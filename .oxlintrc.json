@@ -1,0 +1,79 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true,
+    "typeCheck": true,
+    "reportUnusedDisableDirectives": "warn"
+  },
+  "env": {
+    "node": true
+  },
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import"],
+  "ignorePatterns": ["foo*.ts", "**/gen/*.ts"],
+  "rules": {
+    "capitalized-comments": "off", // 98
+    "curly": "off", // 154
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "func-style": "off", // 58
+    "id-length": "off", // 185
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "import/exports-last": "off", // 41
+    "import/group-exports": "off", // 106
+    "import/no-cycle": ["error", { "maxDepth": 3 }],
+    "import/no-duplicates": "error",
+    "import/no-named-as-default-member": "error",
+    "import/no-named-export": "off", // 165
+    "import/no-namespace": ["error", { "ignore": ["node:*"] }],
+    "import/no-nodejs-modules": "off",
+    "import/prefer-default-export": "off", // 10
+    "init-declarations": "off", // 4
+    "max-statements": "off", // 26
+    "no-console": "warn",
+    "no-continue": "off", // 24
+    "typescript/prefer-regexp-exec": "off", // 6
+    "typescript/prefer-readonly": "off", // 22
+    "no-duplicate-imports": ["warn", { "allowSeparateTypeImports": true }], // 16
+    "no-implicit-coercion": "off", // 4
+    "no-labels": "off", // 4
+    "no-magic-numbers": "off", // 278
+    "no-restricted-imports": ["error", { "paths": ["node:path", "path", "std-env"] }],
+    "no-ternary": "off",
+    "no-unused-vars": "warn",
+    "no-warning-comments": ["warn", { "terms": ["todo", "fixme", "bug"], "location": "start" }],
+    "prefer-destructuring": "off", // 3
+    "prefer-template": "warn",
+    "sort-imports": "off", // 64
+    "sort-keys": ["warn", "asc", { "caseSensitive": true, "natural": false }],
+    "typescript/consistent-type-definitions": "off", // 32
+    "typescript/consistent-type-imports": ["error", { "fixStyle": "separate-type-imports" }],
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/parameter-properties": "off", // 20
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/strict-boolean-expressions": "off",
+    "unicorn/no-null": "error", // 13
+    "unicorn/number-literal-case": "off", // disable, since oxfmt formats number literals in lowercase
+    "unicorn/prefer-module": "error",
+    "unicorn/prefer-node-protocol": "error"
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    // "pedantic": "warn",
+    "perf": "warn",
+    "style": "warn"
+    // "restriction": "error"
+    // "nursery": "error"
+  },
+  "overrides": [
+    {
+      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts"],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    }
+  ]
+}

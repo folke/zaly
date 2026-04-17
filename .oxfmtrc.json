@@ -1,0 +1,22 @@
+{
+  "semi": false,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "useTabs": false,
+  "printWidth": 100,
+  "trailingComma": "es5",
+  "proseWrap": "preserve",
+  // "sortPackageJson": true,
+  // "sortTailwindcss": true,
+  "sortImports": {
+    "newlinesBetween": false,
+    "groups": [
+      "type-import",
+      ["type-internal", "type-parent", "type-sibling", "type-index"],
+      { "newlinesBetween": true },
+      ["value-builtin", "value-external"],
+      ["value-internal", "value-parent", "value-sibling", "value-index"],
+      "unknown"
+    ]
+  }
+}
