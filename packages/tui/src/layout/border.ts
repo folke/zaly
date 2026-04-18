@@ -1,4 +1,8 @@
+import type { Theme } from "../themes/index.ts"
+import type { Style } from "../style/ansi.ts"
+
 import { sliceAnsi, stringWidth } from "#runtime"
+import { openStyle, RESET } from "../style/ansi.ts"
 
 /**
  * Border-character glyphs for drawing a box outline. Any single-cell string
@@ -29,34 +33,84 @@ export function resolveBorder(spec: BorderSpec | undefined): BorderChars | undef
   return spec
 }
 
+export type TitleAlign = "left" | "center" | "right"
+
+export interface DrawBorderOpts {
+  /**
+   * Optional title embedded in the top border, with a single-cell space on
+   * each side. Ellipsis-truncated when it overflows the budget.
+   */
+  title?: string
+  /** Placement of `title` along the top border. Defaults to `"left"`. */
+  titleAlign?: TitleAlign
+  /** Style applied to the border glyphs (corners, horizontal, vertical). */
+  borderStyle?: Style
+  /** Style applied to the title text (including the spaces around it). */
+  titleStyle?: Style
+  /** Theme passed through to SGR emission for slot resolution. */
+  theme?: Theme
+}
+
 /**
  * Wrap pre-rendered inner rows with a border, adding top/bottom border rows
  * and left/right border chars to each inner row. Inner rows must be padded
  * to a uniform width; the output rows are `innerWidth + 2` wide.
  *
- * An optional `title` is embedded in the top border, left-aligned with a
- * single-cell space around it. If the title overflows, it's ellipsis-truncated
- * to fit.
+ * Border glyphs and the optional title can be styled independently via
+ * `borderStyle` and `titleStyle`. Styles are emitted as SGR escapes around
+ * the styled segments; a closing `\x1b[0m` resets at each boundary.
  */
-export function drawBorder(rows: readonly string[], chars: BorderChars, title?: string): string[] {
+export function drawBorder(
+  rows: readonly string[],
+  chars: BorderChars,
+  opts: DrawBorderOpts = {}
+): string[] {
+  const { borderStyle, theme, title, titleAlign, titleStyle } = opts
   const inner = rows.length > 0 ? stringWidth(rows[0]) : 0
+  const bOpen = borderStyle ? openStyle(borderStyle, theme) : ""
+  const tOpen = titleStyle ? openStyle(titleStyle, theme) : ""
+  const wrapB = (s: string): string => (bOpen === "" ? s : bOpen + s + RESET)
+  const wrapT = (s: string): string => (tOpen === "" ? s : tOpen + s + RESET)
+
   const out: string[] = []
-  out.push(topRow(chars, inner, title))
-  for (const row of rows) out.push(chars.v + row + chars.v)
-  out.push(chars.bl + chars.h.repeat(inner) + chars.br)
+  out.push(topRow({ align: titleAlign ?? "left", chars, inner, title, wrapB, wrapT }))
+  const v = wrapB(chars.v)
+  for (const row of rows) out.push(v + row + v)
+  out.push(wrapB(chars.bl + chars.h.repeat(inner) + chars.br))
   return out
 }
 
-function topRow(chars: BorderChars, inner: number, title: string | undefined): string {
+interface TopRowArgs {
+  align: TitleAlign
+  chars: BorderChars
+  inner: number
+  title: string | undefined
+  wrapB: (s: string) => string
+  wrapT: (s: string) => string
+}
+
+function topRow({ align, chars, inner, title, wrapB, wrapT }: TopRowArgs): string {
   if (title === undefined || title === "") {
-    return chars.tl + chars.h.repeat(inner) + chars.tr
+    return wrapB(chars.tl + chars.h.repeat(inner) + chars.tr)
   }
   // Chrome: h + space + title + space + h (4 cells of chrome around the title)
   const budget = inner - 4
-  if (budget <= 0) return chars.tl + chars.h.repeat(inner) + chars.tr
+  if (budget <= 0) return wrapB(chars.tl + chars.h.repeat(inner) + chars.tr)
   const shown = truncate(title, budget)
-  const trailing = inner - 4 - stringWidth(shown)
-  return `${chars.tl}${chars.h} ${shown} ${chars.h.repeat(1 + trailing)}${chars.tr}`
+  const totalH = inner - 2 - stringWidth(shown)
+  const { leading, trailing } = distributeH(totalH, align)
+  const prefix = wrapB(`${chars.tl}${chars.h.repeat(leading)}`)
+  const titleSeg = wrapT(` ${shown} `)
+  const suffix = wrapB(`${chars.h.repeat(trailing)}${chars.tr}`)
+  return prefix + titleSeg + suffix
+}
+
+function distributeH(totalH: number, align: TitleAlign): { leading: number; trailing: number } {
+  if (align === "left") return { leading: 1, trailing: totalH - 1 }
+  if (align === "right") return { leading: totalH - 1, trailing: 1 }
+  // center: leading rounds down so odd slack biases the title slightly left.
+  const leading = Math.floor(totalH / 2)
+  return { leading, trailing: totalH - leading }
 }
 
 function truncate(s: string, width: number): string {

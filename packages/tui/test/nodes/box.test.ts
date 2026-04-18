@@ -112,21 +112,76 @@ describe("Box — padding", () => {
 
 describe("Box — border", () => {
   test("border: true uses single-line preset", () => {
-    const b = new Box({ border: true })
+    // Empty borderStyle opts out of the default "border" slot so the glyphs
+    // read unadorned — layout is the thing under test here.
+    const b = new Box({ border: true, borderStyle: {} })
     b.add(new Text({ content: "hi" }))
     expect(b.render(ctx(6))).toEqual(["┌────┐", "│hi  │", "└────┘"])
   })
 
   test("border rounded with title", () => {
-    const b = new Box({ border: "rounded", borderTitle: "hi" })
+    const b = new Box({
+      border: "rounded",
+      borderStyle: {},
+      borderTitle: "hi",
+      borderTitleStyle: {},
+    })
     b.add(new Text({ content: "body" }))
     expect(b.render(ctx(10))).toEqual(["╭─ hi ───╮", "│body    │", "╰────────╯"])
   })
 
   test("border + padding", () => {
-    const b = new Box({ border: true, padding: 1 })
+    const b = new Box({ border: true, borderStyle: {}, padding: 1 })
     b.add(new Text({ content: "x" }))
     expect(b.render(ctx(7))).toEqual(["┌─────┐", "│     │", "│ x   │", "│     │", "└─────┘"])
+  })
+
+  test("borderStyle defaults to theme `border` slot (moon → muted)", () => {
+    // moon.border = "muted" = "#636da6" → 38;2;99;109;166
+    const b = new Box({ border: true })
+    b.add(new Text({ content: "hi" }))
+    const out = b.render(ctx(6))
+    expect(out[0]).toBe("\x1b[38;2;99;109;166m┌────┐\x1b[0m")
+    expect(out[1]).toBe(
+      "\x1b[38;2;99;109;166m│\x1b[0mhi  \x1b[38;2;99;109;166m│\x1b[0m"
+    )
+    expect(out[2]).toBe("\x1b[38;2;99;109;166m└────┘\x1b[0m")
+  })
+
+  test("borderTitleAlign centers the title", () => {
+    const b = new Box({
+      border: true,
+      borderStyle: {},
+      borderTitle: "hi",
+      borderTitleAlign: "center",
+      borderTitleStyle: {},
+    })
+    b.add(new Text({ content: "body" }))
+    // outer 10, inner 8, total h = 8 - 2 - 2 = 4 → leading 2, trailing 2
+    expect(b.render(ctx(10))[0]).toBe("┌── hi ──┐")
+  })
+
+  test("borderTitleAlign: right", () => {
+    const b = new Box({
+      border: true,
+      borderStyle: {},
+      borderTitle: "hi",
+      borderTitleAlign: "right",
+      borderTitleStyle: {},
+    })
+    b.add(new Text({ content: "body" }))
+    // inner 8, total h = 4 → leading 3, trailing 1
+    expect(b.render(ctx(10))[0]).toBe("┌─── hi ─┐")
+  })
+
+  test("borderTitleStyle defaults to theme `borderTitle` slot", () => {
+    // moon.borderTitle = { bold: true, fg: "primary" } → 1;38;2;130;170;255
+    const b = new Box({ border: true, borderStyle: {}, borderTitle: "hi" })
+    b.add(new Text({ content: "body" }))
+    const out = b.render(ctx(10))
+    // Top row: unstyled border-prefix + styled title + unstyled border-suffix.
+    // inner = 8, budget = 4, shown = "hi", trailing = 2 → "┌─" + " hi " + "───┐"
+    expect(out[0]).toBe("┌─\x1b[1;38;2;130;170;255m hi \x1b[0m───┐")
   })
 })
 

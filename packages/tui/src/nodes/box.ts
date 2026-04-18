@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents, Node } from "../core/node.ts"
-import type { BorderSpec } from "../layout/border.ts"
+import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
@@ -12,7 +12,7 @@ import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
 import { openStyle, RESET } from "../style/ansi.ts"
-import { reapplyBg } from "../style/compose.ts"
+import { reapplyBg, resolveStyleSlot } from "../style/compose.ts"
 
 export type Padding =
   | number
@@ -32,6 +32,19 @@ export interface BoxStyle extends Style {
   padding?: Padding
   border?: BorderSpec
   borderTitle?: string
+  /** Placement of `borderTitle` along the top border. Defaults to `"left"`. */
+  borderTitleAlign?: TitleAlign
+  /**
+   * Style applied to the border glyphs. Either a theme slot name (resolved
+   * via the active theme) or an inline `Style`. Defaults to the `"border"`
+   * theme slot when a border is drawn.
+   */
+  borderStyle?: string | Style
+  /**
+   * Style applied to the border title. Defaults to the `"borderTitle"` theme
+   * slot when a title is set.
+   */
+  borderTitleStyle?: string | Style
 }
 
 export type BoxEvents = BaseEvents & {
@@ -111,7 +124,17 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     const bot = Array.from({ length: padB }, () => blank)
     let rows = [...top, ...contentRows, ...bot]
 
-    if (bchars) rows = drawBorder(rows, bchars, style.borderTitle)
+    if (bchars) {
+      const borderStyle = resolveStyleSlot(style.borderStyle ?? "border", ctx.theme)
+      const titleStyle = resolveStyleSlot(style.borderTitleStyle ?? "borderTitle", ctx.theme)
+      rows = drawBorder(rows, bchars, {
+        borderStyle,
+        theme: ctx.theme,
+        title: style.borderTitle,
+        titleAlign: style.borderTitleAlign,
+        titleStyle,
+      })
+    }
 
     const open = openStyle(style, ctx.theme)
     const bgOnly = style.bg === undefined ? "" : openStyle({ bg: style.bg }, ctx.theme)
