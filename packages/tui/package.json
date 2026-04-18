@@ -7,7 +7,8 @@
   },
   "files": [
     "src/**/*",
-    "dist/**/*"
+    "dist/**/*",
+    "assets/**/*"
   ],
   "type": "module",
   "imports": {
@@ -42,6 +43,8 @@
   },
   "scripts": {
     "build": "tsdown --cwd ../../ --filter @zaly/tui",
+    "build:themes": "bun scripts/build-themes.ts",
+    "build:typia": "bun scripts/build-schemas.ts",
     "check": "cd ../../; oxlint packages/tui",
     "test": "bun test:node && bun test:bun",
     "test:node": "cd ../../; vitest --project @zaly/tui run",
@@ -51,10 +54,12 @@
     "marked": "^18.0.2",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.0",
+    "typia": "^12.0.2",
     "wrap-ansi": "^10.0.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
+    "@typia/transform": "^12.0.2",
     "publint": "^0.3.18",
     "tsdown": "^0.21.9",
     "type-fest": "^5.6.0",

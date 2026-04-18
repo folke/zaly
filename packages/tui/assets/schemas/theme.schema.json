@@ -1,0 +1,862 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "fg": {
+      "$ref": "#/definitions/Color"
+    },
+    "bg": {
+      "$ref": "#/definitions/Color"
+    },
+    "muted": {
+      "$ref": "#/definitions/Color"
+    },
+    "dim": {
+      "$ref": "#/definitions/Color"
+    },
+    "primary": {
+      "$ref": "#/definitions/Color"
+    },
+    "accent": {
+      "$ref": "#/definitions/Color"
+    },
+    "ok": {
+      "$ref": "#/definitions/Color"
+    },
+    "warn": {
+      "$ref": "#/definitions/Color"
+    },
+    "err": {
+      "$ref": "#/definitions/Color"
+    },
+    "border": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "borderTitle": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdHeading": {
+      "$ref": "#/definitions/ThemeValue",
+      "description": "Fallback heading style applied when a specific `mdHeading{N}` slot is\nnot set on the theme. Always required so any heading level renders."
+    },
+    "mdHeading1": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdHeading2": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdHeading3": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdHeading4": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdHeading5": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdHeading6": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ]
+    },
+    "mdStrong": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdEmphasis": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdStrikethrough": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdCode": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdCodeBlock": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdCodeBlockTitle": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdLink": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdBlockquote": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdList": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdListChecked": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdListUnchecked": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdHr": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdTable": {
+      "$ref": "#/definitions/ThemeValue"
+    },
+    "mdTableHeader": {
+      "$ref": "#/definitions/ThemeValue"
+    }
+  },
+  "required": [
+    "fg",
+    "bg",
+    "muted",
+    "dim",
+    "primary",
+    "accent",
+    "ok",
+    "warn",
+    "err",
+    "border",
+    "borderTitle",
+    "mdHeading",
+    "mdStrong",
+    "mdEmphasis",
+    "mdStrikethrough",
+    "mdCode",
+    "mdCodeBlock",
+    "mdCodeBlockTitle",
+    "mdLink",
+    "mdBlockquote",
+    "mdList",
+    "mdListChecked",
+    "mdListUnchecked",
+    "mdHr",
+    "mdTable",
+    "mdTableHeader"
+  ],
+  "description": "A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers\nreference slots by key (`fg: \"primary\"` for colors, `borderStyle: \"border\"`\nfor style refs) and the framework resolves through the theme at render time.\n\nCanonical themes live as JSON under `assets/themes/`. `moon` is bundled as\na static import for zero-cost default access; load any other theme by\nname via `loadTheme(\"tokyonight-storm\")`.",
+  "definitions": {
+    "Color": {
+      "type": "string",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^(#(.*))"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "black",
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "magenta",
+            "cyan",
+            "white",
+            "gray",
+            "grey",
+            "brightBlack",
+            "brightRed",
+            "brightGreen",
+            "brightYellow",
+            "brightBlue",
+            "brightMagenta",
+            "brightCyan",
+            "brightWhite",
+            "brightGray",
+            "brightGrey",
+            "fg",
+            "bg",
+            "muted",
+            "dim",
+            "primary",
+            "accent",
+            "ok",
+            "warn",
+            "err",
+            "border",
+            "borderTitle",
+            "mdHeading",
+            "mdHeading1",
+            "mdHeading2",
+            "mdHeading3",
+            "mdHeading4",
+            "mdHeading5",
+            "mdHeading6",
+            "mdStrong",
+            "mdEmphasis",
+            "mdStrikethrough",
+            "mdCode",
+            "mdCodeBlock",
+            "mdCodeBlockTitle",
+            "mdLink",
+            "mdBlockquote",
+            "mdList",
+            "mdListChecked",
+            "mdListUnchecked",
+            "mdHr",
+            "mdTable",
+            "mdTableHeader",
+            "inherit"
+          ]
+        }
+      ],
+      "description": "A color value. Accepted forms:\n - `#rgb` / `#rrggbb` hex\n - ANSI color names (`red`, `cyan`, `gray`, …)\n - Bright ANSI variants (`brightRed`, `brightBlue`, …)\n - Theme slot keys from `keyof Theme` (`primary`, `muted`, …)\n - `'inherit'` — use the parent's color (renders as no escape)."
+    },
+    "ThemeValue": {
+      "oneOf": [
+        {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/Style"
+        }
+      ],
+      "description": "A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve\ntime; Style objects are used as-is and may carry attrs (`bold`, `underline`,\netc.) and a `bg`. Use Color for simple fg-only slots; escalate to Style when\nthe part needs more than just a foreground color."
+    },
+    "Style": {
+      "type": "object",
+      "properties": {
+        "fg": {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        "bg": {
+          "type": "string",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(#(.*))"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "grey",
+                "brightBlack",
+                "brightRed",
+                "brightGreen",
+                "brightYellow",
+                "brightBlue",
+                "brightMagenta",
+                "brightCyan",
+                "brightWhite",
+                "brightGray",
+                "brightGrey",
+                "fg",
+                "bg",
+                "muted",
+                "dim",
+                "primary",
+                "accent",
+                "ok",
+                "warn",
+                "err",
+                "border",
+                "borderTitle",
+                "mdHeading",
+                "mdHeading1",
+                "mdHeading2",
+                "mdHeading3",
+                "mdHeading4",
+                "mdHeading5",
+                "mdHeading6",
+                "mdStrong",
+                "mdEmphasis",
+                "mdStrikethrough",
+                "mdCode",
+                "mdCodeBlock",
+                "mdCodeBlockTitle",
+                "mdLink",
+                "mdBlockquote",
+                "mdList",
+                "mdListChecked",
+                "mdListUnchecked",
+                "mdHr",
+                "mdTable",
+                "mdTableHeader",
+                "inherit"
+              ]
+            }
+          ]
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "dim": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "inverse": {
+          "type": "boolean"
+        },
+        "strikethrough": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "description": "Base style shared by every node type. Box/Text/etc. extend this."
+    }
+  }
+}

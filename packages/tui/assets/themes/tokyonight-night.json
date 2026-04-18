@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+
+  "fg": "#c0caf5",
+  "bg": "#1a1b26",
+  "muted": "#565f89",
+  "dim": "#a9b1d6",
+  "primary": "#7aa2f7",
+  "accent": "#9d7cd8",
+  "ok": "#9ece6a",
+  "warn": "#e0af68",
+  "err": "#f7768e",
+
+  "border": "#15161e",
+  "borderTitle": { "bold": true, "fg": "#7aa2f7" },
+
+  "mdHeading": { "bold": true, "fg": "#7aa2f7" },
+  "mdHeading1": { "bg": "#24293b", "bold": true, "fg": "#7aa2f7" },
+  "mdHeading2": { "bg": "#2e2a2d", "bold": true, "fg": "#e0af68" },
+  "mdHeading3": { "bg": "#272d2d", "bold": true, "fg": "#9ece6a" },
+  "mdHeading4": { "bg": "#1a2b32", "bold": true, "fg": "#1abc9c" },
+  "mdHeading5": { "bg": "#2a283b", "bold": true, "fg": "#bb9af7" },
+  "mdHeading6": { "bg": "#272538", "bold": true, "fg": "#9d7cd8" },
+
+  "mdStrong": { "bold": true },
+  "mdEmphasis": { "italic": true },
+  "mdStrikethrough": { "strikethrough": true },
+
+  "mdCode": { "bg": "#414868", "fg": "#7aa2f7" },
+  "mdCodeBlock": { "bg": "#16161e", "fg": "#c0caf5" },
+  "mdCodeBlockTitle": { "fg": "#565f89", "italic": true },
+
+  "mdLink": { "fg": "#1abc9c", "underline": true },
+  "mdBlockquote": { "fg": "#565f89", "italic": true },
+  "mdList": { "fg": "#ff9e64" },
+  "mdListChecked": { "fg": "#73daca" },
+  "mdListUnchecked": { "fg": "#7aa2f7" },
+  "mdHr": { "fg": "#ff9e64", "bold": true },
+
+  "mdTable": "#3b4261",
+  "mdTableHeader": { "bold": true, "fg": "#7aa2f7" }
+}
