@@ -11,7 +11,7 @@
   "warn": "#ffc777",
   "err": "#ff757f",
 
-  "border": "#1b1d2b",
+  "border": "#589ed7",
   "borderTitle": { "bold": true, "fg": "#82aaff" },
 
   "mdHeading": { "bold": true, "fg": "#82aaff" },
@@ -37,6 +37,6 @@
   "mdListUnchecked": { "fg": "#82aaff" },
   "mdHr": { "fg": "#ff966c", "bold": true },
 
-  "mdTable": "#3b4261",
+  "mdTable": "#ff966c",
   "mdTableHeader": { "bold": true, "fg": "#82aaff" }
 }
