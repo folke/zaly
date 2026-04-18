@@ -1,7 +1,7 @@
 import type { RenderCtx } from "./ctx.ts"
 import type { TypedEmitter } from "./emitter.ts"
 
-import { ohash } from "../util.ts"
+import { ctxHash } from "./ctx.ts"
 import { Emitter } from "./emitter.ts"
 
 /** Minimum event map every node carries. Custom event maps must intersect. */
@@ -77,7 +77,7 @@ export abstract class NodeBase<S extends object = object, E extends BaseEvents =
   }
 
   render(ctx: RenderCtx): string[] {
-    const key = ohash(ctx, { force: !this.parent }) // force ctx hashing at the root to detect theme/width changes
+    const key = ctxHash(ctx, { force: !this.parent }) // force at the root to pick up theme/width changes
     if (this.#cache?.key !== key) this.#cache = { key, rows: this._render(ctx) }
     return this.#cache.rows
   }

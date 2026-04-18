@@ -1,4 +1,4 @@
-import type { Theme } from "../style/theme.ts"
+import type { Theme } from "./index.ts"
 
 /**
  * Palette-driven theme using only ANSI color names. Every slot renders via a

@@ -1,10 +1,8 @@
-import type { RenderCtx } from "../../src/core/ctx.ts"
-
 import { describe, expect, test } from "vitest"
+import { createCtx } from "../../src/core/ctx.ts"
 import { Text } from "../../src/nodes/text.ts"
-import { tokyoNightMoon } from "../../src/themes/tokyonight-moon.ts"
 
-const ctx = (width: number): RenderCtx => ({ theme: tokyoNightMoon, width })
+const ctx = (width: number) => createCtx({ width })
 
 describe("Text", () => {
   test("fits in one row padded to allocated width (default fill)", () => {

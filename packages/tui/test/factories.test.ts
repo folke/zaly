@@ -1,11 +1,9 @@
-import type { RenderCtx } from "../src/core/ctx.ts"
-
 import { describe, expect, test, vi } from "vitest"
+import { createCtx } from "../src/core/ctx.ts"
 import { Box, box, node, text } from "../src/index.ts"
 import { Text } from "../src/nodes/text.ts"
-import { tokyoNightMoon } from "../src/themes/tokyonight-moon.ts"
 
-const ctx = (width: number): RenderCtx => ({ theme: tokyoNightMoon, width })
+const ctx = (width: number) => createCtx({ width })
 
 describe("text()", () => {
   test("string content → Text", () => {

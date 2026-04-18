@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { colorParams } from "../../src/style/color.ts"
-import { tokyoNightMoon } from "../../src/themes/tokyonight-moon.ts"
+import { moon } from "../../src/themes/tokyonight.ts"
 
 describe("colorParams — ANSI base names", () => {
   test("fg", () => {
@@ -50,7 +50,7 @@ describe("colorParams — hex", () => {
 
 describe("colorParams — theme slots", () => {
   test("slot resolves through theme; hex slot → truecolor", () => {
-    expect(colorParams("primary", "fg", tokyoNightMoon)).toBe("38;2;130;170;255")
+    expect(colorParams("primary", "fg", moon)).toBe("38;2;130;170;255")
   })
 
   test("no theme passed: slot name drops silently", () => {

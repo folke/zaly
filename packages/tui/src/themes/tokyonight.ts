@@ -1,10 +1,10 @@
-import type { Theme } from "../style/theme.ts"
+import type { Theme } from "./index.ts"
 
 /**
  * TokyoNight Moon — the default theme. Canonical palette from
  * `folke/tokyonight.nvim`. Override via `createRenderer({ theme })`.
  */
-export const tokyoNightMoon: Theme = {
+export const moon: Theme = {
   accent: "#c099ff",
   bg: "#222436",
   dim: "#828bb8",
@@ -15,3 +15,5 @@ export const tokyoNightMoon: Theme = {
   primary: "#82aaff",
   warn: "#ffc777",
 }
+
+export default moon

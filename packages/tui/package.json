@@ -42,6 +42,7 @@
   },
   "scripts": {
     "build": "tsdown --cwd ../../ --filter @zaly/tui",
+    "check": "cd ../../; oxlint packages/tui",
     "test": "bun test:node && bun test:bun",
     "test:node": "cd ../../; vitest --project @zaly/tui run",
     "test:bun": "bun test --only-failures"

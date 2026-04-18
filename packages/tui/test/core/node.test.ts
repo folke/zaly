@@ -1,7 +1,8 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
-import type { Theme } from "../../src/style/theme.ts"
+import type { Theme } from "../../src/themes/index.ts"
 
 import { describe, expect, test, vi } from "vitest"
+import { createCtx } from "../../src/core/ctx.ts"
 import { NodeBase } from "../../src/core/node.ts"
 
 const theme: Theme = {
@@ -16,7 +17,7 @@ const theme: Theme = {
   warn: "#ffc777",
 }
 
-const ctx: RenderCtx = { theme, width: 20 }
+const ctx: RenderCtx = createCtx({ theme, width: 20 })
 
 type S = { text: string; count: number }
 
@@ -164,23 +165,23 @@ describe("NodeBase", () => {
 
   test("different ctx width forces re-render even without invalidation", () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render({ theme, width: 10 })
-    n.render({ theme, width: 20 })
+    n.render(createCtx({ theme, width: 10 }))
+    n.render(createCtx({ theme, width: 20 }))
     expect(n.renderCalls).toBe(2)
   })
 
   test("different theme content forces re-render", () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render({ theme, width: 10 })
-    n.render({ theme: { ...theme, primary: "#000000" }, width: 10 })
+    n.render(createCtx({ theme, width: 10 }))
+    n.render(createCtx({ theme: { ...theme, primary: "#000000" }, width: 10 }))
     expect(n.renderCalls).toBe(2)
   })
 
   test("same ctx content across fresh objects is a cache hit", () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render({ theme, width: 10 })
-    // Fresh ctx object with identical content — ohash collapses to same hash.
-    n.render({ theme: { ...theme }, width: 10 })
+    n.render(createCtx({ theme, width: 10 }))
+    // Fresh ctx object with identical content — sha256 collapses to same key.
+    n.render(createCtx({ theme: { ...theme }, width: 10 }))
     expect(n.renderCalls).toBe(1)
   })
 })

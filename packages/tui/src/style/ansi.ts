@@ -1,5 +1,5 @@
 import type { Color } from "./color.ts"
-import type { Theme } from "./theme.ts"
+import type { Theme } from "../themes/index.ts"
 
 import { colorParams } from "./color.ts"
 
