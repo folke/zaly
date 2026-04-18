@@ -42,28 +42,37 @@ const bunLike = (input: string, cbs: MdCallbacks): string => {
   return cbs.code?.(`${body}\n`, lang === "" ? undefined : { language: lang }) ?? `${body}\n`
 }
 
+// Sentinel-wrapping stand-in for shiki. The markdown code callback sees
+// shiki's output fronted by `\x1b[33m...\x1b[0m`, so tests can check the
+// highlight path fired without actually loading a shiki grammar.
+const fakeHighlighter = (code: string) => `\x1b[33m${code}\x1b[0m`
+
+// Shiki returns the input unchanged when a language isn't recognized;
+// `tryHighlight` then falls through to plain styling.
+const passthroughHighlighter = (code: string) => code
+
 describe("markdown — inline callbacks", () => {
-  test("strong wraps children in mdStrong", () => {
+  test("strong wraps children in mdStrong", async () => {
     const open = expectedOpen("mdStrong")
     expect(render("**hi**")).toContain(`${open}hi${RESET}`)
   })
 
-  test("emphasis wraps children in mdEmphasis", () => {
+  test("emphasis wraps children in mdEmphasis", async () => {
     const open = expectedOpen("mdEmphasis")
     expect(render("*hi*")).toContain(`${open}hi${RESET}`)
   })
 
-  test("strikethrough wraps children in mdStrikethrough", () => {
+  test("strikethrough wraps children in mdStrikethrough", async () => {
     const open = expectedOpen("mdStrikethrough")
     expect(render("~~hi~~")).toContain(`${open}hi${RESET}`)
   })
 
-  test("codespan wraps in mdCode", () => {
+  test("codespan wraps in mdCode", async () => {
     const open = expectedOpen("mdCode")
     expect(render("`foo`")).toContain(`${open}foo${RESET}`)
   })
 
-  test("link wraps in mdLink + OSC 8 hyperlink", () => {
+  test("link wraps in mdLink + OSC 8 hyperlink", async () => {
     const open = expectedOpen("mdLink")
     const out = render("[click](https://example.com)")
     expect(out).toContain("\x1b]8;;https://example.com\x1b\\")
@@ -71,7 +80,7 @@ describe("markdown — inline callbacks", () => {
     expect(out).toContain("\x1b]8;;\x1b\\")
   })
 
-  test("nested strong inside heading keeps heading style after inner reset", () => {
+  test("nested strong inside heading keeps heading style after inner reset", async () => {
     const headingOpen = expectedOpen("mdHeading1")
     const strongOpen = expectedOpen("mdStrong")
     // Heading is "**hi** world" — the inner bold reset must re-apply the
@@ -84,7 +93,7 @@ describe("markdown — inline callbacks", () => {
 })
 
 describe("markdown — block callbacks", () => {
-  test("heading level dispatches to mdHeading{level}", () => {
+  test("heading level dispatches to mdHeading{level}", async () => {
     // Heading rows are padded to ctx.width so the bg extends across; assert
     // the styled prefix without pinning the trailing whitespace length.
     for (let level = 1; level <= 6; level++) {
@@ -94,7 +103,7 @@ describe("markdown — block callbacks", () => {
     }
   })
 
-  test("heading padded to ctx.width so bg extends edge-to-edge", () => {
+  test("heading padded to ctx.width so bg extends edge-to-edge", async () => {
     const width = 20
     const out = render("# hi", width)
     // "# hi" → content "hi" padded to 20 cells → "hi" + 18 spaces.
@@ -102,7 +111,7 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}hi${" ".repeat(18)}${RESET}`)
   })
 
-  test("heading falls back to generic mdHeading when level-specific slot is unset", () => {
+  test("heading falls back to generic mdHeading when level-specific slot is unset", async () => {
     // Drop mdHeading3 to simulate a theme that only defines the generic slot.
     const fallbackTheme = { ...moon, mdHeading3: undefined } as typeof moon
     const open = openStyle(resolveStyleSlot("mdHeading", fallbackTheme), fallbackTheme)
@@ -113,23 +122,23 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}h3 `)
   })
 
-  test("paragraph separated by blank lines", () => {
+  test("paragraph separated by blank lines", async () => {
     expect(render("alpha\n\nbeta")).toContain("alpha\n\nbeta")
   })
 
-  test("blockquote prefixes each line with styled │", () => {
+  test("blockquote prefixes each line with styled │", async () => {
     const open = expectedOpen("mdBlockquote")
     const out = render("> quote")
     expect(out).toContain(`${open}│ quote${RESET}`)
   })
 
-  test("hr fills width with ─", () => {
+  test("hr fills width with ─", async () => {
     const open = expectedOpen("mdHr")
     const out = render("---", 10)
     expect(out).toContain(`${open}${"─".repeat(10)}${RESET}`)
   })
 
-  test("code block: lines padded to widest-content + 1 trailing space", () => {
+  test("code block: lines padded to widest-content + 1 trailing space", async () => {
     // Block hugs its content rather than stretching to ctx.width; one cell
     // of trailing padding gives the background a visible tail.
     const open = expectedOpen("mdCodeBlock")
@@ -137,7 +146,7 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}abc ${RESET}`)
   })
 
-  test("code block: multi-line block pads every line to the widest + 1", () => {
+  test("code block: multi-line block pads every line to the widest + 1", async () => {
     const open = expectedOpen("mdCodeBlock")
     // Widest line is "console" (7) → padded to 8.
     const out = render("```\nabc\nconsole\n```", 80)
@@ -145,7 +154,28 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}console ${RESET}`)
   })
 
-  test("code block: width is capped at ctx.width", () => {
+  test("code block: highlighter output replaces plain mdCodeBlock fg when supplied", async () => {
+    // mdCodeBlock drops its own fg when a highlighter is active so per-token
+    // colors win. The bg/attrs from the slot still show through.
+    const bodyOpen = expectedOpen("mdCodeBlock")
+    const out = renderMarkdownMarked(
+      "```ts\nconst x = 1\n```",
+      mdCallbacks(ctx(40), { highlighter: fakeHighlighter })
+    )
+    expect(out).toContain("\x1b[33mconst x = 1\x1b[0m")
+    expect(out).not.toContain(`${bodyOpen}const`)
+  })
+
+  test("code block: highlighter returning input unchanged falls back to plain styling", async () => {
+    const bodyOpen = expectedOpen("mdCodeBlock")
+    const out = renderMarkdownMarked(
+      "```mystery\nprint(1)\n```",
+      mdCallbacks(ctx(40), { highlighter: passthroughHighlighter })
+    )
+    expect(out).toContain(`${bodyOpen}print(1)`)
+  })
+
+  test("code block: width is capped at ctx.width", async () => {
     const open = expectedOpen("mdCodeBlock")
     // Line is 12 cells; block is capped at ctx.width = 8 (no room for +1).
     const out = render("```\nabcdefghijkl\n```", 8)
@@ -167,14 +197,14 @@ describe("markdown — block callbacks", () => {
     expect(titleIdx).toBeLessThan(bodyIdx)
   })
 
-  test("code block: no title attr → no title line emitted (marked)", () => {
+  test("code block: no title attr → no title line emitted (marked)", async () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
     const out = renderMarkdownMarked("```ts\nx\n```", mdCallbacks(ctx(10)))
     expect(out).not.toContain(titleOpen)
   })
 
-  test('code block: title="..." also works through a Bun-like renderer via the component', () => {
-    const out = markdown({
+  test('code block: title="..." also works through a Bun-like renderer via the component', async () => {
+    const out = await markdown({
       content: '```ts title="foo.ts"\nx\n```',
       options: { render: bunLike },
     }).render(ctx(30))
@@ -188,7 +218,7 @@ describe("markdown — block callbacks", () => {
     expect(plain.indexOf("foo.ts")).toBeLessThan(plain.indexOf("x"))
   })
 
-  test("unordered list: bullet glyph styled via mdList", () => {
+  test("unordered list: bullet glyph styled via mdList", async () => {
     const open = expectedOpen("mdList")
     const out = render("- one\n- two")
     // Top-level bullet uses the first glyph in the depth-cycle: ●.
@@ -197,14 +227,14 @@ describe("markdown — block callbacks", () => {
     expect(stripAnsi(out)).toMatch(/● two/)
   })
 
-  test("ordered list: numeric marker styled via mdList", () => {
+  test("ordered list: numeric marker styled via mdList", async () => {
     const open = expectedOpen("mdList")
     const out = render("1. one\n2. two")
     expect(out).toContain(`${open}1.${RESET}`)
     expect(out).toContain(`${open}2.${RESET}`)
   })
 
-  test("task list: checkbox styled via mdListChecked / mdListUnchecked", () => {
+  test("task list: checkbox styled via mdListChecked / mdListUnchecked", async () => {
     const listOpen = expectedOpen("mdList")
     const checkedOpen = expectedOpen("mdListChecked")
     const uncheckedOpen = expectedOpen("mdListUnchecked")
@@ -215,7 +245,7 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${listOpen}●${RESET} ${uncheckedOpen}[ ]${RESET}`)
   })
 
-  test("nested list bullet glyph cycles with depth", () => {
+  test("nested list bullet glyph cycles with depth", async () => {
     // Bullet glyphs per depth: ● / ○ / ◆ / ◇
     const out = render("- outer\n  - inner")
     const plain = stripAnsi(out)
@@ -226,7 +256,7 @@ describe("markdown — block callbacks", () => {
 })
 
 describe("markdown — table callbacks (styled borders, no alignment)", () => {
-  test("table cells separated by styled │", () => {
+  test("table cells separated by styled │", async () => {
     const open = expectedOpen("mdTable")
     const out = render("| a | b |\n|---|---|\n| 1 | 2 |")
     // Expect multiple │ separators styled.
@@ -236,7 +266,7 @@ describe("markdown — table callbacks (styled borders, no alignment)", () => {
     expect(out).toContain("2")
   })
 
-  test("header cells wrapped in mdTableHeader", () => {
+  test("header cells wrapped in mdTableHeader", async () => {
     const open = expectedOpen("mdTableHeader")
     const out = render("| a | b |\n|---|---|\n| 1 | 2 |")
     expect(out).toContain(`${open}a${RESET}`)
@@ -245,40 +275,44 @@ describe("markdown — table callbacks (styled borders, no alignment)", () => {
 })
 
 describe("markdown() factory — rendered output preserves layout", () => {
-  test("nested list: leading 2-space indent survives Text rendering", () => {
+  test("nested list: leading 2-space indent survives Text rendering", async () => {
     // Reproduce the demo regression: nested list items should retain their
     // indent after Text wraps + pads the rendered content. Depth-1 bullet
     // glyph is ○ (second entry in the depth-cycle).
-    const out = markdown("- outer\n  - inner").render(ctx(40))
+    const out = await markdown("- outer\n  - inner").render(ctx(40))
     expect(stripAnsi(out.join("\n"))).toMatch(/^ {2}○ inner/m)
   })
 })
 
 describe("markdown() factory", () => {
-  test("returns a Markdown node that renders via Text", () => {
-    const out = markdown("**bold**").render(ctx(20))
+  test("returns a Markdown node that renders via Text", async () => {
+    const out = await markdown("**bold**").render(ctx(20))
     const joined = out.join("\n")
     const open = expectedOpen("mdStrong")
     expect(joined).toContain(`${open}bold${RESET}`)
   })
 
-  test("accepts state-object form", () => {
-    const out = markdown({ content: "hello", fg: "primary" }).render(ctx(20))
+  test("accepts state-object form", async () => {
+    const out = await markdown({ content: "hello", fg: "primary" }).render(ctx(20))
     expect(out.join("\n")).toContain("hello")
   })
 
-  test("options.render overrides the runtime renderer", () => {
+  test("options.render overrides the runtime renderer", async () => {
     const stub = vi.fn((_input: string, _cbs: object, _opts?: object) => "STUB-OUT")
-    const out = markdown({ content: "# hi", options: { render: stub } }).render(ctx(20))
+    const out = await markdown({
+      content: "# hi",
+      options: { render: stub },
+      syntax: false,
+    }).render(ctx(20))
     expect(stub).toHaveBeenCalledTimes(1)
     expect(out.join("\n")).toContain("STUB-OUT")
   })
 
-  test("changing state.content invalidates the node", () => {
+  test("changing state.content invalidates the node", async () => {
     const m = markdown("a")
     let invalidated = 0
     m.on("invalidate", () => invalidated++)
-    m.render(ctx(10))
+    await m.render(ctx(10))
     m.state.content = "b"
     expect(invalidated).toBe(1)
   })

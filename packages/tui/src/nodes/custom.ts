@@ -41,7 +41,7 @@ class CustomNode<S extends object, E extends BaseEvents> extends NodeBase<S, E> 
     this.#renderFn = renderFn
   }
 
-  protected _render(ctx: RenderCtx): string[] {
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
     const emit = this.emit.bind(this)
     const result = this.#renderFn({ ctx, emit, state: this.state })
     if (isNode(result)) {
@@ -50,7 +50,7 @@ class CustomNode<S extends object, E extends BaseEvents> extends NodeBase<S, E> 
     }
     const kids = result.filter((c): c is Node => Boolean(c))
     for (const c of kids) c.parent = this
-    const childRows = kids.map((c) => c.render(ctx))
+    const childRows = await Promise.all(kids.map((c) => c.render(ctx)))
     return stackColumn(childRows, { gap: 0, width: ctx.width })
   }
 }

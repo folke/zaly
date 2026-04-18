@@ -88,7 +88,7 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     return this
   }
 
-  protected _render(ctx: RenderCtx): string[] {
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state
 
     const requested = resolveSize(style.width ?? "fill", ctx.width) ?? ctx.width
@@ -106,7 +106,7 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     const inner = Math.max(0, paddedWidth - padL - padR)
 
     // Layout children into rows at inner width.
-    let contentRows = this.#layoutChildren(inner, ctx)
+    let contentRows = await this.#layoutChildren(inner, ctx)
 
     // Ensure each content row is exactly `inner` cells wide (absorbs slack).
     contentRows = contentRows.map((row) => padRow(row, inner))
@@ -147,13 +147,15 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     return rows
   }
 
-  #layoutChildren(innerWidth: number, ctx: RenderCtx): string[] {
+  async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {
     if (this.#children.length === 0) return []
     const gap = this.state.gap ?? 0
     const dir = this.state.flexDirection ?? "column"
 
     if (dir === "column") {
-      const childRows = this.#children.map((c) => c.render({ ...ctx, width: innerWidth }))
+      const childRows = await Promise.all(
+        this.#children.map((c) => c.render({ ...ctx, width: innerWidth }))
+      )
       return stackColumn(childRows, { gap, width: innerWidth })
     }
 
@@ -167,7 +169,9 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
       return { flexGrow: s.flexGrow, maxWidth: s.maxWidth, minWidth: s.minWidth, width: s.width }
     })
     const widths = allocateRow(items, { contentWidth: innerWidth, gap })
-    const childRows = this.#children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
+    const childRows = await Promise.all(
+      this.#children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
+    )
     return zipRow(childRows, { gap, widths })
   }
 }

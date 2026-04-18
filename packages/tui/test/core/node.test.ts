@@ -19,13 +19,13 @@ class TestNode extends NodeBase<S> {
 }
 
 describe("NodeBase", () => {
-  test("state proxy reads transparently", () => {
+  test("state proxy reads transparently", async () => {
     const n = new TestNode({ count: 3, text: "hi" })
     expect(n.state.text).toBe("hi")
     expect(n.state.count).toBe(3)
   })
 
-  test("fresh node is already dirty: invalidate is a no-op", () => {
+  test("fresh node is already dirty: invalidate is a no-op", async () => {
     // Per §7.2 short-circuit semantic: cache starts as dirty, so no event
     // fires until something has rendered first.
     const n = new TestNode({ count: 0, text: "hi" })
@@ -36,9 +36,9 @@ describe("NodeBase", () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  test("state proxy write invalidates once cache is warm", () => {
+  test("state proxy write invalidates once cache is warm", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(ctx) // warm the cache → clean state
+    await n.render(ctx) // warm the cache → clean state
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.state.text = "bye"
@@ -46,9 +46,9 @@ describe("NodeBase", () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
-  test("writing same value does not invalidate", () => {
+  test("writing same value does not invalidate", async () => {
     const n = new TestNode({ count: 5, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.state.text = "hi"
@@ -56,9 +56,9 @@ describe("NodeBase", () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  test("invalidate short-circuits when already dirty", () => {
+  test("invalidate short-circuits when already dirty", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.state.text = "a"
@@ -68,9 +68,9 @@ describe("NodeBase", () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
-  test("setState batches multiple fields into one invalidate", () => {
+  test("setState batches multiple fields into one invalidate", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.setState({ count: 10, text: "new" })
@@ -79,97 +79,97 @@ describe("NodeBase", () => {
     expect(n.state.count).toBe(10)
   })
 
-  test("setState with no real changes does not invalidate", () => {
+  test("setState with no real changes does not invalidate", async () => {
     const n = new TestNode({ count: 5, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.setState({ count: 5, text: "hi" })
     expect(fn).not.toHaveBeenCalled()
   })
 
-  test("setState returns this for chaining", () => {
+  test("setState returns this for chaining", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
     expect(n.setState({ count: 1 })).toBe(n)
   })
 
-  test("render caches across calls", () => {
+  test("render caches across calls", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    const a = n.render(ctx)
-    const b = n.render(ctx)
+    const a = await n.render(ctx)
+    const b = await n.render(ctx)
     expect(a).toEqual(["hi:0:20"])
     expect(b).toBe(a)
     expect(n.renderCalls).toBe(1)
   })
 
-  test("invalidate clears cache so next render recomputes", () => {
+  test("invalidate clears cache so next render recomputes", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     expect(n.renderCalls).toBe(1)
     n.state.text = "bye"
-    n.render(ctx)
+    await n.render(ctx)
     expect(n.renderCalls).toBe(2)
   })
 
-  test("manual invalidate() forces next render to recompute", () => {
+  test("manual invalidate() forces next render to recompute", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(ctx)
+    await n.render(ctx)
     n.invalidate()
-    n.render(ctx)
+    await n.render(ctx)
     expect(n.renderCalls).toBe(2)
   })
 
-  test("invalidate cascades to parent", () => {
+  test("invalidate cascades to parent", async () => {
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
     child.parent = parent
     const parentFn = vi.fn()
     parent.on("invalidate", parentFn)
     // Warm both caches so invalidate actually fires.
-    parent.render(ctx)
-    child.render(ctx)
+    await parent.render(ctx)
+    await child.render(ctx)
     child.state.text = "c2"
     expect(parentFn).toHaveBeenCalledTimes(1)
   })
 
-  test("cascade short-circuits when parent already dirty", () => {
+  test("cascade short-circuits when parent already dirty", async () => {
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
     child.parent = parent
     const parentFn = vi.fn()
     parent.on("invalidate", parentFn)
-    parent.render(ctx)
-    child.render(ctx)
+    await parent.render(ctx)
+    await child.render(ctx)
     child.state.text = "a"
     child.state.text = "b"
     child.state.text = "c"
     expect(parentFn).toHaveBeenCalledTimes(1)
   })
 
-  test("invalidate returns this for chaining", () => {
+  test("invalidate returns this for chaining", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
     expect(n.invalidate()).toBe(n)
   })
 
-  test("different ctx width forces re-render even without invalidation", () => {
+  test("different ctx width forces re-render even without invalidation", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(createCtx({ theme, width: 10 }))
-    n.render(createCtx({ theme, width: 20 }))
+    await n.render(createCtx({ theme, width: 10 }))
+    await n.render(createCtx({ theme, width: 20 }))
     expect(n.renderCalls).toBe(2)
   })
 
-  test("different theme content forces re-render", () => {
+  test("different theme content forces re-render", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(createCtx({ theme, width: 10 }))
-    n.render(createCtx({ theme: { ...theme, primary: "#000000" }, width: 10 }))
+    await n.render(createCtx({ theme, width: 10 }))
+    await n.render(createCtx({ theme: { ...theme, primary: "#000000" }, width: 10 }))
     expect(n.renderCalls).toBe(2)
   })
 
-  test("same ctx content across fresh objects is a cache hit", () => {
+  test("same ctx content across fresh objects is a cache hit", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    n.render(createCtx({ theme, width: 10 }))
+    await n.render(createCtx({ theme, width: 10 }))
     // Fresh ctx object with identical content — sha256 collapses to same key.
-    n.render(createCtx({ theme: { ...theme }, width: 10 }))
+    await n.render(createCtx({ theme: { ...theme }, width: 10 }))
     expect(n.renderCalls).toBe(1)
   })
 })

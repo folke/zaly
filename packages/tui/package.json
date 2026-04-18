@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "marked": "^18.0.2",
+    "shiki": "^4.0.2",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.0",
     "typia": "^12.0.2",

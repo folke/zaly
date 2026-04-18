@@ -30,7 +30,7 @@ export interface Node<
   parent?: Node
   setState(patch: Partial<S>): this
   invalidate(): this
-  render(ctx: RenderCtx): string[]
+  render(ctx: RenderCtx): Promise<string[]>
 }
 
 export abstract class NodeBase<S extends object = object, E extends BaseEvents = BaseEvents>
@@ -76,13 +76,13 @@ export abstract class NodeBase<S extends object = object, E extends BaseEvents =
     return this
   }
 
-  render(ctx: RenderCtx): string[] {
+  async render(ctx: RenderCtx): Promise<string[]> {
     const key = ctxHash(ctx, { force: !this.parent }) // force at the root to pick up theme/width changes
-    if (this.#cache?.key !== key) this.#cache = { key, rows: this._render(ctx) }
+    if (this.#cache?.key !== key) this.#cache = { key, rows: await this._render(ctx) }
     return this.#cache.rows
   }
 
-  protected abstract _render(ctx: RenderCtx): string[]
+  protected abstract _render(ctx: RenderCtx): Promise<string[]> | string[]
 }
 
 /** Runtime type guard for Node. */

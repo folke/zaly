@@ -58,32 +58,34 @@ describe("box()", () => {
 })
 
 describe("node()", () => {
-  test("single-Node render is composed", () => {
+  test("single-Node render is composed", async () => {
     const n = node({ label: "hello" }, ({ state }) => text(state.label, { width: 5 }))
-    expect(n.render(ctx(10))).toEqual(["hello"])
+    expect(await n.render(ctx(10))).toEqual(["hello"])
   })
 
-  test("state mutation re-renders via parent linkage", () => {
+  test("state mutation re-renders via parent linkage", async () => {
     const n = node({ label: "a" }, ({ state }) => text(state.label, { width: 3 }))
-    expect(n.render(ctx(10))[0]).toBe("a  ")
+    let rows = await n.render(ctx(10))
+    expect(rows[0]).toBe("a  ")
     n.state.label = "bc"
-    expect(n.render(ctx(10))[0]).toBe("bc ")
+    rows = await n.render(ctx(10))
+    expect(rows[0]).toBe("bc ")
   })
 
-  test("array render stacks children", () => {
+  test("array render stacks children", async () => {
     const n = node({}, () => [text("a", { width: 3 }), text("b", { width: 3 })])
-    expect(n.render(ctx(10))).toEqual(["a  ", "b  "])
+    expect(await n.render(ctx(10))).toEqual(["a  ", "b  "])
   })
 
-  test("array render filters falsy entries", () => {
+  test("array render filters falsy entries", async () => {
     const n = node({ show: false }, ({ state }) => [
       text("a", { width: 3 }),
       state.show && text("b", { width: 3 }),
     ])
-    expect(n.render(ctx(10))).toEqual(["a  "])
+    expect(await n.render(ctx(10))).toEqual(["a  "])
   })
 
-  test("emit is wired to custom node", () => {
+  test("emit is wired to custom node", async () => {
     type E = { changed: [value: number] }
     const listener = vi.fn()
     const n = node<{ v: number }, E & { invalidate: []; mount: []; unmount: [] }>(
@@ -94,7 +96,7 @@ describe("node()", () => {
       }
     )
     n.on("changed", listener)
-    n.render(ctx(10))
+    await n.render(ctx(10))
     expect(listener).toHaveBeenCalledWith(0)
   })
 })
