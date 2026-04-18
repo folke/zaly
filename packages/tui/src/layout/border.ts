@@ -1,6 +1,17 @@
-import type { BorderChars } from "../core/ctx.ts"
-
 import { sliceAnsi, stringWidth } from "#runtime"
+
+/**
+ * Border-character glyphs for drawing a box outline. Any single-cell string
+ * is allowed (including multi-byte glyphs like rounded corners).
+ */
+export interface BorderChars {
+  h: string
+  v: string
+  tl: string
+  tr: string
+  bl: string
+  br: string
+}
 
 export type BorderSpec = boolean | "single" | "double" | "rounded" | BorderChars
 

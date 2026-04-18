@@ -1,4 +1,4 @@
-import type { Size } from "../core/types.ts"
+import type { Size } from "./size.ts"
 
 import { clamp, resolveSize } from "./size.ts"
 

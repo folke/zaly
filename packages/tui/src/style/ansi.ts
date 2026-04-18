@@ -1,9 +1,21 @@
-import type { Theme } from "../core/ctx.ts"
-import type { Style } from "../core/types.ts"
+import type { Color } from "./color.ts"
+import type { Theme } from "./theme.ts"
 
 import { colorParams } from "./color.ts"
 
 export const RESET = "\x1b[0m"
+
+/** Base style shared by every node type. Box/Text/etc. extend this. */
+export interface Style {
+  fg?: Color
+  bg?: Color
+  bold?: boolean
+  dim?: boolean
+  italic?: boolean
+  underline?: boolean
+  inverse?: boolean
+  strikethrough?: boolean
+}
 
 // Attribute → SGR code. Order matters for stable output.
 const ATTRS = [

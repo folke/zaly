@@ -1,9 +1,15 @@
 import type { RenderCtx } from "./ctx.ts"
 import type { TypedEmitter } from "./emitter.ts"
-import type { BaseEvents } from "./types.ts"
 
 import { ohash } from "../util.ts"
 import { Emitter } from "./emitter.ts"
+
+/** Minimum event map every node carries. Custom event maps must intersect. */
+export type BaseEvents = {
+  invalidate: []
+  mount: []
+  unmount: []
+}
 
 /**
  * Public Node handle. Calling `render(ctx)` returns the node's rows from the

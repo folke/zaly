@@ -1,5 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Size, Style } from "../core/types.ts"
+import type { Size } from "../layout/size.ts"
+import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
 import { NodeBase } from "../core/node.ts"
@@ -26,6 +27,23 @@ export class Text extends NodeBase<TextStyle> {
     if (open === "") return padded
     return padded.map((row) => open + row + RESET)
   }
+}
+
+/**
+ * Factory for `Text`. The string form is the common case; pass a full
+ * `TextStyle` object when you need content + style in one literal.
+ *
+ * ```ts
+ * text("hello")
+ * text("hello", { fg: "primary", bold: true })
+ * text({ content: "hello", fg: "primary" })
+ * ```
+ */
+export function text(content: string, style?: Omit<TextStyle, "content">): Text
+export function text(style: TextStyle): Text
+export function text(first: string | TextStyle, style?: Omit<TextStyle, "content">): Text {
+  if (typeof first === "string") return new Text({ content: first, ...style })
+  return new Text(first)
 }
 
 function naturalWidth(content: string, mode: "word" | "char" | "none"): number {

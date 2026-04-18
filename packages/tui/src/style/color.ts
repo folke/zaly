@@ -1,6 +1,40 @@
-import type { Theme } from "../core/ctx.ts"
+import type { Theme } from "./theme.ts"
 
 export type RGB = [r: number, g: number, b: number]
+
+/** Standard ANSI color names. */
+export type AnsiColorName =
+  | "black"
+  | "red"
+  | "green"
+  | "yellow"
+  | "blue"
+  | "magenta"
+  | "cyan"
+  | "white"
+  | "gray"
+  | "grey"
+
+/** Bright ANSI variants — `brightRed`, `brightBlue`, etc. */
+export type BrightAnsiColorName = `bright${Capitalize<AnsiColorName>}`
+
+/** Hex color string. Matches `#rgb` or `#rrggbb` (any case); runtime validates. */
+export type HexColor = `#${string}`
+
+/**
+ * A color value. Accepted forms:
+ *  - `#rgb` / `#rrggbb` hex
+ *  - ANSI color names (`red`, `cyan`, `gray`, …)
+ *  - Bright ANSI variants (`brightRed`, `brightBlue`, …)
+ *  - Theme slot keys from `keyof Theme` (`primary`, `muted`, …)
+ *  - `'inherit'` — use the parent's color (renders as no escape).
+ */
+export type Color =
+  | HexColor
+  | AnsiColorName
+  | BrightAnsiColorName
+  | keyof Theme
+  | "inherit"
 
 // Standard 8-color ANSI palette. Offsets from SGR 30 (fg) and 40 (bg).
 const ANSI_OFFSET: Record<string, number> = {
@@ -21,8 +55,8 @@ const ANSI_OFFSET: Record<string, number> = {
  */
 export function resolveThemeColor(c: string, theme: Theme | undefined): string {
   if (theme === undefined) return c
-  const colors = theme.colors as Record<string, string>
-  return colors[c] ?? c
+  const t = theme as Record<string, string>
+  return t[c] ?? c
 }
 
 /**

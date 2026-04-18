@@ -1,4 +1,14 @@
-import type { Size } from "../core/types.ts"
+/** Percentage string like `'50%'`, resolved against the parent's content axis. */
+export type Pct = `${number}%`
+
+/**
+ * Size along one axis.
+ *  - `number` — absolute cells
+ *  - `Pct` — percentage of the parent's content axis
+ *  - `'auto'` — natural size of the content
+ *  - `'fill'` — fill the remaining space in the flex allocation
+ */
+export type Size = number | Pct | "auto" | "fill"
 
 /**
  * Resolve a Size to cells, given the axis size available from the parent.

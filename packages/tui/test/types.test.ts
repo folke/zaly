@@ -1,4 +1,4 @@
-import type { Color } from "../src/core/types.ts"
+import type { Color } from "../src/style/color.ts"
 
 import { expect, test } from "vitest"
 
