@@ -1,4 +1,4 @@
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "../style/theme.ts"
 import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"

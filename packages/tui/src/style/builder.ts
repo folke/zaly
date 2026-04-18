@@ -1,8 +1,8 @@
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "./theme.ts"
 import type { Style } from "./ansi.ts"
 import type { AnsiColorName, BrightAnsiColorName, Color } from "./color.ts"
 
-import { defaultTheme } from "../themes/index.ts"
+import { defaultTheme } from "./theme.ts"
 import { openStyle, RESET } from "./ansi.ts"
 
 type AttrName = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"

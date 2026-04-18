@@ -1,9 +1,9 @@
 import type { StyleBuilder } from "../style/builder.ts"
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "../style/theme.ts"
 
 import { createHash } from "node:crypto"
 import { style } from "../style/builder.ts"
-import { defaultTheme } from "../themes/index.ts"
+import { defaultTheme } from "../style/theme.ts"
 
 export type { StyleBuilder, Theme }
 
