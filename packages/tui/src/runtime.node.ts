@@ -2,6 +2,9 @@ import sliceAnsiImpl from "slice-ansi"
 import stringWidthImpl from "string-width"
 import wrapAnsiImpl from "wrap-ansi"
 
+export { renderMarkdown } from "./md.ts"
+export type * from "./md.ts"
+
 export interface WrapOpts {
   mode?: "word" | "char"
 }

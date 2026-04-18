@@ -48,6 +48,7 @@
     "test:bun": "bun test --only-failures"
   },
   "dependencies": {
+    "marked": "^18.0.2",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.0",
     "wrap-ansi": "^10.0.0"
