@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { reapplyBg } from "../../src/style/compose.ts"
+import { reapplyBg, resolveStyleSlot } from "../../src/style/compose.ts"
+import { moon } from "../../src/themes/tokyonight.ts"
 
 describe("reapplyBg", () => {
   const bg = "\x1b[48;2;255;0;0m"
@@ -21,5 +22,31 @@ describe("reapplyBg", () => {
 
   test("empty bg escape: input unchanged (guard)", () => {
     expect(reapplyBg("\x1b[0mhello", "")).toBe("\x1b[0mhello")
+  })
+})
+
+describe("resolveStyleSlot", () => {
+  test("inline Style object: returned as-is", () => {
+    const s = { bold: true, fg: "primary" as const }
+    expect(resolveStyleSlot(s, moon)).toBe(s)
+  })
+
+  test("string ref → Color slot: wrapped as { fg }", () => {
+    // moon.primary = "#82aaff" (a Color shortcut)
+    expect(resolveStyleSlot("primary", moon)).toEqual({ fg: "#82aaff" })
+  })
+
+  test("string ref → Style slot: returned directly", () => {
+    const styleSlot = { bold: true, fg: "primary" as const, underline: true }
+    const theme = { ...moon, mdHeading: styleSlot } as never
+    expect(resolveStyleSlot("mdHeading", theme)).toBe(styleSlot)
+  })
+
+  test("unknown slot name: returns empty style (no throw)", () => {
+    expect(resolveStyleSlot("doesNotExist", moon)).toEqual({})
+  })
+
+  test("undefined: returns empty style", () => {
+    expect(resolveStyleSlot(undefined, moon)).toEqual({})
   })
 })

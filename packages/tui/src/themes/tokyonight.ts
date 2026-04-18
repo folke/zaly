@@ -7,6 +7,8 @@ import type { Theme } from "./index.ts"
 export const moon: Theme = {
   accent: "#c099ff",
   bg: "#222436",
+  border: "muted",
+  borderTitle: { bold: true, fg: "primary" },
   dim: "#828bb8",
   err: "#ff757f",
   fg: "#c8d3f5",

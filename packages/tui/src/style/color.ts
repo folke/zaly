@@ -47,11 +47,21 @@ const ANSI_OFFSET: Record<string, number> = {
  * Resolve a theme-named color slot (e.g. `"primary"`) against a Theme.
  * Inputs that don't match a slot pass through unchanged so callers can keep
  * classifying downstream.
+ *
+ * Throws if the slot holds a Style object — Style-valued slots belong on
+ * component part fields (e.g. `borderStyle`), not in fg/bg color channels.
  */
 export function resolveThemeColor(c: string, theme: Theme | undefined): string {
   if (theme === undefined) return c
-  const t = theme as Record<string, string>
-  return t[c] ?? c
+  const t = theme as Record<string, unknown>
+  const v = t[c]
+  if (v === undefined) return c
+  if (typeof v !== "string") {
+    throw new TypeError(
+      `Theme slot "${c}" is a Style, not a Color — use it via *Style fields (e.g. borderStyle), not fg/bg.`
+    )
+  }
+  return v
 }
 
 /**

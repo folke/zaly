@@ -9,6 +9,8 @@ import type { Theme } from "./index.ts"
 export const ansi: Theme = {
   accent: "magenta",
   bg: "inherit",
+  border: "muted",
+  borderTitle: { bold: true, fg: "primary" },
   dim: "brightBlack",
   err: "red",
   fg: "inherit",

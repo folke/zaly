@@ -1,11 +1,20 @@
+import type { Style } from "../style/ansi.ts"
 import type { Color } from "../style/color.ts"
 
 import { moon } from "./tokyonight.ts"
 
 /**
- * A theme is a flat record mapping semantic color slots to `Color` values.
- * Callers reference slots by key (`fg: "primary"`) and the framework resolves
- * through the theme at render time.
+ * A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve
+ * time; Style objects are used as-is and may carry attrs (`bold`, `underline`,
+ * etc.) and a `bg`. Use Color for simple fg-only slots; escalate to Style when
+ * the part needs more than just a foreground color.
+ */
+export type ThemeValue = Color | Style
+
+/**
+ * A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers
+ * reference slots by key (`fg: "primary"` for colors, `borderStyle: "border"`
+ * for style refs) and the framework resolves through the theme at render time.
  *
  * Themes are identified by their module export name (e.g. `moon` exported
  * from `themes/tokyonight.ts`); no `name` field is stored on the object.
@@ -21,6 +30,8 @@ export type Theme = {
   ok: Color
   warn: Color
   err: Color
+  border: ThemeValue
+  borderTitle: ThemeValue
 }
 
 /**

@@ -68,3 +68,10 @@ describe("colorParams — edge cases", () => {
     expect(colorParams("#zzz" as never, "fg")).toBeUndefined()
   })
 })
+
+describe("colorParams — Style-valued theme slot", () => {
+  test("slot resolving to a Style throws (fg is a color channel, not a style)", () => {
+    const theme = { ...moon, mdHeading: { bold: true, fg: "primary", underline: true } } as never
+    expect(() => colorParams("mdHeading", "fg", theme)).toThrow(/mdHeading/)
+  })
+})
