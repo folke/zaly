@@ -55,9 +55,9 @@ describe("style() — theme slots", () => {
     expect(style(moon).bgPrimary("hi")).toBe("\x1b[48;2;130;170;255mhi\x1b[0m")
   })
 
-  test("no theme: theme slot drops silently", () => {
-    // 'primary' without a theme has no SGR to emit → returned as-is.
-    expect(style().primary("hi")).toBe("hi")
+  test("default theme is used when no argument is passed", () => {
+    // tokyonight-moon is the shipped default; its `primary` is `#82aaff`.
+    expect(style().primary("hi")).toBe("\x1b[38;2;130;170;255mhi\x1b[0m")
   })
 })
 

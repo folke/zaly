@@ -1,8 +1,8 @@
-import type { AnsiColorName, BrightAnsiColorName, Color } from "./color.ts"
 import type { Theme } from "../themes/index.ts"
-
 import type { Style } from "./ansi.ts"
+import type { AnsiColorName, BrightAnsiColorName, Color } from "./color.ts"
 
+import { defaultTheme } from "../themes/index.ts"
 import { openStyle, RESET } from "./ansi.ts"
 
 type AttrName = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"
@@ -29,7 +29,8 @@ export type StyleBuilder = {
  *
  * ```ts
  * style().red.bold("err")           // → "\x1b[1;31merr\x1b[0m"
- * style(theme).primary.bgAccent("x") // theme slots resolve via `theme`
+ * style().primary.bgAccent("x")     // theme slots via the default theme
+ * style(myTheme).primary("x")        // override the bound theme
  * style().fg("#82aaff")("x")         // hex via the escape hatch
  * ```
  *
@@ -43,18 +44,11 @@ export type StyleBuilder = {
  *
  * Calling an empty builder is a no-op: `style()("x")` returns `"x"` unchanged.
  */
-export function style(theme?: Theme): StyleBuilder {
+export function style(theme: Theme = defaultTheme): StyleBuilder {
   return build({}, theme)
 }
 
-const ATTRS = new Set<string>([
-  "bold",
-  "dim",
-  "italic",
-  "underline",
-  "inverse",
-  "strikethrough",
-])
+const ATTRS = new Set<string>(["bold", "dim", "italic", "underline", "inverse", "strikethrough"])
 
 function build(current: Style, theme: Theme | undefined): StyleBuilder {
   function apply(text: string): string {

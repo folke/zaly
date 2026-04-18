@@ -29,12 +29,7 @@ export type HexColor = `#${string}`
  *  - Theme slot keys from `keyof Theme` (`primary`, `muted`, …)
  *  - `'inherit'` — use the parent's color (renders as no escape).
  */
-export type Color =
-  | HexColor
-  | AnsiColorName
-  | BrightAnsiColorName
-  | keyof Theme
-  | "inherit"
+export type Color = HexColor | AnsiColorName | BrightAnsiColorName | keyof Theme | "inherit"
 
 // Standard 8-color ANSI palette. Offsets from SGR 30 (fg) and 40 (bg).
 const ANSI_OFFSET: Record<string, number> = {
