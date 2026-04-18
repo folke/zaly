@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { openStyle, RESET } from "../../src/style/ansi.ts"
+import { openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
 import { moon } from "../../src/themes/tokyonight.ts"
 
 describe("openStyle", () => {
@@ -97,5 +97,38 @@ describe("openStyle", () => {
 
   test("without a theme, theme-only names silently drop", () => {
     expect(openStyle({ fg: "primary" })).toBe("")
+  })
+})
+
+describe("splitAnsi", () => {
+  test("plain single line → array with the input", () => {
+    expect(splitAnsi("hello")).toEqual(["hello"])
+  })
+
+  test("plain multi-line → naive split", () => {
+    expect(splitAnsi("a\nb\nc")).toEqual(["a", "b", "c"])
+  })
+
+  test("style that crosses newlines → closes + reopens around each break", () => {
+    // bg span carries across two breaks; each line should end with the bg
+    // closed and start (from line 2 onward) with it re-opened.
+    const s = "\x1b[31mstart\nmiddle\nend\x1b[0m tail"
+    const [l0, l1, l2] = splitAnsi(s)
+    // Line 0 opens the fg + closes at cut
+    expect(l0).toContain("\x1b[31m")
+    expect(l0.endsWith("\x1b[39m")).toBe(true)
+    // Line 1 re-opens + closes at next cut
+    expect(l1.startsWith("\x1b[31m")).toBe(true)
+    expect(l1.endsWith("\x1b[39m")).toBe(true)
+    // Line 2 re-opens + preserves the natural reset at end of span
+    expect(l2.startsWith("\x1b[31m")).toBe(true)
+    expect(l2).toContain("\x1b[0m")
+  })
+
+  test("does not mangle content that already closes styles per line", () => {
+    const s = "\x1b[31mhello\x1b[39m\n\x1b[31mworld\x1b[39m"
+    const [l0, l1] = splitAnsi(s)
+    expect(l0).toContain("hello")
+    expect(l1).toContain("world")
   })
 })

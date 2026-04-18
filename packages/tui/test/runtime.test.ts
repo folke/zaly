@@ -21,30 +21,25 @@ describe("stringWidth", () => {
 
 describe("wrapAnsi (word mode, default)", () => {
   test("wraps at word boundaries", () => {
-    expect(wrapAnsi("hello world and one more", 10)).toEqual(["hello", "world and", "one more"])
+    expect(wrapAnsi("hello world and one more", 10)).toBe("hello\nworld and\none more")
   })
 
   test("keeps long words intact in word mode", () => {
-    expect(wrapAnsi("supercalifragilistic", 5)).toEqual(["supercalifragilistic"])
+    expect(wrapAnsi("supercalifragilistic", 5)).toBe("supercalifragilistic")
   })
 
   test("short input fits in one row", () => {
-    expect(wrapAnsi("one", 10)).toEqual(["one"])
+    expect(wrapAnsi("one", 10)).toBe("one")
   })
 
-  test("empty string yields a single empty row", () => {
-    expect(wrapAnsi("", 10)).toEqual([""])
+  test("empty string yields an empty string", () => {
+    expect(wrapAnsi("", 10)).toBe("")
   })
 })
 
 describe("wrapAnsi (char mode)", () => {
   test("hard-breaks long words at width", () => {
-    expect(wrapAnsi("supercalifragilistic", 5, { mode: "char" })).toEqual([
-      "super",
-      "calif",
-      "ragil",
-      "istic",
-    ])
+    expect(wrapAnsi("supercalifragilistic", 5, { mode: "char" })).toBe("super\ncalif\nragil\nistic")
   })
 })
 

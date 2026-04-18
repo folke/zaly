@@ -1,6 +1,7 @@
-import type { Color } from "./color.ts"
 import type { Theme } from "../themes/index.ts"
+import type { Color } from "./color.ts"
 
+import { sliceAnsi, stringWidth } from "#runtime"
 import { colorParams } from "./color.ts"
 
 export const RESET = "\x1b[0m"
@@ -54,4 +55,34 @@ export function openStyle(style: Style, theme?: Theme): string {
 
   if (params.length === 0) return ""
   return `\x1b[${params.join(";")}m`
+}
+
+/**
+ * Split a multi-line ANSI string into per-line strings where each line is
+ * **self-contained**: any SGR state active at the end of a line is closed
+ * before the break, and re-opened at the start of the next line.
+ *
+ * Matches `String.prototype.split("\n")` semantics for plain strings, and
+ * matches `wrap-ansi`'s close/re-open behavior for styled content — so pad /
+ * clip / concat operations on the returned rows never inherit a dangling
+ * style from a span that crossed the break.
+ *
+ * Works by re-slicing each line out of the newline-stripped source via
+ * `sliceAnsi`, which tracks SGR state and emits the right close/open
+ * sequences at cut points.
+ */
+export function splitAnsi(s: string): string[] {
+  if (!s.includes("\n")) return [s]
+  const lines = s.split("\n")
+  // Shortcut: no escapes anywhere → plain split is fine.
+  if (!s.includes("\x1b[")) return lines
+  const joined = s.replaceAll("\n", "")
+  const out: string[] = []
+  let pos = 0
+  for (const line of lines) {
+    const w = stringWidth(line)
+    out.push(sliceAnsi(joined, pos, pos + w))
+    pos += w
+  }
+  return out
 }

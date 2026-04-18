@@ -28,7 +28,7 @@ export type NodeRenderFn<S extends object, E extends BaseEvents> = (args: {
  */
 export function node<S extends object, E extends BaseEvents = BaseEvents>(
   initialState: S,
-  render: NodeRenderFn<S, E>,
+  render: NodeRenderFn<S, E>
 ): Node<S, E> {
   return new CustomNode<S, E>(initialState, render)
 }

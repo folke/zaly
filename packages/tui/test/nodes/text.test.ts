@@ -67,4 +67,26 @@ describe("Text", () => {
     t.state.content = "bye"
     expect(t.render(ctx(10))).toEqual(["bye  "])
   })
+
+  test("content as a function receives ctx", () => {
+    const t = new Text({
+      content: (c) => `w=${c.width}`,
+      width: 6,
+      wrap: "none",
+    })
+    expect(t.render(ctx(10))).toEqual(["w=10  "])
+  })
+
+  test("content function can compose styled spans via ctx.style", () => {
+    const t = new Text({
+      content: ({ style }) => `${style.ok("+12")} ${style.err("-4")}`,
+      wrap: "none",
+    })
+    const [row] = t.render(ctx(20))
+    // The theme-slot escapes come from the default theme bound on the ctx;
+    // asserting the visible portion keeps the test theme-agnostic.
+    expect(row).toContain("+12")
+    expect(row).toContain("-4")
+    expect(row).toContain("\x1b[") // at least some escape was emitted
+  })
 })
