@@ -28,19 +28,37 @@ export interface RenderCtx {
 }
 
 /**
+ * Current terminal width in cells. Returns `undefined` when stdout isn't a
+ * TTY (piped output, tests, non-Node/Bun runtimes) — callers should fall
+ * back to a sensible default when this is `undefined`.
+ */
+export function termWidth(): number | undefined {
+  if (typeof process === "undefined") return undefined
+  const cols = process.stdout.columns
+  return typeof cols === "number" && cols > 0 ? cols : undefined
+}
+
+/**
  * Build a fresh `RenderCtx` from a resolved theme + width. Binds a `style`
  * builder to the theme so components can use `ctx.style.primary(...)`
  * without constructing their own.
+ *
+ * Width is clamped to the terminal's current column count (falling back to
+ * 80 when stdout isn't a TTY). No width passed → terminal width is used
+ * directly; an explicit `width` wider than the terminal is capped so
+ * components never produce rows that wrap the display. Narrower explicit
+ * widths (e.g. for fixed-layout tests) pass through unchanged.
  *
  * Dynamic theme loading (from a string name) lives in `themes/loadTheme`
  * — resolve the name first, then pass the `Theme` object here.
  */
 export function createCtx(opts?: Partial<RenderCtx>): RenderCtx {
   const theme = opts?.theme ?? defaultTheme
+  const tw = termWidth() ?? 80
   return {
     style: style(theme),
     theme,
-    width: opts?.width ?? 80,
+    width: Math.min(opts?.width ?? tw, tw),
   }
 }
 
