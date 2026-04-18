@@ -46,7 +46,11 @@
     "test:node": "cd ../../; vitest --project @zaly/tui run",
     "test:bun": "bun test --only-failures"
   },
-  "dependencies": {},
+  "dependencies": {
+    "slice-ansi": "^9.0.0",
+    "string-width": "^8.2.0",
+    "wrap-ansi": "^10.0.0"
+  },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "publint": "^0.3.18",
