@@ -14,6 +14,13 @@ export interface MdHeadingMeta {
 export interface MdCodeBlockMeta {
   /** The info-string language (e.g. `"js"`). */
   language?: string
+  /**
+   * File title from the fenced info-string, e.g. `title="src/foo.ts"`.
+   * Widely supported in docs toolchains (Docusaurus, Nextra, Fumadocs,
+   * Expressive Code). Only populated by the marked-backed renderer —
+   * `Bun.markdown.render` strips the info-string after the first token.
+   */
+  title?: string
 }
 
 export interface MdListMeta {
@@ -91,6 +98,17 @@ export interface MdCallbacks {
 }
 
 /**
+ * A function that renders a markdown string by invoking `callbacks` for each
+ * element. Signature matches both `renderMarkdown` (Node-side, marked-backed)
+ * and `Bun.markdown.render`, so either can be plugged in via `MdOptions.render`.
+ */
+export type RenderMarkdown = (
+  input: string,
+  callbacks: MdCallbacks,
+  opts?: MdOptions
+) => string
+
+/**
  * Parser options. Mirrors `Bun.markdown.Options`. Options marked "Bun-only"
  * are silently ignored on the Node side since marked doesn't support them.
  */
@@ -125,6 +143,43 @@ export interface MdOptions {
   autolinks?: boolean | { url?: boolean; www?: boolean; email?: boolean }
   /** Heading IDs / autolink headings. Bun-only. */
   headings?: boolean | { ids?: boolean; autolink?: boolean }
+  /**
+   * Override the renderer used by the `Markdown` component. When omitted,
+   * the component uses whichever renderer the active runtime provides
+   * (`Bun.markdown.render` on Bun, `renderMarkdown` on Node). Useful for
+   * testing — e.g. rendering the same content through both implementations
+   * side-by-side.
+   */
+  render?: RenderMarkdown
+}
+
+// ── Fence info-string encoding ────────────────────────────────────────────
+//
+// Bun.markdown.render exposes only the first whitespace-delimited token from
+// a fenced info-string (`language`), dropping attrs like `title="..."`. As a
+// workaround, `Markdown._render` pre-encodes info-strings by replacing inner
+// spaces with `FENCE_MARKER` so Bun hands the whole thing back as the single
+// "language" token. `parseCodeInfoString` decodes the marker before parsing,
+// so both renderers yield the same meta regardless of path.
+
+/** Sentinel stitched into fence info-strings in place of spaces. */
+export const FENCE_MARKER = "\u0000"
+
+/**
+ * Replace spaces inside every fenced-block info-string with `FENCE_MARKER`
+ * so renderers that truncate after the first token (Bun) still surface the
+ * full info-string as `meta.language`. Inverse of the decode step done by
+ * `parseCodeInfoString`.
+ *
+ * Closing fences (just ``` with optional trailing whitespace) are left
+ * untouched — rewriting their spaces into markers would prevent the
+ * parser from recognizing the closer, swallowing the rest of the document
+ * as code.
+ */
+export function encodeFenceInfoStrings(md: string): string {
+  return md.replaceAll(/^( {0,3}`{3,})([^\n]*)$/gm, (match, fence: string, info: string) =>
+    info.trim() === "" ? match : fence + info.replaceAll(" ", FENCE_MARKER)
+  )
 }
 
 // ── Implementation (Node-side; Bun's runtime passes through to Bun.markdown) ──
@@ -168,7 +223,7 @@ function renderToken(tok: Tokens.Generic, cb: MdCallbacks, depth: number): strin
     }
     case "code": {
       const t = tok as Tokens.Code
-      const meta: MdCodeBlockMeta | undefined = t.lang ? { language: t.lang } : undefined
+      const meta = parseCodeInfoString(t.lang)
       if (cb.code === undefined) return t.text
       return cb.code(t.text, meta) ?? ""
     }
@@ -194,6 +249,28 @@ function renderToken(tok: Tokens.Generic, cb: MdCallbacks, depth: number): strin
     }
     case "hr": {
       return applyBlock("", cb.hr)
+    }
+    case "table": {
+      const t = tok as Tokens.Table
+      const aligns = t.align
+      const renderCell = (
+        cell: Tokens.TableCell,
+        col: number,
+        fn: MdCallbacks["th"] | MdCallbacks["td"]
+      ): string => {
+        const kids = renderTokens(cell.tokens, cb, depth)
+        const a = aligns[col]
+        const meta: MdCellMeta | undefined = a === null ? undefined : { align: a }
+        if (fn === undefined) return kids
+        return fn(kids, meta) ?? ""
+      }
+      const headerRow = t.header.map((c, i) => renderCell(c, i, cb.th)).join("")
+      const thead = applyBlock(applyBlock(headerRow, cb.tr), cb.thead)
+      const bodyRows = t.rows
+        .map((row) => applyBlock(row.map((c, i) => renderCell(c, i, cb.td)).join(""), cb.tr))
+        .join("")
+      const tbody = applyBlock(bodyRows, cb.tbody)
+      return applyBlock(thead + tbody, cb.table)
     }
     case "html": {
       const t = tok as Tokens.HTML
@@ -259,6 +336,35 @@ function renderToken(tok: Tokens.Generic, cb: MdCallbacks, depth: number): strin
       return raw ?? (tok as { raw?: string }).raw ?? ""
     }
   }
+}
+
+/**
+ * Parse a fenced code-block info-string like `jsx title="src/Hello.js"`.
+ * First token → language; `title="..."` / `title='...'` → title. Unknown
+ * attrs after the language are ignored.
+ *
+ * Input may carry `FENCE_MARKER` in place of spaces (from
+ * `encodeFenceInfoStrings`); those are decoded before parsing.
+ *
+ * Returns `undefined` when the info-string is empty (no language, no attrs).
+ */
+export function parseCodeInfoString(info: string | undefined): MdCodeBlockMeta | undefined {
+  if (!info) return undefined
+  const decoded = info.includes(FENCE_MARKER) ? info.replaceAll(FENCE_MARKER, " ") : info
+  const firstSpace = decoded.search(/\s/)
+  if (firstSpace === -1) return { language: decoded }
+  const language = decoded.slice(0, firstSpace)
+  const rest = decoded.slice(firstSpace + 1)
+  // Alternation groups mean exactly one of [1], [2] matches; the other is
+  // undefined at runtime even though TS's regex typing calls both strings.
+  const titleMatch = /title=(?:"([^"]*)"|'([^']*)')/.exec(rest) as
+    | [string, string | undefined, string | undefined]
+    | null
+  const title = titleMatch === null ? undefined : (titleMatch[1] ?? titleMatch[2])
+  const meta: MdCodeBlockMeta = {}
+  if (language !== "") meta.language = language
+  if (title !== undefined) meta.title = title
+  return meta
 }
 
 function applyBlock(children: string, fn: CbNoMeta | undefined): string {

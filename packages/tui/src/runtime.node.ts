@@ -19,5 +19,5 @@ export function sliceAnsi(s: string, start: number, end?: number): string {
 
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
   const char = opts?.mode === "char"
-  return wrapAnsiImpl(s, width, { hard: char, wordWrap: !char })
+  return wrapAnsiImpl(s, width, { hard: char, trim: false, wordWrap: !char })
 }

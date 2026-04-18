@@ -6,6 +6,27 @@ import { colorParams } from "./color.ts"
 
 export const RESET = "\x1b[0m"
 
+// OSC 8 hyperlink sequence. ESC + backslash is the "string terminator" (ST)
+// that closes the OSC. Format: `ESC]8;;URL ST TEXT ESC]8;; ST`.
+const OSC8 = "\x1b]8;;"
+const ST = "\x1b\\"
+
+/**
+ * Wrap `text` in an OSC 8 hyperlink pointing at `url`. Modern terminals
+ * (iTerm2, kitty, WezTerm, VS Code, Ghostty, …) render the text as
+ * clickable while falling back gracefully to plain text elsewhere.
+ *
+ * Safe to nest ANSI SGR styling inside the `text` argument — OSC 8 is a
+ * separate escape category and doesn't conflict.
+ *
+ * An empty `url` short-circuits and returns `text` unchanged, so callers
+ * can unconditionally pipe link text through this helper.
+ */
+export function hyperlink(url: string, text: string): string {
+  if (url === "") return text
+  return `${OSC8}${url}${ST}${text}${OSC8}${ST}`
+}
+
 /** Base style shared by every node type. Box/Text/etc. extend this. */
 export interface Style {
   fg?: Color
