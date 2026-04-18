@@ -1,23 +1,9 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
-import type { Theme } from "../../src/themes/index.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { NodeBase } from "../../src/core/node.ts"
-
-const theme: Theme = {
-  accent: "#c099ff",
-  bg: "#222436",
-  border: "muted",
-  borderTitle: { bold: true, fg: "primary" },
-  dim: "#828bb8",
-  err: "#ff757f",
-  fg: "#c8d3f5",
-  muted: "#636da6",
-  ok: "#c3e88d",
-  primary: "#82aaff",
-  warn: "#ffc777",
-}
+import { moon as theme } from "../../src/style/theme.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })
 

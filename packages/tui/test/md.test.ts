@@ -1,5 +1,10 @@
 import { renderMarkdown } from "#runtime"
 import { describe, expect, test } from "vitest"
+import {
+  encodeFenceInfoStrings,
+  FENCE_MARKER,
+  renderMarkdown as renderMarkdownMarked,
+} from "../src/md.ts"
 
 // ── callback-ordering / structural fixtures ──────────────────────────────
 //
@@ -52,6 +57,110 @@ describe("renderMarkdown — callback dispatch", () => {
     })
     expect(meta?.language).toBe("js")
     expect(children.trim()).toBe("const x = 1")
+  })
+
+  // Title-attribute parsing is marked-side only — Bun.markdown.render strips
+  // the info-string after the first token, so the title is unrecoverable for
+  // the Bun runtime. Users who need titles on Bun can plug the marked renderer
+  // via `options.render`.
+  describe("code block info-string (marked renderer)", () => {
+    test('title="..." is parsed out of the info string', () => {
+      let meta: { language?: string; title?: string } | undefined
+      renderMarkdownMarked('```jsx title="/src/Hello.js"\nconst x = 1\n```', {
+        code: (_c, m) => {
+          meta = m
+          return ""
+        },
+      })
+      expect(meta?.language).toBe("jsx")
+      expect(meta?.title).toBe("/src/Hello.js")
+    })
+
+    test("title='...' (single-quoted) is also parsed", () => {
+      let meta: { language?: string; title?: string } | undefined
+      renderMarkdownMarked("```ts title='foo bar.ts'\nx\n```", {
+        code: (_c, m) => {
+          meta = m
+          return ""
+        },
+      })
+      expect(meta?.language).toBe("ts")
+      expect(meta?.title).toBe("foo bar.ts")
+    })
+
+    test("no title: language only", () => {
+      let meta: { language?: string; title?: string } | undefined
+      renderMarkdownMarked("```ts\nx\n```", {
+        code: (_c, m) => {
+          meta = m
+          return ""
+        },
+      })
+      expect(meta?.language).toBe("ts")
+      expect(meta?.title).toBeUndefined()
+    })
+
+    test("bare fenced block (no lang): no language, no title", () => {
+      let meta: { language?: string; title?: string } | undefined
+      renderMarkdownMarked("```\nx\n```", {
+        code: (_c, m) => {
+          meta = m
+          return ""
+        },
+      })
+      expect(meta?.language).toBeUndefined()
+      expect(meta?.title).toBeUndefined()
+    })
+
+    test("language with other attrs besides title: title still parsed", () => {
+      let meta: { language?: string; title?: string } | undefined
+      renderMarkdownMarked('```ts showLineNumbers title="x.ts" foo=bar\n1\n```', {
+        code: (_c, m) => {
+          meta = m
+          return ""
+        },
+      })
+      expect(meta?.language).toBe("ts")
+      expect(meta?.title).toBe("x.ts")
+    })
+  })
+
+  describe("encodeFenceInfoStrings", () => {
+    test("closing fences with trailing whitespace are left untouched", () => {
+      // Regression: encoding the closing fence's trailing whitespace into
+      // markers breaks fence recognition and swallows the rest of the doc.
+      const input = "```ts\ncode\n```   \nparagraph\n"
+      const out = encodeFenceInfoStrings(input)
+      expect(out).not.toContain(FENCE_MARKER)
+      expect(out).toBe(input)
+    })
+
+    test("opening fence with language+attrs gets spaces encoded", () => {
+      const input = '```ts title="x.ts"\ncode\n```\n'
+      const out = encodeFenceInfoStrings(input)
+      expect(out).toContain(`ts${FENCE_MARKER}title="x.ts"`)
+      expect(out).toContain("\n```\n")
+    })
+
+    test("encoded input: closing fence with trailing space still closes the block", () => {
+      // End-to-end: marked must still see a balanced block after encoding.
+      const input = '```ts title="x.ts"\ncode\n```   \npara\n'
+      const encoded = encodeFenceInfoStrings(input)
+      let sawCode = false
+      let sawPara = false
+      renderMarkdownMarked(encoded, {
+        code: () => {
+          sawCode = true
+          return ""
+        },
+        paragraph: (c) => {
+          if (c === "para") sawPara = true
+          return c
+        },
+      })
+      expect(sawCode).toBe(true)
+      expect(sawPara).toBe(true)
+    })
   })
 
   test("link callback receives href + title", () => {

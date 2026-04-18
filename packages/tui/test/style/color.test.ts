@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { colorParams } from "../../src/style/color.ts"
-import { moon } from "../../src/themes/tokyonight.ts"
+import { moon } from "../../src/style/theme.ts"
 
 describe("colorParams — ANSI base names", () => {
   test("fg", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { reapplyBg, resolveStyleSlot } from "../../src/style/compose.ts"
-import { moon } from "../../src/themes/tokyonight.ts"
+import { moon } from "../../src/style/theme.ts"
 
 describe("reapplyBg", () => {
   const bg = "\x1b[48;2;255;0;0m"

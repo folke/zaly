@@ -20,8 +20,11 @@ describe("stringWidth", () => {
 })
 
 describe("wrapAnsi (word mode, default)", () => {
-  test("wraps at word boundaries", () => {
-    expect(wrapAnsi("hello world and one more", 10)).toBe("hello\nworld and\none more")
+  test("wraps at word boundaries; inter-word spaces stay on the line they belong to", () => {
+    // `trim: false` preserves structural whitespace — the inter-word spaces
+    // that would have ended a line stick there rather than being swallowed.
+    // Structural integrity matters more than cosmetic cleanup for a TUI.
+    expect(wrapAnsi("hello world and one more", 10)).toBe("hello \nworld and \none more")
   })
 
   test("keeps long words intact in word mode", () => {

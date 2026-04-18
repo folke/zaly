@@ -2,6 +2,9 @@ import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Box } from "../../src/nodes/box.ts"
 import { Text } from "../../src/nodes/text.ts"
+import { openStyle, RESET } from "../../src/style/ansi.ts"
+import { resolveStyleSlot } from "../../src/style/compose.ts"
+import { moon } from "../../src/style/theme.ts"
 
 const ctx = (width: number) => createCtx({ width })
 
@@ -136,16 +139,16 @@ describe("Box — border", () => {
     expect(b.render(ctx(7))).toEqual(["┌─────┐", "│     │", "│ x   │", "│     │", "└─────┘"])
   })
 
-  test("borderStyle defaults to theme `border` slot (moon → muted)", () => {
-    // moon.border = "muted" = "#636da6" → 38;2;99;109;166
+  test("borderStyle defaults to the theme's `border` slot", () => {
+    // Derive expected escapes from the active theme so the test survives
+    // palette tweaks (moon's border color is generated, not hand-picked).
     const b = new Box({ border: true })
     b.add(new Text({ content: "hi" }))
     const out = b.render(ctx(6))
-    expect(out[0]).toBe("\x1b[38;2;99;109;166m┌────┐\x1b[0m")
-    expect(out[1]).toBe(
-      "\x1b[38;2;99;109;166m│\x1b[0mhi  \x1b[38;2;99;109;166m│\x1b[0m"
-    )
-    expect(out[2]).toBe("\x1b[38;2;99;109;166m└────┘\x1b[0m")
+    const borderOpen = openStyle(resolveStyleSlot("border", moon), moon)
+    expect(out[0]).toBe(`${borderOpen}┌────┐${RESET}`)
+    expect(out[1]).toBe(`${borderOpen}│${RESET}hi  ${borderOpen}│${RESET}`)
+    expect(out[2]).toBe(`${borderOpen}└────┘${RESET}`)
   })
 
   test("borderTitleAlign centers the title", () => {

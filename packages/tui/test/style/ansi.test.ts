@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
-import { moon } from "../../src/themes/tokyonight.ts"
+import { hyperlink, openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
+import { moon } from "../../src/style/theme.ts"
 
 describe("openStyle", () => {
   test("empty style emits nothing", () => {
@@ -130,5 +130,25 @@ describe("splitAnsi", () => {
     const [l0, l1] = splitAnsi(s)
     expect(l0).toContain("hello")
     expect(l1).toContain("world")
+  })
+})
+
+describe("hyperlink (OSC 8)", () => {
+  test("wraps text with OSC 8 open/close for clickable terminals", () => {
+    // OSC 8: ESC ] 8 ; ; URL ESC \ TEXT ESC ] 8 ; ; ESC \
+    expect(hyperlink("https://example.com", "click me")).toBe(
+      "\x1b]8;;https://example.com\x1b\\click me\x1b]8;;\x1b\\"
+    )
+  })
+
+  test("preserves ANSI-styled text inside the hyperlink", () => {
+    const styled = "\x1b[1mclick me\x1b[0m"
+    expect(hyperlink("https://example.com", styled)).toBe(
+      `\x1b]8;;https://example.com\x1b\\${styled}\x1b]8;;\x1b\\`
+    )
+  })
+
+  test("empty URL: returns text unchanged (no-op)", () => {
+    expect(hyperlink("", "text")).toBe("text")
   })
 })

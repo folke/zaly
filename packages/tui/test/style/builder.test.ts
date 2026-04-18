@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { style } from "../../src/style/builder.ts"
-import { moon } from "../../src/themes/tokyonight.ts"
+import { moon } from "../../src/style/theme.ts"
 
 describe("style() — ANSI fg", () => {
   test("plain red", () => {

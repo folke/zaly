@@ -16,8 +16,12 @@ describe("Text", () => {
   })
 
   test("explicit width narrower than ctx wraps at that width", () => {
+    // "hello world" at width 5 is a pathological case: the inter-word space
+    // can't fit on either line (5+1 > 5, and 1+5 > 5). wrap-ansi with
+    // trim:false places it on its own line so structural whitespace is
+    // never silently dropped. Realistic widths (20+) don't hit this.
     const t = new Text({ content: "hello world", width: 5 })
-    expect(t.render(ctx(20))).toEqual(["hello", "world"])
+    expect(t.render(ctx(20))).toEqual(["hello", "     ", "world"])
   })
 
   test("percent width", () => {

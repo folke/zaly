@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { borders, drawBorder, resolveBorder } from "../../src/layout/border.ts"
-import { moon } from "../../src/themes/tokyonight.ts"
+import { moon } from "../../src/style/theme.ts"
 
 describe("borders (presets)", () => {
   test("single preset uses box-drawing glyphs", () => {
@@ -144,13 +144,25 @@ describe("drawBorder", () => {
       title: "hi",
       titleStyle: { bold: true, fg: "accent" },
     })
-    // accent = #c099ff → 38;2;192;153;255
-    // borderStyle fg = 38;2;130;170;255
-    // Top row: border-prefix, space+title+space (titleStyle), border-suffix
+    // Derive the expected escapes from the actual theme values so this test
+    // stays stable when the theme palette changes.
+    const primary = hexToTruecolor(moon.primary as string, "fg")
+    const accent = hexToTruecolor(moon.accent as string, "fg")
     expect(out[0]).toBe(
-      "\x1b[38;2;130;170;255m┌─\x1b[0m" +
-        "\x1b[1;38;2;192;153;255m hi \x1b[0m" +
-        "\x1b[38;2;130;170;255m─┐\x1b[0m"
+      `\x1b[${primary}m┌─\x1b[0m` +
+        `\x1b[1;${accent}m hi \x1b[0m` +
+        `\x1b[${primary}m─┐\x1b[0m`
     )
   })
 })
+
+// Convert a #rrggbb or #rgb hex value into the SGR params emitted by
+// `colorParams` — e.g. "#82aaff" → "38;2;130;170;255".
+function hexToTruecolor(hex: string, kind: "fg" | "bg"): string {
+  const h = hex.startsWith("#") ? hex.slice(1) : hex
+  const full = h.length === 3 ? h.replaceAll(/./g, "$&$&") : h
+  const r = Number.parseInt(full.slice(0, 2), 16)
+  const g = Number.parseInt(full.slice(2, 4), 16)
+  const b = Number.parseInt(full.slice(4, 6), 16)
+  return `${kind === "fg" ? 38 : 48};2;${r};${g};${b}`
+}
