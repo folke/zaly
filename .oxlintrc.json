@@ -36,7 +36,6 @@
     "no-implicit-coercion": "off", // 4
     "no-labels": "off", // 4
     "no-magic-numbers": "off", // 278
-    "no-restricted-imports": ["error", { "paths": ["node:path", "path", "std-env"] }],
     "no-ternary": "off",
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { "terms": ["todo", "fixme", "bug"], "location": "start" }],
@@ -70,8 +69,15 @@
   },
   "overrides": [
     {
-      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts", "**/demo*.ts"],
+      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts", "**/demo*.ts", "**/scripts/**/*.ts"],
       "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["packages/cli/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": ["error", { "paths": ["node:path", "path", "std-env"] }],
         "eslint/no-console": "off"
       }
     }
