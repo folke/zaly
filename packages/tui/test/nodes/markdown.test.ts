@@ -4,9 +4,9 @@ import { renderMarkdown } from "#runtime"
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { renderMarkdown as renderMarkdownMarked } from "../../src/md.ts"
-import { markdown, mdCallbacks } from "../../src/nodes/markdown.ts"
+import { markdown, mdCallbacks } from "../../src/nodes/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
-import { resolveStyleSlot } from "../../src/style/compose.ts"
+import { resolveStyle } from "../../src/style/compose.ts"
 import { moon } from "../../src/style/theme.ts"
 
 const ctx = (width = 80) => createCtx({ theme: moon, width })
@@ -16,7 +16,7 @@ function render(md: string, width = 80): string {
 }
 
 function expectedOpen(slot: string): string {
-  return openStyle(resolveStyleSlot(slot, moon), moon)
+  return openStyle(resolveStyle(slot, moon), moon)
 }
 
 // Strip all SGR escapes so plain-text regex assertions aren't tripped up by
@@ -114,7 +114,7 @@ describe("markdown — block callbacks", () => {
   test("heading falls back to generic mdHeading when level-specific slot is unset", async () => {
     // Drop mdHeading3 to simulate a theme that only defines the generic slot.
     const fallbackTheme = { ...moon, mdHeading3: undefined } as typeof moon
-    const open = openStyle(resolveStyleSlot("mdHeading", fallbackTheme), fallbackTheme)
+    const open = openStyle(resolveStyle("mdHeading", fallbackTheme), fallbackTheme)
     const out = renderMarkdownMarked(
       "### h3",
       mdCallbacks(createCtx({ theme: fallbackTheme, width: 40 }))
@@ -186,10 +186,7 @@ describe("markdown — block callbacks", () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
     const bodyOpen = expectedOpen("mdCodeBlock")
     // Direct marked path: md.ts already parses title, no component wrapper.
-    const out = renderMarkdownMarked(
-      '```ts title="foo.ts"\nx\n```',
-      mdCallbacks(ctx(10))
-    )
+    const out = renderMarkdownMarked('```ts title="foo.ts"\nx\n```', mdCallbacks(ctx(10)))
     expect(out).toContain(`${titleOpen}foo.ts${RESET}`)
     expect(out).toContain(`${bodyOpen}x`)
     const titleIdx = out.indexOf("foo.ts")

@@ -12,7 +12,7 @@ import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
 import { openStyle, RESET } from "../style/ansi.ts"
-import { reapplyBg, resolveStyleSlot } from "../style/compose.ts"
+import { reapplyBg, resolveStyle } from "../style/compose.ts"
 
 export type Padding =
   | number
@@ -125,8 +125,8 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     let rows = [...top, ...contentRows, ...bot]
 
     if (bchars) {
-      const borderStyle = resolveStyleSlot(style.borderStyle ?? "border", ctx.theme)
-      const titleStyle = resolveStyleSlot(style.borderTitleStyle ?? "borderTitle", ctx.theme)
+      const borderStyle = resolveStyle(style.borderStyle ?? "border", ctx.theme)
+      const titleStyle = resolveStyle(style.borderTitleStyle ?? "borderTitle", ctx.theme)
       rows = drawBorder(rows, bchars, {
         borderStyle,
         theme: ctx.theme,

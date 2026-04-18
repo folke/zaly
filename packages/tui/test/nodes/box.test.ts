@@ -3,7 +3,7 @@ import { createCtx } from "../../src/core/ctx.ts"
 import { Box } from "../../src/nodes/box.ts"
 import { Text } from "../../src/nodes/text.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
-import { resolveStyleSlot } from "../../src/style/compose.ts"
+import { resolveStyle } from "../../src/style/compose.ts"
 import { moon } from "../../src/style/theme.ts"
 
 const ctx = (width: number) => createCtx({ width })
@@ -145,7 +145,7 @@ describe("Box — border", () => {
     const b = new Box({ border: true })
     b.add(new Text({ content: "hi" }))
     const out = await b.render(ctx(6))
-    const borderOpen = openStyle(resolveStyleSlot("border", moon), moon)
+    const borderOpen = openStyle(resolveStyle("border", moon), moon)
     expect(out[0]).toBe(`${borderOpen}┌────┐${RESET}`)
     expect(out[1]).toBe(`${borderOpen}│${RESET}hi  ${borderOpen}│${RESET}`)
     expect(out[2]).toBe(`${borderOpen}└────┘${RESET}`)

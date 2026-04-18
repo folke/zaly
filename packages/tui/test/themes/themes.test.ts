@@ -3,13 +3,8 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
-import { resolveStyleSlot } from "../../src/style/compose.ts"
-import {
-  builtinThemeDir,
-  loadTheme,
-  loadThemeFile,
-  moon,
-} from "../../src/style/theme.ts"
+import { resolveStyle } from "../../src/style/compose.ts"
+import { builtinThemeDir, loadTheme, loadThemeFile, moon } from "../../src/style/theme.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.
 const ansi = loadTheme("ansi")
@@ -23,8 +18,8 @@ describe("theme part slots — moon", () => {
     expect(moon.borderTitle).toBeDefined()
   })
 
-  test("border resolves to a Style via resolveStyleSlot", () => {
-    const s = resolveStyleSlot("border", moon)
+  test("border resolves to a Style via resolveStyle", () => {
+    const s = resolveStyle("border", moon)
     expect(s.fg).toBeDefined()
   })
 })
@@ -99,7 +94,9 @@ describe("validateTheme — built-in assets", () => {
   // through the loader (catches regressions where a shipped theme stops
   // matching the generated schema for structural reasons).
   const themesDir = builtinThemeDir
-  const files = readdirSync(themesDir).filter((f) => f.endsWith(".json")).toSorted()
+  const files = readdirSync(themesDir)
+    .filter((f) => f.endsWith(".json"))
+    .toSorted()
 
   test("asset dir contains at least moon, storm, night, day, ansi", () => {
     expect(files).toEqual(

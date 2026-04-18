@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { reapplyBg, resolveStyleSlot } from "../../src/style/compose.ts"
+import { reapplyBg, resolveStyle } from "../../src/style/compose.ts"
 import { moon } from "../../src/style/theme.ts"
 
 describe("reapplyBg", () => {
@@ -25,28 +25,37 @@ describe("reapplyBg", () => {
   })
 })
 
-describe("resolveStyleSlot", () => {
+describe("resolveStyle", () => {
   test("inline Style object: returned as-is", () => {
     const s = { bold: true, fg: "primary" as const }
-    expect(resolveStyleSlot(s, moon)).toBe(s)
+    expect(resolveStyle(s, moon)).toBe(s)
   })
 
   test("string ref → Color slot: wrapped as { fg }", () => {
     // moon.primary = "#82aaff" (a Color shortcut)
-    expect(resolveStyleSlot("primary", moon)).toEqual({ fg: "#82aaff" })
+    expect(resolveStyle("primary", moon)).toEqual({ fg: "#82aaff" })
   })
 
   test("string ref → Style slot: returned directly", () => {
     const styleSlot = { bold: true, fg: "primary" as const, underline: true }
     const theme = { ...moon, mdHeading: styleSlot } as never
-    expect(resolveStyleSlot("mdHeading", theme)).toBe(styleSlot)
+    expect(resolveStyle("mdHeading", theme)).toBe(styleSlot)
   })
 
-  test("unknown slot name: returns empty style (no throw)", () => {
-    expect(resolveStyleSlot("doesNotExist", moon)).toEqual({})
+  test("unknown string ref: treated as a fg color (resolved downstream)", () => {
+    // Non-slot strings fall back to `{ fg: <ref> }` so callers like the
+    // style builder can accept ANSI names (`"red"`), hex (`"#82aaff"`),
+    // or anything else `colorParams` knows how to resolve.
+    expect(resolveStyle("red", moon)).toEqual({ fg: "red" })
+    expect(resolveStyle("#82aaff", moon)).toEqual({ fg: "#82aaff" })
   })
 
   test("undefined: returns empty style", () => {
-    expect(resolveStyleSlot(undefined, moon)).toEqual({})
+    expect(resolveStyle(undefined, moon)).toEqual({})
+  })
+
+  test("no theme: still returns { fg } for any string ref", () => {
+    expect(resolveStyle("red")).toEqual({ fg: "red" })
+    expect(resolveStyle("primary")).toEqual({ fg: "primary" })
   })
 })

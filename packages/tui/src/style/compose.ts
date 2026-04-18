@@ -1,6 +1,6 @@
-import type { Theme } from "./theme.ts"
 import type { Style } from "./ansi.ts"
 import type { Color } from "./color.ts"
+import type { Theme } from "./theme.ts"
 
 import { RESET } from "./ansi.ts"
 
@@ -19,22 +19,26 @@ export function reapplyBg(s: string, bgEscape: string): string {
 
 /**
  * Resolve a style-slot reference into a `Style` object. A ref is either a
- * theme slot name (string) or an inline `Style`:
+ * theme slot name (string), an inline `Style`, or `undefined`:
  *
  *  - Inline `Style` → returned as-is (no slot lookup).
  *  - String ref pointing at a **Color** slot → wrapped as `{ fg: <color> }`.
  *  - String ref pointing at a **Style** slot → returned as-is.
- *  - String ref that doesn't match a slot → `{}` (empty — emits nothing).
- *  - `undefined` → `{}`.
+ *  - String ref that doesn't match a slot → treated as a fg color
+ *    (`{ fg: <ref> }`) and resolved downstream by `colorParams` — so ANSI
+ *    names (`"red"`), hex (`"#82aaff"`), or unknown names all funnel
+ *    through the same path.
+ *  - `undefined` → `{}` (emits nothing).
  *
- * Used by component "part" fields (e.g. `borderStyle`, `borderTitleStyle`) to
- * let callers pick a theme slot by name or override with a literal `Style`.
+ * Used by component "part" fields (e.g. `borderStyle`, `borderTitleStyle`)
+ * and by the style builder's proxy to let callers pick a theme slot by
+ * name, pass an inline `Style`, or reference any fg color as a string.
  */
-export function resolveStyleSlot(ref: string | Style | undefined, theme: Theme): Style {
+export function resolveStyle(ref: string | Style | undefined, theme?: Theme): Style {
   if (ref === undefined) return {}
   if (typeof ref === "object") return ref
-  const v = (theme as unknown as Record<string, Color | Style | undefined>)[ref]
-  if (v === undefined) return {}
+  const v = ((theme ?? {}) as unknown as Record<string, Color | Style | undefined>)[ref]
+  if (v === undefined) return { fg: ref as Color }
   if (typeof v === "string") return { fg: v }
   return v
 }

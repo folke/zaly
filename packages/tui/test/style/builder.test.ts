@@ -94,3 +94,37 @@ describe("style() — composition", () => {
     expect(red("c")).toBe("\x1b[31mc\x1b[0m")
   })
 })
+
+describe("style() — Style-valued theme slots", () => {
+  test("Style slot merges attrs + fg into the chain", () => {
+    // moon.mdStrong = { bold: true }
+    expect(style(moon).mdStrong("hi")).toBe("\x1b[1mhi\x1b[0m")
+  })
+
+  test("Style slot with attrs + fg together", () => {
+    // moon.borderTitle = { bold: true, fg: "primary" } → primary = #82aaff
+    expect(style(moon).borderTitle("T")).toBe("\x1b[1;38;2;130;170;255mT\x1b[0m")
+  })
+
+  test("chained attrs before Style slot are preserved when slot doesn't conflict", () => {
+    // .underline then .mdStrong (bold only) → both bold and underline.
+    expect(style(moon).underline.mdStrong("x")).toBe("\x1b[1;4mx\x1b[0m")
+  })
+
+  test("later chain overrides slot values", () => {
+    // Slot sets fg=primary; subsequent .red overrides.
+    expect(style(moon).borderTitle.red("x")).toBe("\x1b[1;31mx\x1b[0m")
+  })
+})
+
+describe("style() — inner-reset survival", () => {
+  test("inner RESET gets the outer style re-applied after it", () => {
+    // Simulates a nested builder call inside an outer one:
+    //   style().red("pre" + style().bold("x") + "post")
+    const inner = style().bold("x")
+    const outer = style().red(`pre${inner}post`)
+    // "pre" gets fg:red, then inner "[1mx[0m" — after that [0m, the outer
+    // [31m must be re-applied so "post" is also red.
+    expect(outer).toBe(`\x1b[31mpre\x1b[1mx\x1b[0m\x1b[31mpost\x1b[0m`)
+  })
+})

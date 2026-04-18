@@ -1,9 +1,10 @@
-import type { Theme } from "./theme.ts"
 import type { Style } from "./ansi.ts"
 import type { AnsiColorName, BrightAnsiColorName, Color } from "./color.ts"
+import type { Theme } from "./theme.ts"
 
-import { defaultTheme } from "./theme.ts"
 import { openStyle, RESET } from "./ansi.ts"
+import { reapplyBg, resolveStyle } from "./compose.ts"
+import { defaultTheme } from "./theme.ts"
 
 type AttrName = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"
 
@@ -19,6 +20,7 @@ export type StyleBuilder = {
   (text: string): string
   fg(color: Color): StyleBuilder
   bg(color: Color): StyleBuilder
+  add(slot: string | Style | undefined): StyleBuilder
   // oxlint-disable-next-line typescript/consistent-indexed-object-style -- mapped over a key union, not an open string index
 } & {
   readonly [K in AttrName | FgChainKey | BgChainKey]: StyleBuilder
@@ -53,8 +55,11 @@ const ATTRS = new Set<string>(["bold", "dim", "italic", "underline", "inverse", 
 function build(current: Style, theme: Theme | undefined): StyleBuilder {
   function apply(text: string): string {
     const open = openStyle(current, theme)
-    return open === "" ? text : open + text + RESET
+    // Re-apply the outer open after any inner RESET so nested styled
+    // spans inside `text` don't strip the builder's own style.
+    return open === "" ? text : open + reapplyBg(text, open) + RESET
   }
+
   return new Proxy(apply, {
     get(_target, key) {
       if (typeof key !== "string") return undefined
@@ -65,7 +70,14 @@ function build(current: Style, theme: Theme | undefined): StyleBuilder {
         const color = key[2].toLowerCase() + key.slice(3)
         return build({ ...current, bg: color as Color }, theme)
       }
-      return build({ ...current, fg: key as Color }, theme)
+      if (key === "add")
+        return (ref: string | Style | undefined) =>
+          build({ ...current, ...resolveStyle(ref, theme) }, theme)
+      // Style-valued theme slot → merge its fields into the chain.
+      // Anything else (ANSI color names like `"red"`, hex like `"#82aaff"`,
+      // or Color-valued slot refs) is treated as a fg color and resolved
+      // downstream by `colorParams`.
+      return build({ ...current, ...resolveStyle(key, theme) }, theme)
     },
   }) as StyleBuilder
 }
