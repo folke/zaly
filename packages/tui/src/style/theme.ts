@@ -66,14 +66,26 @@ export type Theme = {
 /**
  * Built-in theme search directory. The CLI layer can opt-in additional
  * user-provided dirs via the `dirs` option on `loadTheme`.
+ *
+ * Path is derived by walking up from this module's location until we
+ * find the package's `package.json`, then joining `assets/themes`. That
+ * way we don't depend on the module being at a fixed depth — works when
+ * `theme.ts` is loaded from `src/` (bun) or from `dist/` (node).
  */
-export const builtinThemeDir = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "..",
-  "assets",
-  "themes"
-)
+export const builtinThemeDir = resolve(pkgPath(), "assets", "themes")
+
+function pkgPath(...parts: string[]): string {
+  let dir = dirname(fileURLToPath(import.meta.url))
+  for (;;) {
+    try {
+      if (statSync(resolve(dir, "package.json")).isFile()) break
+    } catch {}
+    const parent = dirname(dir)
+    if (parent === dir) break // filesystem root; fall through with dir as-is
+    dir = parent
+  }
+  return resolve(dir, ...parts)
+}
 
 /**
  * Load a theme by name. Searches `opts.dirs` in order, then the built-in
