@@ -1,7 +1,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Color } from "../style/color.ts"
 
-import { NodeBase } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { openStyle, RESET } from "../style/ansi.ts"
 
 /** Frame sets from the common terminal-spinner vocabulary. Pick one to taste. */
@@ -41,7 +41,7 @@ export interface SpinnerState {
  * is harmless — the unref'd timer doesn't pin the event loop.
  */
 // eslint-disable-next-line typescript-eslint/no-unnecessary-type-arguments -- explicit SpinnerState is load-bearing for `this.state`.
-export class Spinner extends NodeBase<SpinnerState> {
+export class Spinner extends Node<SpinnerState> {
   #timer?: ReturnType<typeof setInterval>
 
   /** Global tick index for a given `speed`. Shared across all callers. */

@@ -1,8 +1,8 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { TypedEmitter } from "../core/emitter.ts"
-import type { BaseEvents, Node } from "../core/node.ts"
+import type { BaseEvents } from "../core/node.ts"
 
-import { isNode, NodeBase } from "../core/node.ts"
+import { isNode, Node } from "../core/node.ts"
 import { stackColumn } from "../layout/column.ts"
 
 type Child = Node | false | null | undefined
@@ -33,7 +33,7 @@ export function node<S extends object, E extends BaseEvents = BaseEvents>(
   return new CustomNode<S, E>(initialState, render)
 }
 
-class CustomNode<S extends object, E extends BaseEvents> extends NodeBase<S, E> {
+class CustomNode<S extends object, E extends BaseEvents> extends Node<S, E> {
   readonly #renderFn: NodeRenderFn<S, E>
 
   constructor(initialState: S, renderFn: NodeRenderFn<S, E>) {
@@ -45,11 +45,9 @@ class CustomNode<S extends object, E extends BaseEvents> extends NodeBase<S, E> 
     const emit = this.emit.bind(this)
     const result = this.#renderFn({ ctx, emit, state: this.state })
     if (isNode(result)) {
-      result.parent = this
       return result.render(ctx)
     }
     const kids = result.filter((c): c is Node => Boolean(c))
-    for (const c of kids) c.parent = this
     const childRows = await Promise.all(kids.map((c) => c.render(ctx)))
     return stackColumn(childRows, { gap: 0, width: ctx.width })
   }

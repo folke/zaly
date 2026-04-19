@@ -2,14 +2,14 @@ import type { RenderCtx } from "../../src/core/ctx.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { NodeBase } from "../../src/core/node.ts"
+import { Node } from "../../src/core/node.ts"
 import { moon as theme } from "../../src/style/theme.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })
 
 type S = { text: string; count: number }
 
-class TestNode extends NodeBase<S> {
+class TestNode extends Node<S> {
   renderCalls = 0
 
   protected _render(rctx: RenderCtx): string[] {
@@ -64,7 +64,7 @@ describe("NodeBase", () => {
     // mutations from walking the whole tree 500 times.
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
-    child.parent = parent
+    parent.add(child)
     await parent.render(ctx)
     await child.render(ctx)
 
@@ -135,7 +135,7 @@ describe("NodeBase", () => {
   test("invalidate cascades to parent", async () => {
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
-    child.parent = parent
+    parent.add(child)
     const parentFn = vi.fn()
     parent.on("invalidate", parentFn)
     // Warm both caches so invalidate actually fires.
@@ -148,7 +148,7 @@ describe("NodeBase", () => {
   test("cascade short-circuits when parent already dirty", async () => {
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
-    child.parent = parent
+    parent.add(child)
     const parentFn = vi.fn()
     parent.on("invalidate", parentFn)
     await parent.render(ctx)

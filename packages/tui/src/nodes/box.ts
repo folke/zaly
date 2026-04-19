@@ -1,12 +1,11 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { BaseEvents, Node } from "../core/node.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
-import { isNode, NodeBase } from "../core/node.ts"
+import { Node, isNode } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
@@ -47,49 +46,7 @@ export interface BoxStyle extends Style {
   borderTitleStyle?: string | Style
 }
 
-export type BoxEvents = BaseEvents & {
-  childadded: [child: Node]
-  childremoved: [child: Node]
-}
-
-export class Box extends NodeBase<BoxStyle, BoxEvents> {
-  readonly #children: Node[] = []
-
-  get children(): readonly Node[] {
-    return this.#children
-  }
-
-  add(child: Node): this {
-    this.#children.push(child)
-    if (child.parent && child.parent !== this && child.parent instanceof Box)
-      child.parent.remove(child)
-    child.parent = this
-    this.invalidate()
-    this.emit("childadded", child)
-    return this
-  }
-
-  remove(child: Node): this {
-    const i = this.#children.indexOf(child)
-    if (i === -1) return this
-    this.#children.splice(i, 1)
-    if (child.parent === this) child.parent = undefined
-    this.invalidate()
-    this.emit("childremoved", child)
-    return this
-  }
-
-  clear(): this {
-    const removed = [...this.#children]
-    this.#children.length = 0
-    for (const c of removed) {
-      if (c.parent === this) c.parent = undefined
-      this.emit("childremoved", c)
-    }
-    this.invalidate()
-    return this
-  }
-
+export class Box extends Node<BoxStyle> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state
 
@@ -150,18 +107,19 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
   }
 
   async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {
-    if (this.#children.length === 0) return []
+    const children = this.children
+    if (children.length === 0) return []
     const gap = this.state.gap ?? 0
     const dir = this.state.flexDirection ?? "column"
 
     if (dir === "column") {
       const childRows = await Promise.all(
-        this.#children.map((c) => c.render({ ...ctx, width: innerWidth }))
+        children.map((c) => c.render({ ...ctx, width: innerWidth }))
       )
       return stackColumn(childRows, { gap, width: innerWidth })
     }
 
-    const items: RowItem[] = this.#children.map((c) => {
+    const items: RowItem[] = children.map((c) => {
       const s = c.state as {
         width?: Size
         minWidth?: Size
@@ -172,7 +130,7 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
     })
     const widths = allocateRow(items, { contentWidth: innerWidth, gap })
     const childRows = await Promise.all(
-      this.#children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
+      children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
     )
     return zipRow(childRows, { gap, widths })
   }

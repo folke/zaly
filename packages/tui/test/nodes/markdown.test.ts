@@ -1,14 +1,15 @@
+// oxlint-disable unicorn/no-await-expression-member
 import type { MdCallbacks } from "../../src/style/md/marked.ts"
 
 import { renderMarkdown } from "#runtime"
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
 import { createImageCallback } from "../../src/nodes/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/nodes/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/compose.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
+import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
 import { moon } from "../../src/style/theme.ts"
 
 const ctx = (width = 80) => createCtx({ theme: moon, width })
@@ -332,6 +333,7 @@ describe("markdown — images", () => {
   ] as const
   const savedImgEnv: Record<string, string | undefined> = {}
   let savedIsTTY: boolean | undefined
+  const node = markdown("![alt](src.png)")
   beforeAll(() => {
     savedIsTTY = process.stdout.isTTY
     Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false })
@@ -351,7 +353,7 @@ describe("markdown — images", () => {
   })
 
   test("image callback emits an `<img id=N>` marker per occurrence", () => {
-    const { image } = createImageCallback(new Map())
+    const { image } = createImageCallback(node, new Map())
     expect(image?.("Logo", { src: "logo.png" })).toBe("<img id=0>")
     expect(image?.("Doc", { src: "doc.svg" })).toBe("<img id=1>")
     // Same src re-used gets its own marker id — dedup is by `src` in
@@ -360,7 +362,7 @@ describe("markdown — images", () => {
   })
 
   test("resolve() replaces block markers with rendered rows", async () => {
-    const cb = createImageCallback(new Map())
+    const cb = createImageCallback(node, new Map())
     cb.image?.("pic", { src: "pic.png" })
     // Simulate the renderer's block-paragraph output: "<img id=0>" on
     // its own line. With no TTY (test env), the Image node falls back
@@ -373,7 +375,7 @@ describe("markdown — images", () => {
   })
 
   test("resolve() falls back to alt text for inline markers", async () => {
-    const cb = createImageCallback(new Map())
+    const cb = createImageCallback(node, new Map())
     cb.image?.("icon", { src: "i.png" })
     const out = await cb.resolve(ctx(40), "Click <img id=0> here.")
     expect(out).toBe("Click [icon] here.")
@@ -383,7 +385,6 @@ describe("markdown — images", () => {
     const a = await markdown("![diagram](x.png)").render(ctx(40))
     expect(a.join("")).toContain("diagram")
   })
-
 })
 
 describe("markdown — Image instance cache", () => {
@@ -407,11 +408,14 @@ describe("markdown — Image instance cache", () => {
     const { mkdtempSync } = await import("node:fs")
     const { tmpdir } = await import("node:os")
     const { join } = await import("node:path")
+    // oxlint-disable-next-line unicorn/no-await-expression-member
     const sharp = (await import("sharp")).default
     tmpDir = mkdtempSync(join(tmpdir(), "zaly-md-image-"))
     pngPath = join(tmpDir, "t.png")
     const raw = Buffer.alloc(4 * 2 * 3, 0xff)
-    await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } }).png().toFile(pngPath)
+    await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } })
+      .png()
+      .toFile(pngPath)
 
     Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true })
     for (const k of ENV_KEYS) savedEnv[k] = process.env[k]
@@ -429,6 +433,7 @@ describe("markdown — Image instance cache", () => {
   })
 
   test("re-rendering the same markdown reuses the Image node (stable placement id)", async () => {
+    // oxlint-disable-next-line no-shadow
     const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
     const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
     resetCapabilitiesCache()
@@ -451,6 +456,7 @@ describe("markdown — Image instance cache", () => {
   })
 
   test("transmit is emitted at most once across re-renders of the same src", async () => {
+    // oxlint-disable-next-line no-shadow
     const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
     const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
     resetCapabilitiesCache()

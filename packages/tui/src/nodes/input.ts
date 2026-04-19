@@ -1,10 +1,11 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { BaseEvents, RoutedKey, RoutedPaste } from "../core/node.ts"
+import type { BaseEvents } from "../core/node.ts"
 import type { ActionMap } from "../input/keymap.ts"
+import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
-import { NodeBase } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { Text } from "./text.ts"
 
 export interface InputState extends Style {
@@ -59,12 +60,13 @@ export interface InputEvents extends BaseEvents {
  * reserved footer when the Input's row count changes, so the stream
  * above shifts accordingly.
  */
-export class Input extends NodeBase<InputState, InputEvents> {
+export class Input extends Node<InputState, InputEvents> {
   /** Class-level scope tag used by the input router to bind keymaps. */
   static readonly type = "input"
 
   override readonly type = Input.type
   #focused = false
+  #text: Text
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -178,6 +180,8 @@ export class Input extends NodeBase<InputState, InputEvents> {
       this.#focused = false
       this.invalidate()
     })
+    this.#text = new Text({ ...initial, content: "" })
+    this.add(this.#text)
   }
 
   // Fallback path for anything the router couldn't resolve to a named
@@ -233,10 +237,11 @@ export class Input extends NodeBase<InputState, InputEvents> {
     // Forward the non-content InputState fields that Text understands
     // (bg/fg/attrs via Style, plus width). Keep `wrap: "word"` as the
     // default for a pleasant chat-style input.
-    const { cursor: _c, focusable: _f, placeholder: _p, value: _v, ...styleOnly } = this.state
-    const t = new Text({ content, wrap: "word", ...styleOnly })
-    t.parent = this
-    return t.render(ctx)
+    this.#text.setState({
+      ...this.omitFromState("cursor", "id", "focusable", "value", "placeholder"),
+      content,
+    })
+    return this.#text.render(ctx)
   }
 }
 

@@ -1,12 +1,11 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { Size } from "../../layout/size.ts"
-import type { Style } from "../../style/ansi.ts"
 import type { MdCallbacks, MdOptions } from "../../style/md/marked.ts"
 import type { AnsiHighlighter, ShikiTheme } from "../../style/shiki.ts"
 import type { Image } from "../image.ts"
+import type { TextStyle } from "../text.ts"
 
 import { renderMarkdown, stringWidth } from "#runtime"
-import { NodeBase } from "../../core/node.ts"
+import { Node } from "../../core/node.ts"
 import { hyperlink } from "../../style/ansi.ts"
 import { encodeFenceInfoStrings } from "../../style/md/utils.ts"
 import { createAnsiHighlighter } from "../../style/shiki.ts"
@@ -15,12 +14,7 @@ import { collectFenceLanguages, createCodeCallback, decodeCodeMeta } from "./cod
 import { createImageCallback } from "./image.ts"
 import { createTableCallbacks } from "./table.ts"
 
-export interface MarkdownStyle extends Style {
-  wrap?: "word" | "char" | "none"
-  width?: Size
-}
-
-export interface MarkdownState extends MarkdownStyle {
+export interface MarkdownState extends TextStyle {
   content: string
   /** Options forwarded to `renderMarkdown`. */
   options?: MdOptions
@@ -49,12 +43,19 @@ const icons = {
   quote: "│",
 } as const
 
-export class Markdown extends NodeBase<MarkdownState> {
+export class Markdown extends Node<MarkdownState> {
   // Image nodes cached per-src per-Markdown-instance. Re-rendering the
   // same markdown (streaming updates) reuses the same `Image` — same
   // `placementId`, which the KGP spec guarantees is a flicker-free
   // move/resize of the existing placement.
   readonly #images = new Map<string, Image>()
+  #text: Text
+
+  constructor(state: MarkdownState) {
+    super(state)
+    this.#text = new Text({ ...state, content: "" })
+    this.add(this.#text)
+  }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const fn = this.state.options?.render ?? renderMarkdown
@@ -74,7 +75,7 @@ export class Markdown extends NodeBase<MarkdownState> {
     // images concurrently and splices their rows back in. Keeps the
     // markdown callback surface synchronous while supporting async
     // image preparation.
-    const imageCb = createImageCallback(this.#images)
+    const imageCb = createImageCallback(this, this.#images)
 
     // Encode spaces in fence info-strings so renderers that truncate after
     // the first token (Bun) still surface `title="..."` etc. as part of
@@ -89,14 +90,11 @@ export class Markdown extends NodeBase<MarkdownState> {
     const rendered = fn(source, callbacks, this.state.options)
     const final = await imageCb.resolve(ctx, rendered)
 
-    const { content: _c, options: _o, shikiTheme: _st, syntax: _sy, ...styleOnly } = this.state
-    // Every block callback appends `\n\n` as its separator, which is
-    // correct between blocks but leaves the last block with a dangling
-    // blank line. Trim so streaming two markdown nodes back-to-back
-    // doesn't show a spurious empty row between them.
-    const t = new Text({ content: final.replace(/\n+$/, "\n"), wrap: "word", ...styleOnly })
-    t.parent = this
-    return t.render(ctx)
+    this.#text.setState({
+      ...this.omitFromState("options", "shikiTheme", "syntax"),
+      content: final.replace(/\n+$/, "\n"),
+    })
+    return this.#text.render(ctx)
   }
 }
 
@@ -110,9 +108,12 @@ export class Markdown extends NodeBase<MarkdownState> {
  * markdown({ content, wrap: "word", fg: "fg" })
  * ```
  */
-export function markdown(content: string, style?: MarkdownStyle): Markdown
+export function markdown(content: string, style?: Omit<MarkdownState, "content">): Markdown
 export function markdown(state: MarkdownState): Markdown
-export function markdown(first: string | MarkdownState, style?: MarkdownStyle): Markdown {
+export function markdown(
+  first: string | MarkdownState,
+  style?: Omit<MarkdownState, "content">
+): Markdown {
   if (typeof first === "string") return new Markdown({ content: first, ...style })
   return new Markdown(first)
 }

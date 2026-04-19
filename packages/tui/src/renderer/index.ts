@@ -126,8 +126,7 @@ export function createRenderer(opts: RendererOptions = {}): Renderer {
         stopped.v = true
         return
       }
-      const children = n.children
-      if (children !== undefined) for (const c of children) visitNode(c)
+      for (const c of n.children) visitNode(c)
     }
     visitNode(ui.root)
     for (const n of stream.nodes) visitNode(n)

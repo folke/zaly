@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 
-import { NodeBase } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { imageCapabilities } from "../style/image/capabilities.ts"
 import { encode as encodeIterm2 } from "../style/image/iterm.ts"
 import {
@@ -35,7 +35,7 @@ export interface ImageState {
   cellAspect?: number
 }
 
-export class Image extends NodeBase<ImageState> {
+export class Image extends Node<ImageState> {
   // Stable placement id per node instance. KGP re-renders emit the same
   // (image id, placement id) pair — the spec guarantees this replaces
   // the prior placement without flicker.

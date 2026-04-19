@@ -1,6 +1,7 @@
 import type { RenderCtx } from "../../core/ctx.ts"
 import type { MdCallbacks, MdImageMeta } from "../../style/md/marked.ts"
 import type { Image } from "../image.ts"
+import type { Markdown } from "./index.ts"
 
 /** Per-occurrence image metadata collected during markdown rendering. */
 interface ImageEntry {
@@ -30,7 +31,10 @@ interface ImageEntry {
  * therefore the same KGP placement id, which the spec guarantees is a
  * flicker-free move/resize).
  */
-export function createImageCallback(cache: Map<string, Image>): {
+export function createImageCallback(
+  node: Markdown,
+  cache: Map<string, Image>
+): {
   image: MdCallbacks["image"]
   resolve: (ctx: RenderCtx, rendered: string) => Promise<string>
 } {
@@ -49,7 +53,7 @@ export function createImageCallback(cache: Map<string, Image>): {
       // `Image` is heavy (pulls image-meta, sharp lazy loaders, KGP
       // encoder) and 99% of markdown has no images. Load it only when
       // we have something to place.
-      const { Image: ImageCtor } = await import("../image.ts")
+      const { Image } = await import("../image.ts")
 
       // Render each unique src once via the cached Image node.
       const uniqueSrcs = [...new Set(entries.map((e) => e.src))]
@@ -59,7 +63,8 @@ export function createImageCallback(cache: Map<string, Image>): {
           const alt = firstAltForSrc(entries, src)
           let img = cache.get(src)
           if (img === undefined) {
-            img = new ImageCtor({ alt, src })
+            img = new Image({ alt, src })
+            node.add(img)
             cache.set(src, img)
           }
           rowsBySrc.set(src, await img.render(ctx))

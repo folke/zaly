@@ -1,7 +1,7 @@
-import type { RenderMarkdown } from "../src/md.ts"
+import type { RenderMarkdown } from "../src/style/md/marked.ts"
 
 import { box, createCtx, markdown } from "../src/index.ts"
-import { renderMarkdown as markedRenderer } from "../src/md.ts"
+import { renderMarkdown as markedRenderer } from "../src/style/md/marked.ts"
 import { image } from "../src/nodes/image.ts"
 
 // A small fixture exercising the block + inline types our callbacks care

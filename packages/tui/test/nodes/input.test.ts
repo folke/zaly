@@ -1,4 +1,4 @@
-import type { RoutedKey, RoutedPaste } from "../../src/core/node.ts"
+import type { RoutedKey, RoutedPaste } from "../../src/input/router.ts"
 
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
@@ -184,7 +184,7 @@ describe("Input.actions — submit + newline", () => {
     expect(n.state.value).toBe("hi")
   })
 
-  test("insertNewline inserts \\n at the cursor", () => {
+  test(String.raw`insertNewline inserts \n at the cursor`, () => {
     const n = input({ cursor: 5, value: "hello" })
     n.actions.insertNewline()
     expect(n.state.value).toBe("hello\n")
@@ -299,7 +299,7 @@ describe("Input — end-to-end via router + keymap", () => {
   })
 
   test("unmapped printable char falls through to the raw-key fallback", () => {
-    const { n, router } = mount({ value: "ab", cursor: 2 })
+    const { n, router } = mount({ cursor: 2, value: "ab" })
     router.dispatch({ event: key("x", { text: "x" }), type: "key" })
     expect(n.state.value).toBe("abx")
   })

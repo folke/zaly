@@ -3,7 +3,7 @@ import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 
 import { stringWidth } from "#runtime"
-import { NodeBase } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
 import { openStyle, RESET } from "../style/ansi.ts"
 
@@ -33,7 +33,7 @@ export interface ProgressState {
   incomplete?: string
 }
 
-export class Progress extends NodeBase<ProgressState> {
+export class Progress extends Node<ProgressState> {
   protected _render(ctx: RenderCtx): string[] {
     const total = this.state.total ?? 1
     const raw = total > 0 ? this.state.value / total : 0
@@ -80,11 +80,7 @@ export function progress(state: ProgressState): Progress {
   return new Progress(state)
 }
 
-function resolveLabel(
-  label: ProgressState["label"],
-  ctx: RenderCtx,
-  fraction: number,
-): string {
+function resolveLabel(label: ProgressState["label"], ctx: RenderCtx, fraction: number): string {
   if (label === undefined) return ""
   if (typeof label === "function") return label(ctx, fraction)
   if (label === "auto") return `${Math.round(fraction * 100)}%`

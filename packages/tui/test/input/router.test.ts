@@ -1,11 +1,10 @@
 import type { KeyEvent } from "../../src/input/keys.ts"
+import type { Box } from "../../src/nodes/box.ts"
 
 import { describe, expect, test } from "vitest"
 import { InputRouter } from "../../src/input/router.ts"
-import type { Box } from "../../src/nodes/box.ts"
-
-import { text } from "../../src/nodes/text.ts"
 import { box } from "../../src/nodes/box.ts"
+import { text } from "../../src/nodes/text.ts"
 
 function makeKey(name: string, mods: Partial<KeyEvent> = {}): KeyEvent {
   return { alt: false, ctrl: false, meta: false, name, shift: false, ...mods }
@@ -16,7 +15,9 @@ describe("InputRouter — focus", () => {
     const router = new InputRouter()
     const a = text("a")
     const b = text("b")
-    let aFocus = 0, aBlur = 0, bFocus = 0
+    let aFocus = 0,
+      aBlur = 0,
+      bFocus = 0
     a.on("focus", () => aFocus++)
     a.on("blur", () => aBlur++)
     b.on("focus", () => bFocus++)
@@ -84,9 +85,7 @@ describe("InputRouter — key dispatch", () => {
   test("no focused node — dispatch is a no-op", () => {
     const router = new InputRouter()
     // Doesn't throw.
-    expect(() =>
-      router.dispatch({ event: makeKey("q"), type: "key" })
-    ).not.toThrow()
+    expect(() => router.dispatch({ event: makeKey("q"), type: "key" })).not.toThrow()
   })
 })
 
@@ -175,8 +174,8 @@ describe("InputRouter — named actions via keymap", () => {
     n.id = "editor"
     const calls: string[] = []
     n.actions = {
-      submitFromType: () => calls.push("type"),
       submitFromId: () => calls.push("id"),
+      submitFromType: () => calls.push("type"),
     }
     router.focus(n as unknown as Parameters<typeof router.focus>[0])
     router.setKeymaps({

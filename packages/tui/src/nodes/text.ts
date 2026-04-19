@@ -3,7 +3,7 @@ import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
-import { NodeBase } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
 import { openStyle, RESET, splitAnsi } from "../style/ansi.ts"
 import { reapplyBg } from "../style/compose.ts"
@@ -25,7 +25,7 @@ export interface TextStyle extends Style {
   wrap?: "word" | "char" | "none"
 }
 
-export class Text extends NodeBase<TextStyle> {
+export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
     const content =
       typeof this.state.content === "function" ? this.state.content(ctx) : this.state.content
