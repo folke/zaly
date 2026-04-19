@@ -1,4 +1,4 @@
-import type { Node, RoutedKey, RoutedPaste } from "../core/node.ts"
+import type { Node } from "../core/node.ts"
 import type { InputEvent } from "./decoder.ts"
 import type { ActionFn, ActionMap } from "./keymap.ts"
 import type { KeyEvent, KeyPattern } from "./keys.ts"
@@ -17,6 +17,29 @@ interface KeyBinding {
 interface IndexedHit {
   scope: string
   action: string
+}
+
+/**
+ * A routed keyboard event — the raw `KeyEvent` data plus a propagation
+ * control. Listeners call `.stop()` to consume the event; the router
+ * checks `.stopped` between parent-chain hops and halts bubbling.
+ */
+export interface RoutedKey {
+  name: string
+  text?: string
+  ctrl: boolean
+  alt: boolean
+  shift: boolean
+  meta: boolean
+  stopped: boolean
+  stop(): void
+}
+
+/** A routed paste event — the pasted text + the same propagation control. */
+export interface RoutedPaste {
+  text: string
+  stopped: boolean
+  stop(): void
 }
 
 /**
@@ -133,8 +156,7 @@ export class InputRouter {
    * ```
    */
   registerActions<N extends Node>(scope: string, actions: ActionMap<N>): void {
-    const map =
-      this.#externalActions.get(scope) ?? new Map<string, ActionFn>()
+    const map = this.#externalActions.get(scope) ?? new Map<string, ActionFn>()
     for (const [name, fn] of Object.entries(actions)) {
       map.set(name, fn as ActionFn)
     }
@@ -173,7 +195,9 @@ export class InputRouter {
         for (const scope of this.#scopesOf(node)) {
           for (const hit of hits) {
             if (hit.scope !== scope) continue
-            const internal = (node.actions as Record<string, (() => void) | undefined> | undefined)?.[hit.action]
+            const internal = (
+              node.actions as Record<string, (() => void) | undefined> | undefined
+            )?.[hit.action]
             if (typeof internal === "function") {
               internal()
               return true

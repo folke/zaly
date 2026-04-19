@@ -1,3 +1,4 @@
+import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { RenderCtx } from "./ctx.ts"
 import type { TypedEmitter } from "./emitter.ts"
 
@@ -9,6 +10,8 @@ export type BaseEvents = {
   invalidate: []
   mount: []
   unmount: []
+  key: [RoutedKey]
+  paste: [RoutedPaste]
 }
 
 /**
