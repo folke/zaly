@@ -140,6 +140,9 @@ export class Terminal {
     if (!this.#started) return
     this.#started = false
 
+    // Remove all Kitty images
+    this.write(`\x1b_Ga=d,d=A\x1b\\`)
+
     // Clear scroll region (if set), auto-wrap back on, cursor back on.
     if (this.#reserveBottom > 0) this.clearScrollRegion()
     this.write(`${CSI}?7h${CSI}?25h`)
