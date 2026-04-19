@@ -24,7 +24,7 @@ describe("UI.flush — first paint", () => {
   test("adding a child updates reserveBottom and paints at footerTop", async () => {
     const { stdout, terminal, ui } = mount(20, 10)
     ui.root.add(text("[input]"))
-    await ui.flush()
+    await ui.render()
     expect(terminal.reserveBottom).toBe(1)
     expect(terminal.scrollBottom).toBe(9)
     expect(terminal.footerTop).toBe(10)
@@ -38,11 +38,11 @@ describe("UI.flush — row diff", () => {
     const { stdout, ui } = mount(30, 10)
     const line = text("one")
     ui.root.add(line)
-    await ui.flush()
+    await ui.render()
     stdout.clear()
 
     line.state.content = "two"
-    await ui.flush()
+    await ui.render()
     expect(stdout.all).toContain("two")
     // eslint-disable-next-line no-control-regex -- matching ESC is the point.
     const moves = stdout.all.match(/\u001B\[\d+;1H/g) ?? []
@@ -54,11 +54,11 @@ describe("UI — height changes", () => {
   test("growing the footer increases reserveBottom", async () => {
     const { terminal, ui } = mount(30, 10)
     ui.root.add(text("a"))
-    await ui.flush()
+    await ui.render()
     expect(terminal.reserveBottom).toBe(1)
 
     ui.root.add(text("b"))
-    await ui.flush()
+    await ui.render()
     expect(terminal.reserveBottom).toBe(2)
     expect(terminal.footerTop).toBe(9)
   })

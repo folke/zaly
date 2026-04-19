@@ -63,7 +63,7 @@ export class UI {
     this.#scheduled = true
     queueMicrotask(() => {
       this.#scheduled = false
-      void this.flush()
+      void this.render()
     })
   }
 
@@ -72,7 +72,7 @@ export class UI {
    * Updates the terminal's reservation whenever the height changes so
    * the scroll region stays correctly sized.
    */
-  async flush(): Promise<void> {
+  async render(): Promise<void> {
     const ctx = this.getCtx()
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const cap = this.#maxHeight ?? Math.max(1, Math.floor(this.terminal.rows / 3))
