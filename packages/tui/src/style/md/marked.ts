@@ -1,6 +1,8 @@
 import type { Tokens } from "marked"
+import type { MdCodeBlockMeta } from "./utils.ts"
 
 import { marked } from "marked"
+import { parseCodeInfoString } from "./utils.ts"
 
 // ── Types (shape-compatible with Bun.markdown's RenderCallbacks) ──────────
 
@@ -9,18 +11,6 @@ export interface MdHeadingMeta {
   level: number
   /** Heading ID slug. Set when `headings: { ids: true }` is enabled. */
   id?: string
-}
-
-export interface MdCodeBlockMeta {
-  /** The info-string language (e.g. `"js"`). */
-  language?: string
-  /**
-   * File title from the fenced info-string, e.g. `title="src/foo.ts"`.
-   * Widely supported in docs toolchains (Docusaurus, Nextra, Fumadocs,
-   * Expressive Code). Only populated by the marked-backed renderer —
-   * `Bun.markdown.render` strips the info-string after the first token.
-   */
-  title?: string
 }
 
 export interface MdListMeta {
@@ -151,35 +141,6 @@ export interface MdOptions {
    * side-by-side.
    */
   render?: RenderMarkdown
-}
-
-// ── Fence info-string encoding ────────────────────────────────────────────
-//
-// Bun.markdown.render exposes only the first whitespace-delimited token from
-// a fenced info-string (`language`), dropping attrs like `title="..."`. As a
-// workaround, `Markdown._render` pre-encodes info-strings by replacing inner
-// spaces with `FENCE_MARKER` so Bun hands the whole thing back as the single
-// "language" token. `parseCodeInfoString` decodes the marker before parsing,
-// so both renderers yield the same meta regardless of path.
-
-/** Sentinel stitched into fence info-strings in place of spaces. */
-export const FENCE_MARKER = "\u0000"
-
-/**
- * Replace spaces inside every fenced-block info-string with `FENCE_MARKER`
- * so renderers that truncate after the first token (Bun) still surface the
- * full info-string as `meta.language`. Inverse of the decode step done by
- * `parseCodeInfoString`.
- *
- * Closing fences (just ``` with optional trailing whitespace) are left
- * untouched — rewriting their spaces into markers would prevent the
- * parser from recognizing the closer, swallowing the rest of the document
- * as code.
- */
-export function encodeFenceInfoStrings(md: string): string {
-  return md.replaceAll(/^( {0,3}`{3,})([^\n]*)$/gm, (match, fence: string, info: string) =>
-    info.trim() === "" ? match : fence + info.replaceAll(" ", FENCE_MARKER)
-  )
 }
 
 // ── Implementation (Node-side; Bun's runtime passes through to Bun.markdown) ──
@@ -336,35 +297,6 @@ function renderToken(tok: Tokens.Generic, cb: MdCallbacks, depth: number): strin
       return raw ?? (tok as { raw?: string }).raw ?? ""
     }
   }
-}
-
-/**
- * Parse a fenced code-block info-string like `jsx title="src/Hello.js"`.
- * First token → language; `title="..."` / `title='...'` → title. Unknown
- * attrs after the language are ignored.
- *
- * Input may carry `FENCE_MARKER` in place of spaces (from
- * `encodeFenceInfoStrings`); those are decoded before parsing.
- *
- * Returns `undefined` when the info-string is empty (no language, no attrs).
- */
-export function parseCodeInfoString(info: string | undefined): MdCodeBlockMeta | undefined {
-  if (!info) return undefined
-  const decoded = info.includes(FENCE_MARKER) ? info.replaceAll(FENCE_MARKER, " ") : info
-  const firstSpace = decoded.search(/\s/)
-  if (firstSpace === -1) return { language: decoded }
-  const language = decoded.slice(0, firstSpace)
-  const rest = decoded.slice(firstSpace + 1)
-  // Alternation groups mean exactly one of [1], [2] matches; the other is
-  // undefined at runtime even though TS's regex typing calls both strings.
-  const titleMatch = /title=(?:"([^"]*)"|'([^']*)')/.exec(rest) as
-    | [string, string | undefined, string | undefined]
-    | null
-  const title = titleMatch === null ? undefined : (titleMatch[1] ?? titleMatch[2])
-  const meta: MdCodeBlockMeta = {}
-  if (language !== "") meta.language = language
-  if (title !== undefined) meta.title = title
-  return meta
 }
 
 function applyBlock(children: string, fn: CbNoMeta | undefined): string {

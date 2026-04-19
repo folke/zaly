@@ -1,8 +1,8 @@
-import type { MdCallbacks, MdOptions } from "./md.ts"
+import type { MdCallbacks, MdOptions } from "./style/md/marked.ts"
 
 import { extractApc } from "./style/apc.ts"
 
-export type * from "./md.ts"
+export type * from "./style/md/marked.ts"
 
 export interface WrapOpts {
   mode?: "word" | "char"

@@ -4,8 +4,8 @@ import wrapAnsiImpl from "wrap-ansi"
 
 import { extractApc } from "./style/apc.ts"
 
-export { renderMarkdown } from "./md.ts"
-export type * from "./md.ts"
+export { renderMarkdown } from "./style/md/marked.ts"
+export type * from "./style/md/marked.ts"
 
 export interface WrapOpts {
   mode?: "word" | "char"

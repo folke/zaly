@@ -1,16 +1,18 @@
 import type { RenderCtx } from "../../core/ctx.ts"
 import type { Size } from "../../layout/size.ts"
-import type { MdCallbacks, MdOptions } from "../../md.ts"
 import type { Style } from "../../style/ansi.ts"
+import type { MdCallbacks, MdOptions } from "../../style/md/marked.ts"
 import type { AnsiHighlighter, ShikiTheme } from "../../style/shiki.ts"
+import type { Image } from "../image.ts"
 
 import { renderMarkdown, stringWidth } from "#runtime"
 import { NodeBase } from "../../core/node.ts"
-import { encodeFenceInfoStrings } from "../../md.ts"
 import { hyperlink } from "../../style/ansi.ts"
+import { encodeFenceInfoStrings } from "../../style/md/utils.ts"
 import { createAnsiHighlighter } from "../../style/shiki.ts"
 import { Text } from "../text.ts"
 import { collectFenceLanguages, createCodeCallback, decodeCodeMeta } from "./code.ts"
+import { createImageCallback } from "./image.ts"
 import { createTableCallbacks } from "./table.ts"
 
 export interface MarkdownStyle extends Style {
@@ -48,6 +50,12 @@ const icons = {
 } as const
 
 export class Markdown extends NodeBase<MarkdownState> {
+  // Image nodes cached per-src per-Markdown-instance. Re-rendering the
+  // same markdown (streaming updates) reuses the same `Image` — same
+  // `placementId`, which the KGP spec guarantees is a flicker-free
+  // move/resize of the existing placement.
+  readonly #images = new Map<string, Image>()
+
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const fn = this.state.options?.render ?? renderMarkdown
     const syntax = this.state.syntax ?? true
@@ -61,6 +69,13 @@ export class Markdown extends NodeBase<MarkdownState> {
       highlighter = await createAnsiHighlighter({ langs, theme: this.state.shikiTheme })
     }
 
+    // Image handling: the callback emits `<img id=N>` markers during
+    // rendering; a post-processing resolver then renders the referenced
+    // images concurrently and splices their rows back in. Keeps the
+    // markdown callback surface synchronous while supporting async
+    // image preparation.
+    const imageCb = createImageCallback(this.#images)
+
     // Encode spaces in fence info-strings so renderers that truncate after
     // the first token (Bun) still surface `title="..."` etc. as part of
     // `meta.language`. The wrapper around `code` below re-parses to decode.
@@ -69,10 +84,17 @@ export class Markdown extends NodeBase<MarkdownState> {
     const callbacks: MdCallbacks = {
       ...base,
       code: (text, meta) => base.code?.(text, decodeCodeMeta(meta)) ?? text,
+      image: imageCb.image,
     }
     const rendered = fn(source, callbacks, this.state.options)
+    const final = await imageCb.resolve(ctx, rendered)
+
     const { content: _c, options: _o, shikiTheme: _st, syntax: _sy, ...styleOnly } = this.state
-    const t = new Text({ content: rendered, wrap: "word", ...styleOnly })
+    // Every block callback appends `\n\n` as its separator, which is
+    // correct between blocks but leaves the last block with a dangling
+    // blank line. Trim so streaming two markdown nodes back-to-back
+    // doesn't show a spurious empty row between them.
+    const t = new Text({ content: final.replace(/\n+$/, "\n"), wrap: "word", ...styleOnly })
     t.parent = this
     return t.render(ctx)
   }

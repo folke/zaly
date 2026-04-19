@@ -1,10 +1,11 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks, MdCodeBlockMeta } from "../../md.ts"
+import type { MdCallbacks } from "../../style/md/marked.ts"
+import type { MdCodeBlockMeta } from "../../style/md/utils.ts"
 import type { Style } from "../../style/ansi.ts"
 import type { AnsiHighlighter } from "../../style/shiki.ts"
 
 import { stringWidth } from "#runtime"
-import { parseCodeInfoString } from "../../md.ts"
+import { parseCodeInfoString } from "../../style/md/utils.ts"
 import { openStyle, RESET, splitAnsi } from "../../style/ansi.ts"
 import { reapplyBg, resolveStyle } from "../../style/compose.ts"
 
