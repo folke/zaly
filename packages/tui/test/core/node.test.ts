@@ -25,15 +25,16 @@ describe("NodeBase", () => {
     expect(n.state.count).toBe(3)
   })
 
-  test("fresh node is already dirty: invalidate is a no-op", async () => {
-    // Per §7.2 short-circuit semantic: cache starts as dirty, so no event
-    // fires until something has rendered first.
+  test("fresh node still emits on state mutation so surfaces can pick up first render", async () => {
+    // Emit is unconditional — surfaces (Stream, UI) subscribe before
+    // the first render, and need to be told that a not-yet-rendered
+    // node wants a flush. They dedupe internally.
     const n = new TestNode({ count: 0, text: "hi" })
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.state.text = "bye"
     expect(n.state.text).toBe("bye")
-    expect(fn).not.toHaveBeenCalled()
+    expect(fn).toHaveBeenCalledTimes(1)
   })
 
   test("state proxy write invalidates once cache is warm", async () => {
@@ -56,16 +57,28 @@ describe("NodeBase", () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  test("invalidate short-circuits when already dirty", async () => {
-    const n = new TestNode({ count: 0, text: "hi" })
-    await n.render(ctx)
-    const fn = vi.fn()
-    n.on("invalidate", fn)
-    n.state.text = "a"
-    n.state.text = "b"
-    n.state.text = "c"
-    // First mutation invalidates; subsequent are no-ops until next render.
-    expect(fn).toHaveBeenCalledTimes(1)
+  test("invalidate emits on every mutation; parent cascade only on the first", async () => {
+    // Local emit is cheap and surfaces dedupe via their own scheduled
+    // flag, so we don't short-circuit it. The parent cascade *is*
+    // short-circuited — that's the optimization that keeps 500 rapid
+    // mutations from walking the whole tree 500 times.
+    const parent = new TestNode({ count: 0, text: "p" })
+    const child = new TestNode({ count: 0, text: "c" })
+    child.parent = parent
+    await parent.render(ctx)
+    await child.render(ctx)
+
+    const localFn = vi.fn()
+    const parentFn = vi.fn()
+    child.on("invalidate", localFn)
+    parent.on("invalidate", parentFn)
+
+    child.state.text = "a"
+    child.state.text = "b"
+    child.state.text = "c"
+
+    expect(localFn).toHaveBeenCalledTimes(3)
+    expect(parentFn).toHaveBeenCalledTimes(1)
   })
 
   test("setState batches multiple fields into one invalidate", async () => {

@@ -69,10 +69,16 @@ export abstract class NodeBase<S extends object = object, E extends BaseEvents =
   }
 
   invalidate(): this {
-    if (this.#cache === undefined) return this
+    // Always emit — surfaces (stream, UI) dedupe via their own
+    // `scheduled` flag, and a brand-new node whose cache has never
+    // been populated still needs to notify its surface that it wants
+    // a first flush. Cascade upward only when we actually had cached
+    // state to invalidate, so idle ancestor walks don't repeat for
+    // back-to-back state writes.
+    const hadCache = this.#cache !== undefined
     this.#cache = undefined
     this.emit("invalidate")
-    this.parent?.invalidate()
+    if (hadCache) this.parent?.invalidate()
     return this
   }
 
