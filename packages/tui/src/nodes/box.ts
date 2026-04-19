@@ -61,6 +61,8 @@ export class Box extends NodeBase<BoxStyle, BoxEvents> {
 
   add(child: Node): this {
     this.#children.push(child)
+    if (child.parent && child.parent !== this && child.parent instanceof Box)
+      child.parent.remove(child)
     child.parent = this
     this.invalidate()
     this.emit("childadded", child)

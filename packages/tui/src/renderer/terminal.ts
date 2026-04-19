@@ -97,8 +97,13 @@ export class Terminal {
     if (this.#started) return
     this.#started = true
 
-    // Cursor hidden, auto-wrap off.
-    this.write(`${CSI}?25l${CSI}?7l`)
+    // Cursor hidden, auto-wrap off, bracketed paste on, focus reporting on.
+    // Bracketed paste (?2004) lets the decoder tell chunked pastes apart
+    // from keystrokes so widgets don't run individual key handlers for
+    // every character of a paste. Focus reporting (?1004) lets the
+    // terminal tell us when our window gains/loses focus so we can
+    // update cursor visibility, pause animations, etc.
+    this.write(`${CSI}?25l${CSI}?7l${CSI}?2004h${CSI}?1004h`)
     // Scroll region set to [1, scrollBottom]. Terminals default to the
     // full viewport, so omitting `reserveBottom = 0` is a no-op.
     if (this.#reserveBottom > 0) this.setScrollRegion(1, this.scrollBottom)
@@ -143,9 +148,10 @@ export class Terminal {
     // Remove all Kitty images
     this.write(`\x1b_Ga=d,d=A\x1b\\`)
 
-    // Clear scroll region (if set), auto-wrap back on, cursor back on.
+    // Clear scroll region (if set), disable paste/focus reporting,
+    // auto-wrap back on, cursor back on.
     if (this.#reserveBottom > 0) this.clearScrollRegion()
-    this.write(`${CSI}?7h${CSI}?25h`)
+    this.write(`${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
 
     if (this.#stdin?.isTTY && typeof this.#stdin.setRawMode === "function") {
       this.#stdin.setRawMode(this.#prevRawMode ?? false)
@@ -194,6 +200,16 @@ export class Terminal {
   /** Scroll the scroll region up by `n` rows (SU). Top rows enter scrollback. */
   scrollUp(n: number): string {
     return n > 0 ? `${CSI}${n}S` : ""
+  }
+
+  /**
+   * Scroll the scroll region down by `n` rows (SD). Top `n` rows become
+   * blank, existing content shifts down, bottom `n` rows fall off the
+   * region (they don't move to scrollback — scrollback is a top-side
+   * concept; SD's displaced rows are simply lost).
+   */
+  scrollDown(n: number): string {
+    return n > 0 ? `${CSI}${n}T` : ""
   }
 
   /** Delete `n` lines at the cursor, pulling content below upward (DL). */

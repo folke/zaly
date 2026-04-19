@@ -1,0 +1,162 @@
+import { describe, expect, test } from "vitest"
+import { Decoder } from "../../src/input/decoder.ts"
+
+// Tiny assertion helpers to keep test cases focused on the event shapes.
+function keys(d: Decoder, bytes: string): { name: string; mods: string }[] {
+  const out: { name: string; mods: string }[] = []
+  for (const ev of d.feed(bytes)) {
+    if (ev.type !== "key") throw new Error(`expected key event, got ${ev.type}`)
+    const mods = [
+      ev.event.ctrl && "c",
+      ev.event.alt && "a",
+      ev.event.shift && "s",
+      ev.event.meta && "m",
+    ]
+      .filter(Boolean)
+      .join("")
+    out.push({ mods, name: ev.event.name })
+  }
+  return out
+}
+
+describe("Decoder — plain characters", () => {
+  test("prints ASCII letter as a key with that name", () => {
+    expect(keys(new Decoder(), "a")).toEqual([{ mods: "", name: "a" }])
+  })
+
+  test("several chars in one chunk yield several events", () => {
+    expect(keys(new Decoder(), "abc")).toEqual([
+      { mods: "", name: "a" },
+      { mods: "", name: "b" },
+      { mods: "", name: "c" },
+    ])
+  })
+
+  test("uppercase (shifted) letter — name is the uppercase char, shift set", () => {
+    // Terminals already encode Shift+a as the literal "A" byte; we only
+    // set the shift flag (derived from "A" being uppercase letter) so
+    // keyMatches("s-A") works.
+    expect(keys(new Decoder(), "A")).toEqual([{ mods: "s", name: "A" }])
+  })
+
+  test("space character is keyed as 'space' with text=' '", () => {
+    const evs = new Decoder().feed(" ")
+    expect(evs).toHaveLength(1)
+    expect(evs[0]).toEqual({
+      event: { alt: false, ctrl: false, meta: false, name: "space", shift: false, text: " " },
+      type: "key",
+    })
+  })
+})
+
+describe("Decoder — control characters", () => {
+  test("ctrl+c via 0x03", () => {
+    expect(keys(new Decoder(), "\x03")).toEqual([{ mods: "c", name: "c" }])
+  })
+
+  test("enter via 0x0d", () => {
+    expect(keys(new Decoder(), "\r")).toEqual([{ mods: "", name: "enter" }])
+  })
+
+  test("tab via 0x09", () => {
+    expect(keys(new Decoder(), "\t")).toEqual([{ mods: "", name: "tab" }])
+  })
+
+  test("backspace via 0x7f", () => {
+    expect(keys(new Decoder(), "\x7f")).toEqual([{ mods: "", name: "backspace" }])
+  })
+
+  test("ctrl-a via 0x01", () => {
+    expect(keys(new Decoder(), "\x01")).toEqual([{ mods: "c", name: "a" }])
+  })
+})
+
+describe("Decoder — CSI sequences", () => {
+  test("arrow up via ESC [ A", () => {
+    expect(keys(new Decoder(), "\x1b[A")).toEqual([{ mods: "", name: "up" }])
+  })
+
+  test("arrows, one of each direction", () => {
+    expect(keys(new Decoder(), "\x1b[A\x1b[B\x1b[C\x1b[D")).toEqual([
+      { mods: "", name: "up" },
+      { mods: "", name: "down" },
+      { mods: "", name: "right" },
+      { mods: "", name: "left" },
+    ])
+  })
+
+  test("ctrl+up via ESC [ 1 ; 5 A", () => {
+    expect(keys(new Decoder(), "\x1b[1;5A")).toEqual([{ mods: "c", name: "up" }])
+  })
+
+  test("shift+alt+right via ESC [ 1 ; 4 C", () => {
+    expect(keys(new Decoder(), "\x1b[1;4C")).toEqual([{ mods: "as", name: "right" }])
+  })
+
+  test("delete via ESC [ 3 ~", () => {
+    expect(keys(new Decoder(), "\x1b[3~")).toEqual([{ mods: "", name: "delete" }])
+  })
+
+  test("pageup via ESC [ 5 ~", () => {
+    expect(keys(new Decoder(), "\x1b[5~")).toEqual([{ mods: "", name: "pageup" }])
+  })
+
+  test("F5 via ESC [ 15 ~", () => {
+    expect(keys(new Decoder(), "\x1b[15~")).toEqual([{ mods: "", name: "f5" }])
+  })
+})
+
+describe("Decoder — SS3 function keys", () => {
+  test("F1 via ESC O P", () => {
+    expect(keys(new Decoder(), "\x1bOP")).toEqual([{ mods: "", name: "f1" }])
+  })
+
+  test("F4 via ESC O S", () => {
+    expect(keys(new Decoder(), "\x1bOS")).toEqual([{ mods: "", name: "f4" }])
+  })
+})
+
+describe("Decoder — ESC handling", () => {
+  test("bare ESC is pending until flush", () => {
+    const d = new Decoder()
+    expect(d.feed("\x1b")).toEqual([])
+    const out = d.flush()
+    expect(out).toHaveLength(1)
+    expect(out[0]).toMatchObject({ event: { name: "esc" }, type: "key" })
+  })
+
+  test("ESC followed by char = alt+char", () => {
+    expect(keys(new Decoder(), "\x1ba")).toEqual([{ mods: "a", name: "a" }])
+  })
+
+  test("stream split mid-CSI — holds state across feed() calls", () => {
+    const d = new Decoder()
+    expect(d.feed("\x1b")).toEqual([])
+    expect(d.feed("[")).toEqual([])
+    const out = d.feed("A")
+    expect(out).toHaveLength(1)
+    expect(out[0]).toMatchObject({ event: { name: "up" }, type: "key" })
+  })
+})
+
+describe("Decoder — paste + focus", () => {
+  test("bracketed paste emits a single PasteEvent", () => {
+    const d = new Decoder()
+    const out = d.feed("\x1b[200~hello world\x1b[201~")
+    expect(out).toHaveLength(1)
+    expect(out[0]).toEqual({ text: "hello world", type: "paste" })
+  })
+
+  test("keystrokes during paste are included literally (including newlines)", () => {
+    const d = new Decoder()
+    const out = d.feed("\x1b[200~line1\nline2\x1b[201~")
+    expect(out).toHaveLength(1)
+    expect(out[0]).toEqual({ text: "line1\nline2", type: "paste" })
+  })
+
+  test("focus in / focus out", () => {
+    const d = new Decoder()
+    expect(d.feed("\x1b[I")).toEqual([{ gained: true, type: "focus" }])
+    expect(d.feed("\x1b[O")).toEqual([{ gained: false, type: "focus" }])
+  })
+})

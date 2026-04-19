@@ -71,6 +71,16 @@ export class Stream {
     return this.terminal.scrollBottom
   }
 
+  /**
+   * Snapshot of the live nodes currently being tracked — the most-recent
+   * append is last. Exposed so the renderer's traversal helpers
+   * (`walk`, `findNode`) can include stream-attached nodes in tree
+   * scans alongside the UI tree.
+   */
+  get nodes(): readonly Node[] {
+    return this.#live.map((s) => s.node)
+  }
+
   #schedule(): void {
     this.#dirty = true
     if (this.#scheduled) return
@@ -85,15 +95,26 @@ export class Stream {
   }
 
   async render(): Promise<void> {
+    // Snapshot `#live` at the start of this pass. Without it, a call
+    // to `render()` that races with the microtask-scheduled one (the
+    // test suite and `renderer.stream.render()` in demo code can both
+    // trigger this) would see `#live` mutated by the first pass's
+    // trailing flush — `#live[i]` would be undefined past the shrunk
+    // length. Snapshot keeps each render's output landing in the state
+    // objects it set out to render (or a no-op if they've been dropped).
+    const states = [...this.#live]
     let oldRows: string[] = []
     const newRows: string[] = []
-    await Promise.all(
-      this.#live.map(async (state) => {
+    const all = await Promise.all(
+      states.map(async (state) => {
         oldRows.push(...state.rows)
-        state.rows = await state.node.render(this.getCtx())
-        newRows.push(...state.rows)
+        return await state.node.render(this.getCtx())
       })
     )
+    for (let i = 0; i < states.length; i++) {
+      states[i].rows = all[i]
+      newRows.push(...all[i])
+    }
     const height = this.liveHeight
     oldRows = oldRows.slice(-height)
     const bottom = this.terminal.scrollBottom
@@ -124,9 +145,7 @@ export class Stream {
         const batch = Math.min(newRows.length - i, height)
         this.terminal.write(this.terminal.scrollUp(batch))
         for (let j = 0; j < batch; j++) {
-          this.terminal.write(
-            this.terminal.moveTo(bottom - batch + 1 + j, 1) + newRows[i + j]
-          )
+          this.terminal.write(this.terminal.moveTo(bottom - batch + 1 + j, 1) + newRows[i + j])
         }
         i += batch
       }

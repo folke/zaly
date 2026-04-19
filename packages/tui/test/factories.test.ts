@@ -1,3 +1,5 @@
+import type { BaseEvents } from "../src/core/node.ts"
+
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../src/core/ctx.ts"
 import { Box, box, node, text } from "../src/index.ts"
@@ -88,7 +90,7 @@ describe("node()", () => {
   test("emit is wired to custom node", async () => {
     type E = { changed: [value: number] }
     const listener = vi.fn()
-    const n = node<{ v: number }, E & { invalidate: []; mount: []; unmount: [] }>(
+    const n = node<{ v: number }, E & BaseEvents>(
       { v: 0 },
       ({ state, emit }) => {
         emit("changed", state.v)

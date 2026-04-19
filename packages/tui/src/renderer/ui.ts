@@ -37,6 +37,12 @@ export class UI {
     opts: UIOptions = {},
   ) {
     this.#maxHeight = opts.maxHeight
+    // Tag the root as scope `"global"` — the input router resolves
+    // `"global.*"` keymap bindings by walking the focused node's parent
+    // chain, and any focusable widget ultimately parents to this root.
+    // So this tagging is what makes globals fire on every keystroke
+    // without a dedicated always-matching path in the router.
+    this.#root.id = "global"
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", () => this.#schedule())
@@ -75,20 +81,36 @@ export class UI {
     const prevHeight = this.#lastRows.length
     const nextHeight = rows.length
 
-    // Resize the reserved bottom to match the new footer height. This
-    // reissues DECSTBM inside the terminal and makes the stream surface
-    // see a different `scrollBottom` on its next flush.
-    if (nextHeight !== this.terminal.reserveBottom) {
-      this.terminal.setReserveBottom(nextHeight)
-    }
-
     this.terminal.sync(() => {
-      // Clear any rows that used to be footer but aren't anymore.
+      // Grow: before shrinking the scroll region, scroll its existing
+      // contents up by the growth amount. That way any rows the stream
+      // had painted at the bottom of the scroll region ride upward
+      // (their topmost rows sliding into scrollback) rather than being
+      // overwritten when the footer paints onto the rows that used to
+      // be scroll region. SU runs first so it operates on the OLD,
+      // still-larger region.
+      if (nextHeight > prevHeight) {
+        const growth = nextHeight - prevHeight
+        this.terminal.write(this.terminal.scrollUp(growth))
+      }
+
+      // Resize the reserved bottom to match the new footer height.
+      // Reissues DECSTBM — the stream surface sees a different
+      // `scrollBottom` on its next flush.
+      if (nextHeight !== this.terminal.reserveBottom) {
+        this.terminal.setReserveBottom(nextHeight)
+      }
+
+      // Shrink: after enlarging the scroll region, scroll its contents
+      // down by the shrink amount. Stream content that was bottom-
+      // anchored to the old (smaller) region shifts down so it stays
+      // anchored to the new one. The previously-footer rows sitting at
+      // the top of the newly-enlarged region fall off the bottom as
+      // part of that scroll — which is exactly what we want, since
+      // they held stale footer text. Top `shrink` rows become blank.
       if (prevHeight > nextHeight) {
-        for (let r = prevHeight - nextHeight; r > 0; r--) {
-          // These rows are now part of the scroll region; leave them
-          // alone — DECSTBM re-sizing already handed them back.
-        }
+        const shrink = prevHeight - nextHeight
+        this.terminal.write(this.terminal.scrollDown(shrink))
       }
 
       // Paint (or re-paint) each footer row. The footer starts at
