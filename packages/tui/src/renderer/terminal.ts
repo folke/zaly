@@ -188,6 +188,16 @@ export class Terminal {
     return `${CSI}0J`
   }
 
+  /** Scroll the scroll region up by `n` rows (SU). Top rows enter scrollback. */
+  scrollUp(n: number): string {
+    return n > 0 ? `${CSI}${n}S` : ""
+  }
+
+  /** Delete `n` lines at the cursor, pulling content below upward (DL). */
+  deleteLines(n: number): string {
+    return n > 0 ? `${CSI}${n}M` : ""
+  }
+
   /** Set the scroll region (DECSTBM), 1-based inclusive. */
   setScrollRegion(top: number, bottom: number): void {
     this.write(`${CSI}${top};${bottom}r`)
