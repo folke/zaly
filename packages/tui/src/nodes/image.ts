@@ -48,7 +48,7 @@ export class Image extends NodeBase<ImageState> {
     }
 
     const meta = await imageMetadata(this.state.src)
-    const { cols, rows } = dims(this.state, meta, ctx.width)
+    const { cols, rows } = dims(this.state, meta, Math.min(ctx.width, 80))
     const blank = " ".repeat(cols)
 
     // Row 0 carries the protocol escape(s) at the target cursor position.
@@ -58,7 +58,8 @@ export class Image extends NodeBase<ImageState> {
     let lead: string
     if (protocol === "kitty") {
       const { imageId, transmit } = await transmitOnce(this.state.src)
-      lead = transmit + placement(imageId, this.#placementId, { cols, rows })
+      process.stdout.write(transmit) // avoid re-transmitting on every re-render
+      lead = placement(imageId, this.#placementId, { cols, rows })
     } else {
       const bytes = await imageBytes(this.state.src)
       lead = encodeIterm2(Buffer.from(bytes).toString("base64"), {
