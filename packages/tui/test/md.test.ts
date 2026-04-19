@@ -1,10 +1,7 @@
 import { renderMarkdown } from "#runtime"
 import { describe, expect, test } from "vitest"
-import {
-  encodeFenceInfoStrings,
-  FENCE_MARKER,
-  renderMarkdown as renderMarkdownMarked,
-} from "../src/md.ts"
+import { renderMarkdown as renderMarkdownMarked } from "../src/style/md/marked.ts"
+import { encodeFenceInfoStrings, FENCE_MARKER } from "../src/style/md/utils.ts"
 
 // ── callback-ordering / structural fixtures ──────────────────────────────
 //

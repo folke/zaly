@@ -195,9 +195,7 @@ describe("loadTheme", () => {
 
 describe("loadThemeFile", () => {
   test("loads a theme directly by path", () => {
-    const t = loadThemeFile(
-      join(import.meta.dirname, "..", "..", "assets", "themes", "tokyonight-moon.json")
-    )
+    const t = loadThemeFile(join(builtinThemeDir, "tokyonight-moon.json"))
     expect(t.primary).toBe(moon.primary)
   })
 

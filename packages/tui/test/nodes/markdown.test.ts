@@ -1,9 +1,10 @@
-import type { MdCallbacks } from "../../src/md.ts"
+import type { MdCallbacks } from "../../src/style/md/marked.ts"
 
 import { renderMarkdown } from "#runtime"
-import { describe, expect, test, vi } from "vitest"
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { renderMarkdown as renderMarkdownMarked } from "../../src/md.ts"
+import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
+import { createImageCallback } from "../../src/nodes/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/nodes/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/compose.ts"
@@ -314,3 +315,129 @@ describe("markdown() factory", () => {
     expect(invalidated).toBe(1)
   })
 })
+
+describe("markdown — images", () => {
+  test("image callback emits an `<img id=N>` marker per occurrence", () => {
+    const { image } = createImageCallback(new Map())
+    expect(image?.("Logo", { src: "logo.png" })).toBe("<img id=0>")
+    expect(image?.("Doc", { src: "doc.svg" })).toBe("<img id=1>")
+    // Same src re-used gets its own marker id — dedup is by `src` in
+    // the resolver, not in the marker stream.
+    expect(image?.("Logo again", { src: "logo.png" })).toBe("<img id=2>")
+  })
+
+  test("resolve() replaces block markers with rendered rows", async () => {
+    const cb = createImageCallback(new Map())
+    cb.image?.("pic", { src: "pic.png" })
+    // Simulate the renderer's block-paragraph output: "<img id=0>" on
+    // its own line. With no TTY (test env), the Image node falls back
+    // to `[alt]` — so a single-row "block" substitution still works.
+    const out = await cb.resolve(ctx(40), "<img id=0>\n")
+    // The marker is gone either way.
+    expect(out).not.toContain("<img id=")
+    // And the alt flows through.
+    expect(out).toContain("pic")
+  })
+
+  test("resolve() falls back to alt text for inline markers", async () => {
+    const cb = createImageCallback(new Map())
+    cb.image?.("icon", { src: "i.png" })
+    const out = await cb.resolve(ctx(40), "Click <img id=0> here.")
+    expect(out).toBe("Click [icon] here.")
+  })
+
+  test("Markdown pre-renders image nodes and flows alt through to the fallback", async () => {
+    const a = await markdown("![diagram](x.png)").render(ctx(40))
+    expect(a.join("")).toContain("diagram")
+  })
+
+})
+
+describe("markdown — Image instance cache", () => {
+  // Mini PNG fixture built once, torn down at the end. Matches the
+  // pattern in image.test.ts so we don't have to commit a binary.
+  let tmpDir: string
+  let pngPath: string
+
+  const savedEnv: Record<string, string | undefined> = {}
+  const ENV_KEYS = [
+    "GHOSTTY_RESOURCES_DIR",
+    "ITERM_SESSION_ID",
+    "KITTY_WINDOW_ID",
+    "TERM",
+    "TERM_PROGRAM",
+    "TMUX",
+    "WEZTERM_PANE",
+  ] as const
+
+  beforeAll(async () => {
+    const { mkdtempSync } = await import("node:fs")
+    const { tmpdir } = await import("node:os")
+    const { join } = await import("node:path")
+    const sharp = (await import("sharp")).default
+    tmpDir = mkdtempSync(join(tmpdir(), "zaly-md-image-"))
+    pngPath = join(tmpDir, "t.png")
+    const raw = Buffer.alloc(4 * 2 * 3, 0xff)
+    await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } }).png().toFile(pngPath)
+
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true })
+    for (const k of ENV_KEYS) savedEnv[k] = process.env[k]
+    for (const k of ENV_KEYS) delete process.env[k]
+    process.env.KITTY_WINDOW_ID = "1"
+  })
+
+  afterAll(async () => {
+    const { rmSync } = await import("node:fs")
+    rmSync(tmpDir, { force: true, recursive: true })
+    for (const k of ENV_KEYS) {
+      if (savedEnv[k] === undefined) delete process.env[k]
+      else process.env[k] = savedEnv[k]
+    }
+  })
+
+  test("re-rendering the same markdown reuses the Image node (stable placement id)", async () => {
+    const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
+    const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
+    resetCapabilitiesCache()
+    resetTransmitCache()
+
+    // Force a fresh Markdown instance with the kitty env in place.
+    const m = markdown(`![pic](${pngPath})`, { width: 40 })
+    const firstRows = await m.render(ctx(40))
+    const firstP = extractPlacementId(firstRows.join("\n"))
+    expect(firstP).toBeDefined()
+
+    // Mutate content (add a trailing paragraph) to force a re-render.
+    // The image stays on its own line — still a block — so the image
+    // callback pathway fires again, and `#images` should hit the
+    // cached Image → same placementId.
+    m.state.content = `![pic](${pngPath})\n\nand then some text`
+    const secondRows = await m.render(ctx(40))
+    const secondP = extractPlacementId(secondRows.join("\n"))
+    expect(secondP).toBe(firstP)
+  })
+
+  test("transmit is emitted at most once across re-renders of the same src", async () => {
+    const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
+    const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
+    resetCapabilitiesCache()
+    resetTransmitCache()
+
+    const m = markdown(`![pic](${pngPath})`, { width: 40 })
+    const a = (await m.render(ctx(40))).join("\n")
+    m.state.content = `![pic](${pngPath}) more`
+    const b = (await m.render(ctx(40))).join("\n")
+
+    const transmitRe = /\x1b_Ga=t,/g // eslint-disable-line no-control-regex -- KGP APC escapes.
+    const aTransmits = (a.match(transmitRe) ?? []).length
+    const bTransmits = (b.match(transmitRe) ?? []).length
+    // First render transmits once; second render must not re-transmit.
+    expect(aTransmits).toBe(1)
+    expect(bTransmits).toBe(0)
+  })
+})
+
+function extractPlacementId(s: string): string | undefined {
+  // eslint-disable-next-line no-control-regex -- KGP APC escapes.
+  return s.match(/\x1b_Ga=p[^\x1b]*\bp=(\d+)/)?.[1]
+}

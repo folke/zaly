@@ -34,7 +34,7 @@ describe("Stream.flush — first render", () => {
   test("writes rows at scrollBottom inside a synchronized-output block", async () => {
     const { stdout, stream } = mount(20, 10)
     stream.append(text("hello"))
-    await stream.flush()
+    await stream.render()
     expect(stdout.all).toContain("\x1b[?2026h")
     expect(stdout.all).toContain("\x1b[?2026l")
     expect(stdout.all).toContain("\x1b[10;1H")
@@ -54,49 +54,87 @@ describe("Stream.flush — tail growth", () => {
     const { stdout, stream } = mount(20, 10)
     const t = text("one")
     stream.append(t)
-    await stream.flush()
+    await stream.render()
     stdout.clear()
 
     t.state.content = "two"
-    await stream.flush()
+    await stream.render()
     expect(stdout.all).toContain("two")
     // eslint-disable-next-line no-control-regex -- matching ESC is the point.
     expect(stdout.all).toMatch(/\u001B\[\d+;1H/)
   })
 
-  test("growing the tail by one row scrolls once at scrollBottom to reserve space", async () => {
+  test("growing the tail by one row emits a single SU so existing rows ride the scroll", async () => {
     const { stdout, stream } = mount(10, 10)
     // Content that wraps to exactly 1 row at width=10.
     const t = text("one")
     stream.append(t)
-    await stream.flush()
+    await stream.render()
     stdout.clear()
 
     // Force a two-row render by giving a long string that wraps at
-    // cols=10. "aaaaaaaa bbbbbbbb" (17 cells) wraps to 2 rows.
+    // cols=10. "aaaaaaaa bbbbbbbb" (17 cells) wraps to 2 rows. One SU
+    // (size = insertCount = 1) shifts "one" up by a row; then the new
+    // bottom row is painted at its bottom-anchored position.
     t.state.content = "aaaaaaaa bbbbbbbb"
-    await stream.flush()
-    // Expect exactly one bare "\n" — that's the single scroll we
-    // needed to make room for the one extra row.
-    const bareNewlines = (stdout.all.match(/(?<!K)\n/g) ?? []).length
-    expect(bareNewlines).toBe(1)
+    await stream.render()
+    expect(stdout.all).toContain("\x1b[1S")
+    expect(stdout.all).toContain("aaaaaaaa")
+    expect(stdout.all).toContain("bbbbbbbb")
+  })
+})
+
+describe("Stream.flush — tail overflowing the live region", () => {
+  test("rows retained in the new extent aren't re-emitted", async () => {
+    const { stdout, stream } = mount(20, 5) // liveHeight = 5
+    const t = text("a\nb\nc")
+    stream.append(t)
+    await stream.render()
+    stdout.clear()
+
+    // Grow past the live region. rendered grew from 3 to 6 rows; the
+    // insert phase emits a single batched SU(3) (batch size clamped to
+    // liveHeight=5) and then paints the 3 new rows at the freed bottom
+    // positions. "a" enters scrollback; "b" and "c" ride the scroll.
+    t.state.content = "a\nb\nc\nd\ne\nf"
+    await stream.render()
+    expect(stdout.all).toContain("\x1b[3S")
+    expect(stdout.all).toContain("d")
+    expect(stdout.all).toContain("e")
+    expect(stdout.all).toContain("f")
+    // "b" and "c" rode the scroll — no re-emission.
+    expect(stdout.all).not.toContain("b ")
+    expect(stdout.all).not.toContain("c ")
   })
 })
 
 describe("Stream.append — dropping the previous tail", () => {
-  test("new tail's first flush scrolls the old tail upward via newlines at scrollBottom", async () => {
-    const { stdout, stream, terminal } = mount(20, 10)
+  test("new tail's first flush scrolls the old tail upward into scrollback", async () => {
+    const { stdout, stream } = mount(20, 10)
     stream.append(text("one"))
-    await stream.flush()
+    await stream.render()
     stdout.clear()
 
-    // Appending resets drawnHeight to 0. The new tail's first flush
-    // emits `visible` newlines at `scrollBottom` to reserve space,
-    // which scrolls the previous tail's visible rows upward.
+    // The previous tail painted one row; appending a new tail defers
+    // an SU equal to that extent so the old row enters scrollback
+    // before the new tail paints.
     stream.append(text("two"))
-    await stream.flush()
-    expect(stdout.all).toContain(`\x1b[${terminal.scrollBottom};1H`)
-    expect(stdout.all).toContain("\n")
+    await stream.render()
+    expect(stdout.all).toContain("\x1b[1S")
+    expect(stdout.all).toContain("two")
+  })
+
+  test("two appends in the same tick both make it on screen", async () => {
+    // The previous Stream design tracked only a single live tail via a
+    // bottom-anchored mirror; appending a second node before the first
+    // had flushed would overwrite the first's state and its content
+    // would never be painted. The #live queue fixes that — every
+    // appended node is rendered before it's dropped from the queue.
+    const { stdout, stream } = mount(20, 10)
+    stream.append(text("one"))
+    stream.append(text("two"))
+    await drain()
+    expect(stdout.all).toContain("one")
     expect(stdout.all).toContain("two")
   })
 })
@@ -106,7 +144,7 @@ describe("Stream.reset", () => {
     const { stdout, stream } = mount(20, 10)
     const t = text("x")
     stream.append(t)
-    await stream.flush()
+    await stream.render()
     stream.reset()
     stdout.clear()
 
