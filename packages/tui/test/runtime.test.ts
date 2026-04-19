@@ -17,6 +17,15 @@ describe("stringWidth", () => {
   test("wide characters count as 2", () => {
     expect(stringWidth("日本")).toBe(4)
   })
+
+  test("APC sequences contribute 0 width (invisible side-channel)", () => {
+    // Kitty graphics transmit is APC: ESC _ G...payload... ESC \
+    // The terminal consumes the bytes silently — they must not count as
+    // visible width or layout will slice into them and corrupt the payload.
+    const apc = "\x1b_Ga=T,U=1,i=1,f=100;iVBORw0KGgo=\x1b\\"
+    expect(stringWidth(apc)).toBe(0)
+    expect(stringWidth(`${apc}hello`)).toBe(5)
+  })
 })
 
 describe("wrapAnsi (word mode, default)", () => {
@@ -63,5 +72,15 @@ describe("sliceAnsi", () => {
 
   test("plain-text slice matches .slice semantics", () => {
     expect(sliceAnsi("hello world", 0, 5)).toBe("hello")
+  })
+
+  test("APC sequences survive slicing (preserved at row start)", () => {
+    // The KGP transmit APC has 0 display width but must not be lost when a
+    // row containing it gets sliced by box layout — otherwise the image
+    // bytes never reach the terminal.
+    const apc = "\x1b_Gi=1;payload\x1b\\"
+    const sliced = sliceAnsi(`${apc}hello world`, 0, 5)
+    expect(sliced).toContain(apc)
+    expect(sliced).toContain("hello")
   })
 })

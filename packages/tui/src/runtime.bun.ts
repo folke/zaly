@@ -1,5 +1,7 @@
 import type { MdCallbacks, MdOptions } from "./md.ts"
 
+import { extractApc } from "./style/apc.ts"
+
 export type * from "./md.ts"
 
 export interface WrapOpts {
@@ -7,16 +9,18 @@ export interface WrapOpts {
 }
 
 export function stringWidth(s: string): number {
-  return Bun.stringWidth(s)
+  return Bun.stringWidth(extractApc(s).rest)
 }
 
 export function sliceAnsi(s: string, start: number, end?: number): string {
-  return Bun.sliceAnsi(s, start, end)
+  const { apc, rest } = extractApc(s)
+  return apc + Bun.sliceAnsi(rest, start, end)
 }
 
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
   const char = opts?.mode === "char"
-  return Bun.wrapAnsi(s, width, { hard: char, trim: false, wordWrap: !char })
+  const { apc, rest } = extractApc(s)
+  return apc + Bun.wrapAnsi(rest, width, { hard: char, trim: false, wordWrap: !char })
 }
 
 export function renderMarkdown(input: string, callbacks: MdCallbacks, opts?: MdOptions): string {
