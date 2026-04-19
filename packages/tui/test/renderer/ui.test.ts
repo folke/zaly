@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { text } from "../../src/nodes/text.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { UI } from "../../src/renderer/ui.ts"
+import { text } from "../../src/widgets/text.ts"
 import { MockReader, MockWriter } from "./mock.ts"
 
 function mount(cols = 20, rows = 10) {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { spinner, Spinner, spinnerFrames } from "../../src/nodes/spinner.ts"
+import { spinner, Spinner, spinnerFrames } from "../../src/widgets/spinner.ts"
 
 let now = 0
 const origNow = performance.now.bind(performance)

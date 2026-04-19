@@ -3,7 +3,7 @@ import type { BaseEvents } from "../src/core/node.ts"
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../src/core/ctx.ts"
 import { Box, box, node, text } from "../src/index.ts"
-import { Text } from "../src/nodes/text.ts"
+import { Text } from "../src/widgets/text.ts"
 
 const ctx = (width: number) => createCtx({ width })
 
@@ -90,13 +90,10 @@ describe("node()", () => {
   test("emit is wired to custom node", async () => {
     type E = { changed: [value: number] }
     const listener = vi.fn()
-    const n = node<{ v: number }, E & BaseEvents>(
-      { v: 0 },
-      ({ state, emit }) => {
-        emit("changed", state.v)
-        return text(`v=${state.v}`, { width: 5 })
-      }
-    )
+    const n = node<{ v: number }, E & BaseEvents>({ v: 0 }, ({ state, emit }) => {
+      emit("changed", state.v)
+      return text(`v=${state.v}`, { width: 5 })
+    })
     n.on("changed", listener)
     await n.render(ctx(10))
     expect(listener).toHaveBeenCalledWith(0)

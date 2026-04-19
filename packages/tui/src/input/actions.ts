@@ -1,4 +1,4 @@
-import type { Input } from "../nodes/input.ts"
+import type { Input } from "../widgets/input.ts"
 import type { ActionDefs } from "./keymap.ts"
 
 /**

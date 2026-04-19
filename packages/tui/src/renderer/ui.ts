@@ -1,8 +1,8 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Box } from "../nodes/box.ts"
+import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { box } from "../nodes/box.ts"
+import { box } from "../widgets/box.ts"
 
 /**
  * UI surface — the sticky footer. Renders a single Box tree at the
@@ -34,7 +34,7 @@ export class UI {
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    opts: UIOptions = {},
+    opts: UIOptions = {}
   ) {
     this.#maxHeight = opts.maxHeight
     // Tag the root as scope `"global"` — the input router resolves
@@ -118,9 +118,7 @@ export class UI {
       const top = this.terminal.footerTop
       for (let i = 0; i < nextHeight; i++) {
         if (this.#lastRows[i] === rows[i] && prevHeight === nextHeight) continue
-        this.terminal.write(
-          this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i],
-        )
+        this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
       }
     })
 

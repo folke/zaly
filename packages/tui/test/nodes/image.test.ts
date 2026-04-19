@@ -4,9 +4,9 @@ import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { image, resetImageTransmitCache } from "../../src/nodes/image.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
 import { resetImageCache } from "../../src/style/image/source.ts"
+import { image, resetImageTransmitCache } from "../../src/widgets/image.ts"
 
 // Fixture dir + a tiny PNG generated via sharp at setup. Keeping this in a
 // temp dir avoids committing a binary to the repo.
@@ -45,8 +45,12 @@ beforeAll(async () => {
     raw[i + 1] = 0
     raw[i + 2] = 0
   }
-  await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } }).png().toFile(pngPath)
-  await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } }).jpeg().toFile(jpgPath)
+  await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } })
+    .png()
+    .toFile(pngPath)
+  await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } })
+    .jpeg()
+    .toFile(jpgPath)
 })
 
 afterAll(() => {

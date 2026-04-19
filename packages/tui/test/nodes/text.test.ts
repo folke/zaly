@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { Text } from "../../src/nodes/text.ts"
+import { Text } from "../../src/widgets/text.ts"
 
 const ctx = (width: number) => createCtx({ width })
 

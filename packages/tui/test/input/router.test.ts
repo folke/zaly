@@ -1,10 +1,10 @@
 import type { KeyEvent } from "../../src/input/keys.ts"
-import type { Box } from "../../src/nodes/box.ts"
+import type { Box } from "../../src/widgets/box.ts"
 
 import { describe, expect, test } from "vitest"
 import { InputRouter } from "../../src/input/router.ts"
-import { box } from "../../src/nodes/box.ts"
-import { text } from "../../src/nodes/text.ts"
+import { box } from "../../src/widgets/box.ts"
+import { text } from "../../src/widgets/text.ts"
 
 function makeKey(name: string, mods: Partial<KeyEvent> = {}): KeyEvent {
   return { alt: false, ctrl: false, meta: false, name, shift: false, ...mods }

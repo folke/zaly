@@ -5,7 +5,7 @@ import { createCtx } from "../../src/core/ctx.ts"
 import { inputActions } from "../../src/input/actions.ts"
 import { buildKeymaps } from "../../src/input/keymap.ts"
 import { InputRouter } from "../../src/input/router.ts"
-import { input } from "../../src/nodes/input.ts"
+import { input } from "../../src/widgets/input.ts"
 
 function key(name: string, more: Partial<RoutedKey> = {}): RoutedKey {
   const ev: RoutedKey = {

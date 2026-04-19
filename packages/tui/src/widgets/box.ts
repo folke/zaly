@@ -46,6 +46,7 @@ export interface BoxStyle extends Style {
   borderTitleStyle?: string | Style
 }
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-arguments
 export class Box extends Node<BoxStyle> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state

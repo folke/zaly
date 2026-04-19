@@ -2,7 +2,7 @@ import type { RenderMarkdown } from "../src/style/md/marked.ts"
 
 import { box, createCtx, markdown } from "../src/index.ts"
 import { renderMarkdown as markedRenderer } from "../src/style/md/marked.ts"
-import { image } from "../src/nodes/image.ts"
+import { image } from "../src/widgets/image.ts"
 
 // A small fixture exercising the block + inline types our callbacks care
 // about. Keep it intentionally varied so rendering quirks show up.

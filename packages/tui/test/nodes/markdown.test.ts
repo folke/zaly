@@ -4,13 +4,13 @@ import type { MdCallbacks } from "../../src/style/md/marked.ts"
 import { renderMarkdown } from "#runtime"
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { createImageCallback } from "../../src/nodes/markdown/image.ts"
-import { markdown, mdCallbacks } from "../../src/nodes/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/compose.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
 import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
 import { moon } from "../../src/style/theme.ts"
+import { createImageCallback } from "../../src/widgets/markdown/image.ts"
+import { markdown, mdCallbacks } from "../../src/widgets/markdown/index.ts"
 
 const ctx = (width = 80) => createCtx({ theme: moon, width })
 

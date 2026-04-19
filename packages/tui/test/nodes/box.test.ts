@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { Box } from "../../src/nodes/box.ts"
-import { Text } from "../../src/nodes/text.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/compose.ts"
 import { moon } from "../../src/style/theme.ts"
+import { Box } from "../../src/widgets/box.ts"
+import { Text } from "../../src/widgets/text.ts"
 
 const ctx = (width: number) => createCtx({ width })
 

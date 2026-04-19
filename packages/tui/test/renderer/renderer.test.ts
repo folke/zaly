@@ -83,12 +83,13 @@ describe("renderer.walk — tree traversal", () => {
     expect(seen).toContain(b)
   })
 
-  test("returning \"stop\" halts traversal", () => {
+  test('returning "stop" halts traversal', () => {
     const r = renderer()
     const a = text("a")
     const b = text("b")
     r.ui.root.add(box({}, a, b))
     const seen: Node[] = []
+    // oxlint-disable-next-line typescript/consistent-return
     r.walk((n) => {
       seen.push(n)
       if (seen.length === 2) return "stop"

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { progress } from "../../src/nodes/progress.ts"
+import { progress } from "../../src/widgets/progress.ts"
 
 function strip(s: string): string {
   // eslint-disable-next-line no-control-regex -- stripping ANSI is the point.
