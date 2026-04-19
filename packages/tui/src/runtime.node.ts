@@ -22,6 +22,14 @@ export function sliceAnsi(s: string, start: number, end?: number): string {
 
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
   const char = opts?.mode === "char"
-  const { apc, rest } = extractApc(s)
-  return apc + wrapAnsiImpl(rest, width, { hard: char, trim: false, wordWrap: !char })
+  // Wrap line-by-line so APC escapes (zero width, positional — e.g. kitty
+  // image placements) stay on their source line. See wrapAnsi in
+  // runtime.bun.ts for the longer rationale.
+  return s
+    .split("\n")
+    .map((line) => {
+      const { apc, rest } = extractApc(line)
+      return apc + wrapAnsiImpl(rest, width, { hard: char, trim: false, wordWrap: !char })
+    })
+    .join("\n")
 }

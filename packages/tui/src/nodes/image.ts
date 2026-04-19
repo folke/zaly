@@ -58,8 +58,7 @@ export class Image extends NodeBase<ImageState> {
     let lead: string
     if (protocol === "kitty") {
       const { imageId, transmit } = await transmitOnce(this.state.src)
-      process.stdout.write(transmit) // avoid re-transmitting on every re-render
-      lead = placement(imageId, this.#placementId, { cols, rows })
+      lead = transmit + placement(imageId, this.#placementId, { cols, rows })
     } else {
       const bytes = await imageBytes(this.state.src)
       lead = encodeIterm2(Buffer.from(bytes).toString("base64"), {

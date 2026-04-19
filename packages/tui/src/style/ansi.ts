@@ -2,6 +2,7 @@ import type { Theme } from "./theme.ts"
 import type { Color } from "./color.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
+import { extractApc } from "./apc.ts"
 import { colorParams } from "./color.ts"
 
 export const RESET = "\x1b[0m"
@@ -97,12 +98,22 @@ export function splitAnsi(s: string): string[] {
   const lines = s.split("\n")
   // Shortcut: no escapes anywhere → plain split is fine.
   if (!s.includes("\x1b[")) return lines
-  const joined = s.replaceAll("\n", "")
+  // Extract APC escapes (zero width, positional) per line up-front so
+  // the join+re-slice step below doesn't smear them across every row.
+  // sliceAnsi's own extractApc would otherwise grab every APC from
+  // `joined` and prepend the lot to each slice — catastrophic for kitty
+  // placements, which then fire on every row instead of just their own.
+  const perLine = lines.map((line) => extractApc(line))
+  const joinedNoApc = perLine.map((p) => p.rest).join("")
   const out: string[] = []
   let pos = 0
-  for (const line of lines) {
-    const w = stringWidth(line)
-    out.push(sliceAnsi(joined, pos, pos + w))
+  for (const { apc, rest } of perLine) {
+    const w = stringWidth(rest)
+    // `joinedNoApc` has no APC content, so sliceAnsi's internal
+    // extractApc here produces an empty `apc` prefix — the returned
+    // slice is pure SGR-normalised content. We prepend the line's own
+    // APCs back on.
+    out.push(apc + sliceAnsi(joinedNoApc, pos, pos + w))
     pos += w
   }
   return out
