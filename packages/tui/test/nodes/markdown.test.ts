@@ -8,6 +8,7 @@ import { createImageCallback } from "../../src/nodes/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/nodes/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/compose.ts"
+import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
 import { moon } from "../../src/style/theme.ts"
 
 const ctx = (width = 80) => createCtx({ theme: moon, width })
@@ -317,6 +318,38 @@ describe("markdown() factory", () => {
 })
 
 describe("markdown — images", () => {
+  // These tests assume no terminal image protocol is available, so the
+  // Image node's `_render` short-circuits to the alt-text fallback
+  // without actually opening the (nonexistent) src file. `bun test`
+  // inherits the caller's TTY/env, so we explicitly disable both; we
+  // restore in afterAll.
+  const IMG_ENV = [
+    "GHOSTTY_RESOURCES_DIR",
+    "ITERM_SESSION_ID",
+    "KITTY_WINDOW_ID",
+    "TERM",
+    "TERM_PROGRAM",
+  ] as const
+  const savedImgEnv: Record<string, string | undefined> = {}
+  let savedIsTTY: boolean | undefined
+  beforeAll(() => {
+    savedIsTTY = process.stdout.isTTY
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false })
+    for (const k of IMG_ENV) {
+      savedImgEnv[k] = process.env[k]
+      delete process.env[k]
+    }
+    resetCapabilitiesCache()
+  })
+  afterAll(() => {
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: savedIsTTY })
+    for (const k of IMG_ENV) {
+      if (savedImgEnv[k] === undefined) delete process.env[k]
+      else process.env[k] = savedImgEnv[k]
+    }
+    resetCapabilitiesCache()
+  })
+
   test("image callback emits an `<img id=N>` marker per occurrence", () => {
     const { image } = createImageCallback(new Map())
     expect(image?.("Logo", { src: "logo.png" })).toBe("<img id=0>")
