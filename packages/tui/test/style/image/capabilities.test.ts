@@ -1,8 +1,15 @@
-import { afterEach, describe, expect, test } from "vitest"
+import { afterEach, beforeAll, describe, expect, test } from "vitest"
 import {
   imageCapabilities,
   resetCapabilitiesCache,
 } from "../../../src/style/image/capabilities.ts"
+
+// The test runner's stdout isn't a TTY, so detection would otherwise
+// short-circuit to `undefined`. Pretend it is for the duration of the
+// suite — each test still controls detection via its env patch.
+beforeAll(() => {
+  Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true })
+})
 
 function withEnv<T>(patch: Record<string, string | undefined>, fn: () => T): T {
   const saved: Record<string, string | undefined> = {}
@@ -27,11 +34,16 @@ function withEnv<T>(patch: Record<string, string | undefined>, fn: () => T): T {
 const NULL_ENV = {
   GHOSTTY_RESOURCES_DIR: undefined,
   ITERM_SESSION_ID: undefined,
+  KITTY_PID: undefined,
   KITTY_WINDOW_ID: undefined,
+  KONSOLE_VERSION: undefined,
+  LC_TERMINAL: undefined,
   TERM: undefined,
   TERM_PROGRAM: undefined,
+  TERM_PROGRAM_VERSION: undefined,
   TMUX: undefined,
   WEZTERM_PANE: undefined,
+  WEZTERM_UNIX_SOCKET: undefined,
 }
 
 afterEach(() => resetCapabilitiesCache())

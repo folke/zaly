@@ -31,6 +31,9 @@ const ENV_KEYS = [
 const savedEnv: Record<string, string | undefined> = {}
 
 beforeAll(async () => {
+  // Vitest stdout isn't a TTY, so without this stub the detection in
+  // `imageCapabilities()` would skip every code path we care about here.
+  Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true })
   for (const k of ENV_KEYS) savedEnv[k] = process.env[k]
   dir = mkdtempSync(join(tmpdir(), "zaly-image-"))
   pngPath = join(dir, "tiny.png")
