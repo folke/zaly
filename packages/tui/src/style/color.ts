@@ -263,6 +263,33 @@ export function resolveThemeColor(c: string, theme: Theme | undefined, kind?: "f
  */
 export function colorParams(color: string, kind: "fg" | "bg", theme?: Theme): string | undefined {
   if (color === "inherit") return undefined
+  if (theme !== undefined) {
+    // Fast path: per-theme memoization. `colorParams` is pure w.r.t.
+    // (color, kind, theme-identity) — same inputs always produce the
+    // same SGR. Resolving strings like `"primary-300/20"` does variant
+    // math + hex alpha blend + SGR formatting every call; caching
+    // collapses all of that to a Map lookup after the first use.
+    let byTheme = cache.get(theme)
+    if (byTheme === undefined) {
+      byTheme = new Map()
+      cache.set(theme, byTheme)
+    }
+    const key = kind === "fg" ? color : `\0${color}` // disambiguate fg/bg in one Map.
+    const hit = byTheme.get(key)
+    if (hit !== undefined) return hit === NULL ? undefined : hit
+    const computed = computeColorParams(color, kind, theme)
+    byTheme.set(key, computed ?? NULL)
+    return computed
+  }
+  return computeColorParams(color, kind, undefined)
+}
+
+/** Sentinel so `undefined` (unresolvable color) is also cached and we
+ *  can distinguish "not cached" from "cached as no-result". */
+const NULL = "\0"
+const cache = new WeakMap<Theme, Map<string, string>>()
+
+function computeColorParams(color: string, kind: "fg" | "bg", theme?: Theme): string | undefined {
   const resolved = resolveColor(color, theme, kind)
 
   // Gray aliases to brightBlack.

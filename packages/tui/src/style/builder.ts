@@ -60,91 +60,167 @@ export type StyleBuilder = {
  * Calling an empty builder is a no-op: `style()("x")` returns `"x"` unchanged.
  */
 export function style(theme: Theme = defaultTheme): StyleBuilder {
-  return build({}, undefined, theme)
+  return build({ current: {}, last: undefined, theme })
 }
 
 const ATTRS = new Set<string>(["bold", "dim", "italic", "underline", "inverse", "strikethrough"])
 const STEP_SET = new Set<number>(COLOR_STEPS)
 
-function build(
-  current: Style,
-  last: "fg" | "bg" | undefined,
+/** Pending "arg-taking" op on a chain. Set when the caller accesses
+ *  `.fg` / `.bg` / `.alpha` / `.add` — the chain is "parked" waiting
+ *  for its argument. Calling the parked chain consumes the arg and
+ *  produces the real child chain. */
+type PendingOp = "fg" | "bg" | "alpha" | "add"
+
+/** All the inputs a chain needs to behave correctly, gathered in one
+ *  object so we can pass it around cheaply instead of closing over
+ *  four separate vars. `current` is the accumulated Style, `last`
+ *  tracks which of `fg`/`bg` was most recently touched (for `[step]`
+ *  and `.alpha()`), `theme` is the resolved theme, `pending` is set
+ *  on parked arg-taking chains. */
+interface BuilderState {
+  current: Style
+  last: "fg" | "bg" | undefined
   theme: Theme | undefined
-): StyleBuilder {
-  function apply(text: string): string {
-    if (!text) return text
-    const open = openStyle(current, theme)
-    // Re-apply the outer open after any inner RESET so nested styled
-    // spans inside `text` don't strip the builder's own style.
-    return open === "" ? text : open + reapplyStyle(text, open) + RESET
+  pending?: PendingOp
+}
+
+/** The function wrapped by every chain's Proxy. Carries its own state
+ *  so module-level handlers can read it without closure gymnastics. */
+type BuilderFn = {
+  state: BuilderState
+} & (((text: string) => string) | ((arg: Color | number | Style | undefined) => StyleBuilder))
+
+// --- module-level handlers (shared across every chain) -----------------
+
+function applyStyle(state: BuilderState, text: string): string {
+  if (!text) return text
+  const open = openStyle(state.current, state.theme)
+  return open === "" ? text : open + reapplyStyle(text, open) + RESET
+}
+
+function applyOp(fn: BuilderFn, arg: Color | number | Style | undefined): StyleBuilder {
+  // Cache primitive args on the call target itself via `defineProperty`
+  // — repeated `.fg("#82aaff")` hits the same child chain after the
+  // first call, no rebuild. Object args (e.g. raw Style for `add`)
+  // can't be property keys (`"[object Object]"` collision), so those
+  // always rebuild.
+  if (typeof arg === "string" || typeof arg === "number") {
+    const key = String(arg)
+    const hit = (fn as unknown as Record<string, unknown>)[key]
+    if (hit !== undefined) return hit as StyleBuilder
+    const child = fulfill(fn.state, arg)
+    Reflect.defineProperty(fn, key, { configurable: false, value: child, writable: false })
+    return child
+  }
+  return fulfill(fn.state, arg)
+}
+
+/** Turn a parked chain + its arg into the real child chain. */
+function fulfill(state: BuilderState, arg: unknown): StyleBuilder {
+  const { current, last, theme, pending } = state
+  switch (pending) {
+    case "fg": {
+      return build({ current: { ...current, fg: arg as Color }, last: "fg", theme })
+    }
+    case "bg": {
+      return build({ current: { ...current, bg: arg as Color }, last: "bg", theme })
+    }
+    case "alpha": {
+      if (last === undefined) return build({ current, last, theme })
+      const existing = current[last]
+      if (typeof existing !== "string" || existing === "inherit") {
+        return build({ current, last, theme })
+      }
+      const stripped = existing.includes("/") ? existing.replace(/\/\d+$/, "") : existing
+      const next = `${stripped}/${arg as number}` as Color
+      return build({ current: { ...current, [last]: next }, last, theme })
+    }
+    default: {
+      // "add" — no pending pending? defaults to rebuild with undef arg.
+      return build({
+        current: { ...current, ...resolveStyle(arg as string | Style | undefined, theme) },
+        last,
+        theme,
+      })
+    }
+  }
+}
+
+/** Resolve a single property access on a chain to its child chain. */
+function compileKey(state: BuilderState, key: string): StyleBuilder | undefined {
+  const { current, last, theme } = state
+
+  // Numeric key → tonal variant of `last`. No-op when no channel has
+  // been set, or when the existing value is non-hex-resolvable.
+  const asNumber = Number(key)
+  if (!Number.isNaN(asNumber) && STEP_SET.has(asNumber)) {
+    if (last === undefined) return build({ current, last, theme })
+    const existing = current[last]
+    if (typeof existing !== "string" || existing === "inherit") {
+      return build({ current, last, theme })
+    }
+    // Replace (not stack) an existing suffix so `[300][500]` lands
+    // on step 500, not `-300-500`.
+    const base = existing.includes("-") ? existing.replace(/-(\d{2,3})$/, "") : existing
+    const next = `${base}-${key as ColorStep}` as Color
+    return build({ current: { ...current, [last]: next }, last, theme })
   }
 
-  return new Proxy(apply, {
-    get(_target, key) {
-      if (typeof key !== "string") return undefined
+  // Arg-taking ops come back as chains parked in the `pending` state.
+  if (key === "fg" || key === "bg" || key === "alpha" || key === "add") {
+    return build({ current, last, pending: key, theme })
+  }
 
-      // Numeric key → tonal variant of `last`. Works on any Color already
-      // in the chain; for hex or theme slot, the downstream `colorParams`
-      // splits the `-<step>` suffix and applies `variant()`. No-op when
-      // no channel has been set, or when the existing value is non-hex-
-      // resolvable (e.g. ANSI name or `"inherit"`).
-      const asNumber = Number(key)
-      if (!Number.isNaN(asNumber) && STEP_SET.has(asNumber)) {
-        if (last === undefined) return build(current, last, theme)
-        const existing = current[last]
-        if (typeof existing !== "string" || existing === "inherit") {
-          return build(current, last, theme)
+  if (ATTRS.has(key)) return build({ current: { ...current, [key]: true }, last, theme })
+
+  // `bgFoo` / `fgFoo` → set the channel to the color at slot `foo`.
+  // When the slot is a Style, `colorParams` extracts that channel.
+  if (key.startsWith("bg") && key.length > 2 && key[2] === key[2].toUpperCase()) {
+    const color = (key[2].toLowerCase() + key.slice(3)) as Color
+    return build({ current: { ...current, bg: color }, last: "bg", theme })
+  }
+  if (key.startsWith("fg") && key.length > 2 && key[2] === key[2].toUpperCase()) {
+    const color = (key[2].toLowerCase() + key.slice(3)) as Color
+    return build({ current: { ...current, fg: color }, last: "fg", theme })
+  }
+
+  // Style-valued theme slot → merge its fields into the chain.
+  // Anything else (ANSI color names, hex, unresolved slot refs) is
+  // treated as a fg color by `colorParams` downstream.
+  return build({ current: { ...current, ...resolveStyle(key, theme) }, last: "fg", theme })
+}
+
+/** Shared Proxy handler — one instance, used by every chain. Reads
+ *  state off the target (the `BuilderFn`), so chain construction
+ *  doesn't allocate a fresh handler object per `build()` call. */
+const proxyHandler: ProxyHandler<BuilderFn> = {
+  get(target, key) {
+    if (typeof key !== "string") return undefined
+    const cached = (target as unknown as Record<string, unknown>)[key]
+    if (cached !== undefined) return cached
+    // Parked chains can't be chained further — they're waiting for a call.
+    if (target.state.pending !== undefined) return undefined
+    const child = compileKey(target.state, key)
+    if (child === undefined) return undefined
+    Reflect.defineProperty(target, key, { configurable: false, value: child, writable: false })
+    return child
+  },
+}
+
+function build(state: BuilderState): StyleBuilder {
+  // Two dedicated function shapes so V8 sees a stable signature on
+  // each hot path — styling text vs. consuming an op arg are both
+  // monomorphic after the build-time ternary.
+  const fn = (
+    state.pending === undefined
+      ? function apply(text: string): string {
+          return applyStyle(state, text)
         }
-        // Replace (not stack) an existing suffix so `[300][500]` lands
-        // on step 500, not `-300-500`.
-        const base = existing.replace(/-(\d{2,3})$/, "")
-        const next = `${base}-${key as ColorStep}` as Color
-        return build({ ...current, [last]: next }, last, theme)
-      }
-
-      if (key === "fg") return (c: Color) => build({ ...current, fg: c }, "fg", theme)
-      if (key === "bg") return (c: Color) => build({ ...current, bg: c }, "bg", theme)
-      // `alpha(n)` — append a `/<n>` suffix to the last color channel.
-      // Resolver pre-composites over `theme.bg` at render time. Strips
-      // any existing alpha suffix so `.alpha(20).alpha(50)` lands on 50.
-      if (key === "alpha") {
-        return (n: number) => {
-          if (last === undefined) return build(current, last, theme)
-          const existing = current[last]
-          if (typeof existing !== "string" || existing === "inherit") {
-            return build(current, last, theme)
-          }
-          const stripped = existing.replace(/\/\d+$/, "")
-          const next = `${stripped}/${n}` as Color
-          return build({ ...current, [last]: next }, last, theme)
+      : function applyOpCall(arg: Color | number | Style | undefined): StyleBuilder {
+          return applyOp(fn, arg)
         }
-      }
-      if (ATTRS.has(key)) return build({ ...current, [key]: true }, last, theme)
-
-      // `bgFoo` → set `bg` to the color at slot `foo`. When the slot is
-      // a Style, `colorParams` extracts the Style's bg channel.
-      if (key.startsWith("bg") && key.length > 2 && key[2] === key[2].toUpperCase()) {
-        const color = key[2].toLowerCase() + key.slice(3)
-        return build({ ...current, bg: color as Color }, "bg", theme)
-      }
-      // `fgFoo` → set `fg` to the color at slot `foo`. Symmetric with
-      // `bgFoo`; lets callers pluck just one channel out of a Style
-      // slot without adopting the whole thing.
-      if (key.startsWith("fg") && key.length > 2 && key[2] === key[2].toUpperCase()) {
-        const color = key[2].toLowerCase() + key.slice(3)
-        return build({ ...current, fg: color as Color }, "fg", theme)
-      }
-
-      if (key === "add")
-        return (ref: string | Style | undefined) =>
-          build({ ...current, ...resolveStyle(ref, theme) }, last, theme)
-
-      // Style-valued theme slot → merge its fields into the chain.
-      // Anything else (ANSI color names like `"red"`, hex like `"#82aaff"`,
-      // or Color-valued slot refs) is treated as a fg color and resolved
-      // downstream by `colorParams`. Either way, track `fg` as the last
-      // color channel so a trailing `[N]` variants the newly-set fg.
-      return build({ ...current, ...resolveStyle(key, theme) }, "fg", theme)
-    },
-  }) as StyleBuilder
+  ) as BuilderFn
+  fn.state = state
+  return new Proxy(fn, proxyHandler) as unknown as StyleBuilder
 }

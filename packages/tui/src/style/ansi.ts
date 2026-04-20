@@ -59,6 +59,44 @@ const ATTRS = [
  * ordering is attrs → fg → bg, combined into a single `\x1b[...m` run.
  */
 export function openStyle(style: Style, theme?: Theme): string {
+  if (theme !== undefined) {
+    // Per-theme memoization, keyed by the identity-relevant Style
+    // fields (attrs as a bitmask, plus fg/bg color strings). The
+    // builder's `apply` calls `openStyle` on every render of every
+    // node, often with equivalent Style shapes — caching collapses
+    // the attr loop + two `colorParams` calls + join to a Map hit.
+    let byTheme = openCache.get(theme)
+    if (byTheme === undefined) {
+      byTheme = new Map()
+      openCache.set(theme, byTheme)
+    }
+    const key = styleKey(style)
+    const hit = byTheme.get(key)
+    if (hit !== undefined) return hit
+    const computed = computeOpen(style, theme)
+    byTheme.set(key, computed)
+    return computed
+  }
+  return computeOpen(style, undefined)
+}
+
+const openCache = new WeakMap<Theme, Map<string, string>>()
+
+/** Compact key capturing every input the output depends on. Attrs pack
+ *  into a 6-bit bitmask (0..63); colors are inlined as `\0`-separated
+ *  strings. Cheaper than JSON.stringify and stable enough for caching. */
+function styleKey(style: Style): string {
+  let attrs = 0
+  if (style.bold) attrs |= 1
+  if (style.dim) attrs |= 2
+  if (style.italic) attrs |= 4
+  if (style.underline) attrs |= 8
+  if (style.inverse) attrs |= 16
+  if (style.strikethrough) attrs |= 32
+  return `${attrs}\0${style.fg ?? ""}\0${style.bg ?? ""}`
+}
+
+function computeOpen(style: Style, theme?: Theme): string {
   const params: (number | string)[] = []
 
   for (const [key, code] of ATTRS) {
@@ -87,10 +125,26 @@ export function openStyle(style: Style, theme?: Theme): string {
  * `escape` is the already-built SGR run to re-emit after each reset
  * (typically the return value of `openStyle(parentStyle, theme)`). If
  * empty, the input is returned unchanged.
+ *
+ * Inlined indexOf loop rather than `String.prototype.replaceAll` — the
+ * manual version avoids the regex/object allocation overhead of
+ * `replaceAll` and runs meaningfully faster on short strings (hot in
+ * the builder's `apply`, called once per styled span). Pattern taken
+ * from ansis's nested-style resolver.
  */
 export function reapplyStyle(s: string, escape: string): string {
-  if (escape === "") return s
-  return s.replaceAll(RESET, RESET + escape)
+  if (escape === "" || !s.includes(RESET)) return s
+  const replacement = RESET + escape
+  const searchLength = RESET.length
+  let result = ""
+  let lastPos = 0
+  let pos = s.indexOf(RESET)
+  while (pos !== -1) {
+    result += s.slice(lastPos, pos) + replacement
+    lastPos = pos + searchLength
+    pos = s.indexOf(RESET, lastPos)
+  }
+  return result + s.slice(lastPos)
 }
 
 /**
