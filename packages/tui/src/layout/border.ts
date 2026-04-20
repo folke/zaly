@@ -1,8 +1,6 @@
-import type { Theme } from "../style/theme.ts"
-import type { Style } from "../style/ansi.ts"
+import type { StyleBuilder } from "../style/builder.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
-import { openStyle, RESET } from "../style/ansi.ts"
 
 /**
  * Border-character glyphs for drawing a box outline. Any single-cell string
@@ -43,13 +41,18 @@ export interface DrawBorderOpts {
   title?: string
   /** Placement of `title` along the top border. Defaults to `"left"`. */
   titleAlign?: TitleAlign
-  /** Style applied to the border glyphs (corners, horizontal, vertical). */
-  borderStyle?: Style
-  /** Style applied to the title text (including the spaces around it). */
-  titleStyle?: Style
-  /** Theme passed through to SGR emission for slot resolution. */
-  theme?: Theme
+  /**
+   * Styled wrapper applied to the border glyphs (corners, horizontal,
+   * vertical). Use `ctx.style.add(slotOrStyle)` at the call site so the
+   * theme is resolved once per render.
+   */
+  borderStyle?: StyleBuilder
+  /** Styled wrapper applied to the title text (including the padding spaces). */
+  titleStyle?: StyleBuilder
 }
+
+/** Pass-through wrapper used when no style is supplied. */
+const identity = (s: string): string => s
 
 /**
  * Wrap pre-rendered inner rows with a border, adding top/bottom border rows
@@ -57,20 +60,18 @@ export interface DrawBorderOpts {
  * to a uniform width; the output rows are `innerWidth + 2` wide.
  *
  * Border glyphs and the optional title can be styled independently via
- * `borderStyle` and `titleStyle`. Styles are emitted as SGR escapes around
- * the styled segments; a closing `\x1b[0m` resets at each boundary.
+ * `borderStyle` / `titleStyle` — each is a pre-bound `StyleBuilder`, so
+ * this helper stays purely about geometry and never touches SGR itself.
  */
 export function drawBorder(
   rows: readonly string[],
   chars: BorderChars,
   opts: DrawBorderOpts = {}
 ): string[] {
-  const { borderStyle, theme, title, titleAlign, titleStyle } = opts
+  const { title, titleAlign } = opts
   const inner = rows.length > 0 ? stringWidth(rows[0]) : 0
-  const bOpen = borderStyle ? openStyle(borderStyle, theme) : ""
-  const tOpen = titleStyle ? openStyle(titleStyle, theme) : ""
-  const wrapB = (s: string): string => (bOpen === "" ? s : bOpen + s + RESET)
-  const wrapT = (s: string): string => (tOpen === "" ? s : tOpen + s + RESET)
+  const wrapB = opts.borderStyle ?? identity
+  const wrapT = opts.titleStyle ?? identity
 
   const out: string[] = []
   out.push(topRow({ align: titleAlign ?? "left", chars, inner, title, wrapB, wrapT }))

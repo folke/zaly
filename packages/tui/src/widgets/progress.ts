@@ -5,7 +5,6 @@ import type { Color } from "../style/color.ts"
 import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
-import { openStyle, RESET } from "../style/ansi.ts"
 
 export interface ProgressState {
   /** Current value. Clamped to `[0, total]`. */
@@ -55,11 +54,9 @@ export class Progress extends Node<ProgressState> {
     const filled = Math.round(fraction * barWidth)
     const empty = barWidth - filled
 
-    const openFilled = openStyle({ fg: colorFilled }, ctx.theme)
-    const openTrack = openStyle({ fg: colorTrack }, ctx.theme)
     const bar =
-      (openFilled === "" ? complete.repeat(filled) : openFilled + complete.repeat(filled) + RESET) +
-      (openTrack === "" ? incomplete.repeat(empty) : openTrack + incomplete.repeat(empty) + RESET)
+      ctx.style.fg(colorFilled)(complete.repeat(filled)) +
+      ctx.style.fg(colorTrack)(incomplete.repeat(empty))
 
     return [labelStr === "" ? bar : `${bar} ${labelStr}`]
   }

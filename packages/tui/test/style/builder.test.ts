@@ -97,18 +97,19 @@ describe("style() — composition", () => {
 
 describe("style() — Style-valued theme slots", () => {
   test("Style slot merges attrs + fg into the chain", () => {
-    // moon.mdStrong = { bold: true }
-    expect(style(moon).mdStrong("hi")).toBe("\x1b[1mhi\x1b[0m")
+    // moon.mdBold = { bold: true, fg: "fg" } → fg = moon.fg = #c8d3f5
+    expect(style(moon).mdBold("hi")).toBe("\x1b[1;38;2;200;211;245mhi\x1b[0m")
   })
 
   test("Style slot with attrs + fg together", () => {
-    // moon.borderTitle = { bold: true, fg: "primary" } → primary = #82aaff
+    // moon.borderTitle resolves (via `title` slot) to { bold: true, fg: "primary" }
+    // → primary = #82aaff
     expect(style(moon).borderTitle("T")).toBe("\x1b[1;38;2;130;170;255mT\x1b[0m")
   })
 
   test("chained attrs before Style slot are preserved when slot doesn't conflict", () => {
-    // .underline then .mdStrong (bold only) → both bold and underline.
-    expect(style(moon).underline.mdStrong("x")).toBe("\x1b[1;4mx\x1b[0m")
+    // .underline then .mdBold → bold + underline + moon.fg.
+    expect(style(moon).underline.mdBold("x")).toBe("\x1b[1;4;38;2;200;211;245mx\x1b[0m")
   })
 
   test("later chain overrides slot values", () => {
@@ -126,5 +127,76 @@ describe("style() — inner-reset survival", () => {
     // "pre" gets fg:red, then inner "[1mx[0m" — after that [0m, the outer
     // [31m must be re-applied so "post" is also red.
     expect(outer).toBe(`\x1b[31mpre\x1b[1mx\x1b[0m\x1b[31mpost\x1b[0m`)
+  })
+})
+
+describe("style() — tonal variants via -step suffix", () => {
+  test("fg slot-300 resolves through oklch", () => {
+    // tokyonight `primary` is `#82aaff`; anchored at step 400, so
+    // asking for 300 should yield a lighter hex.
+    const out = style(moon).fg("primary-300" as never)("x")
+    // Ensure we got truecolor SGR and it's not the base `#82aaff`.
+    expect(out).toMatch(/\x1b\[38;2;(\d+);(\d+);(\d+)m/)
+    const m = /\x1b\[38;2;(\d+);(\d+);(\d+)m/.exec(out)!
+    const [, r, g, b] = m.map(Number)
+    // Lighter than base → higher luminance approx.
+    expect(r + g + b).toBeGreaterThan(130 + 170 + 255 - 10)
+  })
+
+  test("bracket indexing applies to fg: style.primary[300]", () => {
+    const out = style(moon).primary[300]("x")
+    expect(out).toMatch(/\x1b\[38;2;/)
+    // Differs from the base primary(500-ish) SGR.
+    expect(out).not.toBe(style(moon).primary("x"))
+  })
+
+  test("bracket indexing applies to bg after bgSlot", () => {
+    const baseBg = style(moon).bgPrimary("x")
+    const varied = style(moon).bgPrimary[300]("x")
+    expect(varied).toMatch(/\x1b\[48;2;/)
+    expect(varied).not.toBe(baseBg)
+  })
+
+  test("bracket indexing replaces an existing step (does not stack)", () => {
+    const a = style(moon).primary[300]("x")
+    const b = style(moon).primary[500][300]("x")
+    // Final step in both cases is 300 → same output.
+    expect(b).toBe(a)
+  })
+
+  test("bracket indexing with no prior color set is a no-op", () => {
+    // No channel set → [300] returns an empty-style builder; rendered text equals input.
+    expect(style(moon)[300]("hello")).toBe("hello")
+  })
+
+  test("bgDiffAdd[200].fgDiffAdd sets bg variant and fg from the slot's own fg", () => {
+    const theme = { ...moon, diffAdd: { bg: "#223344", fg: "#c3e88d" } } as never
+    const out = style(theme).bgDiffAdd[200].fgDiffAdd("x")
+    // Both fg and bg SGR components present.
+    expect(out).toMatch(/\x1b\[(?:[^\]]*;)*48;2;/)
+    expect(out).toMatch(/\x1b\[(?:[^\]]*;)*38;2;/)
+  })
+
+  test("alpha(n) composites the last color over theme.bg", () => {
+    const full = style(moon).bgPrimary("x")
+    const washed = style(moon).bgPrimary.alpha(30)("x")
+    // Both emit a bg SGR, but the washed version's RGB should be closer
+    // to moon.bg (#222436) than the full primary (#82aaff).
+    const fullM = /\x1b\[48;2;(\d+);(\d+);(\d+)m/.exec(full)!
+    const washM = /\x1b\[48;2;(\d+);(\d+);(\d+)m/.exec(washed)!
+    expect(washM[0]).not.toBe(fullM[0])
+    const fullDist = Math.abs(Number(fullM[1]) - 0x22)
+    const washDist = Math.abs(Number(washM[1]) - 0x22)
+    expect(washDist).toBeLessThan(fullDist)
+  })
+
+  test("alpha(n) replaces an existing alpha (does not stack)", () => {
+    const a = style(moon).primary.alpha(30)("x")
+    const b = style(moon).primary.alpha(60).alpha(30)("x")
+    expect(b).toBe(a)
+  })
+
+  test("alpha(n) with no prior color set is a no-op", () => {
+    expect(style(moon).alpha(30)("hello")).toBe("hello")
   })
 })

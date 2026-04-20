@@ -1,13 +1,11 @@
 import type { RenderCtx } from "../../core/ctx.ts"
 import type { MdCallbacks } from "../../style/md/marked.ts"
 import type { MdCodeBlockMeta } from "../../style/md/utils.ts"
-import type { Style } from "../../style/ansi.ts"
 import type { AnsiHighlighter } from "../../style/shiki.ts"
 
 import { stringWidth } from "#runtime"
+import { splitAnsi } from "../../style/ansi.ts"
 import { parseCodeInfoString } from "../../style/md/utils.ts"
-import { openStyle, RESET, splitAnsi } from "../../style/ansi.ts"
-import { reapplyBg, resolveStyle } from "../../style/compose.ts"
 
 /**
  * Collect all fenced-block languages from a markdown source. First
@@ -51,7 +49,7 @@ export function createCodeCallback({
   ctx,
   highlighter,
 }: CodeCallbackOpts): NonNullable<MdCallbacks["code"]> {
-  const { style, theme } = ctx
+  const s = ctx.style
   return (text, meta) => {
     // Try syntax highlighting when a highlighter is wired in and the
     // language is already loaded on it. shiki's sync path requires the
@@ -60,26 +58,17 @@ export function createCodeCallback({
     const highlighted = tryHighlight({ highlighter, lang: meta?.language, text })
     const body = highlighted ?? text.replace(/\n+$/, "")
 
-    const blockStyle = resolveStyle("mdCodeBlock", theme)
     // For highlighted output the per-token fgs would clash with the slot's
-    // fg; keep only bg + attrs so shiki's colors show through on top of a
-    // consistent backdrop.
-    const backdropStyle: Style =
-      highlighted !== undefined && typeof blockStyle === "object"
-        ? { ...blockStyle, fg: undefined }
-        : blockStyle
-    const open = openStyle(backdropStyle, theme)
+    // fg; override fg with `"inherit"` so only bg + attrs wrap each row
+    // and shiki's per-token colors show through on top of the backdrop.
+    const wrap = highlighted === undefined ? s.mdCodeBlock : s.mdCodeBlock.fg("inherit")
     const lines = splitAnsi(body)
     const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + 1)
     const padded = lines.map((line) => {
       const padding = Math.max(0, width - stringWidth(line))
-      const bodyLine = line + " ".repeat(padding)
-      if (open === "") return bodyLine
-      // reapplyBg re-opens the backdrop after every inner RESET so the
-      // bg survives per-token resets emitted by shiki.
-      return open + reapplyBg(bodyLine, open) + RESET
+      return wrap(line + " ".repeat(padding))
     })
-    const titleLine = meta?.title === undefined ? "" : `${style.mdCodeBlockTitle(meta.title)}\n`
+    const titleLine = meta?.title === undefined ? "" : `${s.mdCodeBlockTitle(meta.title)}\n`
     return `${titleLine}${padded.join("\n")}\n\n`
   }
 }

@@ -60,7 +60,6 @@ describe("Stream.flush — tail growth", () => {
     t.state.content = "two"
     await stream.render()
     expect(stdout.all).toContain("two")
-    // eslint-disable-next-line no-control-regex -- matching ESC is the point.
     expect(stdout.all).toMatch(/\u001B\[\d+;1H/)
   })
 

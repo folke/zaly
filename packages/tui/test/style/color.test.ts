@@ -70,8 +70,26 @@ describe("colorParams — edge cases", () => {
 })
 
 describe("colorParams — Style-valued theme slot", () => {
-  test("slot resolving to a Style throws (fg is a color channel, not a style)", () => {
-    const theme = { ...moon, mdHeading: { bold: true, fg: "primary", underline: true } } as never
-    expect(() => colorParams("mdHeading", "fg", theme)).toThrow(/mdHeading/)
+  test("extracts the matching channel from a Style slot (fg ← slot.fg)", () => {
+    const theme = {
+      ...moon,
+      mdHeading: { bold: true, fg: "primary", underline: true },
+    } as never
+    // Resolves to `primary` → `#82aaff` → the truecolor SGR for it.
+    const hex = moon.primary
+    const r = Number.parseInt(hex.slice(1, 3), 16)
+    const g = Number.parseInt(hex.slice(3, 5), 16)
+    const b = Number.parseInt(hex.slice(5, 7), 16)
+    expect(colorParams("mdHeading", "fg", theme)).toBe(`38;2;${r};${g};${b}`)
+  })
+
+  test("extracts the bg channel when asked for bg", () => {
+    const theme = { ...moon, diffAdd: { bg: "#223344", fg: "ok" } } as never
+    expect(colorParams("diffAdd", "bg", theme)).toBe("48;2;34;51;68")
+  })
+
+  test("throws when the Style slot lacks the requested channel", () => {
+    const theme = { ...moon, mdHeading: { bold: true, underline: true } } as never
+    expect(() => colorParams("mdHeading", "fg", theme)).toThrow(/without a fg color/)
   })
 })

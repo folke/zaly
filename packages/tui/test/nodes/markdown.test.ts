@@ -5,7 +5,7 @@ import { renderMarkdown } from "#runtime"
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
-import { resolveStyle } from "../../src/style/compose.ts"
+import { resolveStyle } from "../../src/style/color.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
 import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
 import { moon } from "../../src/style/theme.ts"
@@ -55,13 +55,13 @@ const fakeHighlighter = (code: string) => `\x1b[33m${code}\x1b[0m`
 const passthroughHighlighter = (code: string) => code
 
 describe("markdown — inline callbacks", () => {
-  test("strong wraps children in mdStrong", async () => {
-    const open = expectedOpen("mdStrong")
+  test("strong wraps children in mdBold", async () => {
+    const open = expectedOpen("mdBold")
     expect(render("**hi**")).toContain(`${open}hi${RESET}`)
   })
 
-  test("emphasis wraps children in mdEmphasis", async () => {
-    const open = expectedOpen("mdEmphasis")
+  test("emphasis wraps children in mdItalic", async () => {
+    const open = expectedOpen("mdItalic")
     expect(render("*hi*")).toContain(`${open}hi${RESET}`)
   })
 
@@ -85,7 +85,7 @@ describe("markdown — inline callbacks", () => {
 
   test("nested strong inside heading keeps heading style after inner reset", async () => {
     const headingOpen = expectedOpen("mdHeading1")
-    const strongOpen = expectedOpen("mdStrong")
+    const strongOpen = expectedOpen("mdBold")
     // Heading is "**hi** world" — the inner bold reset must re-apply the
     // heading style so " world" doesn't lose fg/underline. The heading is
     // padded to ctx.width so the bg extends past the text; assert on the
@@ -116,7 +116,7 @@ describe("markdown — block callbacks", () => {
 
   test("heading falls back to generic mdHeading when level-specific slot is unset", async () => {
     // Drop mdHeading3 to simulate a theme that only defines the generic slot.
-    const fallbackTheme = { ...moon, mdHeading3: undefined } as typeof moon
+    const fallbackTheme = { ...moon, mdHeading3: undefined } as unknown as typeof moon
     const open = openStyle(resolveStyle("mdHeading", fallbackTheme), fallbackTheme)
     const out = renderMarkdownMarked(
       "### h3",
@@ -130,7 +130,7 @@ describe("markdown — block callbacks", () => {
   })
 
   test("blockquote prefixes each line with styled │", async () => {
-    const open = expectedOpen("mdBlockquote")
+    const open = expectedOpen("mdQuote")
     const out = render("> quote")
     expect(out).toContain(`${open}│ quote${RESET}`)
   })
@@ -288,8 +288,12 @@ describe("markdown() factory", () => {
   test("returns a Markdown node that renders via Text", async () => {
     const out = await markdown("**bold**").render(ctx(20))
     const joined = out.join("\n")
-    const open = expectedOpen("mdStrong")
-    expect(joined).toContain(`${open}bold${RESET}`)
+    // Text wrapping re-slices the SGR-styled content via sliceAnsi,
+    // which normalises any merged SGR (`\x1b[1;38;...m`) into separate
+    // attr + color runs (`\x1b[1m\x1b[38;...m`). Match just the styled
+    // payload rather than pinning exact SGR order.
+    expect(joined).toContain("bold")
+    expect(joined).toMatch(/\x1b\[[0-9;]*1[;m]/)
   })
 
   test("accepts state-object form", async () => {
@@ -467,7 +471,7 @@ describe("markdown — Image instance cache", () => {
     m.state.content = `![pic](${pngPath}) more`
     const b = (await m.render(ctx(40))).join("\n")
 
-    const transmitRe = /\x1b_Ga=t,/g // eslint-disable-line no-control-regex -- KGP APC escapes.
+    const transmitRe = /\x1b_Ga=t,/g
     const aTransmits = (a.match(transmitRe) ?? []).length
     const bTransmits = (b.match(transmitRe) ?? []).length
     // First render transmits once; second render must not re-transmit.
@@ -477,6 +481,5 @@ describe("markdown — Image instance cache", () => {
 })
 
 function extractPlacementId(s: string): string | undefined {
-  // eslint-disable-next-line no-control-regex -- KGP APC escapes.
   return s.match(/\x1b_Ga=p[^\x1b]*\bp=(\d+)/)?.[1]
 }

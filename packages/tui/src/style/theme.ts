@@ -27,40 +27,140 @@ export type ThemeValue = Color | Style
 export type Theme = {
   fg: Color
   bg: Color
-  muted: Color
-  dim: Color
   primary: Color
   accent: Color
-  ok: Color
+  dim: Color
+  muted: Color
+
+  success: Color
+  info: Color
   warn: Color
-  err: Color
+  error: Color
+
+  title: ThemeValue
   border: ThemeValue
   borderTitle: ThemeValue
-  /**
-   * Fallback heading style applied when a specific `mdHeading{N}` slot is
-   * not set on the theme. Always required so any heading level renders.
-   */
-  mdHeading: ThemeValue
-  mdHeading1?: ThemeValue
-  mdHeading2?: ThemeValue
-  mdHeading3?: ThemeValue
-  mdHeading4?: ThemeValue
-  mdHeading5?: ThemeValue
-  mdHeading6?: ThemeValue
-  mdStrong: ThemeValue
-  mdEmphasis: ThemeValue
+  line: ThemeValue
+
+  mdBold: ThemeValue
+  mdItalic: ThemeValue
   mdStrikethrough: ThemeValue
+
+  mdHeading: ThemeValue
+  mdHeading1: ThemeValue
+  mdHeading2: ThemeValue
+  mdHeading3: ThemeValue
+  mdHeading4: ThemeValue
+  mdHeading5: ThemeValue
+  mdHeading6: ThemeValue
+
   mdCode: ThemeValue
   mdCodeBlock: ThemeValue
   mdCodeBlockTitle: ThemeValue
+  mdHr: ThemeValue
   mdLink: ThemeValue
-  mdBlockquote: ThemeValue
-  mdList: ThemeValue
+  mdListBullet: ThemeValue
   mdListChecked: ThemeValue
   mdListUnchecked: ThemeValue
-  mdHr: ThemeValue
+  mdQuote: ThemeValue
   mdTable: ThemeValue
   mdTableHeader: ThemeValue
+
+  code: ThemeValue
+  codeTitle: ThemeValue
+
+  diffAdd: ThemeValue
+  diffContext: ThemeValue
+  diffDel: ThemeValue
+  diffLine: ThemeValue
+  diffTitle: ThemeValue
+}
+
+// oxlint-disable-next-line sort-keys
+const defaults: Theme = {
+  fg: "inherit",
+  bg: "inherit",
+  primary: "blue",
+  accent: "brightMagenta",
+  dim: "brightBlack",
+  muted: "brightBlack",
+
+  success: "green",
+  info: "cyan",
+  warn: "yellow",
+  error: "red",
+
+  title: { bold: true, fg: "primary" },
+  border: "muted",
+  borderTitle: "title",
+  line: "muted",
+
+  mdBold: { bold: true, fg: "fg" },
+  mdItalic: { fg: "fg", italic: true },
+  mdStrikethrough: { fg: "fg", strikethrough: true },
+
+  mdHeading: "title",
+  mdHeading1: "mdHeading",
+  mdHeading2: { bold: true, fg: "accent" },
+  mdHeading3: "mdHeading2",
+  mdHeading4: "mdHeading2",
+  mdHeading5: "mdHeading2",
+  mdHeading6: "mdHeading2",
+
+  mdCode: { bg: "muted", fg: "primary" },
+  mdCodeBlock: { bg: "muted", fg: "primary" },
+  mdCodeBlockTitle: "title",
+  mdHr: "accent",
+  mdLink: { fg: "primary", underline: true },
+  mdListBullet: "accent",
+  mdListChecked: "primary",
+  mdListUnchecked: "primary",
+  mdQuote: "dim",
+  mdTable: "accent",
+  mdTableHeader: "title",
+
+  code: { bg: "muted" },
+  codeTitle: "title",
+
+  diffAdd: { bg: "success/3", fg: "success" },
+  diffContext: "dim",
+  diffDel: { bg: "error/3", fg: "error" },
+  diffTitle: "title",
+  diffLine: "line",
+}
+
+function resolveTheme(theme: unknown): Theme {
+  const ret = validateTheme(theme)
+  delete ret.$schema
+  return { ...defaults, ...ret }
+}
+
+function isFile(path: string): boolean {
+  try {
+    return statSync(path).isFile()
+  } catch {
+    return false
+  }
+}
+
+function tryWithError<T>(fn: () => T, errorMsg: string): T {
+  try {
+    return fn()
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    throw new Error(`${errorMsg}: ${msg}`, { cause: error })
+  }
+}
+
+function pkgPath(...parts: string[]): string {
+  let dir = dirname(fileURLToPath(import.meta.url))
+  for (;;) {
+    if (isFile(resolve(dir, "package.json"))) break
+    const parent = dirname(dir)
+    if (parent === dir) break // filesystem root; fall through with dir as-is
+    dir = parent
+  }
+  return resolve(dir, ...parts)
 }
 
 /**
@@ -74,31 +174,15 @@ export type Theme = {
  */
 export const builtinThemeDir = resolve(pkgPath(), "assets", "themes")
 
-function pkgPath(...parts: string[]): string {
-  let dir = dirname(fileURLToPath(import.meta.url))
-  for (;;) {
-    try {
-      if (statSync(resolve(dir, "package.json")).isFile()) break
-    } catch {}
-    const parent = dirname(dir)
-    if (parent === dir) break // filesystem root; fall through with dir as-is
-    dir = parent
-  }
-  return resolve(dir, ...parts)
-}
-
 /**
  * Load a theme by name. Searches `opts.dirs` in order, then the built-in
  * dir; first `.json` match wins. The loaded JSON is validated against the
  * generated `Theme` schema and throws on any structural problem.
  */
 export function loadTheme(name = "tokyonight-moon", opts?: { dirs?: string[] }): Theme {
+  if (name === "ansi") return { ...defaults }
   const files = [...(opts?.dirs ?? []), builtinThemeDir].map((dir) => resolve(dir, `${name}.json`))
-  for (const path of files) {
-    try {
-      if (statSync(path).isFile()) return loadThemeFile(path)
-    } catch {}
-  }
+  for (const path of files) if (isFile(path)) return loadThemeFile(path)
   throw new Error(
     `Theme "${name}" not found. Searched:\n${files.map((p) => `  - ${p}`).join("\n")}`
   )
@@ -110,33 +194,12 @@ export function loadTheme(name = "tokyonight-moon", opts?: { dirs?: string[] }):
  * /path/to/theme.json` argument.
  */
 export function loadThemeFile(path: string): Theme {
-  let raw: string | undefined
-  try {
-    raw = readFileSync(path, "utf8")
-  } catch {
-    throw new Error(`Theme file not found at ${path}`)
-  }
-  return parseAndValidate(raw, path)
-}
-
-function parseAndValidate(raw: string, path: string): Theme {
-  const data = JSON.parse(raw) as unknown
-  // The packaged JSON has a `$schema` pointer for editor support; strip it
-  // before validating so the equality check doesn't flag it as an extra.
-  if (typeof data === "object" && data !== null && "$schema" in data) {
-    delete (data as Record<string, unknown>).$schema
-  }
-  try {
-    return validateTheme(data)
-  } catch (error) {
-    // typia's `createAssertEquals` throws a formatted error on the first
-    // violation. Prepend the source path so the caller knows which file.
-    const msg = error instanceof Error ? error.message : String(error)
-    throw new Error(`Theme at ${path} failed validation: ${msg}`, { cause: error })
-  }
+  const raw = tryWithError(() => readFileSync(path, "utf8"), `Failed to read theme file at ${path}`)
+  const data = tryWithError(() => JSON.parse(raw), `Failed to parse theme JSON at ${path}`)
+  return resolveTheme(data)
 }
 
 /** TokyoNight Moon — the default. Sourced from `assets/themes/tokyonight-moon.json`. */
-export const moon = moonJson as Theme
+export const moon = resolveTheme(moonJson)
 
 export const defaultTheme = moon

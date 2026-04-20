@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
-import { resolveStyle } from "../../src/style/compose.ts"
+import { resolveStyle } from "../../src/style/color.ts"
 import { builtinThemeDir, loadTheme, loadThemeFile, moon } from "../../src/style/theme.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.
@@ -43,14 +43,14 @@ describe("theme markdown slots — moon", () => {
       "mdHeading4",
       "mdHeading5",
       "mdHeading6",
-      "mdStrong",
-      "mdEmphasis",
+      "mdBold",
+      "mdItalic",
       "mdStrikethrough",
       "mdCode",
       "mdCodeBlock",
       "mdLink",
-      "mdBlockquote",
-      "mdList",
+      "mdQuote",
+      "mdListBullet",
       "mdListChecked",
       "mdListUnchecked",
       "mdHr",
@@ -60,12 +60,12 @@ describe("theme markdown slots — moon", () => {
     for (const k of slots) expect(moon[k]).toBeDefined()
   })
 
-  test("mdStrong defaults to bold", () => {
-    expect(moon.mdStrong).toMatchObject({ bold: true })
+  test("mdBold defaults to bold", () => {
+    expect(moon.mdBold).toMatchObject({ bold: true })
   })
 
-  test("mdEmphasis defaults to italic", () => {
-    expect(moon.mdEmphasis).toMatchObject({ italic: true })
+  test("mdItalic defaults to italic", () => {
+    expect(moon.mdItalic).toMatchObject({ italic: true })
   })
 
   test("mdStrikethrough has strikethrough attr", () => {
@@ -77,8 +77,8 @@ describe("theme markdown slots — ansi", () => {
   test("all md* slots defined", () => {
     const slots = [
       "mdHeading1",
-      "mdStrong",
-      "mdEmphasis",
+      "mdBold",
+      "mdItalic",
       "mdCode",
       "mdCodeBlock",
       "mdLink",
@@ -101,7 +101,6 @@ describe("validateTheme — built-in assets", () => {
   test("asset dir contains at least moon, storm, night, day, ansi", () => {
     expect(files).toEqual(
       expect.arrayContaining([
-        "ansi.json",
         "tokyonight-day.json",
         "tokyonight-moon.json",
         "tokyonight-night.json",
@@ -122,18 +121,27 @@ describe("validateTheme — built-in assets", () => {
   }
 })
 
-describe("validateTheme — negative cases", () => {
-  test("missing required field throws", () => {
-    const { mdHeading: _omit, ...incomplete } = moon
-    expect(() => validateTheme(incomplete)).toThrow(/mdHeading/)
+describe("validateTheme — positive cases", () => {
+  test("empty object is accepted (every slot is optional in JSON)", () => {
+    expect(() => validateTheme({})).not.toThrow()
   })
 
+  test("partial theme (only some slots) is accepted", () => {
+    expect(() => validateTheme({ primary: "#ff00ff" })).not.toThrow()
+  })
+})
+
+describe("validateTheme — negative cases", () => {
   test("extra property throws (createAssertEquals is strict)", () => {
     expect(() => validateTheme({ ...moon, bogusExtra: "nope" })).toThrow()
   })
 
   test("wrong type at a slot throws", () => {
-    expect(() => validateTheme({ ...moon, primary: 42 as never })).toThrow(/primary/)
+    expect(() => validateTheme({ primary: 42 as never })).toThrow(/primary/)
+  })
+
+  test("invalid Color string at a slot throws", () => {
+    expect(() => validateTheme({ primary: "not-a-color" as never })).toThrow(/primary/)
   })
 })
 
@@ -187,7 +195,11 @@ describe("loadTheme", () => {
     })
 
     test("invalid theme JSON in user dir throws", () => {
-      writeFileSync(join(dir, "broken.json"), JSON.stringify({ fg: "red" }, undefined, 2))
+      // Bad value (non-Color string) — triggers typia's value-level check.
+      writeFileSync(
+        join(dir, "broken.json"),
+        JSON.stringify({ primary: "not-a-color" }, undefined, 2)
+      )
       expect(() => loadTheme("broken", { dirs: [dir] })).toThrow()
     })
   })

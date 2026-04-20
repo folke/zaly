@@ -43,7 +43,6 @@ describe("Terminal.start / stop", () => {
   test("no DECSTBM emitted when reserveBottom is 0", () => {
     const { stdout, terminal } = makeTerminal(80, 20, 0)
     terminal.start()
-    // eslint-disable-next-line no-control-regex -- matching ESC is the point.
     expect(stdout.all).not.toMatch(/\u001B\[\d+;\d+r/)
     terminal.stop()
   })
@@ -71,7 +70,7 @@ describe("Terminal.sync", () => {
       terminal.sync(() => {
         terminal.write("x")
         throw new Error("boom")
-      }),
+      })
     ).toThrow("boom")
     expect(stdout.all.endsWith("\x1b[?2026l")).toBe(true)
   })

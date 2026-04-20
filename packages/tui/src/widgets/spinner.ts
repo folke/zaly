@@ -2,7 +2,6 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Color } from "../style/color.ts"
 
 import { Node } from "../core/node.ts"
-import { openStyle, RESET } from "../style/ansi.ts"
 
 /** Frame sets from the common terminal-spinner vocabulary. Pick one to taste. */
 export const spinnerFrames = {
@@ -73,8 +72,7 @@ export class Spinner extends Node<SpinnerState> {
     const frames = this.state.frames ?? spinnerFrames.dots
     const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
     const color = this.state.color ?? "primary"
-    const open = openStyle({ fg: color }, ctx.theme)
-    return [open === "" ? frame : open + frame + RESET]
+    return [ctx.style.fg(color)(frame)]
   }
 }
 

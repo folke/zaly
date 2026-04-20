@@ -1,5 +1,7 @@
 export * from "./box.ts"
+export * from "./code.ts"
 export * from "./custom.ts"
+export * from "./diff.ts"
 export * from "./image.ts"
 export * from "./input.ts"
 export * from "./markdown/index.ts"

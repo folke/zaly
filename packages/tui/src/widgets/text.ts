@@ -5,8 +5,7 @@ import type { Style } from "../style/ansi.ts"
 import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
-import { openStyle, RESET, splitAnsi } from "../style/ansi.ts"
-import { reapplyBg } from "../style/compose.ts"
+import { RESET, splitAnsi } from "../style/ansi.ts"
 
 /**
  * Text content — a plain string, or a function that produces one from the
@@ -39,15 +38,13 @@ export class Text extends Node<TextStyle> {
     const rows = splitAnsi(mode === "none" ? content : wrapAnsi(content, w, { mode }))
     const padded = rows.map((row) => padOrClip(row, w))
 
-    const open = openStyle(this.state, ctx.theme)
-    const bgOnly = this.state.bg === undefined ? "" : openStyle({ bg: this.state.bg }, ctx.theme)
-    if (bgOnly !== "") {
-      // Inner RESETs — whether from content or injected by padOrClip to close
-      // a wrap-open style — would clobber Text's bg. Re-apply after each one.
-      return padded.map((row) => open + reapplyBg(row, bgOnly) + RESET)
-    }
-    if (open !== "") return padded.map((row) => open + row + RESET)
-    return padded
+    // Pre-bind the wrapper once — creating a fresh builder per row would
+    // allocate a Proxy per iteration. Inner SGR resets (from content or
+    // from padOrClip closing a wrap-open style) get the full style
+    // re-applied after them; shiki-style per-token fgs still win on
+    // subsequent text because terminal SGR is cumulative until RESET.
+    const wrap = ctx.style.add(this.state)
+    return padded.map((row) => wrap(row))
   }
 }
 

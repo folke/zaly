@@ -1,27 +1,28 @@
 import { describe, expect, test } from "vitest"
-import { reapplyBg, resolveStyle } from "../../src/style/compose.ts"
+import { reapplyStyle } from "../../src/style/ansi.ts"
+import { resolveStyle } from "../../src/style/color.ts"
 import { moon } from "../../src/style/theme.ts"
 
-describe("reapplyBg", () => {
-  const bg = "\x1b[48;2;255;0;0m"
+describe("reapplyStyle", () => {
+  const esc = "\x1b[48;2;255;0;0m"
 
   test("no resets: input unchanged", () => {
-    expect(reapplyBg("hello", bg)).toBe("hello")
+    expect(reapplyStyle("hello", esc)).toBe("hello")
   })
 
-  test("single reset: bg re-applied after", () => {
-    expect(reapplyBg("\x1b[38;2;0;0;255mhello\x1b[0mworld", bg)).toBe(
-      `\x1b[38;2;0;0;255mhello\x1b[0m${bg}world`
+  test("single reset: style re-applied after", () => {
+    expect(reapplyStyle("\x1b[38;2;0;0;255mhello\x1b[0mworld", esc)).toBe(
+      `\x1b[38;2;0;0;255mhello\x1b[0m${esc}world`
     )
   })
 
-  test("multiple resets: each gets bg re-applied", () => {
+  test("multiple resets: each gets style re-applied", () => {
     const input = "\x1b[0ma\x1b[0mb\x1b[0m"
-    expect(reapplyBg(input, bg)).toBe(`\x1b[0m${bg}a\x1b[0m${bg}b\x1b[0m${bg}`)
+    expect(reapplyStyle(input, esc)).toBe(`\x1b[0m${esc}a\x1b[0m${esc}b\x1b[0m${esc}`)
   })
 
-  test("empty bg escape: input unchanged (guard)", () => {
-    expect(reapplyBg("\x1b[0mhello", "")).toBe("\x1b[0mhello")
+  test("empty escape: input unchanged (guard)", () => {
+    expect(reapplyStyle("\x1b[0mhello", "")).toBe("\x1b[0mhello")
   })
 })
 

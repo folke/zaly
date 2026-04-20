@@ -1,5 +1,5 @@
+// oxlint-disable no-await-in-loop
 import { describe, expect, test } from "bun:test"
-
 import { text } from "../../src/widgets/text.ts"
 import { makeHarness } from "./harness.ts"
 
@@ -9,7 +9,12 @@ describe("Stream — viewport correctness", () => {
     h.renderer.stream.add(text("hello"))
     await h.flush()
     expect(h.viewport()[4]).toBe("hello")
-    expect(h.viewport().slice(0, 4).every((r) => r === "")).toBe(true)
+    expect(
+      h
+        .viewport()
+        .slice(0, 4)
+        .every((r) => r === "")
+    ).toBe(true)
     h.dispose()
   })
 

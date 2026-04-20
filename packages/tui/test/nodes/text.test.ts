@@ -83,7 +83,7 @@ describe("Text", () => {
 
   test("content function can compose styled spans via ctx.style", async () => {
     const t = new Text({
-      content: ({ style }) => `${style.ok("+12")} ${style.err("-4")}`,
+      content: ({ style }) => `${style.success("+12")} ${style.error("-4")}`,
       wrap: "none",
     })
     const [row] = await t.render(ctx(20))

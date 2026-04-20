@@ -14,19 +14,16 @@
 import type { GhosttyCell, GhosttyTerminal } from "ghostty-web"
 import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal.ts"
 
-import { createRequire } from "node:module"
 import { Ghostty } from "ghostty-web"
-
+import { createRequire } from "node:module"
 import { Renderer } from "../../src/renderer/index.ts"
 
 // Resolve the .wasm path relative to the ghostty-web package. Works
 // through Bun's symlinked node_modules layout too — `require.resolve`
 // follows the package's entry, which sits next to the wasm file.
 const require = createRequire(import.meta.url)
-const wasmPath = new URL(
-  "../ghostty-vt.wasm",
-  new URL(`file://${require.resolve("ghostty-web")}`)
-).pathname
+const wasmPath = new URL("../ghostty-vt.wasm", new URL(`file://${require.resolve("ghostty-web")}`))
+  .pathname
 
 // Load the WASM once for the whole test process. `Ghostty.load` is
 // idempotent from our perspective (we cache the promise).
@@ -60,6 +57,21 @@ export interface Harness {
   dispose(): void
 }
 
+const rowToString = (cells: GhosttyCell[]): string => {
+  let s = ""
+  for (const cell of cells) {
+    if (cell.width === 0) continue // combining — already folded into prev
+    s += cell.codepoint === 0 ? " " : String.fromCodePoint(cell.codepoint)
+  }
+  return s.replace(/ +$/, "")
+}
+
+const flush = async (): Promise<void> => {
+  // Drain microtasks — stream/UI flushes are queueMicrotask'd.
+  // oxlint-disable-next-line no-await-in-loop
+  for (let i = 0; i < 8; i++) await Promise.resolve()
+}
+
 /** Build a harness. Async because we need to load the WASM on first call. */
 export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   const cols = opts.cols ?? 40
@@ -71,8 +83,8 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   // Stdout: route every byte our Renderer writes into the parser.
   const stdout: TerminalWriter = {
     columns: cols,
-    rows,
     isTTY: true,
+    rows,
     write(s: string): boolean {
       term.write(s)
       return true
@@ -83,10 +95,10 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   // path. Expand when we need synthetic key events.
   const stdin: TerminalReader = {
     isTTY: true,
-    on() {},
     off() {},
-    resume() {},
+    on() {},
     pause() {},
+    resume() {},
     setRawMode() {},
   }
 
@@ -97,15 +109,6 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
     uiMaxHeight: opts.uiMaxHeight,
   })
   renderer.start()
-
-  const rowToString = (cells: GhosttyCell[]): string => {
-    let s = ""
-    for (const cell of cells) {
-      if (cell.width === 0) continue // combining — already folded into prev
-      s += cell.codepoint === 0 ? " " : String.fromCodePoint(cell.codepoint)
-    }
-    return s.replace(/ +$/, "")
-  }
 
   const viewport = (): string[] => {
     const out: string[] = []
@@ -127,11 +130,6 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   }
 
   const row = (i: number): string => viewport()[i]
-
-  const flush = async (): Promise<void> => {
-    // Drain microtasks — stream/UI flushes are queueMicrotask'd.
-    for (let i = 0; i < 8; i++) await Promise.resolve()
-  }
 
   const dispose = (): void => {
     renderer.stop()

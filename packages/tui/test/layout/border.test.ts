@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { borders, drawBorder, resolveBorder } from "../../src/layout/border.ts"
+import { style } from "../../src/style/builder.ts"
 import { moon } from "../../src/style/theme.ts"
 
 describe("borders (presets)", () => {
@@ -128,8 +129,7 @@ describe("drawBorder", () => {
   test("borderStyle wraps border chars with SGR", () => {
     // primary = #82aaff → 38;2;130;170;255
     const out = drawBorder(["x"], borders.single, {
-      borderStyle: { fg: "primary" },
-      theme: moon,
+      borderStyle: style(moon).fg("primary"),
     })
     // Each border-char segment is wrapped; side chars on row 1 flank the content.
     expect(out[0]).toBe("\x1b[38;2;130;170;255m┌─┐\x1b[0m")
@@ -139,10 +139,9 @@ describe("drawBorder", () => {
 
   test("titleStyle overrides borderStyle for the title region", () => {
     const out = drawBorder(["      "], borders.single, {
-      borderStyle: { fg: "primary" },
-      theme: moon,
+      borderStyle: style(moon).fg("primary"),
       title: "hi",
-      titleStyle: { bold: true, fg: "accent" },
+      titleStyle: style(moon).bold.fg("accent"),
     })
     // Derive the expected escapes from the actual theme values so this test
     // stays stable when the theme palette changes.

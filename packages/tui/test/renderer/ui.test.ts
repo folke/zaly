@@ -44,7 +44,6 @@ describe("UI.flush — row diff", () => {
     line.state.content = "two"
     await ui.render()
     expect(stdout.all).toContain("two")
-    // eslint-disable-next-line no-control-regex -- matching ESC is the point.
     const moves = stdout.all.match(/\u001B\[\d+;1H/g) ?? []
     expect(moves.length).toBe(1)
   })

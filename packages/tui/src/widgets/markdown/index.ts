@@ -148,7 +148,7 @@ export function mdCallbacks(ctx: RenderCtx, opts?: MdCallbacksOpts): MdCallbacks
       const prefixed = children
         .replace(/\n+$/, "")
         .split("\n")
-        .map((line) => style.mdBlockquote(`${icons.quote} ${line}`))
+        .map((line) => style.mdQuote(`${icons.quote} ${line}`))
         .join("\n")
       return `${prefixed}\n\n`
     },
@@ -157,7 +157,7 @@ export function mdCallbacks(ctx: RenderCtx, opts?: MdCallbacksOpts): MdCallbacks
 
     codespan: (text) => style.mdCode(text),
 
-    emphasis: (children) => style.mdEmphasis(children),
+    emphasis: (children) => style.mdItalic(children),
 
     heading: (children, { level }) => {
       // Try the level-specific slot; fall back to the generic `mdHeading`
@@ -191,7 +191,7 @@ export function mdCallbacks(ctx: RenderCtx, opts?: MdCallbacksOpts): MdCallbacks
     },
 
     listItem: (children, meta) => {
-      let marker = style.mdList(
+      let marker = style.mdListBullet(
         meta.ordered
           ? `${(meta.start ?? 1) + meta.index}.`
           : icons.bullets[meta.depth % icons.bullets.length]
@@ -211,7 +211,7 @@ export function mdCallbacks(ctx: RenderCtx, opts?: MdCallbacksOpts): MdCallbacks
 
     strikethrough: (children) => style.mdStrikethrough(children),
 
-    strong: (children) => style.mdStrong(children),
+    strong: (children) => style.mdBold(children),
 
     ...createTableCallbacks(ctx),
   }

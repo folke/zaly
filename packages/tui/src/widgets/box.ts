@@ -10,8 +10,6 @@ import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
-import { openStyle, RESET } from "../style/ansi.ts"
-import { reapplyBg, resolveStyle } from "../style/compose.ts"
 
 export type Padding =
   | number
@@ -85,26 +83,16 @@ export class Box extends Node<BoxStyle> {
     let rows = [...top, ...contentRows, ...bot]
 
     if (bchars) {
-      const borderStyle = resolveStyle(style.borderStyle ?? "border", ctx.theme)
-      const titleStyle = resolveStyle(style.borderTitleStyle ?? "borderTitle", ctx.theme)
       rows = drawBorder(rows, bchars, {
-        borderStyle,
-        theme: ctx.theme,
+        borderStyle: ctx.style.add(style.borderStyle ?? "border"),
         title: style.borderTitle,
         titleAlign: style.borderTitleAlign,
-        titleStyle,
+        titleStyle: ctx.style.add(style.borderTitleStyle ?? "borderTitle"),
       })
     }
 
-    const open = openStyle(style, ctx.theme)
-    const bgOnly = style.bg === undefined ? "" : openStyle({ bg: style.bg }, ctx.theme)
-    if (bgOnly !== "") {
-      rows = rows.map((row) => open + reapplyBg(row, bgOnly) + RESET)
-    } else if (open !== "") {
-      rows = rows.map((row) => open + row + RESET)
-    }
-
-    return rows
+    const wrap = ctx.style.add(style)
+    return rows.map((row) => wrap(row))
   }
 
   async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {

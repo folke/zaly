@@ -80,6 +80,20 @@ export function openStyle(style: Style, theme?: Theme): string {
 }
 
 /**
+ * Post-process a styled string so an outer style is re-applied after any
+ * inner full-reset (`\x1b[0m`). Without this, a child's reset clobbers
+ * the parent's bg/fg/attrs for the remainder of the line.
+ *
+ * `escape` is the already-built SGR run to re-emit after each reset
+ * (typically the return value of `openStyle(parentStyle, theme)`). If
+ * empty, the input is returned unchanged.
+ */
+export function reapplyStyle(s: string, escape: string): string {
+  if (escape === "") return s
+  return s.replaceAll(RESET, RESET + escape)
+}
+
+/**
  * Split a multi-line ANSI string into per-line strings where each line is
  * **self-contained**: any SGR state active at the end of a line is closed
  * before the break, and re-opened at the start of the next line.
