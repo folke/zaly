@@ -72,6 +72,7 @@ function build(
   theme: Theme | undefined
 ): StyleBuilder {
   function apply(text: string): string {
+    if (!text) return text
     const open = openStyle(current, theme)
     // Re-apply the outer open after any inner RESET so nested styled
     // spans inside `text` don't strip the builder's own style.
