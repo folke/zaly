@@ -22,10 +22,6 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
-    "./glob": {
-      "bun": "./src/glob.ts",
-      "default": "./dist/glob.mjs"
-    },
     "./runtime.node": {
       "bun": "./src/runtime.node.ts",
       "default": "./dist/runtime.node.mjs"
@@ -36,7 +32,6 @@
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
-      "./glob": "./dist/glob.mjs",
       "./runtime.node": "./dist/runtime.node.mjs",
       "./package.json": "./package.json"
     }
