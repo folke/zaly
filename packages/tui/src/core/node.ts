@@ -113,35 +113,57 @@ export abstract class Node<
   protected abstract _render(ctx: RenderCtx): Promise<string[]> | string[]
 
   add(child: Node): this {
-    if (child.parent) {
-      if (child.parent === this) return this
-      child.parent.remove(child)
-    }
-    this.#children.push(child)
-    child.#parent = this
-    this.invalidate()
-    this.emit("childadded", child)
+    this.splice(this.#children.length, 0, child)
     return this
   }
 
   remove(child: Node): this {
     const i = this.#children.indexOf(child)
     if (i === -1) return this
-    this.#children.splice(i, 1)
-    this.emit("childremoved", child)
-    if (child.parent === this) child.#parent = undefined
+    this.splice(i, 1)
+    return this
+  }
+
+  splice(start: number, deleteCount: number, ...items: Node[]): this {
+    // Reject self-insertion — a node in its own children list would
+    // create a cycle and stack-overflow on traversal.
+    const filtered: Node[] = []
+    for (const c of items) {
+      if (c === this) continue
+      filtered.push(c)
+    }
+
+    // If any item is already a child of this container, pull it out
+    // first so we don't end up with duplicates. Adjust `start` when a
+    // removal falls before it so the caller-relative index is preserved.
+    let adjustedStart = Math.max(0, Math.min(start, this.#children.length))
+    for (const c of filtered) {
+      if (c.parent !== this) continue
+      const i = this.#children.indexOf(c)
+      if (i === -1) continue
+      this.#children.splice(i, 1)
+      if (i < adjustedStart) adjustedStart--
+    }
+
+    const removed = this.#children.splice(adjustedStart, deleteCount, ...filtered)
+    for (const c of removed) {
+      this.emit("childremoved", c)
+      if (c.parent === this) c.#parent = undefined
+    }
+    for (const c of filtered) {
+      // Detach from old parent before rewriting `#parent`, so the old
+      // parent's `remove()` path observes a consistent `c.parent === old`
+      // and cleans up its own bookkeeping.
+      if (c.parent && c.parent !== this) c.parent.remove(c)
+      c.#parent = this
+      this.emit("childadded", c)
+    }
     this.invalidate()
     return this
   }
 
   clear(): this {
-    const removed = [...this.#children]
-    this.#children.length = 0
-    for (const c of removed) {
-      this.emit("childremoved", c)
-      if (c.parent === this) c.#parent = undefined
-    }
-    this.invalidate()
+    this.splice(0, this.#children.length)
     return this
   }
 

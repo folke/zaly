@@ -186,3 +186,121 @@ describe("NodeBase", () => {
     expect(n.renderCalls).toBe(1)
   })
 })
+
+describe("Node.splice", () => {
+  const mk = (tag: string): TestNode => new TestNode({ count: 0, text: tag })
+
+  test("add appends to the end", () => {
+    const parent = mk("p")
+    const a = mk("a")
+    const b = mk("b")
+    parent.add(a).add(b)
+    expect(parent.children).toEqual([a, b])
+    expect(a.parent).toBe(parent)
+    expect(b.parent).toBe(parent)
+  })
+
+  test("remove detaches and clears parent", () => {
+    const parent = mk("p")
+    const a = mk("a")
+    parent.add(a)
+    const removed = vi.fn()
+    parent.on("childremoved", removed)
+    parent.remove(a)
+    expect(parent.children).toEqual([])
+    expect(a.parent).toBeUndefined()
+    expect(removed).toHaveBeenCalledWith(a)
+  })
+
+  test("adding an existing child does not duplicate", () => {
+    // Plugins that idempotently re-inject a widget would otherwise
+    // double-render it on every pass — keep `splice` reentrant.
+    const parent = mk("p")
+    const a = mk("a")
+    parent.add(a)
+    parent.add(a)
+    expect(parent.children).toEqual([a])
+  })
+
+  test("splice can reorder an existing child without duplicating", () => {
+    const parent = mk("p")
+    const a = mk("a")
+    const b = mk("b")
+    const c = mk("c")
+    parent.splice(0, 0, a, b, c)
+    expect(parent.children).toEqual([a, b, c])
+    // Move `a` to the end.
+    parent.splice(parent.children.length, 0, a)
+    expect(parent.children).toEqual([b, c, a])
+    expect(parent.children.length).toBe(3)
+  })
+
+  test("splice rejects self-insertion (would create a cycle)", () => {
+    const parent = mk("p")
+    parent.splice(0, 0, parent)
+    expect(parent.children).toEqual([])
+    expect(parent.parent).toBeUndefined()
+  })
+
+  test("moving a child to a new parent detaches it from the old one", () => {
+    const a = mk("a")
+    const b = mk("b")
+    const c = mk("c")
+    a.add(c)
+    const aRemoved = vi.fn()
+    const bAdded = vi.fn()
+    a.on("childremoved", aRemoved)
+    b.on("childadded", bAdded)
+    b.add(c)
+    expect(a.children).toEqual([])
+    expect(b.children).toEqual([c])
+    expect(c.parent).toBe(b)
+    expect(aRemoved).toHaveBeenCalledWith(c)
+    expect(bAdded).toHaveBeenCalledWith(c)
+  })
+
+  test("splice insertion + deletion in a single call", () => {
+    const parent = mk("p")
+    const a = mk("a")
+    const b = mk("b")
+    const c = mk("c")
+    parent.splice(0, 0, a, b)
+    const added = vi.fn()
+    const removed = vi.fn()
+    parent.on("childadded", added)
+    parent.on("childremoved", removed)
+    // Replace b with c.
+    parent.splice(1, 1, c)
+    expect(parent.children).toEqual([a, c])
+    expect(b.parent).toBeUndefined()
+    expect(c.parent).toBe(parent)
+    expect(removed).toHaveBeenCalledWith(b)
+    expect(added).toHaveBeenCalledWith(c)
+  })
+
+  test("clear removes every child and fires childremoved for each", () => {
+    const parent = mk("p")
+    const a = mk("a")
+    const b = mk("b")
+    parent.add(a).add(b)
+    const removed = vi.fn()
+    parent.on("childremoved", removed)
+    parent.clear()
+    expect(parent.children).toEqual([])
+    expect(a.parent).toBeUndefined()
+    expect(b.parent).toBeUndefined()
+    expect(removed).toHaveBeenCalledTimes(2)
+  })
+
+  test("splice clamps out-of-range start", () => {
+    // Array#splice would treat negative `start` as an offset from the
+    // end. We clamp to [0, length] since tree insertions don't have a
+    // meaningful "from the end" interpretation.
+    const parent = mk("p")
+    const a = mk("a")
+    const b = mk("b")
+    parent.splice(999, 0, a)
+    parent.splice(-5, 0, b)
+    expect(parent.children).toEqual([b, a])
+  })
+})
