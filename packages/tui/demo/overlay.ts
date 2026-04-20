@@ -140,7 +140,7 @@ you can leave the help open the whole time.`,
 
 async function streamMarkdown(full: string, onProgress: (f: number) => void): Promise<void> {
   const node = markdown("", { wrap: "word" })
-  renderer.stream.add(node)
+  renderer.stream.append(node)
   let i = 0
   while (i < full.length) {
     const take = 1 + Math.floor(Math.random() * 8)

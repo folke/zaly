@@ -29,7 +29,7 @@ renderer.ui.root.add(
 
 field.on("submit", (value) => {
   if (value.trim() === "") return
-  renderer.stream.add(markdown(`**you:** ${value}`))
+  renderer.stream.append(markdown(`**you:** ${value}`))
   field.state.value = ""
   field.state.cursor = 0
 })

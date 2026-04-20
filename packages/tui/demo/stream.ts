@@ -90,7 +90,7 @@ renderer.ui.root.add(
 // caller can update the footer's shared progress bar.
 async function streamMarkdown(full: string, onProgress: (f: number) => void): Promise<void> {
   const node = markdown("", { wrap: "word" })
-  renderer.stream.add(node)
+  renderer.stream.append(node)
 
   let i = 0
   while (i < full.length) {

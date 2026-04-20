@@ -6,7 +6,7 @@ const samples = [
 
 const r = createRenderer()
 r.start()
-r.stream.add(text("hello from zaly"))`,
+r.stream.append(text("hello from zaly"))`,
     lang: "ts",
     title: "greeting.ts",
   },
