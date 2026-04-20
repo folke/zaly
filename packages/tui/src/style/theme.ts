@@ -66,6 +66,10 @@ export type Theme = {
   mdTable: ThemeValue
   mdTableHeader: ThemeValue
 
+  menuLabel: ThemeValue
+  menuHint: ThemeValue
+  menuActive: ThemeValue
+
   code: ThemeValue
   codeTitle: ThemeValue
 
@@ -118,6 +122,10 @@ const defaults: Theme = {
   mdQuote: "dim",
   mdTable: "accent",
   mdTableHeader: "title",
+
+  menuLabel: "primary",
+  menuHint: "muted",
+  menuActive: { bg: "muted" },
 
   code: { bg: "muted" },
   codeTitle: "title",
