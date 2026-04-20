@@ -30,8 +30,7 @@
     "max-statements": "off", // 26
     "no-console": "warn",
     "no-continue": "off", // 24
-    "typescript/prefer-regexp-exec": "off", // 6
-    "typescript/prefer-readonly": "off", // 22
+    "no-control-regex": "off", // 2
     "no-duplicate-imports": ["warn", { "allowSeparateTypeImports": true }], // 16
     "no-implicit-coercion": "off", // 4
     "no-labels": "off", // 4
@@ -43,15 +42,18 @@
     "prefer-template": "warn",
     "sort-imports": "off", // 64
     "sort-keys": ["warn", "asc", { "caseSensitive": true, "natural": false }],
+    "typescript/consistent-return": "error",
     "typescript/consistent-type-definitions": "off", // 32
     "typescript/consistent-type-imports": ["error", { "fixStyle": "separate-type-imports" }],
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
+    "typescript/no-unnecessary-condition": "error",
     "typescript/no-unsafe-type-assertion": "off",
     "typescript/parameter-properties": "off", // 20
     "typescript/prefer-nullish-coalescing": "error",
     "typescript/prefer-optional-chain": "error",
-    "typescript/no-unnecessary-condition": "error",
+    "typescript/prefer-readonly": "off", // 22
+    "typescript/prefer-regexp-exec": "off", // 6
     "typescript/strict-boolean-expressions": "off",
     "unicorn/no-null": "error", // 13
     "unicorn/number-literal-case": "off", // disable, since oxfmt formats number literals in lowercase
@@ -69,7 +71,7 @@
   },
   "overrides": [
     {
-      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts", "**/demo*.ts", "**/scripts/**/*.ts"],
+      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts", "**/demo/**/*.ts", "**/scripts/**/*.ts"],
       "rules": {
         "eslint/no-console": "off"
       }
