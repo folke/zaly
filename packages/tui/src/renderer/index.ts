@@ -52,6 +52,9 @@ export class Renderer {
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
   #running = false
   #escTimer: ReturnType<typeof setTimeout> | undefined
+  #scheduled = false
+  #dirty = false
+  readonly #onDirty = (): void => this.#schedule()
 
   constructor(opts: RendererOptions = {}) {
     this.terminal = new Terminal({
@@ -69,6 +72,12 @@ export class Renderer {
     this.ui = new UI(this.terminal, getCtx, uiOpts)
     this.stream = new Stream(this.terminal, getCtx)
     this.input = new InputRouter()
+
+    // Surfaces emit `"dirty"` instead of self-scheduling. Centralising
+    // the microtask here means one flush per tick for the whole tree and
+    // lets future surfaces (overlay) slot in with a single `.on("dirty")`.
+    this.ui.on("dirty", this.#onDirty)
+    this.stream.on("dirty", this.#onDirty)
 
     // SIGWINCH: size changed. Force a full repaint of both surfaces.
     this.terminal.onResize(() => {
@@ -150,6 +159,40 @@ export class Renderer {
     }
     visitNode(this.ui.root)
     for (const n of this.stream.nodes) visitNode(n)
+  }
+
+  #schedule(): void {
+    this.#dirty = true
+    if (this.#scheduled) return
+    this.#scheduled = true
+    queueMicrotask(() => {
+      this.#dirty = false
+      void this.render().finally(() => {
+        this.#scheduled = false
+        if (this.#dirty) this.#schedule()
+      })
+    })
+  }
+
+  /**
+   * Render every surface once, then commit all of their writes inside a
+   * single `terminal.sync(...)` block — one atomic frame for the entire
+   * tree per tick. Each surface's `render(sync)` takes a capture
+   * function that collects its paint closure; those run back-to-back
+   * inside the outer sync after all compute phases settle.
+   */
+  async render(): Promise<void> {
+    const paints: Array<() => void> = []
+    const capture = (fn: () => void): void => {
+      paints.push(fn)
+    }
+    // Order: stream (lowest), ui (above stream). Overlay slots in here
+    // once it exists. Parallel compute; the paints execute in array
+    // order under the outer sync.
+    await Promise.all([this.stream.render(capture), this.ui.render(capture)])
+    this.terminal.sync(() => {
+      for (const paint of paints) paint()
+    })
   }
 
   // stdin wiring. In raw mode the terminal delivers bytes directly —

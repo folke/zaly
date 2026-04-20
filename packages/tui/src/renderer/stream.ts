@@ -2,6 +2,8 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { Emitter } from "../core/emitter.ts"
+
 type RenderState = {
   node: Node
   /** Undefined until the first render pass populates it. */
@@ -34,15 +36,19 @@ export type StreamOptions = {
  * promotion). So growth of the stream always flows through the bottom
  * row with a `\n`-prefix write per new row.
  */
-export class Stream {
+/** Events emitted by the Stream surface. `dirty` signals that a new
+ *  render is needed; the Renderer subscribes and schedules a tick. */
+export interface StreamEvents extends Record<string, unknown[]> {
+  dirty: []
+}
+
+export class Stream extends Emitter<StreamEvents> {
   #state: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
-  #dirty = false
-  #scheduled = false
   #opts: StreamOptions
   readonly #onInvalidate = (): void => {
-    this.#schedule()
+    this.emit("dirty")
   }
 
   constructor(
@@ -50,6 +56,7 @@ export class Stream {
     private readonly getCtx: () => RenderCtx,
     opts: Partial<StreamOptions> = {}
   ) {
+    super()
     this.#opts = { maxLive: 3, ...opts }
   }
 
@@ -61,7 +68,7 @@ export class Stream {
     node.on("invalidate", this.#onInvalidate)
     this.#state.push({ live: true, node })
     this.commit({ keep: this.#opts.maxLive, render: false })
-    this.#schedule()
+    this.emit("dirty")
     return this
   }
 
@@ -84,20 +91,8 @@ export class Stream {
     return this.#rows
   }
 
-  #schedule(): void {
-    this.#dirty = true
-    if (this.#scheduled) return
-    this.#scheduled = true
-    queueMicrotask(() => {
-      this.#dirty = false
-      void this.render().finally(() => {
-        this.#scheduled = false
-        if (this.#dirty) this.#schedule()
-      })
-    })
-  }
-
-  async render(): Promise<void> {
+  async render(sync?: (fn: () => void) => void): Promise<void> {
+    const run = sync ?? ((fn) => this.terminal.sync(fn))
     // Snapshot in case new appends land mid-render.
     const states = [...this.#state]
 
@@ -132,7 +127,7 @@ export class Stream {
     // rewrite in place). We never scroll into scrollback on shrink.
     const isShrink = allRows.length < oldVisibleEndIdx
 
-    this.terminal.sync(() => {
+    run(() => {
       if (isShrink) {
         // Clear the rows that were above newVisible's new (higher) top.
         for (let r = oldTopRow; r < newTopRow; r++) {
@@ -214,7 +209,7 @@ export class Stream {
       this.#commit(s)
       changed = true
     }
-    if (changed && render) this.#schedule()
+    if (changed && render) this.emit("dirty")
   }
 
   /** Drop the current tail without rendering anything further. */

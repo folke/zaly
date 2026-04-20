@@ -17,6 +17,18 @@ function mount(cols = 20, rows = 10) {
   stdout.clear()
   const ctx = createCtx({ width: terminal.cols })
   const stream = new Stream(terminal, () => ctx)
+  // Tests exercise Stream in isolation (no Renderer present). Self-
+  // schedule on `"dirty"` so `stream.add(...)` still eventually renders
+  // when awaiting microtasks, mirroring the Renderer's behaviour.
+  let scheduled = false
+  stream.on("dirty", () => {
+    if (scheduled) return
+    scheduled = true
+    queueMicrotask(() => {
+      scheduled = false
+      void stream.render()
+    })
+  })
   return { stdout, stream, terminal }
 }
 

@@ -2,6 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { Emitter } from "../core/emitter.ts"
 import { box } from "../widgets/box.ts"
 
 /**
@@ -25,10 +26,15 @@ export interface UIOptions {
   maxHeight?: number
 }
 
-export class UI {
+/** Events emitted by the UI surface. `dirty` signals that a new render
+ *  is needed; the Renderer subscribes and schedules a tick. */
+export interface UIEvents extends Record<string, unknown[]> {
+  dirty: []
+}
+
+export class UI extends Emitter<UIEvents> {
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
-  #scheduled = false
   readonly #maxHeight: number | undefined
 
   constructor(
@@ -36,6 +42,7 @@ export class UI {
     private readonly getCtx: () => RenderCtx,
     opts: UIOptions = {}
   ) {
+    super()
     this.#maxHeight = opts.maxHeight
     // Tag the root as scope `"global"` — the input router resolves
     // `"global.*"` keymap bindings by walking the focused node's parent
@@ -45,7 +52,7 @@ export class UI {
     this.#root.id = "global"
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
-    this.#root.on("invalidate", () => this.#schedule())
+    this.#root.on("invalidate", () => this.emit("dirty"))
   }
 
   /** The footer's root Box. Add children via `ui.root.add(child)`. */
@@ -68,30 +75,31 @@ export class UI {
     return this.#rows
   }
 
-  #schedule(): void {
-    if (this.#scheduled) return
-    this.#scheduled = true
-    queueMicrotask(() => {
-      this.#scheduled = false
-      void this.render()
-    })
-  }
-
   /**
    * Render the footer tree and paint the diff against the last paint.
    * Updates the terminal's reservation whenever the height changes so
    * the scroll region stays correctly sized.
+   *
+   * When called from `Renderer.render()`, a capture-style `sync` is
+   * provided so all surfaces paint inside one atomic sync frame. Direct
+   * callers (tests) omit it and get an immediate `terminal.sync`.
    */
-  async render(): Promise<void> {
+  async render(sync?: (fn: () => void) => void): Promise<void> {
+    const run = sync ?? ((fn: () => void) => this.terminal.sync(fn))
     const ctx = this.getCtx()
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const cap = this.#maxHeight ?? Math.max(1, Math.floor(this.terminal.rows / 3))
     const rows = rendered.slice(0, cap)
 
-    const prevHeight = this.#rows.length
+    // Snapshot the currently-painted rows BEFORE writing `this.#rows`.
+    // The paint closure can run deferred (when a capture `sync` is
+    // provided), by which point `this.#rows` has already been swapped
+    // to the new slice — so the diff comparison needs the old values.
+    const prevRows = this.#rows
+    const prevHeight = prevRows.length
     const nextHeight = rows.length
 
-    this.terminal.sync(() => {
+    run(() => {
       // Grow: before shrinking the scroll region, scroll its existing
       // contents up by the growth amount. That way any rows the stream
       // had painted at the bottom of the scroll region ride upward
@@ -127,7 +135,7 @@ export class UI {
       // `footerTop` (1-based). Only rewrite rows whose content changed.
       const top = this.terminal.footerTop
       for (let i = 0; i < nextHeight; i++) {
-        if (this.#rows[i] === rows[i] && prevHeight === nextHeight) continue
+        if (prevRows[i] === rows[i] && prevHeight === nextHeight) continue
         this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
       }
     })
@@ -138,6 +146,6 @@ export class UI {
   /** Force a full repaint (used on SIGWINCH / theme change). */
   invalidate(): void {
     this.#rows = []
-    this.#schedule()
+    this.emit("dirty")
   }
 }
