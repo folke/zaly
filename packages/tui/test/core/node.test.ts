@@ -164,25 +164,21 @@ describe("NodeBase", () => {
     expect(n.invalidate()).toBe(n)
   })
 
-  test("different ctx width forces re-render even without invalidation", async () => {
+  test("bumping ctx.version forces re-render even without invalidation", async () => {
+    // The Renderer bumps `version` on resize / theme swap; bare callers
+    // pass it explicitly. Same-version ctxs → cache hit; different
+    // version → recompute.
     const n = new TestNode({ count: 0, text: "hi" })
-    await n.render(createCtx({ theme, width: 10 }))
-    await n.render(createCtx({ theme, width: 20 }))
+    await n.render(createCtx({ theme, version: 1, width: 10 }))
+    await n.render(createCtx({ theme, version: 2, width: 20 }))
     expect(n.renderCalls).toBe(2)
   })
 
-  test("different theme content forces re-render", async () => {
+  test("same version across ctxs is a cache hit", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
-    await n.render(createCtx({ theme, width: 10 }))
-    await n.render(createCtx({ theme: { ...theme, primary: "#000000" }, width: 10 }))
-    expect(n.renderCalls).toBe(2)
-  })
-
-  test("same ctx content across fresh objects is a cache hit", async () => {
-    const n = new TestNode({ count: 0, text: "hi" })
-    await n.render(createCtx({ theme, width: 10 }))
-    // Fresh ctx object with identical content — sha256 collapses to same key.
-    await n.render(createCtx({ theme: { ...theme }, width: 10 }))
+    await n.render(createCtx({ theme, version: 1, width: 10 }))
+    // Same version — regardless of content — collapses to the cached rows.
+    await n.render(createCtx({ theme, version: 1, width: 10 }))
     expect(n.renderCalls).toBe(1)
   })
 })

@@ -3,7 +3,6 @@ import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { RenderCtx } from "./ctx.ts"
 import type { Events } from "./emitter.ts"
 
-import { ctxHash } from "./ctx.ts"
 import { Emitter } from "./emitter.ts"
 
 /** Minimum event map every node carries. Custom event maps must intersect. */
@@ -35,7 +34,7 @@ export abstract class Node<
   S extends object = object,
   E extends BaseEvents = BaseEvents,
 > extends Emitter<E> {
-  #cache?: { rows: string[]; key: string }
+  #cache?: { rows: string[]; version: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
   readonly #children: Node[] = []
@@ -99,8 +98,9 @@ export abstract class Node<
 
   async render(ctx: RenderCtx): Promise<string[]> {
     this.#rendering ??= (async () => {
-      const key = ctxHash(ctx, { force: !this.parent }) // force at the root to pick up theme/width changes
-      if (this.#cache?.key !== key) this.#cache = { key, rows: await this._render(ctx) }
+      if (this.#cache?.version !== ctx.version) {
+        this.#cache = { rows: await this._render(ctx), version: ctx.version }
+      }
       return this.#cache.rows
     })()
     try {

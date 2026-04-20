@@ -1,7 +1,6 @@
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../style/theme.ts"
 
-import { createHash } from "node:crypto"
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../style/theme.ts"
 
@@ -14,17 +13,15 @@ export type { StyleBuilder, Theme }
  * `style` is a theme-bound chainable builder made available to components so
  * they can produce inline-styled strings without re-binding the theme.
  *
- * `hash` is a memoized content-hash of the identity-relevant ctx fields
- * (`width`, `theme`). It's set by `ctxHash()` on first call at the root,
- * then propagated to children via spread so every node's cache key is stable
- * for the pass. Callers can bump any non-excluded ctx field (or add a
- * `version` field) to force a tree-wide re-render.
+ * `version` is a monotonic cache-key bumped by the `Renderer` whenever any
+ * identity-relevant ctx field changes (resize, theme swap). Node caches
+ * compare this integer — no hashing, no string keys.
  */
 export interface RenderCtx {
   width: number
   theme: Theme
   style: StyleBuilder
-  hash?: string
+  version: number
 }
 
 /**
@@ -58,24 +55,7 @@ export function createCtx(opts?: Partial<RenderCtx>): RenderCtx {
   return {
     style: style(theme),
     theme,
+    version: opts?.version ?? 0,
     width: Math.min(opts?.width ?? tw, tw),
   }
-}
-
-/**
- * Return the memoized cache key for `ctx`, hashing only the fields that
- * affect render output (`width`, `theme`). The `style` builder is identity-
- * tied to `theme`, and `hash` itself is the memoized result — both are
- * excluded from the hash input.
- *
- * Pass `{ force: true }` at the root of a render pass to recompute from
- * scratch (ignoring any stale cached hash on the object).
- */
-export function ctxHash(ctx: RenderCtx, opts?: { force?: boolean }): string {
-  const h = ctx as { hash?: string }
-  if (opts?.force !== true && h.hash) return h.hash
-  h.hash = createHash("sha256")
-    .update(JSON.stringify({ theme: ctx.theme, width: ctx.width }))
-    .digest("hex")
-  return h.hash
 }

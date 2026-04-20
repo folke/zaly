@@ -53,10 +53,15 @@ export class Renderer {
 
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
+  readonly #theme: Theme | undefined
   #running = false
   #escTimer: ReturnType<typeof setTimeout> | undefined
   #scheduled = false
   #dirty = false
+  /** Monotonic cache-key for `RenderCtx`. Bumped on any event that
+   *  invalidates every node cache in the tree (resize, theme swap). */
+  #ctxVersion = 0
+  #ctx: RenderCtx | undefined
   readonly #onDirty = (): void => this.#schedule()
 
   constructor(opts: RendererOptions = {}) {
@@ -66,8 +71,11 @@ export class Renderer {
       stdout: opts.stdout,
     })
 
-    const theme = opts.theme
-    const getCtx = (): RenderCtx => createCtx({ theme, width: this.terminal.cols })
+    this.#theme = opts.theme
+    // Single shared ctx per tick. Rebuilt lazily when version bumps or
+    // the cached ctx no longer matches the current terminal width
+    // (SIGWINCH handler bumps version + clears `#ctx` below).
+    const getCtx = (): RenderCtx => this.ctx
 
     const uiOpts: UIOptions = {}
     if (opts.uiMaxHeight !== undefined) uiOpts.maxHeight = opts.uiMaxHeight
@@ -89,18 +97,41 @@ export class Renderer {
     this.ui.on("dirty", this.#onDirty)
     this.overlay.on("dirty", this.#onDirty)
 
-    // SIGWINCH: size changed. Force a full repaint of both surfaces.
+    // SIGWINCH: size changed. Bump the ctx version so every node's
+    // cache self-invalidates on the next render; clear `#ctx` so the
+    // next getCtx rebuilds against the new width. Then force the
+    // stream + UI surfaces to repaint.
     this.terminal.onResize(() => {
+      this.#ctxVersion++
+      this.#ctx = undefined
       this.ui.invalidate()
-      // Stream's cached `writtenRows` accounts for what's on screen at
-      // the OLD size. Clearing it forces the next flush to rewrite the
-      // whole visible slice at the new geometry.
       this.stream.reset()
     })
 
     this.#stdin = (opts.stdin ?? (process.stdin as unknown as TerminalReader)) as TerminalReader & {
       setEncoding?: (enc: string) => void
     }
+  }
+
+  /**
+   * Shared `RenderCtx` for the current tick. Built on demand and
+   * reused across every `Node.render(ctx)` call until the version
+   * bumps (resize, theme swap). Nodes compare `ctx.version` against
+   * their cached row's version — simple integer check, no hashing.
+   */
+  get ctx(): RenderCtx {
+    if (
+      this.#ctx === undefined ||
+      this.#ctx.version !== this.#ctxVersion ||
+      this.#ctx.width !== this.terminal.cols
+    ) {
+      this.#ctx = createCtx({
+        theme: this.#theme,
+        version: this.#ctxVersion,
+        width: this.terminal.cols,
+      })
+    }
+    return this.#ctx
   }
 
   start(): void {

@@ -8,6 +8,10 @@ type RenderState = {
   node: Node
   /** Undefined until the first render pass populates it. */
   rows?: string[]
+  /** `ctx.version` captured when `rows` was produced. When the current
+   *  ctx version moves past this, the cached rows are stale — we
+   *  re-render even for non-live (frozen) states (e.g. on resize). */
+  version?: number
   /** True while invalidate-triggered mutations should re-render this node.
    *  Flipped to false when a newer node is appended. A non-live node with
    *  `rows` set is frozen content — its bytes live on screen (and maybe
@@ -102,13 +106,17 @@ export class Stream extends Emitter<StreamEvents> {
     // Snapshot in case new appends land mid-render.
     const states = [...this.#state]
 
-    // Re-render only live states and any state we haven't rendered yet
+    // Re-render only live states, any state we haven't rendered yet
     // (e.g. two appends in the same tick — the first became non-live
-    // when the second arrived, but it still needs an initial render).
+    // when the second arrived, but it still needs an initial render),
+    // or frozen states whose cached rows are from an older ctx version
+    // (resize / theme swap).
+    const ctx = this.getCtx()
     await Promise.all(
       states.map(async (s) => {
-        if (s.live || s.rows === undefined) {
-          s.rows = await s.node.render(this.getCtx())
+        if (s.live || s.rows === undefined || s.version !== ctx.version) {
+          s.rows = await s.node.render(ctx)
+          s.version = ctx.version
         }
       })
     )
