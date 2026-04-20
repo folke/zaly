@@ -4,81 +4,84 @@ import type { Terminal } from "./terminal.ts"
 
 type RenderState = {
   node: Node
-  rows: string[]
-  flush?: boolean
+  /** Undefined until the first render pass populates it. */
+  rows?: string[]
+  /** True while invalidate-triggered mutations should re-render this node.
+   *  Flipped to false when a newer node is appended. A non-live node with
+   *  `rows` set is frozen content — its bytes live on screen (and maybe
+   *  in scrollback) but we won't re-render it. */
+  live: boolean
 }
 
-const MAX_LIVE = 1
+export type StreamOptions = {
+  maxLive: number
+}
 
 /**
- * Stream surface — an append-only list of nodes. The tail-most state is
- * re-drawn in place as its node's state changes; older states are left
- * on screen and ride natural terminal scrolling into scrollback as the
- * tail grows.
+ * Stream surface — append-only list of nodes that render into the bottom
+ * of the terminal's scroll region and commit to scrollback as newer
+ * content arrives.
  *
- * Each `render()` pass walks `#live`, re-renders every state's node,
- * and reconciles what's on screen with the concatenated new rows in
- * three phases (inside a `?2026` synchronized-output block):
+ * We keep previously-appended nodes in `#state` as long as any of their
+ * rows are still on-screen, so `rows` (the getter) can report the full
+ * visible slice, and so the overlay surface can reconstruct what was
+ * underneath it. Only the current tail is `live` — committed nodes are
+ * frozen.
  *
- *   1. **Replace** — for the overlap `i ∈ [0, min(old, new))`, paint
- *      `newRows[i]` at the old extent's top + i whenever it differs
- *      from `oldRows[i]`. Since the kept content lives at those same
- *      row positions until the scroll phase shifts it, an index-wise
- *      compare is exactly right.
- *   2. **Shrink** — if `newRows.length < oldRows.length`, delete the
- *      trailing rows with a single `CSI N M` (DL) at the first stale
- *      row, keeping the retained rows anchored at the top of the old
- *      extent.
- *   3. **Insert** — if the tail grew, batch the new rows in chunks of
- *      `liveHeight` (so per-batch SU never over-scrolls the region,
- *      which would lose intermediate rows into scrollback as blank).
- *      For each batch: emit `CSI N S` to shift existing content up
- *      (committing the top-most rows to scrollback, as kitty /
- *      iterm / plain text all persist natively there) and free N blank
- *      rows at the bottom, then paint the batch's rows at those
- *      freed positions.
- *
- * On overflow (total rows > liveHeight), stale states at the head of
- * `#live` are marked `flush` — their rows are already committed to
- * scrollback so there's no point tracking them anymore — and removed
- * after the paint. Only the most recent state is kept live by default.
+ * Scrollback commits happen via `\n` at `scrollBottom`: the only
+ * guaranteed-portable way to move a row into scrollback (xterm.js and
+ * ghostty-web's WASM parser both ignore `CSI S` for scrollback
+ * promotion). So growth of the stream always flows through the bottom
+ * row with a `\n`-prefix write per new row.
  */
 export class Stream {
-  #live: RenderState[] = []
+  #state: RenderState[] = []
+  #scrollbackCount = 0
+  #rows: string[] = []
   #dirty = false
   #scheduled = false
-  #onInvalidate = () => this.#schedule()
+  #opts: StreamOptions
+  readonly #onInvalidate = (): void => {
+    this.#schedule()
+  }
 
   constructor(
     private readonly terminal: Terminal,
-    private readonly getCtx: () => RenderCtx
-  ) {}
+    private readonly getCtx: () => RenderCtx,
+    opts: Partial<StreamOptions> = {}
+  ) {
+    this.#opts = { maxLive: 3, ...opts }
+  }
 
   /**
-   * Make `node` the new live tail. The previous tail's on-screen content
-   * is left alone — subsequent scrolls (from this new tail growing)
-   * will push it upward and, eventually, into scrollback.
+   * Append `node` as the new live tail. The previous tail is frozen —
+   * it stops receiving re-renders even if its state mutates.
    */
-  append(node: Node): this {
+  add(node: Node): this {
     node.on("invalidate", this.#onInvalidate)
-    this.#live.push({ node, rows: [] })
+    this.#state.push({ live: true, node })
+    this.commit({ keep: this.#opts.maxLive, render: false })
     this.#schedule()
     return this
   }
 
-  /** How many rows the live tail may occupy before older content scrolls out. */
+  /** How many rows the live region may occupy. */
   get liveHeight(): number {
     return this.terminal.scrollBottom
   }
 
-  /**
-   * Snapshot of the live nodes currently being tracked — the most-recent
-   * append is last. Exposed so the renderer's traversal helpers
-   * (`walk`, `findNode`) can include stream-attached nodes in tree
-   * scans alongside the UI tree.
-   */
+  /** Tracked nodes (oldest first). Used by renderer traversals. */
   get nodes(): readonly Node[] {
-    return this.#live.map((s) => s.node)
+    return this.#state.map((s) => s.node)
+  }
+
+  /**
+   * Rows currently painted in the live region, top-to-bottom. Bottom
+   * of the returned array aligns with `terminal.scrollBottom`. Exposed
+   * so the overlay surface can restore what it drew over.
+   */
+  get rows(): readonly string[] {
+    return this.#rows
   }
 
   #schedule(): void {
@@ -95,98 +98,130 @@ export class Stream {
   }
 
   async render(): Promise<void> {
-    // Snapshot `#live` at the start of this pass. Without it, a call
-    // to `render()` that races with the microtask-scheduled one (the
-    // test suite and `renderer.stream.render()` in demo code can both
-    // trigger this) would see `#live` mutated by the first pass's
-    // trailing flush — `#live[i]` would be undefined past the shrunk
-    // length. Snapshot keeps each render's output landing in the state
-    // objects it set out to render (or a no-op if they've been dropped).
-    const states = [...this.#live]
-    let oldRows: string[] = []
-    const newRows: string[] = []
-    const all = await Promise.all(
-      states.map(async (state) => {
-        oldRows.push(...state.rows)
-        return await state.node.render(this.getCtx())
+    // Snapshot in case new appends land mid-render.
+    const states = [...this.#state]
+
+    // Re-render only live states and any state we haven't rendered yet
+    // (e.g. two appends in the same tick — the first became non-live
+    // when the second arrived, but it still needs an initial render).
+    await Promise.all(
+      states.map(async (s) => {
+        if (s.live || s.rows === undefined) {
+          s.rows = await s.node.render(this.getCtx())
+        }
       })
     )
-    for (let i = 0; i < states.length; i++) {
-      states[i].rows = all[i]
-      newRows.push(...all[i])
-    }
+
+    const allRows: string[] = []
+    for (const s of states) if (s.rows) allRows.push(...s.rows)
+
     const height = this.liveHeight
-    oldRows = oldRows.slice(-height)
     const bottom = this.terminal.scrollBottom
-    const top = bottom - oldRows.length + 1
+    const oldCC = this.#scrollbackCount
+    const oldVisible = this.#rows
+    const oldTopRow = bottom - oldVisible.length + 1
+    const oldVisibleEndIdx = oldCC + oldVisible.length
+
+    const newCC = Math.max(oldCC, allRows.length - height)
+    const newVisible = allRows.slice(newCC)
+    const newTopRow = bottom - newVisible.length + 1
+
+    // Tail shrank below the old visible extent. Treated as a separate
+    // path because the bottom-anchored layout needs to move content
+    // upward (or equivalently, clear stale rows above the new top and
+    // rewrite in place). We never scroll into scrollback on shrink.
+    const isShrink = allRows.length < oldVisibleEndIdx
 
     this.terminal.sync(() => {
-      // replace existing lines
-      for (let i = 0; i < Math.min(oldRows.length, newRows.length); i++) {
-        if (oldRows[i] === newRows[i]) continue
-        this.terminal.write(
-          this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + newRows[i]
-        )
-      }
-      // delete any remaining old lines (if the tail shrank)
-      if (oldRows.length > newRows.length) {
-        this.terminal.write(
-          this.terminal.moveTo(top + newRows.length, 1) +
-            this.terminal.deleteLines(oldRows.length - newRows.length)
-        )
-      }
-      // Insert any remaining new rows (if the tail grew). Batched by
-      // `height` so a single SU never exceeds `liveHeight`: scrolling
-      // further would just commit blank rows to scrollback, silently
-      // dropping the intermediate rows that the user would expect to
-      // find in history when they scroll up.
-      let i = oldRows.length
-      while (i < newRows.length) {
-        const batch = Math.min(newRows.length - i, height)
-        this.terminal.write(this.terminal.scrollUp(batch))
-        for (let j = 0; j < batch; j++) {
-          this.terminal.write(this.terminal.moveTo(bottom - batch + 1 + j, 1) + newRows[i + j])
+      if (isShrink) {
+        // Clear the rows that were above newVisible's new (higher) top.
+        for (let r = oldTopRow; r < newTopRow; r++) {
+          this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
         }
-        i += batch
+        // Rewrite the visible window — cheap enough since we only do
+        // this when the tail shrinks, and we skip unchanged rows.
+        for (let k = 0; k < newVisible.length; k++) {
+          const oldK = k + (oldVisible.length - newVisible.length)
+          if (oldVisible[oldK] === newVisible[k]) continue
+          this.terminal.write(
+            this.terminal.moveTo(newTopRow + k, 1) + this.terminal.clearLine() + newVisible[k]
+          )
+        }
+      } else {
+        // --- Mutations: rewrite rows whose allRows content changed ---
+        // At this point the viewport still holds `oldVisible`; rewrite
+        // in place at old positions. Any row we rewrite that ends up
+        // scrolling into scrollback during the growth phase will carry
+        // the updated content with it.
+        for (let k = 0; k < oldVisible.length; k++) {
+          const idx = oldCC + k
+          const newContent = allRows[idx]
+          if (oldVisible[k] === newContent) continue
+          this.terminal.write(
+            this.terminal.moveTo(oldTopRow + k, 1) + this.terminal.clearLine() + newContent
+          )
+        }
+
+        // --- Growth: append new rows with \n-at-scrollBottom pattern ---
+        // The `\n` promotes the region's current top row into scrollback
+        // (works uniformly on xterm.js / ghostty-web / real terminals
+        // as long as scrollTop is row 1). `\r` resets column so the
+        // next payload starts at col 1; `clearLine` wipes any trailing
+        // cells the previous write left after a shorter row.
+        if (allRows.length > oldVisibleEndIdx) {
+          this.terminal.write(this.terminal.moveTo(bottom, 1))
+          for (let i = oldVisibleEndIdx; i < allRows.length; i++) {
+            this.terminal.write(`\n\r${this.terminal.clearLine()}${allRows[i]}`)
+          }
+        }
       }
     })
 
-    this.flush({ keep: MAX_LIVE, render: false })
+    this.#rows = newVisible
 
-    // If the tail grew beyond the scroll region, trim older states until it fits.
-    let newHeight = 0
-    for (let i = this.#live.length - 1; i >= 0; i--) {
-      const state = this.#live[i]
-      if (newHeight > height) state.flush = true
-      newHeight += state.rows.length
+    // Drop states whose rows have entirely entered scrollback. Any
+    // dropped rows leave `allRows` too on the next tick, so decrement
+    // `#scrollbackCount` accordingly — it tracks scrollback rows that
+    // are still represented in our state queue.
+    let dropped = 0
+    while (this.#state.length > 0) {
+      const first = this.#state[0]
+      const len = first.rows?.length ?? 0
+      if (dropped + len > newCC) break
+      this.#state.shift()
+      this.#commit(first)
+      dropped += len
     }
-
-    // remove any flushed states from the head until we hit a live one.
-    while (this.#live.length > 0 && this.#live[0].flush) {
-      const state = this.#live.shift()!
-      state.node.off("invalidate", this.#onInvalidate)
-    }
+    this.#scrollbackCount = newCC - dropped
   }
 
-  flush(opts?: { keep?: number; render?: boolean }): void {
+  /** Detach invalidate listener and mark non-live.
+   * Might still render this node if it was never rendered yet */
+  #commit(state: RenderState): void {
+    if (!state.live) return
+    state.live = false
+    state.node.off("invalidate", this.#onInvalidate)
+  }
+
+  /** Commit all but the last `keep` states. If `render` is true, also
+   * schedule a render to flush the commits. */
+  commit(opts?: { keep?: number; render?: boolean }): void {
     const keep = opts?.keep ?? 1
     const render = opts?.render ?? true
-    for (let i = 0; i < this.#live.length - keep; i++) {
-      const state = this.#live[i]
-      state.flush = true
-      // Unsubscribe synchronously: even if a render is scheduled, the
-      // node shouldn't be able to re-schedule us via `invalidate` in
-      // the meantime. And when `render: false`, no render will run to
-      // clean up, so this is the only unsubscribe point.
-      state.node.off("invalidate", this.#onInvalidate)
+    let changed = false
+    for (let i = 0; i < this.#state.length - keep; i++) {
+      const s = this.#state[i]
+      this.#commit(s)
+      changed = true
     }
-    // Drop flushed states we aren't going to render again.
-    if (!render) this.#live = this.#live.filter((s) => !s.flush)
-    if (render) this.#schedule()
+    if (changed && render) this.#schedule()
   }
 
   /** Drop the current tail without rendering anything further. */
   reset(): void {
-    this.flush({ keep: 0, render: false })
+    for (const s of this.#state) this.#commit(s)
+    this.#state.length = 0
+    this.#scrollbackCount = 0
+    this.#rows = []
   }
 }

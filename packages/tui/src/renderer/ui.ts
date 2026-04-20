@@ -27,7 +27,7 @@ export interface UIOptions {
 
 export class UI {
   readonly #root: Box = box({ flexDirection: "column" })
-  #lastRows: string[] = []
+  #rows: string[] = []
   #scheduled = false
   readonly #maxHeight: number | undefined
 
@@ -55,7 +55,17 @@ export class UI {
 
   /** Current rendered height (rows). */
   get height(): number {
-    return this.#lastRows.length
+    return this.#rows.length
+  }
+
+  /**
+   * The rows currently painted into the footer region, in order from the
+   * top of the reserved area downward. Exposed so the overlay surface
+   * can re-emit this content after it tears down, without re-rendering
+   * the tree.
+   */
+  get rows(): readonly string[] {
+    return this.#rows
   }
 
   #schedule(): void {
@@ -78,7 +88,7 @@ export class UI {
     const cap = this.#maxHeight ?? Math.max(1, Math.floor(this.terminal.rows / 3))
     const rows = rendered.slice(0, cap)
 
-    const prevHeight = this.#lastRows.length
+    const prevHeight = this.#rows.length
     const nextHeight = rows.length
 
     this.terminal.sync(() => {
@@ -117,17 +127,17 @@ export class UI {
       // `footerTop` (1-based). Only rewrite rows whose content changed.
       const top = this.terminal.footerTop
       for (let i = 0; i < nextHeight; i++) {
-        if (this.#lastRows[i] === rows[i] && prevHeight === nextHeight) continue
+        if (this.#rows[i] === rows[i] && prevHeight === nextHeight) continue
         this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
       }
     })
 
-    this.#lastRows = rows
+    this.#rows = rows
   }
 
   /** Force a full repaint (used on SIGWINCH / theme change). */
   invalidate(): void {
-    this.#lastRows = []
+    this.#rows = []
     this.#schedule()
   }
 }
