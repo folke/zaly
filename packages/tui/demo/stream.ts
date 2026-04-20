@@ -72,7 +72,7 @@ let status = "streaming"
 const spin = spinner({ color: "accent" })
 const statusLine = text(
   ({ style }) =>
-    `${style.primary("zaly")} ${style.dim("·")} ${style.ok(status)} ${style.dim("·")} ${style.muted("ctrl-c to quit")}`
+    `${style.primary("zaly")} ${style.dim("·")} ${style.success(status)} ${style.dim("·")} ${style.muted("ctrl-c to quit")}`
 )
 const bar = progress({ color: "primary", label: "auto", total: 1, value: 0 })
 
@@ -90,7 +90,7 @@ renderer.ui.root.add(
 // caller can update the footer's shared progress bar.
 async function streamMarkdown(full: string, onProgress: (f: number) => void): Promise<void> {
   const node = markdown("", { wrap: "word" })
-  renderer.stream.append(node)
+  renderer.stream.add(node)
 
   let i = 0
   while (i < full.length) {
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
   statusLine.invalidate()
   bar.state.value = 1
   spin.stop()
-  await new Promise((r) => setTimeout(r, 500))
+  await new Promise((r) => setTimeout(r, 5000))
 
   renderer.stop()
 }

@@ -8,7 +8,7 @@ async function demo(label: string, name: string) {
   // color is picked dynamically at render time: `.bold[state.level]` maps
   // to theme slots via `keyof Theme`.
   const status = node(
-    { level: "ok" as "ok" | "warn" | "err", msg: "all systems nominal" },
+    { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
     ({ ctx: { style }, state }) => text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`)
   )
 
@@ -22,7 +22,7 @@ async function demo(label: string, name: string) {
     { flexDirection: "row", gap: 1 },
     box(
       { border: "rounded", borderTitle: "passing", flexGrow: 1, padding: [0, 1] },
-      text("168 / 168", { bold: true, fg: "ok" })
+      text("168 / 168", { bold: true, fg: "success" })
     ),
     box(
       { border: "rounded", borderTitle: "pending", flexGrow: 1, padding: [0, 1] },
@@ -30,7 +30,7 @@ async function demo(label: string, name: string) {
     ),
     box(
       { border: "rounded", borderTitle: "failed", flexGrow: 1, padding: [0, 1] },
-      text("0", { fg: "err" })
+      text("0", { fg: "error" })
     )
   )
 
@@ -44,11 +44,11 @@ async function demo(label: string, name: string) {
     text("  path: src/nodes/box.ts", { fg: "muted" }),
     // Mixed-span line — resolves `ctx.style` at render time via the
     // function form of `text()`. No need to pre-bind a builder outside.
-    text(({ style }) => `  lines: ${style.ok("+12")} ${style.err("-4")}`),
+    text(({ style }) => `  lines: ${style.success("+12")} ${style.error("-4")}`),
     text(""),
     text("tool: bash", { fg: "primary" }),
     text("  cmd: bun test", { fg: "muted" }),
-    text("  exit: 0", { fg: "ok" })
+    text("  exit: 0", { fg: "success" })
   )
 
   const app = box({ gap: 1 }, header, stats, activity, status)
