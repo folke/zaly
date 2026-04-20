@@ -72,20 +72,19 @@ describe("spinner()", () => {
     s.stop()
   })
 
-  test("first render auto-starts the interval; stop() cancels it", () => {
-    const ctx = createCtx({ width: 40 })
+  test("mount auto-starts the interval; unmount cancels it", () => {
     const s = spinner({ speed: 50 })
     const spy = vi.spyOn(s, "invalidate")
 
-    // Render once → interval starts.
-    void s.render(ctx)
+    // Mount → interval starts; timer ticks fire invalidate.
+    s.mount("stream")
     vi.advanceTimersByTime(200)
     expect(spy).toHaveBeenCalled()
 
     spy.mockClear()
-    s.stop()
+    s.unmount()
     vi.advanceTimersByTime(1000)
-    // No more ticks after stop.
+    // No more ticks after unmount.
     expect(spy).not.toHaveBeenCalled()
   })
 })

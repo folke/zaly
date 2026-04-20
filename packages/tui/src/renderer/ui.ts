@@ -36,6 +36,7 @@ export class UI extends Emitter<UIEvents> {
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
   readonly #maxHeight: number | undefined
+  #running = false
 
   constructor(
     private readonly terminal: Terminal,
@@ -53,6 +54,10 @@ export class UI extends Emitter<UIEvents> {
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", () => this.emit("dirty"))
+    // The root is *not* mounted here — it mounts on `Renderer.start()`
+    // via `onStart`. Deferring means widgets added to the footer tree
+    // (e.g. a Spinner) don't fire their `mount` handler before the
+    // renderer is actually rendering.
   }
 
   /** The footer's root Box. Add children via `ui.root.add(child)`. */
@@ -167,5 +172,19 @@ export class UI extends Emitter<UIEvents> {
   onResize(): void {
     this.#rows = []
     this.emit("dirty")
+  }
+
+  /** Renderer is starting. Mount the footer root. */
+  onStart(): void {
+    if (this.#running) return
+    this.#running = true
+    if (!this.#root.mounted) this.#root.mount("ui")
+  }
+
+  /** Renderer is stopping. Unmount the footer root. */
+  onStop(): void {
+    if (!this.#running) return
+    this.#running = false
+    if (this.#root.mounted) this.#root.unmount()
   }
 }

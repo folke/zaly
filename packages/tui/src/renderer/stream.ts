@@ -57,6 +57,10 @@ export class Stream extends Emitter<StreamEvents> {
    *  blanks (not overlay bytes) into scrollback. */
   readonly #staleRows = new Set<number>()
   #opts: StreamOptions
+  /** Set by the Renderer via `onStart`/`onStop`. Gates `mount()` on
+   *  appends: a node appended while the renderer is stopped just
+   *  gets tracked, and mounts when `onStart` fires. */
+  #running = false
   readonly #onInvalidate = (): void => {
     this.emit("dirty")
   }
@@ -74,9 +78,10 @@ export class Stream extends Emitter<StreamEvents> {
    * Append `node` as the new live tail. The previous tail is frozen —
    * it stops receiving re-renders even if its state mutates.
    */
-  add(node: Node): this {
+  append(node: Node): this {
     node.on("invalidate", this.#onInvalidate)
     this.#state.push({ live: true, node })
+    if (this.#running) node.mount("stream")
     this.commit({ keep: this.#opts.maxLive, render: false })
     this.emit("dirty")
     return this
@@ -209,6 +214,7 @@ export class Stream extends Emitter<StreamEvents> {
       const first = this.#state[0]
       const len = first.rows?.length ?? 0
       if (dropped + len > newCC) break
+      if (first.node.mounted) first.node.unmount()
       this.#state.shift()
       this.#commit(first)
       dropped += len
@@ -310,11 +316,30 @@ export class Stream extends Emitter<StreamEvents> {
     if (changed) this.#rows = copy
   }
 
-  /** Drop the current tail without rendering anything further. */
-  reset(): void {
-    for (const s of this.#state) this.#commit(s)
-    this.#state.length = 0
-    this.#scrollbackCount = 0
-    this.#rows = []
+  /**
+   * Renderer is starting. Mount every tracked node against this
+   * surface so their `mount` lifecycle fires now (not at append time
+   * — a node appended before the renderer was running has been
+   * waiting for this). Called once per `Renderer.start()`.
+   */
+  onStart(): void {
+    if (this.#running) return
+    this.#running = true
+    for (const s of this.#state) {
+      if (!s.node.mounted) s.node.mount("stream")
+    }
+  }
+
+  /**
+   * Renderer is stopping. Unmount every tracked node — symmetrical
+   * with `onStart`. Tracked state (`#state`) is preserved so a
+   * subsequent `start()` finds the same tree and remounts it.
+   */
+  onStop(): void {
+    if (!this.#running) return
+    this.#running = false
+    for (const s of this.#state) {
+      if (s.node.mounted) s.node.unmount()
+    }
   }
 }

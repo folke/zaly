@@ -1,12 +1,12 @@
 // oxlint-disable no-await-in-loop
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { text } from "../../src/widgets/text.ts"
 import { makeHarness } from "./harness.ts"
 
 describe("Stream — viewport correctness", () => {
   test("single append lands at the bottom", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
-    h.renderer.stream.add(text("hello"))
+    h.renderer.stream.append(text("hello"))
     await h.flush()
     expect(h.viewport()[4]).toBe("hello")
     expect(
@@ -21,7 +21,7 @@ describe("Stream — viewport correctness", () => {
   test("sequential appends stack bottom-anchored while fitting", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     for (const label of ["a", "b", "c"]) {
-      h.renderer.stream.add(text(label))
+      h.renderer.stream.append(text(label))
       await h.flush()
     }
     expect(h.viewport()).toEqual(["", "", "a", "b", "c"])
@@ -31,7 +31,7 @@ describe("Stream — viewport correctness", () => {
   test("mutations on the live tail re-render in place", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     const t = text("draft")
-    h.renderer.stream.add(t)
+    h.renderer.stream.append(t)
     await h.flush()
     t.state.content = "final"
     await h.flush()
@@ -44,7 +44,7 @@ describe("Stream — overflow & scrollback", () => {
   test("N sequential appends past liveHeight: oldest scroll into scrollback, newest visible", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     for (let i = 1; i <= 10; i++) {
-      h.renderer.stream.add(text(String(i)))
+      h.renderer.stream.append(text(String(i)))
       await h.flush()
     }
     expect(h.viewport()).toEqual(["6", "7", "8", "9", "10"])
@@ -58,7 +58,7 @@ describe("Stream — overflow & scrollback", () => {
 
   test("appends within one tick also spill correctly", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
-    for (let i = 1; i <= 10; i++) h.renderer.stream.add(text(String(i)))
+    for (let i = 1; i <= 10; i++) h.renderer.stream.append(text(String(i)))
     await h.flush()
     expect(h.viewport()).toEqual(["6", "7", "8", "9", "10"])
     expect(h.scrollback().filter((r) => r !== "")).toEqual(["1", "2", "3", "4", "5"])
@@ -69,7 +69,7 @@ describe("Stream — overflow & scrollback", () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     // Twelve logical rows in one node — more than liveHeight (=5).
     const lines = Array.from({ length: 12 }, (_, i) => `r${i + 1}`)
-    h.renderer.stream.add(text(lines.join("\n")))
+    h.renderer.stream.append(text(lines.join("\n")))
     await h.flush()
     expect(h.viewport()).toEqual(["r8", "r9", "r10", "r11", "r12"])
     expect(h.scrollback().filter((r) => r !== "")).toEqual([
@@ -87,7 +87,7 @@ describe("Stream — overflow & scrollback", () => {
   test("a live tail that grows past liveHeight spills its older rows", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     const t = text("r1\nr2\nr3")
-    h.renderer.stream.add(t)
+    h.renderer.stream.append(t)
     await h.flush()
     expect(h.viewport()).toEqual(["", "", "r1", "r2", "r3"])
 
@@ -109,10 +109,10 @@ describe("Stream — live / frozen nodes", () => {
     const second = text("second")
     const third = text("third")
     const fourth = text("fourth")
-    h.renderer.stream.add(first)
-    h.renderer.stream.add(second)
-    h.renderer.stream.add(third)
-    h.renderer.stream.add(fourth)
+    h.renderer.stream.append(first)
+    h.renderer.stream.append(second)
+    h.renderer.stream.append(third)
+    h.renderer.stream.append(fourth)
     await h.flush()
     expect(h.viewport().slice(-4)).toEqual(["first", "second", "third", "fourth"])
 
@@ -135,8 +135,8 @@ describe("Stream.commit", () => {
     const h = await makeHarness({ cols: 20, rows: 10 })
     const a = text("a")
     const b = text("b")
-    h.renderer.stream.add(a)
-    h.renderer.stream.add(b)
+    h.renderer.stream.append(a)
+    h.renderer.stream.append(b)
     await h.flush()
     h.renderer.stream.commit({ keep: 1, render: false })
 

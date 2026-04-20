@@ -27,6 +27,8 @@ export interface RendererOptions {
   hookSignals?: boolean
 }
 
+export type Surface = "stream" | "ui" | "overlay"
+
 /** Visitor signature for `Renderer.walk`. Return `"stop"` to halt. */
 export type NodeVisitor = (node: Node) => void | "stop"
 
@@ -159,6 +161,13 @@ export class Renderer {
     return this.#ctx
   }
 
+  /** Whether the renderer is currently running. Surfaces use this to
+   *  decide whether a fresh append/open should immediately mount the
+   *  node or just queue it for the next `start()`. */
+  get running(): boolean {
+    return this.#running
+  }
+
   start(): void {
     if (this.#running) return
     this.#running = true
@@ -166,10 +175,26 @@ export class Renderer {
     this.#stdin.setEncoding?.("utf8")
     this.#stdin.on("data", this.#onData)
     this.#stdin.resume?.()
+    // Mount every surface's tracked tree now that we're actually
+    // going to render. Order doesn't matter — each surface owns its
+    // own nodes and fires its own mount events.
+    this.stream.onStart()
+    this.ui.onStart()
+    this.overlay.onStart()
+    // Anything that called `emit("dirty")` before `start()` set
+    // `#dirty = true` but couldn't schedule (no renderer yet). Now
+    // that we're running, drain it.
+    if (this.#dirty) this.#schedule()
   }
 
   stop(): void {
     if (!this.#running) return
+    // Unmount before tearing the terminal down so widgets that
+    // scheduled teardown work (timers, subscriptions) have a clean
+    // chance to run before their last render.
+    this.overlay.onStop()
+    this.ui.onStop()
+    this.stream.onStop()
     this.#running = false
     this.#stdin.off("data", this.#onData)
     this.#stdin.pause?.()
@@ -230,9 +255,21 @@ export class Renderer {
 
   #schedule(): void {
     this.#dirty = true
+    // Nothing to paint until the renderer is actually running.
+    // Tracked `#dirty` is preserved so `start()` picks it up via the
+    // initial mount-triggered flush (or the first invalidate after).
+    if (!this.#running) return
     if (this.#scheduled) return
     this.#scheduled = true
     queueMicrotask(() => {
+      // A `stop()` may have landed between scheduling and the
+      // microtask firing; bail so we don't write to a terminal that
+      // just tore down. `#dirty` stays set, so the next `start()` can
+      // drain it.
+      if (!this.#running) {
+        this.#scheduled = false
+        return
+      }
       this.#dirty = false
       void this.render().finally(() => {
         this.#scheduled = false

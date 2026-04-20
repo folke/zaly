@@ -5,6 +5,7 @@ import { imageCapabilities } from "../style/image/capabilities.ts"
 import { encode as encodeIterm2 } from "../style/image/iterm.ts"
 import {
   allocatePlacementId,
+  deletePlacement,
   placement,
   resetTransmitCache,
   transmitOnce,
@@ -40,6 +41,12 @@ export class Image extends Node<ImageState> {
   // (image id, placement id) pair — the spec guarantees this replaces
   // the prior placement without flicker.
   readonly #placementId = allocatePlacementId()
+  #delete?: () => void
+
+  constructor(state: ImageState) {
+    super(state)
+    this.on("unmount", () => this.#delete?.())
+  }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const protocol = imageCapabilities().protocol
@@ -58,6 +65,7 @@ export class Image extends Node<ImageState> {
     let lead: string
     if (protocol === "kitty") {
       const { imageId, transmit } = await transmitOnce(this.state.src)
+      this.#delete = () => deletePlacement(imageId, this.#placementId)
       lead = transmit + placement(imageId, this.#placementId, { cols, rows })
     } else {
       const bytes = await imageBytes(this.state.src)

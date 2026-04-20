@@ -43,6 +43,12 @@ export interface SpinnerState {
 export class Spinner extends Node<SpinnerState> {
   #timer?: ReturnType<typeof setInterval>
 
+  constructor(state: SpinnerState) {
+    super(state)
+    this.on("mount", () => this.start())
+    this.on("unmount", () => this.stop())
+  }
+
   /** Global tick index for a given `speed`. Shared across all callers. */
   static tick(speed: number): number {
     return Math.floor(performance.now() / speed)
@@ -68,7 +74,6 @@ export class Spinner extends Node<SpinnerState> {
   }
 
   protected _render(ctx: RenderCtx): string[] {
-    this.start()
     const frames = this.state.frames ?? spinnerFrames.dots
     const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
     const color = this.state.color ?? "primary"

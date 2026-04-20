@@ -24,7 +24,7 @@ describe("renderer.getNode — lookup by id", () => {
     const r = renderer()
     const t = text("hi")
     t.id = "greeting"
-    r.stream.add(t)
+    r.stream.append(t)
     expect(r.getNode("greeting")).toBe(t)
   })
 
@@ -100,7 +100,7 @@ describe("renderer.walk — tree traversal", () => {
   test("walks stream-attached nodes too", () => {
     const r = renderer()
     const t = text("stream-side")
-    r.stream.add(t)
+    r.stream.append(t)
     const seen: Node[] = []
     r.walk((n) => {
       seen.push(n)

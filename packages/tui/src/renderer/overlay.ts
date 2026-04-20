@@ -41,6 +41,7 @@ export interface OverlayDeps {
  */
 export class OverlaySurface extends Emitter<OverlayEvents> {
   readonly #active: Overlay[] = []
+  #running = false
   readonly #onDirty = (): void => {
     this.emit("dirty")
   }
@@ -60,6 +61,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     this.#active.push(overlay)
     this.#active.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
     overlay.on("invalidate", this.#onDirty)
+    if (this.#running) overlay.mount("overlay")
     this.emit("dirty")
     return this
   }
@@ -74,6 +76,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
   close(overlay: Overlay): this {
     const i = this.#active.indexOf(overlay)
     if (i === -1) return this
+    if (overlay.mounted) overlay.unmount()
     this.#active.splice(i, 1)
     overlay.off("invalidate", this.#onDirty)
     this.deps.ui.invalidate()
@@ -84,6 +87,22 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
   /** Every currently-open overlay node, for renderer traversals. */
   get nodes(): readonly Node[] {
     return this.#active
+  }
+
+  /** Renderer is starting. Mount every active overlay — overlays that
+   *  were opened before `start()` have been waiting for this. */
+  onStart(): void {
+    if (this.#running) return
+    this.#running = true
+    for (const o of this.#active) if (!o.mounted) o.mount("overlay")
+  }
+
+  /** Renderer is stopping. Unmount every active overlay. Active set
+   *  is preserved so a subsequent `start()` remounts the same stack. */
+  onStop(): void {
+    if (!this.#running) return
+    this.#running = false
+    for (const o of this.#active) if (o.mounted) o.unmount()
   }
 
   /**
@@ -103,7 +122,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
         // box layout decide how wide it wants to be against `ctx.width`.
         const rows = await o.render(ctx)
         painted.push({ rows, x: o.state.x, y: o.state.y })
-      }),
+      })
     )
     run(() => {
       for (const { rows, x, y } of painted) {

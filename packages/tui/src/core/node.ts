@@ -1,5 +1,6 @@
 import type { ActionMap } from "../input/keymap.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
+import type { Surface } from "../renderer/index.ts"
 import type { RenderCtx } from "./ctx.ts"
 import type { Events } from "./emitter.ts"
 
@@ -40,6 +41,7 @@ export abstract class Node<
   readonly #children: Node[] = []
   readonly #state: S
   readonly state: S
+  #surface?: Surface
   actions?: ActionMap
   id?: string
   type?: string
@@ -65,6 +67,14 @@ export abstract class Node<
   // Make parent readonly
   get parent(): Node | undefined {
     return this.#parent
+  }
+
+  get surface(): Surface | undefined {
+    return this.#surface
+  }
+
+  get mounted(): boolean {
+    return this.#surface !== undefined
   }
 
   setState(patch: Partial<S>): this {
@@ -154,15 +164,20 @@ export abstract class Node<
     const removed = this.#children.splice(adjustedStart, deleteCount, ...filtered)
     for (const c of removed) {
       this.emit("childremoved", c)
+      if (c.mounted) c.unmount()
       if (c.parent === this) c.#parent = undefined
     }
     for (const c of filtered) {
       // Detach from old parent before rewriting `#parent`, so the old
       // parent's `remove()` path observes a consistent `c.parent === old`
       // and cleans up its own bookkeeping.
-      if (c.parent && c.parent !== this) c.parent.remove(c)
+      if (c.parent && c.parent !== this) {
+        c.unmount()
+        c.parent.remove(c)
+      }
       c.#parent = this
       this.emit("childadded", c)
+      if (this.mounted) c.mount(this.#surface!)
     }
     this.invalidate()
     return this
@@ -177,6 +192,27 @@ export abstract class Node<
     const result = { ...this.#state } as Omit<S, K>
     for (const k of keys) delete (result as S)[k]
     return result
+  }
+
+  mount(surface: Surface): this {
+    if (this.#surface === surface) return this
+    if (this.#surface) {
+      throw new Error(
+        `Node is already mounted on "${this.#surface}" (requested "${surface}"). Unmount first if you meant to move it.`,
+      )
+    }
+    this.#surface = surface
+    this.emit("mount")
+    for (const c of this.#children) c.mount(surface)
+    return this
+  }
+
+  unmount(): this {
+    if (!this.#surface) return this
+    for (const c of this.#children) c.unmount()
+    this.emit("unmount")
+    this.#surface = undefined
+    return this
   }
 }
 
