@@ -143,9 +143,17 @@ export class UI extends Emitter<UIEvents> {
     this.#rows = rows
   }
 
-  /** Force a full repaint (used on SIGWINCH / theme change). */
+  /**
+   * Force a full repaint of the currently-painted footer rows on the
+   * next render. Replaces each cached row with `""` so the diff sees
+   * every slot as changed and rewrites it in place — without shrinking
+   * the array. Emptying it entirely would fool the grow/shrink math
+   * into thinking the footer just appeared (`prevHeight === 0`), so
+   * it'd emit `scrollUp(nextHeight)` to make room for a footer that's
+   * already on screen, visibly scrolling the stream up by N rows.
+   */
   invalidate(): void {
-    this.#rows = []
+    this.#rows = this.#rows.map(() => "")
     this.emit("dirty")
   }
 }

@@ -6,10 +6,12 @@ import type { UIOptions } from "./ui.ts"
 import { createCtx } from "../core/ctx.ts"
 import { Decoder } from "../input/decoder.ts"
 import { InputRouter } from "../input/router.ts"
+import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
 import { Terminal } from "./terminal.ts"
 import { UI } from "./ui.ts"
 
+export { OverlaySurface } from "./overlay.ts"
 export { Stream } from "./stream.ts"
 export { Terminal } from "./terminal.ts"
 export { UI } from "./ui.ts"
@@ -45,6 +47,7 @@ export type NodeVisitor = (node: Node) => void | "stop"
 export class Renderer {
   readonly stream: Stream
   readonly ui: UI
+  readonly overlay: OverlaySurface
   readonly terminal: Terminal
   readonly input: InputRouter
 
@@ -71,13 +74,20 @@ export class Renderer {
 
     this.ui = new UI(this.terminal, getCtx, uiOpts)
     this.stream = new Stream(this.terminal, getCtx)
+    this.overlay = new OverlaySurface({
+      getCtx,
+      stream: this.stream,
+      terminal: this.terminal,
+      ui: this.ui,
+    })
     this.input = new InputRouter()
 
     // Surfaces emit `"dirty"` instead of self-scheduling. Centralising
-    // the microtask here means one flush per tick for the whole tree and
-    // lets future surfaces (overlay) slot in with a single `.on("dirty")`.
-    this.ui.on("dirty", this.#onDirty)
+    // the microtask here means one flush per tick for the whole tree
+    // and keeps paint order explicit: stream < ui < overlay.
     this.stream.on("dirty", this.#onDirty)
+    this.ui.on("dirty", this.#onDirty)
+    this.overlay.on("dirty", this.#onDirty)
 
     // SIGWINCH: size changed. Force a full repaint of both surfaces.
     this.terminal.onResize(() => {
@@ -159,6 +169,7 @@ export class Renderer {
     }
     visitNode(this.ui.root)
     for (const n of this.stream.nodes) visitNode(n)
+    for (const n of this.overlay.nodes) visitNode(n)
   }
 
   #schedule(): void {
@@ -182,16 +193,22 @@ export class Renderer {
    * inside the outer sync after all compute phases settle.
    */
   async render(): Promise<void> {
-    const paints: Array<() => void> = []
-    const capture = (fn: () => void): void => {
-      paints.push(fn)
-    }
-    // Order: stream (lowest), ui (above stream). Overlay slots in here
-    // once it exists. Parallel compute; the paints execute in array
-    // order under the outer sync.
-    await Promise.all([this.stream.render(capture), this.ui.render(capture)])
+    const paints: { paint: () => void; order: number }[] = []
+    const capture =
+      (order: number) =>
+      (fn: () => void): void => {
+        paints.push({ order, paint: fn })
+      }
+    // Order: stream (lowest) → ui → overlay (highest). Parallel
+    // compute; the paints execute in array order under the outer sync,
+    // so later surfaces land on top of earlier ones' bytes.
+    await Promise.all([
+      this.stream.render(capture(1)),
+      this.ui.render(capture(2)),
+      this.overlay.render(capture(3)),
+    ])
     this.terminal.sync(() => {
-      for (const paint of paints) paint()
+      paints.toSorted((a, b) => a.order - b.order).forEach(({ paint }) => paint())
     })
   }
 

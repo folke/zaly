@@ -67,9 +67,12 @@ const rowToString = (cells: GhosttyCell[]): string => {
 }
 
 const flush = async (): Promise<void> => {
-  // Drain microtasks — stream/UI flushes are queueMicrotask'd.
+  // Drain microtasks — a full render tick chains through many awaits
+  // (Promise.all across surfaces, each surface awaiting child nodes,
+  // plus shiki/image pipelines). 8 isn't enough for a multi-surface
+  // render with overlays; 64 is generous and still free-fast.
   // oxlint-disable-next-line no-await-in-loop
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 64; i++) await Promise.resolve()
 }
 
 /** Build a harness. Async because we need to load the WASM on first call. */

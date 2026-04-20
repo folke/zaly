@@ -46,6 +46,12 @@ export class Stream extends Emitter<StreamEvents> {
   #state: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
+  /** Absolute rows outside `#rows` that need clearing on the next
+   *  render — populated by `markStale` when an overlay paints at a row
+   *  above the stream's tracked region. Cleared at the top of the paint
+   *  closure, before Phase 1/2, so any `\n`-scroll that follows promotes
+   *  blanks (not overlay bytes) into scrollback. */
+  readonly #staleRows = new Set<number>()
   #opts: StreamOptions
   readonly #onInvalidate = (): void => {
     this.emit("dirty")
@@ -127,7 +133,19 @@ export class Stream extends Emitter<StreamEvents> {
     // rewrite in place). We never scroll into scrollback on shrink.
     const isShrink = allRows.length < oldVisibleEndIdx
 
+    // Snapshot + clear now so the paint closure (possibly deferred via
+    // the Renderer's capture) doesn't race with new `markStale` calls.
+    const staleRows = [...this.#staleRows]
+    this.#staleRows.clear()
+
     run(() => {
+      // Clear any rows outside the tracked region that picked up bytes
+      // from another surface (overlay). Must happen before any \n-scroll
+      // so the promoted scrollback rows are blank, not ghost content.
+      for (const r of staleRows) {
+        this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+      }
+
       if (isShrink) {
         // Clear the rows that were above newVisible's new (higher) top.
         for (let r = oldTopRow; r < newTopRow; r++) {
@@ -210,6 +228,55 @@ export class Stream extends Emitter<StreamEvents> {
       changed = true
     }
     if (changed && render) this.emit("dirty")
+  }
+
+  /**
+   * Force a full repaint of the currently-visible stream rows on the
+   * next render. Replaces each cached row with `""` so Phase 1's diff
+   * sees every slot as changed and rewrites it in place — *without*
+   * shrinking the array. Emptying it entirely would fool the growth
+   * path into treating already-visible rows as fresh appends and
+   * re-scrolling them through `\n`-at-scrollBottom, duplicating
+   * on-screen content.
+   */
+  invalidate(): void {
+    this.#rows = this.#rows.map(() => "")
+    this.emit("dirty")
+  }
+
+  /**
+   * Mark a range of absolute rows (inclusive) as stale — the next
+   * render must clear them before any `\n`-at-scrollBottom scroll, so
+   * overlay bytes never get promoted into scrollback or ghost-shifted
+   * above their absolute position.
+   *
+   *   - Rows inside `#rows`: their cached entry becomes `""`, so the
+   *     diff sees a mismatch and Phase 1 rewrites them with real
+   *     stream content.
+   *   - Rows outside (above) the tracked region: added to `#staleRows`
+   *     and force-cleared (via `clearLine`) at the top of the next
+   *     render's paint closure.
+   *
+   * No `"dirty"` emit — callers own their own scheduling.
+   */
+  markStale(fromRow: number, toRow: number): void {
+    const top = this.terminal.scrollBottom - this.#rows.length + 1
+    const bottom = this.terminal.scrollBottom
+    const copy = [...this.#rows]
+    let changed = false
+    for (let r = fromRow; r <= toRow; r++) {
+      const idx = r - top
+      if (idx >= 0 && idx < copy.length) {
+        copy[idx] = ""
+        changed = true
+      } else if (r >= 1 && r <= bottom) {
+        // Outside the tracked region but still inside the scroll
+        // region — stream doesn't "own" these rows but `\n` will
+        // scroll them, so pre-clear.
+        this.#staleRows.add(r)
+      }
+    }
+    if (changed) this.#rows = copy
   }
 
   /** Drop the current tail without rendering anything further. */
