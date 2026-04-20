@@ -97,6 +97,12 @@ export abstract class Node<
   }
 
   async render(ctx: RenderCtx): Promise<string[]> {
+    // `visible: false` on the state suppresses the render entirely —
+    // no `_render` call, no cached rows, zero layout footprint. Opt-in
+    // via `state.visible`; absence or `true` is the default shown path.
+    // Useful for toggled panels (autocomplete, log, modals) that should
+    // stick around in the tree so we don't re-create them each time.
+    if ((this.state as { visible?: boolean }).visible === false) return []
     this.#rendering ??= (async () => {
       if (this.#cache?.version !== ctx.version) {
         this.#cache = { rows: await this._render(ctx), version: ctx.version }
