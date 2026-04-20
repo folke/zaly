@@ -81,6 +81,23 @@ describe("NodeBase", () => {
     expect(parentFn).toHaveBeenCalledTimes(1)
   })
 
+  test("visible: false renders no rows without calling _render", async () => {
+    const n = new TestNode({ count: 0, text: "hi" })
+    ;(n.state as { visible?: boolean }).visible = false
+    const rows = await n.render(ctx)
+    expect(rows).toEqual([])
+    expect(n.renderCalls).toBe(0)
+  })
+
+  test("visible: true (or unset) renders normally", async () => {
+    const n = new TestNode({ count: 0, text: "hi" })
+    const rows = await n.render(ctx)
+    expect(rows).toEqual(["hi:0:20"])
+    ;(n.state as { visible?: boolean }).visible = true
+    const rows2 = await n.render(ctx)
+    expect(rows2).toEqual(["hi:0:20"])
+  })
+
   test("setState batches multiple fields into one invalidate", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
     await n.render(ctx)

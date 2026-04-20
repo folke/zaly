@@ -156,4 +156,16 @@ export class UI extends Emitter<UIEvents> {
     this.#rows = this.#rows.map(() => "")
     this.emit("dirty")
   }
+
+  /**
+   * Terminal was resized. Drop the painted-rows mirror so the next
+   * render's grow/shrink math treats the footer as if it's just
+   * appearing — correct after a screen clear, when the terminal no
+   * longer holds any footer bytes. The scroll region gets re-established
+   * through the normal `setReserveBottom` path inside `render()`.
+   */
+  onResize(): void {
+    this.#rows = []
+    this.emit("dirty")
+  }
 }

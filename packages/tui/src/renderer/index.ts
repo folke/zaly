@@ -97,15 +97,40 @@ export class Renderer {
     this.ui.on("dirty", this.#onDirty)
     this.overlay.on("dirty", this.#onDirty)
 
-    // SIGWINCH: size changed. Bump the ctx version so every node's
-    // cache self-invalidates on the next render; clear `#ctx` so the
-    // next getCtx rebuilds against the new width. Then force the
-    // stream + UI surfaces to repaint.
+    // SIGWINCH: dimensions changed. The terminal has re-wrapped its
+    // existing content against the new column count; our on-screen
+    // positioning bookkeeping (stream's `#rows`/`#scrollbackCount`,
+    // ui's `#rows`) is from before the resize and no longer maps to
+    // what's really painted. Cleanest recovery:
+    //
+    //   1. Bump `ctxVersion` + drop cached `#ctx` so every node's
+    //      cache self-invalidates and re-renders at the new width on
+    //      the next pass.
+    //   2. Clear the scroll region (DECSTBM defaults to full viewport)
+    //      then wipe the screen with ED. The UI surface's next render
+    //      will reissue DECSTBM against the new row count.
+    //   3. Tell both surfaces to forget their paint mirrors
+    //      (`onResize`). Node state is preserved — we still have every
+    //      stream node — so the re-render just replays them from
+    //      scratch at the new geometry.
     this.terminal.onResize(() => {
       this.#ctxVersion++
       this.#ctx = undefined
-      this.ui.invalidate()
-      this.stream.reset()
+      this.terminal.sync(() => {
+        // Drop DECSTBM so ED clears the entire display (some terminals
+        // honour the region for ED; full reset avoids ambiguity), wipe
+        // the screen, then reissue DECSTBM against the NEW row count
+        // if a footer is reserved. `setReserveBottom` would early-return
+        // (the stored `#reserveBottom` hasn't changed), so we bypass it
+        // and talk to `setScrollRegion` directly.
+        this.terminal.clearScrollRegion()
+        this.terminal.write(`${this.terminal.moveTo(1, 1)}\x1b[2J`)
+        if (this.terminal.reserveBottom > 0) {
+          this.terminal.setScrollRegion(1, this.terminal.scrollBottom)
+        }
+      })
+      this.stream.onResize()
+      this.ui.onResize()
     })
 
     this.#stdin = (opts.stdin ?? (process.stdin as unknown as TerminalReader)) as TerminalReader & {

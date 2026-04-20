@@ -15,6 +15,7 @@ import type { GhosttyCell, GhosttyTerminal } from "ghostty-web"
 import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal.ts"
 
 import { Ghostty } from "ghostty-web"
+import { readFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import { Renderer } from "../../src/renderer/index.ts"
 
@@ -25,11 +26,34 @@ const require = createRequire(import.meta.url)
 const wasmPath = new URL("../ghostty-vt.wasm", new URL(`file://${require.resolve("ghostty-web")}`))
   .pathname
 
-// Load the WASM once for the whole test process. `Ghostty.load` is
-// idempotent from our perspective (we cache the promise).
-let ghostty: Awaited<ReturnType<typeof Ghostty.load>> | undefined
-async function loadGhostty(): Promise<NonNullable<typeof ghostty>> {
-  ghostty ??= await Ghostty.load(wasmPath)
+// We instantiate the WASM ourselves and hand the instance to the
+// `Ghostty` constructor rather than going through `Ghostty.load(path)`.
+// Upstream's `loadFromPath` calls `fetch(path)` as its last fallback;
+// under Node (both vitest and plain `node`), `fetch` on a bare file
+// path — or even `file://` URL, up through Node 25 — fails with
+// `ERR_INVALID_URL` / "fetch file:// not implemented". Reading the
+// bytes directly keeps the harness runnable in both Bun and Node.
+let ghostty: Ghostty | undefined
+async function loadGhostty(): Promise<Ghostty> {
+  if (ghostty !== undefined) return ghostty
+  const bytes = await readFile(wasmPath)
+  const module_ = await WebAssembly.compile(bytes)
+  // The `env.log` import closes over `instance` to reach `memory` for
+  // decoding the logged UTF-8 slice. This matches upstream's
+  // loadFromPath wiring verbatim — keeping behaviour identical means
+  // the same parser runs under both runtimes.
+  let instance: WebAssembly.Instance | undefined
+  instance = await WebAssembly.instantiate(module_, {
+    env: {
+      log: (ptr: number, len: number) => {
+        if (instance === undefined) return
+        const mem = (instance.exports as { memory: WebAssembly.Memory }).memory
+        const bytes = new Uint8Array(mem.buffer, ptr, len)
+        console.log("[ghostty-vt]", new TextDecoder().decode(bytes))
+      },
+    },
+  })
+  ghostty = new Ghostty(instance)
   return ghostty
 }
 
@@ -53,6 +77,11 @@ export interface Harness {
   row(i: number): string
   /** Wait for any pending microtasks (state mutations → flush). */
   flush(): Promise<void>
+  /**
+   * Resize the simulated terminal and fire SIGWINCH so the renderer's
+   * resize handler runs. Waits for the scheduled flush to settle.
+   */
+  resize(cols: number, rows: number): Promise<void>
   /** Tear down the renderer and the terminal. */
   dispose(): void
 }
@@ -77,17 +106,24 @@ const flush = async (): Promise<void> => {
 
 /** Build a harness. Async because we need to load the WASM on first call. */
 export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
-  const cols = opts.cols ?? 40
-  const rows = opts.rows ?? 10
+  let cols = opts.cols ?? 40
+  let rows = opts.rows ?? 10
 
   const g = await loadGhostty()
   const term = g.createTerminal(cols, rows, { scrollbackLimit: opts.scrollback ?? 1000 })
 
   // Stdout: route every byte our Renderer writes into the parser.
+  // `columns`/`rows` are getters (not fixed properties) so the harness's
+  // `resize()` sees new values instantly without re-wiring — the Terminal
+  // reads them on every access via its own getters.
   const stdout: TerminalWriter = {
-    columns: cols,
+    get columns(): number {
+      return cols
+    },
     isTTY: true,
-    rows,
+    get rows(): number {
+      return rows
+    },
     write(s: string): boolean {
       term.write(s)
       return true
@@ -122,6 +158,17 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
     return out
   }
 
+  const resize = async (newCols: number, newRows: number): Promise<void> => {
+    cols = newCols
+    rows = newRows
+    term.resize(newCols, newRows)
+    // Terminal listens via `process.on("SIGWINCH", ...)`, so poking
+    // process's EventEmitter triggers the renderer's handler. The
+    // handler emits `dirty` on the surfaces, which schedules a render.
+    process.emit("SIGWINCH")
+    await flush()
+  }
+
   const scrollback = (): string[] => {
     const len = term.getScrollbackLength()
     const out: string[] = []
@@ -139,5 +186,5 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
     term.free()
   }
 
-  return { dispose, flush, renderer, row, scrollback, term, viewport }
+  return { dispose, flush, renderer, resize, row, scrollback, term, viewport }
 }

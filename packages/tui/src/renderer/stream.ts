@@ -253,6 +253,29 @@ export class Stream extends Emitter<StreamEvents> {
   }
 
   /**
+   * Terminal was resized. The paint bookkeeping (`#rows`,
+   * `#scrollbackCount`, stale-row set) was sized against the old
+   * column/row geometry — after a `SIGWINCH` the real terminal has
+   * re-wrapped scrollback and `scrollBottom` now points at a different
+   * row. We can't reconstruct where each pre-resize row "actually"
+   * landed; the pragmatic fix is to forget the visible-region bookkeeping
+   * and let the next render paint from scratch against the new
+   * dimensions. Node state (`#state`) is preserved so live nodes
+   * re-render at the new width; their caches self-invalidate via
+   * `ctx.version`.
+   *
+   * Paired with a screen-clear in the Renderer's resize handler — this
+   * method only resets our mirror of what's on screen; the actual wipe
+   * and re-establishment of DECSTBM lives in the terminal-level handler.
+   */
+  onResize(): void {
+    this.#rows = []
+    this.#scrollbackCount = 0
+    this.#staleRows.clear()
+    this.emit("dirty")
+  }
+
+  /**
    * Mark a range of absolute rows (inclusive) as stale — the next
    * render must clear them before any `\n`-at-scrollBottom scroll, so
    * overlay bytes never get promoted into scrollback or ghost-shifted
