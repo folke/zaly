@@ -53,7 +53,7 @@
   "dependencies": {
     "image-meta": "^0.2.2",
     "marked": "^18.0.2",
-    "sharp": "^0.34.0",
+    "sharp": "^0.34.5",
     "shiki": "^4.0.2",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.0",
@@ -63,6 +63,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@typia/transform": "^12.0.2",
+    "ghostty-web": "^0.4.0",
     "publint": "^0.3.18",
     "tsdown": "^0.21.9",
     "type-fest": "^5.6.0",
