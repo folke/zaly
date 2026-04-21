@@ -1,47 +1,39 @@
-import {
-  box,
-  createRenderer,
-  input,
-  markdown,
-  overlay,
-  progress,
-  spinner,
-  text,
-} from "../src/index.ts"
+import { box, createRenderer, markdown, overlay, progress, signal, spinner, text } from "../src/index.ts"
 
 /**
- * Overlay demo. Streams markdown into the scroll region while a
- * notification overlay appears, updates, moves, then closes — without
- * polluting scrollback and without blocking the stream's own growth.
+ * Overlay demo. Streams markdown into the scroll region while a help
+ * overlay stays pinned and toasts flash over it. Demonstrates that the
+ * three surfaces (stream, ui, overlay) compose cleanly — scrollback
+ * stays clean, overlays don't block stream growth.
  *
  * Controls:
  *   h        toggle the help overlay
- *   t        open a "toast" overlay that auto-closes after 2s
- *   ctrl-c   quit
+ *   t        open a "toast" overlay that auto-closes after ~2s
+ *   ctrl-c   quit  (default binding)
  */
 
 const renderer = createRenderer()
 
-// Footer: spinner + status + progress + input hint.
-let status = "ready"
-const spin = spinner({ color: "accent" })
-const statusLine = text(
-  ({ style }) =>
-    `${style.primary("zaly")} ${style.dim("·")} ${style.success(status)} ${style.dim("·")} ${style.muted("h help · t toast · ctrl-c quit")}`
-)
-const bar = progress({ color: "primary", label: "auto", total: 1, value: 0 })
+const [status, setStatus] = signal("ready")
+const [progressValue, setProgressValue] = signal(0)
+const [spinning, setSpinning] = signal(true)
 
-renderer.ui.root.add(
+renderer.ui.add(
   box(
     { bg: "bg", flexDirection: "column", padding: [0, 1] },
-    box({ flexDirection: "row", gap: 1 }, spin, statusLine),
-    bar
-  )
+    box(
+      { flexDirection: "row", gap: 1 },
+      spinner({ color: "accent", running: spinning }),
+      text(
+        ({ style }) =>
+          `${style.primary("zaly")} ${style.dim("·")} ${style.success(status())} ${style.dim("·")} ${style.muted("h help · t toast · ctrl-c quit")}`,
+      ),
+    ),
+    progress({ color: "primary", label: "auto", total: 1, value: progressValue }),
+  ),
 )
 
-// --- overlays -------------------------------------------------------------
-
-// Pre-built help panel. Opened/closed by the `?` key.
+// Pre-built help panel. `renderer.overlay.open/close` toggles it.
 const helpPanel = overlay(
   {
     border: "rounded",
@@ -60,13 +52,10 @@ const helpPanel = overlay(
         `${style.accent("t")}       ${style.dim("show a toast (auto-close)")}`,
         `${style.accent("ctrl-c")}  ${style.dim("quit")}`,
       ].join("\n"),
-    { wrap: "none" }
-  )
+    { wrap: "none" },
+  ),
 )
-let helpOpen = false
 
-// Toast: built on demand, auto-closed via `setTimeout`. Demonstrates a
-// short-lived overlay that appears over whatever the stream is doing.
 function showToast(message: string): void {
   const t = overlay(
     {
@@ -78,34 +67,21 @@ function showToast(message: string): void {
       y: 2,
       zIndex: 20,
     },
-    text(({ style }) => style.bold(message), { wrap: "none" })
+    text(({ style }) => style.bold(message), { wrap: "none" }),
   )
   renderer.overlay.open(t)
-  setTimeout(() => renderer.overlay.close(t), 1800).unref()
+  setTimeout(() => t.close(), 1800).unref()
 }
 
-// --- global keys ----------------------------------------------------------
-
 renderer.bind("h", () => {
-  helpOpen = !helpOpen
-  if (helpOpen) renderer.overlay.open(helpPanel)
-  else renderer.overlay.close(helpPanel)
+  if (helpPanel.mounted) helpPanel.close()
+  else renderer.overlay.open(helpPanel)
   return true
 })
 renderer.bind("t", () => {
   showToast("toast · overlay over stream")
   return true
 })
-renderer.bind("ctrl-c", () => {
-  renderer.stop()
-  process.exit(0)
-  return true
-})
-
-// Force ui to be "global" focus target so the bindings fire.
-renderer.input.focus(renderer.ui.root as never)
-
-// --- streaming content ----------------------------------------------------
 
 const responses = [
   `### Overlay demo — streaming underneath
@@ -133,50 +109,36 @@ That's all. The spinner keeps ticking, the progress bar hits 100%, and
 you can leave the help open the whole time.`,
 ]
 
-async function streamMarkdown(full: string, onProgress: (f: number) => void): Promise<void> {
-  const node = markdown("", { wrap: "word" })
-  renderer.stream.append(node)
-  let i = 0
-  while (i < full.length) {
-    const take = 1 + Math.floor(Math.random() * 8)
-    i = Math.min(i + take, full.length)
-    node.state.content = full.slice(0, i)
-    onProgress(i / full.length)
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise((r) => setTimeout(r, 12 + Math.floor(Math.random() * 20)))
-  }
-}
+renderer.start()
+renderer.overlay.open(helpPanel)
+showToast("hi! overlays are up")
 
 async function main(): Promise<void> {
-  renderer.start()
-  // Auto-open the help panel so the demo looks populated from frame 0.
-  renderer.overlay.open(helpPanel)
-  helpOpen = true
-  showToast("hi! overlays are up")
-
-  /* eslint-disable no-await-in-loop */
   for (let i = 0; i < responses.length; i++) {
-    status = `streaming ${i + 1}/${responses.length}`
-    statusLine.invalidate()
-    await streamMarkdown(responses[i], (f) => {
-      bar.state.value = (i + f) / responses.length
-    })
+    setStatus(`streaming ${i + 1}/${responses.length}`)
+    const node = markdown("", { wrap: "word" })
+    renderer.stream.append(node)
+    const full = responses[i]
+    let j = 0
+    while (j < full.length) {
+      const take = 1 + Math.floor(Math.random() * 8)
+      j = Math.min(j + take, full.length)
+      node.state.content = full.slice(0, j)
+      setProgressValue((i + j / full.length) / responses.length)
+      // oxlint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 12 + Math.floor(Math.random() * 20)))
+    }
+    // oxlint-disable-next-line no-await-in-loop
     await new Promise((r) => setTimeout(r, 400))
   }
-  /* eslint-enable no-await-in-loop */
 
-  status = "done"
-  statusLine.invalidate()
-  bar.state.value = 1
+  setStatus("done")
+  setProgressValue(1)
   showToast("done — ctrl-c to quit")
   await new Promise((r) => setTimeout(r, 8000))
-  spin.stop()
+  setSpinning(false)
 
   renderer.stop()
 }
 
 void main()
-
-// Demo is read-only, but input needs to exist for focus/keymap plumbing
-// to route globals. Attach an invisible input to the ui root.
-void input
