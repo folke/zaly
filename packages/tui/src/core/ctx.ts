@@ -6,6 +6,7 @@ import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../style/theme.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Node } from "./node.ts"
+import type { Reactive } from "./reactive.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../style/theme.ts"
@@ -18,9 +19,12 @@ export type { StyleBuilder, Theme }
  * `BaseState`) so the base behaviour wires up automatically.
  *
  *   - `visible: false` suppresses rendering with zero layout footprint.
+ *     Accepts a `Reactive<boolean>` — pass a signal accessor to toggle
+ *     visibility from shared state. `Node.render` unwraps it at render
+ *     time so the subscription goes through the usual tracking ctx.
  */
 export interface BaseState {
-  visible?: boolean
+  visible?: Reactive<boolean>
 }
 
 /** Widget state mixin: `Style` (fg/bg/attrs) plus `BaseState`

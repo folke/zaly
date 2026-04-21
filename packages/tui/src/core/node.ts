@@ -5,7 +5,7 @@ import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
 import type { Events } from "./emitter.ts"
 
 import { Emitter } from "./emitter.ts"
-import { withActiveNode } from "./reactive.ts"
+import { unwrap, withActiveNode } from "./reactive.ts"
 
 export type { BaseState }
 
@@ -144,8 +144,10 @@ export abstract class Node<
     // via `state.visible`; absence or `true` is the default shown path.
     // Useful for toggled panels (autocomplete, log, modals) that should
     // stick around in the tree so we don't re-create them each time.
-    if (this.state.visible === false) return []
+    // Resolve inside the tracking ctx so a signal accessor read
+    // subscribes this node.
     this.#rendering ??= withActiveNode(this, async () => {
+      if (!unwrap(this.state.visible ?? true)) return []
       if (this.#cache?.version !== ctx.version) {
         this.#cache = { rows: await this._render(ctx), version: ctx.version }
       }

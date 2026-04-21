@@ -2,6 +2,7 @@ import type { BaseState, RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { Color } from "../style/color.ts"
 
+import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 
@@ -104,6 +105,12 @@ export class Spinner extends Node<SpinnerState> {
 
     const frames = this.state.frames ?? spinnerFrames.dots
     const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
+    // When stopped, hold the slot open with blank space of the same
+    // cell width so surrounding layout doesn't jump as the spinner
+    // toggles. Stable-width frame sets (dots, line, circle) look the
+    // same; variable sets (bouncingBar) pick the longest frame's
+    // width so stops after a short frame still hold full space.
+    if (!unwrap(this.state.running ?? true)) return [" ".repeat(stringWidth(frame))]
     const color = this.state.color ?? "primary"
     return [ctx.style.fg(color)(frame)]
   }
