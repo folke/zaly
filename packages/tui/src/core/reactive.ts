@@ -47,21 +47,42 @@ function withTracking<T>(ctx: TrackingCtx, fn: () => T): T {
 
 // ---- public types ----------------------------------------------------
 
-export type Signal<T> = readonly [get: () => T, set: (next: T | ((prev: T) => T)) => void]
+/** Brand tag: every accessor / setter returned by `signal` / `memo`
+ *  carries this symbol so `unwrap` can tell a reactive source from a
+ *  plain function-valued prop (label formatter, text callback, etc.). */
+const REACTIVE = Symbol.for("@zaly/tui/reactive")
 
-/** A read-only reactive source — anything callable that returns `T`. */
-export type Accessor<T> = () => T
+export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>]
+
+/** A read-only reactive source. Branded so `isAccessor` can detect it
+ *  without false positives on arbitrary callables. */
+export type Accessor<T> = (() => T) & { readonly [REACTIVE]: "get" }
+
+/** A signal setter. Same branding as `Accessor` (different tag) so a
+ *  setter isn't mistaken for an accessor by `unwrap`. */
+export type Setter<T> = ((next: T | ((prev: T) => T)) => void) & { readonly [REACTIVE]: "set" }
 
 /** A widget prop that's either a literal value or a reactive accessor. */
 export type Reactive<T> = T | Accessor<T>
 
+/** Runtime check: `true` when `v` was produced by `signal` / `memo`.
+ *  False for plain callables (text-content functions, label formatters). */
+export function isAccessor<T>(v: unknown): v is Accessor<T> {
+  return typeof v === "function" && (v as { [REACTIVE]?: string })[REACTIVE] === "get"
+}
+
 /** Resolve a `Reactive<T>` to its current `T`. Call inside `_render`
- *  so accessor reads subscribe the rendering node. Any `typeof v ===
- *  "function"` is treated as an accessor — widgets with function-
- *  valued props (callbacks, formatters) must keep a hand-rolled
- *  guard. */
+ *  so accessor reads subscribe the rendering node. Only brand-tagged
+ *  accessors are invoked — other function values pass through
+ *  untouched, so widgets whose `T` is itself a function type (label
+ *  formatters etc.) don't need a hand-rolled guard. */
 export function unwrap<T>(v: Reactive<T>): T {
-  return typeof v === "function" ? (v as Accessor<T>)() : v
+  return isAccessor<T>(v) ? v() : v
+}
+
+function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F {
+  Object.defineProperty(fn, REACTIVE, { configurable: false, enumerable: false, value: tag, writable: false })
+  return fn
 }
 
 // ---- Node integration ------------------------------------------------
@@ -96,23 +117,23 @@ export function signal<T>(initial: T): Signal<T> {
   let value = initial
   const subs = new Set<() => void>()
 
-  const get = (): T => {
+  const get = brand((): T => {
     const ctx = activeCtx.getStore()
     if (ctx && !subs.has(ctx.notify)) {
       subs.add(ctx.notify)
       ctx.register(() => subs.delete(ctx.notify))
     }
     return value
-  }
+  }, "get") as Accessor<T>
 
-  const set = (next: T | ((prev: T) => T)): void => {
+  const set = brand((next: T | ((prev: T) => T)): void => {
     const resolved = typeof next === "function" ? (next as (prev: T) => T)(value) : next
     if (resolved === value) return
     value = resolved
     // Snapshot — subscribers may mutate the set while running.
     const snapshot = [...subs]
     for (const notify of snapshot) notify()
-  }
+  }, "set") as Setter<T>
 
   return [get, set] as const
 }
