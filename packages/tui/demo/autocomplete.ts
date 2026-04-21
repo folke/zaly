@@ -37,34 +37,6 @@ const users: MenuItem[] = [
   { value: "@dave", hint: "Dave Grohl" },
 ]
 
-const field = input({ placeholder: "type a message, try / or @…" })
-  .focus()
-  .on("submit", (value, self) => {
-    if (value.trim() === "") return
-    renderer.stream.append(markdown(`**you:** ${value}`))
-    self.setState({ cursor: 0, value: "" })
-  })
-
-const ac = autocomplete({
-  input: field,
-  maxHeight: 8,
-  sources: {
-    slash: {
-      triggers: [/(?:^|\n)\s*\//],
-      complete: (q) =>
-        slashCommands.filter((c) => c.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
-    },
-    mention: {
-      triggers: [/\B@/],
-      complete: (q) =>
-        users.filter((u) => u.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
-    },
-  },
-  onComplete: (source, item) => {
-    renderer.stream.append(markdown(`*completed via ${source}: ${item.value}*`))
-  },
-})
-
 renderer.ui.add(
   box(
     { bg: "bg", flexDirection: "column", padding: [0, 1] },
@@ -72,12 +44,34 @@ renderer.ui.add(
     box(
       { flexDirection: "row", gap: 1 },
       text(({ style }) => style.primary("❯"), { width: 1 }),
-      field,
+      input({ placeholder: "type a message, try / or @…" })
+        .id("chat-input")
+        .focus()
+        .on("submit", (value, self) => {
+          if (value.trim() === "") return
+          renderer.stream.append(markdown(`**you:** ${value}`))
+          self.setState({ cursor: 0, value: "" })
+        }),
     ),
-    ac,
+    autocomplete({
+      input: "chat-input",
+      maxHeight: 8,
+      sources: {
+        slash: {
+          triggers: [/(?:^|\n)\s*\//],
+          complete: (q) =>
+            slashCommands.filter((c) => c.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
+        },
+        mention: {
+          triggers: [/\B@/],
+          complete: (q) =>
+            users.filter((u) => u.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
+        },
+      },
+    }).on("complete", (source, item) => {
+      renderer.stream.append(markdown(`*completed via ${source}: ${item.value}*`))
+    }),
   ),
 )
-
-ac.bindKeys()
 
 renderer.start()

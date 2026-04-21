@@ -1,6 +1,5 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { Flexible } from "../layout/flex.ts"
-import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
 import { Node } from "../core/node.ts"
@@ -18,7 +17,7 @@ import { RESET, splitAnsi } from "../style/ansi.ts"
  */
 export type TextContent = string | ((ctx: RenderCtx) => string)
 
-export interface TextStyle extends Style, Flexible {
+export interface TextStyle extends StyleState, Flexible {
   content: TextContent
   wrap?: "word" | "char" | "none"
 }

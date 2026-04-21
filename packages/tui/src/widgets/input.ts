@@ -1,14 +1,13 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
-import type { Style } from "../style/ansi.ts"
 
 import { Node } from "../core/node.ts"
 import { Text } from "./text.ts"
 
-export interface InputState extends Style {
+export interface InputState extends StyleState {
   /** Current text content. May include `\n` for multi-line input. */
   value?: string
   /** Shown dim when `value` is empty. */

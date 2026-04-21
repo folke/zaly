@@ -1,4 +1,3 @@
-import type { BaseState } from "../core/ctx.ts"
 import type { Color } from "./color.ts"
 import type { Theme } from "./theme.ts"
 
@@ -30,9 +29,10 @@ export function hyperlink(url: string, text: string): string {
 }
 
 /** Base style shared by every node type. Box/Text/etc. extend this.
- *  Also extends `BaseState` so every widget state that extends `Style`
- *  gets `visible` / `focus` without needing to declare them. */
-export interface Style extends BaseState {
+ *  Pure styling — no layout or lifecycle fields. Widget state interfaces
+ *  extend `StyleState` to pick up the `visible` base-state bits alongside
+ *  these style fields. */
+export interface Style {
   fg?: Color
   bg?: Color
   bold?: boolean
@@ -42,6 +42,7 @@ export interface Style extends BaseState {
   inverse?: boolean
   strikethrough?: boolean
 }
+
 
 // Attribute → SGR code. Order matters for stable output.
 const ATTRS = [

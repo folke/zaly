@@ -1,8 +1,7 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
-import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
@@ -17,7 +16,7 @@ export interface MenuItem {
   hint?: string
 }
 
-export interface MenuState extends Style {
+export interface MenuState extends StyleState {
   items: MenuItem[]
   /** Index of the highlighted row. Defaults to 0; clamped on render. */
   active?: number

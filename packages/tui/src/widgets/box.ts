@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { Flexible } from "../layout/flex.ts"
 import type { RowItem } from "../layout/row.ts"
@@ -17,7 +17,7 @@ export type Padding =
   | readonly [v: number, h: number]
   | readonly [t: number, r: number, b: number, l: number]
 
-export interface BoxStyle extends Style, Flexible {
+export interface BoxStyle extends StyleState, Flexible {
   flexDirection?: "row" | "column"
   gap?: number
   height?: Size

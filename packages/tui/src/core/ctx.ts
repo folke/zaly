@@ -1,6 +1,7 @@
 import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
+import type { Style } from "../style/ansi.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../style/theme.ts"
 import type { Overlay } from "../widgets/overlay.ts"
@@ -21,6 +22,13 @@ export type { StyleBuilder, Theme }
 export interface BaseState {
   visible?: boolean
 }
+
+/** Widget state mixin: `Style` (fg/bg/attrs) plus `BaseState`
+ *  (visibility + any future framework-level state fields). Widget state
+ *  interfaces extend this so base-state concerns and pure styling stay
+ *  cleanly separated at the type level without each widget having to
+ *  compose the two manually. */
+export type StyleState = Style & BaseState
 
 /**
  * Passed to every `render(ctx)` call. Width flows in; height emerges from

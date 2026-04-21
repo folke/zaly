@@ -65,21 +65,21 @@ describe("autocomplete", () => {
     expect(i.state.cursor).toBe("/help ".length)
   })
 
-  test("onComplete callback fires with source name + item", async () => {
+  test("complete event fires with source name + item", async () => {
     const i = input({})
     const cb = vi.fn()
     const item: MenuItem = { value: "/quit" }
     const ac = autocomplete({
       input: i,
-      onComplete: cb,
       sources: {
         slash: { complete: () => [item], triggers: [/^\s*\//] },
       },
     })
+    ac.on("complete", cb)
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
-    expect(cb).toHaveBeenCalledWith("slash", item)
+    expect(cb).toHaveBeenCalledWith("slash", item, ac)
   })
 
   test("cancel hides the menu until a new trigger reopens it", async () => {
@@ -137,7 +137,7 @@ describe("autocomplete", () => {
     expect(slashComplete).not.toHaveBeenCalled()
   })
 
-  test("bindKeys routes up/down/enter/esc to the menu while open", async () => {
+  test("routes up/down/enter/esc to the menu while open", async () => {
     const i = input({})
     const ac = autocomplete({
       input: i,
@@ -148,11 +148,9 @@ describe("autocomplete", () => {
         },
       },
     })
-    // Mount the autocomplete + input subtree (via the input's subtree,
-    // since ac wraps the input's own key events) so ctx.actions is
-    // available.
+    // Mount so the key interceptor auto-installs and ctx.actions is
+    // available for dispatch.
     ac.mount(mockMountCtx("ui"))
-    ac.bindKeys()
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
