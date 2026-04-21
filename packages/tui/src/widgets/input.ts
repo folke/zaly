@@ -15,18 +15,8 @@ export interface InputState extends Style {
   placeholder?: string
   /** Cursor position as a char index in `value`. Clamped to `[0, value.length]`. */
   cursor?: number
-  /** Marks this node as keyboard-focusable. Defaults to `true`. */
-  focusable?: boolean
   /** Render width. Defaults to `fill`. */
   width?: Size
-  /**
-   * Instance-level scope tag for the input router. Set this to let
-   * keymap bindings under an id (e.g. `"editor.insertNewline"`) target
-   * just this Input instance on top of the class-wide `"input.*"`
-   * bindings. Unset by default — the node is still keymap-addressable
-   * via its class `type = "input"`.
-   */
-  id?: string
 }
 
 export interface InputEvents extends BaseEvents {
@@ -164,8 +154,7 @@ export class Input extends Node<InputState, InputEvents> {
 
   constructor(initial: InputState = {}) {
     const value = initial.value ?? ""
-    super({ cursor: value.length, focusable: true, value, ...initial })
-    if (initial.id !== undefined) this.id = initial.id
+    super({ cursor: value.length, value, ...initial })
     this.on("key", (ev) => {
       this.#handleKey(ev)
     })
@@ -180,7 +169,14 @@ export class Input extends Node<InputState, InputEvents> {
       this.#focused = false
       this.invalidate()
     })
-    this.#text = new Text({ ...initial, content: "" })
+    // Drop Input-only control fields before handing state to the
+    // child Text. Without this, `focus: true` would autofocus the
+    // Text instead of the Input on mount (children mount after their
+    // parent, so the Text's autofocus would override the Input's).
+    this.#text = new Text({
+      ...this.omitFromState("cursor", "placeholder", "value", "visible"),
+      content: "",
+    })
     this.add(this.#text)
   }
 
@@ -238,7 +234,7 @@ export class Input extends Node<InputState, InputEvents> {
     // (bg/fg/attrs via Style, plus width). Keep `wrap: "word"` as the
     // default for a pleasant chat-style input.
     this.#text.setState({
-      ...this.omitFromState("cursor", "id", "focusable", "value", "placeholder"),
+      ...this.omitFromState("cursor", "placeholder", "value", "visible"),
       content,
     })
     return this.#text.render(ctx)

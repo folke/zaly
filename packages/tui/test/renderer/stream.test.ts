@@ -3,7 +3,7 @@ import { createCtx } from "../../src/core/ctx.ts"
 import { Stream } from "../../src/renderer/stream.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { text } from "../../src/widgets/text.ts"
-import { MockReader, MockWriter } from "./mock.ts"
+import { MockReader, MockWriter, mockMountCtx } from "./mock.ts"
 
 function mount(cols = 20, rows = 10) {
   const stdout = new MockWriter(cols, rows)
@@ -141,7 +141,7 @@ describe("Stream.onStart / onStop", () => {
     stream.append(t)
     // Before the surface is "running", appends don't trigger mount.
     expect(t.mounted).toBe(false)
-    stream.onStart()
+    stream.onStart(mockMountCtx("stream"))
     expect(t.mounted).toBe(true)
     expect(t.surface).toBe("stream")
     stream.onStop()
@@ -150,7 +150,7 @@ describe("Stream.onStart / onStop", () => {
 
   test("append while running mounts immediately", () => {
     const { stream } = mount(20, 10)
-    stream.onStart()
+    stream.onStart(mockMountCtx("stream"))
     const t = text("x")
     stream.append(t)
     expect(t.mounted).toBe(true)

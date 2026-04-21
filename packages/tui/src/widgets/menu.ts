@@ -27,11 +27,6 @@ export interface MenuState extends Style {
   width?: Size
   /** Width of the label column. Defaults to the widest item label + 2. */
   labelWidth?: number
-  /** Toggle rendering without removing from the tree. */
-  visible?: boolean
-  /** Marks this node keyboard-focusable. Defaults to `true`. */
-  focusable?: boolean
-  id?: string
 }
 
 export interface MenuEvents extends BaseEvents {
@@ -87,8 +82,7 @@ export class Menu extends Node<MenuState, MenuEvents> {
   } satisfies ActionMap
 
   constructor(initial: MenuState) {
-    super({ active: 0, focusable: true, ...initial })
-    if (initial.id !== undefined) this.id = initial.id
+    super({ active: 0, ...initial })
   }
 
   #active(): number {

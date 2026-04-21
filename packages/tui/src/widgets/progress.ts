@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { BaseState, RenderCtx } from "../core/ctx.ts"
 import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 
@@ -6,7 +6,7 @@ import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
 
-export interface ProgressState {
+export interface ProgressState extends BaseState {
   /** Current value. Clamped to `[0, total]`. */
   value: number
   /** Maximum value. Defaults to `1` — pass a fraction in `[0, 1]` to value. */

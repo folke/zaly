@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Stream } from "./stream.ts"
@@ -42,6 +42,7 @@ export interface OverlayDeps {
 export class OverlaySurface extends Emitter<OverlayEvents> {
   readonly #active: Overlay[] = []
   #running = false
+  #mountCtx?: MountCtx
   readonly #onDirty = (): void => {
     this.emit("dirty")
   }
@@ -61,7 +62,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     this.#active.push(overlay)
     this.#active.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
     overlay.on("invalidate", this.#onDirty)
-    if (this.#running) overlay.mount("overlay")
+    if (this.#running && this.#mountCtx) overlay.mount(this.#mountCtx)
     this.emit("dirty")
     return this
   }
@@ -89,12 +90,14 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     return this.#active
   }
 
-  /** Renderer is starting. Mount every active overlay — overlays that
-   *  were opened before `start()` have been waiting for this. */
-  onStart(): void {
+  /** Renderer is starting. Mount every active overlay with the ctx
+   *  the renderer built. Overlays opened before `start()` have been
+   *  waiting for this. */
+  onStart(ctx: MountCtx): void {
     if (this.#running) return
     this.#running = true
-    for (const o of this.#active) if (!o.mounted) o.mount("overlay")
+    this.#mountCtx = ctx
+    for (const o of this.#active) if (!o.mounted) o.mount(ctx)
   }
 
   /** Renderer is stopping. Unmount every active overlay. Active set
@@ -102,6 +105,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
   onStop(): void {
     if (!this.#running) return
     this.#running = false
+    this.#mountCtx = undefined
     for (const o of this.#active) if (o.mounted) o.unmount()
   }
 

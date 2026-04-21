@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { spinner, Spinner, spinnerFrames } from "../../src/widgets/spinner.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
 let now = 0
 const origNow = performance.now.bind(performance)
@@ -77,7 +78,7 @@ describe("spinner()", () => {
     const spy = vi.spyOn(s, "invalidate")
 
     // Mount → interval starts; timer ticks fire invalidate.
-    s.mount("stream")
+    s.mount(mockMountCtx("stream"))
     vi.advanceTimersByTime(200)
     expect(spy).toHaveBeenCalled()
 

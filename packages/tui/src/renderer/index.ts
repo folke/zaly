@@ -1,10 +1,13 @@
-import type { RenderCtx, Theme } from "../core/ctx.ts"
+import type { MountCtx, RenderCtx, Theme } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { ActionMap } from "../input/keymap.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 
 import { createCtx } from "../core/ctx.ts"
+import { defaultActions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
+import { buildKeymaps } from "../input/keymap.ts"
 import { InputRouter } from "../input/router.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
@@ -65,6 +68,13 @@ export class Renderer {
   #ctxVersion = 0
   #ctx: RenderCtx | undefined
   readonly #onDirty = (): void => this.#schedule()
+
+  actions = {
+    quit: () => {
+      this.stop()
+      process.exit(0)
+    },
+  } satisfies ActionMap
 
   constructor(opts: RendererOptions = {}) {
     this.terminal = new Terminal({
@@ -168,6 +178,11 @@ export class Renderer {
     return this.#running
   }
 
+  /** Shortcut for `renderer.input.bind(pattern, handler)`. Returns an
+   *  unsubscribe function. Use for one-off app-level bindings where a
+   *  named action would be overkill. */
+  bind: InputRouter["bind"] = (pattern, handler) => this.input.bind(pattern, handler)
+
   start(): void {
     if (this.#running) return
     this.#running = true
@@ -175,12 +190,18 @@ export class Renderer {
     this.#stdin.setEncoding?.("utf8")
     this.#stdin.on("data", this.#onData)
     this.#stdin.resume?.()
-    // Mount every surface's tracked tree now that we're actually
-    // going to render. Order doesn't matter — each surface owns its
-    // own nodes and fires its own mount events.
-    this.stream.onStart()
-    this.ui.onStart()
-    this.overlay.onStart()
+    // Install the default keymap + wire our own actions under the
+    // `global` scope. Idempotent with overrides: apps that want custom
+    // bindings can call `renderer.input.setKeymaps(...)` any time after
+    // `start()`, and plugins can layer more actions via `registerActions`.
+    this.input.registerActions("global", this.actions)
+    this.input.setKeymaps(buildKeymaps(defaultActions))
+    // Mount every surface's tracked tree. Build one MountCtx per
+    // surface; each shares the same underlying services (router,
+    // overlay, tree walk), only the `surface` tag differs.
+    this.stream.onStart(this.#mountCtxFor("stream"))
+    this.ui.onStart(this.#mountCtxFor("ui"))
+    this.overlay.onStart(this.#mountCtxFor("overlay"))
     // Anything that called `emit("dirty")` before `start()` set
     // `#dirty = true` but couldn't schedule (no renderer yet). Now
     // that we're running, drain it.
@@ -209,7 +230,7 @@ export class Renderer {
   getNode(id: string): Node | undefined {
     let found: Node | undefined
     this.walk((n) => {
-      if (n.id !== id) return undefined
+      if (n.id() !== id) return undefined
       found = n
       return "stop"
     })
@@ -251,6 +272,27 @@ export class Renderer {
     visitNode(this.ui.root)
     for (const n of this.stream.nodes) visitNode(n)
     for (const n of this.overlay.nodes) visitNode(n)
+  }
+
+  /** Build a MountCtx for a given surface. Each call creates a fresh
+   *  object but closes over the same underlying services, so nodes
+   *  across surfaces share a single overlay surface, router, etc. */
+  #mountCtxFor(surface: Surface): MountCtx {
+    return {
+      findNode: (m) => this.findNode(m),
+      getNode: (id) => this.getNode(id),
+      input: {
+        bind: (pattern, handler) => this.input.bind(pattern, handler),
+        blur: () => this.input.focus(undefined),
+        focus: (node) => this.input.focus(node),
+        registerActions: (scope, actions) => this.input.registerActions(scope, actions),
+      },
+      overlay: {
+        close: (o) => this.overlay.close(o),
+        open: (o) => this.overlay.open(o),
+      },
+      surface,
+    }
   }
 
   #schedule(): void {

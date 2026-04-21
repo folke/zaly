@@ -43,11 +43,6 @@ describe("Input — initial state", () => {
     expect(n.state.cursor).toBe(0)
   })
 
-  test("is focusable by default", () => {
-    const n = input()
-    expect(n.state.focusable).toBe(true)
-  })
-
   test("accepts initial value and puts cursor at the end", () => {
     const n = input({ value: "hello" })
     expect(n.state.value).toBe("hello")
@@ -59,8 +54,8 @@ describe("Input — initial state", () => {
   })
 
   test("instance `id` threads through state", () => {
-    const n = input({ id: "editor" })
-    expect(n.id).toBe("editor")
+    const n = input().id("editor")
+    expect(n.id()).toBe("editor")
   })
 })
 

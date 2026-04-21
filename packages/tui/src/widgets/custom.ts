@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { BaseState, RenderCtx } from "../core/ctx.ts"
 import type { TypedEmitter } from "../core/emitter.ts"
 import type { BaseEvents } from "../core/node.ts"
 
@@ -7,7 +7,7 @@ import { stackColumn } from "../layout/column.ts"
 
 type Child = Node | false | null | undefined
 
-export type NodeRenderFn<S extends object, E extends BaseEvents> = (args: {
+export type NodeRenderFn<S, E extends BaseEvents> = (args: {
   state: S
   ctx: RenderCtx
   emit: TypedEmitter<E>["emit"]
@@ -28,12 +28,12 @@ export type NodeRenderFn<S extends object, E extends BaseEvents> = (args: {
  */
 export function node<S extends object, E extends BaseEvents = BaseEvents>(
   initialState: S,
-  render: NodeRenderFn<S, E>
-): Node<S, E> {
-  return new CustomNode<S, E>(initialState, render)
+  render: NodeRenderFn<S & BaseState, E>,
+): Node<S & BaseState, E> {
+  return new CustomNode<S & BaseState, E>(initialState as S & BaseState, render)
 }
 
-class CustomNode<S extends object, E extends BaseEvents> extends Node<S, E> {
+class CustomNode<S extends BaseState, E extends BaseEvents> extends Node<S, E> {
   readonly #renderFn: NodeRenderFn<S, E>
 
   constructor(initialState: S, renderFn: NodeRenderFn<S, E>) {

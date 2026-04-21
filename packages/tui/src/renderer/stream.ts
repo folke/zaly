@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Terminal } from "./terminal.ts"
 
@@ -61,6 +61,7 @@ export class Stream extends Emitter<StreamEvents> {
    *  appends: a node appended while the renderer is stopped just
    *  gets tracked, and mounts when `onStart` fires. */
   #running = false
+  #mountCtx?: MountCtx
   readonly #onInvalidate = (): void => {
     this.emit("dirty")
   }
@@ -81,7 +82,7 @@ export class Stream extends Emitter<StreamEvents> {
   append(node: Node): this {
     node.on("invalidate", this.#onInvalidate)
     this.#state.push({ live: true, node })
-    if (this.#running) node.mount("stream")
+    if (this.#running && this.#mountCtx) node.mount(this.#mountCtx)
     this.commit({ keep: this.#opts.maxLive, render: false })
     this.emit("dirty")
     return this
@@ -318,26 +319,27 @@ export class Stream extends Emitter<StreamEvents> {
 
   /**
    * Renderer is starting. Mount every tracked node against this
-   * surface so their `mount` lifecycle fires now (not at append time
-   * — a node appended before the renderer was running has been
-   * waiting for this). Called once per `Renderer.start()`.
+   * surface with the MountCtx the renderer built. Nodes appended
+   * before `start()` have been waiting for this.
    */
-  onStart(): void {
+  onStart(ctx: MountCtx): void {
     if (this.#running) return
     this.#running = true
+    this.#mountCtx = ctx
     for (const s of this.#state) {
-      if (!s.node.mounted) s.node.mount("stream")
+      if (!s.node.mounted) s.node.mount(ctx)
     }
   }
 
   /**
-   * Renderer is stopping. Unmount every tracked node — symmetrical
-   * with `onStart`. Tracked state (`#state`) is preserved so a
-   * subsequent `start()` finds the same tree and remounts it.
+   * Renderer is stopping. Unmount every tracked node. Tracked state
+   * (`#state`) is preserved so a subsequent `start()` finds the same
+   * tree and remounts it.
    */
   onStop(): void {
     if (!this.#running) return
     this.#running = false
+    this.#mountCtx = undefined
     for (const s of this.#state) {
       if (s.node.mounted) s.node.unmount()
     }

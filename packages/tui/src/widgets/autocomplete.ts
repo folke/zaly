@@ -19,9 +19,8 @@ export interface CompletionSource {
   complete: (query: string) => CompleteResult
 }
 
-export interface AutocompleteState extends Style {
-  visible?: boolean
-}
+// oxlint-disable-next-line no-empty-interface
+export interface AutocompleteState extends Style {}
 
 export interface AutocompleteOptions {
   input: Input
@@ -138,7 +137,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
    * ac.bindKeys(renderer.input)
    * ```
    *
-   * We use `bindGlobal` (which runs before keymap-driven action
+   * We use `bind` (which runs before keymap-driven action
    * dispatch) rather than a node-scoped action, because the menu
    * isn't an ancestor of the focused input — so scope walking wouldn't
    * reach it. Global is the right priority: when the popup is open
@@ -152,11 +151,11 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       return true
     }
     const unbinds = [
-      router.bindGlobal("up", () => routeTo("prev")),
-      router.bindGlobal("down", () => routeTo("next")),
-      router.bindGlobal("tab", () => routeTo("select")),
-      router.bindGlobal("enter", () => routeTo("select")),
-      router.bindGlobal("esc", () => routeTo("cancel")),
+      router.bind("up", () => routeTo("prev")),
+      router.bind("down", () => routeTo("next")),
+      router.bind("tab", () => routeTo("select")),
+      router.bind("enter", () => routeTo("select")),
+      router.bind("esc", () => routeTo("cancel")),
     ]
     return () => unbinds.forEach((fn) => fn())
   }

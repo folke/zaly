@@ -10,13 +10,14 @@ type E = {
 const noop = () => {}
 
 describe("Emitter", () => {
-  test("emit invokes listener with typed args", () => {
+  test("emit invokes listener with typed args + trailing self", () => {
     const e = new Emitter<E>()
     const fn = vi.fn()
     e.on("ping", fn)
     e.emit("ping", 42)
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith(42)
+    // Listeners receive the event args followed by the emitter itself.
+    expect(fn).toHaveBeenCalledWith(42, e)
   })
 
   test("emit invokes multiple listeners in order", () => {
@@ -59,7 +60,7 @@ describe("Emitter", () => {
     e.emit("ping", 1)
     expect(a).not.toHaveBeenCalled()
     expect(b).toHaveBeenCalledTimes(1)
-    expect(b).toHaveBeenCalledWith(1)
+    expect(b).toHaveBeenCalledWith(1, e)
   })
 
   test("once only fires one time", () => {
@@ -69,7 +70,7 @@ describe("Emitter", () => {
     e.emit("ping", 1)
     e.emit("ping", 2)
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith(1)
+    expect(fn).toHaveBeenCalledWith(1, e)
   })
 
   test("once can be removed before firing", () => {
@@ -116,7 +117,7 @@ describe("Emitter", () => {
     e.on("pong", pong)
     e.emit("ping", 1)
     expect(ping).toHaveBeenCalledTimes(1)
-    expect(ping).toHaveBeenCalledWith(1)
+    expect(ping).toHaveBeenCalledWith(1, e)
     expect(pong).not.toHaveBeenCalled()
   })
 })

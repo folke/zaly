@@ -15,15 +15,14 @@ function renderer() {
 describe("renderer.getNode — lookup by id", () => {
   test("finds a node tagged with id anywhere in the UI tree", () => {
     const r = renderer()
-    const a = input({ id: "editor" })
+    const a = input().id("editor")
     r.ui.root.add(box({}, a))
     expect(r.getNode("editor")).toBe(a)
   })
 
   test("finds a node tagged with id attached to the stream", () => {
     const r = renderer()
-    const t = text("hi")
-    t.id = "greeting"
+    const t = text("hi").id("greeting")
     r.stream.append(t)
     expect(r.getNode("greeting")).toBe(t)
   })
@@ -48,12 +47,12 @@ describe("renderer.findNode — filter by type or predicate", () => {
 
   test("predicate receives every node and collects matches", () => {
     const r = renderer()
-    const a = input({ id: "editor" })
+    const a = input().id("editor")
     const t = text("label")
     r.ui.root.add(box({}, t, a))
     // The UI root itself carries id="global" (so the router's scope
     // chain reaches it); exclude it to keep the assertion focused.
-    const withId = r.findNode((n) => n.id !== undefined && n !== r.ui.root)
+    const withId = r.findNode((n) => n.id() !== undefined && n !== r.ui.root)
     expect(withId).toEqual([a])
   })
 

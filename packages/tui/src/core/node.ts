@@ -1,10 +1,12 @@
 import type { ActionMap } from "../input/keymap.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
-import type { RenderCtx } from "./ctx.ts"
+import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
 import type { Events } from "./emitter.ts"
 
 import { Emitter } from "./emitter.ts"
+
+export type { BaseState }
 
 /** Minimum event map every node carries. Custom event maps must intersect. */
 export interface BaseEvents extends Events {
@@ -32,7 +34,7 @@ export interface BaseEvents extends Events {
  */
 
 export abstract class Node<
-  S extends object = object,
+  S extends BaseState = BaseState,
   E extends BaseEvents = BaseEvents,
 > extends Emitter<E> {
   #cache?: { rows: string[]; version: number }
@@ -41,9 +43,9 @@ export abstract class Node<
   readonly #children: Node[] = []
   readonly #state: S
   readonly state: S
-  #surface?: Surface
+  #ctx?: MountCtx
+  #id?: string
   actions?: ActionMap
-  id?: string
   type?: string
 
   constructor(state: S, ...children: Node[]) {
@@ -69,12 +71,41 @@ export abstract class Node<
     return this.#parent
   }
 
+  /** Mount context when this node is attached to a surface — surface
+   *  identifier plus scoped handles to router / overlay / tree lookups.
+   *  `undefined` before mount and after unmount. Exposed so widget
+   *  authors can reach renderer services without closing over a ref. */
+  get ctx(): MountCtx | undefined {
+    return this.#ctx
+  }
+
   get surface(): Surface | undefined {
-    return this.#surface
+    return this.#ctx?.surface
   }
 
   get mounted(): boolean {
-    return this.#surface !== undefined
+    return this.#ctx !== undefined
+  }
+
+  /**
+   * Read or set the node's `id`. Called without args, returns the
+   * current id. Called with a string, sets it and returns `this` for
+   * chaining — useful when building trees inline:
+   *
+   * ```ts
+   * input({...}).id("chat-input").focus().on("submit", ...)
+   * ```
+   *
+   * The id is used by `ctx.getNode(id)` / `Renderer.getNode(id)` for
+   * tree lookups, and by the input router as a per-instance scope for
+   * keymap bindings (alongside the class-level `type`).
+   */
+  id(): string | undefined
+  id(value: string): this
+  id(value?: string): string | undefined | this {
+    if (value === undefined) return this.#id
+    this.#id = value
+    return this
   }
 
   setState(patch: Partial<S>): this {
@@ -112,7 +143,7 @@ export abstract class Node<
     // via `state.visible`; absence or `true` is the default shown path.
     // Useful for toggled panels (autocomplete, log, modals) that should
     // stick around in the tree so we don't re-create them each time.
-    if ((this.state as { visible?: boolean }).visible === false) return []
+    if (this.state.visible === false) return []
     this.#rendering ??= (async () => {
       if (this.#cache?.version !== ctx.version) {
         this.#cache = { rows: await this._render(ctx), version: ctx.version }
@@ -177,7 +208,7 @@ export abstract class Node<
       }
       c.#parent = this
       this.emit("childadded", c)
-      if (this.mounted) c.mount(this.#surface!)
+      if (this.#ctx !== undefined) c.mount(this.#ctx)
     }
     this.invalidate()
     return this
@@ -194,24 +225,47 @@ export abstract class Node<
     return result
   }
 
-  mount(surface: Surface): this {
-    if (this.#surface === surface) return this
-    if (this.#surface) {
+  mount(ctx: MountCtx): this {
+    if (this.#ctx?.surface === ctx.surface) return this
+    if (this.#ctx) {
       throw new Error(
-        `Node is already mounted on "${this.#surface}" (requested "${surface}"). Unmount first if you meant to move it.`,
+        `Node is already mounted on "${this.#ctx.surface}" (requested "${ctx.surface}"). Unmount first if you meant to move it.`,
       )
     }
-    this.#surface = surface
+    this.#ctx = ctx
     this.emit("mount")
-    for (const c of this.#children) c.mount(surface)
+    for (const c of this.#children) c.mount(ctx)
     return this
   }
 
   unmount(): this {
-    if (!this.#surface) return this
+    if (!this.#ctx) return this
     for (const c of this.#children) c.unmount()
     this.emit("unmount")
-    this.#surface = undefined
+    this.#ctx = undefined
+    return this
+  }
+
+  /** Become the focused node. Routes through the MountCtx, which emits
+   *  `blur` on the previous focus and `focus` on this node.
+   *
+   *  When called before the node is mounted (the common case for
+   *  `input({ focus: true }).on(...)` style setup), the focus is
+   *  deferred until the next `mount` event. That keeps the API
+   *  synchronous and side-effect-free at build time — callers don't
+   *  have to think about ordering. */
+  focus(): this {
+    if (!this.#ctx) {
+      this.once("mount", () => this.focus())
+      return this
+    }
+    this.#ctx.input.focus(this)
+    return this
+  }
+
+  /** Release focus. No-op when not mounted. */
+  blur(): this {
+    this.#ctx?.input.blur()
     return this
   }
 }

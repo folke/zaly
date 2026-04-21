@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
@@ -50,7 +50,7 @@ export class UI extends Emitter<UIEvents> {
     // chain, and any focusable widget ultimately parents to this root.
     // So this tagging is what makes globals fire on every keystroke
     // without a dedicated always-matching path in the router.
-    this.#root.id = "global"
+    this.#root.id("global")
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", () => this.emit("dirty"))
@@ -63,6 +63,13 @@ export class UI extends Emitter<UIEvents> {
   /** The footer's root Box. Add children via `ui.root.add(child)`. */
   get root(): Box {
     return this.#root
+  }
+
+  /** Shortcut: add a child to the footer root. Same semantics as
+   *  `ui.root.add(child)`; returns `this` for chaining. */
+  add(child: Parameters<Box["add"]>[0]): this {
+    this.#root.add(child)
+    return this
   }
 
   /** Current rendered height (rows). */
@@ -175,10 +182,10 @@ export class UI extends Emitter<UIEvents> {
   }
 
   /** Renderer is starting. Mount the footer root. */
-  onStart(): void {
+  onStart(ctx: MountCtx): void {
     if (this.#running) return
     this.#running = true
-    if (!this.#root.mounted) this.#root.mount("ui")
+    if (!this.#root.mounted) this.#root.mount(ctx)
   }
 
   /** Renderer is stopping. Unmount the footer root. */

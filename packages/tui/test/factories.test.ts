@@ -96,6 +96,6 @@ describe("node()", () => {
     })
     n.on("changed", listener)
     await n.render(ctx(10))
-    expect(listener).toHaveBeenCalledWith(0)
+    expect(listener).toHaveBeenCalledWith(0, n)
   })
 })

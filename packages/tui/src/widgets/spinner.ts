@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { BaseState, RenderCtx } from "../core/ctx.ts"
 import type { Color } from "../style/color.ts"
 
 import { Node } from "../core/node.ts"
@@ -12,7 +12,7 @@ export const spinnerFrames = {
   line: ["-", "\\", "|", "/"],
 } as const
 
-export interface SpinnerState {
+export interface SpinnerState extends BaseState {
   /** Frame glyphs, cycled in order. Defaults to `dots`. */
   frames?: readonly string[]
   /** Milliseconds per frame. Defaults to 80. */

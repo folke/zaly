@@ -1,5 +1,6 @@
-import type { Theme } from "./theme.ts"
+import type { BaseState } from "../core/ctx.ts"
 import type { Color } from "./color.ts"
+import type { Theme } from "./theme.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
 import { extractApc } from "./apc.ts"
@@ -28,8 +29,10 @@ export function hyperlink(url: string, text: string): string {
   return `${OSC8}${url}${ST}${text}${OSC8}${ST}`
 }
 
-/** Base style shared by every node type. Box/Text/etc. extend this. */
-export interface Style {
+/** Base style shared by every node type. Box/Text/etc. extend this.
+ *  Also extends `BaseState` so every widget state that extends `Style`
+ *  gets `visible` / `focus` without needing to declare them. */
+export interface Style extends BaseState {
   fg?: Color
   bg?: Color
   bold?: boolean

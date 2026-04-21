@@ -59,7 +59,7 @@ describe("menu", () => {
     m.on("select", fn)
     m.actions.next()
     m.actions.select()
-    expect(fn).toHaveBeenCalledWith(items[1])
+    expect(fn).toHaveBeenCalledWith(items[1], m)
   })
 
   test("cancel emits cancel", () => {

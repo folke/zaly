@@ -47,7 +47,7 @@ export interface RoutedPaste {
  *
  * Dispatch priority for a key event:
  *
- *   1. **`bindGlobal`** handlers (pattern → callback). Direct, no scope;
+ *   1. **`bind`** handlers (pattern → callback). Direct, no scope;
  *      a handler that returns `true` consumes the event. Kept as a
  *      shortcut for bindings that aren't worth a named-action entry
  *      (simple throwaway scripts, tests).
@@ -101,9 +101,9 @@ export class InputRouter {
    *
    * Use this for one-off bindings where rolling a named-action catalog
    * is overkill — ctrl-c → quit in a demo, for example. For
-   * user-configurable bindings prefer `setKeymaps` + `defineGlobals`.
+   * user-configurable bindings prefer `setKeymaps` + action defs.
    */
-  bindGlobal(pattern: KeyPatterns, handler: KeyHandler): () => void {
+  bind(pattern: KeyPatterns, handler: KeyHandler): () => void {
     const binding: KeyBinding = { handler, pattern }
     this.#globals.push(binding)
     return () => {
@@ -178,7 +178,7 @@ export class InputRouter {
   }
 
   #dispatchKey(event: KeyEvent): boolean {
-    // 1. bindGlobal direct handlers.
+    // 1. Direct `bind()` handlers.
     for (const g of this.#globals) {
       if (keyMatches(event, g.pattern) && g.handler(event) === true) return true
     }
@@ -235,7 +235,8 @@ export class InputRouter {
 
   #scopesOf(node: Node): string[] {
     const scopes: string[] = []
-    if (node.id !== undefined) scopes.push(node.id)
+    const nodeId = node.id()
+    if (nodeId !== undefined) scopes.push(nodeId)
     if (node.type !== undefined) scopes.push(node.type)
     return scopes
   }

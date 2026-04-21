@@ -1,10 +1,25 @@
+import type { InputRouter } from "../input/router.ts"
+import type { Surface } from "../renderer/index.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../style/theme.ts"
+import type { Overlay } from "../widgets/overlay.ts"
+import type { Node } from "./node.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../style/theme.ts"
 
 export type { StyleBuilder, Theme }
+
+/**
+ * Fields every Node reads off its state. Widget state types should
+ * extend this (directly or transitively via `Style`, which extends
+ * `BaseState`) so the base behaviour wires up automatically.
+ *
+ *   - `visible: false` suppresses rendering with zero layout footprint.
+ */
+export interface BaseState {
+  visible?: boolean
+}
 
 /**
  * Passed to every `render(ctx)` call. Width flows in; height emerges from
@@ -22,6 +37,52 @@ export interface RenderCtx {
   theme: Theme
   style: StyleBuilder
   version: number
+}
+
+/**
+ * Context handed to a node when it mounts onto a surface. Gives widget
+ * authors a scoped handle to the services they legitimately need —
+ * focus, overlays, tree lookups, out-of-band repaints — without
+ * exposing the full Renderer.
+ *
+ * MountCtx is *per-lifetime*: set once when `mount()` is called and
+ * cleared on `unmount()`. Distinct from `RenderCtx` (per-tick, carries
+ * width/theme/version). If a node moves between surfaces, it receives
+ * a fresh MountCtx via the subsequent `mount()` call.
+ */
+export interface MountCtx {
+  /** Which surface owns this subtree. */
+  readonly surface: Surface
+
+  /** Overlay capabilities — open/close an Overlay node from inside a
+   *  widget (e.g. a confirm dialog, autocomplete popover, tooltip). */
+  readonly overlay: {
+    readonly open: (o: Overlay) => void
+    readonly close: (o: Overlay) => void
+  }
+
+  /** Input capabilities — a narrow slice of the router. We deliberately
+   *  don't expose the full `InputRouter`: `setKeymaps` / `dispatch` are
+   *  app-level concerns, not widget-level ones. Widgets legitimately
+   *  need to install global key bindings (autocomplete), register
+   *  scoped actions (plugin widgets), and move focus. */
+  readonly input: {
+    readonly bind: InputRouter["bind"]
+    readonly registerActions: InputRouter["registerActions"]
+    /** Move focus to `node`. Mirrors `router.focus(node)`. */
+    readonly focus: (node: Node) => void
+    /** Clear focus. */
+    readonly blur: () => void
+  }
+
+  /** Look up a node anywhere in the tree by its `id`. First match
+   *  wins; `undefined` when nothing matches. Same semantics as
+   *  `Renderer.getNode`. */
+  readonly getNode: (id: string) => Node | undefined
+  /** Find every node matching a predicate. Strings match `node.type`;
+   *  pass a function for richer predicates. Same semantics as
+   *  `Renderer.findNode`. */
+  readonly findNode: (match: string | ((n: Node) => boolean)) => Node[]
 }
 
 /**

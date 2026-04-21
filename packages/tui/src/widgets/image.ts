@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { BaseState, RenderCtx } from "../core/ctx.ts"
 
 import { Node } from "../core/node.ts"
 import { imageCapabilities } from "../style/image/capabilities.ts"
@@ -12,7 +12,7 @@ import {
 } from "../style/image/kitty.ts"
 import { imageBytes, imageMetadata } from "../style/image/source.ts"
 
-export interface ImageState {
+export interface ImageState extends BaseState {
   /**
    * Path to an image file. PNG passes through with zero decoding; other
    * formats (JPEG/WebP/GIF/AVIF/SVG) are read via image-meta for

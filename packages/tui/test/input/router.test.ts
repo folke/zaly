@@ -93,7 +93,7 @@ describe("InputRouter — globals", () => {
   test("global handler fires on matching pattern", () => {
     const router = new InputRouter()
     let hits = 0
-    router.bindGlobal("ctrl-c", () => {
+    router.bind("ctrl-c", () => {
       hits++
     })
     router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
@@ -105,7 +105,7 @@ describe("InputRouter — globals", () => {
     const n = text("x")
     const nodeSeen: string[] = []
     n.on("key", (ev) => nodeSeen.push(ev.name))
-    router.bindGlobal("ctrl-c", () => {
+    router.bind("ctrl-c", () => {
       throw new Error("should not fire")
     })
     router.focus(n)
@@ -118,17 +118,17 @@ describe("InputRouter — globals", () => {
     const n = text("x")
     const nodeSeen: string[] = []
     n.on("key", (ev) => nodeSeen.push(ev.name))
-    router.bindGlobal("ctrl-c", () => true)
+    router.bind("ctrl-c", () => true)
     router.focus(n)
     const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
     expect(consumed).toBe(true)
     expect(nodeSeen).toEqual([])
   })
 
-  test("bindGlobal returns an unsubscribe function", () => {
+  test("bind returns an unsubscribe function", () => {
     const router = new InputRouter()
     let hits = 0
-    const off = router.bindGlobal("a", () => {
+    const off = router.bind("a", () => {
       hits++
     })
     router.dispatch({ event: makeKey("a"), type: "key" })
@@ -171,7 +171,7 @@ describe("InputRouter — named actions via keymap", () => {
       parent?: unknown
     }
     n.type = "input"
-    n.id = "editor"
+    ;(n as unknown as { id: (v: string) => unknown }).id("editor")
     const calls: string[] = []
     n.actions = {
       submitFromId: () => calls.push("id"),
@@ -196,7 +196,7 @@ describe("InputRouter — named actions via keymap", () => {
       on: (...a: unknown[]) => unknown
       parent?: unknown
     }
-    n.id = "editor"
+    ;(n as unknown as { id: (v: string) => unknown }).id("editor")
     const received: unknown[] = []
     router.registerActions("editor", {
       toggleThinking: (node) => received.push(node),
@@ -214,7 +214,7 @@ describe("InputRouter — named actions via keymap", () => {
     const child = text("c")
     root.add(child)
     // Tag root as `"global"` like the UI surface does.
-    ;(root as unknown as { id?: string }).id = "global"
+    root.id("global")
     let fired = 0
     router.registerActions("global", { quit: () => fired++ })
     router.focus(child)

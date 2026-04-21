@@ -1,4 +1,4 @@
-import type { RenderCtx } from "../../src/core/ctx.ts"
+import type { BaseState, RenderCtx } from "../../src/core/ctx.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
@@ -7,7 +7,10 @@ import { moon as theme } from "../../src/style/theme.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })
 
-type S = { text: string; count: number }
+interface S extends BaseState {
+  text: string
+  count: number
+}
 
 class TestNode extends Node<S> {
   renderCalls = 0
@@ -222,7 +225,7 @@ describe("Node.splice", () => {
     parent.remove(a)
     expect(parent.children).toEqual([])
     expect(a.parent).toBeUndefined()
-    expect(removed).toHaveBeenCalledWith(a)
+    expect(removed).toHaveBeenCalledWith(a, expect.anything())
   })
 
   test("adding an existing child does not duplicate", () => {
@@ -268,8 +271,8 @@ describe("Node.splice", () => {
     expect(a.children).toEqual([])
     expect(b.children).toEqual([c])
     expect(c.parent).toBe(b)
-    expect(aRemoved).toHaveBeenCalledWith(c)
-    expect(bAdded).toHaveBeenCalledWith(c)
+    expect(aRemoved).toHaveBeenCalledWith(c, expect.anything())
+    expect(bAdded).toHaveBeenCalledWith(c, expect.anything())
   })
 
   test("splice insertion + deletion in a single call", () => {
@@ -287,8 +290,8 @@ describe("Node.splice", () => {
     expect(parent.children).toEqual([a, c])
     expect(b.parent).toBeUndefined()
     expect(c.parent).toBe(parent)
-    expect(removed).toHaveBeenCalledWith(b)
-    expect(added).toHaveBeenCalledWith(c)
+    expect(removed).toHaveBeenCalledWith(b, expect.anything())
+    expect(added).toHaveBeenCalledWith(c, expect.anything())
   })
 
   test("clear removes every child and fires childremoved for each", () => {
