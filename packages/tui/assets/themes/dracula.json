@@ -1,0 +1,24 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "dracula",
+  "fg": "#F8F8F2",
+  "bg": "#282A36",
+  "primary": "#BD93F9",
+  "accent": "#FF79C6",
+  "dim": "#F8F8F2",
+  "muted": "#6272A4",
+  "success": "#50FA7B",
+  "info": "#BD93F9",
+  "warn": "#8BE9FD",
+  "error": "#FF5555",
+  "border": "#BD93F9",
+  "diffAdd": {
+    "bg": "#50FA7B20"
+  },
+  "diffDel": {
+    "bg": "#FF555550"
+  },
+  "menuActive": {
+    "bg": "#44475A"
+  }
+}

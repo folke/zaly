@@ -1,0 +1,30 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "catppuccin-mocha",
+  "fg": "#cdd6f4",
+  "bg": "#1e1e2e",
+  "primary": "#89b4fa",
+  "accent": "#cba6f7",
+  "dim": "#a6adc8",
+  "muted": "#585b70",
+  "success": "#a6e3a1",
+  "info": "#89b4fa",
+  "warn": "#fab387",
+  "error": "#f38ba8",
+  "border": "#585b70",
+  "diffAdd": {
+    "bg": "#a6e3a133"
+  },
+  "diffDel": {
+    "bg": "#f38ba833"
+  },
+  "menuActive": {
+    "bg": "#313244"
+  },
+  "code": {
+    "bg": "#181825"
+  },
+  "mdCodeBlock": {
+    "bg": "#181825"
+  }
+}

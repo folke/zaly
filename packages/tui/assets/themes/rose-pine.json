@@ -1,0 +1,30 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "rose-pine",
+  "fg": "#e0def4",
+  "bg": "#191724",
+  "primary": "#c4a7e7",
+  "accent": "#c4a7e7",
+  "dim": "#e0def4",
+  "muted": "#908caa",
+  "success": "#31748f",
+  "info": "#9ccfd8",
+  "warn": "#f6c177",
+  "error": "#eb6f92",
+  "border": "#0000",
+  "diffAdd": {
+    "bg": "#9ccfd826"
+  },
+  "diffDel": {
+    "bg": "#eb6f9226"
+  },
+  "menuActive": {
+    "bg": "#6e6a8633"
+  },
+  "code": {
+    "bg": "#1f1d2e"
+  },
+  "mdCodeBlock": {
+    "bg": "#1f1d2e"
+  }
+}

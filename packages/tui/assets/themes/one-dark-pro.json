@@ -1,0 +1,27 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "one-dark-pro",
+  "fg": "#abb2bf",
+  "bg": "#282c34",
+  "primary": "#61afef",
+  "accent": "#c162de",
+  "dim": "#d7dae0",
+  "muted": "#4f5666",
+  "success": "#8cc265",
+  "info": "#4aa5f0",
+  "warn": "#d19a66",
+  "error": "#c24038",
+  "border": "#3e4452",
+  "diffAdd": {
+    "bg": "#00809b33"
+  },
+  "menuActive": {
+    "bg": "#2c313a"
+  },
+  "code": {
+    "bg": "#2c313c"
+  },
+  "mdCodeBlock": {
+    "bg": "#2c313c"
+  }
+}

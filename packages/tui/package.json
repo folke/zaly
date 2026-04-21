@@ -40,6 +40,7 @@
     "bench": "bun bench/run.ts",
     "build": "tsdown --cwd ../../ --filter @zaly/tui",
     "build:themes": "bun scripts/build-themes.ts",
+    "build:shiki-themes": "bun scripts/build-shiki-themes.ts",
     "build:typia": "bun scripts/build-schemas.ts",
     "check": "cd ../../; oxlint packages/tui",
     "test": "bun test:node && bun test:bun",

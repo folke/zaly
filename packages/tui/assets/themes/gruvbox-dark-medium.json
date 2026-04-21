@@ -1,0 +1,24 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "gruvbox-dark-medium",
+  "fg": "#ebdbb2",
+  "bg": "#282828",
+  "primary": "#83a598",
+  "accent": "#b16286",
+  "dim": "#a89984",
+  "muted": "#928374",
+  "success": "#98971a",
+  "info": "#458588",
+  "warn": "#d79921",
+  "error": "#fb4934",
+  "border": "#3c3836",
+  "diffAdd": {
+    "bg": "#b8bb2630"
+  },
+  "diffDel": {
+    "bg": "#fb493430"
+  },
+  "menuActive": {
+    "bg": "#3c383680"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "nord",
+  "fg": "#d8dee9",
+  "bg": "#2e3440",
+  "primary": "#88c0d0",
+  "accent": "#b48ead",
+  "dim": "#e5e9f0",
+  "muted": "#4c566a",
+  "success": "#a3be8c",
+  "info": "#81a1c1",
+  "warn": "#ebcb8b",
+  "error": "#bf616a",
+  "border": "#3b4252",
+  "diffAdd": {
+    "bg": "#81a1c133"
+  },
+  "diffDel": {
+    "bg": "#bf616a4d"
+  },
+  "menuActive": {
+    "bg": "#88c0d0"
+  },
+  "code": {
+    "bg": "#4c566a"
+  },
+  "mdCodeBlock": {
+    "bg": "#4c566a"
+  }
+}

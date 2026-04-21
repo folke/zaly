@@ -1,0 +1,30 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "catppuccin-latte",
+  "fg": "#4c4f69",
+  "bg": "#eff1f5",
+  "primary": "#1e66f5",
+  "accent": "#8839ef",
+  "dim": "#acb0be",
+  "muted": "#6c6f85",
+  "success": "#40a02b",
+  "info": "#1e66f5",
+  "warn": "#fe640b",
+  "error": "#d20f39",
+  "border": "#acb0be",
+  "diffAdd": {
+    "bg": "#40a02b33"
+  },
+  "diffDel": {
+    "bg": "#d20f3933"
+  },
+  "menuActive": {
+    "bg": "#ccd0da"
+  },
+  "code": {
+    "bg": "#e6e9ef"
+  },
+  "mdCodeBlock": {
+    "bg": "#e6e9ef"
+  }
+}

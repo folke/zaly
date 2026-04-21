@@ -1,0 +1,30 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "github-dark",
+  "fg": "#e1e4e8",
+  "bg": "#24292e",
+  "primary": "#79b8ff",
+  "accent": "#b392f0",
+  "dim": "#d1d5da",
+  "muted": "#959da5",
+  "success": "#34d058",
+  "info": "#2188ff",
+  "warn": "#ffea7f",
+  "error": "#f97583",
+  "border": "#1b1f23",
+  "diffAdd": {
+    "bg": "#28a74530"
+  },
+  "diffDel": {
+    "bg": "#d73a4930"
+  },
+  "menuActive": {
+    "bg": "#39414a"
+  },
+  "code": {
+    "bg": "#2f363d"
+  },
+  "mdCodeBlock": {
+    "bg": "#2f363d"
+  }
+}

@@ -25,6 +25,11 @@ export type ThemeValue = Color | Style
  * name via `loadTheme("tokyonight-storm")`.
  */
 export type Theme = {
+  /** Optional name of a matching Shiki syntax-highlighting theme. Code
+   *  blocks and fenced markdown snippets look this up so highlighting
+   *  aligns with the TUI palette. Leave unset for themes without a
+   *  Shiki counterpart. */
+  shiki?: string
   fg: Color
   bg: Color
   primary: Color
@@ -111,7 +116,7 @@ const defaults: Theme = {
   mdHeading5: "mdHeading2",
   mdHeading6: "mdHeading2",
 
-  mdCode: { bg: "muted", fg: "primary" },
+  mdCode: { bg: "primary/15", fg: "primary" },
   mdCodeBlock: { bg: "muted", fg: "primary" },
   mdCodeBlockTitle: "title",
   mdHr: "accent",
