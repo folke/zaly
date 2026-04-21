@@ -1,3 +1,4 @@
+import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { StyleBuilder } from "../style/builder.ts"
@@ -62,18 +63,22 @@ export interface MountCtx {
   }
 
   /** Input capabilities — a narrow slice of the router. We deliberately
-   *  don't expose the full `InputRouter`: `setKeymaps` / `dispatch` are
-   *  app-level concerns, not widget-level ones. Widgets legitimately
-   *  need to install global key bindings (autocomplete), register
-   *  scoped actions (plugin widgets), and move focus. */
+   *  don't expose the full `InputRouter`: `setKeymap` / `dispatch` are
+   *  app-level concerns. Widgets legitimately need to install direct
+   *  global key bindings (autocomplete) and move focus. */
   readonly input: {
     readonly bind: InputRouter["bind"]
-    readonly registerActions: InputRouter["registerActions"]
     /** Move focus to `node`. Mirrors `router.focus(node)`. */
     readonly focus: (node: Node) => void
     /** Clear focus. */
     readonly blur: () => void
   }
+
+  /** Action registry — widgets and plugins can `register` catalog
+   *  entries (with desc + default keys + optional `fn`) and `dispatch`
+   *  actions by id. The Router feeds key-triggered dispatches through
+   *  here; programmatic callers do the same. */
+  readonly actions: Actions
 
   /** Look up a node anywhere in the tree by its `id`. First match
    *  wins; `undefined` when nothing matches. Same semantics as

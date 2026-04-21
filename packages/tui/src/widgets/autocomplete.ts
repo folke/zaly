@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { InputRouter } from "../input/router.ts"
+import type { RoutedKey } from "../input/router.ts"
 import type { Style } from "../style/ansi.ts"
 import type { Input } from "./input.ts"
 import type { MenuItem } from "./menu.ts"
@@ -77,7 +77,6 @@ interface Match {
  * source matches, `visible` flips to `false` and the widget takes
  * zero rows, so the footer naturally collapses.
  */
-// oxlint-disable-next-line typescript/no-unnecessary-type-arguments
 export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   static readonly type = "autocomplete"
   override readonly type = Autocomplete.type
@@ -124,40 +123,55 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   }
 
   /**
-   * Install keyboard interception on `router`. While the popup is open,
-   * `up` / `down` / `tab` / `enter` / `esc` drive the menu instead of
-   * the input's own actions; other keys flow through unchanged so
-   * typing keeps the query in sync.
+   * Install keyboard interception. While the popup is open, `up` /
+   * `down` / `tab` / `enter` / `esc` drive the menu instead of the
+   * input's own actions; other keys flow through so typing keeps the
+   * query in sync.
    *
-   * Must be called after the renderer is wired up but before `start()`.
-   * Returns an unbind function that removes the interception.
+   * Hooks directly into the bound `Input`'s `"key"` event (phase 1 of
+   * dispatch) — stopping propagation there pre-empts keymap-driven
+   * actions like `input.cursorUp`. This is the correct scope for a
+   * popup that only exists while the input is focused: the input is
+   * in the focus chain, the menu isn't, so a node-level listener
+   * wins.
    *
-   * ```ts
-   * const ac = autocomplete({ ... })
-   * ac.bindKeys(renderer.input)
-   * ```
-   *
-   * We use `bind` (which runs before keymap-driven action
-   * dispatch) rather than a node-scoped action, because the menu
-   * isn't an ancestor of the focused input — so scope walking wouldn't
-   * reach it. Global is the right priority: when the popup is open
-   * these keys should win; when it isn't, the handler returns `false`
-   * and normal bindings run.
+   * Returns an unbind function.
    */
-  bindKeys(router: InputRouter): () => void {
-    const routeTo = (name: "prev" | "next" | "select" | "cancel"): boolean => {
-      if (!this.open) return false
-      this.menu.actions[name]()
-      return true
+  bindKeys(): () => void {
+    const listener = (ev: RoutedKey): void => {
+      if (!this.open) return
+      const id = ((): string | undefined => {
+        switch (ev.pattern) {
+          case "up": {
+            return "menu.prev"
+          }
+          case "down": {
+            return "menu.next"
+          }
+          case "tab":
+          case "enter": {
+            return "menu.select"
+          }
+          case "esc": {
+            return "menu.cancel"
+          }
+          default: {
+            return undefined
+          }
+        }
+      })()
+      if (id === undefined) return
+      // Dispatch through the action registry with an explicit target
+      // so it walks *from the menu* rather than the focused input —
+      // the menu isn't in the focus chain, but its actions dict holds
+      // the handlers we want.
+      this.ctx?.actions.dispatch(id, { key: ev, source: "key", target: this.menu })
+      ev.stop()
     }
-    const unbinds = [
-      router.bind("up", () => routeTo("prev")),
-      router.bind("down", () => routeTo("next")),
-      router.bind("tab", () => routeTo("select")),
-      router.bind("enter", () => routeTo("select")),
-      router.bind("esc", () => routeTo("cancel")),
-    ]
-    return () => unbinds.forEach((fn) => fn())
+    this.#input.on("key", listener)
+    return () => {
+      this.#input.off("key", listener)
+    }
   }
 
   /** Whether the popup is currently showing. */

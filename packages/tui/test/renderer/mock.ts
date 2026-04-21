@@ -2,26 +2,31 @@ import type { MountCtx } from "../../src/core/ctx.ts"
 import type { Surface } from "../../src/renderer/index.ts"
 import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal.ts"
 
+import { Actions } from "../../src/input/actions.ts"
 import { InputRouter } from "../../src/input/router.ts"
 
 /**
  * Minimal MountCtx for tests that exercise Node / surface lifecycle in
- * isolation (no Renderer). Overlay/find/invalidate are no-ops; the
- * `router` is a fresh InputRouter so `node.focus()` works.
+ * isolation (no Renderer). Overlay/find are no-ops; a fresh `Actions`
+ * + `InputRouter` are wired so `node.focus()` and `ctx.actions.*`
+ * work as they would under a live Renderer.
  */
 export function mockMountCtx(
   surface: Surface = "stream",
   overrides?: Partial<MountCtx>,
 ): MountCtx {
   const router = new InputRouter()
+  const actions = new Actions()
+  actions.setTargetResolver(() => router.focused)
+  router.setActions(actions)
   return {
+    actions,
     findNode: () => [],
     getNode: () => undefined,
     input: {
       bind: (pattern, handler) => router.bind(pattern, handler),
       blur: () => router.focus(undefined),
       focus: (node) => router.focus(node),
-      registerActions: (scope, actions) => router.registerActions(scope, actions),
     },
     overlay: {
       close: () => {},

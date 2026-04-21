@@ -42,14 +42,15 @@ async function loadGhostty(): Promise<Ghostty> {
   // decoding the logged UTF-8 slice. This matches upstream's
   // loadFromPath wiring verbatim — keeping behaviour identical means
   // the same parser runs under both runtimes.
+  // oxlint-disable-next-line prefer-const
   let instance: WebAssembly.Instance | undefined
   instance = await WebAssembly.instantiate(module_, {
     env: {
       log: (ptr: number, len: number) => {
         if (instance === undefined) return
         const mem = (instance.exports as { memory: WebAssembly.Memory }).memory
-        const bytes = new Uint8Array(mem.buffer, ptr, len)
-        console.log("[ghostty-vt]", new TextDecoder().decode(bytes))
+        const data = new Uint8Array(mem.buffer, ptr, len)
+        console.log("[ghostty-vt]", new TextDecoder().decode(data))
       },
     },
   })

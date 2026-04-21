@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { ActionMap } from "../input/keymap.ts"
+import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
@@ -45,39 +45,38 @@ export interface MenuEvents extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-// oxlint-disable-next-line typescript/no-unnecessary-type-arguments
 export class Menu extends Node<MenuState, MenuEvents> {
   static readonly type = "menu"
   override readonly type = Menu.type
 
   override actions = {
-    next: (): void => {
-      const n = this.state.items.length
-      if (n === 0) return
-      this.state.active = (this.#active() + 1) % n
+    "menu.cancel": (): void => {
+      this.emit("cancel")
     },
-    prev: (): void => {
-      const n = this.state.items.length
-      if (n === 0) return
-      this.state.active = (this.#active() - 1 + n) % n
-    },
-    first: (): void => {
+    "menu.first": (): void => {
       if (this.state.items.length === 0) return
       this.state.active = 0
     },
-    last: (): void => {
+    "menu.last": (): void => {
       const n = this.state.items.length
       if (n === 0) return
       this.state.active = n - 1
     },
-    select: (): void => {
+    "menu.next": (): void => {
+      const n = this.state.items.length
+      if (n === 0) return
+      this.state.active = (this.#active() + 1) % n
+    },
+    "menu.prev": (): void => {
+      const n = this.state.items.length
+      if (n === 0) return
+      this.state.active = (this.#active() - 1 + n) % n
+    },
+    "menu.select": (): void => {
       const items = this.state.items
       if (items.length === 0) return
       const i = this.#active()
       this.emit("select", items[i])
-    },
-    cancel: (): void => {
-      this.emit("cancel")
     },
   } satisfies ActionMap
 
@@ -115,7 +114,7 @@ export class Menu extends Node<MenuState, MenuEvents> {
     // very long label doesn't crowd out the hint.
     const gap = 2
     const widest = Math.max(
-      ...items.slice(start, start + visible).map((it) => stringWidth(it.label ?? it.value)),
+      ...items.slice(start, start + visible).map((it) => stringWidth(it.label ?? it.value))
     )
     const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(width / 2))
 

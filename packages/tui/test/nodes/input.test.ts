@@ -2,8 +2,7 @@ import type { RoutedKey, RoutedPaste } from "../../src/input/router.ts"
 
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { inputActions } from "../../src/input/actions.ts"
-import { buildKeymaps } from "../../src/input/keymap.ts"
+import { Actions, defaultActions } from "../../src/input/actions.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { input } from "../../src/widgets/input.ts"
 
@@ -13,6 +12,7 @@ function key(name: string, more: Partial<RoutedKey> = {}): RoutedKey {
     ctrl: false,
     meta: false,
     name,
+    pattern: name,
     shift: false,
     stop: () => {
       ev.stopped = true
@@ -66,21 +66,21 @@ describe("Input — initial state", () => {
 describe("Input.actions — character editing", () => {
   test("deleteCharBack removes the char before the cursor", () => {
     const n = input({ cursor: 5, value: "hello" })
-    n.actions.deleteCharBack()
+    n.actions["input.deleteCharBack"]()
     expect(n.state.value).toBe("hell")
     expect(n.state.cursor).toBe(4)
   })
 
   test("deleteCharBack at cursor=0 is a no-op", () => {
     const n = input({ cursor: 0, value: "x" })
-    n.actions.deleteCharBack()
+    n.actions["input.deleteCharBack"]()
     expect(n.state.value).toBe("x")
     expect(n.state.cursor).toBe(0)
   })
 
   test("deleteCharForward removes the char at the cursor", () => {
     const n = input({ cursor: 1, value: "abc" })
-    n.actions.deleteCharForward()
+    n.actions["input.deleteCharForward"]()
     expect(n.state.value).toBe("ac")
     expect(n.state.cursor).toBe(1)
   })
@@ -89,54 +89,54 @@ describe("Input.actions — character editing", () => {
 describe("Input.actions — cursor motion", () => {
   test("cursorLeft / cursorRight move and clamp", () => {
     const n = input({ cursor: 1, value: "abc" })
-    n.actions.cursorLeft()
+    n.actions["input.cursorLeft"]()
     expect(n.state.cursor).toBe(0)
-    n.actions.cursorLeft()
+    n.actions["input.cursorLeft"]()
     expect(n.state.cursor).toBe(0)
-    n.actions.cursorRight()
-    n.actions.cursorRight()
-    n.actions.cursorRight()
-    n.actions.cursorRight()
+    n.actions["input.cursorRight"]()
+    n.actions["input.cursorRight"]()
+    n.actions["input.cursorRight"]()
+    n.actions["input.cursorRight"]()
     expect(n.state.cursor).toBe(3)
   })
 
   test("cursorLineStart / cursorLineEnd jump within the logical line", () => {
     const n = input({ cursor: 6, value: "abc\ndefg" }) // on 'f'
-    n.actions.cursorLineStart()
+    n.actions["input.cursorLineStart"]()
     expect(n.state.cursor).toBe(4) // start of "defg"
-    n.actions.cursorLineEnd()
+    n.actions["input.cursorLineEnd"]()
     expect(n.state.cursor).toBe(8) // end of "defg"
   })
 
   test("cursorUp moves up one line at the same column", () => {
     const n = input({ cursor: 6, value: "abc\ndefg" })
-    n.actions.cursorUp()
+    n.actions["input.cursorUp"]()
     expect(n.state.cursor).toBe(2)
   })
 
   test("cursorUp clamps to end of prev line when col exceeds it", () => {
     const n = input({ cursor: 9, value: "ab\nlonger" })
-    n.actions.cursorUp()
+    n.actions["input.cursorUp"]()
     expect(n.state.cursor).toBe(2)
   })
 
   test("cursorUp on the first line is a no-op", () => {
     const n = input({ cursor: 2, value: "ab\ncd" })
-    n.actions.cursorUp()
+    n.actions["input.cursorUp"]()
     expect(n.state.cursor).toBe(2)
   })
 
   test("cursorDown moves down one line, same col", () => {
     const n = input({ cursor: 1, value: "abcd\nefgh" })
-    n.actions.cursorDown()
+    n.actions["input.cursorDown"]()
     expect(n.state.cursor).toBe(6)
   })
 
   test("cursorDown on the last line is a no-op", () => {
     const n = input({ cursor: 1, value: "ab\ncd" })
-    n.actions.cursorDown()
+    n.actions["input.cursorDown"]()
     expect(n.state.cursor).toBe(4)
-    n.actions.cursorDown()
+    n.actions["input.cursorDown"]()
     expect(n.state.cursor).toBe(4)
   })
 })
@@ -144,21 +144,21 @@ describe("Input.actions — cursor motion", () => {
 describe("Input.actions — word deletion", () => {
   test("deleteWordBack eats the previous word", () => {
     const n = input({ cursor: 11, value: "hello world" })
-    n.actions.deleteWordBack()
+    n.actions["input.deleteWordBack"]()
     expect(n.state.value).toBe("hello ")
     expect(n.state.cursor).toBe(6)
   })
 
   test("deleteWordBack after trailing spaces eats the spaces plus the word", () => {
     const n = input({ cursor: 8, value: "hello   " })
-    n.actions.deleteWordBack()
+    n.actions["input.deleteWordBack"]()
     expect(n.state.value).toBe("")
     expect(n.state.cursor).toBe(0)
   })
 
   test("deleteWordBack at start is a no-op", () => {
     const n = input({ cursor: 0, value: "hello" })
-    n.actions.deleteWordBack()
+    n.actions["input.deleteWordBack"]()
     expect(n.state.value).toBe("hello")
     expect(n.state.cursor).toBe(0)
   })
@@ -169,26 +169,26 @@ describe("Input.actions — submit + newline", () => {
     const n = input({ value: "hi" })
     const seen: string[] = []
     n.on("submit", (v) => seen.push(v))
-    n.actions.submit()
+    n.actions["input.submit"]()
     expect(seen).toEqual(["hi"])
   })
 
   test("submit does not clear the value", () => {
     const n = input({ value: "hi" })
-    n.actions.submit()
+    n.actions["input.submit"]()
     expect(n.state.value).toBe("hi")
   })
 
   test(String.raw`insertNewline inserts \n at the cursor`, () => {
     const n = input({ cursor: 5, value: "hello" })
-    n.actions.insertNewline()
+    n.actions["input.insertNewline"]()
     expect(n.state.value).toBe("hello\n")
     expect(n.state.cursor).toBe(6)
   })
 
   test("insertNewline carries leading whitespace onto the new line", () => {
     const n = input({ cursor: 9, value: "  - hello" })
-    n.actions.insertNewline()
+    n.actions["input.insertNewline"]()
     expect(n.state.value).toBe("  - hello\n  ")
     expect(n.state.cursor).toBe(12)
   })
@@ -198,14 +198,14 @@ describe("Input.actions — submit + newline", () => {
     // indent matches what's *before* the cursor (one space), not the
     // line's full prefix. The rest of the original line stays intact.
     const n = input({ cursor: 1, value: "    ok" })
-    n.actions.insertNewline()
+    n.actions["input.insertNewline"]()
     expect(n.state.value).toBe(" \n    ok")
     expect(n.state.cursor).toBe(3)
   })
 
   test("insertTab inserts two spaces at the cursor", () => {
     const n = input({ cursor: 0, value: "hi" })
-    n.actions.insertTab()
+    n.actions["input.insertTab"]()
     expect(n.state.value).toBe("  hi")
     expect(n.state.cursor).toBe(2)
   })
@@ -267,9 +267,13 @@ describe("Input — paste", () => {
 describe("Input — end-to-end via router + keymap", () => {
   function mount(state = {}) {
     const router = new InputRouter()
+    const actions = new Actions()
+    actions.setTargetResolver(() => router.focused)
+    router.setActions(actions)
+    actions.register(defaultActions)
     const n = input(state)
     router.focus(n)
-    router.setKeymaps(buildKeymaps(inputActions))
+    router.setKeymapIndex(actions.buildKeymap())
     return { n, router }
   }
 

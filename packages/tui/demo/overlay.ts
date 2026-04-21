@@ -8,8 +8,6 @@ import {
   spinner,
   text,
 } from "../src/index.ts"
-import { inputActions } from "../src/input/actions.ts"
-import { buildKeymaps } from "../src/input/keymap.ts"
 
 /**
  * Overlay demo. Streams markdown into the scroll region while a
@@ -88,20 +86,17 @@ function showToast(message: string): void {
 
 // --- global keys ----------------------------------------------------------
 
-const keymap = buildKeymaps({ ...inputActions })
-renderer.input.setKeymaps(keymap)
-
-renderer.input.bindGlobal("h", () => {
+renderer.bind("h", () => {
   helpOpen = !helpOpen
   if (helpOpen) renderer.overlay.open(helpPanel)
   else renderer.overlay.close(helpPanel)
   return true
 })
-renderer.input.bindGlobal("t", () => {
+renderer.bind("t", () => {
   showToast("toast · overlay over stream")
   return true
 })
-renderer.input.bindGlobal("ctrl-c", () => {
+renderer.bind("ctrl-c", () => {
   renderer.stop()
   process.exit(0)
   return true

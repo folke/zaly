@@ -1,4 +1,4 @@
-import type { ActionMap } from "../input/keymap.ts"
+import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
@@ -233,9 +233,28 @@ export abstract class Node<
       )
     }
     this.#ctx = ctx
+    this.#registerActionMeta(ctx)
     this.emit("mount")
     for (const c of this.#children) c.mount(ctx)
     return this
+  }
+
+  /** Contribute any `ActionInfo`-shaped entries in `this.actions` to
+   *  the catalog. The instance `fn` stays on the node (dispatch finds
+   *  it via the focus-chain walk); only metadata lands in the registry.
+   *  Uses `extend: false` so defaults don't clobber user overrides
+   *  that were registered before the widget mounted. */
+  #registerActionMeta(ctx: MountCtx): void {
+    if (!this.actions) return
+    const metas: Record<string, ActionInfo> = {}
+    let any = false
+    for (const [id, entry] of Object.entries(this.actions)) {
+      if (typeof entry === "function") continue
+      const { fn: _fn, ...info } = entry
+      metas[id] = info
+      any = true
+    }
+    if (any) ctx.actions.register(metas, { extend: false })
   }
 
   unmount(): this {

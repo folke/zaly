@@ -1,5 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
+import type { Flexible } from "../layout/flex.ts"
 import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
@@ -16,14 +17,10 @@ export type Padding =
   | readonly [v: number, h: number]
   | readonly [t: number, r: number, b: number, l: number]
 
-export interface BoxStyle extends Style {
+export interface BoxStyle extends Style, Flexible {
   flexDirection?: "row" | "column"
   gap?: number
-  flexGrow?: number
-  width?: Size
   height?: Size
-  minWidth?: Size
-  maxWidth?: Size
   minHeight?: Size
   maxHeight?: Size
   padding?: Padding
@@ -109,12 +106,7 @@ export class Box extends Node<BoxStyle> {
     }
 
     const items: RowItem[] = children.map((c) => {
-      const s = c.state as {
-        width?: Size
-        minWidth?: Size
-        maxWidth?: Size
-        flexGrow?: number
-      }
+      const s = c.state as Flexible
       return { flexGrow: s.flexGrow, maxWidth: s.maxWidth, minWidth: s.minWidth, width: s.width }
     })
     const widths = allocateRow(items, { contentWidth: innerWidth, gap })

@@ -1,12 +1,14 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
 import type { MenuItem } from "../../src/widgets/menu.ts"
 
+import type { RoutedKey } from "../../src/input/router.ts"
+
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { InputRouter } from "../../src/input/router.ts"
 import { moon as theme } from "../../src/style/theme.ts"
 import { autocomplete } from "../../src/widgets/autocomplete.ts"
 import { input } from "../../src/widgets/input.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
 
@@ -17,8 +19,8 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          triggers: [/^\s*\//],
           complete: () => [{ value: "/help" }],
+          triggers: [/^\s*\//],
         },
       },
     })
@@ -32,7 +34,7 @@ describe("autocomplete", () => {
     const ac = autocomplete({
       input: i,
       sources: {
-        slash: { triggers: [/^\s*\//], complete },
+        slash: { complete, triggers: [/^\s*\//] },
       },
     })
     // Triggering is driven by input state changes; the widget subscribes
@@ -51,14 +53,14 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          triggers: [/^\s*\//],
           complete: () => [{ value: "/help" }],
+          triggers: [/^\s*\//],
         },
       },
     })
     i.setState({ cursor: 3, value: "/he" })
     await Promise.resolve()
-    ac.menu.actions.select()
+    ac.menu.actions["menu.select"]()
     expect(i.state.value).toBe("/help ")
     expect(i.state.cursor).toBe("/help ".length)
   })
@@ -69,14 +71,14 @@ describe("autocomplete", () => {
     const item: MenuItem = { value: "/quit" }
     const ac = autocomplete({
       input: i,
-      sources: {
-        slash: { triggers: [/^\s*\//], complete: () => [item] },
-      },
       onComplete: cb,
+      sources: {
+        slash: { complete: () => [item], triggers: [/^\s*\//] },
+      },
     })
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
-    ac.menu.actions.select()
+    ac.menu.actions["menu.select"]()
     expect(cb).toHaveBeenCalledWith("slash", item)
   })
 
@@ -86,15 +88,15 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          triggers: [/^\s*\//],
           complete: () => [{ value: "/help" }],
+          triggers: [/^\s*\//],
         },
       },
     })
     i.setState({ cursor: 3, value: "/he" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
-    ac.menu.actions.cancel()
+    ac.menu.actions["menu.cancel"]()
     expect(ac.open).toBe(false)
     const rows = await ac.render(ctx)
     expect(rows).toEqual([])
@@ -106,13 +108,13 @@ describe("autocomplete", () => {
     const ac = autocomplete({
       input: i,
       sources: {
-        mention: { triggers: [/\B@/], complete },
+        mention: { complete, triggers: [/\B@/] },
       },
     })
     i.setState({ cursor: 7, value: "hey @bo" })
     await Promise.resolve()
     expect(complete).toHaveBeenCalledWith("bo")
-    ac.menu.actions.select()
+    ac.menu.actions["menu.select"]()
     expect(i.state.value).toBe("hey @bob ")
   })
 
@@ -123,14 +125,16 @@ describe("autocomplete", () => {
     autocomplete({
       input: i,
       sources: {
-        slash: { triggers: [/^\s*\//], complete: slashComplete },
-        other: { triggers: [/^\s*\//], complete: otherComplete },
+        other: { complete: otherComplete, triggers: [/^\s*\//] },
+        slash: { complete: slashComplete, triggers: [/^\s*\//] },
       },
     })
     i.setState({ cursor: 2, value: "/x" })
     await Promise.resolve()
-    expect(slashComplete).toHaveBeenCalled()
-    expect(otherComplete).not.toHaveBeenCalled()
+    // Sources iterate in object-insertion order; `other` is declared
+    // first (after alphabetical sort), so it claims the match.
+    expect(otherComplete).toHaveBeenCalled()
+    expect(slashComplete).not.toHaveBeenCalled()
   })
 
   test("bindKeys routes up/down/enter/esc to the menu while open", async () => {
@@ -139,35 +143,44 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          triggers: [/^\s*\//],
           complete: () => [{ value: "/a" }, { value: "/b" }, { value: "/c" }],
+          triggers: [/^\s*\//],
         },
       },
     })
-    const router = new InputRouter()
-    router.focus(i)
-    ac.bindKeys(router)
+    // Mount the autocomplete + input subtree (via the input's subtree,
+    // since ac wraps the input's own key events) so ctx.actions is
+    // available.
+    ac.mount(mockMountCtx("ui"))
+    ac.bindKeys()
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
 
-    const keyEv = (name: string): Parameters<InputRouter["dispatch"]>[0] => ({
-      event: { alt: false, ctrl: false, meta: false, name, shift: false },
-      type: "key",
-    })
+    const keyEv = (name: string): RoutedKey => {
+      const ev: RoutedKey = {
+        alt: false,
+        ctrl: false,
+        meta: false,
+        name,
+        pattern: name,
+        shift: false,
+        stop: () => {
+          ev.stopped = true
+        },
+        stopped: false,
+      }
+      return ev
+    }
 
     expect(ac.menu.state.active).toBe(0)
-    expect(router.dispatch(keyEv("down"))).toBe(true)
+    i.emit("key", keyEv("down"))
     expect(ac.menu.state.active).toBe(1)
-    expect(router.dispatch(keyEv("up"))).toBe(true)
+    i.emit("key", keyEv("up"))
     expect(ac.menu.state.active).toBe(0)
-    expect(router.dispatch(keyEv("enter"))).toBe(true)
+    i.emit("key", keyEv("enter"))
     expect(i.state.value).toBe("/a ")
     expect(ac.open).toBe(false)
-
-    // When closed, the globals should return false so the input's
-    // bindings would have run instead.
-    expect(router.dispatch(keyEv("down"))).toBe(false)
   })
 
   test("closes when trigger no longer matches", async () => {
@@ -176,8 +189,8 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          triggers: [/^\s*\//],
           complete: () => [{ value: "/help" }],
+          triggers: [/^\s*\//],
         },
       },
     })

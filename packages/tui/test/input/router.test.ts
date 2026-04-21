@@ -2,6 +2,7 @@ import type { KeyEvent } from "../../src/input/keys.ts"
 import type { Box } from "../../src/widgets/box.ts"
 
 import { describe, expect, test } from "vitest"
+import { Actions } from "../../src/input/actions.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { box } from "../../src/widgets/box.ts"
 import { text } from "../../src/widgets/text.ts"
@@ -113,7 +114,10 @@ describe("InputRouter — globals", () => {
     expect(nodeSeen).toEqual(["a"])
   })
 
-  test("global handler returning true consumes the event", () => {
+  test("global handler fires as a last-resort fallback", () => {
+    // `bind()` runs in phase 3 — after node bubble and keymap lookup.
+    // The node's raw key listener sees the event first; the global
+    // handler catches the unclaimed event and consumes it.
     const router = new InputRouter()
     const n = text("x")
     const nodeSeen: string[] = []
@@ -122,7 +126,7 @@ describe("InputRouter — globals", () => {
     router.focus(n)
     const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
     expect(consumed).toBe(true)
-    expect(nodeSeen).toEqual([])
+    expect(nodeSeen).toEqual(["c"])
   })
 
   test("bind returns an unsubscribe function", () => {
@@ -139,87 +143,55 @@ describe("InputRouter — globals", () => {
   })
 })
 
-describe("InputRouter — named actions via keymap", () => {
-  test("internal action on the focused node fires and is marked consumed", () => {
+describe("InputRouter — keymap → action dispatch", () => {
+  test("keymap entry with action id fires the focused node's handler", () => {
     const router = new InputRouter()
-    const n = text("t") as unknown as {
-      actions?: Record<string, () => void>
-      type?: string
-      id?: string
-      emit: (...a: unknown[]) => boolean
-      on: (...a: unknown[]) => unknown
-      parent?: unknown
-    }
-    n.type = "input"
+    const actions = new Actions()
+    actions.setTargetResolver(() => router.focused)
+    router.setActions(actions)
+    actions.register({ "input.cursorLeft": { keys: ["left"] } })
+
+    const n = text("t")
     let fired = 0
-    n.actions = { cursorLeft: () => fired++ }
-    router.focus(n as unknown as Parameters<typeof router.focus>[0])
-    router.setKeymaps({ "input.cursorLeft": ["left"] })
+    ;(n as unknown as { actions: Record<string, () => void> }).actions = {
+      "input.cursorLeft": () => fired++,
+    }
+    router.focus(n)
+    router.setKeymapIndex(actions.buildKeymap())
     const consumed = router.dispatch({ event: makeKey("left"), type: "key" })
     expect(consumed).toBe(true)
     expect(fired).toBe(1)
   })
 
-  test("id bindings beat type bindings on the same node", () => {
+  test("action with catalog `fn` fires directly without walking", () => {
     const router = new InputRouter()
-    const n = text("t") as unknown as {
-      actions?: Record<string, () => void>
-      type?: string
-      id?: string
-      emit: (...a: unknown[]) => boolean
-      on: (...a: unknown[]) => unknown
-      parent?: unknown
-    }
-    n.type = "input"
-    ;(n as unknown as { id: (v: string) => unknown }).id("editor")
-    const calls: string[] = []
-    n.actions = {
-      submitFromId: () => calls.push("id"),
-      submitFromType: () => calls.push("type"),
-    }
-    router.focus(n as unknown as Parameters<typeof router.focus>[0])
-    router.setKeymaps({
-      "editor.submitFromId": ["enter"],
-      "input.submitFromType": ["enter"],
-    })
-    router.dispatch({ event: makeKey("enter"), type: "key" })
-    expect(calls).toEqual(["id"])
-  })
-
-  test("external scope-registered actions receive the node and fire when node's id matches", () => {
-    const router = new InputRouter()
-    const n = text("t") as unknown as {
-      id?: string
-      type?: string
-      actions?: Record<string, () => void>
-      emit: (...a: unknown[]) => boolean
-      on: (...a: unknown[]) => unknown
-      parent?: unknown
-    }
-    ;(n as unknown as { id: (v: string) => unknown }).id("editor")
-    const received: unknown[] = []
-    router.registerActions("editor", {
-      toggleThinking: (node) => received.push(node),
-    })
-    router.focus(n as unknown as Parameters<typeof router.focus>[0])
-    router.setKeymaps({ "editor.toggleThinking": ["ctrl-t"] })
-    const consumed = router.dispatch({ event: makeKey("t", { ctrl: true }), type: "key" })
-    expect(consumed).toBe(true)
-    expect(received).toEqual([n])
-  })
-
-  test("scope chain walks parents — ancestor scope still fires", () => {
-    const router = new InputRouter()
-    const root = box({})
-    const child = text("c")
-    root.add(child)
-    // Tag root as `"global"` like the UI surface does.
-    root.id("global")
+    const actions = new Actions()
+    actions.setTargetResolver(() => router.focused)
+    router.setActions(actions)
     let fired = 0
-    router.registerActions("global", { quit: () => fired++ })
+    actions.register({ "global.quit": { fn: () => fired++, keys: ["ctrl-c"] } })
+    router.setKeymapIndex(actions.buildKeymap())
+    const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
+    expect(consumed).toBe(true)
+    expect(fired).toBe(1)
+  })
+
+  test("dispatch walks the focus chain for node.actions[id]", () => {
+    const router = new InputRouter()
+    const actions = new Actions()
+    actions.setTargetResolver(() => router.focused)
+    router.setActions(actions)
+    const parent = box({})
+    const child = text("c")
+    parent.add(child)
+    let fired = 0
+    ;(parent as unknown as { actions: Record<string, () => void> }).actions = {
+      "app.doit": () => fired++,
+    }
+    actions.register({ "app.doit": { keys: ["ctrl-d"] } })
     router.focus(child)
-    router.setKeymaps({ "global.quit": ["ctrl-c"] })
-    router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
+    router.setKeymapIndex(actions.buildKeymap())
+    router.dispatch({ event: makeKey("d", { ctrl: true }), type: "key" })
     expect(fired).toBe(1)
   })
 
@@ -229,31 +201,35 @@ describe("InputRouter — named actions via keymap", () => {
     const seen: string[] = []
     n.on("key", (ev) => seen.push(ev.name))
     router.focus(n)
-    router.setKeymaps({ "input.foo": ["enter"] })
-    // "a" isn't bound — should bubble as a raw key.
+    router.setKeymap({ enter: "input.foo" })
+    // "a" isn't bound — bubbles as a raw key first anyway.
     router.dispatch({ event: makeKey("a"), type: "key" })
     expect(seen).toEqual(["a"])
   })
 
-  test("setKeymaps rebuilds the index — subsequent calls replace, not merge", () => {
+  test("direct handler in keymap fires and consumes", () => {
     const router = new InputRouter()
-    const n = text("t") as unknown as {
-      actions?: Record<string, () => void>
-      type?: string
-      emit: (...a: unknown[]) => boolean
-      on: (...a: unknown[]) => unknown
-      parent?: unknown
-    }
-    n.type = "input"
     let fired = 0
-    n.actions = { cursorLeft: () => fired++ }
-    router.focus(n as unknown as Parameters<typeof router.focus>[0])
-    router.setKeymaps({ "input.cursorLeft": ["left"] })
+    router.setKeymap({
+      "ctrl-s": () => {
+        fired++
+        return true
+      },
+    })
+    const consumed = router.dispatch({ event: makeKey("s", { ctrl: true }), type: "key" })
+    expect(consumed).toBe(true)
+    expect(fired).toBe(1)
+  })
+
+  test("setKeymap replaces the index wholesale", () => {
+    const router = new InputRouter()
+    const actions = new Actions()
+    router.setActions(actions)
+    let fired = 0
+    router.setKeymap({ left: () => (fired++, true) })
     router.dispatch({ event: makeKey("left"), type: "key" })
     expect(fired).toBe(1)
-    // Replace with a different binding; "left" should no longer fire
-    // cursorLeft (keymap replaced wholesale).
-    router.setKeymaps({ "input.cursorLeft": ["right"] })
+    router.setKeymap({ right: () => (fired++, true) })
     router.dispatch({ event: makeKey("left"), type: "key" })
     expect(fired).toBe(1)
     router.dispatch({ event: makeKey("right"), type: "key" })

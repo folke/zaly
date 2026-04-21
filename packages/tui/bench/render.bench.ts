@@ -21,7 +21,7 @@ const ctx = createCtx({ theme: moon, width: 80 })
 const leaf = text("hello world", { fg: "primary" })
 
 const smallTree = box(
-  { padding: 1, border: "rounded" },
+  { border: "rounded", padding: 1 },
   text("title", { bold: true, fg: "primary" }),
   text("body line 1"),
   text("body line 2"),
@@ -35,7 +35,7 @@ const flexRow = box(
 )
 
 const deepTree = box(
-  { padding: 1, border: "rounded" },
+  { border: "rounded", padding: 1 },
   ...Array.from({ length: 20 }, (_, i) =>
     box(
       { flexDirection: "row", gap: 1 },

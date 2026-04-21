@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url"
 import { run } from "mitata"
 
 const here = dirname(fileURLToPath(import.meta.url))
-const files = globSync("*.bench.ts", { cwd: here }).sort()
+const files = globSync("*.bench.ts", { cwd: here }).toSorted()
 
 for (const file of files) {
   // eslint-disable-next-line no-await-in-loop -- each bench file registers benches on import

@@ -79,7 +79,7 @@ describe("Overlay surface", () => {
     h.dispose()
   })
 
-  test("overlay above stream region — no ghosting after \\n scroll", async () => {
+  test(String.raw`overlay above stream region — no ghosting after \n scroll`, async () => {
     // Stream has only a few rows; overlay at y=5 sits ABOVE the stream
     // tracked region. Before the fix, stream's \n-growth scrolled the
     // overlay bytes up (ghost at y-1) and promoted them into scrollback.

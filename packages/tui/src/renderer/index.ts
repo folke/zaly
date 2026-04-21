@@ -1,13 +1,12 @@
 import type { MountCtx, RenderCtx, Theme } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { ActionMap } from "../input/keymap.ts"
+import type { ActionInfo } from "../input/actions.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 
 import { createCtx } from "../core/ctx.ts"
-import { defaultActions } from "../input/actions.ts"
+import { Actions, defaultActions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
-import { buildKeymaps } from "../input/keymap.ts"
 import { InputRouter } from "../input/router.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
@@ -69,12 +68,24 @@ export class Renderer {
   #ctx: RenderCtx | undefined
   readonly #onDirty = (): void => this.#schedule()
 
-  actions = {
-    quit: () => {
-      this.stop()
-      process.exit(0)
+  /** Runtime action registry (catalog + dispatcher). Populated with
+   *  `defaultActions` + `globalActions` at construction; apps extend
+   *  via `renderer.actions.register({ "app.foo": { ... } })`. */
+  readonly actions = new Actions()
+
+  /** Global action impls. Merged into the `actions` catalog on
+   *  construction so the ids declared here gain their keys and desc
+   *  from `defaultActions`. Using `satisfies` (rather than an explicit
+   *  type annotation) keeps the literal keys so `BuiltinAction` can
+   *  pull them out. */
+  globalActions = {
+    "global.quit": {
+      fn: (): void => {
+        this.stop()
+        process.exit(0)
+      },
     },
-  } satisfies ActionMap
+  } satisfies Record<string, ActionInfo>
 
   constructor(opts: RendererOptions = {}) {
     this.terminal = new Terminal({
@@ -101,6 +112,22 @@ export class Renderer {
       ui: this.ui,
     })
     this.input = new InputRouter()
+    // Wire the action registry: Actions looks up the focused node
+    // (so programmatic dispatch starts there) and the Router hands
+    // matched keymap action ids back to the registry for dispatch.
+    this.actions.setTargetResolver(() => this.input.focused)
+    this.input.setActions(this.actions)
+    // Rebuild the Router's keymap whenever the catalog changes. Action
+    // `.keys` fields are the single source of truth for default
+    // bindings; `setKeymap` can still be called by apps to override.
+    this.actions.onChange(() => {
+      this.input.setKeymapIndex(this.actions.buildKeymap())
+    })
+    // Bundled metadata + impls. `register` merges by id, so the
+    // `globalActions` `fn` entries augment the docs/keys already
+    // supplied by `defaultActions`.
+    this.actions.register(defaultActions)
+    this.actions.register(this.globalActions)
 
     // Surfaces emit `"dirty"` instead of self-scheduling. Centralising
     // the microtask here means one flush per tick for the whole tree
@@ -190,12 +217,6 @@ export class Renderer {
     this.#stdin.setEncoding?.("utf8")
     this.#stdin.on("data", this.#onData)
     this.#stdin.resume?.()
-    // Install the default keymap + wire our own actions under the
-    // `global` scope. Idempotent with overrides: apps that want custom
-    // bindings can call `renderer.input.setKeymaps(...)` any time after
-    // `start()`, and plugins can layer more actions via `registerActions`.
-    this.input.registerActions("global", this.actions)
-    this.input.setKeymaps(buildKeymaps(defaultActions))
     // Mount every surface's tracked tree. Build one MountCtx per
     // surface; each shares the same underlying services (router,
     // overlay, tree walk), only the `surface` tag differs.
@@ -279,13 +300,13 @@ export class Renderer {
    *  across surfaces share a single overlay surface, router, etc. */
   #mountCtxFor(surface: Surface): MountCtx {
     return {
+      actions: this.actions,
       findNode: (m) => this.findNode(m),
       getNode: (id) => this.getNode(id),
       input: {
         bind: (pattern, handler) => this.input.bind(pattern, handler),
         blur: () => this.input.focus(undefined),
         focus: (node) => this.input.focus(node),
-        registerActions: (scope, actions) => this.input.registerActions(scope, actions),
       },
       overlay: {
         close: (o) => this.overlay.close(o),

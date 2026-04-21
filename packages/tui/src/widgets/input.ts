@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { ActionMap } from "../input/keymap.ts"
+import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
@@ -65,50 +65,50 @@ export class Input extends Node<InputState, InputEvents> {
    * default key bindings.
    */
   override actions = {
-    cursorDown: (): void => {
+    "input.cursorDown": (): void => {
       const v = this.state.value ?? ""
       const { col, line } = posToLineCol(v, this.state.cursor ?? 0)
       if (line >= countLines(v) - 1) return
       this.state.cursor = lineColToPos(v, line + 1, col)
     },
-    cursorLeft: (): void => {
+    "input.cursorLeft": (): void => {
       const c = this.state.cursor ?? 0
       if (c > 0) this.state.cursor = c - 1
     },
-    cursorLineEnd: (): void => {
+    "input.cursorLineEnd": (): void => {
       const v = this.state.value ?? ""
       this.state.cursor = lineEndPos(v, this.state.cursor ?? 0)
     },
-    cursorLineStart: (): void => {
+    "input.cursorLineStart": (): void => {
       const v = this.state.value ?? ""
       const { line } = posToLineCol(v, this.state.cursor ?? 0)
       this.state.cursor = lineColToPos(v, line, 0)
     },
-    cursorRight: (): void => {
+    "input.cursorRight": (): void => {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c < v.length) this.state.cursor = c + 1
     },
-    cursorUp: (): void => {
+    "input.cursorUp": (): void => {
       const v = this.state.value ?? ""
       const { col, line } = posToLineCol(v, this.state.cursor ?? 0)
       if (line === 0) return
       this.state.cursor = lineColToPos(v, line - 1, col)
     },
-    deleteCharBack: (): void => {
+    "input.deleteCharBack": (): void => {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c === 0) return
       this.state.value = v.slice(0, c - 1) + v.slice(c)
       this.state.cursor = c - 1
     },
-    deleteCharForward: (): void => {
+    "input.deleteCharForward": (): void => {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c >= v.length) return
       this.state.value = v.slice(0, c) + v.slice(c + 1)
     },
-    deleteWordBack: (): void => {
+    "input.deleteWordBack": (): void => {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       let i = c
@@ -118,7 +118,7 @@ export class Input extends Node<InputState, InputEvents> {
       this.state.value = v.slice(0, i) + v.slice(c)
       this.state.cursor = i
     },
-    insertNewline: (): void => {
+    "input.insertNewline": (): void => {
       // Smart indent: copy the leading whitespace of the current
       // logical line onto the new line so continuations stay aligned
       // with the bullet / quote / prefix the user typed.
@@ -136,7 +136,7 @@ export class Input extends Node<InputState, InputEvents> {
       this.state.value = v.slice(0, c) + insert + v.slice(c)
       this.state.cursor = c + insert.length
     },
-    insertTab: (): void => {
+    "input.insertTab": (): void => {
       // Two spaces rather than `\t` — terminal tab stops are
       // unpredictable (often 8 cells) and play badly with our per-row
       // layout. Soft tabs are the safer default; users wanting real
@@ -147,7 +147,7 @@ export class Input extends Node<InputState, InputEvents> {
       this.state.value = v.slice(0, c) + tab + v.slice(c)
       this.state.cursor = c + tab.length
     },
-    submit: (): void => {
+    "input.submit": (): void => {
       this.emit("submit", this.state.value ?? "")
     },
   } satisfies ActionMap

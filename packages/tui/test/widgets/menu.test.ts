@@ -1,3 +1,4 @@
+// oxlint-disable unicorn/no-await-expression-member
 import type { RenderCtx } from "../../src/core/ctx.ts"
 
 import { describe, expect, test, vi } from "vitest"
@@ -8,13 +9,12 @@ import { menu } from "../../src/widgets/menu.ts"
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
 
 const items = [
-  { value: "/help", hint: "show commands" },
-  { value: "/quit", hint: "exit" },
-  { value: "/model", hint: "pick a model" },
+  { hint: "show commands", value: "/help" },
+  { hint: "exit", value: "/quit" },
+  { hint: "pick a model", value: "/model" },
 ]
 
 function stripAnsi(s: string): string {
-  // oxlint-disable-next-line no-control-regex -- strip SGR for stable row assertions
   return s.replace(/\x1b\[[0-9;]*m/g, "")
 }
 
@@ -30,7 +30,7 @@ describe("menu", () => {
 
   test("label defaults to value; custom label wins", async () => {
     const m = menu({
-      items: [{ value: "x", label: "Custom" }],
+      items: [{ label: "Custom", value: "x" }],
     })
     const rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows[0]).toContain("Custom")
@@ -39,17 +39,17 @@ describe("menu", () => {
   test("next/prev/first/last move the active index", () => {
     const m = menu({ items })
     expect(m.state.active).toBe(0)
-    m.actions.next()
+    m.actions["menu.next"]()
     expect(m.state.active).toBe(1)
-    m.actions.next()
-    m.actions.next()
+    m.actions["menu.next"]()
+    m.actions["menu.next"]()
     // wraps: going past end returns to 0
     expect(m.state.active).toBe(0)
-    m.actions.prev()
+    m.actions["menu.prev"]()
     expect(m.state.active).toBe(2)
-    m.actions.first()
+    m.actions["menu.first"]()
     expect(m.state.active).toBe(0)
-    m.actions.last()
+    m.actions["menu.last"]()
     expect(m.state.active).toBe(2)
   })
 
@@ -57,8 +57,8 @@ describe("menu", () => {
     const m = menu({ items })
     const fn = vi.fn()
     m.on("select", fn)
-    m.actions.next()
-    m.actions.select()
+    m.actions["menu.next"]()
+    m.actions["menu.select"]()
     expect(fn).toHaveBeenCalledWith(items[1], m)
   })
 
@@ -66,7 +66,7 @@ describe("menu", () => {
     const m = menu({ items })
     const fn = vi.fn()
     m.on("cancel", fn)
-    m.actions.cancel()
+    m.actions["menu.cancel"]()
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
@@ -96,7 +96,7 @@ describe("menu", () => {
     const m = menu({ items: [] })
     const fn = vi.fn()
     m.on("select", fn)
-    m.actions.select()
+    m.actions["menu.select"]()
     expect(fn).not.toHaveBeenCalled()
   })
 })
