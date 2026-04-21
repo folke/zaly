@@ -1,57 +1,56 @@
 import { box, createCtx, loadTheme, node, text } from "../src/index.ts"
 
-async function demo(label: string, name: string) {
+async function demo(label: string, name: string): Promise<void> {
   const theme = loadTheme(name)
   const ctx = createCtx({ theme })
 
-  // Custom node — state-driven status line. Uses `ctx.style` so the fg
-  // color is picked dynamically at render time: `.bold[state.level]` maps
-  // to theme slots via `keyof Theme`.
-  const status = node(
-    { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
-    ({ ctx: { style }, state }) => text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`)
-  )
-
-  const header = box(
-    { bg: "primary", padding: [0, 1] },
-    text(({ style }) => style.brightWhite.bold("@zaly/tui")),
-    text(({ style }) => style.brightWhite("  agent harness · dev build"))
-  )
-
-  const stats = box(
-    { flexDirection: "row", gap: 1 },
+  const app = box(
+    { gap: 1 },
     box(
-      { border: "rounded", borderTitle: "passing", flexGrow: 1, padding: [0, 1] },
-      text("168 / 168", { bold: true, fg: "success" })
+      { bg: "primary", padding: [0, 1] },
+      text(({ style }) => style.brightWhite.bold("@zaly/tui")),
+      text(({ style }) => style.brightWhite("  agent harness · dev build")),
     ),
     box(
-      { border: "rounded", borderTitle: "pending", flexGrow: 1, padding: [0, 1] },
-      text("3 queued", { fg: "warn" })
+      { flexDirection: "row", gap: 1 },
+      box(
+        { border: "rounded", borderTitle: "passing", flexGrow: 1, padding: [0, 1] },
+        text("168 / 168", { bold: true, fg: "success" }),
+      ),
+      box(
+        { border: "rounded", borderTitle: "pending", flexGrow: 1, padding: [0, 1] },
+        text("3 queued", { fg: "warn" }),
+      ),
+      box(
+        { border: "rounded", borderTitle: "failed", flexGrow: 1, padding: [0, 1] },
+        text("0", { fg: "error" }),
+      ),
     ),
     box(
-      { border: "rounded", borderTitle: "failed", flexGrow: 1, padding: [0, 1] },
-      text("0", { fg: "error" })
-    )
+      { border: "rounded", borderTitle: "activity", borderTitleAlign: "center", padding: 1 },
+      text("tool: read_file", { fg: "primary" }),
+      text("  path: src/index.ts", { fg: "muted" }),
+      text("  bytes: 2847", { fg: "muted" }),
+      text(""),
+      text("tool: edit", { fg: "primary" }),
+      text("  path: src/nodes/box.ts", { fg: "muted" }),
+      // Mixed-span line — resolves `ctx.style` at render time via the
+      // function form of `text()`. No need to pre-bind a builder outside.
+      text(({ style }) => `  lines: ${style.success("+12")} ${style.error("-4")}`),
+      text(""),
+      text("tool: bash", { fg: "primary" }),
+      text("  cmd: bun test", { fg: "muted" }),
+      text("  exit: 0", { fg: "success" }),
+    ),
+    // Custom node — state-driven status line. Uses `ctx.style` so the fg
+    // color is picked dynamically at render time: `.bold[state.level]` maps
+    // to theme slots via `keyof Theme`.
+    node(
+      { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
+      ({ ctx: { style }, state }) =>
+        text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`),
+    ),
   )
-
-  const activity = box(
-    { border: "rounded", borderTitle: "activity", borderTitleAlign: "center", padding: 1 },
-    text("tool: read_file", { fg: "primary" }),
-    text("  path: src/index.ts", { fg: "muted" }),
-    text("  bytes: 2847", { fg: "muted" }),
-    text(""),
-    text("tool: edit", { fg: "primary" }),
-    text("  path: src/nodes/box.ts", { fg: "muted" }),
-    // Mixed-span line — resolves `ctx.style` at render time via the
-    // function form of `text()`. No need to pre-bind a builder outside.
-    text(({ style }) => `  lines: ${style.success("+12")} ${style.error("-4")}`),
-    text(""),
-    text("tool: bash", { fg: "primary" }),
-    text("  cmd: bun test", { fg: "muted" }),
-    text("  exit: 0", { fg: "success" })
-  )
-
-  const app = box({ gap: 1 }, header, stats, activity, status)
 
   console.log(`── ${label} ──`)
   const rows = await app.render(ctx)

@@ -1,8 +1,12 @@
 import type { RenderMarkdown } from "../src/style/md/marked.ts"
 
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { box, createCtx, markdown } from "../src/index.ts"
 import { renderMarkdown as markedRenderer } from "../src/style/md/marked.ts"
-import { image } from "../src/widgets/image.ts"
+
+const here = dirname(fileURLToPath(import.meta.url))
+const earth = resolve(here, "earth.jpg")
 
 // A small fixture exercising the block + inline types our callbacks care
 // about. Keep it intentionally varied so rendering quirks show up.
@@ -49,6 +53,10 @@ console.log(greeting)
 | three | four  |
 
 Read the [Bun docs](https://bun.com) for details.
+
+## Image
+
+![Apollo 17 — The Blue Marble (NASA, 1972)](${earth})
 `.trim()
 
 const bunRenderer: RenderMarkdown = (input, cbs, opts) => Bun.markdown.render(input, cbs, opts)
@@ -63,14 +71,13 @@ function column(title: string, render: RenderMarkdown) {
       padding: [0, 1],
     },
     markdown({ content: md, options: { render } }),
-    image("/home/folke/.config/wall.png")
   )
 }
 
 const app = box(
   { flexDirection: "row", gap: 1 },
   column("Bun.markdown.render", bunRenderer),
-  column("renderMarkdown (marked)", markedRenderer)
+  column("renderMarkdown (marked)", markedRenderer),
 )
 
 const ctx = createCtx({ width: 200 })
