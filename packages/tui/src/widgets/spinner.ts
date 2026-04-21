@@ -1,7 +1,9 @@
 import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { Color } from "../style/color.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 
 /** Frame sets from the common terminal-spinner vocabulary. Pick one to taste. */
 export const spinnerFrames = {
@@ -19,6 +21,11 @@ export interface SpinnerState extends BaseState {
   speed?: number
   /** Foreground theme slot or explicit color. Defaults to `primary`. */
   color?: Color
+  /** Whether the animation is ticking. Defaults to `true`. Accepts a
+   *  signal accessor so callers can drive the spinner from shared
+   *  reactive state. Setting `false` stops the interval; setting
+   *  `true` restarts it. */
+  running?: Reactive<boolean>
 }
 
 /**
@@ -45,8 +52,12 @@ export class Spinner extends Node<SpinnerState> {
 
   constructor(state: SpinnerState) {
     super(state)
-    this.on("mount", () => this.start())
-    this.on("unmount", () => this.stop())
+    // Timer lifecycle is driven by state: `_render` reconciles the
+    // interval on every render, and we reconcile on mount too so a
+    // spinner that's never rendered (tests, offscreen trees) still
+    // obeys its `running` flag. Unmount always clears.
+    this.on("mount", () => this.#reconcile())
+    this.on("unmount", () => this.#stopTimer())
   }
 
   /** Global tick index for a given `speed`. Shared across all callers. */
@@ -54,26 +65,43 @@ export class Spinner extends Node<SpinnerState> {
     return Math.floor(performance.now() / speed)
   }
 
-  /** Start the auto-invalidate interval. Idempotent; unref'd. */
+  /** Shorthand for `setState({ running: true })`. */
   start(): this {
-    if (this.#timer !== undefined) return this
+    return this.setState({ running: true })
+  }
+
+  /** Shorthand for `setState({ running: false })`. */
+  stop(): this {
+    return this.setState({ running: false })
+  }
+
+  #startTimer(): void {
+    if (this.#timer !== undefined) return
     const speed = this.state.speed ?? 80
     this.#timer = setInterval(() => this.invalidate(), speed)
     // Don't pin the event loop — a forgotten spinner should never
     // prevent the process from exiting.
     this.#timer.unref()
-    return this
   }
 
-  /** Stop the auto-invalidate interval. Idempotent. */
-  stop(): this {
-    if (this.#timer === undefined) return this
+  #stopTimer(): void {
+    if (this.#timer === undefined) return
     clearInterval(this.#timer)
     this.#timer = undefined
-    return this
+  }
+
+  /** Sync the interval to the current `running` state. Reading through
+   *  `unwrap` during a render subscribes the spinner to a signal
+   *  accessor so flips from elsewhere in the app retrigger this. */
+  #reconcile(): void {
+    const running = unwrap(this.state.running ?? true)
+    if (running) this.#startTimer()
+    else this.#stopTimer()
   }
 
   protected _render(ctx: RenderCtx): string[] {
+    this.#reconcile()
+
     const frames = this.state.frames ?? spinnerFrames.dots
     const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
     const color = this.state.color ?? "primary"

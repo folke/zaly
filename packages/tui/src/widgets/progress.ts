@@ -1,16 +1,20 @@
 import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 
 import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 
 export interface ProgressState extends BaseState {
-  /** Current value. Clamped to `[0, total]`. */
-  value: number
+  /** Current value. Clamped to `[0, total]`. Accepts a signal accessor
+   *  so callers can drive the bar from reactive state without manual
+   *  `setState` plumbing. */
+  value: Reactive<number>
   /** Maximum value. Defaults to `1` — pass a fraction in `[0, 1]` to value. */
-  total?: number
+  total?: Reactive<number>
   /**
    * Bar width in cells. Defaults to `fill` (uses the full `ctx.width`).
    * Shrinks to fit if a `label` is provided.
@@ -34,8 +38,8 @@ export interface ProgressState extends BaseState {
 
 export class Progress extends Node<ProgressState> {
   protected _render(ctx: RenderCtx): string[] {
-    const total = this.state.total ?? 1
-    const raw = total > 0 ? this.state.value / total : 0
+    const total = unwrap(this.state.total ?? 1)
+    const raw = total > 0 ? unwrap(this.state.value) / total : 0
     const fraction = Math.max(0, Math.min(1, raw))
 
     const complete = this.state.complete ?? "█"

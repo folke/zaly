@@ -1,10 +1,12 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 
 /** A single selectable entry. `value` is what the autocomplete inserts;
@@ -17,7 +19,9 @@ export interface MenuItem {
 }
 
 export interface MenuState extends StyleState {
-  items: MenuItem[]
+  /** Items to show. Accepts a signal accessor so the list can be
+   *  driven from reactive state (filtered results, search, etc.). */
+  items: Reactive<MenuItem[]>
   /** Index of the highlighted row. Defaults to 0; clamped on render. */
   active?: number
   /** Max rows visible at once — window slides to keep `active` in view. */
@@ -53,26 +57,26 @@ export class Menu extends Node<MenuState, MenuEvents> {
       this.emit("cancel")
     },
     "menu.first": (): void => {
-      if (this.state.items.length === 0) return
+      if (this.#items().length === 0) return
       this.state.active = 0
     },
     "menu.last": (): void => {
-      const n = this.state.items.length
+      const n = this.#items().length
       if (n === 0) return
       this.state.active = n - 1
     },
     "menu.next": (): void => {
-      const n = this.state.items.length
+      const n = this.#items().length
       if (n === 0) return
       this.state.active = (this.#active() + 1) % n
     },
     "menu.prev": (): void => {
-      const n = this.state.items.length
+      const n = this.#items().length
       if (n === 0) return
       this.state.active = (this.#active() - 1 + n) % n
     },
     "menu.select": (): void => {
-      const items = this.state.items
+      const items = this.#items()
       if (items.length === 0) return
       const i = this.#active()
       this.emit("select", items[i])
@@ -83,15 +87,19 @@ export class Menu extends Node<MenuState, MenuEvents> {
     super({ active: 0, ...initial })
   }
 
+  #items(): MenuItem[] {
+    return unwrap(this.state.items)
+  }
+
   #active(): number {
-    const n = this.state.items.length
+    const n = this.#items().length
     if (n === 0) return 0
     const a = this.state.active ?? 0
     return Math.max(0, Math.min(n - 1, a))
   }
 
   protected _render(ctx: RenderCtx): string[] {
-    const items = this.state.items
+    const items = this.#items()
     if (items.length === 0) return []
 
     const width = resolveSize(this.state.width ?? "fill", ctx.width) ?? ctx.width

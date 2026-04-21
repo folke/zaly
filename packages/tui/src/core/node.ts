@@ -5,6 +5,7 @@ import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
 import type { Events } from "./emitter.ts"
 
 import { Emitter } from "./emitter.ts"
+import { withActiveNode } from "./reactive.ts"
 
 export type { BaseState }
 
@@ -144,12 +145,12 @@ export abstract class Node<
     // Useful for toggled panels (autocomplete, log, modals) that should
     // stick around in the tree so we don't re-create them each time.
     if (this.state.visible === false) return []
-    this.#rendering ??= (async () => {
+    this.#rendering ??= withActiveNode(this, async () => {
       if (this.#cache?.version !== ctx.version) {
         this.#cache = { rows: await this._render(ctx), version: ctx.version }
       }
       return this.#cache.rows
-    })()
+    })
     try {
       return await this.#rendering
     } finally {
