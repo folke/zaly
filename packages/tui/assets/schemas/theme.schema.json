@@ -4,6 +4,73 @@
   "properties": {
     "shiki": {
       "type": "string",
+      "enum": [
+        "andromeeda",
+        "aurora-x",
+        "ayu-dark",
+        "ayu-light",
+        "ayu-mirage",
+        "catppuccin-frappe",
+        "catppuccin-latte",
+        "catppuccin-macchiato",
+        "catppuccin-mocha",
+        "dark-plus",
+        "dracula",
+        "dracula-soft",
+        "everforest-dark",
+        "everforest-light",
+        "github-dark",
+        "github-dark-default",
+        "github-dark-dimmed",
+        "github-dark-high-contrast",
+        "github-light",
+        "github-light-default",
+        "github-light-high-contrast",
+        "gruvbox-dark-hard",
+        "gruvbox-dark-medium",
+        "gruvbox-dark-soft",
+        "gruvbox-light-hard",
+        "gruvbox-light-medium",
+        "gruvbox-light-soft",
+        "horizon",
+        "horizon-bright",
+        "houston",
+        "kanagawa-dragon",
+        "kanagawa-lotus",
+        "kanagawa-wave",
+        "laserwave",
+        "light-plus",
+        "material-theme",
+        "material-theme-darker",
+        "material-theme-lighter",
+        "material-theme-ocean",
+        "material-theme-palenight",
+        "min-dark",
+        "min-light",
+        "monokai",
+        "night-owl",
+        "night-owl-light",
+        "nord",
+        "one-dark-pro",
+        "one-light",
+        "plastic",
+        "poimandres",
+        "red",
+        "rose-pine",
+        "rose-pine-dawn",
+        "rose-pine-moon",
+        "slack-dark",
+        "slack-ochin",
+        "snazzy-light",
+        "solarized-dark",
+        "solarized-light",
+        "synthwave-84",
+        "tokyo-night",
+        "vesper",
+        "vitesse-black",
+        "vitesse-dark",
+        "vitesse-light"
+      ],
       "description": "Optional name of a matching Shiki syntax-highlighting theme. Code\nblocks and fenced markdown snippets look this up so highlighting\naligns with the TUI palette. Leave unset for themes without a\nShiki counterpart."
     },
     "fg": {
@@ -201,8 +268,8 @@
         {
           "type": "string",
           "enum": [
-            "black",
             "red",
+            "black",
             "green",
             "yellow",
             "blue",
@@ -211,8 +278,8 @@
             "white",
             "gray",
             "grey",
-            "brightBlack",
             "brightRed",
+            "brightBlack",
             "brightGreen",
             "brightYellow",
             "brightBlue",
@@ -791,8 +858,8 @@
             {
               "type": "string",
               "enum": [
-                "black",
                 "red",
+                "black",
                 "green",
                 "yellow",
                 "blue",
@@ -801,8 +868,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightBlack",
                 "brightRed",
+                "brightBlack",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -1387,8 +1454,8 @@
             {
               "type": "string",
               "enum": [
-                "black",
                 "red",
+                "black",
                 "green",
                 "yellow",
                 "blue",
@@ -1397,8 +1464,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightBlack",
                 "brightRed",
+                "brightBlack",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -1974,8 +2041,8 @@
             {
               "type": "string",
               "enum": [
-                "black",
                 "red",
+                "black",
                 "green",
                 "yellow",
                 "blue",
@@ -1984,8 +2051,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightBlack",
                 "brightRed",
+                "brightBlack",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -2568,13 +2635,10 @@
         },
         "strikethrough": {
           "type": "boolean"
-        },
-        "visible": {
-          "type": "boolean"
         }
       },
       "required": [],
-      "description": "Base style shared by every node type. Box/Text/etc. extend this.\nAlso extends `BaseState` so every widget state that extends `Style`\ngets `visible` / `focus` without needing to declare them."
+      "description": "Base style shared by every node type. Box/Text/etc. extend this.\nPure styling — no layout or lifecycle fields. Widget state interfaces\nextend `StyleState` to pick up the `visible` base-state bits alongside\nthese style fields."
     }
   }
 }

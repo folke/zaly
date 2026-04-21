@@ -1,7 +1,6 @@
 // oxlint-disable no-nested-ternary
 // oxlint-disable typescript/no-unnecessary-condition
 import type { RenderCtx } from "../core/ctx.ts"
-import type { ShikiTheme } from "../style/shiki.ts"
 import type { TextStyle } from "./text.ts"
 
 import { stringWidth } from "#runtime"
@@ -35,8 +34,6 @@ export interface DiffState extends Omit<TextStyle, "content"> {
   title?: string
   /** Lines of surrounding context per hunk. Default: 3. */
   context?: number
-  /** Shiki theme. Default: `"tokyo-night"`. */
-  shikiTheme?: ShikiTheme
 }
 
 /**
@@ -68,7 +65,7 @@ export class Diff extends Node<DiffState> {
     // padding + optional title.
     const body = rows.join("\n")
     this.#code.setState({
-      ...this.omitFromState("original", "edits", "context", "lang", "shikiTheme", "title"),
+      ...this.omitFromState("original", "edits", "context", "lang", "title"),
       code: body,
       syntax: false,
       title: this.state.title,
@@ -121,7 +118,7 @@ async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]
 
   // Highlight both sides as complete files so context tokens the way it
   // would in the real source. Unknown / missing lang → plain lines.
-  const { origHi, editedHi } = await highlightPair(state, origLines, editedLines)
+  const { origHi, editedHi } = await highlightPair(ctx, state, origLines, editedLines)
 
   // Build the structured row list.
   const rows: DiffRow[] = []
@@ -172,7 +169,9 @@ async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]
   return renderRows(ctx, rows, origLines.length, editedLines.length)
 }
 
+// oxlint-disable-next-line max-params
 async function highlightPair(
+  ctx: RenderCtx,
   state: DiffState,
   origLines: string[],
   editedLines: string[]
@@ -183,7 +182,7 @@ async function highlightPair(
   try {
     const highlight = await createAnsiHighlighter({
       langs: [state.lang],
-      theme: state.shikiTheme,
+      theme: ctx.theme.shiki,
     })
     const splitHi = (src: string[]): string[] => {
       const out = highlight(src.join("\n"), state.lang!)

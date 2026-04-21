@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { AnsiHighlighter, ShikiTheme } from "../style/shiki.ts"
+import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { TextStyle } from "./text.ts"
 
 import { stringWidth } from "#runtime"
@@ -18,8 +18,6 @@ export interface CodeState extends Omit<TextStyle, "content"> {
   title?: string
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
-  /** Shiki theme. Default: `"tokyo-night"`. */
-  shikiTheme?: ShikiTheme
 }
 
 /**
@@ -42,7 +40,7 @@ export class Code extends Node<CodeState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const content = await buildCodeContent(ctx, this.state)
     this.#text.setState({
-      ...this.omitFromState("code", "lang", "title", "syntax", "shikiTheme"),
+      ...this.omitFromState("code", "lang", "title", "syntax"),
       content,
     })
     return this.#text.render(ctx)
@@ -69,7 +67,7 @@ export function code(state: CodeState): Code {
  */
 export async function buildCodeContent(
   ctx: RenderCtx,
-  state: Pick<CodeState, "code" | "lang" | "title" | "syntax" | "shikiTheme">
+  state: Pick<CodeState, "code" | "lang" | "title" | "syntax">
 ): Promise<string> {
   const syntax = state.syntax ?? true
 
@@ -77,7 +75,7 @@ export async function buildCodeContent(
   if (syntax && state.lang !== undefined && state.lang !== "") {
     highlighter = await createAnsiHighlighter({
       langs: [state.lang],
-      theme: state.shikiTheme,
+      theme: ctx.theme.shiki,
     })
   }
 

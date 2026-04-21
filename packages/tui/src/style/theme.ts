@@ -1,5 +1,6 @@
 import type { Style } from "./ansi.ts"
 import type { Color } from "./color.ts"
+import type { ShikiTheme } from "./shiki.ts"
 
 import { readFileSync, statSync } from "node:fs"
 import { dirname, resolve } from "node:path"
@@ -29,7 +30,7 @@ export type Theme = {
    *  blocks and fenced markdown snippets look this up so highlighting
    *  aligns with the TUI palette. Leave unset for themes without a
    *  Shiki counterpart. */
-  shiki?: string
+  shiki?: ShikiTheme
   fg: Color
   bg: Color
   primary: Color

@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../../core/ctx.ts"
 import type { MdCallbacks, MdOptions } from "../../style/md/marked.ts"
-import type { AnsiHighlighter, ShikiTheme } from "../../style/shiki.ts"
+import type { AnsiHighlighter } from "../../style/shiki.ts"
 import type { Image } from "../image.ts"
 import type { TextStyle } from "../text.ts"
 
@@ -25,12 +25,6 @@ export interface MarkdownState extends TextStyle {
    * as plain text.
    */
   syntax?: boolean
-  /**
-   * Shiki theme name used when `syntax` is enabled. Defaults to
-   * `"tokyo-night"` (matches the zaly default). Any bundled shiki theme
-   * name is accepted.
-   */
-  shikiTheme?: ShikiTheme
 }
 
 const icons = {
@@ -67,7 +61,7 @@ export class Markdown extends Node<MarkdownState> {
     let highlighter: AnsiHighlighter | undefined
     if (syntax) {
       const langs = collectFenceLanguages(this.state.content)
-      highlighter = await createAnsiHighlighter({ langs, theme: this.state.shikiTheme })
+      highlighter = await createAnsiHighlighter({ langs, theme: ctx.theme.shiki })
     }
 
     // Image handling: the callback emits `<img id=N>` markers during
@@ -91,7 +85,7 @@ export class Markdown extends Node<MarkdownState> {
     const final = await imageCb.resolve(ctx, rendered)
 
     this.#text.setState({
-      ...this.omitFromState("options", "shikiTheme", "syntax"),
+      ...this.omitFromState("options", "syntax"),
       content: final.replace(/\n+$/, "\n"),
     })
     return this.#text.render(ctx)

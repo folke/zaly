@@ -1,4 +1,4 @@
-import { box, code, createCtx, text } from "../src/index.ts"
+import { box, code, createCtx, loadTheme, text } from "../src/index.ts"
 
 const samples = [
   {
@@ -36,7 +36,8 @@ done`,
   },
 ]
 
-const ctx = createCtx({ width: 80 })
+const theme = loadTheme("catppuccin-mocha")
+const ctx = createCtx({ theme, width: 80 })
 
 const column = (sample: (typeof samples)[number]) =>
   box({ flexDirection: "column", padding: [0, 0, 1, 0] }, code(sample))
