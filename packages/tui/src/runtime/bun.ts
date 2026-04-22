@@ -2,9 +2,9 @@
 // Bun builtin helpers; `style/ansi.ts` wraps these with APC extraction
 // and the user-facing signatures.
 
-import type { MdCallbacks, MdCodeBlockMeta, MdOptions } from "./style/md/index.ts"
+import type { MdCallbacks, MdCodeBlockMeta, MdOptions } from "../markdown/index.ts"
 
-import { encodeFenceInfoStrings, parseCodeInfoString } from "./style/md/utils.ts"
+import { encodeFenceInfoStrings, parseCodeInfoString } from "../markdown/utils.ts"
 
 export const _stringWidth = Bun.stringWidth
 export const _sliceAnsi = Bun.sliceAnsi

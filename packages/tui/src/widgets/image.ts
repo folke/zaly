@@ -1,16 +1,16 @@
 import type { BaseState, RenderCtx } from "../core/ctx.ts"
 
 import { Node } from "../core/node.ts"
-import { imageCapabilities } from "../style/image/capabilities.ts"
-import { encode as encodeIterm2 } from "../style/image/iterm.ts"
+import { imageCapabilities } from "../image/capabilities.ts"
+import { encode as encodeIterm2 } from "../image/iterm.ts"
 import {
   allocatePlacementId,
   deletePlacement,
   placement,
   resetTransmitCache,
   transmitOnce,
-} from "../style/image/kitty.ts"
-import { imageBytes, imageMetadata } from "../style/image/source.ts"
+} from "../image/kitty.ts"
+import { imageBytes, imageMetadata } from "../image/source.ts"
 
 export interface ImageState extends BaseState {
   /**

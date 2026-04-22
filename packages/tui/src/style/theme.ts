@@ -6,7 +6,7 @@ import { readFileSync, statSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
-import { validateTheme } from "../schemas/gen/theme.config.ts"
+import { validateTheme } from "../schemas/index.ts"
 
 /**
  * A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve

@@ -7,36 +7,38 @@ import { stackColumn } from "../layout/column.ts"
 
 type Child = Node | false | null | undefined
 
-export type NodeRenderFn<S, E extends BaseEvents> = (args: {
+export type WidgetRenderFn<S, E extends BaseEvents> = (args: {
   state: S
   ctx: RenderCtx
   emit: TypedEmitter<E>["emit"]
 }) => Node | Child[]
 
 /**
- * Create a custom node from initial state and a render function. The common
- * case is to return a single composed Node (a box subtree). Returning an
- * array stacks the children vertically at ctx width — useful when there's
- * no styling/chrome to apply via a Box.
+ * Build a custom widget from initial state and a render function. The
+ * common case is returning a single composed Node (typically a `box`
+ * subtree). Returning an array stacks children vertically at ctx width
+ * — useful when there's no styling/chrome to apply via a Box.
  *
  * ```ts
- * const toolCall = node(
+ * const toolCall = widget(
  *   { name: "", status: "running" },
  *   ({ state }) => box({ border: "rounded" }, text(state.name)),
  * )
  * ```
+ *
+ * @group Widgets
  */
-export function node<S extends object, E extends BaseEvents = BaseEvents>(
+export function widget<S extends object, E extends BaseEvents = BaseEvents>(
   initialState: S,
-  render: NodeRenderFn<S & BaseState, E>,
+  render: WidgetRenderFn<S & BaseState, E>,
 ): Node<S & BaseState, E> {
-  return new CustomNode<S & BaseState, E>(initialState as S & BaseState, render)
+  return new Widget<S & BaseState, E>(initialState as S & BaseState, render)
 }
 
-class CustomNode<S extends BaseState, E extends BaseEvents> extends Node<S, E> {
-  readonly #renderFn: NodeRenderFn<S, E>
+class Widget<S extends BaseState, E extends BaseEvents> extends Node<S, E> {
+  readonly #renderFn: WidgetRenderFn<S, E>
 
-  constructor(initialState: S, renderFn: NodeRenderFn<S, E>) {
+  constructor(initialState: S, renderFn: WidgetRenderFn<S, E>) {
     super(initialState)
     this.#renderFn = renderFn
   }

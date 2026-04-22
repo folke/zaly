@@ -2,7 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../../src/schemas/index.ts"
 import { resolveStyle } from "../../src/style/color.ts"
 import { builtinThemeDir, loadTheme, loadThemeFile, defaultTheme } from "../../src/style/theme.ts"
 

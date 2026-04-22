@@ -3,8 +3,8 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
-import { renderMarkdown } from "../../src/style/md/index.ts"
+import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
+import { renderMarkdown } from "../../src/markdown/index.ts"
 import { defaultTheme } from "../../src/style/theme.ts"
 import { createImageCallback } from "../../src/widgets/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/widgets/markdown/index.ts"
@@ -408,8 +408,8 @@ describe("markdown — Image instance cache", () => {
 
   test("re-rendering the same markdown reuses the Image node (stable placement id)", async () => {
     // oxlint-disable-next-line no-shadow
-    const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
-    const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
+    const { resetCapabilitiesCache } = await import("../../src/image/capabilities.ts")
+    const { resetTransmitCache } = await import("../../src/image/kitty.ts")
     resetCapabilitiesCache()
     resetTransmitCache()
 
@@ -431,8 +431,8 @@ describe("markdown — Image instance cache", () => {
 
   test("transmit is emitted at most once across re-renders of the same src", async () => {
     // oxlint-disable-next-line no-shadow
-    const { resetCapabilitiesCache } = await import("../../src/style/image/capabilities.ts")
-    const { resetTransmitCache } = await import("../../src/style/image/kitty.ts")
+    const { resetCapabilitiesCache } = await import("../../src/image/capabilities.ts")
+    const { resetTransmitCache } = await import("../../src/image/kitty.ts")
     resetCapabilitiesCache()
     resetTransmitCache()
 

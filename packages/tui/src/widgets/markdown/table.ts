@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../../core/ctx.ts"
 import type { StyleBuilder } from "../../style/builder.ts"
-import type { MdCallbacks } from "../../style/md/index.ts"
+import type { MdCallbacks } from "../../markdown/index.ts"
 
 import { stringWidth } from "../../style/ansi.ts"
 

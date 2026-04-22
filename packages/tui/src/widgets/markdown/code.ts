@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks } from "../../style/md/index.ts"
+import type { MdCallbacks } from "../../markdown/index.ts"
 import type { AnsiHighlighter } from "../../style/shiki.ts"
 
 import { splitAnsi, stringWidth } from "../../style/ansi.ts"

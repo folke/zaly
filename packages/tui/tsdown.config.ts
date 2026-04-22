@@ -7,7 +7,7 @@ export default defineConfig({
   entry: {
     glob: "src/glob.ts",
     index: "src/index.ts",
-    "runtime.node": "src/runtime.node.ts",
+    "runtime.node": "src/runtime/node.ts",
   },
   exports: {
     devExports: "bun",

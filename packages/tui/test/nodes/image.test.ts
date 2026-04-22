@@ -4,8 +4,8 @@ import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
-import { resetImageCache } from "../../src/style/image/source.ts"
+import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
+import { resetImageCache } from "../../src/image/source.ts"
 import { image, resetImageTransmitCache } from "../../src/widgets/image.ts"
 
 // Fixture dir + a tiny PNG generated via sharp at setup. Keeping this in a

@@ -8,7 +8,7 @@ import {
   placement,
   transmitBytes,
   transmitFile,
-} from "../../../src/style/image/kitty.ts"
+} from "../../src/image/kitty.ts"
 
 describe("transmitFile", () => {
   test("emits t=f with the path base64-encoded in the payload", () => {

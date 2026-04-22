@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks, MdImageMeta } from "../../style/md/index.ts"
+import type { MdCallbacks, MdImageMeta } from "../../markdown/index.ts"
 import type { Image } from "../image.ts"
 import type { Markdown } from "./index.ts"
 

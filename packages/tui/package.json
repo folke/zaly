@@ -13,8 +13,8 @@
   "type": "module",
   "imports": {
     "#runtime": {
-      "bun": "./src/runtime.bun.ts",
-      "default": "./src/runtime.node.ts"
+      "bun": "./src/runtime/bun.ts",
+      "default": "./src/runtime/node.ts"
     }
   },
   "exports": {
@@ -23,7 +23,7 @@
       "default": "./dist/index.mjs"
     },
     "./runtime.node": {
-      "bun": "./src/runtime.node.ts",
+      "bun": "./src/runtime/node.ts",
       "default": "./dist/runtime.node.mjs"
     },
     "./package.json": "./package.json"

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { renderMarkdown } from "../src/style/md/index.ts"
-import { encodeFenceInfoStrings, FENCE_MARKER } from "../src/style/md/utils.ts"
+import { renderMarkdown } from "../src/markdown/index.ts"
+import { encodeFenceInfoStrings, FENCE_MARKER } from "../src/markdown/utils.ts"
 
 // ── callback-ordering / structural fixtures ──────────────────────────────
 //

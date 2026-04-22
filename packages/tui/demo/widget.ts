@@ -1,4 +1,4 @@
-import { box, createCtx, loadTheme, node, text } from "../src/index.ts"
+import { box, createCtx, loadTheme, text, widget } from "../src/index.ts"
 
 async function demo(label: string, name: string): Promise<void> {
   const theme = loadTheme(name)
@@ -42,10 +42,10 @@ async function demo(label: string, name: string): Promise<void> {
       text("  cmd: bun test", { fg: "muted" }),
       text("  exit: 0", { fg: "success" }),
     ),
-    // Custom node — state-driven status line. Uses `ctx.style` so the fg
+    // Custom widget — state-driven status line. Uses `ctx.style` so the fg
     // color is picked dynamically at render time: `.bold[state.level]` maps
     // to theme slots via `keyof Theme`.
-    node(
+    widget(
       { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
       ({ ctx: { style }, state }) =>
         text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`),

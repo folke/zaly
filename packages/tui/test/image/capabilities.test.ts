@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, test } from "vitest"
 import {
   imageCapabilities,
   resetCapabilitiesCache,
-} from "../../../src/style/image/capabilities.ts"
+} from "../../src/image/capabilities.ts"
 
 // The test runner's stdout isn't a TTY, so detection would otherwise
 // short-circuit to `undefined`. Pretend it is for the duration of the

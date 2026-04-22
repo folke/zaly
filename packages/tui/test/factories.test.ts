@@ -2,7 +2,7 @@ import type { BaseEvents } from "../src/core/node.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../src/core/ctx.ts"
-import { Box, box, node, text } from "../src/index.ts"
+import { Box, box, text, widget } from "../src/index.ts"
 import { Text } from "../src/widgets/text.ts"
 
 const ctx = (width: number) => createCtx({ width })
@@ -59,14 +59,14 @@ describe("box()", () => {
   })
 })
 
-describe("node()", () => {
+describe("widget()", () => {
   test("single-Node render is composed", async () => {
-    const n = node({ label: "hello" }, ({ state }) => text(state.label, { width: 5 }))
+    const n = widget({ label: "hello" }, ({ state }) => text(state.label, { width: 5 }))
     expect(await n.render(ctx(10))).toEqual(["hello"])
   })
 
   test("state mutation re-renders via parent linkage", async () => {
-    const n = node({ label: "a" }, ({ state }) => text(state.label, { width: 3 }))
+    const n = widget({ label: "a" }, ({ state }) => text(state.label, { width: 3 }))
     let rows = await n.render(ctx(10))
     expect(rows[0]).toBe("a  ")
     n.state.label = "bc"
@@ -75,12 +75,12 @@ describe("node()", () => {
   })
 
   test("array render stacks children", async () => {
-    const n = node({}, () => [text("a", { width: 3 }), text("b", { width: 3 })])
+    const n = widget({}, () => [text("a", { width: 3 }), text("b", { width: 3 })])
     expect(await n.render(ctx(10))).toEqual(["a  ", "b  "])
   })
 
   test("array render filters falsy entries", async () => {
-    const n = node({ show: false }, ({ state }) => [
+    const n = widget({ show: false }, ({ state }) => [
       text("a", { width: 3 }),
       state.show && text("b", { width: 3 }),
     ])
@@ -90,7 +90,7 @@ describe("node()", () => {
   test("emit is wired to custom node", async () => {
     type E = { changed: [value: number] }
     const listener = vi.fn()
-    const n = node<{ v: number }, E & BaseEvents>({ v: 0 }, ({ state, emit }) => {
+    const n = widget<{ v: number }, E & BaseEvents>({ v: 0 }, ({ state, emit }) => {
       emit("changed", state.v)
       return text(`v=${state.v}`, { width: 5 })
     })

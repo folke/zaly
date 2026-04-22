@@ -39,7 +39,11 @@
       "error",
       {
         "paths": ["#runtime"],
-        "patterns": [{ "regex": "marked\\.[tj]s" }, { "regex": "runtime\\..*\\.[tj]s" }]
+        "patterns": [
+          { "regex": "marked\\.[tj]s" },
+          { "regex": "runtime/(bun|node)\\.[tj]s" },
+          { "regex": "schemas/(tpl|gen)/" }
+        ]
       }
     ],
     "no-ternary": "off",
