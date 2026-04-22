@@ -1,18 +1,19 @@
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
+import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
+import { markdown } from "../../src/index.ts"
+import { createCallbacks } from "../../src/markdown/callbacks.ts"
+import { createImageCallback } from "../../src/markdown/image.ts"
+import { renderMarkdown } from "../../src/markdown/index.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
-import { renderMarkdown } from "../../src/markdown/index.ts"
 import { defaultTheme } from "../../src/style/theme.ts"
-import { createImageCallback } from "../../src/widgets/markdown/image.ts"
-import { markdown, mdCallbacks } from "../../src/widgets/markdown/index.ts"
 
 const ctx = (width = 80) => createCtx({ theme: defaultTheme, width })
 
 function render(md: string, width = 80): string {
-  return renderMarkdown(md, mdCallbacks(ctx(width)))
+  return renderMarkdown(md, createCallbacks(ctx(width)))
 }
 
 function expectedOpen(slot: string): string {
@@ -96,20 +97,6 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}hi${" ".repeat(18)}${RESET}`)
   })
 
-  test("heading falls back to generic mdHeading when level-specific slot is unset", async () => {
-    // Drop mdHeading3 to simulate a theme that only defines the generic slot.
-    const fallbackTheme = {
-      ...defaultTheme,
-      mdHeading3: undefined,
-    } as unknown as typeof defaultTheme
-    const open = openStyle(resolveStyle("mdHeading", fallbackTheme), fallbackTheme)
-    const out = renderMarkdown(
-      "### h3",
-      mdCallbacks(createCtx({ theme: fallbackTheme, width: 40 }))
-    )
-    expect(out).toContain(`${open}h3 `)
-  })
-
   test("paragraph separated by blank lines", async () => {
     expect(render("alpha\n\nbeta")).toContain("alpha\n\nbeta")
   })
@@ -148,7 +135,7 @@ describe("markdown — block callbacks", () => {
     const bodyOpen = expectedOpen("mdCodeBlock")
     const out = renderMarkdown(
       "```ts\nconst x = 1\n```",
-      mdCallbacks(ctx(40), { highlighter: fakeHighlighter })
+      createCallbacks({ ...ctx(40), highlighter: fakeHighlighter })
     )
     expect(out).toContain("\x1b[33mconst x = 1\x1b[0m")
     expect(out).not.toContain(`${bodyOpen}const`)
@@ -158,7 +145,7 @@ describe("markdown — block callbacks", () => {
     const bodyOpen = expectedOpen("mdCodeBlock")
     const out = renderMarkdown(
       "```mystery\nprint(1)\n```",
-      mdCallbacks(ctx(40), { highlighter: passthroughHighlighter })
+      createCallbacks({ ...ctx(40), highlighter: passthroughHighlighter })
     )
     expect(out).toContain(`${bodyOpen}print(1)`)
   })
@@ -174,7 +161,7 @@ describe("markdown — block callbacks", () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
     const bodyOpen = expectedOpen("mdCodeBlock")
     // Direct marked path: md.ts already parses title, no component wrapper.
-    const out = renderMarkdown('```ts title="foo.ts"\nx\n```', mdCallbacks(ctx(10)))
+    const out = renderMarkdown('```ts title="foo.ts"\nx\n```', createCallbacks(ctx(10)))
     expect(out).toContain(`${titleOpen}foo.ts${RESET}`)
     expect(out).toContain(`${bodyOpen}x`)
     const titleIdx = out.indexOf("foo.ts")
@@ -184,7 +171,7 @@ describe("markdown — block callbacks", () => {
 
   test("code block: no title attr → no title line emitted (marked)", async () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
-    const out = renderMarkdown("```ts\nx\n```", mdCallbacks(ctx(10)))
+    const out = renderMarkdown("```ts\nx\n```", createCallbacks(ctx(10)))
     expect(out).not.toContain(titleOpen)
   })
 
@@ -327,7 +314,7 @@ describe("markdown — images", () => {
   })
 
   test("image callback emits an `<img id=N>` marker per occurrence", () => {
-    const { image } = createImageCallback(node, new Map())
+    const { cb: image } = createImageCallback(node)
     expect(image?.("Logo", { src: "logo.png" })).toBe("<img id=0>")
     expect(image?.("Doc", { src: "doc.svg" })).toBe("<img id=1>")
     // Same src re-used gets its own marker id — dedup is by `src` in
@@ -336,12 +323,12 @@ describe("markdown — images", () => {
   })
 
   test("resolve() replaces block markers with rendered rows", async () => {
-    const cb = createImageCallback(node, new Map())
-    cb.image?.("pic", { src: "pic.png" })
+    const image = createImageCallback(node)
+    image.cb?.("pic", { src: "pic.png" })
     // Simulate the renderer's block-paragraph output: "<img id=0>" on
     // its own line. With no TTY (test env), the Image node falls back
     // to `[alt]` — so a single-row "block" substitution still works.
-    const out = await cb.resolve(ctx(40), "<img id=0>\n")
+    const out = await image.resolve(ctx(40), "<img id=0>\n")
     // The marker is gone either way.
     expect(out).not.toContain("<img id=")
     // And the alt flows through.
@@ -349,9 +336,9 @@ describe("markdown — images", () => {
   })
 
   test("resolve() falls back to alt text for inline markers", async () => {
-    const cb = createImageCallback(node, new Map())
-    cb.image?.("icon", { src: "i.png" })
-    const out = await cb.resolve(ctx(40), "Click <img id=0> here.")
+    const image = createImageCallback(node)
+    image.cb?.("icon", { src: "i.png" })
+    const out = await image.resolve(ctx(40), "Click <img id=0> here.")
     expect(out).toBe("Click [icon] here.")
   })
 

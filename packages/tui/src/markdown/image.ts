@@ -1,7 +1,21 @@
-import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks, MdImageMeta } from "../../markdown/index.ts"
-import type { Image } from "../image.ts"
-import type { Markdown } from "./index.ts"
+import type { RenderCtx } from "../core/ctx.ts"
+import type { Node } from "../core/node.ts"
+import type { Image } from "../widgets/image.ts"
+import type { MdCallbacks, MdImageMeta } from "./types.ts"
+
+/** Minimal host shape the image callback needs. Any Node-like parent
+ *  with a per-src `Image` cache satisfies it — the `Markdown` widget is
+ *  the primary caller but the interface keeps this file decoupled from
+ *  widget internals (and breaks the widgets↔markdown import loop). */
+export interface ImageHost {
+  /** Per-src cache so re-renders reuse the same `Image` — same KGP
+   *  placement id, which the spec guarantees is a flicker-free
+   *  move/resize. */
+  images: Map<string, Image>
+  /** Attach a freshly-created `Image` as a child so mount/unmount
+   *  propagate. */
+  add(child: Node): unknown
+}
 
 /** Per-occurrence image metadata collected during markdown rendering. */
 interface ImageEntry {
@@ -31,17 +45,15 @@ interface ImageEntry {
  * therefore the same KGP placement id, which the spec guarantees is a
  * flicker-free move/resize).
  */
-export function createImageCallback(
-  node: Markdown,
-  cache: Map<string, Image>
-): {
-  image: MdCallbacks["image"]
+export function createImageCallback(host: ImageHost): {
+  cb: MdCallbacks["image"]
   resolve: (ctx: RenderCtx, rendered: string) => Promise<string>
 } {
   const entries: ImageEntry[] = []
+  const cache = host.images
 
   return {
-    image(alt: string, meta: MdImageMeta): string {
+    cb(alt: string, meta: MdImageMeta): string {
       const id = entries.length
       entries.push({ alt, src: meta.src })
       return `<img id=${id}>`
@@ -53,7 +65,7 @@ export function createImageCallback(
       // `Image` is heavy (pulls image-meta, sharp lazy loaders, KGP
       // encoder) and 99% of markdown has no images. Load it only when
       // we have something to place.
-      const { Image } = await import("../image.ts")
+      const { Image } = await import("../widgets/image.ts")
 
       // Render each unique src once via the cached Image node.
       const uniqueSrcs = [...new Set(entries.map((e) => e.src))]
@@ -64,7 +76,7 @@ export function createImageCallback(
           let img = cache.get(src)
           if (img === undefined) {
             img = new Image({ alt, src })
-            node.add(img)
+            host.add(img)
             cache.set(src, img)
           }
           rowsBySrc.set(src, await img.render(ctx))

@@ -1,0 +1,92 @@
+import type { RenderCtx } from "../core/ctx.ts"
+import type { MdOptions } from "../markdown/index.ts"
+import type { Image } from "./image.ts"
+import type { TextStyle } from "./text.ts"
+
+import { Node } from "../core/node.ts"
+import { createCallbacks } from "../markdown/callbacks.ts"
+import { createCodeHighlighter } from "../markdown/code.ts"
+import { createImageCallback } from "../markdown/image.ts"
+import { renderMarkdown } from "../markdown/index.ts"
+import { Text } from "./text.ts"
+
+export interface MarkdownState extends TextStyle {
+  content: string
+  /** Options forwarded to `renderMarkdown`. */
+  options?: MdOptions
+  /**
+   * Enable shiki-backed syntax highlighting for fenced code blocks. Defaults
+   * to `true` — code blocks get per-token colors from the shiki theme, with
+   * `mdCodeBlock`'s bg applied as a backdrop. Unknown languages fall through
+   * as plain text.
+   */
+  syntax?: boolean
+}
+
+export class Markdown extends Node<MarkdownState> {
+  // Image nodes cached per-src per-Markdown-instance. Re-rendering the
+  // same markdown (streaming updates) reuses the same `Image` — same
+  // `placementId`, which the KGP spec guarantees is a flicker-free
+  // move/resize of the existing placement.
+  readonly images = new Map<string, Image>()
+  #text: Text
+
+  constructor(state: MarkdownState) {
+    super(state)
+    this.#text = new Text({ ...state, content: "" })
+    this.add(this.#text)
+  }
+
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
+    const fn = this.state.options?.render ?? renderMarkdown
+
+    const callbacks = createCallbacks({
+      ...ctx,
+      highlighter:
+        (this.state.syntax ?? true) ? await createCodeHighlighter(this.state.content) : undefined,
+    })
+
+    // Image handling: the callback emits `<img id=N>` markers during
+    // rendering; a post-processing resolver then renders the referenced
+    // images concurrently and splices their rows back in. Keeps the
+    // markdown callback surface synchronous while supporting async
+    // image preparation.
+    const image = createImageCallback(this)
+    callbacks.image = image.cb
+
+    const rendered = fn(this.state.content, callbacks, this.state.options)
+    const final = await image.resolve(ctx, rendered)
+
+    // Mirror the source's trailing newlines: the renderer adds its own
+    // padding after blocks (`\n\n` after paragraphs, etc.) which would
+    // leave stray blank rows. Normalizing to what the caller typed keeps
+    // single-line inputs compact and preserves explicit spacing when
+    // they asked for it.
+    const trailing = /\n*$/.exec(this.state.content)?.[0] ?? ""
+    this.#text.setState({
+      ...this.omitFromState("options", "syntax"),
+      content: final.replace(/\n+$/, trailing),
+    })
+    return this.#text.render(ctx)
+  }
+}
+
+/**
+ * Render a markdown string as a TUI node. Produces ANSI-styled text that
+ * resolves per-element styling through theme slots (`mdHeading1`, `mdCode`,
+ * `mdLink`, …). Links become clickable in terminals that support OSC 8.
+ *
+ * ```ts
+ * markdown("# Hello\n\nThis is **bold** and *italic*.")
+ * markdown({ content, wrap: "word", fg: "fg" })
+ * ```
+ */
+export function markdown(content: string, style?: Omit<MarkdownState, "content">): Markdown
+export function markdown(state: MarkdownState): Markdown
+export function markdown(
+  first: string | MarkdownState,
+  style?: Omit<MarkdownState, "content">
+): Markdown {
+  if (typeof first === "string") return new Markdown({ content: first, ...style })
+  return new Markdown(first)
+}

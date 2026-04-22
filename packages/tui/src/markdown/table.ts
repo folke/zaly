@@ -1,8 +1,8 @@
-import type { RenderCtx } from "../../core/ctx.ts"
-import type { StyleBuilder } from "../../style/builder.ts"
-import type { MdCallbacks } from "../../markdown/index.ts"
+import type { RenderCtx } from "../core/ctx.ts"
+import type { StyleBuilder } from "../style/builder.ts"
+import type { MdCallbacks } from "./types.ts"
 
-import { stringWidth } from "../../style/ansi.ts"
+import { stringWidth } from "../style/ansi.ts"
 
 type CellAlign = "left" | "center" | "right"
 

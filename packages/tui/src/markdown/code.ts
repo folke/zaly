@@ -1,27 +1,17 @@
-import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks } from "../../markdown/index.ts"
-import type { AnsiHighlighter } from "../../style/shiki.ts"
+import type { AnsiHighlighter, ShikiTheme } from "../style/shiki.ts"
+import type { MarkdownCtx } from "./callbacks.ts"
+import type { MdCallbacks } from "./types.ts"
 
-import { splitAnsi, stringWidth } from "../../style/ansi.ts"
+import { splitAnsi, stringWidth } from "../style/ansi.ts"
 
-/**
- * Collect all fenced-block languages from a markdown source. First
- * whitespace-delimited token of each info-string is the language; duplicates
- * are deduped. Unknown-to-shiki names pass through and get filtered out by
- * `createAnsiHighlighter`.
- */
-export function collectFenceLanguages(md: string): string[] {
-  const langs = new Set<string>()
-  for (const m of md.matchAll(/^ {0,3}`{3,}([^\n]+)$/gm)) {
-    const lang = m[1].trim().split(/\s/)[0]
-    if (lang !== "") langs.add(lang)
+export async function createCodeHighlighter(content: string, theme?: ShikiTheme) {
+  const langs = collectFenceLanguages(content).filter(Boolean)
+  // Only load when needed
+  if (langs.length > 0) {
+    const { createAnsiHighlighter } = await import("../style/shiki.ts")
+    return await createAnsiHighlighter({ langs, theme })
   }
-  return [...langs]
-}
-
-interface CodeCallbackOpts {
-  ctx: RenderCtx
-  highlighter: AnsiHighlighter | undefined
+  return undefined
 }
 
 /**
@@ -30,17 +20,19 @@ interface CodeCallbackOpts {
  * widest-content + 1, apply `mdCodeBlock` as a bg-only backdrop, and prefix an
  * optional title line from `title="..."`.
  */
-export function createCodeCallback({
-  ctx,
-  highlighter,
-}: CodeCallbackOpts): NonNullable<MdCallbacks["code"]> {
+export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["code"]> {
+  // Pre-load any fenced-block languages we see in the source. Once this
+  // resolves, the code callback (sync) can call `codeToAnsi` safely —
+  // `createAnsiHighlighter` is idempotent + returns the shared singleton.
   const s = ctx.style
   return (text, meta) => {
     // Try syntax highlighting when a highlighter is wired in and the
     // language is already loaded on it. shiki's sync path requires the
     // grammar + theme to be preloaded — callers do that via
     // `createAnsiHighlighter({ langs, themes })` before rendering.
-    const highlighted = tryHighlight({ highlighter, lang: meta?.language, text })
+    const highlighted = ctx.highlighter
+      ? tryHighlight(ctx.highlighter, text, meta?.language)
+      : undefined
     const body = highlighted ?? text.replace(/\n+$/, "")
 
     // For highlighted output the per-token fgs would clash with the slot's
@@ -58,19 +50,17 @@ export function createCodeCallback({
   }
 }
 
-interface TryHighlightOpts {
-  highlighter: AnsiHighlighter | undefined
-  text: string
-  lang: string | undefined
-}
-
 /**
  * Run shiki on a code block. `codeToAnsi` is sync here because the
  * highlighter was pre-loaded with all needed languages in `_render`.
  * Unknown languages (or a throw) just fall through to plain styling.
  */
-function tryHighlight({ highlighter, text, lang }: TryHighlightOpts): string | undefined {
-  if (highlighter === undefined || lang === undefined || lang === "") return undefined
+function tryHighlight(
+  highlighter: AnsiHighlighter,
+  text: string,
+  lang?: string
+): string | undefined {
+  if (lang === undefined || lang === "") return undefined
   try {
     // Shiki emits a trailing newline; strip it so the block hugs content.
     const code = text.replace(/\n+$/, "")
@@ -83,4 +73,19 @@ function tryHighlight({ highlighter, text, lang }: TryHighlightOpts): string | u
   } catch {
     return undefined
   }
+}
+
+/**
+ * Collect all fenced-block languages from a markdown source. First
+ * whitespace-delimited token of each info-string is the language; duplicates
+ * are deduped. Unknown-to-shiki names pass through and get filtered out by
+ * `createAnsiHighlighter`.
+ */
+function collectFenceLanguages(md: string): string[] {
+  const langs = new Set<string>()
+  for (const m of md.matchAll(/^ {0,3}`{3,}([^\n]+)$/gm)) {
+    const lang = m[1].trim().split(/\s/)[0]
+    if (lang !== "") langs.add(lang)
+  }
+  return [...langs]
 }

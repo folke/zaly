@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { hyperlink, openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
+import { hasAnsi, hyperlink, openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
 import { defaultTheme } from "../../src/style/theme.ts"
 
 describe("openStyle", () => {
@@ -150,5 +150,12 @@ describe("hyperlink (OSC 8)", () => {
 
   test("empty URL: returns text unchanged (no-op)", () => {
     expect(hyperlink("", "text")).toBe("text")
+  })
+})
+
+describe("hasAnsi", () => {
+  test("detects SGR sequences", () => {
+    expect(hasAnsi("\x1b[31mred\x1b[0m")).toBe(true)
+    expect(hasAnsi("plain")).toBe(false)
   })
 })

@@ -2,7 +2,7 @@
 // its own file so Bun callers can use them without pulling in `marked`
 // (which is the heavy dep in `src/md.ts`).
 
-import type { MdCodeBlockMeta } from "./index.ts"
+import type { MdCodeBlockMeta } from "./types.ts"
 
 /** Sentinel stitched into fence info-strings in place of spaces. */
 export const FENCE_MARKER = "\u0000"
