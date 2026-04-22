@@ -1,6 +1,6 @@
 import type { StyleBuilder } from "../style/builder.ts"
 
-import { sliceAnsi, stringWidth } from "#runtime"
+import { sliceAnsi, stringWidth } from "../style/ansi.ts"
 
 /**
  * Border-character glyphs for drawing a box outline. Any single-cell string

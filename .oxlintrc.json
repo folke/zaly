@@ -35,6 +35,13 @@
     "no-implicit-coercion": "off", // 4
     "no-labels": "off", // 4
     "no-magic-numbers": "off", // 278
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": ["#runtime"],
+        "patterns": [{ "regex": "marked\\.[tj]s" }, { "regex": "runtime\\..*\\.[tj]s" }]
+      }
+    ],
     "no-ternary": "off",
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { "terms": ["todo", "fixme", "bug"], "location": "start" }],
@@ -85,7 +92,10 @@
     {
       "files": ["packages/cli/**/*.ts"],
       "rules": {
-        "no-restricted-imports": ["error", { "paths": ["node:path", "path", "std-env"] }],
+        "no-restricted-imports": [
+          "error",
+          { "paths": ["node:path", "path", "std-env", "#runtime"] }
+        ],
         "eslint/no-console": "off"
       }
     }

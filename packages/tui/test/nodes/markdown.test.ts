@@ -1,13 +1,10 @@
 // oxlint-disable unicorn/no-await-expression-member
-import type { MdCallbacks } from "../../src/style/md/marked.ts"
-
-import { renderMarkdown } from "#runtime"
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
-import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
+import { renderMarkdown } from "../../src/style/md/index.ts"
 import { defaultTheme } from "../../src/style/theme.ts"
 import { createImageCallback } from "../../src/widgets/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/widgets/markdown/index.ts"
@@ -28,21 +25,6 @@ const ESC = String.fromCharCode(27)
 const ANSI_SGR = new RegExp(`${ESC}\\[[0-9;]*m`, "g")
 function stripAnsi(s: string): string {
   return s.replaceAll(ANSI_SGR, "")
-}
-
-// Minimal stand-in for Bun.markdown.render: finds the first fenced block and
-// reports the first whitespace-delimited token as `language` — the exact
-// truncation behavior we saw live. With `Markdown._render` encoding spaces
-// in the info-string beforehand, Bun's tokenization now hands back the
-// whole info-string as `language` and the component's wrapper re-parses
-// `title` out of it.
-const bunLike = (input: string, cbs: MdCallbacks): string => {
-  const m = /^ {0,3}`{3,}([^\n]*)\n([\s\S]*?)\n`{3,}/m.exec(input)
-  if (m === null) return ""
-  const info = m[1]
-  const body = m[2]
-  const lang = info.split(/\s/)[0]
-  return cbs.code?.(`${body}\n`, lang === "" ? undefined : { language: lang }) ?? `${body}\n`
 }
 
 // Sentinel-wrapping stand-in for shiki. The markdown code callback sees
@@ -121,7 +103,7 @@ describe("markdown — block callbacks", () => {
       mdHeading3: undefined,
     } as unknown as typeof defaultTheme
     const open = openStyle(resolveStyle("mdHeading", fallbackTheme), fallbackTheme)
-    const out = renderMarkdownMarked(
+    const out = renderMarkdown(
       "### h3",
       mdCallbacks(createCtx({ theme: fallbackTheme, width: 40 }))
     )
@@ -164,7 +146,7 @@ describe("markdown — block callbacks", () => {
     // mdCodeBlock drops its own fg when a highlighter is active so per-token
     // colors win. The bg/attrs from the slot still show through.
     const bodyOpen = expectedOpen("mdCodeBlock")
-    const out = renderMarkdownMarked(
+    const out = renderMarkdown(
       "```ts\nconst x = 1\n```",
       mdCallbacks(ctx(40), { highlighter: fakeHighlighter })
     )
@@ -174,7 +156,7 @@ describe("markdown — block callbacks", () => {
 
   test("code block: highlighter returning input unchanged falls back to plain styling", async () => {
     const bodyOpen = expectedOpen("mdCodeBlock")
-    const out = renderMarkdownMarked(
+    const out = renderMarkdown(
       "```mystery\nprint(1)\n```",
       mdCallbacks(ctx(40), { highlighter: passthroughHighlighter })
     )
@@ -192,7 +174,7 @@ describe("markdown — block callbacks", () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
     const bodyOpen = expectedOpen("mdCodeBlock")
     // Direct marked path: md.ts already parses title, no component wrapper.
-    const out = renderMarkdownMarked('```ts title="foo.ts"\nx\n```', mdCallbacks(ctx(10)))
+    const out = renderMarkdown('```ts title="foo.ts"\nx\n```', mdCallbacks(ctx(10)))
     expect(out).toContain(`${titleOpen}foo.ts${RESET}`)
     expect(out).toContain(`${bodyOpen}x`)
     const titleIdx = out.indexOf("foo.ts")
@@ -202,23 +184,8 @@ describe("markdown — block callbacks", () => {
 
   test("code block: no title attr → no title line emitted (marked)", async () => {
     const titleOpen = expectedOpen("mdCodeBlockTitle")
-    const out = renderMarkdownMarked("```ts\nx\n```", mdCallbacks(ctx(10)))
+    const out = renderMarkdown("```ts\nx\n```", mdCallbacks(ctx(10)))
     expect(out).not.toContain(titleOpen)
-  })
-
-  test('code block: title="..." also works through a Bun-like renderer via the component', async () => {
-    const out = await markdown({
-      content: '```ts title="foo.ts"\nx\n```',
-      options: { render: bunLike },
-    }).render(ctx(30))
-    const joined = out.join("\n")
-    // slice-ansi may split compound SGRs when our Text re-slices lines, so
-    // don't assert on exact escape bytes. Instead strip escapes and check
-    // that the title text appears as its own row ahead of the body.
-    const esc = String.fromCharCode(27)
-    const plain = joined.replaceAll(new RegExp(`${esc}\\[[0-9;]*m`, "g"), "")
-    expect(plain).toMatch(/^foo\.ts/m)
-    expect(plain.indexOf("foo.ts")).toBeLessThan(plain.indexOf("x"))
   })
 
   test("unordered list: bullet glyph styled via mdList", async () => {

@@ -2,6 +2,8 @@
 // its own file so Bun callers can use them without pulling in `marked`
 // (which is the heavy dep in `src/md.ts`).
 
+import type { MdCodeBlockMeta } from "./index.ts"
+
 /** Sentinel stitched into fence info-strings in place of spaces. */
 export const FENCE_MARKER = "\u0000"
 
@@ -18,15 +20,8 @@ export const FENCE_MARKER = "\u0000"
  */
 export function encodeFenceInfoStrings(md: string): string {
   return md.replaceAll(/^( {0,3}`{3,})([^\n]*)$/gm, (match, fence: string, info: string) =>
-    info.trim() === "" ? match : fence + info.replaceAll(" ", FENCE_MARKER),
+    info.trim() === "" ? match : fence + info.replaceAll(" ", FENCE_MARKER)
   )
-}
-
-export interface MdCodeBlockMeta {
-  /** The info-string language (e.g. `"js"`). */
-  language?: string
-  /** File title from the fenced info-string, e.g. `title="src/foo.ts"`. */
-  title?: string
 }
 
 /**

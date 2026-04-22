@@ -30,9 +30,11 @@ renderer.ui.add(
           renderer.stream.append(markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
         })
-        .on("attach", (path) => {
-          renderer.stream.append(markdown(`*pasted image:* \`${path}\``))
-          renderer.stream.append(image(path))
+        .on("attach", (att) => {
+          renderer.stream.append(markdown(`*pasted ${att.kind}:* \`${att.path}\``))
+          if (att.kind === "image" || att.type.startsWith("image/")) {
+            renderer.stream.append(image(att.path))
+          }
         }),
     ),
   ),

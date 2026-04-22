@@ -1,4 +1,4 @@
-import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
+import { sliceAnsi, stringWidth, wrapAnsi } from "../src/style/ansi.ts"
 import { describe, expect, test } from "vitest"
 
 describe("stringWidth", () => {

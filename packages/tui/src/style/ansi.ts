@@ -1,9 +1,66 @@
 import type { Color } from "./color.ts"
 import type { Theme } from "./theme.ts"
 
-import { sliceAnsi, stringWidth } from "#runtime"
-import { extractApc } from "./apc.ts"
+// oxlint-disable-next-line no-restricted-imports
+import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#runtime"
 import { colorParams } from "./color.ts"
+
+/** Optional wrap mode: `"word"` (default) breaks at word boundaries;
+ *  `"char"` hard-wraps mid-word. */
+export interface WrapOpts {
+  mode?: "word" | "char"
+}
+
+// ---- APC-aware text primitives ----------------------------------------
+//
+// APC (Application Program Command) escapes — `ESC _ ... ESC \` — are
+// side-channel payloads the terminal consumes silently (e.g. the Kitty
+// graphics protocol image transmits and placements). They have zero
+// visible width and must survive layout operations without being
+// truncated. The runtime shims below hand over to the Bun/Node
+// primitives with APCs extracted first and re-prepended after.
+
+const APC_RE = /\u001B_[\s\S]*?\u001B\\/g
+
+function extractApc(s: string): { apc: string; rest: string } {
+  if (!s.includes("\u001B_")) return { apc: "", rest: s }
+  let apc = ""
+  const rest = s.replace(APC_RE, (m) => {
+    apc += m
+    return ""
+  })
+  return { apc, rest }
+}
+
+/** Terminal display width in cells. APC escapes are excluded before
+ *  measuring. */
+export function stringWidth(s: string): number {
+  return _stringWidth(extractApc(s).rest)
+}
+
+/** Cell-aware substring preserving SGR state. APC escapes are re-
+ *  prepended to the slice output so they stay attached to the row. */
+export function sliceAnsi(s: string, start: number, end?: number): string {
+  const { apc, rest } = extractApc(s)
+  return apc + _sliceAnsi(rest, start, end)
+}
+
+/** Word- or char-wrap to `width` cells while preserving SGR state and
+ *  APC escapes. Wraps line-by-line so APCs (zero-width, positional —
+ *  e.g. kitty image placements) stay on their source line. A single
+ *  global extract+prepend would collapse every APC onto row 0 of the
+ *  output, and downstream `splitAnsi` would then re-prepend those to
+ *  every row; the image placement would fire on every painted row. */
+export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
+  const char = opts?.mode === "char"
+  return s
+    .split("\n")
+    .map((line) => {
+      const { apc, rest } = extractApc(line)
+      return apc + _wrapAnsi(rest, width, { hard: char, trim: false, wordWrap: !char })
+    })
+    .join("\n")
+}
 
 /** @internal */
 export const RESET = "\x1b[0m"
@@ -45,7 +102,6 @@ export interface Style {
   inverse?: boolean
   strikethrough?: boolean
 }
-
 
 // Attribute → SGR code. Order matters for stable output.
 const ATTRS = [

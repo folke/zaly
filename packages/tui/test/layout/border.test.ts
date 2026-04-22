@@ -148,6 +148,7 @@ describe("drawBorder", () => {
     const primary = hexToTruecolor(defaultTheme.primary as string, "fg")
     const accent = hexToTruecolor(defaultTheme.accent as string, "fg")
     expect(out[0]).toBe(
+      // oxlint-disable-next-line no-useless-concat
       `\x1b[${primary}m┌─\x1b[0m` + `\x1b[1;${accent}m hi \x1b[0m` + `\x1b[${primary}m─┐\x1b[0m`
     )
   })

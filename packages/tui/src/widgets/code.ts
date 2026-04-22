@@ -2,9 +2,8 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { TextStyle } from "./text.ts"
 
-import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
-import { splitAnsi } from "../style/ansi.ts"
+import { splitAnsi, stringWidth } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
 import { Text } from "./text.ts"
 

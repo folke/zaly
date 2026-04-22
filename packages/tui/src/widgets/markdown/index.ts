@@ -1,16 +1,15 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks, MdOptions } from "../../style/md/marked.ts"
+import type { MdCallbacks, MdOptions } from "../../style/md/index.ts"
 import type { AnsiHighlighter } from "../../style/shiki.ts"
 import type { Image } from "../image.ts"
 import type { TextStyle } from "../text.ts"
 
-import { renderMarkdown, stringWidth } from "#runtime"
 import { Node } from "../../core/node.ts"
-import { hyperlink } from "../../style/ansi.ts"
-import { encodeFenceInfoStrings } from "../../style/md/utils.ts"
+import { hyperlink, stringWidth } from "../../style/ansi.ts"
+import { renderMarkdown } from "../../style/md/index.ts"
 import { createAnsiHighlighter } from "../../style/shiki.ts"
 import { Text } from "../text.ts"
-import { collectFenceLanguages, createCodeCallback, decodeCodeMeta } from "./code.ts"
+import { collectFenceLanguages, createCodeCallback } from "./code.ts"
 import { createImageCallback } from "./image.ts"
 import { createTableCallbacks } from "./table.ts"
 
@@ -71,17 +70,11 @@ export class Markdown extends Node<MarkdownState> {
     // image preparation.
     const imageCb = createImageCallback(this, this.#images)
 
-    // Encode spaces in fence info-strings so renderers that truncate after
-    // the first token (Bun) still surface `title="..."` etc. as part of
-    // `meta.language`. The wrapper around `code` below re-parses to decode.
-    const source = encodeFenceInfoStrings(this.state.content)
-    const base = mdCallbacks(ctx, { highlighter })
     const callbacks: MdCallbacks = {
-      ...base,
-      code: (text, meta) => base.code?.(text, decodeCodeMeta(meta)) ?? text,
+      ...mdCallbacks(ctx, { highlighter }),
       image: imageCb.image,
     }
-    const rendered = fn(source, callbacks, this.state.options)
+    const rendered = fn(this.state.content, callbacks, this.state.options)
     const final = await imageCb.resolve(ctx, rendered)
 
     this.#text.setState({

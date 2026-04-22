@@ -5,7 +5,7 @@ import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
-import { sliceAnsi, stringWidth } from "#runtime"
+import { sliceAnsi, stringWidth } from "../style/ansi.ts"
 
 import { Node, isNode } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"

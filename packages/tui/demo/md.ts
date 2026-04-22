@@ -1,9 +1,12 @@
-import type { RenderMarkdown } from "../src/style/md/marked.ts"
+import type { RenderMarkdown } from "../src/style/md/index.ts"
 
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { box, createCtx, markdown } from "../src/index.ts"
-import { renderMarkdown as markedRenderer } from "../src/style/md/marked.ts"
+// oxlint-disable-next-line no-restricted-imports
+import { renderMarkdown as bunRenderer } from "../src/runtime.bun.ts"
+// oxlint-disable-next-line no-restricted-imports
+import { renderMarkdown as markedRenderer } from "../src/runtime.node.ts"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const earth = resolve(here, "earth.jpg")
@@ -59,8 +62,6 @@ Read the [Bun docs](https://bun.com) for details.
 ![Apollo 17 — The Blue Marble (NASA, 1972)](${earth})
 `.trim()
 
-const bunRenderer: RenderMarkdown = (input, cbs, opts) => Bun.markdown.render(input, cbs, opts)
-
 function column(title: string, render: RenderMarkdown) {
   return box(
     {
@@ -70,14 +71,14 @@ function column(title: string, render: RenderMarkdown) {
       flexGrow: 1,
       padding: [0, 1],
     },
-    markdown({ content: md, options: { render } }),
+    markdown({ content: md, options: { render } })
   )
 }
 
 const app = box(
   { flexDirection: "row", gap: 1 },
   column("Bun.markdown.render", bunRenderer),
-  column("renderMarkdown (marked)", markedRenderer),
+  column("renderMarkdown (marked)", markedRenderer)
 )
 
 const ctx = createCtx({ width: 200 })

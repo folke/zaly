@@ -1,11 +1,8 @@
 import type { RenderCtx } from "../../core/ctx.ts"
-import type { MdCallbacks } from "../../style/md/marked.ts"
-import type { MdCodeBlockMeta } from "../../style/md/utils.ts"
+import type { MdCallbacks } from "../../style/md/index.ts"
 import type { AnsiHighlighter } from "../../style/shiki.ts"
 
-import { stringWidth } from "#runtime"
-import { splitAnsi } from "../../style/ansi.ts"
-import { parseCodeInfoString } from "../../style/md/utils.ts"
+import { splitAnsi, stringWidth } from "../../style/ansi.ts"
 
 /**
  * Collect all fenced-block languages from a markdown source. First
@@ -20,18 +17,6 @@ export function collectFenceLanguages(md: string): string[] {
     if (lang !== "") langs.add(lang)
   }
   return [...langs]
-}
-
-/**
- * Normalize a code-block meta coming from either the marked-backed renderer
- * (already parsed, title populated) or Bun's renderer (only `language` set,
- * carrying the encoded info-string). Safe to call on either shape.
- */
-export function decodeCodeMeta(meta: MdCodeBlockMeta | undefined): MdCodeBlockMeta | undefined {
-  if (meta === undefined) return undefined
-  if (meta.title !== undefined) return meta
-  if (meta.language === undefined) return meta
-  return parseCodeInfoString(meta.language) ?? meta
 }
 
 interface CodeCallbackOpts {

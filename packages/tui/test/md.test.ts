@@ -1,6 +1,5 @@
-import { renderMarkdown } from "#runtime"
 import { describe, expect, test } from "vitest"
-import { renderMarkdown as renderMarkdownMarked } from "../src/style/md/marked.ts"
+import { renderMarkdown } from "../src/style/md/index.ts"
 import { encodeFenceInfoStrings, FENCE_MARKER } from "../src/style/md/utils.ts"
 
 // ── callback-ordering / structural fixtures ──────────────────────────────
@@ -56,14 +55,10 @@ describe("renderMarkdown — callback dispatch", () => {
     expect(children.trim()).toBe("const x = 1")
   })
 
-  // Title-attribute parsing is marked-side only — Bun.markdown.render strips
-  // the info-string after the first token, so the title is unrecoverable for
-  // the Bun runtime. Users who need titles on Bun can plug the marked renderer
-  // via `options.render`.
-  describe("code block info-string (marked renderer)", () => {
+  describe("code block info-string", () => {
     test('title="..." is parsed out of the info string', () => {
       let meta: { language?: string; title?: string } | undefined
-      renderMarkdownMarked('```jsx title="/src/Hello.js"\nconst x = 1\n```', {
+      renderMarkdown('```jsx title="/src/Hello.js"\nconst x = 1\n```', {
         code: (_c, m) => {
           meta = m
           return ""
@@ -75,7 +70,7 @@ describe("renderMarkdown — callback dispatch", () => {
 
     test("title='...' (single-quoted) is also parsed", () => {
       let meta: { language?: string; title?: string } | undefined
-      renderMarkdownMarked("```ts title='foo bar.ts'\nx\n```", {
+      renderMarkdown("```ts title='foo bar.ts'\nx\n```", {
         code: (_c, m) => {
           meta = m
           return ""
@@ -87,7 +82,7 @@ describe("renderMarkdown — callback dispatch", () => {
 
     test("no title: language only", () => {
       let meta: { language?: string; title?: string } | undefined
-      renderMarkdownMarked("```ts\nx\n```", {
+      renderMarkdown("```ts\nx\n```", {
         code: (_c, m) => {
           meta = m
           return ""
@@ -99,7 +94,7 @@ describe("renderMarkdown — callback dispatch", () => {
 
     test("bare fenced block (no lang): no language, no title", () => {
       let meta: { language?: string; title?: string } | undefined
-      renderMarkdownMarked("```\nx\n```", {
+      renderMarkdown("```\nx\n```", {
         code: (_c, m) => {
           meta = m
           return ""
@@ -111,7 +106,7 @@ describe("renderMarkdown — callback dispatch", () => {
 
     test("language with other attrs besides title: title still parsed", () => {
       let meta: { language?: string; title?: string } | undefined
-      renderMarkdownMarked('```ts showLineNumbers title="x.ts" foo=bar\n1\n```', {
+      renderMarkdown('```ts showLineNumbers title="x.ts" foo=bar\n1\n```', {
         code: (_c, m) => {
           meta = m
           return ""
@@ -145,7 +140,7 @@ describe("renderMarkdown — callback dispatch", () => {
       const encoded = encodeFenceInfoStrings(input)
       let sawCode = false
       let sawPara = false
-      renderMarkdownMarked(encoded, {
+      renderMarkdown(encoded, {
         code: () => {
           sawCode = true
           return ""

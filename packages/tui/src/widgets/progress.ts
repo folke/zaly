@@ -3,7 +3,7 @@ import type { Reactive } from "../core/reactive.ts"
 import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 
-import { stringWidth } from "#runtime"
+import { stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"

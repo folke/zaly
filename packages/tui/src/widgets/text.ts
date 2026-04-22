@@ -1,10 +1,9 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { Flexible } from "../layout/flex.ts"
 
-import { stringWidth, wrapAnsi } from "#runtime"
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
-import { padOrClip, splitAnsi } from "../style/ansi.ts"
+import { padOrClip, splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
 
 /**
  * Text content — a plain string, or a function that produces one from the

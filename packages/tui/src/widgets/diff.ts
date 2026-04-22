@@ -3,7 +3,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { TextStyle } from "./text.ts"
 
-import { stringWidth } from "#runtime"
+import { stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
 import { Code } from "./code.ts"

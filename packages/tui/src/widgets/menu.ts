@@ -4,7 +4,7 @@ import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 
-import { sliceAnsi, stringWidth } from "#runtime"
+import { sliceAnsi, stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
