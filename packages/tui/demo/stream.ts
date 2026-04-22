@@ -15,7 +15,8 @@ After reading the design doc I'm convinced the **direct-mode** approach is right
 Writing whole rows to stdout means the terminal's own scrollback keeps the
 history; we don't have to reinvent it.
 
-The \`DECSTBM\` scroll region pins the footer; everything above flows naturally.`,
+The \`DECSTBM\` scroll region pins the footer; everything above flows naturally.
+`,
 
   `### A small TypeScript example
 
@@ -34,7 +35,8 @@ for await (const chunk of agent.stream()) {
 \`\`\`
 
 Because \`markdown()\` re-renders on every mutation, the fenced block above
-gets syntax-highlighted in-place.`,
+gets syntax-highlighted in-place.
+`,
 
   `### Inline image in markdown
 
@@ -44,7 +46,8 @@ Here's a screenshot the agent attached:
 
 The markdown renderer pre-renders \`![](…)\` refs and splices the image's
 \`Image\` node rows into the output. Block images (on their own line)
-work best.`,
+work best.
+`,
 
   `### What the surfaces do
 
@@ -60,7 +63,8 @@ A quick list:
 - **Re-renders** are coalesced via microtask so a 60-token/s stream yields one flush per tick.
 - **Synchronized output** (\`CSI ? 2026\`) hides per-flush flicker on every supporting terminal.
 
-That's enough for the first agent demo. Let's wire input next.`,
+That's enough for the first agent demo. Let's wire input next.
+`,
 ]
 
 const renderer = createRenderer()
@@ -77,11 +81,11 @@ renderer.ui.add(
       spinner({ color: "accent", running: spinning }),
       text(
         ({ style }) =>
-          `${style.primary("zaly")} ${style.dim("·")} ${style.success(status())} ${style.dim("·")} ${style.muted("ctrl-c to quit")}`,
-      ),
+          `${style.primary("zaly")} ${style.dim("·")} ${style.success(status())} ${style.dim("·")} ${style.muted("ctrl-c to quit")}`
+      )
     ),
-    progress({ color: "primary", label: "auto", total: 1, value: progressValue }),
-  ),
+    progress({ color: "primary", label: "auto", total: 1, value: progressValue })
+  )
 )
 
 renderer.start()

@@ -276,3 +276,8 @@ export function padOrClip(row: string, width: number): string {
   }
   return sliceAnsi(row, 0, width)
 }
+
+/** Check if the string contains any ANSI SGR escapes */
+export function hasAnsi(text: string): boolean {
+  return /\x1b\[[0-9;]*m/.test(text)
+}

@@ -1,6 +1,7 @@
 import type { MountCtx, RenderCtx, Theme } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { ActionInfo } from "../input/actions.ts"
+import type { LogCallable, LoggerOptions } from "../logger/logger.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 
@@ -8,6 +9,7 @@ import { createCtx } from "../core/ctx.ts"
 import { Actions, defaultActions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
 import { InputRouter } from "../input/router.ts"
+import { Logger, makeLog } from "../logger/logger.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
 import { Terminal } from "./terminal.ts"
@@ -27,6 +29,8 @@ export interface RendererOptions {
   uiMaxHeight?: number
   /** Register SIGINT/SIGTERM cleanup (default: true). Disable in tests. */
   hookSignals?: boolean
+  /** Options for the built-in `logger` (and its callable `log` accessor). */
+  logger?: LoggerOptions
 }
 
 export type Surface = "stream" | "ui" | "overlay"
@@ -54,6 +58,11 @@ export class Renderer {
   readonly overlay: OverlaySurface
   readonly terminal: Terminal
   readonly input: InputRouter
+  /** Always-on logger, auto-attached to `this.stream`. Calling
+   *  `renderer.log("msg")` logs at `"log"` level; level methods
+   *  (`renderer.log.error(...)` etc.) are also available. */
+  readonly log: LogCallable
+  readonly logger: Logger
 
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
@@ -112,6 +121,9 @@ export class Renderer {
       ui: this.ui,
     })
     this.input = new InputRouter()
+    this.logger = new Logger(opts.logger)
+    this.logger.attach(this.stream)
+    this.log = makeLog(this.logger)
     // Wire the action registry: Actions looks up the focused node
     // (so programmatic dispatch starts there) and the Router hands
     // matched keymap action ids back to the registry for dispatch.
