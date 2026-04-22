@@ -58,8 +58,8 @@ onMounted(async () => {
           </div>
           <h1>The terminal UI<span class="italic"> for agents</span></h1>
           <p class="lede">
-            Rows to stdout, signals for state, and the terminal's own scrollback for 
-            history. Built for agent interfaces.
+            Rows to stdout, signals for state, and the terminal's own scrollback for history. Built
+            for agent interfaces.
           </p>
           <div class="ctas">
             <a class="btn primary" href="/guide/getting-started">
@@ -91,7 +91,6 @@ onMounted(async () => {
                at the bottom. Rows are always in the DOM with opacity
                gating so the box doesn't grow/shrink during the reveal. -->
           <div class="ttty">
-
             <!-- Stream area is bottom-anchored via flexbox. Each revealed
                  row grows its own max-height from 0 → natural, so older
                  rows shift upward as new ones arrive — exactly like a
@@ -99,22 +98,43 @@ onMounted(async () => {
             <div class="stream-area">
               <fieldset class="tbox on">
                 <legend><span class="tb">zaly agent</span></legend>
-                <div class="tbox-row on"><span class="muted">opus-4.7</span> <span class="faint">·</span> <span class="ok">ready</span></div>
+                <div class="tbox-row on">
+                  <span class="muted">super-model</span> <span class="faint">·</span>
+                  <span class="ok">ready</span>
+                </div>
               </fieldset>
               <!-- Blank above the user row appears together with the
                    user row itself — otherwise the question shows up
                    flush against the agent panel for one tick and then
                    pops apart when the blank grows in. -->
               <div class="row blank" :class="{ on: streamRows >= 0 }">&nbsp;</div>
-              <div class="row user" :class="{ on: streamRows >= 1 }"><span class="accent">❯</span> explain <span class="accent">@src/renderer</span></div>
+              <div class="row user" :class="{ on: streamRows >= 1 }">
+                <span class="accent">❯</span> explain <span class="accent">@src/renderer</span>
+              </div>
               <div class="row blank" :class="{ on: streamRows >= 2 }">&nbsp;</div>
-              <div class="row" :class="{ on: streamRows >= 3 }"><span class="accent">●</span><span class="faint"> the renderer owns three surfaces:</span></div>
-              <div class="row" :class="{ on: streamRows >= 4 }">&nbsp;&nbsp;<span class="accent">●</span> <span class="bold">stream</span>&nbsp;&nbsp;&nbsp;<span class="faint">scroll region</span></div>
-              <div class="row" :class="{ on: streamRows >= 5 }">&nbsp;&nbsp;<span class="accent">●</span> <span class="bold">ui</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="faint">sticky footer</span></div>
-              <div class="row" :class="{ on: streamRows >= 6 }">&nbsp;&nbsp;<span class="accent">●</span> <span class="bold">overlay</span>&nbsp;&nbsp;<span class="faint">absolute</span></div>
+              <div class="row" :class="{ on: streamRows >= 3 }">
+                <span class="accent">●</span
+                ><span class="faint"> the renderer owns three surfaces:</span>
+              </div>
+              <div class="row" :class="{ on: streamRows >= 4 }">
+                &nbsp;&nbsp;<span class="accent">●</span>
+                <span class="bold"> stream</span>&nbsp;&nbsp;&nbsp;<span class="faint"
+                  >scroll region</span
+                >
+              </div>
+              <div class="row" :class="{ on: streamRows >= 5 }">
+                &nbsp;&nbsp;<span class="accent">●</span>
+                <span class="bold"> ui</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                  class="faint"
+                  >sticky footer</span
+                >
+              </div>
+              <div class="row" :class="{ on: streamRows >= 6 }">
+                &nbsp;&nbsp;<span class="accent">●</span>
+                <span class="bold"> overlay</span>&nbsp;&nbsp;<span class="faint">absolute</span>
+              </div>
               <div class="row blank" :class="{ on: streamRows >= 1 }">&nbsp;</div>
             </div>
-
 
             <!-- Input row stays pinned at the bottom. During typing it
                  shows the partial query; once submitted the text moves
@@ -140,7 +160,7 @@ onMounted(async () => {
         </div>
         <div class="strip-cell">
           <div class="k">deps</div>
-          <div class="v">marked · shiki · sharp</div>
+          <div class="v">marked · shiki</div>
         </div>
         <div class="strip-cell">
           <div class="k">license</div>
