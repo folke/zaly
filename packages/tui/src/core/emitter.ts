@@ -1,3 +1,4 @@
+/** @internal */
 export type Events = Record<string, unknown[]>
 
 /**
@@ -15,6 +16,8 @@ export type Events = Record<string, unknown[]>
  * fewer-params rule lets `(value) => void` be assigned to the declared
  * `(value, self) => void`, so existing listeners that ignore `self`
  * keep compiling.
+ *
+ * @internal
  */
 export interface TypedEmitter<T extends Events> {
   on<K extends keyof T & string>(event: K, fn: (...args: [...T[K], this]) => void): this
@@ -25,6 +28,11 @@ export interface TypedEmitter<T extends Events> {
 
 type AnyFn = (...args: unknown[]) => void
 
+/** Shared implementation of `TypedEmitter`. Every `Node` is an
+ *  Emitter; surfaces extend it too. Custom widgets don't usually
+ *  construct this directly — they extend `Node`, which handles it.
+ *
+ *  @internal */
 export class Emitter<T extends Events = Events> implements TypedEmitter<T> {
   private listeners = new Map<keyof T & string, AnyFn[]>()
   private wrappers = new WeakMap<AnyFn, AnyFn>()

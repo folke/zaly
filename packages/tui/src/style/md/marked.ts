@@ -150,6 +150,8 @@ export interface MdOptions {
  * callbacks for each block / inline element. Output shape matches
  * `Bun.markdown.render()` — same callback names, same metadata, same
  * "null/undefined omits, missing callback passes through" semantics.
+ *
+ * @internal
  */
 export function renderMarkdown(input: string, callbacks: MdCallbacks, opts?: MdOptions): string {
   const tokens = marked.lexer(input, {

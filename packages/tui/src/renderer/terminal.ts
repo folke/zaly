@@ -40,6 +40,7 @@ type ResizeListener = (cols: number, rows: number) => void
 const CSI = "\x1b["
 const ESC = "\x1b"
 
+/** @internal */
 export class Terminal {
   readonly #stdout: TerminalWriter
   readonly #stdin: TerminalReader | undefined
@@ -250,4 +251,5 @@ export class Terminal {
   }
 }
 
+/** @internal */
 export { CSI, ESC }

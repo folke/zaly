@@ -66,7 +66,9 @@ export type Setter<T> = ((next: T | ((prev: T) => T)) => void) & { readonly [REA
 export type Reactive<T> = T | Accessor<T>
 
 /** Runtime check: `true` when `v` was produced by `signal` / `memo`.
- *  False for plain callables (text-content functions, label formatters). */
+ *  False for plain callables (text-content functions, label formatters).
+ *
+ *  @internal */
 export function isAccessor<T>(v: unknown): v is Accessor<T> {
   return typeof v === "function" && (v as { [REACTIVE]?: string })[REACTIVE] === "get"
 }
@@ -91,7 +93,9 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
  *  the node; subscriptions auto-clear on unmount. Stale deps across
  *  renders persist until unmount — mildly wasteful (extra
  *  invalidations), but cheaper than re-tracking per render and
- *  harmless (invalidate is idempotent). */
+ *  harmless (invalidate is idempotent).
+ *
+ *  @internal */
 export function withActiveNode<T>(node: Node, fn: () => T): T {
   // Lazy-create a stable per-node ctx: reusing the same `notify`
   // identity means multiple reads of the same signal dedupe in its

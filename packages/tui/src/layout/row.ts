@@ -20,6 +20,8 @@ export interface AllocateOpts {
  * weight 1 (or `flexGrow` if provided, or 1 for explicit `'fill'`). Remaining
  * space is distributed proportionally; min/max clamp each result; any rounding
  * remainder lands on the last flex item.
+ *
+ * @internal
  */
 export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): number[] {
   const { contentWidth } = opts
@@ -82,6 +84,8 @@ export interface ZipOpts {
  * Zip pre-rendered child rows horizontally. Shorter children are padded with
  * blank rows of their allocated width. Rows of each child must already be
  * padded to the corresponding width in `widths`.
+ *
+ * @internal
  */
 export function zipRow(children: readonly (readonly string[])[], opts: ZipOpts): string[] {
   if (children.length === 0) return []

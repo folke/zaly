@@ -91,6 +91,8 @@ const ANSI_OFFSET: Record<string, number> = {
  * the theme (honouring `kind` for Style slots), then applies
  * `variant(hex, step)`. Non-variant inputs fall straight through to
  * `resolveThemeColor`.
+ *
+ * @internal
  */
 export function resolveColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
   let input = c
@@ -216,6 +218,8 @@ function walkSlot(ref: string, theme: Theme | undefined): string | Style {
  *  - String ref that doesn't match a slot → treated as a fg color
  *    (`{ fg: <ref> }`) and resolved downstream by `colorParams`.
  *  - `undefined` → `{}` (emits nothing).
+ *
+ * @internal
  */
 export function resolveStyle(ref: string | Style | undefined, theme?: Theme): Style {
   if (ref === undefined) return {}
@@ -233,6 +237,8 @@ export function resolveStyle(ref: string | Style | undefined, theme?: Theme): St
  * channels to extract (`"fg"` → Style.fg, `"bg"` → Style.bg). Without
  * `kind`, a Style slot throws — Style-valued slots can't be used as a
  * single color without explicit channel selection.
+ *
+ * @internal
  */
 export function resolveThemeColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
   const v = walkSlot(c, theme)
@@ -260,6 +266,8 @@ export function resolveThemeColor(c: string, theme: Theme | undefined, kind?: "f
  *   "gray" / "grey" → aliased to brightBlack
  *   "#82aaff"   → "38;2;130;170;255" / "48;2;130;170;255"
  *   theme slot  → resolved via `theme`, re-classified
+ *
+ * @internal
  */
 export function colorParams(color: string, kind: "fg" | "bg", theme?: Theme): string | undefined {
   if (color === "inherit") return undefined

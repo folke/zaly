@@ -8,6 +8,7 @@
 
 const APC_RE = /\u001B_[\s\S]*?\u001B\\/g
 
+/** @internal */
 export function extractApc(s: string): { apc: string; rest: string } {
   if (!s.includes("\u001B_")) return { apc: "", rest: s }
   let apc = ""

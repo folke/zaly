@@ -106,6 +106,8 @@ export interface MountCtx {
  * Current terminal width in cells. Returns `undefined` when stdout isn't a
  * TTY (piped output, tests, non-Node/Bun runtimes) — callers should fall
  * back to a sensible default when this is `undefined`.
+ *
+ * @internal
  */
 export function termWidth(): number | undefined {
   if (typeof process === "undefined") return undefined

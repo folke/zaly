@@ -292,7 +292,9 @@ export abstract class Node<
   }
 }
 
-/** Runtime type guard for Node. */
+/** Runtime type guard for Node. 
+ *
+ * @internal*/
 export function isNode(x: unknown): x is Node {
   return x instanceof Node
 }

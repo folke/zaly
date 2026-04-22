@@ -23,7 +23,9 @@ export const borders = {
   single: { bl: "└", br: "┘", h: "─", tl: "┌", tr: "┐", v: "│" },
 } as const satisfies Record<string, BorderChars>
 
-/** Resolve the `border` style value to a concrete BorderChars, or undefined. */
+/** Resolve the `border` style value to a concrete BorderChars, or undefined. 
+ *
+ * @internal*/
 export function resolveBorder(spec: BorderSpec | undefined): BorderChars | undefined {
   if (spec === undefined || spec === false) return undefined
   if (spec === true) return borders.single
@@ -62,6 +64,8 @@ const identity = (s: string): string => s
  * Border glyphs and the optional title can be styled independently via
  * `borderStyle` / `titleStyle` — each is a pre-bound `StyleBuilder`, so
  * this helper stays purely about geometry and never touches SGR itself.
+ *
+ * @internal
  */
 export function drawBorder(
   rows: readonly string[],

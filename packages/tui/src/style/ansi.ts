@@ -5,6 +5,7 @@ import { sliceAnsi, stringWidth } from "#runtime"
 import { extractApc } from "./apc.ts"
 import { colorParams } from "./color.ts"
 
+/** @internal */
 export const RESET = "\x1b[0m"
 
 // OSC 8 hyperlink sequence. ESC + backslash is the "string terminator" (ST)
@@ -22,6 +23,8 @@ const ST = "\x1b\\"
  *
  * An empty `url` short-circuits and returns `text` unchanged, so callers
  * can unconditionally pipe link text through this helper.
+ *
+ * @internal
  */
 export function hyperlink(url: string, text: string): string {
   if (url === "") return text
@@ -61,6 +64,8 @@ const ATTRS = [
  * When `theme` is provided, `fg`/`bg` values matching a theme color slot
  * (e.g. `"primary"`, `"muted"`) are resolved against it first. The output
  * ordering is attrs → fg → bg, combined into a single `\x1b[...m` run.
+ *
+ * @internal
  */
 export function openStyle(style: Style, theme?: Theme): string {
   if (theme !== undefined) {
@@ -135,6 +140,8 @@ function computeOpen(style: Style, theme?: Theme): string {
  * `replaceAll` and runs meaningfully faster on short strings (hot in
  * the builder's `apply`, called once per styled span). Pattern taken
  * from ansis's nested-style resolver.
+ *
+ * @internal
  */
 export function reapplyStyle(s: string, escape: string): string {
   if (escape === "" || !s.includes(RESET)) return s

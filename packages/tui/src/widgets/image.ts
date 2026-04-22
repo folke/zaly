@@ -107,7 +107,9 @@ function dims(
   return { cols: cols ?? available, rows: rows ?? 1 }
 }
 
-/** Drop the KGP transmit cache. Mostly for tests. */
+/** Drop the KGP transmit cache. Mostly for tests.
+ *
+ *  @internal */
 export function resetImageTransmitCache(): void {
   resetTransmitCache()
 }

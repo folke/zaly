@@ -64,6 +64,8 @@ export function code(state: CodeState): Code {
  * `Diff` widget can reuse it — `Diff` pre-assembles rows with `-`/`+`
  * prefixes + per-row bg and hands the resulting pre-highlighted string
  * to us with `syntax: false` to skip re-highlighting.
+ *
+ * @internal
  */
 export async function buildCodeContent(
   ctx: RenderCtx,

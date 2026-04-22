@@ -8,6 +8,8 @@ import { Emitter } from "../core/emitter.ts"
  * paint is needed; the Renderer subscribes and schedules a tick. Each
  * surface subclass may extend this with its own events, but `dirty` is
  * the universal channel every surface fires through.
+ *
+ * @internal
  */
 export interface SurfaceEvents extends Record<string, unknown[]> {
   dirty: []
@@ -30,6 +32,8 @@ export interface SurfaceEvents extends Record<string, unknown[]> {
  * whichever set of nodes they track (UI root, overlay stack, stream
  * tail, …). Everything else — `nodes` getter, `render()`, and any
  * surface-specific API — stays on the subclass.
+ *
+ * @internal
  */
 export abstract class Surface<E extends SurfaceEvents = SurfaceEvents> extends Emitter<E> {
   #running = false

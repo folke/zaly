@@ -7,6 +7,8 @@ export interface StackOpts {
  * Stack pre-rendered child rows vertically. `gap` blank rows of `width` spaces
  * separate each sibling pair. Caller must ensure each child's rows are already
  * padded to `width`.
+ *
+ * @internal
  */
 export function stackColumn(children: readonly (readonly string[])[], opts: StackOpts): string[] {
   const out: string[] = []

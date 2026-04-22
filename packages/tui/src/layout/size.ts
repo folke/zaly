@@ -17,6 +17,8 @@ export type Size = number | Pct | "auto" | "fill"
  *  - `Pct` — percentage of `available`, rounded down
  *  - `'fill'` — full `available`
  *  - `'auto'` / `undefined` — returns undefined; caller measures content
+ *
+ * @internal
  */
 export function resolveSize(size: Size | undefined, available: number): number | undefined {
   if (size === undefined || size === "auto") return undefined
@@ -34,6 +36,8 @@ export interface ClampOpts {
 /**
  * Clamp a value to [min, max]. Each bound may be a `Size` (number or `Pct`) or
  * undefined. When both bounds conflict, `min` wins — matches CSS/flex.
+ *
+ * @internal
  */
 export function clamp(value: number, opts: ClampOpts): number {
   const maxN = resolveSize(opts.max, opts.available)
