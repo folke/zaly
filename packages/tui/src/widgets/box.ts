@@ -6,6 +6,7 @@ import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
 import { sliceAnsi, stringWidth } from "#runtime"
+
 import { Node, isNode } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { stackColumn } from "../layout/column.ts"
@@ -157,9 +158,16 @@ function resolvePadding(p: Padding | undefined): [t: number, r: number, b: numbe
   return [p[0], p[1], p[2], p[3]]
 }
 
+/** Pad/clip a child row without injecting a RESET. The Box's outer
+ *  `reapplyStyle` wrap inserts its own `RESET + reopen` at each inner
+ *  `[0m`, so padding produced here stays inside the ambient style the
+ *  box is closing over. Text's `padOrClip` in `style/ansi.ts` behaves
+ *  differently — it inserts `RESET` before the pad — because Text has
+ *  no outer reapply chain to carry the style forward. */
 function padRow(row: string, width: number): string {
   const w = stringWidth(row)
   if (w === width) return row
   if (w < width) return row + " ".repeat(width - w)
   return sliceAnsi(row, 0, width)
 }
+

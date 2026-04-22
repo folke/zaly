@@ -1,10 +1,10 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { Flexible } from "../layout/flex.ts"
 
-import { sliceAnsi, stringWidth, wrapAnsi } from "#runtime"
+import { stringWidth, wrapAnsi } from "#runtime"
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
-import { RESET, splitAnsi } from "../style/ansi.ts"
+import { padOrClip, splitAnsi } from "../style/ansi.ts"
 
 /**
  * Text content — a plain string, or a function that produces one from the
@@ -86,16 +86,3 @@ function naturalWidth(content: string, mode: "word" | "char" | "none"): number {
   return max
 }
 
-function padOrClip(row: string, width: number): string {
-  const w = stringWidth(row)
-  if (w === width) return row
-  if (w < width) {
-    // If the row carries any styling, close it before the pad spaces so they
-    // don't inherit an open style. splitAnsi already ensures per-line close/
-    // reopen — this is belt-and-suspenders for any weird content. Plain rows
-    // skip the RESET so output stays byte-identical to the no-style path.
-    const tail = row.includes("\x1b[") ? RESET : ""
-    return row + tail + " ".repeat(width - w)
-  }
-  return sliceAnsi(row, 0, width)
-}

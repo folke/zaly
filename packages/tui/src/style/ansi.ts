@@ -190,3 +190,26 @@ export function splitAnsi(s: string): string[] {
   }
   return out
 }
+
+/**
+ * Pad a row with spaces on the right, or clip it to exactly `width`
+ * cells. Handles ANSI-styled rows correctly:
+ *
+ *  - Styled rows get a `RESET` inserted before the pad spaces so the
+ *    pad doesn't inherit the row's open SGR state.
+ *  - Plain rows skip the `RESET` so output stays byte-identical to the
+ *    no-style path — useful for layout tests that compare raw bytes.
+ *  - Over-width rows are sliced via `sliceAnsi`, preserving SGR state.
+ *
+ * Used by every layout primitive that stitches rows together at a
+ * fixed column count (column stack, row zip, Box body, Text output).
+ */
+export function padOrClip(row: string, width: number): string {
+  const w = stringWidth(row)
+  if (w === width) return row
+  if (w < width) {
+    const tail = row.includes("\x1b[") ? RESET : ""
+    return row + tail + " ".repeat(width - w)
+  }
+  return sliceAnsi(row, 0, width)
+}

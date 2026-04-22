@@ -19,22 +19,36 @@ export interface InputState extends StyleState {
   width?: Size
 }
 
+/** An attachment produced by an Input's paste action. Discriminated
+ *  by `kind` so listeners can pattern-match without parsing MIME
+ *  strings. `path` is always an absolute filesystem path the caller
+ *  takes ownership of. */
+export type InputAttachment =
+  | {
+      kind: "image"
+      /** Temporary PNG file written from clipboard bytes. */
+      path: string
+      /** MIME type. Always `"image/png"` for image pastes. */
+      type: "image/png"
+    }
+  | {
+      kind: "file"
+      /** Real path on disk (e.g. from a file manager paste). */
+      path: string
+      /** Best-effort MIME guess from the file extension.
+       *  `"application/octet-stream"` when unknown — callers typically
+       *  re-sniff via their own tools. */
+      type: string
+    }
+
 export interface InputEvents extends BaseEvents {
   /** Fired when plain Enter is pressed. Payload is the current value. */
   submit: [string]
   /** Fired when the user pastes a non-text resource via the
-   *  `input.clipboard` action. Currently covers two shapes:
-   *
-   *    - **image** — the clipboard held image bytes; `path` is a
-   *      temporary PNG file and the caller takes ownership.
-   *    - **file** — the clipboard held file references (e.g. from the
-   *      OS file manager); `path` is the real filesystem path. One
-   *      `attach` event fires per file.
-   *
-   *  `type` is a MIME string. `"image/png"` for image pastes; for
-   *  files it's a best-effort guess (`"application/octet-stream"`
-   *  when unknown) — callers typically re-sniff via their own tools. */
-  attach: [path: string, type: string]
+   *  `input.paste` action. Images and file references both land here,
+   *  discriminated by `attachment.kind`. One event fires per image
+   *  paste; one per file in a multi-file paste. */
+  attach: [attachment: InputAttachment]
 }
 
 /**
@@ -174,12 +188,12 @@ export class Input extends Node<InputState, InputEvents> {
         const content = await clipboard.read()
         if (!content) return
         if (content.kind === "image") {
-          this.emit("attach", content.path, content.type)
+          this.emit("attach", { kind: "image", path: content.path, type: content.type })
           return
         }
         if (content.kind === "files") {
           for (const path of content.paths) {
-            this.emit("attach", path, guessMime(path))
+            this.emit("attach", { kind: "file", path, type: guessMime(path) })
           }
           return
         }
