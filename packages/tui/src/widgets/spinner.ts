@@ -6,7 +6,10 @@ import { stringWidth } from "#runtime"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 
-/** Frame sets from the common terminal-spinner vocabulary. Pick one to taste. */
+/**
+ * Frame sets from the common terminal-spinner vocabulary. Pick one to taste.
+ * @internal
+ */
 export const spinnerFrames = {
   arrow: ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"],
   bouncingBar: ["[    ]", "[=   ]", "[==  ]", "[=== ]", "[ ===]", "[  ==]", "[   =]", "[    ]"],
@@ -15,9 +18,11 @@ export const spinnerFrames = {
   line: ["-", "\\", "|", "/"],
 } as const
 
+export type SpinnerStyle = keyof typeof spinnerFrames
+
 export interface SpinnerState extends BaseState {
   /** Frame glyphs, cycled in order. Defaults to `dots`. */
-  frames?: readonly string[]
+  frames?: SpinnerStyle | readonly string[]
   /** Milliseconds per frame. Defaults to 80. */
   speed?: number
   /** Foreground theme slot or explicit color. Defaults to `primary`. */
@@ -103,7 +108,8 @@ export class Spinner extends Node<SpinnerState> {
   protected _render(ctx: RenderCtx): string[] {
     this.#reconcile()
 
-    const frames = this.state.frames ?? spinnerFrames.dots
+    const f = this.state.frames
+    const frames = (typeof f === "string" ? spinnerFrames[f] : f) ?? spinnerFrames.dots
     const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
     // When stopped, hold the slot open with blank space of the same
     // cell width so surrounding layout doesn't jump as the spinner
