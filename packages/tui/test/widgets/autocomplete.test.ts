@@ -41,7 +41,7 @@ describe("autocomplete", () => {
     i.setState({ cursor: 3, value: "/he" })
     // Allow the microtask-queued refresh to run.
     await Promise.resolve()
-    expect(complete).toHaveBeenCalledWith("he")
+    expect(complete).toHaveBeenCalledWith("he", expect.any(Function))
     const rows = await ac.render(ctx)
     expect(rows.length).toBeGreaterThan(0)
   })
@@ -112,7 +112,7 @@ describe("autocomplete", () => {
     })
     i.setState({ cursor: 7, value: "hey @bo" })
     await Promise.resolve()
-    expect(complete).toHaveBeenCalledWith("bo")
+    expect(complete).toHaveBeenCalledWith("bo", expect.any(Function))
     ac.menu.actions["menu.select"]()
     expect(i.state.value).toBe("hey @bob ")
   })
@@ -178,6 +178,50 @@ describe("autocomplete", () => {
     i.emit("key", keyEv("enter"))
     expect(i.state.value).toBe("/a ")
     expect(ac.open).toBe(false)
+  })
+
+  test("accept returning undefined clears the trigger+query range (side-effect source)", async () => {
+    const i = input({})
+    const onAccept = vi.fn(() => undefined)
+    const ac = autocomplete({
+      input: i,
+      sources: {
+        cmd: {
+          accept: onAccept,
+          complete: () => [{ value: "quit" }],
+          triggers: [/^\s*\//],
+        },
+      },
+    })
+    i.setState({ cursor: 3, value: "/qu" })
+    await Promise.resolve()
+    ac.menu.actions["menu.select"]()
+    expect(onAccept).toHaveBeenCalledWith({ value: "quit" }, "qu")
+    // Source handled it; the typed trigger+query gets cleared, nothing
+    // is inserted.
+    expect(i.state.value).toBe("")
+    expect(i.state.cursor).toBe(0)
+    expect(ac.open).toBe(false)
+  })
+
+  test("accept returning a string replaces the trigger+query range", async () => {
+    const i = input({})
+    const ac = autocomplete({
+      input: i,
+      sources: {
+        files: {
+          accept: (item) => (item as { value: string }).value,
+          complete: () => [{ value: "src/index.ts" }],
+          triggers: [/(?<=^|\s)@/],
+        },
+      },
+    })
+    i.setState({ cursor: 4, value: "@src" })
+    await Promise.resolve()
+    ac.menu.actions["menu.select"]()
+    // No trailing space (files override).
+    expect(i.state.value).toBe("src/index.ts")
+    expect(i.state.cursor).toBe("src/index.ts".length)
   })
 
   test("closes when trigger no longer matches", async () => {

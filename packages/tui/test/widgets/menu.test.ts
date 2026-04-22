@@ -76,11 +76,11 @@ describe("menu", () => {
     expect(rows).toEqual([])
   })
 
-  test("maxHeight caps visible rows; window follows active", async () => {
+  test("maxHeight caps visible item rows; window follows active", async () => {
     const manyItems = Array.from({ length: 10 }, (_, i) => ({
       value: `cmd${i}`,
     }))
-    const m = menu({ items: manyItems, maxHeight: 3 })
+    const m = menu({ counter: false, items: manyItems, maxHeight: 3 })
     let rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows).toHaveLength(3)
     expect(rows[0]).toContain("cmd0")
@@ -90,6 +90,110 @@ describe("menu", () => {
     rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows).toHaveLength(3)
     expect(rows.some((r) => r.includes("cmd5"))).toBe(true)
+  })
+
+  test("counter auto-shows as the last row when items exceed maxHeight", async () => {
+    const manyItems = Array.from({ length: 10 }, (_, i) => ({ value: `cmd${i}` }))
+    const m = menu({ items: manyItems, maxHeight: 3 })
+    m.state.active = 4
+    const rows = (await m.render(ctx)).map(stripAnsi)
+    // 3 item rows + 1 counter row.
+    expect(rows).toHaveLength(4)
+    expect(rows[3]).toMatch(/5\s*\/\s*10/)
+  })
+
+  test("counter hides when counter: false", async () => {
+    const manyItems = Array.from({ length: 10 }, (_, i) => ({ value: `cmd${i}` }))
+    const m = menu({ counter: false, items: manyItems, maxHeight: 3 })
+    const rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(3)
+    expect(rows.every((r) => !/\d+\/\d+/.test(r))).toBe(true)
+  })
+
+  test("counter does not show when everything fits", async () => {
+    const m = menu({ items })
+    const rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(items.length)
+  })
+
+  test("pin-until-leave: window doesn't move while active stays in view", async () => {
+    const manyItems = Array.from({ length: 10 }, (_, i) => ({ value: `cmd${i}` }))
+    const m = menu({ counter: false, items: manyItems, maxHeight: 4 })
+    // First render starts at 0–3. Move active forward within the window.
+    m.state.active = 2
+    let rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows[0]).toContain("cmd0")
+    expect(rows[3]).toContain("cmd3")
+    // Still inside window.
+    m.state.active = 3
+    rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows[0]).toContain("cmd0")
+    expect(rows[3]).toContain("cmd3")
+    // One past the window — slide by one.
+    m.state.active = 4
+    rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows[0]).toContain("cmd1")
+    expect(rows[3]).toContain("cmd4")
+  })
+
+  test("sticky: counter row persists once shown, so total height stays put", async () => {
+    const many = Array.from({ length: 27 }, (_, i) => ({ value: `cmd${i}` }))
+    const m = menu({ items: many, maxHeight: 8, sticky: true })
+    // Initial: 8 item rows + 1 counter = 9 rows.
+    let rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(9)
+    expect(rows[8]).toMatch(/\d+\/27/)
+    // Filter down to something that fits — without the persistent
+    // counter we'd drop from 9 rows to 8.
+    m.state.items = [{ value: "cmd0" }, { value: "cmd1" }, { value: "cmd2" }]
+    rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(9)
+    // Last row still carries a counter, now reflecting the filtered total.
+    expect(rows[8]).toMatch(/\d+\/3/)
+  })
+
+  test("sticky: height grows but doesn't shrink; resetHeight clears it", async () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ value: `cmd${i}` }))
+    const m = menu({ counter: false, items: many, maxHeight: 5, sticky: true })
+    let rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(5)
+    // Shrink items — rendered height should stay at 5 with blank filler.
+    m.state.items = [{ value: "cmd0" }]
+    rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(5)
+    expect(rows[0]).toContain("cmd0")
+    expect(rows[1].trim()).toBe("")
+    // Reset allows shrink again.
+    m.resetHeight()
+    rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toContain("cmd0")
+  })
+
+  test("generic over item type — select payload is typed as T", () => {
+    interface Cmd { value: string; fn: () => void }
+    const fn = vi.fn()
+    const m = menu<Cmd>({ items: [{ fn, value: "/quit" }] })
+    m.on("select", (it) => it.fn())
+    m.actions["menu.select"]()
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+
+  test("custom render is used for item rows; menuActive still paints selection", async () => {
+    interface Row { tag: string }
+    const m = menu<Row>({
+      items: [{ tag: "alpha" }, { tag: "beta" }, { tag: "gamma" }],
+      render: (it, active) => `${active ? "→" : " "} ${it.tag}`,
+    })
+    const rows = (await m.render(ctx)).map(stripAnsi)
+    expect(rows[0]).toMatch(/^→ alpha/)
+    expect(rows[1]).toMatch(/^\s+beta/)
+    expect(rows[2]).toMatch(/^\s+gamma/)
+  })
+
+  test("default render throws when items carry neither label nor value", async () => {
+    const m = menu({ items: [{} as unknown as { value: string }] })
+    await expect(m.render(ctx)).rejects.toThrow(/label.*value.*render/)
   })
 
   test("select on empty menu does not emit", () => {

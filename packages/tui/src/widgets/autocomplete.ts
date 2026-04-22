@@ -1,21 +1,49 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { RoutedKey } from "../input/router.ts"
-import type { MenuItem } from "./menu.ts"
+import type { MenuItem, MenuRender } from "./menu.ts"
 
 import { Node } from "../core/node.ts"
+import { fuzzyScore } from "./completions/fuzzy.ts"
 import { Input } from "./input.ts"
 import { Menu } from "./menu.ts"
 
-export type CompleteResult = MenuItem[] | Promise<MenuItem[]>
+export type CompleteResult<T = MenuItem> = T[] | Promise<T[]>
+
+/** Match function handed to `complete`. Returns `0` for no match,
+ *  positive integer otherwise — so both `match(s) > 0` and the
+ *  idiomatic `.filter(match(s))` work (0 is falsy). The magnitude is a
+ *  score the source can use to rank its own candidates when it cares
+ *  about order. */
+export type Matcher = (s: string) => number
+
+/** Called when the user picks `item` from this source. Return a string
+ *  to insert in place of the trigger + query range, or `undefined`
+ *  when the source handled the selection itself (dispatched an action,
+ *  opened a modal, …) and the trigger range should just be removed. */
+export type AcceptFn<T> = (item: T, query: string) => string | undefined
 
 /** Single completion source. `triggers` are regexes run against the text
  *  *before the cursor*; the first regex whose match ends in the trailing
  *  word wins. The slice between match-end and the cursor becomes the
- *  `query` passed to `complete`. */
-export interface CompletionSource {
+ *  `query` passed to `complete`.
+ *
+ *  `complete` receives a `match` helper bound to `query` — call it on
+ *  whatever string the source considers the matching field (action id,
+ *  file basename, contact email, etc.) and either filter or rank.
+ *
+ *  `accept` controls what happens on selection. Default: insert
+ *  `item.value + " "`. Return `undefined` to have the source do its own
+ *  side effect (dispatch an action, open a picker, …) and just clear
+ *  the trigger range in the input.
+ *
+ *  `render` is forwarded to the internal `Menu` so the source can carry
+ *  its own row presentation — handy when `T` isn't a plain `MenuItem`. */
+export interface CompletionSource<T = MenuItem> {
   triggers: readonly RegExp[]
-  complete: (query: string) => CompleteResult
+  complete: (query: string, match: Matcher) => CompleteResult<T>
+  accept?: AcceptFn<T>
+  render?: MenuRender<T>
 }
 
 // oxlint-disable-next-line no-empty-interface
@@ -26,19 +54,23 @@ export interface AutocompleteOptions {
    *  resolves through `ctx.getNode` on mount — the latter enables fully
    *  inline composition where the input doesn't need a local binding. */
   input: Input | string
-  sources: Record<string, CompletionSource>
+  // Per-source item types are erased at this level — each source
+  // declares its own `T` which is preserved within its own `complete`
+  // / `accept` / `render` callbacks. The `complete` event payload is
+  // consequently typed as `unknown`; callers discriminate by source
+  // name and cast.
+  sources: Record<string, CompletionSource<any>>
   /** Cap on rows the popup shows at once. Default: 8. */
   maxHeight?: number
-  /** Whether to auto-append a trailing space after the inserted value
-   *  (handy for slash commands; undesirable for paths). Default: `true`. */
-  trailingSpace?: boolean
 }
 
 export interface AutocompleteEvents extends BaseEvents {
   open: []
   close: []
-  /** Fired after an item is inserted into the input. */
-  complete: [source: string, item: MenuItem]
+  /** Fired after an item is inserted into the input. Payload item type
+   *  is `unknown` because sources may have different `T`; discriminate
+   *  by source name and cast. */
+  complete: [source: string, item: unknown]
 }
 
 interface Match {
@@ -81,10 +113,9 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   static readonly type = "autocomplete"
   override readonly type = Autocomplete.type
 
-  readonly menu: Menu
+  readonly menu: Menu<unknown>
   readonly #inputRef: Input | string
-  readonly #sources: Record<string, CompletionSource>
-  readonly #trailingSpace: boolean
+  readonly #sources: Record<string, CompletionSource<any>>
   #input?: Input
   #match: Match | undefined
   #cancelled = false
@@ -99,9 +130,12 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     super({ visible: false })
     this.#inputRef = opts.input
     this.#sources = opts.sources
-    this.#trailingSpace = opts.trailingSpace ?? true
 
-    this.menu = new Menu({ items: [], maxHeight: opts.maxHeight ?? 8 })
+    this.menu = new Menu<unknown>({
+      items: [],
+      maxHeight: opts.maxHeight ?? 8,
+      sticky: true,
+    })
     this.add(this.menu)
 
     // If a concrete Input is passed, wire immediately so the widget
@@ -122,9 +156,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       if (this.#input === undefined && typeof this.#inputRef === "string") {
         const node = this.ctx?.getNode(this.#inputRef)
         if (!(node instanceof Input)) {
-          throw new Error(
-            `autocomplete: no Input with id "${this.#inputRef}" found in tree`,
-          )
+          throw new Error(`autocomplete: no Input with id "${this.#inputRef}" found in tree`)
         }
         this.#bindInput(node)
       }
@@ -132,6 +164,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     })
     this.on("unmount", () => {
       this.#uninstallKeyIntercept()
+      this.#uninstallInvalidateListener()
     })
   }
 
@@ -151,6 +184,13 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       void this.#refresh()
     }
     node.on("invalidate", this.#invalidateListener)
+  }
+
+  #uninstallInvalidateListener(): void {
+    if (this.#input && this.#invalidateListener) {
+      this.#input.off("invalidate", this.#invalidateListener)
+    }
+    this.#invalidateListener = undefined
   }
 
   /**
@@ -226,7 +266,9 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       this.#close()
       return
     }
-    const result = this.#sources[match.source].complete(match.query)
+    const source = this.#sources[match.source]
+    const matcher: Matcher = (s) => fuzzyScore(match.query, s)
+    const result = source.complete(match.query, matcher)
     const items = Array.isArray(result) ? result : await result
     // A newer refresh has already started — drop our stale result.
     if (seq !== this.#refreshSeq) return
@@ -234,7 +276,10 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       this.#close()
       return
     }
-    this.menu.setState({ active: 0, items })
+    // Forward the source's custom `render` so per-source row styling
+    // kicks in. Explicitly clear it when the new source doesn't supply
+    // one so we don't carry a previous source's renderer.
+    this.menu.setState({ active: 0, items, render: source.render })
     this.#setVisible(true)
   }
 
@@ -270,16 +315,29 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     return undefined
   }
 
-  #accept(item: MenuItem): void {
+  #accept(item: unknown): void {
     const match = this.#match
     if (match === undefined || !this.#input) return
+    const source = this.#sources[match.source]
     const value = this.#input.state.value ?? ""
     const cursor = this.#input.state.cursor ?? 0
     const tail = value.slice(cursor)
-    const insertion = this.#trailingSpace ? `${item.value} ` : item.value
-    const next = value.slice(0, match.start) + insertion + tail
-    const nextCursor = match.start + insertion.length
-    this.#input.setState({ cursor: nextCursor, value: next })
+    // Source-provided accept wins; default is `item.value + " "` when
+    // the item looks MenuItem-shaped, otherwise a no-op clear.
+    const accepted = source.accept ? source.accept(item, match.query) : defaultAccept(item)
+    if (accepted === undefined) {
+      // Source handled the selection itself (dispatched an action,
+      // etc.) — just clear the trigger..cursor range.
+      this.#input.setState({
+        cursor: match.start,
+        value: value.slice(0, match.start) + tail,
+      })
+    } else {
+      this.#input.setState({
+        cursor: match.start + accepted.length,
+        value: value.slice(0, match.start) + accepted + tail,
+      })
+    }
     this.emit("complete", match.source, item)
     this.#close()
   }
@@ -287,6 +345,11 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   #close(): void {
     if (!this.open) return
     this.#setVisible(false)
+    // Clear the Menu's items + sticky grown-height so nothing stale
+    // lingers in state (e.g. briefly visible if anything re-opens the
+    // popup before a fresh complete() lands).
+    this.menu.setState({ items: [] })
+    this.menu.resetHeight()
     this.emit("close")
   }
 
@@ -302,6 +365,15 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // flows through one handle.
     return this.menu.render(ctx)
   }
+}
+
+/** Default `accept` fallback used when a source doesn't provide one.
+ *  Assumes the item is `MenuItem`-shaped and inserts `value + " "` —
+ *  matches the old `trailingSpace: true` behaviour. Returns `undefined`
+ *  (clear-only) when the item has no `value`. */
+function defaultAccept(item: unknown): string | undefined {
+  const v = (item as MenuItem | null)?.value
+  return typeof v === "string" ? `${v} ` : undefined
 }
 
 /**

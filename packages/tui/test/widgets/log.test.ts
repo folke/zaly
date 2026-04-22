@@ -21,9 +21,9 @@ describe("log() widget", () => {
     expect(plain).toContain("boom")
   })
 
-  test("log level has no prefix chrome", async () => {
+  test("log level uses a dim bullet icon as its prefix", async () => {
     const rows = await log({ content: "x", level: "log" }).render(ctx)
-    expect(strip(rows[0]).replace(/ +$/, "")).toBe("x")
+    expect(strip(rows[0]).replace(/ +$/, "")).toMatch(/^●\s+x$/)
   })
 
   test("wrapped lines indent to align with prefix", async () => {

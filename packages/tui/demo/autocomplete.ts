@@ -1,77 +1,104 @@
-// oxlint-disable sort-keys
-import type { MenuItem } from "../src/widgets/menu.ts"
-
-import { autocomplete, box, createRenderer, input, markdown, text } from "../src/index.ts"
+import {
+  actionsSource,
+  autocomplete,
+  box,
+  createRenderer,
+  filesSource,
+  githubSource,
+  input,
+  markdown,
+  text,
+} from "../src/index.ts"
 
 /**
- * Autocomplete demo. Same input-and-stream shape as `demo/input.ts`,
- * but with two completion sources wired up:
+ * Autocomplete demo wired to the built-in completion sources:
  *
- *   - `/` at the start of the line → slash commands
- *   - `@` mid-text → user mentions
+ *   - `/` at the start of the line → `actionsSource` backed by the
+ *     Renderer's action registry. Selecting a slash command dispatches
+ *     the action and clears the trigger text (no stale `/foo` left in
+ *     the input).
+ *   - `@` mid-text → `filesSource`, browsing the current working
+ *     directory. Selecting a file inserts its relative path — no
+ *     trailing space, so you can keep typing to drill into subdirs.
  *
- * The popup lives in the UI footer directly above the input. It uses
- * `visible: false` to collapse when nothing matches, so the footer
- * height tracks the menu automatically.
+ * A few app-level actions are registered so there's something real to
+ * dispatch when slash commands are picked.
  */
 
 const renderer = createRenderer()
 
-const slashCommands: MenuItem[] = [
-  { value: "/help", hint: "show available commands" },
-  { value: "/clear", hint: "clear the stream" },
-  { value: "/model", hint: "pick a model" },
-  { value: "/theme", hint: "switch theme" },
-  { value: "/quit", hint: "exit the demo" },
-  { value: "/status", hint: "show session status" },
-  { value: "/tokens", hint: "show token usage" },
-  { value: "/resume", hint: "resume last session" },
-  { value: "/new", hint: "start a new conversation" },
-  { value: "/export", hint: "export the session" },
-]
+const { log } = renderer
 
-const users: MenuItem[] = [
-  { value: "@alice", hint: "Alice Cooper" },
-  { value: "@bob", hint: "Bob Dylan" },
-  { value: "@carol", hint: "Carol Kaye" },
-  { value: "@dave", hint: "Dave Grohl" },
-]
+// App-level actions. `register` merges by id, so these compose with
+// the bundled defaults (`global.quit`, input/menu bindings, etc.)
+// without clobbering them.
+renderer.actions.register({
+  "app.clear": {
+    desc: "clear the stream surface",
+    fn: () => {
+      log.success("stream cleared (demo — no-op)")
+    },
+    name: "clear",
+  },
+  "app.greet": {
+    desc: "say hello back",
+    fn: () => {
+      log.info("hello! 👋")
+    },
+    name: "greet",
+  },
+  "app.model": {
+    desc: "pick the active model",
+    fn: () => {
+      log.info("would open model picker")
+    },
+    name: "model",
+  },
+  "app.theme": {
+    desc: "switch between bundled themes",
+    fn: () => {
+      log.info("would open theme switcher")
+    },
+    name: "theme",
+  },
+  "app.tokens": {
+    desc: "show token usage for this session",
+    fn: () => {
+      log.info("tokens: 1,234 in / 789 out (demo)")
+    },
+    name: "tokens",
+  },
+})
 
 renderer.ui.add(
   box(
     { bg: "bg", flexDirection: "column", padding: [0, 1] },
-    text(({ style }) => `${style.primary("›")} ${style.dim("enter to send · ctrl-c to quit")}`),
+    text(
+      ({ style }) =>
+        `${style.primary("›")} ${style.dim("enter · / actions · @ files · # issues/prs · ctrl-c quit")}`
+    ),
     box(
       { flexDirection: "row", gap: 1 },
       text(({ style }) => style.primary("❯"), { width: 1 }),
-      input({ placeholder: "type a message, try / or @…" })
+      input({ placeholder: "try / or @ …" })
         .id("chat-input")
         .focus()
         .on("submit", (value, self) => {
           if (value.trim() === "") return
           renderer.stream.append(markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
-        }),
+        })
     ),
     autocomplete({
       input: "chat-input",
       maxHeight: 8,
       sources: {
-        slash: {
-          triggers: [/(?:^|\n)\s*\//],
-          complete: (q) =>
-            slashCommands.filter((c) => c.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
-        },
-        mention: {
-          triggers: [/\B@/],
-          complete: (q) =>
-            users.filter((u) => u.value.slice(1).toLowerCase().startsWith(q.toLowerCase())),
-        },
+        files: filesSource(),
+        gh: githubSource(),
+        slash: actionsSource({ actions: renderer.actions }),
       },
-    }).on("complete", (source, item) => {
-      renderer.stream.append(markdown(`*completed via ${source}: ${item.value}*`))
-    }),
-  ),
+    })
+  )
 )
 
 renderer.start()

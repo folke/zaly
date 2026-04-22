@@ -1,6 +1,7 @@
 export * from "./autocomplete.ts"
 export * from "./box.ts"
 export * from "./code.ts"
+export * from "./completions/index.ts"
 export * from "./diff.ts"
 export * from "./image.ts"
 export * from "./input.ts"

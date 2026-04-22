@@ -126,8 +126,7 @@ export class Input extends Node<InputState, InputEvents> {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c === 0) return
-      this.state.value = v.slice(0, c - 1) + v.slice(c)
-      this.state.cursor = c - 1
+      this.setState({ cursor: c - 1, value: v.slice(0, c - 1) + v.slice(c) })
     },
     "input.deleteCharForward": (): void => {
       const v = this.state.value ?? ""
@@ -142,8 +141,7 @@ export class Input extends Node<InputState, InputEvents> {
       while (i > 0 && isWhitespace(v[i - 1])) i--
       while (i > 0 && !isWhitespace(v[i - 1])) i--
       if (i === c) return
-      this.state.value = v.slice(0, i) + v.slice(c)
-      this.state.cursor = i
+      this.setState({ cursor: i, value: v.slice(0, i) + v.slice(c) })
     },
     "input.insertNewline": (): void => {
       // Smart indent: copy the leading whitespace of the current
@@ -160,8 +158,10 @@ export class Input extends Node<InputState, InputEvents> {
         else break
       }
       const insert = `\n${indent}`
-      this.state.value = v.slice(0, c) + insert + v.slice(c)
-      this.state.cursor = c + insert.length
+      this.setState({
+        cursor: c + insert.length,
+        value: v.slice(0, c) + insert + v.slice(c),
+      })
     },
     "input.insertTab": (): void => {
       // Two spaces rather than `\t` — terminal tab stops are
@@ -171,8 +171,7 @@ export class Input extends Node<InputState, InputEvents> {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       const tab = "  "
-      this.state.value = v.slice(0, c) + tab + v.slice(c)
-      this.state.cursor = c + tab.length
+      this.setState({ cursor: c + tab.length, value: v.slice(0, c) + tab + v.slice(c) })
     },
     // `ctrl-v` queries the OS clipboard (via xclip / wl-paste / pbpaste /
     // PowerShell depending on platform). The richest content wins:
@@ -200,8 +199,10 @@ export class Input extends Node<InputState, InputEvents> {
         // kind === "text"
         const v = this.state.value ?? ""
         const c = this.state.cursor ?? 0
-        this.state.value = v.slice(0, c) + content.text + v.slice(c)
-        this.state.cursor = c + content.text.length
+        this.setState({
+          cursor: c + content.text.length,
+          value: v.slice(0, c) + content.text + v.slice(c),
+        })
       })()
     },
     "input.submit": (): void => {
@@ -244,16 +245,20 @@ export class Input extends Node<InputState, InputEvents> {
     if (ev.text === undefined || ev.ctrl || ev.alt || ev.meta) return
     const v = this.state.value ?? ""
     const c = this.state.cursor ?? 0
-    this.state.value = v.slice(0, c) + ev.text + v.slice(c)
-    this.state.cursor = c + ev.text.length
+    this.setState({
+      cursor: c + ev.text.length,
+      value: v.slice(0, c) + ev.text + v.slice(c),
+    })
     ev.stop()
   }
 
   #handlePaste(ev: RoutedPaste): void {
     const v = this.state.value ?? ""
     const c = this.state.cursor ?? 0
-    this.state.value = v.slice(0, c) + ev.text + v.slice(c)
-    this.state.cursor = c + ev.text.length
+    this.setState({
+      cursor: c + ev.text.length,
+      value: v.slice(0, c) + ev.text + v.slice(c),
+    })
     ev.stop()
   }
 
