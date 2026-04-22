@@ -26,11 +26,10 @@ export type WidgetRenderFn<S, E extends BaseEvents> = (args: {
  * )
  * ```
  *
- * @group Widgets
  */
 export function widget<S extends object, E extends BaseEvents = BaseEvents>(
   initialState: S,
-  render: WidgetRenderFn<S & BaseState, E>,
+  render: WidgetRenderFn<S & BaseState, E>
 ): Node<S & BaseState, E> {
   return new Widget<S & BaseState, E>(initialState as S & BaseState, render)
 }
