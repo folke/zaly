@@ -1,9 +1,10 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
+import type { Node } from "../core/node.ts"
 import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { Emitter } from "../core/emitter.ts"
 import { box } from "../widgets/box.ts"
+import { Surface } from "./surface.ts"
 
 /**
  * UI surface — the sticky footer. Renders a single Box tree at the
@@ -26,22 +27,15 @@ export interface UIOptions {
   maxHeight?: number
 }
 
-/** Events emitted by the UI surface. `dirty` signals that a new render
- *  is needed; the Renderer subscribes and schedules a tick. */
-export interface UIEvents extends Record<string, unknown[]> {
-  dirty: []
-}
-
-export class UI extends Emitter<UIEvents> {
+export class UI extends Surface {
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
   readonly #maxHeight: number | undefined
-  #running = false
 
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    opts: UIOptions = {}
+    opts: UIOptions = {},
   ) {
     super()
     this.#maxHeight = opts.maxHeight
@@ -53,7 +47,7 @@ export class UI extends Emitter<UIEvents> {
     this.#root.id("global")
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
-    this.#root.on("invalidate", () => this.emit("dirty"))
+    this.#root.on("invalidate", this.onDirty)
     // The root is *not* mounted here — it mounts on `Renderer.start()`
     // via `onStart`. Deferring means widgets added to the footer tree
     // (e.g. a Spinner) don't fire their `mount` handler before the
@@ -181,17 +175,16 @@ export class UI extends Emitter<UIEvents> {
     this.emit("dirty")
   }
 
-  /** Renderer is starting. Mount the footer root. */
-  onStart(ctx: MountCtx): void {
-    if (this.#running) return
-    this.#running = true
+  /** UI's tracked node set is just the footer root. */
+  get nodes(): readonly Node[] {
+    return [this.#root]
+  }
+
+  protected mountAll(ctx: MountCtx): void {
     if (!this.#root.mounted) this.#root.mount(ctx)
   }
 
-  /** Renderer is stopping. Unmount the footer root. */
-  onStop(): void {
-    if (!this.#running) return
-    this.#running = false
+  protected unmountAll(): void {
     if (this.#root.mounted) this.#root.unmount()
   }
 }

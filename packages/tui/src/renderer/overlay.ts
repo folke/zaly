@@ -5,15 +5,7 @@ import type { Stream } from "./stream.ts"
 import type { Terminal } from "./terminal.ts"
 import type { UI } from "./ui.ts"
 
-import { Emitter } from "../core/emitter.ts"
-
-/**
- * Events emitted by the Overlay surface. `dirty` tells the Renderer to
- * schedule a flush. Mirrors Stream/UI.
- */
-export interface OverlayEvents extends Record<string, unknown[]> {
-  dirty: []
-}
+import { Surface } from "./surface.ts"
 
 export interface OverlayDeps {
   terminal: Terminal
@@ -39,13 +31,8 @@ export interface OverlayDeps {
  *     sizing / positioning sensibly. The stream lives inside DECSTBM,
  *     so overlays that touch row 0 can disrupt scrollback.
  */
-export class OverlaySurface extends Emitter<OverlayEvents> {
+export class OverlaySurface extends Surface {
   readonly #active: Overlay[] = []
-  #running = false
-  #mountCtx?: MountCtx
-  readonly #onDirty = (): void => {
-    this.emit("dirty")
-  }
 
   constructor(private readonly deps: OverlayDeps) {
     super()
@@ -61,8 +48,9 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     if (this.#active.includes(overlay)) return this
     this.#active.push(overlay)
     this.#active.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
-    overlay.on("invalidate", this.#onDirty)
-    if (this.#running && this.#mountCtx) overlay.mount(this.#mountCtx)
+    overlay.on("invalidate", this.onDirty)
+    const ctx = this.mountCtx
+    if (this.running && ctx) overlay.mount(ctx)
     this.emit("dirty")
     return this
   }
@@ -79,7 +67,7 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     if (i === -1) return this
     if (overlay.mounted) overlay.unmount()
     this.#active.splice(i, 1)
-    overlay.off("invalidate", this.#onDirty)
+    overlay.off("invalidate", this.onDirty)
     this.deps.ui.invalidate()
     this.emit("dirty")
     return this
@@ -90,22 +78,13 @@ export class OverlaySurface extends Emitter<OverlayEvents> {
     return this.#active
   }
 
-  /** Renderer is starting. Mount every active overlay with the ctx
-   *  the renderer built. Overlays opened before `start()` have been
-   *  waiting for this. */
-  onStart(ctx: MountCtx): void {
-    if (this.#running) return
-    this.#running = true
-    this.#mountCtx = ctx
+  protected mountAll(ctx: MountCtx): void {
     for (const o of this.#active) if (!o.mounted) o.mount(ctx)
   }
 
-  /** Renderer is stopping. Unmount every active overlay. Active set
-   *  is preserved so a subsequent `start()` remounts the same stack. */
-  onStop(): void {
-    if (!this.#running) return
-    this.#running = false
-    this.#mountCtx = undefined
+  protected unmountAll(): void {
+    // Active set is preserved so a subsequent `onStart()` remounts the
+    // same stack in z-order.
     for (const o of this.#active) if (o.mounted) o.unmount()
   }
 

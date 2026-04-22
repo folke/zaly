@@ -2,7 +2,7 @@ import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { Emitter } from "../core/emitter.ts"
+import { Surface } from "./surface.ts"
 
 type RenderState = {
   node: Node
@@ -40,13 +40,7 @@ export type StreamOptions = {
  * promotion). So growth of the stream always flows through the bottom
  * row with a `\n`-prefix write per new row.
  */
-/** Events emitted by the Stream surface. `dirty` signals that a new
- *  render is needed; the Renderer subscribes and schedules a tick. */
-export interface StreamEvents extends Record<string, unknown[]> {
-  dirty: []
-}
-
-export class Stream extends Emitter<StreamEvents> {
+export class Stream extends Surface {
   #state: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
@@ -57,19 +51,11 @@ export class Stream extends Emitter<StreamEvents> {
    *  blanks (not overlay bytes) into scrollback. */
   readonly #staleRows = new Set<number>()
   #opts: StreamOptions
-  /** Set by the Renderer via `onStart`/`onStop`. Gates `mount()` on
-   *  appends: a node appended while the renderer is stopped just
-   *  gets tracked, and mounts when `onStart` fires. */
-  #running = false
-  #mountCtx?: MountCtx
-  readonly #onInvalidate = (): void => {
-    this.emit("dirty")
-  }
 
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    opts: Partial<StreamOptions> = {}
+    opts: Partial<StreamOptions> = {},
   ) {
     super()
     this.#opts = { maxLive: 3, ...opts }
@@ -80,9 +66,10 @@ export class Stream extends Emitter<StreamEvents> {
    * it stops receiving re-renders even if its state mutates.
    */
   append(node: Node): this {
-    node.on("invalidate", this.#onInvalidate)
+    node.on("invalidate", this.onDirty)
     this.#state.push({ live: true, node })
-    if (this.#running && this.#mountCtx) node.mount(this.#mountCtx)
+    const ctx = this.mountCtx
+    if (this.running && ctx) node.mount(ctx)
     this.commit({ keep: this.#opts.maxLive, render: false })
     this.emit("dirty")
     return this
@@ -228,7 +215,7 @@ export class Stream extends Emitter<StreamEvents> {
   #commit(state: RenderState): void {
     if (!state.live) return
     state.live = false
-    state.node.off("invalidate", this.#onInvalidate)
+    state.node.off("invalidate", this.onDirty)
   }
 
   /** Commit all but the last `keep` states. If `render` is true, also
@@ -317,29 +304,15 @@ export class Stream extends Emitter<StreamEvents> {
     if (changed) this.#rows = copy
   }
 
-  /**
-   * Renderer is starting. Mount every tracked node against this
-   * surface with the MountCtx the renderer built. Nodes appended
-   * before `start()` have been waiting for this.
-   */
-  onStart(ctx: MountCtx): void {
-    if (this.#running) return
-    this.#running = true
-    this.#mountCtx = ctx
+  protected mountAll(ctx: MountCtx): void {
     for (const s of this.#state) {
       if (!s.node.mounted) s.node.mount(ctx)
     }
   }
 
-  /**
-   * Renderer is stopping. Unmount every tracked node. Tracked state
-   * (`#state`) is preserved so a subsequent `start()` finds the same
-   * tree and remounts it.
-   */
-  onStop(): void {
-    if (!this.#running) return
-    this.#running = false
-    this.#mountCtx = undefined
+  protected unmountAll(): void {
+    // Tracked state (`#state`) is preserved so a subsequent `onStart()`
+    // finds the same tree and remounts it.
     for (const s of this.#state) {
       if (s.node.mounted) s.node.unmount()
     }

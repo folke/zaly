@@ -66,7 +66,6 @@ export type NodeAction =
 /** Shape of a Node's `actions` dict — full action ids as keys. */
 export type ActionMap = Record<string, NodeAction>
 
-// export type Actions<T extends string = string> = Record<T, ActionInfo>
 
 /**
  * Union of every built-in action id. Derived from widget `actions`
