@@ -59,7 +59,9 @@ export interface ActionInfo {
  *  on mount, the metadata (everything except `fn`) is auto-registered
  *  into `ctx.actions` with `extend: false`, so it contributes defaults
  *  without clobbering anything the user already configured. */
-export type NodeAction = ((ctx: ActionCtx) => void) | (ActionInfo & { fn: (ctx: ActionCtx) => void })
+export type NodeAction =
+  | ((ctx: ActionCtx) => void)
+  | (ActionInfo & { fn: (ctx: ActionCtx) => void })
 
 /** Shape of a Node's `actions` dict — full action ids as keys. */
 export type ActionMap = Record<string, NodeAction>
@@ -132,6 +134,10 @@ export const defaultActions: Record<BuiltinAction, ActionInfo> = {
   "input.insertTab": {
     desc: "insert an indent (two spaces) at the cursor",
     keys: ["tab"],
+  },
+  "input.paste": {
+    desc: "paste text from the system clipboard, or attach a pasted image",
+    keys: ["ctrl-v"],
   },
   "input.submit": {
     desc: "submit the current value",
@@ -219,10 +225,7 @@ export class Actions {
    *
    * Returns an unregister function that rolls this call back.
    */
-  register(
-    entries: Record<string, ActionInfo>,
-    opts: { extend?: boolean } = {},
-  ): () => void {
+  register(entries: Record<string, ActionInfo>, opts: { extend?: boolean } = {}): () => void {
     const extend = opts.extend ?? true
     const ids = Object.keys(entries)
     const prior = new Map<string, ActionInfo | undefined>()

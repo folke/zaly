@@ -5,6 +5,7 @@ import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 
 import { Node } from "../core/node.ts"
+import { clipboard } from "../input/clipboard.ts"
 import { Text } from "./text.ts"
 
 export interface InputState extends StyleState {
@@ -21,6 +22,19 @@ export interface InputState extends StyleState {
 export interface InputEvents extends BaseEvents {
   /** Fired when plain Enter is pressed. Payload is the current value. */
   submit: [string]
+  /** Fired when the user pastes a non-text resource via the
+   *  `input.clipboard` action. Currently covers two shapes:
+   *
+   *    - **image** — the clipboard held image bytes; `path` is a
+   *      temporary PNG file and the caller takes ownership.
+   *    - **file** — the clipboard held file references (e.g. from the
+   *      OS file manager); `path` is the real filesystem path. One
+   *      `attach` event fires per file.
+   *
+   *  `type` is a MIME string. `"image/png"` for image pastes; for
+   *  files it's a best-effort guess (`"application/octet-stream"`
+   *  when unknown) — callers typically re-sniff via their own tools. */
+  attach: [path: string, type: string]
 }
 
 /**
@@ -145,6 +159,36 @@ export class Input extends Node<InputState, InputEvents> {
       const tab = "  "
       this.state.value = v.slice(0, c) + tab + v.slice(c)
       this.state.cursor = c + tab.length
+    },
+    // `ctrl-v` queries the OS clipboard (via xclip / wl-paste / pbpaste /
+    // PowerShell depending on platform). The richest content wins:
+    //
+    //   - **image bytes** → one `attach` event with a temp PNG path.
+    //   - **file references** → one `attach` event per file.
+    //   - **plain text** → inserted at the cursor like a regular paste.
+    //
+    // Fire-and-forget async — we await the probe and commit the
+    // result in a microtask.
+    "input.paste": (): void => {
+      void (async (): Promise<void> => {
+        const content = await clipboard.read()
+        if (!content) return
+        if (content.kind === "image") {
+          this.emit("attach", content.path, content.type)
+          return
+        }
+        if (content.kind === "files") {
+          for (const path of content.paths) {
+            this.emit("attach", path, guessMime(path))
+          }
+          return
+        }
+        // kind === "text"
+        const v = this.state.value ?? ""
+        const c = this.state.cursor ?? 0
+        this.state.value = v.slice(0, c) + content.text + v.slice(c)
+        this.state.cursor = c + content.text.length
+      })()
     },
     "input.submit": (): void => {
       this.emit("submit", this.state.value ?? "")
@@ -290,4 +334,29 @@ function countLines(value: string): number {
   let n = 1
   for (const ch of value) if (ch === "\n") n++
   return n
+}
+
+/** Best-effort MIME guess from a file extension. Returns
+ *  `application/octet-stream` for anything unknown — the caller that
+ *  cares about MIME should re-sniff via its own tools (or `file(1)`). */
+function guessMime(path: string): string {
+  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase()
+  const MIMES: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    svg: "image/svg+xml",
+    pdf: "application/pdf",
+    md: "text/markdown",
+    txt: "text/plain",
+    json: "application/json",
+    html: "text/html",
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+  }
+  return MIMES[ext] ?? "application/octet-stream"
 }
