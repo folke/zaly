@@ -71,7 +71,7 @@
   },
   "overrides": [
     {
-      "files": ["packages/cli/**/*.ts", "scripts/**/*.ts", "**/demo/**/*.ts", "**/scripts/**/*.ts"],
+      "files": ["!**/src/**/*.ts"],
       "rules": {
         "eslint/no-console": "off"
       }

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "entryPoints": ["src/index.ts"],
+  "tsconfig": "./tsconfig.json",
+  "exclude": ["**/schemas/gen/**", "**/node_modules/**"],
+  "skipErrorChecking": true,
+  "out": "docs/api",
+  "readme": "none",
+  "hideBreadcrumbs": true,
+  "hidePageHeader": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "sort": ["kind", "alphabetical"],
+  "categorizeByGroup": false,
+  "sourceLinkTemplate": "https://github.com/folke/zaly/blob/main/packages/tui/{path}#L{line}",
+  "docsRoot": "docs"
+}

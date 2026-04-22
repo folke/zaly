@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    .ink { stroke: rgb(60, 60, 67); }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: rgb(235, 235, 245); }
+    }
+  </style>
+  <polyline points="14,20 24,32 14,44" stroke="#07b5ef" />
+  <polyline points="30,20 52,20 30,44 52,44" class="ink" />
+</svg>

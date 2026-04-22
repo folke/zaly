@@ -43,6 +43,10 @@
     "build:shiki-themes": "bun scripts/build-shiki-themes.ts",
     "build:typia": "bun scripts/build-schemas.ts",
     "check": "cd ../../; oxlint packages/tui",
+    "docs:api": "typedoc",
+    "docs:dev": "bun run docs:api && vitepress dev docs",
+    "docs:build": "bun run docs:api && vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "test": "bun test:node && bun test:bun",
     "test:node": "cd ../../; vitest --project @zaly/tui run",
     "test:bun": "bun test --only-failures"
@@ -67,7 +71,12 @@
     "publint": "^0.3.18",
     "tsdown": "^0.21.9",
     "type-fest": "^5.6.0",
-    "typescript": "^6.0.3"
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
+    "typedoc-vitepress-theme": "^1.1.2",
+    "typescript": "^6.0.3",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-group-icons": "^1.7.5"
   },
   "engines": {
     "bun": ">=1.2",

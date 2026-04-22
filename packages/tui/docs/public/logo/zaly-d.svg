@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Variant D: filled geometric — bold solid shapes for weight -->
+  <!-- Chevron as a filled arrow shape -->
+  <path d="M 6 18 L 24 32 L 6 46 L 6 38 L 14 32 L 6 26 Z" fill="#7aa2f7"/>
+  <!-- Z as filled outlined letter -->
+  <path d="M 28 16 L 58 16 L 58 22 L 38 42 L 58 42 L 58 48 L 28 48 L 28 42 L 48 22 L 28 22 Z" fill="#7aa2f7"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#7aa2f7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Variant C: merged — chevron flows into Z's top stroke -->
+  <!-- chevron upper arm continues through to Z's top-right corner -->
+  <polyline points="8,20 20,32 8,44" />
+  <polyline points="20,32 56,12 56,20" />
+  <polyline points="56,20 28,44 56,44" />
+</svg>

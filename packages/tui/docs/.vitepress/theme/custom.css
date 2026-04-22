@@ -1,0 +1,60 @@
+/**
+ * @zaly/tui docs — custom theme.
+ *
+ * Typography: JetBrains Mono everywhere, paired with Instrument Serif
+ * (italic only) as the single display accent. The rest is uniform
+ * monospace — a TUI toolkit's site should read like a TUI.
+ *
+ * Palette: near-black ink, one crisp blue accent (#07b5ef), subtle
+ * paper-white ground. No gradients, no glows, no rounded buttons.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap");
+
+:root {
+  /* Brand ramp */
+  --vp-c-brand-1: #07b5ef;
+  --vp-c-brand-2: #0aa5db;
+  --vp-c-brand-3: #0d95c7;
+  --vp-c-brand-soft: rgba(7, 181, 239, 0.14);
+
+  /* Zaly custom tokens — used in the custom home component */
+  --z-accent: #07b5ef;
+  --z-accent-soft: rgba(7, 181, 239, 0.12);
+  --z-ink: rgb(24, 24, 27);
+  --z-ink-muted: rgb(113, 113, 122);
+  --z-ink-faint: rgb(161, 161, 170);
+  --z-paper: #fafaf8;
+  --z-paper-raised: #ffffff;
+  --z-rule: rgba(24, 24, 27, 0.12);
+  --z-rule-strong: rgba(24, 24, 27, 0.28);
+
+  /* Fonts */
+  --vp-font-family-base: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --vp-font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --z-font-display: "Instrument Serif", "JetBrains Mono", serif;
+
+  /* Default home page assumes the VP default layout — we're replacing it,
+     so these just keep unrelated bits looking sane if someone reverts. */
+  --vp-home-hero-name-color: var(--z-accent);
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+}
+
+.dark {
+  --vp-c-brand-1: #5dd4ff;
+  --vp-c-brand-2: #38c4f5;
+  --vp-c-brand-3: #07b5ef;
+  --vp-c-brand-soft: rgba(93, 212, 255, 0.16);
+
+  --z-accent: #5dd4ff;
+  --z-accent-soft: rgba(93, 212, 255, 0.14);
+  --z-ink: rgb(228, 228, 231);
+  --z-ink-muted: rgb(161, 161, 170);
+  --z-ink-faint: rgb(113, 113, 122);
+  --z-paper: #0a0a0a;
+  --z-paper-raised: #111113;
+  --z-rule: rgba(228, 228, 231, 0.1);
+  --z-rule-strong: rgba(228, 228, 231, 0.22);
+}
