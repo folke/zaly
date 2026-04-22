@@ -17,13 +17,14 @@ export interface BorderChars {
 
 export type BorderSpec = boolean | "single" | "double" | "rounded" | BorderChars
 
+/** @internal */
 export const borders = {
   double: { bl: "╚", br: "╝", h: "═", tl: "╔", tr: "╗", v: "║" },
   rounded: { bl: "╰", br: "╯", h: "─", tl: "╭", tr: "╮", v: "│" },
   single: { bl: "└", br: "┘", h: "─", tl: "┌", tr: "┐", v: "│" },
 } as const satisfies Record<string, BorderChars>
 
-/** Resolve the `border` style value to a concrete BorderChars, or undefined. 
+/** Resolve the `border` style value to a concrete BorderChars, or undefined.
  *
  * @internal*/
 export function resolveBorder(spec: BorderSpec | undefined): BorderChars | undefined {

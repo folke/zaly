@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 import { Box } from "../../src/widgets/box.ts"
 import { Text } from "../../src/widgets/text.ts"
 
@@ -145,7 +145,7 @@ describe("Box — border", () => {
     const b = new Box({ border: true })
     b.add(new Text({ content: "hi" }))
     const out = await b.render(ctx(6))
-    const borderOpen = openStyle(resolveStyle("border", moon), moon)
+    const borderOpen = openStyle(resolveStyle("border", defaultTheme), defaultTheme)
     expect(out[0]).toBe(`${borderOpen}┌────┐${RESET}`)
     expect(out[1]).toBe(`${borderOpen}│${RESET}hi  ${borderOpen}│${RESET}`)
     expect(out[2]).toBe(`${borderOpen}└────┘${RESET}`)

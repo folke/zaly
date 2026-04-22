@@ -8,18 +8,18 @@ import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
 import { resetCapabilitiesCache } from "../../src/style/image/capabilities.ts"
 import { renderMarkdown as renderMarkdownMarked } from "../../src/style/md/marked.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 import { createImageCallback } from "../../src/widgets/markdown/image.ts"
 import { markdown, mdCallbacks } from "../../src/widgets/markdown/index.ts"
 
-const ctx = (width = 80) => createCtx({ theme: moon, width })
+const ctx = (width = 80) => createCtx({ theme: defaultTheme, width })
 
 function render(md: string, width = 80): string {
   return renderMarkdown(md, mdCallbacks(ctx(width)))
 }
 
 function expectedOpen(slot: string): string {
-  return openStyle(resolveStyle(slot, moon), moon)
+  return openStyle(resolveStyle(slot, defaultTheme), defaultTheme)
 }
 
 // Strip all SGR escapes so plain-text regex assertions aren't tripped up by
@@ -116,7 +116,10 @@ describe("markdown — block callbacks", () => {
 
   test("heading falls back to generic mdHeading when level-specific slot is unset", async () => {
     // Drop mdHeading3 to simulate a theme that only defines the generic slot.
-    const fallbackTheme = { ...moon, mdHeading3: undefined } as unknown as typeof moon
+    const fallbackTheme = {
+      ...defaultTheme,
+      mdHeading3: undefined,
+    } as unknown as typeof defaultTheme
     const open = openStyle(resolveStyle("mdHeading", fallbackTheme), fallbackTheme)
     const out = renderMarkdownMarked(
       "### h3",

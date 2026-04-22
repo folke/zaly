@@ -11,10 +11,10 @@
 
 import { barplot, bench, summary } from "mitata"
 import { createCtx } from "../src/core/ctx.ts"
+import { defaultTheme } from "../src/style/theme.ts"
 import { box, text } from "../src/widgets/index.ts"
-import { moon } from "../src/style/theme.ts"
 
-const ctx = createCtx({ theme: moon, width: 80 })
+const ctx = createCtx({ theme: defaultTheme, width: 80 })
 
 // Shared fixtures — reused across bench invocations so allocation cost of
 // building the tree doesn't show up in the render numbers.
@@ -24,14 +24,14 @@ const smallTree = box(
   { border: "rounded", padding: 1 },
   text("title", { bold: true, fg: "primary" }),
   text("body line 1"),
-  text("body line 2"),
+  text("body line 2")
 )
 
 const flexRow = box(
   { flexDirection: "row", gap: 2 },
   text("left", { flexGrow: 1 }),
   text("center", { flexGrow: 1 }),
-  text("right", { flexGrow: 1 }),
+  text("right", { flexGrow: 1 })
 )
 
 const deepTree = box(
@@ -40,9 +40,9 @@ const deepTree = box(
     box(
       { flexDirection: "row", gap: 1 },
       text(`label ${i}`, { fg: "muted", width: 10 }),
-      text(`value ${i}`, { fg: "primary", flexGrow: 1 }),
-    ),
-  ),
+      text(`value ${i}`, { fg: "primary", flexGrow: 1 })
+    )
+  )
 )
 
 const longProse =
@@ -52,14 +52,14 @@ const wrapText = text(longProse, { fg: "primary" })
 // Styled content with inner SGR — simulates shiki-highlighted tokens.
 const styledContent = Array.from(
   { length: 10 },
-  () => `\x1b[38;2;130;170;255mkey\x1b[0m: \x1b[38;2;195;232;141m"value"\x1b[0m,`,
+  () => `\x1b[38;2;130;170;255mkey\x1b[0m: \x1b[38;2;195;232;141m"value"\x1b[0m,`
 ).join(" ")
 const shikiLike = text(styledContent)
 
 barplot(async () => {
   summary(async () => {
     // Baseline: ctx construction cost on its own.
-    bench("createCtx()", () => createCtx({ theme: moon, width: 80 }))
+    bench("createCtx()", () => createCtx({ theme: defaultTheme, width: 80 }))
 
     // Single leaf text, cold cache every time (bump version).
     bench("text leaf (cold)", async () => {

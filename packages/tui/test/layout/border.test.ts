@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { borders, drawBorder, resolveBorder } from "../../src/layout/border.ts"
 import { style } from "../../src/style/builder.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 
 describe("borders (presets)", () => {
   test("single preset uses box-drawing glyphs", () => {
@@ -129,7 +129,7 @@ describe("drawBorder", () => {
   test("borderStyle wraps border chars with SGR", () => {
     // primary = #82aaff → 38;2;130;170;255
     const out = drawBorder(["x"], borders.single, {
-      borderStyle: style(moon).fg("primary"),
+      borderStyle: style(defaultTheme).fg("primary"),
     })
     // Each border-char segment is wrapped; side chars on row 1 flank the content.
     expect(out[0]).toBe("\x1b[38;2;130;170;255m┌─┐\x1b[0m")
@@ -139,18 +139,16 @@ describe("drawBorder", () => {
 
   test("titleStyle overrides borderStyle for the title region", () => {
     const out = drawBorder(["      "], borders.single, {
-      borderStyle: style(moon).fg("primary"),
+      borderStyle: style(defaultTheme).fg("primary"),
       title: "hi",
-      titleStyle: style(moon).bold.fg("accent"),
+      titleStyle: style(defaultTheme).bold.fg("accent"),
     })
     // Derive the expected escapes from the actual theme values so this test
     // stays stable when the theme palette changes.
-    const primary = hexToTruecolor(moon.primary as string, "fg")
-    const accent = hexToTruecolor(moon.accent as string, "fg")
+    const primary = hexToTruecolor(defaultTheme.primary as string, "fg")
+    const accent = hexToTruecolor(defaultTheme.accent as string, "fg")
     expect(out[0]).toBe(
-      `\x1b[${primary}m┌─\x1b[0m` +
-        `\x1b[1;${accent}m hi \x1b[0m` +
-        `\x1b[${primary}m─┐\x1b[0m`
+      `\x1b[${primary}m┌─\x1b[0m` + `\x1b[1;${accent}m hi \x1b[0m` + `\x1b[${primary}m─┐\x1b[0m`
     )
   })
 })

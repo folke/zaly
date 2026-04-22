@@ -3,7 +3,7 @@ import type { BaseState, RenderCtx } from "../../src/core/ctx.ts"
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Node } from "../../src/core/node.ts"
-import { moon as theme } from "../../src/style/theme.ts"
+import { defaultTheme as theme } from "../../src/style/theme.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })
 

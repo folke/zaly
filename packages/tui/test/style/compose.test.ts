@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { reapplyStyle } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 
 describe("reapplyStyle", () => {
   const esc = "\x1b[48;2;255;0;0m"
@@ -29,17 +29,17 @@ describe("reapplyStyle", () => {
 describe("resolveStyle", () => {
   test("inline Style object: returned as-is", () => {
     const s = { bold: true, fg: "primary" as const }
-    expect(resolveStyle(s, moon)).toBe(s)
+    expect(resolveStyle(s, defaultTheme)).toBe(s)
   })
 
   test("string ref → Color slot: wrapped as { fg }", () => {
     // moon.primary = "#82aaff" (a Color shortcut)
-    expect(resolveStyle("primary", moon)).toEqual({ fg: "#82aaff" })
+    expect(resolveStyle("primary", defaultTheme)).toEqual({ fg: "#82aaff" })
   })
 
   test("string ref → Style slot: returned directly", () => {
     const styleSlot = { bold: true, fg: "primary" as const, underline: true }
-    const theme = { ...moon, mdHeading: styleSlot } as never
+    const theme = { ...defaultTheme, mdHeading: styleSlot } as never
     expect(resolveStyle("mdHeading", theme)).toBe(styleSlot)
   })
 
@@ -47,12 +47,12 @@ describe("resolveStyle", () => {
     // Non-slot strings fall back to `{ fg: <ref> }` so callers like the
     // style builder can accept ANSI names (`"red"`), hex (`"#82aaff"`),
     // or anything else `colorParams` knows how to resolve.
-    expect(resolveStyle("red", moon)).toEqual({ fg: "red" })
-    expect(resolveStyle("#82aaff", moon)).toEqual({ fg: "#82aaff" })
+    expect(resolveStyle("red", defaultTheme)).toEqual({ fg: "red" })
+    expect(resolveStyle("#82aaff", defaultTheme)).toEqual({ fg: "#82aaff" })
   })
 
   test("undefined: returns empty style", () => {
-    expect(resolveStyle(undefined, moon)).toEqual({})
+    expect(resolveStyle(undefined, defaultTheme)).toEqual({})
   })
 
   test("no theme: still returns { fg } for any string ref", () => {

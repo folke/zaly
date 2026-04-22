@@ -11,9 +11,9 @@
 
 import { barplot, bench, summary } from "mitata"
 import { style } from "../src/style/builder.ts"
-import { moon } from "../src/style/theme.ts"
+import { defaultTheme } from "../src/style/theme.ts"
 
-const s = style(moon)
+const s = style(defaultTheme)
 
 barplot(async () => {
   summary(async () => {

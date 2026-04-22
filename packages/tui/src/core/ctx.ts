@@ -128,6 +128,7 @@ export function termWidth(): number | undefined {
  *
  * Dynamic theme loading (from a string name) lives in `themes/loadTheme`
  * — resolve the name first, then pass the `Theme` object here.
+ * @internal
  */
 export function createCtx(opts?: Partial<RenderCtx>): RenderCtx {
   const theme = opts?.theme ?? defaultTheme

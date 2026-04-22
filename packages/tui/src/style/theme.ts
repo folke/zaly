@@ -185,6 +185,7 @@ function pkgPath(...parts: string[]): string {
  * find the package's `package.json`, then joining `assets/themes`. That
  * way we don't depend on the module being at a fixed depth — works when
  * `theme.ts` is loaded from `src/` (bun) or from `dist/` (node).
+ * @internal
  */
 export const builtinThemeDir = resolve(pkgPath(), "assets", "themes")
 
@@ -214,6 +215,4 @@ export function loadThemeFile(path: string): Theme {
 }
 
 /** TokyoNight Moon — the default. Sourced from `assets/themes/tokyonight-moon.json`. */
-export const moon = resolveTheme(moonJson)
-
-export const defaultTheme = moon
+export const defaultTheme = resolveTheme(moonJson)

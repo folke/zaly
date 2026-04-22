@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { style } from "../../src/style/builder.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 
 describe("style() — ANSI fg", () => {
   test("plain red", () => {
@@ -48,11 +48,11 @@ describe("style() — chaining", () => {
 
 describe("style() — theme slots", () => {
   test("theme fg slot resolves via theme", () => {
-    expect(style(moon).primary("hi")).toBe("\x1b[38;2;130;170;255mhi\x1b[0m")
+    expect(style(defaultTheme).primary("hi")).toBe("\x1b[38;2;130;170;255mhi\x1b[0m")
   })
 
   test("theme bg slot via bgPrefix", () => {
-    expect(style(moon).bgPrimary("hi")).toBe("\x1b[48;2;130;170;255mhi\x1b[0m")
+    expect(style(defaultTheme).bgPrimary("hi")).toBe("\x1b[48;2;130;170;255mhi\x1b[0m")
   })
 
   test("default theme is used when no argument is passed", () => {
@@ -98,23 +98,23 @@ describe("style() — composition", () => {
 describe("style() — Style-valued theme slots", () => {
   test("Style slot merges attrs + fg into the chain", () => {
     // moon.mdBold = { bold: true, fg: "fg" } → fg = moon.fg = #c8d3f5
-    expect(style(moon).mdBold("hi")).toBe("\x1b[1;38;2;200;211;245mhi\x1b[0m")
+    expect(style(defaultTheme).mdBold("hi")).toBe("\x1b[1;38;2;200;211;245mhi\x1b[0m")
   })
 
   test("Style slot with attrs + fg together", () => {
     // moon.borderTitle resolves (via `title` slot) to { bold: true, fg: "primary" }
     // → primary = #82aaff
-    expect(style(moon).borderTitle("T")).toBe("\x1b[1;38;2;130;170;255mT\x1b[0m")
+    expect(style(defaultTheme).borderTitle("T")).toBe("\x1b[1;38;2;130;170;255mT\x1b[0m")
   })
 
   test("chained attrs before Style slot are preserved when slot doesn't conflict", () => {
     // .underline then .mdBold → bold + underline + moon.fg.
-    expect(style(moon).underline.mdBold("x")).toBe("\x1b[1;4;38;2;200;211;245mx\x1b[0m")
+    expect(style(defaultTheme).underline.mdBold("x")).toBe("\x1b[1;4;38;2;200;211;245mx\x1b[0m")
   })
 
   test("later chain overrides slot values", () => {
     // Slot sets fg=primary; subsequent .red overrides.
-    expect(style(moon).borderTitle.red("x")).toBe("\x1b[1;31mx\x1b[0m")
+    expect(style(defaultTheme).borderTitle.red("x")).toBe("\x1b[1;31mx\x1b[0m")
   })
 })
 
@@ -134,7 +134,7 @@ describe("style() — tonal variants via -step suffix", () => {
   test("fg slot-300 resolves through oklch", () => {
     // tokyonight `primary` is `#82aaff`; anchored at step 400, so
     // asking for 300 should yield a lighter hex.
-    const out = style(moon).fg("primary-300" as never)("x")
+    const out = style(defaultTheme).fg("primary-300" as never)("x")
     // Ensure we got truecolor SGR and it's not the base `#82aaff`.
     expect(out).toMatch(/\x1b\[38;2;(\d+);(\d+);(\d+)m/)
     const m = /\x1b\[38;2;(\d+);(\d+);(\d+)m/.exec(out)!
@@ -144,33 +144,33 @@ describe("style() — tonal variants via -step suffix", () => {
   })
 
   test("bracket indexing applies to fg: style.primary[300]", () => {
-    const out = style(moon).primary[300]("x")
+    const out = style(defaultTheme).primary[300]("x")
     expect(out).toMatch(/\x1b\[38;2;/)
     // Differs from the base primary(500-ish) SGR.
-    expect(out).not.toBe(style(moon).primary("x"))
+    expect(out).not.toBe(style(defaultTheme).primary("x"))
   })
 
   test("bracket indexing applies to bg after bgSlot", () => {
-    const baseBg = style(moon).bgPrimary("x")
-    const varied = style(moon).bgPrimary[300]("x")
+    const baseBg = style(defaultTheme).bgPrimary("x")
+    const varied = style(defaultTheme).bgPrimary[300]("x")
     expect(varied).toMatch(/\x1b\[48;2;/)
     expect(varied).not.toBe(baseBg)
   })
 
   test("bracket indexing replaces an existing step (does not stack)", () => {
-    const a = style(moon).primary[300]("x")
-    const b = style(moon).primary[500][300]("x")
+    const a = style(defaultTheme).primary[300]("x")
+    const b = style(defaultTheme).primary[500][300]("x")
     // Final step in both cases is 300 → same output.
     expect(b).toBe(a)
   })
 
   test("bracket indexing with no prior color set is a no-op", () => {
     // No channel set → [300] returns an empty-style builder; rendered text equals input.
-    expect(style(moon)[300]("hello")).toBe("hello")
+    expect(style(defaultTheme)[300]("hello")).toBe("hello")
   })
 
   test("bgDiffAdd[200].fgDiffAdd sets bg variant and fg from the slot's own fg", () => {
-    const theme = { ...moon, diffAdd: { bg: "#223344", fg: "#c3e88d" } } as never
+    const theme = { ...defaultTheme, diffAdd: { bg: "#223344", fg: "#c3e88d" } } as never
     const out = style(theme).bgDiffAdd[200].fgDiffAdd("x")
     // Both fg and bg SGR components present.
     expect(out).toMatch(/\x1b\[(?:[^\]]*;)*48;2;/)
@@ -178,8 +178,8 @@ describe("style() — tonal variants via -step suffix", () => {
   })
 
   test("alpha(n) composites the last color over theme.bg", () => {
-    const full = style(moon).bgPrimary("x")
-    const washed = style(moon).bgPrimary.alpha(30)("x")
+    const full = style(defaultTheme).bgPrimary("x")
+    const washed = style(defaultTheme).bgPrimary.alpha(30)("x")
     // Both emit a bg SGR, but the washed version's RGB should be closer
     // to moon.bg (#222436) than the full primary (#82aaff).
     const fullM = /\x1b\[48;2;(\d+);(\d+);(\d+)m/.exec(full)!
@@ -191,12 +191,12 @@ describe("style() — tonal variants via -step suffix", () => {
   })
 
   test("alpha(n) replaces an existing alpha (does not stack)", () => {
-    const a = style(moon).primary.alpha(30)("x")
-    const b = style(moon).primary.alpha(60).alpha(30)("x")
+    const a = style(defaultTheme).primary.alpha(30)("x")
+    const b = style(defaultTheme).primary.alpha(60).alpha(30)("x")
     expect(b).toBe(a)
   })
 
   test("alpha(n) with no prior color set is a no-op", () => {
-    expect(style(moon).alpha(30)("hello")).toBe("hello")
+    expect(style(defaultTheme).alpha(30)("hello")).toBe("hello")
   })
 })

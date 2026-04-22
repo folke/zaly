@@ -1,11 +1,10 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
-import type { MenuItem } from "../../src/widgets/menu.ts"
-
 import type { RoutedKey } from "../../src/input/router.ts"
+import type { MenuItem } from "../../src/widgets/menu.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { moon as theme } from "../../src/style/theme.ts"
+import { defaultTheme as theme } from "../../src/style/theme.ts"
 import { autocomplete } from "../../src/widgets/autocomplete.ts"
 import { input } from "../../src/widgets/input.ts"
 import { mockMountCtx } from "../renderer/mock.ts"

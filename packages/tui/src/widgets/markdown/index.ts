@@ -129,6 +129,7 @@ export interface MdCallbacksOpts {
  * callers can invoke `renderMarkdown` directly when they need the string
  * output without the wrapping `Markdown` node (e.g. to embed markdown inside
  * a custom `Text` content function).
+ * @internal
  */
 export function mdCallbacks(ctx: RenderCtx, opts?: MdCallbacksOpts): MdCallbacks {
   const { style, theme } = ctx

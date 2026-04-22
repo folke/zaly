@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { hyperlink, openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
-import { moon } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/style/theme.ts"
 
 describe("openStyle", () => {
   test("empty style emits nothing", () => {
@@ -88,11 +88,11 @@ describe("openStyle", () => {
 
   test("theme color slots resolve when a theme is passed", () => {
     // moon.primary = '#82aaff' → [130,170,255]
-    expect(openStyle({ fg: "primary" }, moon)).toBe("\x1b[38;2;130;170;255m")
+    expect(openStyle({ fg: "primary" }, defaultTheme)).toBe("\x1b[38;2;130;170;255m")
   })
 
   test("non-slot names fall through to ANSI parsing", () => {
-    expect(openStyle({ fg: "red" }, moon)).toBe("\x1b[31m")
+    expect(openStyle({ fg: "red" }, defaultTheme)).toBe("\x1b[31m")
   })
 
   test("without a theme, theme-only names silently drop", () => {

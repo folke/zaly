@@ -4,22 +4,22 @@ import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { builtinThemeDir, loadTheme, loadThemeFile, moon } from "../../src/style/theme.ts"
+import { builtinThemeDir, loadTheme, loadThemeFile, defaultTheme } from "../../src/style/theme.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.
 const ansi = loadTheme("ansi")
 
 describe("theme part slots — moon", () => {
   test("border slot defined", () => {
-    expect(moon.border).toBeDefined()
+    expect(defaultTheme.border).toBeDefined()
   })
 
   test("borderTitle slot defined", () => {
-    expect(moon.borderTitle).toBeDefined()
+    expect(defaultTheme.borderTitle).toBeDefined()
   })
 
   test("border resolves to a Style via resolveStyle", () => {
-    const s = resolveStyle("border", moon)
+    const s = resolveStyle("border", defaultTheme)
     expect(s.fg).toBeDefined()
   })
 })
@@ -57,19 +57,19 @@ describe("theme markdown slots — moon", () => {
       "mdTable",
       "mdTableHeader",
     ] as const
-    for (const k of slots) expect(moon[k]).toBeDefined()
+    for (const k of slots) expect(defaultTheme[k]).toBeDefined()
   })
 
   test("mdBold defaults to bold", () => {
-    expect(moon.mdBold).toMatchObject({ bold: true })
+    expect(defaultTheme.mdBold).toMatchObject({ bold: true })
   })
 
   test("mdItalic defaults to italic", () => {
-    expect(moon.mdItalic).toMatchObject({ italic: true })
+    expect(defaultTheme.mdItalic).toMatchObject({ italic: true })
   })
 
   test("mdStrikethrough has strikethrough attr", () => {
-    expect(moon.mdStrikethrough).toMatchObject({ strikethrough: true })
+    expect(defaultTheme.mdStrikethrough).toMatchObject({ strikethrough: true })
   })
 })
 
@@ -133,7 +133,7 @@ describe("validateTheme — positive cases", () => {
 
 describe("validateTheme — negative cases", () => {
   test("extra property throws (createAssertEquals is strict)", () => {
-    expect(() => validateTheme({ ...moon, bogusExtra: "nope" })).toThrow()
+    expect(() => validateTheme({ ...defaultTheme, bogusExtra: "nope" })).toThrow()
   })
 
   test("wrong type at a slot throws", () => {
@@ -149,12 +149,12 @@ describe("loadTheme", () => {
   test("loads a built-in theme from assets/themes/*.json", () => {
     const t = loadTheme("tokyonight-moon")
     // Round-trip parity: static moon and loaded moon agree on all keys.
-    expect(t.primary).toBe(moon.primary)
-    expect(t.mdHeading1).toEqual(moon.mdHeading1)
+    expect(t.primary).toBe(defaultTheme.primary)
+    expect(t.mdHeading1).toEqual(defaultTheme.mdHeading1)
   })
 
   test("default name is tokyonight-moon", () => {
-    expect(loadTheme().primary).toBe(moon.primary)
+    expect(loadTheme().primary).toBe(defaultTheme.primary)
   })
 
   test("loads ansi", () => {
@@ -172,12 +172,12 @@ describe("loadTheme", () => {
       // Minimal complete theme copied from moon, plus a marker we can assert on.
       writeFileSync(
         join(dir, "custom.json"),
-        JSON.stringify({ ...moon, primary: "#ff00ff" }, undefined, 2)
+        JSON.stringify({ ...defaultTheme, primary: "#ff00ff" }, undefined, 2)
       )
       // Same name as built-in to test override precedence.
       writeFileSync(
         join(dir, "tokyonight-moon.json"),
-        JSON.stringify({ ...moon, primary: "#123456" }, undefined, 2)
+        JSON.stringify({ ...defaultTheme, primary: "#123456" }, undefined, 2)
       )
     })
     afterAll(() => rmSync(dir, { force: true, recursive: true }))
@@ -208,7 +208,7 @@ describe("loadTheme", () => {
 describe("loadThemeFile", () => {
   test("loads a theme directly by path", () => {
     const t = loadThemeFile(join(builtinThemeDir, "tokyonight-moon.json"))
-    expect(t.primary).toBe(moon.primary)
+    expect(t.primary).toBe(defaultTheme.primary)
   })
 
   test("unknown path throws", () => {
