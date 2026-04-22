@@ -356,21 +356,21 @@ function countLines(value: string): number {
 function guessMime(path: string): string {
   const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase()
   const MIMES: Record<string, string> = {
-    png: "image/png",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
     gif: "image/gif",
-    webp: "image/webp",
-    svg: "image/svg+xml",
-    pdf: "application/pdf",
-    md: "text/markdown",
-    txt: "text/plain",
-    json: "application/json",
     html: "text/html",
-    mp4: "video/mp4",
+    jpeg: "image/jpeg",
+    jpg: "image/jpeg",
+    json: "application/json",
+    md: "text/markdown",
     mov: "video/quicktime",
     mp3: "audio/mpeg",
+    mp4: "video/mp4",
+    pdf: "application/pdf",
+    png: "image/png",
+    svg: "image/svg+xml",
+    txt: "text/plain",
     wav: "audio/wav",
+    webp: "image/webp",
   }
   return MIMES[ext] ?? "application/octet-stream"
 }

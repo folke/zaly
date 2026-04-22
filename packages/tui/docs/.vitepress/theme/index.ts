@@ -7,6 +7,7 @@ import "./custom.css"
 // @ts-ignore -- Vue SFC, no .d.ts generated
 import Layout from "./Layout.vue"
 
+// oxlint-disable-next-line import/no-anonymous-default-export
 export default {
   ...DefaultTheme,
   Layout,

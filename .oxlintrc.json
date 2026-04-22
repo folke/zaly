@@ -77,6 +77,12 @@
       }
     },
     {
+      "files": ["*.vue"],
+      "rules": {
+        "unicorn/filename-case": "off"
+      }
+    },
+    {
       "files": ["packages/cli/**/*.ts"],
       "rules": {
         "no-restricted-imports": ["error", { "paths": ["node:path", "path", "std-env"] }],
