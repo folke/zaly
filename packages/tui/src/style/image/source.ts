@@ -32,10 +32,20 @@ const bytesCache = new Map<string, Promise<Uint8Array>>()
 
 // sharp is only needed when we have to convert a non-PNG to PNG. Both
 // its ESM graph and its native binding are heavy (~50ms cold), so we
-// defer loading until the conversion path actually fires.
+// defer loading until the conversion path actually fires. `sharp` is
+// also an `optionalDependencies` — throw a clear, actionable error
+// when the user hits this path without having it installed.
 async function getSharp(): Promise<typeof sharpType> {
-  const mod = await import("sharp")
-  return mod.default
+  try {
+    const mod = await import("sharp")
+    return mod.default
+  } catch {
+    throw new Error(
+      "@zaly/tui: `sharp` is required to render non-PNG images " +
+        "(jpg, webp, gif). Install it with `bun add sharp` (or your " +
+        "package manager's equivalent), or use PNG sources directly.",
+    )
+  }
 }
 
 /** Read dims + format via image-meta. Works on PNG/JPEG/GIF/WebP/AVIF/... */

@@ -50,12 +50,14 @@
   "dependencies": {
     "image-meta": "^0.2.2",
     "marked": "^18.0.2",
-    "sharp": "^0.34.5",
     "shiki": "^4.0.2",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.0",
     "typia": "^12.0.2",
     "wrap-ansi": "^10.0.0"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
