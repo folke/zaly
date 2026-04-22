@@ -131,7 +131,11 @@ export abstract class Node<
     // back-to-back state writes.
     const hadCache = this.#cache !== undefined
     this.#cache = undefined
-    // avoid cascade during an active render, state mutations are allowed
+    // avoid cascade during an active render — state mutations during
+    // render are allowed (e.g. Markdown setting its Text child's
+    // content inside `_render`). The current render's output already
+    // reflects the new state, so skipping the cascade avoids a
+    // redundant re-paint of an otherwise up-to-date tree.
     if (this.#rendering) return this
     this.emit("invalidate")
     if (hadCache) this.parent?.invalidate()
@@ -147,7 +151,14 @@ export abstract class Node<
     // Resolve inside the tracking ctx so a signal accessor read
     // subscribes this node.
     this.#rendering ??= withActiveNode(this, async () => {
-      if (!unwrap(this.state.visible ?? true)) return []
+      // Cache the hidden result too, so a later `invalidate()` sees
+      // `hadCache === true` and cascades up — otherwise a toggleable
+      // panel (autocomplete, modal) whose first paint happened while
+      // hidden would swallow the flip-to-visible invalidate.
+      if (!unwrap(this.state.visible ?? true)) {
+        this.#cache = { rows: [], version: ctx.version }
+        return this.#cache.rows
+      }
       if (this.#cache?.version !== ctx.version) {
         this.#cache = { rows: await this._render(ctx), version: ctx.version }
       }
