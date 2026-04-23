@@ -44,7 +44,7 @@ const b = await loadTheme("my-theme", { dirs: ["~/.config/myapp/themes"] })
 
 `loadTheme` is async (built-in themes resolve through dynamic imports). Its `name` parameter is typed `BuiltinTheme | (string & {})` — editors suggest every bundled name while still accepting arbitrary strings for custom themes.
 
-For CLIs that accept an explicit `--theme /path/to/foo.json` flag, skip the search and pass the path to `loadThemeFile(path)` directly.
+For CLIs that accept an explicit `--theme /path/to/foo.json` flag, skip the search and `await loadThemeFile(path)` directly. It's async because typia's generated validator (a few thousand unrolled assertions) is dynamically imported — built-in themes are pre-validated at build time and skip this path, so `import "@zaly/tui"` never pulls the validator into its startup graph.
 
 ## Bundled themes
 

@@ -1,6 +1,6 @@
 import type { ThemeName } from "../../src/themes/index.ts"
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -94,10 +94,15 @@ describe("theme markdown slots — ansi", () => {
 
 describe("built-in themes — load & validate", () => {
   // Every bundled theme surfaces via the `themes` async loader map.
-  // Awaiting the loader runs `resolveTheme` (and therefore typia's
-  // `validateTheme`) on the raw JSON — if any shipped theme drifted
-  // out of sync with the schema, the load itself throws.
   const names = Object.keys(themes) as ThemeName[]
+
+  // `resolveTheme` skips validation for the hot path — built-in
+  // theme JSON is dev-controlled, and typia's generated assertions
+  // would drag ~3MB of code into module load. The correctness
+  // contract is covered here instead: every shipped JSON is
+  // validated explicitly so schema drift still fails the build.
+  const assetsDir = fileURLToPath(import.meta.resolve("../../assets/themes/"))
+  const jsonFiles = readdirSync(assetsDir).filter((f) => f.endsWith(".json"))
 
   test("map includes the tokyonight family", () => {
     expect(names).toEqual(
@@ -109,6 +114,13 @@ describe("built-in themes — load & validate", () => {
       ])
     )
   })
+
+  for (const file of jsonFiles) {
+    test(`${file} validates against the Theme schema`, () => {
+      const raw = JSON.parse(readFileSync(join(assetsDir, file), "utf8"))
+      expect(() => validateTheme(raw)).not.toThrow()
+    })
+  }
 
   for (const name of names) {
     test(`${name} loads and has core slots`, async () => {
@@ -128,19 +140,90 @@ describe("validateTheme — positive cases", () => {
   test("partial theme (only some slots) is accepted", () => {
     expect(() => validateTheme({ primary: "#ff00ff" })).not.toThrow()
   })
+
+  test("ANSI names and bright variants accepted", () => {
+    expect(() => validateTheme({ primary: "red", accent: "brightCyan" })).not.toThrow()
+  })
+
+  test("inherit accepted", () => {
+    expect(() => validateTheme({ fg: "inherit" })).not.toThrow()
+  })
+
+  test("hex forms (#rgb / #rrggbb / #rrggbbaa) accepted", () => {
+    expect(() => validateTheme({ fg: "#fff", bg: "#112233", primary: "#11223344" })).not.toThrow()
+  })
+
+  test("slot ref accepted as a Color", () => {
+    expect(() => validateTheme({ accent: "primary" })).not.toThrow()
+  })
+
+  test("step variant accepted on hex and slot", () => {
+    expect(() =>
+      validateTheme({ accent: "primary-300", primary: "#ff0000-500" })
+    ).not.toThrow()
+  })
+
+  test("alpha variant accepted on slot ref", () => {
+    expect(() => validateTheme({ accent: "primary/20" })).not.toThrow()
+  })
+
+  test("Style slot accepts fg/bg + attrs", () => {
+    expect(() =>
+      validateTheme({ title: { bold: true, fg: "primary", bg: "muted/10" } })
+    ).not.toThrow()
+  })
+
+  test("unknown plugin slots are accepted (extensibility)", () => {
+    expect(() =>
+      validateTheme({ pluginThing: "primary", pluginStyle: { italic: true, fg: "red" } })
+    ).not.toThrow()
+  })
+
+  test("shiki slot carries a theme-name string, not a Color", () => {
+    expect(() => validateTheme({ shiki: "catppuccin-mocha" })).not.toThrow()
+  })
+
+  test("$schema passes through unchecked", () => {
+    expect(() => validateTheme({ $schema: "./schema.json" })).not.toThrow()
+  })
 })
 
 describe("validateTheme — negative cases", () => {
-  test("extra property throws (createAssertEquals is strict)", () => {
-    expect(() => validateTheme({ ...defaultTheme, bogusExtra: "nope" })).toThrow()
-  })
-
   test("wrong type at a slot throws", () => {
     expect(() => validateTheme({ primary: 42 as never })).toThrow(/primary/)
   })
 
   test("invalid Color string at a slot throws", () => {
     expect(() => validateTheme({ primary: "not-a-color" as never })).toThrow(/primary/)
+  })
+
+  test("color-only slot rejects a Style object", () => {
+    // `primary` is one of the Color-typed slots (ColorKeys<Theme>); a
+    // Style shape here should trip the isColorKey narrowing.
+    expect(() =>
+      validateTheme({ primary: { bold: true, fg: "red" } as never })
+    ).toThrow()
+  })
+
+  test("unknown step number rejected", () => {
+    // 450 is not an OKLCH step; `toStep` narrows to the canonical set.
+    expect(() => validateTheme({ primary: "primary-450" as never })).toThrow()
+  })
+
+  test("invalid fg inside a Style rejected", () => {
+    expect(() =>
+      validateTheme({ title: { bold: true, fg: "not-a-color" } as never })
+    ).toThrow()
+  })
+
+  test("invalid bg inside a Style rejected", () => {
+    expect(() =>
+      validateTheme({ title: { fg: "primary", bg: "not-a-color" } as never })
+    ).toThrow()
+  })
+
+  test("non-string $schema rejected", () => {
+    expect(() => validateTheme({ $schema: 42 as never })).toThrow()
   })
 })
 
@@ -220,12 +303,12 @@ describe("loadThemeFile", () => {
     import.meta.resolve("../../assets/themes/tokyonight-moon.json"),
   )
 
-  test("loads a theme directly by path", () => {
-    const t = loadThemeFile(assetPath)
+  test("loads a theme directly by path", async () => {
+    const t = await loadThemeFile(assetPath)
     expect(t.primary).toBe(defaultTheme.primary)
   })
 
-  test("unknown path throws", () => {
-    expect(() => loadThemeFile("/nope/does-not-exist.json")).toThrow()
+  test("unknown path throws", async () => {
+    await expect(loadThemeFile("/nope/does-not-exist.json")).rejects.toThrow()
   })
 })

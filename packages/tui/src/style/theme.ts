@@ -6,7 +6,6 @@ import type { ShikiTheme } from "./shiki.ts"
 import { readFileSync, statSync } from "node:fs"
 import { resolve } from "node:path"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
-import { validateTheme } from "../schemas/index.ts"
 import { themes } from "../themes/index.ts"
 
 /**
@@ -146,14 +145,18 @@ const defaults: Theme = {
   diffLine: "line",
 }
 
-/** Validate and fill defaults on a raw theme object. Exposed for the
- *  generated `src/themes/*.ts` entries — apps should use `loadTheme()`
- *  or the per-name subpath exports instead.
+/** Fill defaults on a raw theme object. Exposed for the generated
+ *  `src/themes/*.ts` entries — apps should use `loadTheme()` or the
+ *  per-name subpath exports instead.
+ *
+ *  Does *not* validate: built-in theme JSON is dev-controlled and
+ *  exercised by the test suite, so we don't pay typia's ~3MB of
+ *  generated assertions at startup. User-supplied JSON goes through
+ *  `loadThemeFile`, which dynamically imports `validateTheme`.
  * @internal */
 export function resolveTheme(theme: unknown): Theme {
-  const ret = validateTheme(theme)
-  delete ret.$schema
-  return { ...defaults, ...ret }
+  const { $schema: _, ...rest } = theme as Partial<Theme> & { $schema?: unknown }
+  return { ...defaults, ...rest }
 }
 
 function isFile(path: string): boolean {
@@ -202,11 +205,16 @@ export async function loadTheme(
  * Load a theme directly from a file path. No directory search happens —
  * this is the escape hatch for CLIs that accept an explicit `--theme
  * /path/to/theme.json` argument.
+ *
+ * Async because typia's generated `validateTheme` (a few thousand
+ * unrolled assertions) is dynamically imported here — it's only needed
+ * for user-supplied JSON and should stay off the main startup path.
  */
-export function loadThemeFile(path: string): Theme {
+export async function loadThemeFile(path: string): Promise<Theme> {
   const raw = tryWithError(() => readFileSync(path, "utf8"), `Failed to read theme file at ${path}`)
   const data = tryWithError(() => JSON.parse(raw), `Failed to parse theme JSON at ${path}`)
-  return resolveTheme(data)
+  const { validateTheme } = await import("../schemas/index.ts")
+  return resolveTheme(validateTheme(data))
 }
 
 /** TokyoNight Moon — the default. Sourced from `assets/themes/tokyonight-moon.json`. */
