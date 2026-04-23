@@ -1,5 +1,5 @@
+export type * from "./flex.ts"
 export * from "./border.ts"
 export * from "./column.ts"
-export type * from "./flex.ts"
 export * from "./row.ts"
 export * from "./size.ts"

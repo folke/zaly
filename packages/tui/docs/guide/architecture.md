@@ -81,12 +81,15 @@ src/
   markdown/     renderMarkdown callbacks + pipeline (types, code, image, table)
   image/        Kitty / iTerm2 protocol + capability probe
   schemas/      generated JSON schemas (typia)
-  runtime/      Bun / Node runtime shims (#runtime import map)
+  runtime/      Bun / Node runtime shims (#ansi, #md import maps)
 ```
 
 ## Runtime split
 
-Widgets use APIs that differ between Bun and Node — `Bun.markdown.render` vs `marked`, `Bun.stringWidth` vs `string-width`, etc. The `#runtime` import map in `package.json` resolves to `src/runtime/bun.ts` on Bun and `src/runtime/node.ts` on Node, keeping the rest of the codebase agnostic.
+Widgets use APIs that differ between Bun and Node — `Bun.markdown.render` vs `marked`, `Bun.stringWidth` vs `string-width`, etc. Two `package.json` imports resolve them:
+
+- `#ansi` → `runtime/ansi.{bun,node}.ts` — string-width / slice-ansi / wrap-ansi, pulled synchronously by `style/ansi.ts`.
+- `#md` → `runtime/md.{bun,node}.ts` — `renderMarkdown`, dynamically imported by the markdown widget so `marked` (~100ms of module init on Node) only loads when actually used.
 
 ## See also
 

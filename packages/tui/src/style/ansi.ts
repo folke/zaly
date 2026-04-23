@@ -1,8 +1,7 @@
 import type { Color } from "./color.ts"
 import type { Theme } from "./theme.ts"
 
-// oxlint-disable-next-line no-restricted-imports
-import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#runtime"
+import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
 import { colorParams } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;

@@ -27,8 +27,7 @@ const names: string[] = [...Object.keys(themes), "ansi"]
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })
   for (const name of names.slice(i, i + CHUNK)) {
-    const theme =
-      name === "ansi" ? loadTheme("ansi") : await themes[name as keyof typeof themes]()
+    const theme = await (name === "ansi" ? loadTheme("ansi") : themes[name as keyof typeof themes]())
     const panel = box(
       { bg: theme.bg, border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
       text(({ style }) =>

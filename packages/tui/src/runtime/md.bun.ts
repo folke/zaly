@@ -1,14 +1,6 @@
-// Runtime shim for Bun. Exports the raw, APC-unaware impls from the
-// Bun builtin helpers; `style/ansi.ts` wraps these with APC extraction
-// and the user-facing signatures.
-
 import type { MdCallbacks, MdCodeBlockMeta, MdOptions } from "../markdown/index.ts"
 
 import { encodeFenceInfoStrings, parseCodeInfoString } from "../markdown/utils.ts"
-
-export const _stringWidth = Bun.stringWidth
-export const _sliceAnsi = Bun.sliceAnsi
-export const _wrapAnsi = Bun.wrapAnsi
 
 /**
  * Bun wrapper for `renderMarkdown`. `Bun.markdown.render` truncates code

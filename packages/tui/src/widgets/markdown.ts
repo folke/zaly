@@ -7,7 +7,6 @@ import { Node } from "../core/node.ts"
 import { createCallbacks } from "../markdown/callbacks.ts"
 import { createCodeHighlighter } from "../markdown/code.ts"
 import { createImageCallback } from "../markdown/image.ts"
-import { renderMarkdown } from "../markdown/index.ts"
 import { Text } from "./text.ts"
 
 export interface MarkdownState extends TextStyle {
@@ -38,6 +37,7 @@ export class Markdown extends Node<MarkdownState> {
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
+    const { renderMarkdown } = await import("#md")
     const fn = this.state.options?.render ?? renderMarkdown
 
     const callbacks = createCallbacks({

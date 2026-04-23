@@ -37,11 +37,11 @@
     "no-magic-numbers": "off", // 278
     "no-restricted-imports": [
       "error",
+      { "paths": ["slice-ansi", "string-width", "wrap-ansi"] },
       {
-        "paths": ["#runtime"],
         "patterns": [
           { "regex": "marked\\.[tj]s" },
-          { "regex": "runtime/(bun|node)\\.[tj]s" },
+          { "regex": "runtime/.*.[tj]s" },
           { "regex": "schemas/(tpl|gen)/" }
         ]
       }
@@ -98,7 +98,7 @@
       "rules": {
         "no-restricted-imports": [
           "error",
-          { "paths": ["node:path", "path", "std-env", "#runtime"] }
+          { "paths": ["node:path", "path", "std-env", "#ansi", "#md"] }
         ],
         "eslint/no-console": "off"
       }

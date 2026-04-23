@@ -13,19 +13,19 @@
   ],
   "type": "module",
   "imports": {
-    "#runtime": {
-      "bun": "./src/runtime/bun.ts",
-      "default": "./src/runtime/node.ts"
+    "#ansi": {
+      "bun": "./src/runtime/ansi.bun.ts",
+      "default": "./src/runtime/ansi.node.ts"
+    },
+    "#md": {
+      "bun": "./src/runtime/md.bun.ts",
+      "default": "./src/runtime/md.node.ts"
     }
   },
   "exports": {
     ".": {
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
-    },
-    "./runtime.node": {
-      "bun": "./src/runtime/node.ts",
-      "default": "./dist/runtime.node.mjs"
     },
     "./themes": {
       "bun": "./src/themes/index.ts",
@@ -41,13 +41,16 @@
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
-      "./runtime.node": "./dist/runtime.node.mjs",
       "./themes": "./dist/themes.mjs",
       "./package.json": "./package.json",
       "./themes/*": {
         "bun": "./src/themes/*.ts",
         "default": "./dist/themes/*.mjs"
       }
+    },
+    "imports": {
+      "#ansi": "./dist/ansi.mjs",
+      "#md": "./dist/md.mjs"
     }
   },
   "scripts": {
@@ -74,9 +77,6 @@
     "typia": "^12.0.2",
     "wrap-ansi": "^10.0.0"
   },
-  "optionalDependencies": {
-    "sharp": "^0.34.5"
-  },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@typia/transform": "^12.0.2",
@@ -92,9 +92,22 @@
     "vitepress": "^1.6.4",
     "vitepress-plugin-group-icons": "^1.7.5"
   },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
+  },
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": []
+  "trustedDependencies": [],
+  "inlinedDependencies": {
+    "ansi-regex": "6.2.2",
+    "ansi-styles": "6.2.3",
+    "get-east-asian-width": "1.5.0",
+    "is-fullwidth-code-point": "5.1.0",
+    "slice-ansi": "9.0.0",
+    "string-width": "8.2.0",
+    "strip-ansi": "7.2.0",
+    "wrap-ansi": "10.0.0"
+  }
 }

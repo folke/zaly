@@ -1,8 +1,5 @@
 // ── Types (shape-compatible with Bun.markdown's RenderCallbacks) ──────────
 
-// oxlint-disable-next-line no-restricted-imports
-export { renderMarkdown } from "#runtime"
-
 export interface MdHeadingMeta {
   /** Heading level (1–6). */
   level: number

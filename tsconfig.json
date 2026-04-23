@@ -12,6 +12,11 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
+    // Prefer the `bun` condition when resolving workspace packages so
+    // `@zaly/tui` follows the `exports.bun` branch (→ TS source)
+    // rather than `exports.default` (→ dist/*.mjs). Keeps go-to-def,
+    // find-refs, and rename scoped to real source during development.
+    "customConditions": ["bun"],
 
     "strict": true,
     "skipLibCheck": true,
@@ -23,5 +28,5 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "exclude": ["**/dist"]
+  "exclude": ["dist"]
 }
