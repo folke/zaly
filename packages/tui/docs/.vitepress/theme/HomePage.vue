@@ -165,7 +165,7 @@ onMounted(async () => {
         </div>
         <div class="strip-cell">
           <div class="k">license</div>
-          <div class="v">apache-2.0</div>
+          <div class="v">mit</div>
         </div>
       </section>
 
@@ -259,7 +259,7 @@ r.<span class="k-fn">start</span>()</code></pre>
         <div class="foot-meta">
           <span>zaly/tui</span>
           <span>·</span>
-          <span>apache-2.0</span>
+          <span>mit</span>
           <span>·</span>
           <span>folke lemaitre</span>
         </div>

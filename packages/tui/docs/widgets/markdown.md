@@ -49,7 +49,7 @@ See [Theming](../guide/theming) for the slot values.
 
 ## Streaming
 
-Because `content` is reactive, you can append tokens as they arrive — the node re-renders on each write, fenced blocks become syntax-highlighted in place, lists reformat. See [Markdown streaming](../guide/recipes/streaming) for the streaming recipe.
+Because `content` is reactive, you can append tokens as they arrive — the node re-renders on each write, fenced blocks become syntax-highlighted in place, lists reformat. See [Agent stream](../demos/stream) for a full streaming demo.
 
 ```ts
 const md = markdown("")

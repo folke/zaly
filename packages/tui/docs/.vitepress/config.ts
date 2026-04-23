@@ -103,7 +103,7 @@ export default defineConfig({
   title: "@zaly/tui",
   description: "Direct-mode terminal UI toolkit for agent interfaces",
   cleanUrls: true,
-  ignoreDeadLinks: true,
+  ignoreDeadLinks: false,
   head: [["link", { rel: "icon", type: "image/svg+xml", href: "/logo/zaly-a.svg" }]],
   markdown: {
     config(md) {

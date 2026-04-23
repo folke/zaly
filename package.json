@@ -2,6 +2,7 @@
   "name": "zaly",
   "version": "0.0.3",
   "private": true,
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/folke/zaly"

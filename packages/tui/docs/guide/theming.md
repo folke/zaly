@@ -89,4 +89,4 @@ The `theme` demo (`bun demo/theme.ts`) shows every slot exercised side-by-side �
 ## See also
 
 - [Styling](./styling) — `ctx.style` chainable builder, how slot refs are resolved.
-- [Demo: Theme preview](../demos/theme)
+- `bun demo/theme.ts` — every theme slot exercised side-by-side against a sample layout. Run locally while authoring a theme.
