@@ -1,34 +1,34 @@
 // oxlint-disable no-await-in-loop
-import { readdirSync } from "node:fs"
-import { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
-
-import { box, createCtx, loadTheme, text } from "../src/index.ts"
+import { themes } from "@zaly/tui/themes"
+import { box, createCtx, loadTheme, text } from "@zaly/tui"
 
 /**
- * Preview every bundled theme. Walks `assets/themes/`, reads each
- * `<name>.json`, and renders a labelled column per theme so their
- * palettes can be compared side-by-side. Chunks rows of 5 so the
+ * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`
+ * async loader map so each palette is resolved on-demand (code-split per
+ * theme when bundled). Renders labelled columns in chunks of 5 so the
  * output stays readable even as the theme set grows.
+ *
+ * For static, tree-shaken imports of a known theme, reach for the
+ * per-theme subpath instead:
+ *
+ * ```ts
+ * import dracula from "@zaly/tui/themes/dracula"
+ * ```
  */
 
 const CHUNK = 5
 const PANEL_WIDTH = 25
 
-const here = dirname(fileURLToPath(import.meta.url))
-const themeDir = resolve(here, "../assets/themes")
-const files = readdirSync(themeDir)
-  .filter((f) => f.endsWith(".json"))
-  .toSorted()
-
-// Always include the pure-ansi theme as a final column — useful for
-// seeing how a terminal without truecolor resolves every slot.
-const names = [...files.map((f) => f.replace(/\.json$/, "")), "ansi"]
+// Pull every bundled theme from the async loader map, plus the pure-ansi
+// fallback (not a JSON — loaded via `loadTheme("ansi")`) as a final column
+// so the render shows how palette-only terminals resolve every slot.
+const names: string[] = [...Object.keys(themes), "ansi"]
 
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })
   for (const name of names.slice(i, i + CHUNK)) {
-    const theme = loadTheme(name)
+    const theme =
+      name === "ansi" ? loadTheme("ansi") : await themes[name as keyof typeof themes]()
     const panel = box(
       { bg: theme.bg, border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
       text(({ style }) =>

@@ -1,12 +1,13 @@
+import type { ThemeName } from "../themes/index.ts"
 import type { Style } from "./ansi.ts"
 import type { Color } from "./color.ts"
 import type { ShikiTheme } from "./shiki.ts"
 
 import { readFileSync, statSync } from "node:fs"
-import { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { resolve } from "node:path"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
 import { validateTheme } from "../schemas/index.ts"
+import { themes } from "../themes/index.ts"
 
 /**
  * A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve
@@ -15,6 +16,8 @@ import { validateTheme } from "../schemas/index.ts"
  * the part needs more than just a foreground color.
  */
 export type ThemeValue = Color | Style
+
+export type BuiltinTheme = ThemeName | "ansi"
 
 /**
  * A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers
@@ -143,7 +146,11 @@ const defaults: Theme = {
   diffLine: "line",
 }
 
-function resolveTheme(theme: unknown): Theme {
+/** Validate and fill defaults on a raw theme object. Exposed for the
+ *  generated `src/themes/*.ts` entries — apps should use `loadTheme()`
+ *  or the per-name subpath exports instead.
+ * @internal */
+export function resolveTheme(theme: unknown): Theme {
   const ret = validateTheme(theme)
   delete ret.$schema
   return { ...defaults, ...ret }
@@ -166,38 +173,26 @@ function tryWithError<T>(fn: () => T, errorMsg: string): T {
   }
 }
 
-function pkgPath(...parts: string[]): string {
-  let dir = dirname(fileURLToPath(import.meta.url))
-  for (;;) {
-    if (isFile(resolve(dir, "package.json"))) break
-    const parent = dirname(dir)
-    if (parent === dir) break // filesystem root; fall through with dir as-is
-    dir = parent
-  }
-  return resolve(dir, ...parts)
-}
-
-/**
- * Built-in theme search directory. The CLI layer can opt-in additional
- * user-provided dirs via the `dirs` option on `loadTheme`.
- *
- * Path is derived by walking up from this module's location until we
- * find the package's `package.json`, then joining `assets/themes`. That
- * way we don't depend on the module being at a fixed depth — works when
- * `theme.ts` is loaded from `src/` (bun) or from `dist/` (node).
- * @internal
- */
-export const builtinThemeDir = resolve(pkgPath(), "assets", "themes")
-
 /**
  * Load a theme by name. Searches `opts.dirs` in order, then the built-in
  * dir; first `.json` match wins. The loaded JSON is validated against the
  * generated `Theme` schema and throws on any structural problem.
  */
-export function loadTheme(name = "tokyonight-moon", opts?: { dirs?: string[] }): Theme {
+export async function loadTheme(
+  // `string & {}` (rather than bare `string`) preserves editor
+  // autocomplete for the literal members of `BuiltinTheme` while
+  // still accepting any string — TS folds `"x" | string` to `string`,
+  // but `"x" | (string & {})` keeps the union branches visible.
+  name: BuiltinTheme | (string & {}) = "tokyonight-moon",
+  opts?: { dirs?: string[] }
+): Promise<Theme> {
   if (name === "ansi") return { ...defaults }
-  const files = [...(opts?.dirs ?? []), builtinThemeDir].map((dir) => resolve(dir, `${name}.json`))
+  const files = (opts?.dirs ?? []).map((dir) => resolve(dir, `${name}.json`))
   for (const path of files) if (isFile(path)) return loadThemeFile(path)
+
+  const builtin = (themes as Partial<typeof themes>)[name as ThemeName]
+  if (builtin) return await builtin()
+
   throw new Error(
     `Theme "${name}" not found. Searched:\n${files.map((p) => `  - ${p}`).join("\n")}`
   )

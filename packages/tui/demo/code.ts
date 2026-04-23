@@ -36,7 +36,7 @@ done`,
   },
 ]
 
-const theme = loadTheme("catppuccin-mocha")
+const theme = await loadTheme("catppuccin-mocha")
 const ctx = createCtx({ theme, width: 80 })
 
 const column = (sample: (typeof samples)[number]) =>

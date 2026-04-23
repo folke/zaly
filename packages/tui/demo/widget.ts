@@ -1,7 +1,7 @@
 import { box, createCtx, loadTheme, text, widget } from "../src/index.ts"
 
 async function demo(label: string, name: string): Promise<void> {
-  const theme = loadTheme(name)
+  const theme = await loadTheme(name)
   const ctx = createCtx({ theme })
 
   const app = box(

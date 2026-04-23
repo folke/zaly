@@ -60,7 +60,7 @@ const help = overlay(
         const name = (info.name ?? id).padEnd(10)
         const desc = (info.desc ?? "").padEnd(26)
         const keys = (info.keys ?? []).join(", ")
-        rows.push(`${style.accent("/" + name)} ${style.dim(desc)} ${style.primary(keys)}`)
+        rows.push(`${style.accent(`/ ${name}`)} ${style.dim(desc)} ${style.primary(keys)}`)
       }
       rows.push("")
       rows.push(style.bold("Try:"))
@@ -68,8 +68,8 @@ const help = overlay(
       rows.push(style.accent("open @src/renderer/index.ts and explain it"))
       return rows.join("\n")
     },
-    { wrap: "none" },
-  ),
+    { wrap: "none" }
+  )
 )
 
 function toggleHelp(): void {
@@ -115,7 +115,7 @@ renderer.ui.add(
       spinner({ color: "accent", running: busy }),
       text(({ style }) => style.primary.bold("agent"), { width: 5 }),
       text(({ style }) => `${style.dim("model:")} ${style.success(model())}`),
-      text(({ style }) => `${style.dim("status:")} ${style.accent(status())}`),
+      text(({ style }) => `${style.dim("status:")} ${style.accent(status())}`)
     ),
     progress({ color: "primary", label: "auto", total: 1, value: progressValue, visible: busy }),
     text(({ style }) => style.dim("/ commands · @ files · ctrl-h help · ctrl-c quit")),
@@ -123,9 +123,9 @@ renderer.ui.add(
     box(
       { flexDirection: "row", gap: 1 },
       text(({ style }) => style.primary("❯"), { width: 1 }),
-      composer,
-    ),
-  ),
+      composer
+    )
+  )
 )
 
 // ── Intro + welcome toast ────────────────────────────────────────────
@@ -133,7 +133,7 @@ renderer.ui.add(
 renderer.stream.append(
   markdown(`## agent harness
 
-A mock coding-assistant shell built on **@zaly/tui**. Try \`/\` for commands, \`@\` for files, or just ask a question.`),
+A mock coding-assistant shell built on **@zaly/tui**. Try \`/\` for commands, \`@\` for files, or just ask a question.`)
 )
 
 // Toast: a small floating overlay at the top that auto-dismisses after
@@ -150,8 +150,8 @@ const toast = overlay(
   },
   text(
     ({ style }) =>
-      `${style.accent("ctrl-h")} ${style.dim("for help")}  ·  ${style.accent("ctrl-c")} ${style.dim("to quit")}`,
-  ),
+      `${style.accent("ctrl-h")} ${style.dim("for help")}  ·  ${style.accent("ctrl-c")} ${style.dim("to quit")}`
+  )
 )
 
 // ── Reply streaming ──────────────────────────────────────────────────

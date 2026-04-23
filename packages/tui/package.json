@@ -27,14 +27,27 @@
       "bun": "./src/runtime/node.ts",
       "default": "./dist/runtime.node.mjs"
     },
-    "./package.json": "./package.json"
+    "./themes": {
+      "bun": "./src/themes/index.ts",
+      "default": "./dist/themes.mjs"
+    },
+    "./package.json": "./package.json",
+    "./themes/*": {
+      "bun": "./src/themes/*.ts",
+      "default": "./dist/themes/*.mjs"
+    }
   },
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./runtime.node": "./dist/runtime.node.mjs",
-      "./package.json": "./package.json"
+      "./themes": "./dist/themes.mjs",
+      "./package.json": "./package.json",
+      "./themes/*": {
+        "bun": "./src/themes/*.ts",
+        "default": "./dist/themes/*.mjs"
+      }
     }
   },
   "scripts": {
@@ -82,9 +95,6 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
-  },
-  "inlinedDependencies": {
-    "type-fest": "5.5.0"
   },
   "trustedDependencies": []
 }

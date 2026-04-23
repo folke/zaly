@@ -1,13 +1,17 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import type { ThemeName } from "../../src/themes/index.ts"
+
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/index.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { builtinThemeDir, loadTheme, loadThemeFile, defaultTheme } from "../../src/style/theme.ts"
+import { defaultTheme, loadTheme, loadThemeFile } from "../../src/style/theme.ts"
+import { themes } from "../../src/themes/index.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.
-const ansi = loadTheme("ansi")
+const ansi = await loadTheme("ansi")
 
 describe("theme part slots — moon", () => {
   test("border slot defined", () => {
@@ -88,35 +92,30 @@ describe("theme markdown slots — ansi", () => {
   })
 })
 
-describe("validateTheme — built-in assets", () => {
-  // Resolve the on-disk theme dir the same way loadTheme does, but read
-  // files directly so this test exercises validateTheme without going
-  // through the loader (catches regressions where a shipped theme stops
-  // matching the generated schema for structural reasons).
-  const themesDir = builtinThemeDir
-  const files = readdirSync(themesDir)
-    .filter((f) => f.endsWith(".json"))
-    .toSorted()
+describe("built-in themes — load & validate", () => {
+  // Every bundled theme surfaces via the `themes` async loader map.
+  // Awaiting the loader runs `resolveTheme` (and therefore typia's
+  // `validateTheme`) on the raw JSON — if any shipped theme drifted
+  // out of sync with the schema, the load itself throws.
+  const names = Object.keys(themes) as ThemeName[]
 
-  test("asset dir contains at least moon, storm, night, day, ansi", () => {
-    expect(files).toEqual(
+  test("map includes the tokyonight family", () => {
+    expect(names).toEqual(
       expect.arrayContaining([
-        "tokyonight-day.json",
-        "tokyonight-moon.json",
-        "tokyonight-night.json",
-        "tokyonight-storm.json",
+        "tokyonight-day",
+        "tokyonight-moon",
+        "tokyonight-night",
+        "tokyonight-storm",
       ])
     )
   })
 
-  for (const file of files) {
-    test(`${file} passes validateTheme`, () => {
-      const raw = readFileSync(join(themesDir, file), "utf8")
-      const data = JSON.parse(raw) as Record<string, unknown>
-      // Loader strips `$schema` before validating; do the same so the
-      // equality check isn't tripped by a known-extra field.
-      delete data.$schema
-      expect(() => validateTheme(data)).not.toThrow()
+  for (const name of names) {
+    test(`${name} loads and has core slots`, async () => {
+      const theme = await themes[name]()
+      expect(theme.primary).toBeDefined()
+      expect(theme.border).toBeDefined()
+      expect(theme.mdHeading1).toBeDefined()
     })
   }
 })
@@ -146,23 +145,25 @@ describe("validateTheme — negative cases", () => {
 })
 
 describe("loadTheme", () => {
-  test("loads a built-in theme from assets/themes/*.json", () => {
-    const t = loadTheme("tokyonight-moon")
-    // Round-trip parity: static moon and loaded moon agree on all keys.
+  test("loads a built-in theme by name", async () => {
+    const t = await loadTheme("tokyonight-moon")
+    // Round-trip parity: static moon and loaded moon agree on core slots.
     expect(t.primary).toBe(defaultTheme.primary)
     expect(t.mdHeading1).toEqual(defaultTheme.mdHeading1)
   })
 
-  test("default name is tokyonight-moon", () => {
-    expect(loadTheme().primary).toBe(defaultTheme.primary)
+  test("default name is tokyonight-moon", async () => {
+    const t = await loadTheme()
+    expect(t.primary).toBe(defaultTheme.primary)
   })
 
-  test("loads ansi", () => {
-    expect(loadTheme("ansi").primary).toBe(ansi.primary)
+  test("loads ansi", async () => {
+    const t = await loadTheme("ansi")
+    expect(t.primary).toBe(ansi.primary)
   })
 
-  test("unknown theme name throws with the search paths listed", () => {
-    expect(() => loadTheme("does-not-exist")).toThrow(/not found/)
+  test("unknown theme name throws with the search paths listed", async () => {
+    await expect(loadTheme("does-not-exist")).rejects.toThrow(/not found/)
   })
 
   describe("with user dirs", () => {
@@ -174,7 +175,7 @@ describe("loadTheme", () => {
         join(dir, "custom.json"),
         JSON.stringify({ ...defaultTheme, primary: "#ff00ff" }, undefined, 2)
       )
-      // Same name as built-in to test override precedence.
+      // Same name as a built-in to test override precedence.
       writeFileSync(
         join(dir, "tokyonight-moon.json"),
         JSON.stringify({ ...defaultTheme, primary: "#123456" }, undefined, 2)
@@ -182,32 +183,45 @@ describe("loadTheme", () => {
     })
     afterAll(() => rmSync(dir, { force: true, recursive: true }))
 
-    test("user dir resolves a custom theme", () => {
-      expect(loadTheme("custom", { dirs: [dir] }).primary).toBe("#ff00ff")
+    test("user dir resolves a custom theme", async () => {
+      const t = await loadTheme("custom", { dirs: [dir] })
+      expect(t.primary).toBe("#ff00ff")
     })
 
-    test("user dir takes precedence over built-in for same name", () => {
-      expect(loadTheme("tokyonight-moon", { dirs: [dir] }).primary).toBe("#123456")
+    test("user dir takes precedence over built-in for same name", async () => {
+      const t = await loadTheme("tokyonight-moon", { dirs: [dir] })
+      expect(t.primary).toBe("#123456")
     })
 
-    test("falls back to built-in when user dirs miss", () => {
-      expect(loadTheme("ansi", { dirs: [dir] }).primary).toBe(ansi.primary)
+    test("falls back to built-in when user dirs miss", async () => {
+      const t = await loadTheme("ansi", { dirs: [dir] })
+      expect(t.primary).toBe(ansi.primary)
     })
 
-    test("invalid theme JSON in user dir throws", () => {
+    test("invalid theme JSON in user dir throws", async () => {
       // Bad value (non-Color string) — triggers typia's value-level check.
       writeFileSync(
         join(dir, "broken.json"),
         JSON.stringify({ primary: "not-a-color" }, undefined, 2)
       )
-      expect(() => loadTheme("broken", { dirs: [dir] })).toThrow()
+      await expect(loadTheme("broken", { dirs: [dir] })).rejects.toThrow()
     })
   })
 })
 
 describe("loadThemeFile", () => {
+  // The bundled JSON lives at `<pkg>/assets/themes/*.json` and is
+  // still readable directly for the file-loader path used by CLIs
+  // that accept an explicit `--theme /path/to/foo.json` flag.
+  // `import.meta.resolve` returns a `file://` URL; convert to a plain
+  // fs path so `loadThemeFile` (which uses `readFileSync`) is happy on
+  // both Bun and Node.
+  const assetPath = fileURLToPath(
+    import.meta.resolve("../../assets/themes/tokyonight-moon.json"),
+  )
+
   test("loads a theme directly by path", () => {
-    const t = loadThemeFile(join(builtinThemeDir, "tokyonight-moon.json"))
+    const t = loadThemeFile(assetPath)
     expect(t.primary).toBe(defaultTheme.primary)
   })
 
