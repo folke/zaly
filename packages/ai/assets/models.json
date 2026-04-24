@@ -13509,8 +13509,8 @@
       "baseUrl": "https://api.deepseek.com",
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "deepseek",
-        "reasoningField": "reasoning_content"
+        "reasoningField": "reasoning_content",
+        "thinkingFormat": "deepseek"
       }
     },
     "deepseek/deepseek-reasoner": {
@@ -13550,8 +13550,8 @@
       "baseUrl": "https://api.deepseek.com",
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "deepseek",
-        "reasoningField": "reasoning_content"
+        "reasoningField": "reasoning_content",
+        "thinkingFormat": "deepseek"
       }
     },
     "llama/llama-3.3-70b-instruct": {
@@ -13818,8 +13818,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/deepseek/deepseek-r1": {
@@ -13860,8 +13860,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/deepseek/deepseek-v3.2-speciale": {
@@ -13902,8 +13902,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/deepseek/deepseek-v3.2": {
@@ -13944,8 +13944,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/deepseek/deepseek-v3.1-terminus:exacto": {
@@ -13986,8 +13986,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/deepseek/deepseek-v3.1-terminus": {
@@ -14028,8 +14028,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openrouter/elephant-alpha": {
@@ -14069,8 +14069,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openrouter/free": {
@@ -14111,8 +14111,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/arcee-ai/trinity-large-thinking": {
@@ -14151,8 +14151,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/arcee-ai/trinity-large-preview:free": {
@@ -14193,8 +14193,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nousresearch/hermes-4-405b": {
@@ -14234,8 +14234,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nousresearch/hermes-4-70b": {
@@ -14276,8 +14276,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/stepfun/step-3.5-flash": {
@@ -14318,8 +14318,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
@@ -14361,8 +14361,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/devstral-2512": {
@@ -14403,8 +14403,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/codestral-2508": {
@@ -14445,8 +14445,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/mistral-medium-3.1": {
@@ -14488,8 +14488,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/mistral-small-2603": {
@@ -14530,8 +14530,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/mistral-medium-3": {
@@ -14573,8 +14573,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/devstral-small-2505": {
@@ -14614,8 +14614,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/mistral-small-3.2-24b-instruct": {
@@ -14657,8 +14657,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/devstral-medium-2507": {
@@ -14699,8 +14699,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/mistralai/devstral-small-2507": {
@@ -14741,8 +14741,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/meta-llama/llama-3.3-70b-instruct:free": {
@@ -14783,8 +14783,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-4-fast": {
@@ -14828,8 +14828,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-code-fast-1": {
@@ -14871,8 +14871,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-3-beta": {
@@ -14914,8 +14914,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-4": {
@@ -14958,8 +14958,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-3-mini": {
@@ -15002,8 +15002,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-4.1-fast": {
@@ -15047,8 +15047,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-4.20-beta": {
@@ -15094,8 +15094,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-3-mini-beta": {
@@ -15137,8 +15137,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/x-ai/grok-3": {
@@ -15181,8 +15181,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/prime-intellect/intellect-3": {
@@ -15223,8 +15223,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-3-super-120b-a12b": {
@@ -15264,8 +15264,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-3-nano-30b-a3b:free": {
@@ -15306,8 +15306,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-nano-9b-v2:free": {
@@ -15348,8 +15348,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-3-super-120b-a12b:free": {
@@ -15389,8 +15389,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-nano-9b-v2": {
@@ -15430,8 +15430,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/nvidia/nemotron-nano-12b-v2-vl:free": {
@@ -15472,8 +15472,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/inception/mercury-2": {
@@ -15514,8 +15514,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.1-codex-max": {
@@ -15558,8 +15558,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.2-chat": {
@@ -15602,8 +15602,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-120b:exacto": {
@@ -15643,8 +15643,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.2-pro": {
@@ -15686,8 +15686,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5-mini": {
@@ -15729,8 +15729,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5-nano": {
@@ -15772,8 +15772,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.3-codex": {
@@ -15817,8 +15817,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.2": {
@@ -15861,8 +15861,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-20b:free": {
@@ -15901,8 +15901,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-4o-mini": {
@@ -15945,8 +15945,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.4-mini": {
@@ -15990,8 +15990,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.1-chat": {
@@ -16034,8 +16034,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/o4-mini": {
@@ -16078,8 +16078,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.4-nano": {
@@ -16123,8 +16123,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.2-codex": {
@@ -16167,8 +16167,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.1-codex-mini": {
@@ -16211,8 +16211,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5-image": {
@@ -16257,8 +16257,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.1": {
@@ -16301,8 +16301,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.4-pro": {
@@ -16347,8 +16347,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5-codex": {
@@ -16391,8 +16391,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-20b": {
@@ -16432,8 +16432,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5-pro": {
@@ -16475,8 +16475,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-120b:free": {
@@ -16515,8 +16515,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5": {
@@ -16558,8 +16558,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-safeguard-20b": {
@@ -16598,8 +16598,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-oss-120b": {
@@ -16639,8 +16639,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-4.1": {
@@ -16683,8 +16683,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-4.1-mini": {
@@ -16727,8 +16727,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.1-codex": {
@@ -16771,8 +16771,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.7": {
@@ -16817,8 +16817,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-5": {
@@ -16862,8 +16862,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-5.1": {
@@ -16907,8 +16907,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.5": {
@@ -16949,8 +16949,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.6:exacto": {
@@ -16992,8 +16992,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.5-air": {
@@ -17034,8 +17034,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-5-turbo": {
@@ -17080,8 +17080,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.5v": {
@@ -17124,8 +17124,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.6": {
@@ -17167,8 +17167,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/z-ai/glm-4.7-flash": {
@@ -17211,8 +17211,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m2.7": {
@@ -17253,8 +17253,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m2": {
@@ -17299,8 +17299,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-01": {
@@ -17340,8 +17340,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m2.1": {
@@ -17384,8 +17384,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m2.5:free": {
@@ -17428,8 +17428,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m1": {
@@ -17468,8 +17468,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/minimax/minimax-m2.5": {
@@ -17513,8 +17513,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3.5-397b-a17b": {
@@ -17557,8 +17557,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3.5-flash-02-23": {
@@ -17600,8 +17600,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3.6-plus": {
@@ -17644,8 +17644,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-max": {
@@ -17684,8 +17684,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-coder:exacto": {
@@ -17726,8 +17726,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-30b-a3b-instruct-2507": {
@@ -17768,8 +17768,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-235b-a22b-thinking-2507": {
@@ -17810,8 +17810,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-next-80b-a3b-thinking": {
@@ -17852,8 +17852,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-30b-a3b-thinking-2507": {
@@ -17894,8 +17894,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-coder-flash": {
@@ -17936,8 +17936,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-next-80b-a3b-instruct": {
@@ -17978,8 +17978,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-coder-30b-a3b-instruct": {
@@ -18020,8 +18020,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-coder": {
@@ -18062,8 +18062,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3.5-plus-02-15": {
@@ -18106,8 +18106,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/qwen/qwen3-235b-a22b-07-25": {
@@ -18148,8 +18148,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-pro-preview-05-06": {
@@ -18195,8 +18195,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-3.1-pro-preview-customtools": {
@@ -18250,8 +18250,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-flash-lite-preview-09-2025": {
@@ -18297,8 +18297,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.0-flash-001": {
@@ -18344,8 +18344,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-3.1-flash-lite-preview": {
@@ -18394,8 +18394,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-3.1-pro-preview": {
@@ -18449,8 +18449,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-3-flash-preview": {
@@ -18499,8 +18499,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-3-pro-preview": {
@@ -18548,8 +18548,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-4-31b-it": {
@@ -18592,8 +18592,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-pro-preview-06-05": {
@@ -18639,8 +18639,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-3-27b-it:free": {
@@ -18681,8 +18681,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-flash": {
@@ -18728,8 +18728,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-4-31b-it:free": {
@@ -18772,8 +18772,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-flash-preview-09-2025": {
@@ -18819,8 +18819,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-3-27b-it": {
@@ -18862,8 +18862,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-4-26b-a4b-it": {
@@ -18906,8 +18906,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemma-4-26b-a4b-it:free": {
@@ -18950,8 +18950,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-flash-lite": {
@@ -18997,8 +18997,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2.5": {
@@ -19045,8 +19045,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2-0905": {
@@ -19087,8 +19087,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2.6": {
@@ -19133,8 +19133,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2-0905:exacto": {
@@ -19175,8 +19175,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2": {
@@ -19216,8 +19216,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/moonshotai/kimi-k2-thinking": {
@@ -19262,8 +19262,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-opus-4.1": {
@@ -19308,8 +19308,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-3.7-sonnet": {
@@ -19353,8 +19353,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-opus-4.6": {
@@ -19405,8 +19405,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-opus-4.7": {
@@ -19457,8 +19457,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-sonnet-4": {
@@ -19508,8 +19508,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-sonnet-4.5": {
@@ -19560,8 +19560,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-opus-4.5": {
@@ -19606,8 +19606,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-haiku-4.5": {
@@ -19652,8 +19652,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-sonnet-4.6": {
@@ -19703,8 +19703,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/xiaomi/mimo-v2-omni": {
@@ -19751,8 +19751,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/xiaomi/mimo-v2-pro": {
@@ -19796,8 +19796,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/xiaomi/mimo-v2-flash": {
@@ -19839,8 +19839,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/openai/gpt-5.4": {
@@ -19890,8 +19890,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/google/gemini-2.5-pro": {
@@ -19942,8 +19942,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-opus-4": {
@@ -19987,8 +19987,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "openrouter/anthropic/claude-3.5-haiku": {
@@ -20032,8 +20032,8 @@
       },
       "quirks": {
         "maxTokensField": "max_tokens",
-        "thinkingFormat": "openrouter",
-        "reasoningField": "reasoning"
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
       }
     },
     "fireworks-ai/accounts/fireworks/models/glm-5p1": {
@@ -58743,6 +58743,230 @@
       "provider": "openai",
       "baseUrl": "https://pass.wafer.ai/v1"
     },
+    "cohere/command-a-reasoning-08-2025": {
+      "id": "command-a-reasoning-08-2025",
+      "name": "Command A Reasoning",
+      "family": "command-a",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2025-08-21",
+      "last_updated": "2025-08-21",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2.5,
+        "output": 10
+      },
+      "limit": {
+        "context": 256000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-r7b-12-2024": {
+      "id": "command-r7b-12-2024",
+      "name": "Command R7B",
+      "family": "command-r",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2024-02-27",
+      "last_updated": "2024-02-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.0375,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 128000,
+        "output": 4000
+      },
+      "maxTokens": 4000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-r-plus-08-2024": {
+      "id": "command-r-plus-08-2024",
+      "name": "Command R+",
+      "family": "command-r",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2024-08-30",
+      "last_updated": "2024-08-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2.5,
+        "output": 10
+      },
+      "limit": {
+        "context": 128000,
+        "output": 4000
+      },
+      "maxTokens": 4000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-r7b-arabic-02-2025": {
+      "id": "command-r7b-arabic-02-2025",
+      "name": "Command R7B Arabic",
+      "family": "command-r",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2025-02-27",
+      "last_updated": "2025-02-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.0375,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 128000,
+        "output": 4000
+      },
+      "maxTokens": 4000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-a-translate-08-2025": {
+      "id": "command-a-translate-08-2025",
+      "name": "Command A Translate",
+      "family": "command-a",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2025-08-28",
+      "last_updated": "2025-08-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2.5,
+        "output": 10
+      },
+      "limit": {
+        "context": 8000,
+        "output": 8000
+      },
+      "maxTokens": 8000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-r-08-2024": {
+      "id": "command-r-08-2024",
+      "name": "Command R",
+      "family": "command-r",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2024-08-30",
+      "last_updated": "2024-08-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 128000,
+        "output": 4000
+      },
+      "maxTokens": 4000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
+    "cohere/command-a-03-2025": {
+      "id": "command-a-03-2025",
+      "name": "Command A",
+      "family": "command-a",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06-01",
+      "release_date": "2025-03-13",
+      "last_updated": "2025-03-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2.5,
+        "output": 10
+      },
+      "limit": {
+        "context": 256000,
+        "output": 8000
+      },
+      "maxTokens": 8000,
+      "provider": "openai",
+      "baseUrl": "https://api.cohere.com/compatibility/v1"
+    },
     "cloudferro-sherlock/meta-llama/Llama-3.3-70B-Instruct": {
       "id": "meta-llama/Llama-3.3-70B-Instruct",
       "name": "Llama 3.3 70B Instruct",
@@ -58939,6 +59163,821 @@
       "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://coding-plan-endpoint.kuaecloud.net/v1"
+    },
+    "xai/grok-2-1212": {
+      "id": "grok-2-1212",
+      "name": "Grok 2 (1212)",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-12-12",
+      "last_updated": "2024-12-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-vision-beta": {
+      "id": "grok-vision-beta",
+      "name": "Grok Vision Beta",
+      "family": "grok-vision",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-11-01",
+      "last_updated": "2024-11-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 15,
+        "cache_read": 5
+      },
+      "limit": {
+        "context": 8192,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-mini-fast": {
+      "id": "grok-3-mini-fast",
+      "name": "Grok 3 Mini Fast",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.6,
+        "output": 4,
+        "reasoning": 4,
+        "cache_read": 0.15
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-mini-latest": {
+      "id": "grok-3-mini-latest",
+      "name": "Grok 3 Mini Latest",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 0.5,
+        "reasoning": 0.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-fast": {
+      "id": "grok-3-fast",
+      "name": "Grok 3 Fast",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 1.25
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-2-vision-latest": {
+      "id": "grok-2-vision-latest",
+      "name": "Grok 2 Vision Latest",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-08-20",
+      "last_updated": "2024-12-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 8192,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4.20-0309-reasoning": {
+      "id": "grok-4.20-0309-reasoning",
+      "name": "Grok 4.20 (Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-09",
+      "last_updated": "2026-03-09",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 12,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4-1-fast-non-reasoning": {
+      "id": "grok-4-1-fast-non-reasoning",
+      "name": "Grok 4.1 Fast (Non-Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-11-19",
+      "last_updated": "2025-11-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-mini-fast-latest": {
+      "id": "grok-3-mini-fast-latest",
+      "name": "Grok 3 Mini Fast Latest",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.6,
+        "output": 4,
+        "reasoning": 4,
+        "cache_read": 0.15
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4-fast": {
+      "id": "grok-4-fast",
+      "name": "Grok 4 Fast",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-09-19",
+      "last_updated": "2025-09-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-latest": {
+      "id": "grok-3-latest",
+      "name": "Grok 3 Latest",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.75
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-2": {
+      "id": "grok-2",
+      "name": "Grok 2",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-08-20",
+      "last_updated": "2024-08-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-code-fast-1": {
+      "id": "grok-code-fast-1",
+      "name": "Grok Code Fast 1",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-10",
+      "release_date": "2025-08-28",
+      "last_updated": "2025-08-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 1.5,
+        "cache_read": 0.02
+      },
+      "limit": {
+        "context": 256000,
+        "output": 10000
+      },
+      "maxTokens": 10000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4.20-0309-non-reasoning": {
+      "id": "grok-4.20-0309-non-reasoning",
+      "name": "Grok 4.20 (Non-Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-09",
+      "last_updated": "2026-03-09",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 6,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 12,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-fast-latest": {
+      "id": "grok-3-fast-latest",
+      "name": "Grok 3 Fast Latest",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 1.25
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4": {
+      "id": "grok-4",
+      "name": "Grok 4",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-07-09",
+      "last_updated": "2025-07-09",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "reasoning": 15,
+        "cache_read": 0.75
+      },
+      "limit": {
+        "context": 256000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-2-latest": {
+      "id": "grok-2-latest",
+      "name": "Grok 2 Latest",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-08-20",
+      "last_updated": "2024-12-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-beta": {
+      "id": "grok-beta",
+      "name": "Grok Beta",
+      "family": "grok-beta",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-11-01",
+      "last_updated": "2024-11-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 15,
+        "cache_read": 5
+      },
+      "limit": {
+        "context": 131072,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-2-vision": {
+      "id": "grok-2-vision",
+      "name": "Grok 2 Vision",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-08-20",
+      "last_updated": "2024-08-20",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 8192,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4-1-fast": {
+      "id": "grok-4-1-fast",
+      "name": "Grok 4.1 Fast",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-11-19",
+      "last_updated": "2025-11-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3-mini": {
+      "id": "grok-3-mini",
+      "name": "Grok 3 Mini",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 0.5,
+        "reasoning": 0.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-2-vision-1212": {
+      "id": "grok-2-vision-1212",
+      "name": "Grok 2 Vision (1212)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2024-08-20",
+      "last_updated": "2024-12-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 10,
+        "cache_read": 2
+      },
+      "limit": {
+        "context": 8192,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-3": {
+      "id": "grok-3",
+      "name": "Grok 3",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2025-02-17",
+      "last_updated": "2025-02-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.75
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4-fast-non-reasoning": {
+      "id": "grok-4-fast-non-reasoning",
+      "name": "Grok 4 Fast (Non-Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-09-19",
+      "last_updated": "2025-09-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
     },
     "meganova/Qwen/Qwen3-235B-A22B-Instruct-2507": {
       "id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
@@ -67710,6 +68749,849 @@
       "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
+    },
+    "mistral/mistral-small-latest": {
+      "id": "mistral-small-latest",
+      "name": "Mistral Small (latest)",
+      "family": "mistral-small",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-06",
+      "release_date": "2026-03-16",
+      "last_updated": "2026-03-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 256000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-nemo": {
+      "id": "mistral-nemo",
+      "name": "Mistral Nemo",
+      "family": "mistral-nemo",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07",
+      "release_date": "2024-07-01",
+      "last_updated": "2024-07-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-large-2512": {
+      "id": "mistral-large-2512",
+      "name": "Mistral Large 3",
+      "family": "mistral-large",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2024-11-01",
+      "last_updated": "2025-12-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/labs-devstral-small-2512": {
+      "id": "labs-devstral-small-2512",
+      "name": "Devstral Small 2",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-12",
+      "release_date": "2025-12-09",
+      "last_updated": "2025-12-09",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 256000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/devstral-2512": {
+      "id": "devstral-2512",
+      "name": "Devstral 2",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-12",
+      "release_date": "2025-12-09",
+      "last_updated": "2025-12-09",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/magistral-medium-latest": {
+      "id": "magistral-medium-latest",
+      "name": "Magistral Medium (latest)",
+      "family": "magistral-medium",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-06",
+      "release_date": "2025-03-17",
+      "last_updated": "2025-03-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2,
+        "output": 5
+      },
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/open-mixtral-8x7b": {
+      "id": "open-mixtral-8x7b",
+      "name": "Mixtral 8x7B",
+      "family": "mixtral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-01",
+      "release_date": "2023-12-11",
+      "last_updated": "2023-12-11",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.7,
+        "output": 0.7
+      },
+      "limit": {
+        "context": 32000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/pixtral-large-latest": {
+      "id": "pixtral-large-latest",
+      "name": "Pixtral Large (latest)",
+      "family": "pixtral",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2024-11-01",
+      "last_updated": "2024-11-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2,
+        "output": 6
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-large-2411": {
+      "id": "mistral-large-2411",
+      "name": "Mistral Large 2.1",
+      "family": "mistral-large",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2024-11-01",
+      "last_updated": "2024-11-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2,
+        "output": 6
+      },
+      "limit": {
+        "context": 131072,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/codestral-latest": {
+      "id": "codestral-latest",
+      "name": "Codestral (latest)",
+      "family": "codestral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2024-05-29",
+      "last_updated": "2025-01-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 0.9
+      },
+      "limit": {
+        "context": 256000,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-large-latest": {
+      "id": "mistral-large-latest",
+      "name": "Mistral Large (latest)",
+      "family": "mistral-large",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2024-11-01",
+      "last_updated": "2025-12-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-small-2506": {
+      "id": "mistral-small-2506",
+      "name": "Mistral Small 3.2",
+      "family": "mistral-small",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03",
+      "release_date": "2025-06-20",
+      "last_updated": "2025-06-20",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.3
+      },
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/pixtral-12b": {
+      "id": "pixtral-12b",
+      "name": "Pixtral 12B",
+      "family": "pixtral",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-09",
+      "release_date": "2024-09-01",
+      "last_updated": "2024-09-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/ministral-8b-latest": {
+      "id": "ministral-8b-latest",
+      "name": "Ministral 8B (latest)",
+      "family": "ministral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2024-10-01",
+      "last_updated": "2024-10-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.1
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/magistral-small": {
+      "id": "magistral-small",
+      "name": "Magistral Small",
+      "family": "magistral-small",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-06",
+      "release_date": "2025-03-17",
+      "last_updated": "2025-03-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.5
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-small-2603": {
+      "id": "mistral-small-2603",
+      "name": "Mistral Small 4",
+      "family": "mistral-small",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-06",
+      "release_date": "2026-03-16",
+      "last_updated": "2026-03-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 256000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/ministral-3b-latest": {
+      "id": "ministral-3b-latest",
+      "name": "Ministral 3B (latest)",
+      "family": "ministral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2024-10-01",
+      "last_updated": "2024-10-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.04,
+        "output": 0.04
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/open-mixtral-8x22b": {
+      "id": "open-mixtral-8x22b",
+      "name": "Mixtral 8x22B",
+      "family": "mixtral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04",
+      "release_date": "2024-04-17",
+      "last_updated": "2024-04-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2,
+        "output": 6
+      },
+      "limit": {
+        "context": 64000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/devstral-small-2505": {
+      "id": "devstral-small-2505",
+      "name": "Devstral Small 2505",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-05-07",
+      "last_updated": "2025-05-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.3
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/devstral-medium-2507": {
+      "id": "devstral-medium-2507",
+      "name": "Devstral Medium",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-07-10",
+      "last_updated": "2025-07-10",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-medium-latest": {
+      "id": "mistral-medium-latest",
+      "name": "Mistral Medium (latest)",
+      "family": "mistral-medium",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-05-07",
+      "last_updated": "2025-05-10",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/open-mistral-7b": {
+      "id": "open-mistral-7b",
+      "name": "Mistral 7B",
+      "family": "mistral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2023-09-27",
+      "last_updated": "2023-09-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.25,
+        "output": 0.25
+      },
+      "limit": {
+        "context": 8000,
+        "output": 8000
+      },
+      "maxTokens": 8000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/devstral-medium-latest": {
+      "id": "devstral-medium-latest",
+      "name": "Devstral 2 (latest)",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-12",
+      "release_date": "2025-12-02",
+      "last_updated": "2025-12-02",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-medium-2505": {
+      "id": "mistral-medium-2505",
+      "name": "Mistral Medium 3",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-05-07",
+      "last_updated": "2025-05-07",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/devstral-small-2507": {
+      "id": "devstral-small-2507",
+      "name": "Devstral Small",
+      "family": "devstral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-07-10",
+      "last_updated": "2025-07-10",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.3
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-medium-2508": {
+      "id": "mistral-medium-2508",
+      "name": "Mistral Medium 3.1",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2025-08-12",
+      "last_updated": "2025-08-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
     },
     "ovhcloud/meta-llama-3_3-70b-instruct": {
       "id": "meta-llama-3_3-70b-instruct",
@@ -77136,6 +79018,329 @@
       "provider": "openai",
       "baseUrl": "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1"
     },
+    "groq/llama-3.3-70b-versatile": {
+      "id": "llama-3.3-70b-versatile",
+      "name": "Llama 3.3 70B Versatile",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2024-12-06",
+      "last_updated": "2024-12-06",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.59,
+        "output": 0.79
+      },
+      "limit": {
+        "context": 131072,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/llama-3.1-8b-instant": {
+      "id": "llama-3.1-8b-instant",
+      "name": "Llama 3.1 8B Instant",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2024-07-23",
+      "last_updated": "2024-07-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.05,
+        "output": 0.08
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/meta-llama/llama-4-scout-17b-16e-instruct": {
+      "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+      "name": "Llama 4 Scout 17B",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2025-04-05",
+      "last_updated": "2025-04-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.11,
+        "output": 0.34
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/openai/gpt-oss-20b": {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT OSS 20B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.075,
+        "output": 0.3
+      },
+      "limit": {
+        "context": 131072,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/openai/gpt-oss-safeguard-20b": {
+      "id": "openai/gpt-oss-safeguard-20b",
+      "name": "Safety GPT OSS 20B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-03-05",
+      "last_updated": "2025-03-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.075,
+        "output": 0.3,
+        "cache_read": 0.037
+      },
+      "limit": {
+        "context": 131072,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/openai/gpt-oss-120b": {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT OSS 120B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 131072,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/qwen/qwen3-32b": {
+      "id": "qwen/qwen3-32b",
+      "name": "Qwen3 32B",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-11-08",
+      "release_date": "2024-12-23",
+      "last_updated": "2024-12-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.29,
+        "output": 0.59
+      },
+      "limit": {
+        "context": 131072,
+        "output": 40960
+      },
+      "maxTokens": 40960,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/groq/compound": {
+      "id": "groq/compound",
+      "name": "Compound",
+      "family": "groq",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-09-04",
+      "release_date": "2025-09-04",
+      "last_updated": "2025-09-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/groq/compound-mini": {
+      "id": "groq/compound-mini",
+      "name": "Compound Mini",
+      "family": "groq",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-09-04",
+      "release_date": "2025-09-04",
+      "last_updated": "2025-09-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
+    "groq/moonshotai/kimi-k2-instruct-0905": {
+      "id": "moonshotai/kimi-k2-instruct-0905",
+      "name": "Kimi K2 Instruct 0905",
+      "family": "kimi",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2025-09-05",
+      "last_updated": "2025-09-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1,
+        "output": 3
+      },
+      "limit": {
+        "context": 262144,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1"
+    },
     "fastrouter/x-ai/grok-4": {
       "id": "x-ai/grok-4",
       "name": "Grok 4",
@@ -78150,6 +80355,1030 @@
       "maxTokens": 32768,
       "provider": "openai",
       "baseUrl": "http://localhost:8080/v1"
+    },
+    "google/gemini-flash-lite-latest": {
+      "id": "gemini-flash-lite-latest",
+      "name": "Gemini Flash-Lite Latest",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-09-25",
+      "last_updated": "2025-09-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-pro-preview-05-06": {
+      "id": "gemini-2.5-pro-preview-05-06",
+      "name": "Gemini 2.5 Pro Preview 05-06",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-05-06",
+      "last_updated": "2025-05-06",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-live-2.5-flash-preview-native-audio": {
+      "id": "gemini-live-2.5-flash-preview-native-audio",
+      "name": "Gemini Live 2.5 Flash Preview Native Audio",
+      "family": "gemini-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2025-06-17",
+      "last_updated": "2025-09-18",
+      "modalities": {
+        "input": [
+          "text",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text",
+          "audio"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 2,
+        "input_audio": 3,
+        "output_audio": 12
+      },
+      "limit": {
+        "context": 131072,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-3.1-pro-preview-customtools": {
+      "id": "gemini-3.1-pro-preview-customtools",
+      "name": "Gemini 3.1 Pro Preview Custom Tools",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-02-19",
+      "last_updated": "2026-02-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-lite-preview-09-2025": {
+      "id": "gemini-2.5-flash-lite-preview-09-2025",
+      "name": "Gemini 2.5 Flash Lite Preview 09-25",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-09-25",
+      "last_updated": "2025-09-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-1.5-flash": {
+      "id": "gemini-1.5-flash",
+      "name": "Gemini 1.5 Flash",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04",
+      "release_date": "2024-05-14",
+      "last_updated": "2024-05-14",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.075,
+        "output": 0.3,
+        "cache_read": 0.01875
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-1.5-pro": {
+      "id": "gemini-1.5-pro",
+      "name": "Gemini 1.5 Pro",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04",
+      "release_date": "2024-02-15",
+      "last_updated": "2024-02-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 5,
+        "cache_read": 0.3125
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-3.1-flash-lite-preview": {
+      "id": "gemini-3.1-flash-lite-preview",
+      "name": "Gemini 3.1 Flash Lite Preview",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-03-03",
+      "last_updated": "2026-03-03",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "cache_read": 0.025,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-3.1-pro-preview": {
+      "id": "gemini-3.1-pro-preview",
+      "name": "Gemini 3.1 Pro Preview",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-02-19",
+      "last_updated": "2026-02-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.0-flash": {
+      "id": "gemini-2.0-flash",
+      "name": "Gemini 2.0 Flash",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-06",
+      "release_date": "2024-12-11",
+      "last_updated": "2024-12-11",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-3-flash-preview": {
+      "id": "gemini-3-flash-preview",
+      "name": "Gemini 3 Flash Preview",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-12-17",
+      "last_updated": "2025-12-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05,
+        "context_over_200k": {
+          "input": 0.5,
+          "output": 3,
+          "cache_read": 0.05
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-3-pro-preview": {
+      "id": "gemini-3-pro-preview",
+      "name": "Gemini 3 Pro Preview",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-11-18",
+      "last_updated": "2025-11-18",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 4,
+          "output": 18,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-preview-05-20": {
+      "id": "gemini-2.5-flash-preview-05-20",
+      "name": "Gemini 2.5 Flash Preview 05-20",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-05-20",
+      "last_updated": "2025-05-20",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6,
+        "cache_read": 0.0375
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-pro": {
+      "id": "gemini-2.5-pro",
+      "name": "Gemini 2.5 Pro",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-03-20",
+      "last_updated": "2025-06-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125,
+        "context_over_200k": {
+          "input": 2.5,
+          "output": 15,
+          "cache_read": 0.25
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-flash-latest": {
+      "id": "gemini-flash-latest",
+      "name": "Gemini Flash Latest",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-09-25",
+      "last_updated": "2025-09-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.075,
+        "input_audio": 1
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemma-4-31b-it": {
+      "id": "gemma-4-31b-it",
+      "name": "Gemma 4 31B",
+      "family": "gemma",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 256000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-pro-preview-06-05": {
+      "id": "gemini-2.5-pro-preview-06-05",
+      "name": "Gemini 2.5 Pro Preview 06-05",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-06-05",
+      "last_updated": "2025-06-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-lite-preview-06-17": {
+      "id": "gemini-2.5-flash-lite-preview-06-17",
+      "name": "Gemini 2.5 Flash Lite Preview 06-17",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-06-17",
+      "last_updated": "2025-06-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025,
+        "input_audio": 0.3
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash": {
+      "id": "gemini-2.5-flash",
+      "name": "Gemini 2.5 Flash",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-03-20",
+      "last_updated": "2025-06-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.03,
+        "input_audio": 1
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-preview-04-17": {
+      "id": "gemini-2.5-flash-preview-04-17",
+      "name": "Gemini 2.5 Flash Preview 04-17",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-04-17",
+      "last_updated": "2025-04-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6,
+        "cache_read": 0.0375
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-preview-09-2025": {
+      "id": "gemini-2.5-flash-preview-09-2025",
+      "name": "Gemini 2.5 Flash Preview 09-25",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-09-25",
+      "last_updated": "2025-09-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.075,
+        "input_audio": 1
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemma-3-27b-it": {
+      "id": "gemma-3-27b-it",
+      "name": "Gemma 3 27B",
+      "family": "gemma",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2025-03-12",
+      "last_updated": "2025-03-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemma-4-26b-a4b-it": {
+      "id": "gemma-4-26b-a4b-it",
+      "name": "Gemma 4 26B",
+      "family": "gemma",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 256000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.5-flash-lite": {
+      "id": "gemini-2.5-flash-lite",
+      "name": "Gemini 2.5 Flash Lite",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-06-17",
+      "last_updated": "2025-06-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.1,
+        "output": 0.4,
+        "cache_read": 0.025
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-1.5-flash-8b": {
+      "id": "gemini-1.5-flash-8b",
+      "name": "Gemini 1.5 Flash-8B",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04",
+      "release_date": "2024-10-03",
+      "last_updated": "2024-10-03",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.0375,
+        "output": 0.15,
+        "cache_read": 0.01
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-live-2.5-flash": {
+      "id": "gemini-live-2.5-flash",
+      "name": "Gemini Live 2.5 Flash",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-09-01",
+      "last_updated": "2025-09-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text",
+          "audio"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 2,
+        "input_audio": 3,
+        "output_audio": 12
+      },
+      "limit": {
+        "context": 128000,
+        "output": 8000
+      },
+      "maxTokens": 8000,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
+    "google/gemini-2.0-flash-lite": {
+      "id": "gemini-2.0-flash-lite",
+      "name": "Gemini 2.0 Flash Lite",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-06",
+      "release_date": "2024-12-11",
+      "last_updated": "2024-12-11",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.075,
+        "output": 0.3
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai"
     },
     "drun/public/deepseek-r1": {
       "id": "public/deepseek-r1",
@@ -80282,6 +83511,495 @@
       "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://models.github.ai/inference"
+    },
+    "togetherai/essentialai/Rnj-1-Instruct": {
+      "id": "essentialai/Rnj-1-Instruct",
+      "name": "Rnj-1 Instruct",
+      "family": "rnj",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2025-12-05",
+      "last_updated": "2025-12-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 32768,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/Qwen/Qwen3.5-397B-A17B": {
+      "id": "Qwen/Qwen3.5-397B-A17B",
+      "name": "Qwen3.5 397B A17B",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-16",
+      "last_updated": "2026-02-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 262144,
+        "output": 130000
+      },
+      "maxTokens": 130000,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/Qwen/Qwen3-Coder-Next-FP8": {
+      "id": "Qwen/Qwen3-Coder-Next-FP8",
+      "name": "Qwen3 Coder Next FP8",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2026-02-03",
+      "release_date": "2026-02-03",
+      "last_updated": "2026-02-03",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/Qwen/Qwen3-235B-A22B-Instruct-2507-tput": {
+      "id": "Qwen/Qwen3-235B-A22B-Instruct-2507-tput",
+      "name": "Qwen3 235B A22B Instruct 2507 FP8",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-07-25",
+      "last_updated": "2025-07-25",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.2,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": {
+      "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
+      "name": "Qwen3 Coder 480B A35B Instruct",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2025-07-23",
+      "last_updated": "2025-07-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2,
+        "output": 2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/zai-org/GLM-5.1": {
+      "id": "zai-org/GLM-5.1",
+      "name": "GLM-5.1",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-11",
+      "release_date": "2026-04-07",
+      "last_updated": "2026-04-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.4,
+        "output": 4.4
+      },
+      "limit": {
+        "context": 202752,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/meta-llama/Llama-3.3-70B-Instruct-Turbo": {
+      "id": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "name": "Llama 3.3 70B",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2024-12-06",
+      "last_updated": "2024-12-06",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.88,
+        "output": 0.88
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/deepseek-ai/DeepSeek-V3": {
+      "id": "deepseek-ai/DeepSeek-V3",
+      "name": "DeepSeek V3",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07",
+      "release_date": "2025-01-20",
+      "last_updated": "2025-05-29",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.25,
+        "output": 1.25
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/deepseek-ai/DeepSeek-V3-1": {
+      "id": "deepseek-ai/DeepSeek-V3-1",
+      "name": "DeepSeek V3.1",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08",
+      "release_date": "2025-08-21",
+      "last_updated": "2025-08-21",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 1.7
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/openai/gpt-oss-120b": {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT OSS 120B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/google/gemma-4-31B-it": {
+      "id": "google/gemma-4-31B-it",
+      "name": "Gemma 4 31B Instruct",
+      "family": "gemma",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-07",
+      "last_updated": "2026-04-07",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/moonshotai/Kimi-K2.6": {
+      "id": "moonshotai/Kimi-K2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.2,
+        "output": 4.5,
+        "cache_read": 0.2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 131000
+      },
+      "maxTokens": 131000,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/moonshotai/Kimi-K2.5": {
+      "id": "moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
+      "family": "kimi",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": true,
+      "temperature": true,
+      "knowledge": "2026-01",
+      "release_date": "2026-01-27",
+      "last_updated": "2026-01-27",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 2.8
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/MiniMaxAI/MiniMax-M2.5": {
+      "id": "MiniMaxAI/MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/MiniMaxAI/MiniMax-M2.7": {
+      "id": "MiniMaxAI/MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
+      },
+      "limit": {
+        "context": 202752,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
     },
     "qihang-ai/claude-opus-4-5-20251101": {
       "id": "claude-opus-4-5-20251101",
@@ -82749,6 +86467,16 @@
       "name": "Wafer",
       "doc": "https://docs.wafer.ai/wafer-pass"
     },
+    "cohere": {
+      "id": "cohere",
+      "env": [
+        "COHERE_API_KEY"
+      ],
+      "npm": "@ai-sdk/cohere",
+      "name": "Cohere",
+      "doc": "https://docs.cohere.com/docs/models",
+      "api": "https://api.cohere.com/compatibility/v1"
+    },
     "cloudferro-sherlock": {
       "id": "cloudferro-sherlock",
       "env": [
@@ -82768,6 +86496,16 @@
       "api": "https://coding-plan-endpoint.kuaecloud.net/v1",
       "name": "KUAE Cloud Coding Plan",
       "doc": "https://docs.mthreads.com/kuaecloud/kuaecloud-doc-online/coding_plan/"
+    },
+    "xai": {
+      "id": "xai",
+      "env": [
+        "XAI_API_KEY"
+      ],
+      "npm": "@ai-sdk/xai",
+      "name": "xAI",
+      "doc": "https://docs.x.ai/docs/models",
+      "api": "https://api.x.ai/v1"
     },
     "meganova": {
       "id": "meganova",
@@ -82878,6 +86616,16 @@
       "name": "Alibaba Coding Plan (China)",
       "doc": "https://help.aliyun.com/zh/model-studio/coding-plan"
     },
+    "mistral": {
+      "id": "mistral",
+      "env": [
+        "MISTRAL_API_KEY"
+      ],
+      "npm": "@ai-sdk/mistral",
+      "name": "Mistral",
+      "doc": "https://docs.mistral.ai/getting-started/models/",
+      "api": "https://api.mistral.ai/v1"
+    },
     "ovhcloud": {
       "id": "ovhcloud",
       "env": [
@@ -82939,6 +86687,16 @@
       "name": "Cloudflare Workers AI",
       "doc": "https://developers.cloudflare.com/workers-ai/models/"
     },
+    "groq": {
+      "id": "groq",
+      "env": [
+        "GROQ_API_KEY"
+      ],
+      "npm": "@ai-sdk/groq",
+      "name": "Groq",
+      "doc": "https://console.groq.com/docs/models",
+      "api": "https://api.groq.com/openai/v1"
+    },
     "fastrouter": {
       "id": "fastrouter",
       "env": [
@@ -82980,6 +86738,17 @@
       "name": "Privatemode AI",
       "doc": "https://docs.privatemode.ai/api/overview"
     },
+    "google": {
+      "id": "google",
+      "env": [
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GEMINI_API_KEY"
+      ],
+      "npm": "@ai-sdk/google",
+      "name": "Google",
+      "doc": "https://ai.google.dev/gemini-api/docs/pricing",
+      "api": "https://generativelanguage.googleapis.com/v1beta/openai"
+    },
     "drun": {
       "id": "drun",
       "env": [
@@ -83019,6 +86788,16 @@
       "api": "https://models.github.ai/inference",
       "name": "GitHub Models",
       "doc": "https://docs.github.com/en/github-models"
+    },
+    "togetherai": {
+      "id": "togetherai",
+      "env": [
+        "TOGETHER_API_KEY"
+      ],
+      "npm": "@ai-sdk/togetherai",
+      "name": "Together AI",
+      "doc": "https://docs.together.ai/docs/serverless-models",
+      "api": "https://api.together.xyz/v1"
     },
     "qihang-ai": {
       "id": "qihang-ai",
