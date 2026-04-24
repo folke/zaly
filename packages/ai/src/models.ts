@@ -1,4 +1,7 @@
+import type { AuthProvider } from "./auth.ts"
 import type { Modality, ModelOptions, ProviderInfo } from "./types.ts"
+
+import { hasAuth } from "./auth.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than
@@ -60,32 +63,24 @@ export async function getModel(id: string): Promise<ModelOptions | undefined> {
   return await resolveBuiltin(id)
 }
 
-export function isAvailable(m: ModelOptions): boolean {
-  const envs = m.providerInfo?.env
-  if (!envs || envs.length === 0) return true // no env required → always ok
-  return envs.some((e) => {
-    const v = process.env[e]
-    return v !== undefined && v !== ""
-  })
-}
-
 /** Predicate inputs for narrowing a model list.
  *
- *  - `env`      — only models whose provider has a populated env var
- *                 set in the current process (see `isAvailable`).
- *  - `reasoning`— match the model's `reasoning` capability exactly.
- *  - `modality` — shorthand form (`Modality` / `Modality[]`) matches
- *                 against INPUT (common case — "accepts image").
- *                 Explicit form `{ input?, output? }` lets callers
- *                 narrow on generation direction too. */
+ *  - `auth`      — only models whose credentials this provider resolves
+ *                  (use `envAuth` for env-based, chain OAuth providers
+ *                  for richer logic). Absent → no availability filter.
+ *  - `reasoning` — match the model's `reasoning` capability exactly.
+ *  - `modality`  — shorthand form (`Modality` / `Modality[]`) matches
+ *                  against INPUT (common case — "accepts image").
+ *                  Explicit form `{ input?, output? }` lets callers
+ *                  narrow on generation direction too. */
 export interface ModelFilter {
-  env?: boolean
+  auth?: AuthProvider
   reasoning?: boolean
   modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
 }
 
-export function filterModel(m: ModelOptions, opts?: ModelFilter): boolean {
-  if (opts?.env && !isAvailable(m)) return false
+export async function filterModel(m: ModelOptions, opts?: ModelFilter): Promise<boolean> {
+  if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth))) return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
   return true
@@ -96,9 +91,7 @@ export function filterModel(m: ModelOptions, opts?: ModelFilter): boolean {
  *  input because "find me a vision model" is the common case. */
 function matchesModality(m: ModelOptions, spec: NonNullable<ModelFilter["modality"]>): boolean {
   const normalised =
-    typeof spec === "string" || Array.isArray(spec)
-      ? { input: [spec].flat() }
-      : spec
+    typeof spec === "string" || Array.isArray(spec) ? { input: [spec].flat() } : spec
   if (
     normalised.input !== undefined &&
     normalised.input.length > 0 &&
@@ -121,10 +114,16 @@ function matchesModality(m: ModelOptions, spec: NonNullable<ModelFilter["modalit
  *  `listModelIds` — one compact JSON, no catalog load needed. */
 export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelOptions>> {
   const catalog = await loadCatalog()
+  const entries: [string, ModelOptions][] = Object.entries(catalog.models).map(([id, stored]) => [
+    id,
+    attachProviderInfo(stored, catalog, id),
+  ])
+  // Run filters in parallel — `auth.getAuth` may be async (OAuth,
+  // keychain); sequential await would serialise 2400 lookups.
+  const verdicts = await Promise.all(entries.map(([, m]) => filterModel(m, opts)))
   const out: Record<string, ModelOptions> = {}
-  for (const [id, stored] of Object.entries(catalog.models)) {
-    const p = attachProviderInfo(stored, catalog, id)
-    if (filterModel(p, opts)) out[id] = p
+  for (const [i, [id, m]] of entries.entries()) {
+    if (verdicts[i]) out[id] = m
   }
   for (const [id, m] of customModels) out[id] = m
   return out

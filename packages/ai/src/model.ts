@@ -1,3 +1,4 @@
+import type { AuthProvider } from "./auth.ts"
 import type {
   CountRequest,
   GenerateRequest,
@@ -6,8 +7,9 @@ import type {
   TokenCount,
 } from "./provider.ts"
 import type { BuiltinProvider } from "./providers/index.ts"
-import type { ModelOptions, ProviderInfo, ProviderOptions } from "./types.ts"
+import type { ModelOptions, ProviderOptions } from "./types.ts"
 
+import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
 import { loadProvider } from "./providers/index.ts"
 
@@ -42,11 +44,12 @@ export interface Model<T extends BuiltinProvider = BuiltinProvider> {
  */
 export async function loadModel(
   source: string | ModelOptions,
-  overrides?: Partial<ProviderOptions>
+  overrides?: Partial<ProviderOptions>,
+  auth: AuthProvider = envAuth
 ): Promise<Model> {
   const base: ModelOptions = typeof source === "string" ? await resolve(source) : source
   const options: ModelOptions = { ...base, ...overrides }
-  const provider = await buildAdapter(options)
+  const provider = await buildAdapter(options, auth)
   // URI form — preserve the caller's id when they passed a string (so
   // catalog lookups round-trip `"openrouter/kimi/k2"` even though
   // `options.provider` now holds the adapter name `"openai"`). For
@@ -87,23 +90,20 @@ async function resolve(id: string): Promise<ModelOptions> {
 
 /** Construct the adapter for a pre-resolved `ModelOptions`. Everything
  *  about HOW to reach the endpoint is already on `options` (baseUrl,
- *  headers, quirks) — the only runtime work is env-var resolution for
- *  `apiKey` when the caller didn't supply one explicitly.
+ *  headers, quirks); `auth` resolves credentials.
  *
  *  Options spread in full rather than field-by-field: any future
  *  `ProviderOptions` extension (timeout, proxy, etc.) flows through
- *  automatically. `apiKey` overlays on top with the env fallback. */
-async function buildAdapter(options: ModelOptions): Promise<Provider<BuiltinProvider>> {
+ *  automatically. `apiKey` and `headers` from the caller's options
+ *  win over auth-resolved values. */
+async function buildAdapter(
+  options: ModelOptions,
+  auth: AuthProvider
+): Promise<Provider<BuiltinProvider>> {
+  const creds = await auth.getAuth(options)
   return await loadProvider(options.provider as BuiltinProvider, {
     ...options,
-    apiKey: options.apiKey ?? firstEnv(options.providerInfo?.env ?? []),
+    apiKey: options.apiKey ?? creds?.apiKey,
+    headers: { ...creds?.headers, ...options.headers },
   })
-}
-
-function firstEnv(envs: ProviderInfo["env"]): string | undefined {
-  for (const name of envs) {
-    const value = process.env[name]
-    if (value !== undefined && value !== "") return value
-  }
-  return undefined
 }
