@@ -42,5 +42,9 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
+  },
+  "dependencies": {
+    "jsonrepair": "^3.14.0",
+    "typebox": "^1.1.33"
   }
 }
