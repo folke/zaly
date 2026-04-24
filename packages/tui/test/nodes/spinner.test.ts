@@ -50,7 +50,6 @@ describe("spinner()", () => {
     expect(row0).toContain("A")
 
     // Render five more times at t=0 — still frame 0.
-    // eslint-disable-next-line no-await-in-loop -- sequential is the point.
     for (let i = 0; i < 5; i++) await s.render(ctx)
     setTime(250) // 2.5 ticks at speed=100 → frame index 2 → "C"
     s.invalidate()

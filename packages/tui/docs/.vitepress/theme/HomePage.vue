@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// oxlint-disable no-await-in-loop
 import { onMounted, ref } from "vue"
 
 // The hero "terminal" runs through a realistic session on mount:

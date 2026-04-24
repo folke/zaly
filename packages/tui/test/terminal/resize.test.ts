@@ -1,4 +1,3 @@
-// oxlint-disable no-await-in-loop
 import { describe, expect, test } from "vitest"
 import { input } from "../../src/widgets/input.ts"
 import { text } from "../../src/widgets/text.ts"

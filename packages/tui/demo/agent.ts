@@ -209,7 +209,6 @@ async function streamReply(prompt: string, full: string): Promise<void> {
     i = Math.min(i + take, full.length)
     reply.state.content = full.slice(0, i)
     setProgressValue(i / full.length)
-    // oxlint-disable-next-line no-await-in-loop -- token streaming is the point.
     await new Promise((r) => setTimeout(r, 10 + Math.floor(Math.random() * 18)))
   }
 

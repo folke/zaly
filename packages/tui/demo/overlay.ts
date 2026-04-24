@@ -1,4 +1,13 @@
-import { box, createRenderer, markdown, overlay, progress, signal, spinner, text } from "../src/index.ts"
+import {
+  box,
+  createRenderer,
+  markdown,
+  overlay,
+  progress,
+  signal,
+  spinner,
+  text,
+} from "../src/index.ts"
 
 /**
  * Overlay demo. Streams markdown into the scroll region while a help
@@ -26,11 +35,11 @@ renderer.ui.add(
       spinner({ color: "accent", running: spinning }),
       text(
         ({ style }) =>
-          `${style.primary("zaly")} ${style.dim("·")} ${style.success(status())} ${style.dim("·")} ${style.muted("h help · t toast · ctrl-c quit")}`,
-      ),
+          `${style.primary("zaly")} ${style.dim("·")} ${style.success(status())} ${style.dim("·")} ${style.muted("h help · t toast · ctrl-c quit")}`
+      )
     ),
-    progress({ color: "primary", label: "auto", total: 1, value: progressValue }),
-  ),
+    progress({ color: "primary", label: "auto", total: 1, value: progressValue })
+  )
 )
 
 // Pre-built help panel. `renderer.overlay.open/close` toggles it.
@@ -52,8 +61,8 @@ const helpPanel = overlay(
         `${style.accent("t")}       ${style.dim("show a toast (auto-close)")}`,
         `${style.accent("ctrl-c")}  ${style.dim("quit")}`,
       ].join("\n"),
-    { wrap: "none" },
-  ),
+    { wrap: "none" }
+  )
 )
 
 function showToast(message: string): void {
@@ -67,7 +76,7 @@ function showToast(message: string): void {
       y: 2,
       zIndex: 20,
     },
-    text(({ style }) => style.bold(message), { wrap: "none" }),
+    text(({ style }) => style.bold(message), { wrap: "none" })
   )
   renderer.overlay.open(t)
   setTimeout(() => t.close(), 1800).unref()
@@ -125,10 +134,8 @@ async function main(): Promise<void> {
       j = Math.min(j + take, full.length)
       node.state.content = full.slice(0, j)
       setProgressValue((i + j / full.length) / responses.length)
-      // oxlint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, 12 + Math.floor(Math.random() * 20)))
     }
-    // oxlint-disable-next-line no-await-in-loop
     await new Promise((r) => setTimeout(r, 400))
   }
 

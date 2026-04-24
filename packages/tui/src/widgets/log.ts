@@ -35,15 +35,15 @@ interface LevelDefaults {
 /** Per-level default prefix style + icon + color. Matches rekal's
  *  `defaultStyles` table, adapted to zaly's theme slots. */
 export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
-  trace: { color: "dim", icon: "⠿", style: "icon", textColor: "muted" },
-  debug: { color: "info", icon: "⚙ ", style: "prompt" },
-  log: { color: "dim", icon: "●", style: "icon" },
-  info: { color: "info", icon: "ℹ ", style: "icon" },
-  success: { color: "success", icon: "✔ ", style: "icon" },
   cancel: { color: "warn", icon: "✖ ", style: "icon" },
-  warn: { color: "warn", icon: "⚠", style: "badge", textColor: "warn" },
+  debug: { color: "info", icon: "⚙ ", style: "prompt" },
   error: { color: "error", icon: "✖ ", style: "badge", textColor: "error" },
   fatal: { color: "error", icon: "☢ ", style: "badge" },
+  info: { color: "info", icon: "ℹ ", style: "icon" },
+  log: { color: "dim", icon: "●", style: "icon" },
+  success: { color: "success", icon: "✔ ", style: "icon" },
+  trace: { color: "dim", icon: "⠿", style: "icon", textColor: "muted" },
+  warn: { color: "warn", icon: "⚠", style: "badge", textColor: "warn" },
 }
 
 export class Log extends Node<LogState> {

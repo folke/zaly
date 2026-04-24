@@ -17,15 +17,15 @@ export const LOG_LEVELS = [
 ] as const
 
 const LOG_PRIORITY: Record<LogLevel, number> = {
-  trace: 0,
-  debug: 1,
-  log: 2,
-  info: 2,
-  success: 2,
   cancel: 2,
-  warn: 3,
+  debug: 1,
   error: 4,
   fatal: 5,
+  info: 2,
+  log: 2,
+  success: 2,
+  trace: 0,
+  warn: 3,
 }
 
 export function isLogLevel(level: string): level is LogLevel {

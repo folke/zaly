@@ -1,4 +1,3 @@
-// oxlint-disable no-await-in-loop
 // oxlint-disable typescript/consistent-return
 import type { IJsonSchemaUnit } from "typia"
 

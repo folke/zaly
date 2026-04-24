@@ -83,10 +83,11 @@
   },
   "overrides": [
     {
-      "files": ["!**/src/**/*.ts"],
+      "files": ["!packages/*/src/**/*.ts"],
       "rules": {
         "eslint/no-console": "off",
-        "eslint/sort-keys": "off"
+        "eslint/sort-keys": "off",
+        "eslint/no-await-in-loop": "off"
       }
     },
     {

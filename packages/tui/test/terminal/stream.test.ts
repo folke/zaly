@@ -1,4 +1,3 @@
-// oxlint-disable no-await-in-loop
 import { describe, expect, test } from "vitest"
 import { text } from "../../src/widgets/text.ts"
 import { makeHarness } from "./harness.ts"

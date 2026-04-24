@@ -89,59 +89,59 @@ export type Theme = {
 }
 
 const defaults: Theme = {
-  fg: "inherit",
-  bg: "inherit",
-  primary: "blue",
   accent: "brightMagenta",
-  dim: "brightBlack",
-  muted: "brightBlack",
-
-  success: "green",
-  info: "cyan",
-  warn: "yellow",
-  error: "red",
-
-  title: { bold: true, fg: "primary" },
+  bg: "inherit",
   border: "muted",
   borderTitle: "title",
-  line: "muted",
-
-  mdBold: { bold: true, fg: "fg" },
-  mdItalic: { fg: "fg", italic: true },
-  mdStrikethrough: { fg: "fg", strikethrough: true },
-
-  mdHeading: "title",
-  mdHeading1: "mdHeading",
-  mdHeading2: { bold: true, fg: "accent" },
-  mdHeading3: "mdHeading2",
-  mdHeading4: "mdHeading2",
-  mdHeading5: "mdHeading2",
-  mdHeading6: "mdHeading2",
-
-  mdCode: { bg: "primary/15", fg: "primary" },
-  mdCodeBlock: { bg: "muted", fg: "primary" },
-  mdCodeBlockTitle: "title",
-  mdHr: "accent",
-  mdLink: { fg: "primary", underline: true },
-  mdListBullet: "accent",
-  mdListChecked: "primary",
-  mdListUnchecked: "primary",
-  mdQuote: "dim",
-  mdTable: "accent",
-  mdTableHeader: "title",
-
-  menuLabel: "primary",
-  menuHint: "muted",
-  menuActive: { bg: "muted" },
-
   code: { bg: "muted" },
   codeTitle: "title",
 
   diffAdd: { bg: "success/3", fg: "success" },
   diffContext: "dim",
   diffDel: { bg: "error/3", fg: "error" },
-  diffTitle: "title",
   diffLine: "line",
+
+  diffTitle: "title",
+  dim: "brightBlack",
+  error: "red",
+  fg: "inherit",
+
+  info: "cyan",
+  line: "muted",
+  mdBold: { bold: true, fg: "fg" },
+
+  mdCode: { bg: "primary/15", fg: "primary" },
+  mdCodeBlock: { bg: "muted", fg: "primary" },
+  mdCodeBlockTitle: "title",
+  mdHeading: "title",
+  mdHeading1: "mdHeading",
+  mdHeading2: { bold: true, fg: "accent" },
+  mdHeading3: "mdHeading2",
+
+  mdHeading4: "mdHeading2",
+  mdHeading5: "mdHeading2",
+  mdHeading6: "mdHeading2",
+  mdHr: "accent",
+  mdItalic: { fg: "fg", italic: true },
+  mdLink: { fg: "primary", underline: true },
+  mdListBullet: "accent",
+  mdListChecked: "primary",
+  mdListUnchecked: "primary",
+  mdQuote: "dim",
+  mdStrikethrough: { fg: "fg", strikethrough: true },
+
+  mdTable: "accent",
+  mdTableHeader: "title",
+  menuActive: { bg: "muted" },
+
+  menuHint: "muted",
+  menuLabel: "primary",
+
+  muted: "brightBlack",
+  primary: "blue",
+  success: "green",
+  title: { bold: true, fg: "primary" },
+  warn: "yellow",
 }
 
 /** Fill defaults on a raw theme object. Exposed for the generated

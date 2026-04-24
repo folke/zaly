@@ -102,10 +102,8 @@ async function main(): Promise<void> {
       j = Math.min(j + take, full.length)
       node.state.content = full.slice(0, j)
       setProgressValue((i + j / full.length) / responses.length)
-      // oxlint-disable-next-line no-await-in-loop -- streaming is the point.
       await new Promise((r) => setTimeout(r, 12 + Math.floor(Math.random() * 20)))
     }
-    // oxlint-disable-next-line no-await-in-loop
     await new Promise((r) => setTimeout(r, 350))
   }
 

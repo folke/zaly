@@ -1,6 +1,5 @@
-// oxlint-disable no-await-in-loop
-import { themes } from "@zaly/tui/themes"
 import { box, createCtx, loadTheme, text } from "@zaly/tui"
+import { themes } from "@zaly/tui/themes"
 
 /**
  * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`
@@ -27,15 +26,17 @@ const names: string[] = [...Object.keys(themes), "ansi"]
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })
   for (const name of names.slice(i, i + CHUNK)) {
-    const theme = await (name === "ansi" ? loadTheme("ansi") : themes[name as keyof typeof themes]())
+    const theme = await (name === "ansi"
+      ? loadTheme("ansi")
+      : themes[name as keyof typeof themes]())
     const panel = box(
       { bg: theme.bg, border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
       text(({ style }) =>
         Object.keys(theme)
           .filter((k) => k !== "bg" && k !== "shiki")
           .map((k) => style.add(k)(k))
-          .join("\n"),
-      ),
+          .join("\n")
+      )
     )
     const panelRows = await panel.render(createCtx({ theme, width: PANEL_WIDTH }))
     row.add(text(panelRows.join("\n")))
