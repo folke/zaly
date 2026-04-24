@@ -18,7 +18,7 @@ import type {
  * `countTokens` is optional — providers without native token counting
  * can fall back to a shared heuristic in the registry.
  */
-export interface Provider<T extends string> {
+export interface Provider<T extends string = string> {
   id: T
   stream(req: GenerateRequest): AsyncIterable<StreamEvent>
   countTokens?(req: CountRequest): Promise<TokenCount>
