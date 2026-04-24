@@ -1,0 +1,46 @@
+{
+  "name": "@zaly/ai",
+  "version": "0.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/folke/zaly.git"
+  },
+  "files": [
+    "src/**/*",
+    "dist/**/*"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    }
+  },
+  "scripts": {
+    "build": "tsdown --cwd ../../ --filter @zaly/ai",
+    "build:providers": "bun scripts/fetch-models.ts && bun scripts/build-providers.ts",
+    "check": "cd ../../; oxlint packages/ai",
+    "test": "bun test:node && bun test:bun",
+    "test:node": "cd ../../; vitest --project @zaly/ai run",
+    "test:bun": "bun test --only-failures"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "publint": "^0.3.18",
+    "tsdown": "^0.21.9",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "bun": ">=1.2",
+    "node": ">=24"
+  }
+}
