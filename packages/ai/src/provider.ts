@@ -15,13 +15,14 @@ import type {
  * implement one thing, and the harness layers (retries, throttling,
  * telemetry) wrap one thing.
  *
- * `countTokens` is optional — providers without native token counting
- * can fall back to a shared heuristic in the registry.
+ * Token counts come from `StreamEvent.finish.usage` — the provider is
+ * the source of truth, and post-hoc reporting is enough for
+ * compaction-at-90% decisions (see `isContextOverflow` for the
+ * reactive fallback path).
  */
 export interface Provider<T extends string = string> {
   id: T
   stream(req: GenerateRequest): AsyncIterable<StreamEvent>
-  countTokens?(req: CountRequest): Promise<TokenCount>
 }
 
 /**
@@ -104,15 +105,6 @@ export type ResponseFormat =
   | { type: "json" }
   | { type: "json_schema"; name: string; schema: unknown; strict?: boolean }
 
-/** Input to `countTokens`. Mirrors `GenerateRequest` but drops the
- *  execution knobs — token count depends on what's serialised, not on
- *  temperature or stop sequences. */
-export interface CountRequest {
-  model: string
-  messages: Message[]
-  tools?: Tool[]
-}
-
 /**
  * Events emitted while streaming a single assistant turn. The shape
  * is Vercel-AI-SDK-ish: typed union, each event self-describes.
@@ -144,7 +136,8 @@ export type FinishReason =
   | "error"
   | "other"
 
-/** Token accounting returned at end-of-stream and from `countTokens`.
+/** Token accounting returned at end-of-stream (`finish.usage`). Provider
+ *  is the source of truth — we don't count locally.
  *  `cachedInput` is the portion of the input that was a cache hit
  *  (Anthropic `cache_read_input_tokens`, OpenAI
  *  `prompt_tokens_details.cached_tokens`). */

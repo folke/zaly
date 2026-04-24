@@ -1,11 +1,5 @@
 import type { AuthProvider } from "./auth.ts"
-import type {
-  CountRequest,
-  GenerateRequest,
-  Provider,
-  StreamEvent,
-  TokenCount,
-} from "./provider.ts"
+import type { GenerateRequest, Provider, StreamEvent } from "./provider.ts"
 import type { BuiltinProvider } from "./providers/index.ts"
 import type { ModelOptions, ProviderOptions } from "./types.ts"
 
@@ -13,9 +7,9 @@ import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
 import { loadProvider } from "./providers/index.ts"
 
-/** Shape of a loaded model. `stream` / `countTokens` are the same as
- *  the underlying `Provider` but with `model` pre-filled and quirks
- *  auto-attached, so callers don't repeat themselves every turn.
+/** Shape of a loaded model. `stream` is the underlying `Provider`'s
+ *  stream with `model` pre-filled and quirks auto-attached, so callers
+ *  don't repeat themselves every turn.
  *
  *  `provider` is exposed for power-user reuse — a long-running app
  *  with many models on the same endpoint can share the same adapter
@@ -26,7 +20,6 @@ export interface Model<T extends BuiltinProvider = BuiltinProvider> {
   options: ModelOptions
   provider: Provider<T>
   stream(req: Omit<GenerateRequest, "model">): AsyncIterable<StreamEvent>
-  countTokens?(req: Omit<CountRequest, "model">): Promise<TokenCount>
 }
 
 /**
@@ -68,13 +61,6 @@ export async function loadModel(
     stream(req) {
       return provider.stream({ ...req, model: options.id, quirks: req.quirks ?? options.quirks })
     },
-    ...(provider.countTokens
-      ? {
-          async countTokens(req) {
-            return await provider.countTokens!({ ...req, model: options.id })
-          },
-        }
-      : {}),
   }
 }
 
