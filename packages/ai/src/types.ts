@@ -213,8 +213,10 @@ export interface ModelInfo {
   attachment: boolean
   /** Emits reasoning / thinking tokens. */
   reasoning: boolean
-  /** Supports tool calling. */
-  tool_call: boolean
+  /** Supports tool calling. Informational — we filter non-tool models
+   *  out of the generated catalog, so at runtime this is effectively
+   *  always true. Optional to make `addModels` ergonomic. */
+  tool_call?: boolean
   /** Reasoning tokens interleave with output.
    *  - `true` — field defaults to `"reasoning_content"`.
    *  - `{ field }` — explicit field name (`"reasoning_content"` on
@@ -227,16 +229,16 @@ export interface ModelInfo {
   temperature?: boolean
   /** Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`. */
   knowledge?: string
-  /** Release date in `YYYY-MM` or `YYYY-MM-DD`. */
-  release_date: string
-  /** Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. */
-  last_updated: string
+  /** Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational. */
+  release_date?: string
+  /** Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational. */
+  last_updated?: string
   modalities: {
     input: Modality[]
     output: Modality[]
   }
-  /** Model weights are publicly released. */
-  open_weights: boolean
+  /** Model weights are publicly released. Informational. */
+  open_weights?: boolean
   /** Pricing per million tokens. `context_over_200k` is the higher
    *  tier some providers bill for prompts over 200K tokens. */
   cost?: Cost & { context_over_200k?: Cost }
