@@ -148,3 +148,161 @@ describe("runAgentTurn — usage accumulation", () => {
     expect(result.usage).toEqual({ input: 30, output: 8 })
   })
 })
+
+describe("runAgentTurn — token budget", () => {
+  test("stops with token-budget when summed usage exceeds the cap", async () => {
+    const provider = mockProvider([
+      [
+        { params: { a: 1, b: 1 }, id: "c1", name: "add", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 60, output: 30 } },
+      ],
+      [
+        { params: { a: 1, b: 1 }, id: "c2", name: "add", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 80, output: 40 } },
+      ],
+    ])
+    const result = await runAgentTurn({
+      provider,
+      request: {
+        messages: [{ content: "go", role: "user" }],
+        model: "mock/x",
+        tools: [Add],
+      },
+      tokenBudget: 80,
+    })
+    expect(result.stopReason).toBe("token-budget")
+    expect(result.iterations).toBe(1)
+  })
+})
+
+describe("runAgentTurn — max tool errors", () => {
+  test("stops with max-tool-errors after N consecutive failing tool calls", async () => {
+    // Each iteration emits one tool call to a missing tool → isError=true.
+    const provider = mockProvider([
+      [
+        { params: {}, id: "c1", name: "missing", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        { params: {}, id: "c2", name: "missing", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        { params: {}, id: "c3", name: "missing", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+    ])
+    const result = await runAgentTurn({
+      maxToolErrors: 3,
+      provider,
+      request: {
+        messages: [{ content: "go", role: "user" }],
+        model: "mock/x",
+        tools: [Add],
+      },
+    })
+    expect(result.stopReason).toBe("max-tool-errors")
+    expect(result.iterations).toBe(3)
+  })
+
+  test("a successful tool call resets the consecutive counter", async () => {
+    const provider = mockProvider([
+      [
+        { params: {}, id: "c1", name: "missing", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        { params: { a: 1, b: 2 }, id: "c2", name: "add", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        { params: {}, id: "c3", name: "missing", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        { delta: "ok", type: "text-delta" },
+        { finishReason: "stop", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+    ])
+    const result = await runAgentTurn({
+      maxToolErrors: 2,
+      provider,
+      request: {
+        messages: [{ content: "go", role: "user" }],
+        model: "mock/x",
+        tools: [Add],
+      },
+    })
+    expect(result.stopReason).toBe("natural")
+  })
+})
+
+describe("runAgentTurn — context overflow", () => {
+  test("detects overflow from a thrown stream error", async () => {
+    const provider: Provider = {
+      id: "mock",
+      // eslint-disable-next-line require-yield
+      async *stream() {
+        throw new Error("This model's maximum context length is 8192 tokens.")
+      },
+    }
+    const result = await runAgentTurn({
+      provider,
+      request: { messages: [{ content: "go", role: "user" }], model: "mock/x" },
+    })
+    expect(result.stopReason).toBe("context-overflow")
+  })
+
+  test("detects silent overflow against contextLimit", async () => {
+    const provider = mockProvider([
+      [{ finishReason: "stop", type: "finish", usage: { input: 9000, output: 5 } }],
+    ])
+    const result = await runAgentTurn({
+      contextLimit: 8000,
+      provider,
+      request: { messages: [{ content: "go", role: "user" }], model: "mock/x" },
+    })
+    expect(result.stopReason).toBe("context-overflow")
+  })
+
+  test("genuine errors still surface as stopReason: error", async () => {
+    const provider: Provider = {
+      id: "mock",
+      // eslint-disable-next-line require-yield
+      async *stream() {
+        throw new Error("network down")
+      },
+    }
+    const result = await runAgentTurn({
+      provider,
+      request: { messages: [{ content: "go", role: "user" }], model: "mock/x" },
+    })
+    expect(result.stopReason).toBe("error")
+  })
+})
+
+describe("runAgentTurn — loop detector", () => {
+  test("stops with loop-detected when the detector returns true", async () => {
+    let calledWith: unknown
+    const provider = mockProvider([
+      [
+        { params: { a: 1, b: 1 }, id: "c1", name: "add", type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+    ])
+    const result = await runAgentTurn({
+      loopDetector: (calls) => {
+        calledWith = calls
+        return true
+      },
+      provider,
+      request: {
+        messages: [{ content: "go", role: "user" }],
+        model: "mock/x",
+        tools: [Add],
+      },
+    })
+    expect(result.stopReason).toBe("loop-detected")
+    expect(Array.isArray(calledWith)).toBe(true)
+  })
+})

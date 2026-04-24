@@ -11,6 +11,8 @@ import type { Message, Tool, ToolCallPart, ToolResultPart } from "./types.ts"
 
 import { collect } from "./provider.ts"
 import { runTool, ToolError } from "./tools.ts"
+import { isContextOverflow } from "./utils/overflow.ts"
+import type { LoopDetector } from "./utils/looping.ts"
 
 /** Input for `runAgentTurn`. Holds the provider + full `GenerateRequest`
  *  so callers can configure any per-request knob (reasoning, tool choice,
@@ -24,8 +26,28 @@ export interface RunAgentOptions extends CollectOptions {
   provider: Provider
   request: GenerateRequest
   /** Hard ceiling on provider round-trips. Prevents runaway tool loops
-   *  when the model refuses to stop calling tools. Default: 10. */
+   *  when the model refuses to stop calling tools. Default: 50. */
   maxIterations?: number
+  /** Cumulative token cap across the whole turn (`usage.input +
+   *  usage.output` summed across iterations). Distinct from
+   *  `request.maxTokens`, which caps a single response. When the
+   *  budget is exceeded, the loop stops with `stopReason: "token-budget"`. */
+  tokenBudget?: number
+  /** Bail out after this many consecutive failing tool calls. A
+   *  successful tool call resets the streak. Use to stop wedged
+   *  agents that can't recover from a broken tool. */
+  maxToolErrors?: number
+  /** Model's declared context window. When set, after each successful
+   *  iteration the loop checks `usage.input + usage.cachedInput`
+   *  against this and stops with `stopReason: "context-overflow"` on
+   *  silent overflow (provider accepted but truncated). The reactive
+   *  error-message check runs unconditionally — this is only for the
+   *  proactive arm. */
+  contextLimit?: number
+  /** Predicate over the running tool-call history. When it returns
+   *  true the loop stops with `stopReason: "loop-detected"`. Use
+   *  `createLoopDetector` from `./utils` for the default heuristics. */
+  loopDetector?: LoopDetector
   /** Called after each completed sub-stream with the assembled
    *  assistant message + any tool messages appended in this iteration. */
   onMessage?: (message: Message) => void | Promise<unknown>
@@ -50,8 +72,19 @@ export interface AgentTurnResult {
   /** Why the loop terminated:
    *  - `natural`         — model returned without a tool call
    *  - `max-iterations`  — hit `maxIterations`; model may still want more
+   *  - `token-budget`    — summed usage exceeded `tokenBudget`
+   *  - `loop-detected`   — `loopDetector` flagged repetition
+   *  - `max-tool-errors` — too many consecutive failing tool calls
+   *  - `context-overflow`— request overflowed the context window
    *  - `error`           — a non-recoverable error; see `error` */
-  stopReason: "natural" | "max-iterations" | "error"
+  stopReason:
+    | "natural"
+    | "max-iterations"
+    | "token-budget"
+    | "loop-detected"
+    | "max-tool-errors"
+    | "context-overflow"
+    | "error"
   /** Summed token usage across every provider call. */
   usage: TokenCount
   /** Present only when `stopReason === "error"`. */
@@ -75,14 +108,16 @@ export interface AgentTurnResult {
  *     the real cost of the turn, not just the last round-trip.
  */
 export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResult> {
-  const maxIterations = opts.maxIterations ?? 10
+  const maxIterations = opts.maxIterations ?? 50
   const toolIndex = new Map<string, Tool>()
   for (const t of opts.request.tools ?? []) toolIndex.set(t.name, t)
 
   const produced: Message[] = []
   const conversation: Message[] = [...opts.request.messages]
+  const callHistory: ToolCallPart[] = []
   let usage: TokenCount = { input: 0, output: 0 }
   let iterations = 0
+  let consecutiveErrors = 0
   let finishReason: FinishReason = "other"
 
   while (iterations < maxIterations) {
@@ -92,12 +127,14 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResu
       const stream = opts.provider.stream({ ...opts.request, messages: conversation })
       collected = await collect(stream, { onEvent: opts.onEvent, onUpdate: opts.onUpdate })
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      const overflow = isContextOverflow({ message: err.message })
       return {
-        error: error instanceof Error ? error : new Error(String(error)),
-        finishReason: "error",
+        error: err,
+        finishReason: overflow ? "length" : "error",
         iterations,
         messages: produced,
-        stopReason: "error",
+        stopReason: overflow ? "context-overflow" : "error",
         usage,
       }
     }
@@ -107,6 +144,16 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResu
     produced.push(collected.message)
     conversation.push(collected.message)
     await opts.onMessage?.(collected.message)
+
+    if (
+      opts.contextLimit !== undefined &&
+      isContextOverflow({
+        contextLimit: opts.contextLimit,
+        usageInput: collected.usage.input + (collected.usage.cachedInput ?? 0),
+      })
+    ) {
+      return { finishReason, iterations, messages: produced, stopReason: "context-overflow", usage }
+    }
 
     const toolCalls = extractToolCalls(collected.message)
     if (toolCalls.length === 0) {
@@ -131,12 +178,24 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResu
         result: result.result,
         type: "tool-result",
       })
+      callHistory.push(call)
+      consecutiveErrors = result.isError ? consecutiveErrors + 1 : 0
     }
 
     const toolMessage: Message = { content: resultParts, role: "tool" }
     produced.push(toolMessage)
     conversation.push(toolMessage)
     await opts.onMessage?.(toolMessage)
+
+    if (opts.loopDetector?.(callHistory) === true) {
+      return { finishReason, iterations, messages: produced, stopReason: "loop-detected", usage }
+    }
+    if (opts.maxToolErrors !== undefined && consecutiveErrors >= opts.maxToolErrors) {
+      return { finishReason, iterations, messages: produced, stopReason: "max-tool-errors", usage }
+    }
+    if (opts.tokenBudget !== undefined && usage.input + usage.output > opts.tokenBudget) {
+      return { finishReason, iterations, messages: produced, stopReason: "token-budget", usage }
+    }
   }
 
   return {
