@@ -13,9 +13,11 @@
  *   MODEL                 override the default id
  */
 
-import { collect, loadModel } from "../src/index.ts"
+import { collect, listModels, loadModel } from "../src/index.ts"
 
 const id = process.env.MODEL ?? "openrouter/minimax/minimax-m2.7"
+
+console.log(await listModels({ env: true }).then((m) => Object.keys(m).sort()))
 
 const model = await loadModel(id)
 
