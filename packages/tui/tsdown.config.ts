@@ -28,7 +28,6 @@ export default defineConfig({
     // `await import("#md")` actually runs.
     neverBundle: ["#ansi", "#md"],
   },
-  // oxlint-disable-next-line sort-keys
   entry: {
     index: "src/index.ts",
     ansi: "src/runtime/ansi.node.ts",
@@ -36,7 +35,6 @@ export default defineConfig({
     themes: "src/themes/index.ts",
     ...themeEntries,
   },
-  // oxlint-disable-next-line sort-keys
   exports: {
     devExports: "bun",
     // `ansi`/`md` are entries only so tsdown emits them as separate

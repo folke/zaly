@@ -1,4 +1,3 @@
-// oxlint-disable sort-keys
 import type { DefaultTheme } from "vitepress"
 
 import { existsSync, readFileSync } from "node:fs"

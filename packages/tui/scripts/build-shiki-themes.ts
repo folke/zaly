@@ -73,7 +73,6 @@ function toTui(id: string, c: Colors): Record<string, unknown> {
   const menuActiveBg = pick(c, "list.activeSelectionBackground", "editor.selectionBackground")
   const codeBg = pick(c, "textCodeBlock.background", "editorInlayHint.background")
 
-  // oxlint-disable-next-line sort-keys -- conventional theme-JSON order
   const out: Record<string, unknown> = {
     $schema: "file:./../schemas/theme.schema.json",
     /** Matching shiki theme name — used by the markdown/code renderers

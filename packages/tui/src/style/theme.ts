@@ -88,7 +88,6 @@ export type Theme = {
   diffTitle: ThemeValue
 }
 
-// oxlint-disable-next-line sort-keys
 const defaults: Theme = {
   fg: "inherit",
   bg: "inherit",

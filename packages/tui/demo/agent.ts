@@ -1,4 +1,3 @@
-// oxlint-disable sort-keys
 import {
   actionsSource,
   autocomplete,

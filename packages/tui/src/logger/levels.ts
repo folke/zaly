@@ -16,7 +16,6 @@ export const LOG_LEVELS = [
   "fatal",
 ] as const
 
-// oxlint-disable-next-line sort-keys
 const LOG_PRIORITY: Record<LogLevel, number> = {
   trace: 0,
   debug: 1,

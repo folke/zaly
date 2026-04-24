@@ -32,7 +32,6 @@ interface LevelDefaults {
   textColor?: Color
 }
 
-// oxlint-disable sort-keys
 /** Per-level default prefix style + icon + color. Matches rekal's
  *  `defaultStyles` table, adapted to zaly's theme slots. */
 export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
@@ -46,7 +45,6 @@ export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
   error: { color: "error", icon: "✖ ", style: "badge", textColor: "error" },
   fatal: { color: "error", icon: "☢ ", style: "badge" },
 }
-// oxlint-enable sort-keys
 
 export class Log extends Node<LogState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {

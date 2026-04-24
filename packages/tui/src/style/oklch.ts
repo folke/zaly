@@ -21,7 +21,6 @@
  *   500 → base lightness (roughly matching a well-designed brand color)
  *   950 → very dark shade
  */
-// oxlint-disable-next-line sort-keys
 export const STOPS = {
   50: 0.98,
   100: 0.95,

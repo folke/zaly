@@ -1,3 +1,4 @@
+import type { BuiltinProvider } from "../src/providers/index.ts"
 /**
  * Build-time overrides applied on top of the models.dev snapshot.
  *
@@ -16,9 +17,7 @@
  * Hand-maintained. Adding a new entry is typically the answer when a
  * provider has a quirk models.dev's catalog can't express.
  */
-// oxlint-disable sort-keys -- logical grouping (quirks → compat reroutes) reads better than alphabetical
 import type { ModelInfo, ProviderInfo, Quirks } from "../src/types.ts"
-import type { BuiltinProvider } from "../src/providers/index.ts"
 
 export interface ProviderOverride {
   adapter?: BuiltinProvider

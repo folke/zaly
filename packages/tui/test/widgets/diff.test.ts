@@ -1,4 +1,3 @@
-// oxlint-disable sort-keys
 import type { RenderCtx } from "../../src/core/ctx.ts"
 
 import { describe, expect, test } from "vitest"

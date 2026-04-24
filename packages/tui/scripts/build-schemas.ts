@@ -1,4 +1,5 @@
-// oxlint-disable no-await-in-loop, sort-keys, typescript-eslint/consistent-return
+// oxlint-disable no-await-in-loop
+// oxlint-disable typescript/consistent-return
 import type { IJsonSchemaUnit } from "typia"
 
 import { TypiaGenerator } from "@typia/transform"
@@ -25,11 +26,7 @@ function convertRefs(obj: any): any {
   if (Array.isArray(obj)) return obj.map(convertRefs)
 
   // Split pattern + enum into a oneOf so external validators accept either.
-  if (
-    obj.type === "string" &&
-    typeof obj.pattern === "string" &&
-    Array.isArray(obj.enum)
-  ) {
+  if (obj.type === "string" && typeof obj.pattern === "string" && Array.isArray(obj.enum)) {
     const { pattern, enum: enumValues, description, ...rest } = obj
     return {
       ...rest,
