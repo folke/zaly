@@ -1,7 +1,8 @@
+import type { Message, Tool } from "../../src/types.ts"
+
 import { describe, expect, test } from "vitest"
 import { collect } from "../../src/provider.ts"
 import { createOpenAI } from "../../src/providers/openai.ts"
-import type { Message, Tool } from "../../src/types.ts"
 import { recordFetch, sseResponse } from "../helpers/sse.ts"
 
 // ── Request translation ──────────────────────────────────────────────────
@@ -65,9 +66,9 @@ describe("openai: request translation", () => {
     const asst: Message = {
       content: [
         { text: "Let me check.", type: "text" },
-        { args: { city: "Tokyo" }, id: "c1", name: "get_weather", type: "tool-call" },
+        { params: { city: "Tokyo" }, id: "c1", name: "get_weather", type: "tool-call" },
         { text: " And also:", type: "text" },
-        { args: { city: "Tokyo" }, id: "c2", name: "get_forecast", type: "tool-call" },
+        { params: { city: "Tokyo" }, id: "c2", name: "get_forecast", type: "tool-call" },
       ],
       role: "assistant",
     }
@@ -128,15 +129,11 @@ describe("openai: request translation", () => {
         messages: [
           { content: "x", role: "user" },
           {
-            content: [
-              { args: {}, id: "c1", name: "get_weather", type: "tool-call" },
-            ],
+            content: [{ params: {}, id: "c1", name: "get_weather", type: "tool-call" }],
             role: "assistant",
           },
           {
-            content: [
-              { id: "c1", name: "get_weather", result: { temp: 18 }, type: "tool-result" },
-            ],
+            content: [{ id: "c1", name: "get_weather", result: { temp: 18 }, type: "tool-result" }],
             role: "tool",
           },
         ],
@@ -156,11 +153,11 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     const tool: Tool = {
-      description: "fetch weather",
-      execute: async () => ({}),
+      desc: "fetch weather",
+      call: async () => ({}),
+      params: { properties: { city: { type: "string" } }, type: "object" },
       name: "get_weather",
-      schema: { properties: { city: { type: "string" } }, type: "object" },
-      validateInput: (x) => x,
+      validateParams: (x) => x,
     }
     await drain(
       provider.stream({
@@ -187,10 +184,10 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     const tool: Tool = {
-      execute: async () => ({}),
+      call: async () => ({}),
+      params: { type: "object" },
       name: "t",
-      schema: { type: "object" },
-      validateInput: (x) => x,
+      validateParams: (x) => x,
     }
     await drain(
       provider.stream({
@@ -207,10 +204,10 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     const tool: Tool = {
-      execute: async () => ({}),
+      call: async () => ({}),
+      params: { type: "object" },
       name: "t",
-      schema: { type: "object" },
-      validateInput: (x) => x,
+      validateParams: (x) => x,
     }
     await drain(
       provider.stream({
@@ -230,10 +227,10 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     const tool: Tool = {
-      execute: async () => ({}),
+      call: async () => ({}),
+      params: { type: "object" },
       name: "t",
-      schema: { type: "object" },
-      validateInput: (x) => x,
+      validateParams: (x) => x,
     }
     await drain(
       provider.stream({
@@ -389,9 +386,7 @@ describe("openai: request translation", () => {
       fetch,
       headers: { "X-Stainless": "zaly" },
     })
-    await drain(
-      provider.stream({ messages: [{ content: "x", role: "user" }], model: "m" })
-    )
+    await drain(provider.stream({ messages: [{ content: "x", role: "user" }], model: "m" }))
 
     expect(recorded[0].headers.authorization).toBe("Bearer secret")
     expect(recorded[0].headers["x-stainless"]).toBe("zaly")
@@ -440,7 +435,7 @@ describe("openai: stream parsing", () => {
     const calls = events.filter((e) => e.type === "tool-call")
     expect(calls).toHaveLength(1)
     expect(calls[0]).toEqual({
-      args: { city: "Tokyo" },
+      params: { city: "Tokyo" },
       id: "call_1",
       name: "get_weather",
       type: "tool-call",
@@ -480,8 +475,8 @@ describe("openai: stream parsing", () => {
     const events = await drain(
       provider.stream({ messages: [{ content: "q", role: "user" }], model: "m" })
     )
-    const call = events.find((e) => e.type === "tool-call") as { args: unknown }
-    expect(call.args).toBe("{not valid")
+    const call = events.find((e) => e.type === "tool-call") as { params: unknown }
+    expect(call.params).toBe("{not valid")
   })
 
   test("usage with cached_tokens maps to cachedInput", async () => {
@@ -547,7 +542,7 @@ describe("openai: collect integration", () => {
     expect(message.content).toEqual([
       { text: "Let me check.", type: "text" },
       {
-        args: { city: "Tokyo" },
+        params: { city: "Tokyo" },
         id: "c1",
         name: "get_weather",
         type: "tool-call",
@@ -570,9 +565,7 @@ function chunk(delta: Record<string, unknown>) {
   }
 }
 
-function finishChunk(
-  opts: { finish_reason?: string; usage?: Record<string, unknown> } = {}
-) {
+function finishChunk(opts: { finish_reason?: string; usage?: Record<string, unknown> } = {}) {
   return {
     choices: [{ delta: {}, finish_reason: opts.finish_reason ?? "stop", index: 0 }],
     usage: opts.usage ?? { completion_tokens: 5, prompt_tokens: 10 },
@@ -581,9 +574,7 @@ function finishChunk(
 
 function toolStart(index: number, id: string, name: string) {
   return chunk({
-    tool_calls: [
-      { function: { arguments: "", name }, id, index, type: "function" },
-    ],
+    tool_calls: [{ function: { arguments: "", name }, id, index, type: "function" }],
   })
 }
 

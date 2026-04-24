@@ -24,7 +24,7 @@ export interface ToolCallPart {
   type: "tool-call"
   id: string
   name: string
-  args: unknown
+  params: unknown
 }
 
 /** Tool response carried on a `tool`-role message. `result` is left as
@@ -109,28 +109,29 @@ export type Message =
 
 /** A callable tool exposed to the model.
  *
- *  `schema` is a JSON Schema for the tool's input. Adapters translate
- *  it into the provider's shape (`function.parameters` on OpenAI,
- *  `input_schema` on Anthropic).
+ *  `input` is a JSON Schema for the tool's arguments. Adapters
+ *  translate it into the provider's shape (`function.parameters` on
+ *  OpenAI, `input_schema` on Anthropic). `output` is optional — MCP
+ *  tools that declare a return schema get it wired; pure tools skip it.
  *
  *  `validateInput` runs before `execute` — it coerces LLM quirks
  *  (stringified numbers, missing optionals) and throws a human-readable
  *  error on schema mismatch. The kernel catches the throw, formats it
  *  back to the model as a `tool-result` with `isError: true`, and the
- *  model self-corrects next turn. `validateOutput` is optional; MCP
- *  tools that declare an output schema get it wired, pure tools skip it.
+ *  model self-corrects next turn.
  *
  *  The `_types` phantom is there so callers can narrow `result` by name
  *  when they own both the definition and the consumer. It carries no
  *  runtime value and is erased at compile time. */
-export interface Tool<Input = unknown, Output = unknown> {
+export interface Tool<Params = unknown, Result = unknown> {
   name: string
-  description?: string
-  schema: unknown
-  validateInput(args: unknown): Input
-  validateOutput?(result: unknown): Output
-  execute(input: Input): Promise<Output>
-  _types?: { input: Input; output: Output }
+  desc?: string
+  params: unknown
+  result?: unknown
+  validateParams(params: unknown): Params
+  validateResult?(result: unknown): Result
+  call(params: Params): Promise<Result>
+  _types?: { input: Params; output: Result }
 }
 
 // ── Catalog types ────────────────────────────────────────────────────────

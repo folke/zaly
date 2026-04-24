@@ -9,6 +9,8 @@ import type {
 } from "../provider.ts"
 import type { Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
+import { stringifyToolResult } from "../tools.ts"
+
 /**
  * OpenAI Chat Completions adapter.
  *
@@ -276,9 +278,9 @@ function toOpenAIResponseFormat(
 function toOpenAITool(tool: Tool, strict: boolean): OpenAITool {
   return {
     function: {
-      description: tool.description,
+      description: tool.desc,
       name: tool.name,
-      parameters: tool.schema,
+      parameters: tool.params,
       ...(strict ? { strict: true } : {}),
     },
     type: "function",
@@ -314,7 +316,7 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
         if (part.type === "text") textChunks.push(part.text)
         else if (part.type === "tool-call") {
           toolCalls.push({
-            function: { arguments: JSON.stringify(part.args ?? {}), name: part.name },
+            function: { arguments: JSON.stringify(part.params ?? {}), name: part.name },
             id: part.id,
             type: "function",
           })
@@ -335,8 +337,9 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
       // `role: "tool"` Message per tool result upstream. This keeps
       // the 1:1 invariant with OpenAI's shape without silent merges.
       const part = msg.content[0]
+      const body = stringifyToolResult(part.result)
       return {
-        content: stringifyToolResult(part.result, part.isError === true),
+        content: part.isError === true ? `ERROR: ${body}` : body,
         role: "tool",
         tool_call_id: part.id,
       }
@@ -348,11 +351,6 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
       throw new Error(`Unhandled message role: ${(_exhaustive as { role: string }).role}`)
     }
   }
-}
-
-function stringifyToolResult(result: unknown, isError: boolean): string {
-  const body = typeof result === "string" ? result : JSON.stringify(result)
-  return isError ? `ERROR: ${body}` : body
 }
 
 // ── SSE parsing ──────────────────────────────────────────────────────────
@@ -417,9 +415,9 @@ async function* parseStream(
   // Flush any accumulated tool calls as complete events before `finish`.
   for (const [, pending] of pendingToolCalls) {
     yield {
-      args: safeParseJson(pending.argsBuffer),
       id: pending.id,
       name: pending.name,
+      params: safeParseJson(pending.argsBuffer),
       type: "tool-call",
     }
   }
@@ -510,9 +508,9 @@ function* handleChunk(
       // end-of-stream after `finish`, violating event ordering.
       for (const [index, pending] of pendingToolCalls) {
         yield {
-          args: safeParseJson(pending.argsBuffer),
           id: pending.id,
           name: pending.name,
+          params: safeParseJson(pending.argsBuffer),
           type: "tool-call",
         }
         pendingToolCalls.delete(index)

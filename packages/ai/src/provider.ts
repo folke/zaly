@@ -122,7 +122,7 @@ export type ResponseFormat =
 export type StreamEvent =
   | { type: "text-delta"; delta: string }
   | { type: "reasoning-delta"; delta: string; signature?: string }
-  | { type: "tool-call"; id: string; name: string; args: unknown }
+  | { type: "tool-call"; id: string; name: string; params: unknown }
   | { type: "finish"; finishReason: FinishReason; usage: TokenCount }
   | { type: "error"; error: Error }
 
@@ -232,7 +232,7 @@ export async function collect(
         }
         case "tool-call": {
           openText = undefined
-          parts.push({ args: ev.args, id: ev.id, name: ev.name, type: "tool-call" })
+          parts.push({ id: ev.id, name: ev.name, params: ev.params, type: "tool-call" })
           break
         }
         case "finish": {
