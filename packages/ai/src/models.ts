@@ -1,4 +1,4 @@
-import type { ModelOptions, ProviderInfo } from "./types.ts"
+import type { Modality, ModelOptions, ProviderInfo } from "./types.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than
@@ -60,16 +60,73 @@ export async function getModel(id: string): Promise<ModelOptions | undefined> {
   return await resolveBuiltin(id)
 }
 
+export function isAvailable(m: ModelOptions): boolean {
+  const envs = m.providerInfo?.env
+  if (!envs || envs.length === 0) return true // no env required → always ok
+  return envs.some((e) => {
+    const v = process.env[e]
+    return v !== undefined && v !== ""
+  })
+}
+
+/** Predicate inputs for narrowing a model list.
+ *
+ *  - `env`      — only models whose provider has a populated env var
+ *                 set in the current process (see `isAvailable`).
+ *  - `reasoning`— match the model's `reasoning` capability exactly.
+ *  - `modality` — shorthand form (`Modality` / `Modality[]`) matches
+ *                 against INPUT (common case — "accepts image").
+ *                 Explicit form `{ input?, output? }` lets callers
+ *                 narrow on generation direction too. */
+export interface ModelFilter {
+  env?: boolean
+  reasoning?: boolean
+  modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
+}
+
+export function filterModel(m: ModelOptions, opts?: ModelFilter): boolean {
+  if (opts?.env && !isAvailable(m)) return false
+  if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
+  if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
+  return true
+}
+
+/** Normalise the shorthand/object form and check membership against
+ *  the model's declared input/output modalities. Shorthand targets
+ *  input because "find me a vision model" is the common case. */
+function matchesModality(m: ModelOptions, spec: NonNullable<ModelFilter["modality"]>): boolean {
+  const normalised =
+    typeof spec === "string" || Array.isArray(spec)
+      ? { input: [spec].flat() }
+      : spec
+  if (
+    normalised.input !== undefined &&
+    normalised.input.length > 0 &&
+    !normalised.input.some((mod) => m.modalities.input.includes(mod))
+  ) {
+    return false
+  }
+  if (
+    normalised.output !== undefined &&
+    normalised.output.length > 0 &&
+    !normalised.output.some((mod) => m.modalities.output.includes(mod))
+  ) {
+    return false
+  }
+  return true
+}
+
 /** Every model we know about, keyed by id. Includes runtime-registered
  *  custom models. For just ids (autocomplete sources), use
  *  `listModelIds` — one compact JSON, no catalog load needed. */
-export async function listModels(): Promise<Record<string, ModelOptions>> {
+export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelOptions>> {
   const catalog = await loadCatalog()
   const out: Record<string, ModelOptions> = {}
   for (const [id, stored] of Object.entries(catalog.models)) {
-    out[id] = attachProviderInfo(stored, catalog, id)
+    const p = attachProviderInfo(stored, catalog, id)
+    if (filterModel(p, opts)) out[id] = p
   }
-  for (const [id, opts] of customModels) out[id] = opts
+  for (const [id, m] of customModels) out[id] = m
   return out
 }
 
@@ -84,7 +141,9 @@ export async function listModelIds(): Promise<readonly string[]> {
 /** Built-in providers map. Exposed so callers can read endpoint
  *  metadata directly (names, docs URLs, env-var names) for pickers
  *  or admin tooling. */
-export async function builtinProviders(): Promise<Readonly<Record<string, Omit<ProviderInfo, "models">>>> {
+export async function builtinProviders(): Promise<
+  Readonly<Record<string, Omit<ProviderInfo, "models">>>
+> {
   const catalog = await loadCatalog()
   return catalog.providers
 }
@@ -106,9 +165,9 @@ function attachProviderInfo(
   id: string
 ): ModelOptions {
   const { provider: endpointId } = parseModelId(id)
-  const providerMeta = (catalog.providers as Record<string, Catalog["providers"][string] | undefined>)[
-    endpointId
-  ]
+  const providerMeta = (
+    catalog.providers as Record<string, Catalog["providers"][string] | undefined>
+  )[endpointId]
   if (providerMeta === undefined) return stored
   return { ...stored, providerInfo: { ...providerMeta, models: {} } }
 }

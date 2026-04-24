@@ -194,7 +194,6 @@ export type ExperimentalModes = Record<
   }
 >
 
-
 /** Metadata for one model. One-to-one with the models.dev `Model`
  *  schema. Loaded lazily per-provider via `getModel(id)` or eagerly
  *  via `listModels()`.
@@ -285,10 +284,7 @@ export interface ProviderInfo {
 /** Callable shape of `fetch`. Duplicated here (rather than imported
  *  from `./utils/retry.ts`) so `types.ts` stays free of runtime
  *  imports — types.ts is the leaf module every other file depends on. */
-export type FetchLike = (
-  input: string | URL | Request,
-  init?: RequestInit
-) => Promise<Response>
+export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
 
 /** Adapter-construction config. Generic across provider families;
  *  adapter-specific wire quirks live in `Quirks` below so the options
@@ -328,13 +324,7 @@ export interface Quirks {
    *  - `"deepseek"`            → `thinking: { type: "enabled" }` + `reasoning_effort`
    *  - `"zai"` / `"qwen"`      → top-level `enable_thinking: boolean`
    *  - `"qwen-chat-template"`  → `chat_template_kwargs.enable_thinking` */
-  thinkingFormat?:
-    | "openai"
-    | "openrouter"
-    | "deepseek"
-    | "zai"
-    | "qwen"
-    | "qwen-chat-template"
+  thinkingFormat?: "openai" | "openrouter" | "deepseek" | "zai" | "qwen" | "qwen-chat-template"
 
   /** Which effort levels this model actually accepts. Adapter clamps
    *  unsupported values to the nearest supported one — `"xhigh"` on
