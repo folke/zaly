@@ -10,6 +10,7 @@ export type ProviderLoader<T extends string = string> = (
  *  keys — widening to `Record<string, ProviderLoader>` would erase
  *  them and lose the typed autocomplete. */
 export const providers = {
+  anthropic: (opts) => import("./anthropic.ts").then((m) => m.createAnthropic(opts)),
   openai: (opts) => import("./openai.ts").then((m) => m.createOpenAI(opts)),
 } as const satisfies Record<string, ProviderLoader>
 

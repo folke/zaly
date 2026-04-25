@@ -13475,6 +13475,200 @@
       "provider": "openai",
       "baseUrl": "https://llm.submodel.ai/v1"
     },
+    "minimax-coding-plan/MiniMax-M2": {
+      "id": "MiniMax-M2",
+      "name": "MiniMax-M2",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-10-27",
+      "last_updated": "2025-10-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 196608,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax-coding-plan/MiniMax-M2.5": {
+      "id": "MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax-coding-plan/MiniMax-M2.7": {
+      "id": "MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax-coding-plan/MiniMax-M2.7-highspeed": {
+      "id": "MiniMax-M2.7-highspeed",
+      "name": "MiniMax-M2.7-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax-coding-plan/MiniMax-M2.1": {
+      "id": "MiniMax-M2.1",
+      "name": "MiniMax-M2.1",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-23",
+      "last_updated": "2025-12-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax-coding-plan/MiniMax-M2.5-highspeed": {
+      "id": "MiniMax-M2.5-highspeed",
+      "name": "MiniMax-M2.5-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
     "deepseek/deepseek-chat": {
       "id": "deepseek-chat",
       "name": "DeepSeek Chat",
@@ -20655,6 +20849,115 @@
       "provider": "openai",
       "baseUrl": "https://api.fireworks.ai/inference/v1/"
     },
+    "kimi-for-coding/k2p6": {
+      "id": "k2p6",
+      "name": "Kimi K2.6",
+      "family": "kimi-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04",
+      "last_updated": "2026-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "anthropic",
+      "baseUrl": "https://api.kimi.com/coding/v1"
+    },
+    "kimi-for-coding/k2p5": {
+      "id": "k2p5",
+      "name": "Kimi K2.5",
+      "family": "kimi-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-01",
+      "last_updated": "2026-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "anthropic",
+      "baseUrl": "https://api.kimi.com/coding/v1"
+    },
+    "kimi-for-coding/kimi-k2-thinking": {
+      "id": "kimi-k2-thinking",
+      "name": "Kimi K2 Thinking",
+      "family": "kimi-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-07",
+      "release_date": "2025-11",
+      "last_updated": "2025-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "anthropic",
+      "baseUrl": "https://api.kimi.com/coding/v1"
+    },
     "moark/GLM-4.7": {
       "id": "GLM-4.7",
       "name": "GLM-4.7",
@@ -20720,6 +21023,42 @@
       "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://moark.com/v1"
+    },
+    "opencode-go/minimax-m2.7": {
+      "id": "minimax-m2.7",
+      "name": "MiniMax M2.7",
+      "family": "minimax-m2.7",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/go/v1"
     },
     "opencode-go/kimi-k2.5": {
       "id": "kimi-k2.5",
@@ -20919,6 +21258,45 @@
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
+    "opencode-go/qwen3.6-plus": {
+      "id": "qwen3.6-plus",
+      "name": "Qwen3.6 Plus",
+      "family": "qwen3.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05,
+        "cache_write": 0.625
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/go/v1"
+    },
     "opencode-go/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -21068,6 +21446,45 @@
       },
       "maxTokens": 128000,
       "provider": "openai",
+      "baseUrl": "https://opencode.ai/zen/go/v1"
+    },
+    "opencode-go/qwen3.5-plus": {
+      "id": "qwen3.5-plus",
+      "name": "Qwen3.5 Plus",
+      "family": "qwen3.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-02-16",
+      "last_updated": "2026-02-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 1.2,
+        "cache_read": 0.02,
+        "cache_write": 0.25
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
     "io-net/Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar": {
@@ -24033,6 +24450,200 @@
       "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2": {
+      "id": "MiniMax-M2",
+      "name": "MiniMax-M2",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-10-27",
+      "last_updated": "2025-10-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 196608,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2.5": {
+      "id": "MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2.7": {
+      "id": "MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2.7-highspeed": {
+      "id": "MiniMax-M2.7-highspeed",
+      "name": "MiniMax-M2.7-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2.1": {
+      "id": "MiniMax-M2.1",
+      "name": "MiniMax-M2.1",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-23",
+      "last_updated": "2025-12-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn-coding-plan/MiniMax-M2.5-highspeed": {
+      "id": "MiniMax-M2.5-highspeed",
+      "name": "MiniMax-M2.5-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
     },
     "jiekou/gpt-5.1-codex-max": {
       "id": "gpt-5.1-codex-max",
@@ -28885,6 +29496,224 @@
       "provider": "openai",
       "baseUrl": "https://zenmux.ai/api/v1"
     },
+    "zenmux/minimax/minimax-m2.7": {
+      "id": "minimax/minimax-m2.7",
+      "name": "MiniMax M2.7",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2026-03-20",
+      "last_updated": "2026-03-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3055,
+        "output": 1.2219
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131070
+      },
+      "maxTokens": 131070,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/minimax/minimax-m2.7-highspeed": {
+      "id": "minimax/minimax-m2.7-highspeed",
+      "name": "MiniMax M2.7 highspeed",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2026-03-20",
+      "last_updated": "2026-03-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.611,
+        "output": 2.4439
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131070
+      },
+      "maxTokens": 131070,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/minimax/minimax-m2": {
+      "id": "minimax/minimax-m2",
+      "name": "MiniMax M2",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-10-27",
+      "last_updated": "2025-10-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03,
+        "cache_write": 0.38
+      },
+      "limit": {
+        "context": 204000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/minimax/minimax-m2.1": {
+      "id": "minimax/minimax-m2.1",
+      "name": "MiniMax M2.1",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-12-22",
+      "last_updated": "2025-12-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03,
+        "cache_write": 0.38
+      },
+      "limit": {
+        "context": 204000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/minimax/minimax-m2.5-lightning": {
+      "id": "minimax/minimax-m2.5-lightning",
+      "name": "MiniMax M2.5 highspeed",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.6,
+        "output": 4.8,
+        "cache_read": 0.06,
+        "cache_write": 0.75
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/minimax/minimax-m2.5": {
+      "id": "minimax/minimax-m2.5",
+      "name": "MiniMax M2.5",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
     "zenmux/qwen/qwen3-coder-plus": {
       "id": "qwen/qwen3-coder-plus",
       "name": "Qwen3-Coder-Plus",
@@ -29496,6 +30325,431 @@
       "maxTokens": 64000,
       "provider": "openai",
       "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/anthropic/claude-opus-4.1": {
+      "id": "anthropic/claude-opus-4.1",
+      "name": "Claude Opus 4.1",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "image",
+          "text",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-3.7-sonnet": {
+      "id": "anthropic/claude-3.7-sonnet",
+      "name": "Claude 3.7 Sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-02-24",
+      "last_updated": "2025-02-24",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-opus-4.6": {
+      "id": "anthropic/claude-opus-4.6",
+      "name": "Claude Opus 4.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05-31",
+      "release_date": "2026-02-06",
+      "last_updated": "2026-02-06",
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-opus-4.7": {
+      "id": "anthropic/claude-opus-4.7",
+      "name": "Claude Opus 4.7",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-sonnet-4": {
+      "id": "anthropic/claude-sonnet-4",
+      "name": "Claude Sonnet 4",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "image",
+          "text",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-sonnet-4.5": {
+      "id": "anthropic/claude-sonnet-4.5",
+      "name": "Claude Sonnet 4.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-09-29",
+      "last_updated": "2025-09-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-opus-4.5": {
+      "id": "anthropic/claude-opus-4.5",
+      "name": "Claude Opus 4.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-11-24",
+      "last_updated": "2025-11-24",
+      "modalities": {
+        "input": [
+          "pdf",
+          "image",
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-opus-4": {
+      "id": "anthropic/claude-opus-4",
+      "name": "Claude Opus 4",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "image",
+          "text",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-3.5-haiku": {
+      "id": "anthropic/claude-3.5-haiku",
+      "name": "Claude 3.5 Haiku",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2024-11-04",
+      "last_updated": "2024-11-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.8,
+        "output": 4,
+        "cache_read": 0.08,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-haiku-4.5": {
+      "id": "anthropic/claude-haiku-4.5",
+      "name": "Claude Haiku 4.5",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01-01",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
+    },
+    "zenmux/anthropic/claude-sonnet-4.6": {
+      "id": "anthropic/claude-sonnet-4.6",
+      "name": "Claude Sonnet 4.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-18",
+      "last_updated": "2026-02-18",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic",
+        "api": "https://zenmux.ai/api/anthropic/v1"
+      },
+      "baseUrl": "https://zenmux.ai/api/anthropic/v1"
     },
     "zenmux/xiaomi/mimo-v2-omni": {
       "id": "xiaomi/mimo-v2-omni",
@@ -46363,6 +47617,45 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/claude-haiku-4-5": {
+      "id": "claude-haiku-4-5",
+      "name": "Claude Haiku 4.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-02-28",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/kimi-k2.5": {
       "id": "kimi-k2.5",
       "name": "Kimi K2.5",
@@ -46435,6 +47728,85 @@
       },
       "maxTokens": 131072,
       "provider": "openai",
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-sonnet-4-6": {
+      "id": "claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": true,
+      "temperature": true,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-17",
+      "last_updated": "2026-02-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-opus-4-7": {
+      "id": "claude-opus-4-7",
+      "name": "Claude Opus 4.7",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
     "opencode/gpt-5-nano": {
@@ -46516,6 +47888,42 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/minimax-m2.5-free": {
+      "id": "minimax-m2.5-free",
+      "name": "MiniMax M2.5 Free",
+      "family": "minimax-free",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/gpt-5.2": {
       "id": "gpt-5.2",
       "name": "GPT-5.2",
@@ -46552,6 +47960,121 @@
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/big-pickle": {
+      "id": "big-pickle",
+      "name": "Big Pickle",
+      "family": "big-pickle",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-10-17",
+      "last_updated": "2025-10-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-opus-4-1": {
+      "id": "claude-opus-4-1",
+      "name": "Claude Opus 4.1",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/qwen3.6-plus": {
+      "id": "qwen3.6-plus",
+      "name": "Qwen3.6 Plus",
+      "family": "qwen3.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05,
+        "cache_write": 0.625
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
@@ -46592,6 +48115,45 @@
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-3-5-haiku": {
+      "id": "claude-3-5-haiku",
+      "name": "Claude Haiku 3.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07-31",
+      "release_date": "2024-10-22",
+      "last_updated": "2024-10-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.8,
+        "output": 4,
+        "cache_read": 0.08,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 200000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
@@ -46750,6 +48312,51 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/claude-sonnet-4": {
+      "id": "claude-sonnet-4",
+      "name": "Claude Sonnet 4",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75,
+        "context_over_200k": {
+          "input": 6,
+          "output": 22.5,
+          "cache_read": 0.6,
+          "cache_write": 7.5
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/gpt-5.1": {
       "id": "gpt-5.1",
       "name": "GPT-5.1",
@@ -46826,6 +48433,45 @@
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-opus-4-5": {
+      "id": "claude-opus-4-5",
+      "name": "Claude Opus 4.5",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-11-24",
+      "last_updated": "2025-11-24",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
@@ -47045,6 +48691,52 @@
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/claude-sonnet-4-5": {
+      "id": "claude-sonnet-4-5",
+      "name": "Claude Sonnet 4.5",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": true,
+      "temperature": true,
+      "knowledge": "2025-07-31",
+      "release_date": "2025-09-29",
+      "last_updated": "2025-09-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75,
+        "context_over_200k": {
+          "input": 6,
+          "output": 22.5,
+          "cache_read": 0.6,
+          "cache_write": 7.5
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/gpt-5": {
       "id": "gpt-5",
       "name": "GPT-5",
@@ -47081,6 +48773,45 @@
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/qwen3.5-plus": {
+      "id": "qwen3.5-plus",
+      "name": "Qwen3.5 Plus",
+      "family": "qwen3.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-02-16",
+      "last_updated": "2026-02-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 1.2,
+        "cache_read": 0.02,
+        "cache_write": 0.25
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
@@ -47196,6 +48927,45 @@
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/claude-opus-4-6": {
+      "id": "claude-opus-4-6",
+      "name": "Claude Opus 4.6",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-03-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
@@ -73621,6 +75391,200 @@
       "provider": "openai",
       "baseUrl": "https://api.siliconflow.com/v1"
     },
+    "minimax/MiniMax-M2": {
+      "id": "MiniMax-M2",
+      "name": "MiniMax-M2",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-10-27",
+      "last_updated": "2025-10-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "limit": {
+        "context": 196608,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax/MiniMax-M2.5": {
+      "id": "MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax/MiniMax-M2.7": {
+      "id": "MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax/MiniMax-M2.7-highspeed": {
+      "id": "MiniMax-M2.7-highspeed",
+      "name": "MiniMax-M2.7-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 2.4,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax/MiniMax-M2.1": {
+      "id": "MiniMax-M2.1",
+      "name": "MiniMax-M2.1",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-23",
+      "last_updated": "2025-12-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
+    "minimax/MiniMax-M2.5-highspeed": {
+      "id": "MiniMax-M2.5-highspeed",
+      "name": "MiniMax-M2.5-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 2.4,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimax.io/anthropic/v1"
+    },
     "llmgateway/grok-4-1-fast-reasoning": {
       "id": "grok-4-1-fast-reasoning",
       "name": "Grok 4.1 Fast Reasoning",
@@ -84355,6 +86319,831 @@
       "provider": "openai",
       "baseUrl": "https://tokenhub.tencentmaas.com/v1"
     },
+    "anthropic/claude-3-sonnet-20240229": {
+      "id": "claude-3-sonnet-20240229",
+      "name": "Claude Sonnet 3",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-08-31",
+      "release_date": "2024-03-04",
+      "last_updated": "2024-03-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 0.3
+      },
+      "limit": {
+        "context": 200000,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-haiku-4-5": {
+      "id": "claude-haiku-4-5",
+      "name": "Claude Haiku 4.5 (latest)",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-02-28",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-5-20251101": {
+      "id": "claude-opus-4-5-20251101",
+      "name": "Claude Opus 4.5",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-11-01",
+      "last_updated": "2025-11-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-opus-20240229": {
+      "id": "claude-3-opus-20240229",
+      "name": "Claude Opus 3",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-08-31",
+      "release_date": "2024-02-29",
+      "last_updated": "2024-02-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-5-haiku-20241022": {
+      "id": "claude-3-5-haiku-20241022",
+      "name": "Claude Haiku 3.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07-31",
+      "release_date": "2024-10-22",
+      "last_updated": "2024-10-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.8,
+        "output": 4,
+        "cache_read": 0.08,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 200000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-5-sonnet-20241022": {
+      "id": "claude-3-5-sonnet-20241022",
+      "name": "Claude Sonnet 3.5 v2",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04-30",
+      "release_date": "2024-10-22",
+      "last_updated": "2024-10-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-sonnet-4-6": {
+      "id": "claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-17",
+      "last_updated": "2026-03-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-0": {
+      "id": "claude-opus-4-0",
+      "name": "Claude Opus 4 (latest)",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-7": {
+      "id": "claude-opus-4-7",
+      "name": "Claude Opus 4.7",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-haiku-20240307": {
+      "id": "claude-3-haiku-20240307",
+      "name": "Claude Haiku 3",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-08-31",
+      "release_date": "2024-03-13",
+      "last_updated": "2024-03-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.25,
+        "output": 1.25,
+        "cache_read": 0.03,
+        "cache_write": 0.3
+      },
+      "limit": {
+        "context": 200000,
+        "output": 4096
+      },
+      "maxTokens": 4096,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-sonnet-4-5-20250929": {
+      "id": "claude-sonnet-4-5-20250929",
+      "name": "Claude Sonnet 4.5",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07-31",
+      "release_date": "2025-09-29",
+      "last_updated": "2025-09-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-5-haiku-latest": {
+      "id": "claude-3-5-haiku-latest",
+      "name": "Claude Haiku 3.5 (latest)",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07-31",
+      "release_date": "2024-10-22",
+      "last_updated": "2024-10-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.8,
+        "output": 4,
+        "cache_read": 0.08,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 200000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-1": {
+      "id": "claude-opus-4-1",
+      "name": "Claude Opus 4.1 (latest)",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-sonnet-4-0": {
+      "id": "claude-sonnet-4-0",
+      "name": "Claude Sonnet 4 (latest)",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-5-sonnet-20240620": {
+      "id": "claude-3-5-sonnet-20240620",
+      "name": "Claude Sonnet 3.5",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-04-30",
+      "release_date": "2024-06-20",
+      "last_updated": "2024-06-20",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-5": {
+      "id": "claude-opus-4-5",
+      "name": "Claude Opus 4.5 (latest)",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-11-24",
+      "last_updated": "2025-11-24",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-1-20250805": {
+      "id": "claude-opus-4-1-20250805",
+      "name": "Claude Opus 4.1",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-haiku-4-5-20251001": {
+      "id": "claude-haiku-4-5-20251001",
+      "name": "Claude Haiku 4.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-02-28",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-sonnet-4-20250514": {
+      "id": "claude-sonnet-4-20250514",
+      "name": "Claude Sonnet 4",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-6": {
+      "id": "claude-opus-4-6",
+      "name": "Claude Opus 4.6",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-03-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 30,
+              "output": 150,
+              "cache_read": 3,
+              "cache_write": 37.5
+            },
+            "provider": {
+              "body": {
+                "speed": "fast"
+              },
+              "headers": {
+                "anthropic-beta": "fast-mode-2026-02-01"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-3-7-sonnet-20250219": {
+      "id": "claude-3-7-sonnet-20250219",
+      "name": "Claude Sonnet 3.7",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10-31",
+      "release_date": "2025-02-19",
+      "last_updated": "2025-02-19",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-sonnet-4-5": {
+      "id": "claude-sonnet-4-5",
+      "name": "Claude Sonnet 4.5 (latest)",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-07-31",
+      "release_date": "2025-09-29",
+      "last_updated": "2025-09-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "anthropic"
+    },
+    "anthropic/claude-opus-4-20250514": {
+      "id": "claude-opus-4-20250514",
+      "name": "Claude Opus 4",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03-31",
+      "release_date": "2025-05-22",
+      "last_updated": "2025-05-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 15,
+        "output": 75,
+        "cache_read": 1.5,
+        "cache_write": 18.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "anthropic"
+    },
     "modelscope/Qwen/Qwen3-30B-A3B-Thinking-2507": {
       "id": "Qwen/Qwen3-30B-A3B-Thinking-2507",
       "name": "Qwen3 30B A3B Thinking 2507",
@@ -85084,6 +87873,200 @@
       "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.clarifai.com/v2/ext/openai/v1"
+    },
+    "minimax-cn/MiniMax-M2": {
+      "id": "MiniMax-M2",
+      "name": "MiniMax-M2",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-10-27",
+      "last_updated": "2025-10-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "limit": {
+        "context": 196608,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn/MiniMax-M2.5": {
+      "id": "MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn/MiniMax-M2.7": {
+      "id": "MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn/MiniMax-M2.7-highspeed": {
+      "id": "MiniMax-M2.7-highspeed",
+      "name": "MiniMax-M2.7-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 2.4,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn/MiniMax-M2.1": {
+      "id": "MiniMax-M2.1",
+      "name": "MiniMax-M2.1",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-23",
+      "last_updated": "2025-12-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
+    },
+    "minimax-cn/MiniMax-M2.5-highspeed": {
+      "id": "MiniMax-M2.5-highspeed",
+      "name": "MiniMax-M2.5-highspeed",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-13",
+      "last_updated": "2026-02-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 2.4,
+        "cache_read": 0.06,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "anthropic",
+      "baseUrl": "https://api.minimaxi.com/anthropic/v1"
     },
     "regolo-ai/mistral-small3.2": {
       "id": "mistral-small3.2",
@@ -86047,6 +89030,16 @@
       "name": "submodel",
       "doc": "https://submodel.gitbook.io"
     },
+    "minimax-coding-plan": {
+      "id": "minimax-coding-plan",
+      "env": [
+        "MINIMAX_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "api": "https://api.minimax.io/anthropic/v1",
+      "name": "MiniMax Coding Plan (minimax.io)",
+      "doc": "https://platform.minimax.io/docs/coding-plan/intro"
+    },
     "deepseek": {
       "id": "deepseek",
       "env": [
@@ -86087,6 +89080,16 @@
       "name": "Fireworks AI",
       "doc": "https://fireworks.ai/docs/"
     },
+    "kimi-for-coding": {
+      "id": "kimi-for-coding",
+      "env": [
+        "KIMI_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "api": "https://api.kimi.com/coding/v1",
+      "name": "Kimi For Coding",
+      "doc": "https://www.kimi.com/coding/docs/en/third-party-agents.html"
+    },
     "moark": {
       "id": "moark",
       "env": [
@@ -86126,6 +89129,16 @@
       "api": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "name": "Alibaba (China)",
       "doc": "https://www.alibabacloud.com/help/en/model-studio/models"
+    },
+    "minimax-cn-coding-plan": {
+      "id": "minimax-cn-coding-plan",
+      "env": [
+        "MINIMAX_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "api": "https://api.minimaxi.com/anthropic/v1",
+      "name": "MiniMax Coding Plan (minimaxi.com)",
+      "doc": "https://platform.minimaxi.com/docs/coding-plan/intro"
     },
     "jiekou": {
       "id": "jiekou",
@@ -86666,6 +89679,16 @@
       "name": "SiliconFlow",
       "doc": "https://cloud.siliconflow.com/models"
     },
+    "minimax": {
+      "id": "minimax",
+      "env": [
+        "MINIMAX_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "api": "https://api.minimax.io/anthropic/v1",
+      "name": "MiniMax (minimax.io)",
+      "doc": "https://platform.minimax.io/docs/guides/quickstart"
+    },
     "llmgateway": {
       "id": "llmgateway",
       "env": [
@@ -86819,6 +89842,15 @@
       "name": "Tencent TokenHub",
       "doc": "https://cloud.tencent.com/document/product/1823/130050"
     },
+    "anthropic": {
+      "id": "anthropic",
+      "env": [
+        "ANTHROPIC_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "name": "Anthropic",
+      "doc": "https://docs.anthropic.com/en/docs/about-claude/models"
+    },
     "modelscope": {
       "id": "modelscope",
       "env": [
@@ -86858,6 +89890,16 @@
       "api": "https://api.clarifai.com/v2/ext/openai/v1",
       "name": "Clarifai",
       "doc": "https://docs.clarifai.com/compute/inference/"
+    },
+    "minimax-cn": {
+      "id": "minimax-cn",
+      "env": [
+        "MINIMAX_API_KEY"
+      ],
+      "npm": "@ai-sdk/anthropic",
+      "api": "https://api.minimaxi.com/anthropic/v1",
+      "name": "MiniMax (minimaxi.com)",
+      "doc": "https://platform.minimaxi.com/docs/guides/quickstart"
     },
     "regolo-ai": {
       "id": "regolo-ai",

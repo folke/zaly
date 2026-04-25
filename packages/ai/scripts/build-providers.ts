@@ -58,6 +58,9 @@ function adapterForNpm(npm: string): BuiltinProvider | undefined {
     case "@openrouter/ai-sdk-provider": {
       return "openai"
     }
+    case "@ai-sdk/anthropic": {
+      return "anthropic"
+    }
     default: {
       return undefined
     }

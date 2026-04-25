@@ -304,6 +304,16 @@ export interface ProviderOptions {
   /** Fetch impl — injection point for retry wrappers, proxies,
    *  instrumentation. Defaults to the platform `fetch`. */
   fetch?: FetchLike
+  /** Honor `CacheHint`s placed by the harness. Default `true`.
+   *
+   *  Adapter behaviour when `false`: cache hints are ignored and no
+   *  provider-side cache markers are sent. Useful as a debugging
+   *  kill-switch or when a caller wants strict per-token billing.
+   *
+   *  Only affects providers with explicit, opt-in cache APIs
+   *  (Anthropic `cache_control`). OpenAI's prefix caching is automatic
+   *  and unaffected by this flag. */
+  caching?: boolean
 }
 
 /** Provider-specific wire quirks that "OpenAI compatibility" doesn't
