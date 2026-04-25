@@ -49,7 +49,7 @@ describe("AgentSession — tool-calls loop", () => {
     expect(result.stopReason).toBe("natural")
     const roles = result.messages.map((m) => m.role)
     expect(roles).toEqual(["user", "assistant", "tool", "assistant"])
-    const toolMsg = result.messages[2] as Extract<Message, { role: "tool" }>
+    const toolMsg = result.messages[2] as Message<"tool">
     expect(toolMsg.content[0].result).toBe(5)
     expect(toolMsg.content[0].isError).toBe(false)
   })
@@ -70,7 +70,7 @@ describe("AgentSession — tool-calls loop", () => {
       model,
       request: { tools: [Add] },
     })
-    const toolMsg = result.messages[2] as Extract<Message, { role: "tool" }>
+    const toolMsg = result.messages[2] as Message<"tool">
     expect(toolMsg.content[0].isError).toBe(true)
     expect(String(toolMsg.content[0].result)).toMatch(/UNKNOWN_TOOL|mystery/)
   })

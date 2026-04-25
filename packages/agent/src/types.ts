@@ -15,8 +15,8 @@ import type { StopPolicyOptions } from "./policy.ts"
  *  logic between steps. */
 export interface StepResult {
   kind: StepKind
-  message?: Extract<Message, { role: "assistant" }>
-  toolMessage?: Extract<Message, { role: "tool" }>
+  message?: Message<"assistant">
+  toolMessage?: Message<"tool">
   finishReason: FinishReason
   usage: TokenCount
   error?: Error

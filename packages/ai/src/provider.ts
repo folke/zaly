@@ -165,7 +165,7 @@ export interface CollectOptions {
   /** Called after each event is processed, with the assistant message
    *  assembled so far. Receives a fresh snapshot on each call so
    *  consumers can safely retain / diff the value. */
-  onUpdate?: (message: Extract<Message, { role: "assistant" }>) => void | Promise<unknown>
+  onUpdate?: (message: Message<"assistant">) => void | Promise<unknown>
   /** Called with each raw `StreamEvent` — useful for side channels
    *  that don't map onto the assembled message (per-delta TTS,
    *  streaming telemetry, partial token usage). */
@@ -191,7 +191,7 @@ export async function collect(
   stream: AsyncIterable<StreamEvent>,
   opts?: CollectOptions
 ): Promise<{
-  message: Extract<Message, { role: "assistant" }>
+  message: Message<"assistant">
   finishReason: FinishReason
   usage: TokenCount
 }> {
@@ -207,7 +207,7 @@ export async function collect(
   const track = (r?: unknown): void => {
     if (r instanceof Promise) pending.push(r)
   }
-  const snapshot = (): Extract<Message, { role: "assistant" }> => ({
+  const snapshot = (): Message<"assistant"> => ({
     // Fresh wrapper per call so consumers can retain the value; the
     // inner `parts` array is reused, which is fine because snapshots
     // are read-only from the consumer's point of view and any

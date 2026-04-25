@@ -124,7 +124,7 @@ export class AgentSession extends Emitter {
    *  responds. If a loop is currently running, the message lands on the
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
-  send(message: Message): void {
+  send(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
       this.add(message)
       void this.run()
@@ -136,7 +136,7 @@ export class AgentSession extends Emitter {
   /** Inject a message into the *current* turn — flushed into the
    *  conversation right before the next step's stream. If the
    *  session is idle/paused, behaves like `send`. */
-  inject(message: Message): void {
+  inject(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
       this.send(message)
     } else {
@@ -246,7 +246,7 @@ export class AgentSession extends Emitter {
         type: "tool-result",
       })
     }
-    const message: Extract<Message, { role: "tool" }> = { content: resultParts, role: "tool" }
+    const message: Message<"tool"> = { content: resultParts, role: "tool" }
     this.add(message)
     return message
   }

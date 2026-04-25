@@ -81,7 +81,7 @@ export interface CacheHint {
  *
  *  String shorthands on `user` and `assistant` expand to a single
  *  `TextPart` — they're there for ergonomics, not a different shape. */
-export type Message =
+type M =
   | {
       role: "system"
       content: string
@@ -106,6 +106,8 @@ export type Message =
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }
+
+export type Message<T extends M["role"] = M["role"]> = Extract<M, { role: T }>
 
 /** A callable tool exposed to the model.
  *

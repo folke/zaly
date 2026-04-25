@@ -1,7 +1,8 @@
 import type { Message, Model, StreamEvent, TokenCount } from "@zaly/ai"
-import { AgentSession } from "../src/agent.ts"
 import type { AgentStopReason } from "../src/events.ts"
 import type { AgentSessionOptions } from "../src/types.ts"
+
+import { AgentSession } from "../src/agent.ts"
 
 /** Build a minimal `Model` from a list of scripted stream-event arrays
  *  (one per turn). Only the fields `AgentSession` reads are populated. */
@@ -45,7 +46,7 @@ export function throwingModel(message: string): Model {
  *  Returns the resulting messages, summed usage, and the loop's stop
  *  reason — same shape as the old `runAgentTurn`. */
 export async function runAgentTurn(
-  opts: AgentSessionOptions & { send?: Message },
+  opts: AgentSessionOptions & { send?: Message<"user" | "system"> }
 ): Promise<{
   messages: Message[]
   /** Last step's usage. */

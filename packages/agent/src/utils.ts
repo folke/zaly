@@ -4,7 +4,7 @@ import { ToolError } from "@zaly/ai"
 /** Pull tool-call parts out of an assistant message. Returns `[]` for
  *  the string-content shorthand or a content array with no calls. */
 export function extractToolCalls(
-  message: Extract<Message, { role: "assistant" }>,
+  message: Message<"assistant">,
 ): ToolCallPart[] {
   if (typeof message.content === "string") return []
   return message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
