@@ -78,9 +78,9 @@ describe.skipIf(!hasKey)("openai: live", () => {
     )
     const calls = asArray(message.content).filter((p) => p.type === "tool-call")
     expect(calls).toHaveLength(1)
-    const call = calls[0] as unknown as { name: string; args: { city: string } }
+    const call = calls[0] as unknown as { name: string; params: { city: string } }
     expect(call.name).toBe("get_weather")
-    expect(call.args.city.toLowerCase()).toContain("tokyo")
+    expect(call.params.city.toLowerCase()).toContain("tokyo")
     expect(["tool-calls", "stop"]).toContain(finishReason)
   }, 30_000)
 
