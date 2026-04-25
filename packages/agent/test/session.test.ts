@@ -133,3 +133,142 @@ describe("Session — navigate", () => {
     expect(() => s.navigate("not-a-real-uuid")).toThrow(/unknown uuid/)
   })
 })
+
+describe("Session — history", () => {
+  test("returns empty when there's nothing past the active chain", () => {
+    const s = new Session({ initialMessages: [u("hi"), a("hello")] })
+    expect(s.history()).toEqual([])
+  })
+
+  test("returns pre-compact messages, chronological", () => {
+    const s = new Session()
+    s.add(u("old1"))
+    s.add(a("old2"))
+    s.compact()
+    s.add(u("fresh"))
+    expect(s.messages).toEqual([u("fresh")])
+    expect(s.history()).toEqual([u("old1"), a("old2")])
+  })
+
+  test("walks past multiple compacts and returns everything before active", () => {
+    const s = new Session()
+    s.add(u("a1"))
+    s.compact()
+    s.add(u("a2"))
+    s.compact()
+    s.add(u("a3"))
+    expect(s.messages).toEqual([u("a3")])
+    expect(s.history()).toEqual([u("a1"), u("a2")])
+  })
+
+  test("limit truncates from the front (oldest), keeps the most recent history", () => {
+    const s = new Session()
+    s.add(u("oldest"))
+    s.add(u("middle"))
+    s.add(u("newest"))
+    s.compact()
+    s.add(u("active"))
+    expect(s.history(2)).toEqual([u("middle"), u("newest")])
+    expect(s.history(1)).toEqual([u("newest")])
+  })
+
+  test("when active is empty, history walks back from head (the compact)", () => {
+    const s = new Session()
+    s.add(u("a"))
+    s.add(u("b"))
+    s.compact()
+    expect(s.messages).toEqual([])
+    expect(s.history()).toEqual([u("a"), u("b")])
+  })
+})
+
+function tmpPath(name: string): string {
+  return `${process.env.TMPDIR ?? "/tmp"}/zaly-session-${Date.now()}-${Math.random().toString(36).slice(2)}-${name}.jsonl`
+}
+
+describe("Session — JSONL persistence", () => {
+  const path = tmpPath
+
+  test("writes one record per node and round-trips via load", async () => {
+    const file = path("roundtrip")
+    const s = new Session({ modelId: "openai/gpt-4o", path: file, prompt: ["be brief"] })
+    s.add(u("hi"))
+    const aId = s.add(a("hello"), { modelId: "openai/gpt-4o", usage: { input: 5, output: 2 } })
+    s.add(u("again"))
+    await s.close()
+
+    const loaded = await Session.load(file)
+    expect(loaded.head).toBe(s.head)
+    expect(loaded.messages).toEqual(s.messages)
+    expect(loaded.nodes.size).toBe(s.nodes.size)
+    // Metadata round-trips on the assistant node
+    const aNode = loaded.nodes.get(aId)!
+    if (aNode.type !== "message") throw new Error("expected message node")
+    expect(aNode.usage).toEqual({ input: 5, output: 2 })
+    expect(aNode.modelId).toBe("openai/gpt-4o")
+    await loaded.close()
+  })
+
+  test("compact + post-compact messages survive a round-trip", async () => {
+    const file = path("compact")
+    const s = new Session({ path: file })
+    s.add(u("old1"))
+    s.add(a("old2"))
+    s.compact({ preTokens: 50, trigger: "auto" })
+    s.add(u("fresh"))
+    await s.close()
+
+    const loaded = await Session.load(file)
+    // Active chain stops at the compact, so only "fresh" is visible.
+    expect(loaded.messages).toEqual([u("fresh")])
+    // Pre-compact records still in the DAG (history).
+    expect(loaded.nodes.size).toBe(5) // start + 2 old + compact + 1 fresh
+  })
+
+  test("load picks the latest record as head by default", async () => {
+    const file = path("latest")
+    const s = new Session({ path: file })
+    s.add(u("a"))
+    s.add(u("b"))
+    const lastHead = s.head
+    await s.close()
+
+    const loaded = await Session.load(file)
+    expect(loaded.head).toBe(lastHead)
+  })
+
+  test("load(path, { fromUuid }) navigates to a branch head", async () => {
+    const file = path("branch")
+    const s = new Session({ path: file })
+    s.add(u("first"))
+    const branchPoint = s.head!
+    s.add(u("alt-future"))
+    await s.close()
+
+    const loaded = await Session.load(file, { fromUuid: branchPoint })
+    expect(loaded.head).toBe(branchPoint)
+    expect(loaded.messages).toEqual([u("first")])
+  })
+
+  test("load tolerates a truncated last line (crash mid-write)", async () => {
+    const file = path("truncated")
+    const s = new Session({ path: file })
+    s.add(u("ok"))
+    await s.close()
+
+    // Append a partial JSON line — what a crash mid-write would leave.
+    const fs = await import("node:fs/promises")
+    await fs.appendFile(file, '{"type":"message","message"', "utf8")
+
+    const loaded = await Session.load(file)
+    expect(loaded.messages).toEqual([u("ok")])
+  })
+
+  test("load throws on an unknown fromUuid", async () => {
+    const file = path("badbranch")
+    const s = new Session({ path: file })
+    s.add(u("x"))
+    await s.close()
+    await expect(Session.load(file, { fromUuid: "no-such-uuid" })).rejects.toThrow(/not in file/)
+  })
+})
