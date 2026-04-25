@@ -5,6 +5,7 @@ import type {
   Message,
   Model,
   TokenCount,
+  Tool,
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
@@ -26,27 +27,33 @@ export interface StepResult {
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
   model: Model
+  /** Tools the model may call. Kernel-owned: the agent both passes
+   *  these to the provider on every step and dispatches calls against
+   *  them. Mutable post-construction via `agent.tools = …`. */
+  tools?: Tool[]
   /** Stop-policy knobs — `maxSteps`, `tokenBudget`, `maxToolErrors`,
    *  loop-detection tuning. Grouped under one key to keep the agent's
    *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */
   policy?: StopPolicyOptions
-  /** Static per-call request knobs (tools, temperature, reasoning,
-   *  toolChoice, …). The agent owns `model`, `messages`, and
-   *  `prompt` — those have dedicated top-level fields here. */
-  request?: Omit<GenerateRequest, "model" | "messages" | "prompt">
+  /** Per-call passthrough knobs (`temperature`, `toolChoice`,
+   *  `reasoning`, `responseFormat`, …). The agent owns `model`,
+   *  `messages`, `prompt`, and `tools` — those have dedicated
+   *  top-level fields here. */
+  request?: Omit<GenerateRequest, "model" | "messages" | "prompt" | "tools">
   /** Pre-built `Session` to use. Useful for resuming a persisted
    *  conversation or for sharing one Session across multiple Agents
    *  (e.g. swapping models). When omitted, a fresh in-memory Session
-   *  is created from `initialMessages` / `prompt` / `model.id`. */
+   *  is created. Either way, `messages` (if any) are appended to it. */
   session?: Session
-  /** Conversation history to seed a new Session with. Ignored if
-   *  `session` is supplied. */
-  initialMessages?: Message[]
+  /** Initial messages appended to the session at construction. Useful
+   *  for seeding a fresh conversation or for prepending fixed context
+   *  to an existing session. */
+  messages?: Message[]
   /** Durable system prompt — passed to every step's request and
    *  routed by adapters to each provider's dedicated system slot. Use
    *  this for "behave like X" instructions that don't change across
    *  the session. For mid-conversation steering, `send()` a
-   *  `role: "system"` message instead. */
+   *  `role: "system"` message instead. Mutable via `agent.prompt = …`. */
   prompt?: string[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number

@@ -19,6 +19,38 @@ export function mockModel(scripts: StreamEvent[][]): Model {
   } as Model
 }
 
+/** Build a `Model` whose `stream` blocks until `release(events)` is
+ *  called. Lets tests exercise send/inject/pause/abort against a turn
+ *  that's actually in flight, instead of one that completes in a
+ *  single microtask. Each `release` feeds the next pending stream. */
+export function pendingModel(): {
+  model: Model
+  release: (events: StreamEvent[]) => void
+  pending: number
+} {
+  const waiting: ((events: StreamEvent[]) => void)[] = []
+  const state = {
+    get pending() {
+      return waiting.length
+    },
+    model: {
+      id: "mock/x",
+      options: {} as Model["options"],
+      provider: {} as Model["provider"],
+      async *stream() {
+        const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
+        for (const ev of events) yield ev
+      },
+    } as Model,
+    release(events: StreamEvent[]): void {
+      const next = waiting.shift()
+      if (!next) throw new Error("pendingModel.release: no pending stream")
+      next(events)
+    },
+  }
+  return state
+}
+
 /** Build a `Model` whose `stream` always throws the given message —
  *  used to exercise error / overflow paths. */
 export function throwingModel(message: string): Model {

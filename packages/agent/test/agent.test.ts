@@ -19,7 +19,7 @@ describe("Agent — no tool calls", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "hi", role: "user" }],
+      messages: [{ content: "hi", role: "user" }],
       model,
     })
     expect(result.steps).toBe(1)
@@ -41,9 +41,9 @@ describe("Agent — tool-calls loop", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "what is 2+3?", role: "user" }],
+      messages: [{ content: "what is 2+3?", role: "user" }],
       model,
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.steps).toBe(2)
     expect(result.stopReason).toBe("natural")
@@ -66,9 +66,9 @@ describe("Agent — tool-calls loop", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
-      request: { tools: [Add] },
+      tools: [Add],
     })
     const toolMsg = result.messages[2] as Message<"tool">
     expect(toolMsg.content[0].isError).toBe(true)
@@ -87,10 +87,10 @@ describe("Agent — tool-calls loop", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "loop", role: "user" }],
+      messages: [{ content: "loop", role: "user" }],
       model,
       policy: { maxSteps: 2 },
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.steps).toBe(2)
     expect(result.stopReason).toBe("max-steps")
@@ -110,9 +110,9 @@ describe("Agent — usage accumulation", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.totalUsage).toEqual({ input: 30, output: 8 })
     expect(result.usage).toEqual({ input: 20, output: 3 })
@@ -132,10 +132,10 @@ describe("Agent — token budget", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
       policy: { tokenBudget: 80 },
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.stopReason).toBe("token-budget")
     expect(result.steps).toBe(1)
@@ -159,7 +159,7 @@ describe("Agent — max tool errors", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
       policy: {
         // Disable loop detection so repeated identical failing calls
@@ -168,7 +168,7 @@ describe("Agent — max tool errors", () => {
         loopWindowRepeats: Infinity,
         maxToolErrors: 3,
       },
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.stopReason).toBe("max-tool-errors")
     expect(result.steps).toBe(3)
@@ -194,10 +194,10 @@ describe("Agent — max tool errors", () => {
       ],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
       policy: { maxToolErrors: 2 },
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.stopReason).toBe("natural")
   })
@@ -206,7 +206,7 @@ describe("Agent — max tool errors", () => {
 describe("Agent — context overflow", () => {
   test("detects overflow from a thrown stream error", async () => {
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model: throwingModel("This model's maximum context length is 8192 tokens."),
     })
     expect(result.stopReason).toBe("context-overflow")
@@ -218,7 +218,7 @@ describe("Agent — context overflow", () => {
     ])
     const result = await runAgent({
       contextLimit: 8000,
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
     })
     expect(result.stopReason).toBe("context-overflow")
@@ -226,7 +226,7 @@ describe("Agent — context overflow", () => {
 
   test("genuine errors surface as stopReason: error", async () => {
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model: throwingModel("network down"),
     })
     expect(result.stopReason).toBe("error")
@@ -252,10 +252,10 @@ describe("Agent — loop detection", () => {
       [sameCall("c3"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
     ])
     const result = await runAgent({
-      initialMessages: [{ content: "go", role: "user" }],
+      messages: [{ content: "go", role: "user" }],
       model,
       policy: { loopConsecutive: 3 },
-      request: { tools: [Add] },
+      tools: [Add],
     })
     expect(result.stopReason).toBe("loop-detected")
   })

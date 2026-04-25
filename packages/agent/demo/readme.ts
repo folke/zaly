@@ -13,7 +13,7 @@ const model = await loadModel("openai/gpt-4o-mini")
 
 const agent = new Agent({
   model,
-  request: { tools: [multiply] },
+  tools: [multiply],
 })
 
 agent.send({ content: "What is 17 × 23?", role: "user" })

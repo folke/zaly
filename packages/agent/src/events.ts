@@ -1,4 +1,4 @@
-import type { Message, StreamEvent, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { StreamEvent, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai"
 
 // ── Agent event union ────────────────────────────────────────────────────
 
@@ -25,14 +25,15 @@ export type AgentStopReason =
  *  logic between steps. */
 export type StepKind = "natural" | "tool-calls" | "context-overflow" | "error"
 
-/** Events emitted by an `AgentSession` as the loop runs. Listeners
- *  fire synchronously; a throw inside a listener is caught and logged
- *  by the emitter so the loop keeps running. */
+/** Events emitted by an `Agent` as the loop runs. Listeners fire
+ *  synchronously; a throw inside a listener is caught and logged by
+ *  the emitter so the loop keeps running.
+ *
+ *  Conversation-shape events (new message committed, head moved, …)
+ *  live on the `Session`, not here — subscribe via `agent.session.on(…)`. */
 export type AgentEvent =
   | { type: "status"; status: AgentStatus }
   | { type: "stream-event"; event: StreamEvent }
-  | { type: "message"; message: Message }
-  | { type: "replace"; before: readonly Message[]; after: readonly Message[] }
   | { type: "tool-call"; call: ToolCallPart }
   | { type: "tool-result"; call: ToolCallPart; result: ToolResult }
   | { type: "step-end"; outcome: StepKind }

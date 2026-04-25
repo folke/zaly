@@ -58,16 +58,16 @@ export interface SessionOptions {
    *  one record. Open in append mode — existing content is preserved.
    *  Use `Session.load(path)` to rehydrate from an existing file. */
   path?: string
-  /** Conversation history to seed the session. Each message gets a
-   *  fresh uuid; `parentUuid` chains them in order. */
-  initialMessages?: Message[]
-  /** Initial durable system prompt — recorded on the `session-start`
-   *  node so loaders can recover it. The active value lives on the
-   *  agent / context that wraps this session. */
-  prompt?: string[]
-  /** Model id active at session creation — recorded on the
-   *  `session-start` node. */
+}
+
+/** Metadata recorded on the `session-start` node by `start()`. Captures
+ *  the model and durable prompt that originally produced the
+ *  conversation, so loaders / replay tools can attribute downstream
+ *  records correctly even when a different Agent picks the session up
+ *  later (e.g. for model swaps). */
+export interface SessionStart {
   modelId?: string
+  prompt?: string[]
 }
 
 /**
@@ -100,17 +100,26 @@ export class Session extends Emitter<SessionEvent> {
   constructor(opts: SessionOptions = {}) {
     super()
     if (opts.path) this.#writer = createWriteStream(opts.path, { flags: "a" })
+  }
 
-    // Always seed with a `session-start` node so the file (and the
-    // navigation chain) always has a root.
+  /** Initialize the session by writing a `session-start` node. Called
+   *  by `Agent`'s constructor in the common path; safe to call directly
+   *  if you're using `Session` standalone.
+   *
+   *  Idempotent: if the session already has a `session-start` (because
+   *  it was loaded from disk, pre-seeded, or a prior `start()` ran),
+   *  this is a no-op. The original metadata stays intact — historical
+   *  truth wins over later context. To make a model swap visible in the
+   *  DAG, append a record yourself rather than overwriting the start. */
+  start(meta: SessionStart = {}): void {
+    if (this.#nodes.size > 0) return
     this.#commit({
-      modelId: opts.modelId,
-      prompt: opts.prompt,
+      modelId: meta.modelId,
+      prompt: meta.prompt,
       ts: Date.now(),
       type: "session-start",
       uuid: uuidv7(),
     })
-    for (const m of opts.initialMessages ?? []) this.add(m)
   }
 
   // ── Read ──────────────────────────────────────────────────────────────
@@ -240,11 +249,8 @@ export class Session extends Emitter<SessionEvent> {
     }
 
     // Build empty session in-memory (no writer yet — we don't want to
-    // re-write the records we're loading), then replace state.
+    // re-write the records we're loading), then load state.
     const session = new Session()
-    session.#nodes.clear()
-    session.#head = undefined
-    session.#messages = []
     for (const node of records) session.#nodes.set(node.uuid, node)
 
     const head = opts.fromUuid ?? records[records.length - 1].uuid

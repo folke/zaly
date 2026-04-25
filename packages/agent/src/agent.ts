@@ -16,7 +16,7 @@ import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
  * Typical interactive use:
  *
  * ```ts
- * const agent = new Agent({ model, request: { tools } })
+ * const agent = new Agent({ model, tools })
  * agent.session.on("node", (e) => render(e))
  * agent.send({ role: "user", content: "hi" })          // auto-runs
  * // …user types again later…
@@ -28,9 +28,11 @@ import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
  */
 export class Agent extends Emitter<AgentEvent> {
   readonly #opts: AgentOptions
-  readonly #toolIndex = new Map<string, Tool>()
   readonly #policy: StopPolicy
   readonly session: Session
+
+  #tools: Tool[] = []
+  #prompt?: string[]
 
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
@@ -46,14 +48,13 @@ export class Agent extends Emitter<AgentEvent> {
   constructor(opts: AgentOptions) {
     super()
     this.#opts = opts
-    this.session =
-      opts.session ??
-      new Session({
-        initialMessages: opts.initialMessages,
-        modelId: opts.model.id,
-        prompt: opts.prompt,
-      })
-    for (const t of opts.request?.tools ?? []) this.#toolIndex.set(t.name, t)
+    this.#prompt = opts.prompt
+    this.session = opts.session ?? new Session()
+    // Idempotent — no-op on a loaded / pre-seeded session, so historical
+    // metadata wins over whatever this Agent would record now.
+    this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
+    for (const m of opts.messages ?? []) this.session.add(m)
+    this.tools = opts.tools ?? []
     this.#policy = new StopPolicy(opts.policy)
     this.#policy.attach(this)
     this.onEmitError = (error) => {
@@ -97,11 +98,24 @@ export class Agent extends Emitter<AgentEvent> {
   get steps(): number {
     return this.#policy.steps
   }
-  /** Durable system prompt — currently the value supplied at
-   *  construction. Exposed as a getter so subclasses or future
-   *  setter overrides have a single resolution point. */
+  /** Durable system prompt sent on every step. Mutable: assign to
+   *  swap behaviour mid-conversation; the change applies on the next
+   *  step (the in-flight stream keeps its original prompt). */
   get prompt(): string[] | undefined {
-    return this.#opts.prompt
+    return this.#prompt
+  }
+  set prompt(value: string[] | undefined) {
+    this.#prompt = value
+  }
+
+  /** Tools the model may call. Mutable: assign to swap the available
+   *  set mid-conversation; the new set applies on the next step.
+   *  Setting rebuilds the dispatch table. */
+  get tools(): readonly Tool[] {
+    return this.#tools
+  }
+  set tools(next: Tool[]) {
+    this.#tools = next
   }
 
   // ── Input ────────────────────────────────────────────────────────────
@@ -152,8 +166,9 @@ export class Agent extends Emitter<AgentEvent> {
     const stream = this.#opts.model.stream({
       ...this.#opts.request,
       messages: [...this.session.messages],
-      prompt: this.prompt,
+      prompt: this.#prompt,
       signal: this.#abortController.signal,
+      tools: this.#tools,
     })
     return await collect(stream, {
       onEvent: (event) => {
@@ -225,7 +240,7 @@ export class Agent extends Emitter<AgentEvent> {
     const resultParts: ToolResultPart[] = []
     for (const call of calls) {
       this.emit({ call, type: "tool-call" })
-      const tool = this.#toolIndex.get(call.name)
+      const tool = this.#tools.find((t) => t.name === call.name)
       const result = tool ? await runTool(tool, call.params) : unknownToolResult(call.name)
       this.emit({ call, result, type: "tool-result" })
       resultParts.push({
