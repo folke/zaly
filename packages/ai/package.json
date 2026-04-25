@@ -12,10 +12,7 @@
   ],
   "type": "module",
   "exports": {
-    ".": {
-      "bun": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
+    ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
   "publishConfig": {

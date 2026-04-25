@@ -9,8 +9,10 @@ export default defineConfig({
   dts: {
     sourcemap: true,
   },
-  exports: { devExports: "bun" },
+  exports: {
+    devExports: true,
+  },
   format: ["esm"],
   publint: true,
-  workspace: true,
+  workspace: "packages/*",
 })
