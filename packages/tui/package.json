@@ -64,9 +64,7 @@
     "docs:dev": "bun run docs:api && vitepress dev docs",
     "docs:build": "bun run docs:api && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "test": "bun test:node && bun test:bun",
-    "test:node": "vitest -r ../../ --project @zaly/tui run",
-    "test:bun": "bun test --only-failures"
+    "test": "bun test && vitest -r ../../ --project @zaly/tui run"
   },
   "dependencies": {
     "image-meta": "^0.2.2",

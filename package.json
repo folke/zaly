@@ -20,9 +20,7 @@
     "up": "bun --workspaces update --latest",
     "build": "bun build:assets && tsdown",
     "build:assets": "bun run --sequential --no-exit-on-error --workspaces 'build:*'",
-    "test": "bun test:node && bun test:bun",
-    "test:node": "vitest run",
-    "test:bun": "bun test --no-env-file",
+    "test": "bun test --no-env-file && bun vitest",
     "test:live": "bun test live"
   },
   "devDependencies": {

@@ -27,9 +27,7 @@
   "scripts": {
     "build": "tsdown --cwd ../../ --filter @zaly/agent",
     "check": "oxlint",
-    "test": "bun test:node && bun test:bun",
-    "test:node": "vitest -r ../../ --project @zaly/agent run",
-    "test:bun": "bun test --only-failures"
+    "test": "bun test && vitest -r ../../ --project @zaly/agent run"
   },
   "dependencies": {
     "@zaly/ai": "workspace:*",

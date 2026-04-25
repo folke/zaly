@@ -28,9 +28,7 @@
     "build": "tsdown --cwd ../../ --filter @zaly/ai",
     "build:models": "bun scripts/fetch-models.ts && bun scripts/build-models.ts",
     "check": "oxlint",
-    "test": "bun test:node && bun test:bun",
-    "test:node": "vitest -r ../../ --project @zaly/ai run",
-    "test:bun": "bun test --only-failures"
+    "test": "bun test && vitest -r ../../ --project @zaly/ai run"
   },
   "dependencies": {
     "jsonrepair": "^3.14.0",
