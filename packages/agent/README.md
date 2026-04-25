@@ -64,8 +64,8 @@ Status is one of `idle | streaming | running-tools | paused`. `paused` covers po
 Each `run()` resolves with an `AgentStopReason`:
 
 - `natural` — model returned without a tool call and no follow-ups queued
-- `max-steps` — hit `maxSteps` (default 50)
-- `token-budget` — `usage.input + usage.output` exceeded `tokenBudget`
+- `max-steps` — hit `policy.maxSteps` (default 50)
+- `token-budget` — cumulative usage exceeded `policy.tokenBudget`
 - `loop-detected` — built-in loop heuristic flagged repetition (see below)
 - `max-tool-errors` — too many consecutive failing tool calls
 - `context-overflow` — request overflowed the context window (regex-detected from error messages or compared against `contextLimit`)
@@ -81,17 +81,19 @@ All policy knobs live on the session options and are routed to the
 internal `StopPolicy`. Defaults below.
 
 ```ts
-new AgentSession({
+new Agent({
   // …
-  maxSteps: 50,             // hard ceiling on provider round-trips per run()
-  maxToolErrors: 5,         // bail after N consecutive failing tool calls
-  tokenBudget: 100_000,     // cumulative usage cap across the run
   contextLimit: 128_000,    // model's context window — enables silent-overflow detection
+  policy: {
+    maxSteps: 50,           // hard ceiling on provider round-trips per run()
+    maxToolErrors: 5,       // bail after N consecutive failing tool calls
+    tokenBudget: 100_000,   // cumulative usage cap across the run
 
-  // Loop detection (cheap heuristics over tool-call history)
-  loopConsecutive: 3,       // same call N times in a row → loop-detected
-  loopWindow: 10,           // window for the second arm
-  loopWindowRepeats: 4,     // duplicates within the window → loop-detected
+    // Loop detection (cheap heuristics over tool-call history)
+    loopConsecutive: 3,     // same call N times in a row → loop-detected
+    loopWindow: 10,         // window for the second arm
+    loopWindowRepeats: 4,   // duplicates within the window → loop-detected
+  },
 })
 ```
 

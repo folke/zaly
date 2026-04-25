@@ -54,7 +54,7 @@ export class Agent extends Emitter<AgentEvent> {
         prompt: opts.prompt,
       })
     for (const t of opts.request?.tools ?? []) this.#toolIndex.set(t.name, t)
-    this.#policy = new StopPolicy(opts)
+    this.#policy = new StopPolicy(opts.policy)
     this.#policy.attach(this)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console

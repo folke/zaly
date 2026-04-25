@@ -23,11 +23,13 @@ export interface StepResult {
   error?: Error
 }
 
-/** Options for constructing an `Agent`. Inherits all stop-policy
- *  knobs (`maxSteps`, `tokenBudget`, `maxToolErrors`, loop-detection
- *  tuning) from `StopPolicyOptions`. */
-export interface AgentOptions extends CollectOptions, StopPolicyOptions {
+/** Options for constructing an `Agent`. */
+export interface AgentOptions extends CollectOptions {
   model: Model
+  /** Stop-policy knobs — `maxSteps`, `tokenBudget`, `maxToolErrors`,
+   *  loop-detection tuning. Grouped under one key to keep the agent's
+   *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */
+  policy?: StopPolicyOptions
   /** Static per-call request knobs (tools, temperature, reasoning,
    *  toolChoice, …). The agent owns `model`, `messages`, and
    *  `prompt` — those have dedicated top-level fields here. */

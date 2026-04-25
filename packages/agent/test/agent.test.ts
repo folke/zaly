@@ -88,8 +88,8 @@ describe("Agent — tool-calls loop", () => {
     ])
     const result = await runAgent({
       initialMessages: [{ content: "loop", role: "user" }],
-      maxSteps: 2,
       model,
+      policy: { maxSteps: 2 },
       request: { tools: [Add] },
     })
     expect(result.steps).toBe(2)
@@ -134,8 +134,8 @@ describe("Agent — token budget", () => {
     const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model,
+      policy: { tokenBudget: 80 },
       request: { tools: [Add] },
-      tokenBudget: 80,
     })
     expect(result.stopReason).toBe("token-budget")
     expect(result.steps).toBe(1)
@@ -160,12 +160,14 @@ describe("Agent — max tool errors", () => {
     ])
     const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
-      // Disable loop detection so repeated identical failing calls
-      // don't trip "loop-detected" before the error cap fires.
-      loopConsecutive: Infinity,
-      loopWindowRepeats: Infinity,
-      maxToolErrors: 3,
       model,
+      policy: {
+        // Disable loop detection so repeated identical failing calls
+        // don't trip "loop-detected" before the error cap fires.
+        loopConsecutive: Infinity,
+        loopWindowRepeats: Infinity,
+        maxToolErrors: 3,
+      },
       request: { tools: [Add] },
     })
     expect(result.stopReason).toBe("max-tool-errors")
@@ -193,8 +195,8 @@ describe("Agent — max tool errors", () => {
     ])
     const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
-      maxToolErrors: 2,
       model,
+      policy: { maxToolErrors: 2 },
       request: { tools: [Add] },
     })
     expect(result.stopReason).toBe("natural")
@@ -251,8 +253,8 @@ describe("Agent — loop detection", () => {
     ])
     const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
-      loopConsecutive: 3,
       model,
+      policy: { loopConsecutive: 3 },
       request: { tools: [Add] },
     })
     expect(result.stopReason).toBe("loop-detected")
