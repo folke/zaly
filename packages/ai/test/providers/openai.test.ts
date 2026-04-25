@@ -32,6 +32,62 @@ describe("openai: request translation", () => {
     ])
   })
 
+  test("prompt[] is prepended as a single system message, joined with blank lines", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [{ content: "hi", role: "user" }],
+        model: "gpt-4o-mini",
+        prompt: ["You are a tutor.", "Always show your work."],
+      })
+    )
+
+    const body = recorded[0].body as { messages: unknown[] }
+    expect(body.messages[0]).toEqual({
+      content: "You are a tutor.\n\nAlways show your work.",
+      role: "system",
+    })
+    expect(body.messages[1]).toEqual({ content: "hi", role: "user" })
+  })
+
+  test("prompt[] composes with existing role:'system' messages", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          { content: "be concise", role: "system" },
+          { content: "hi", role: "user" },
+        ],
+        model: "gpt-4o-mini",
+        prompt: ["You are a tutor."],
+      })
+    )
+
+    const body = recorded[0].body as { messages: unknown[] }
+    // Durable prompt first, interleaved system second, user last.
+    expect(body.messages).toEqual([
+      { content: "You are a tutor.", role: "system" },
+      { content: "be concise", role: "system" },
+      { content: "hi", role: "user" },
+    ])
+  })
+
+  test("empty prompt[] is a no-op", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [{ content: "hi", role: "user" }],
+        model: "gpt-4o-mini",
+        prompt: [],
+      })
+    )
+    const body = recorded[0].body as { messages: unknown[] }
+    expect(body.messages).toEqual([{ content: "hi", role: "user" }])
+  })
+
   test("user TextPart[] becomes content-parts array", async () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })

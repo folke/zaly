@@ -44,6 +44,14 @@ export interface GenerateRequest {
   model: string
   messages: Message[]
   tools?: Tool[]
+  /** Durable system prompt. Adapters route this to the provider's
+   *  dedicated slot (OpenAI: prepended `role: "system"` message;
+   *  Anthropic: top-level `system` field; Gemini: `systemInstruction`).
+   *  Joined with blank-line separators where the wire format expects a
+   *  single string. Distinct from `role: "system"` messages in
+   *  `messages`, which are mid-conversation steering and follow each
+   *  provider's interleaved-system policy. */
+  prompt?: string[]
 
   // ── User-facing request config ────────────────────────────────────
   temperature?: number

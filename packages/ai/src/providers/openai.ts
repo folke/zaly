@@ -143,8 +143,15 @@ interface OpenAIContentPart {
 function buildRequest(req: GenerateRequest): OpenAIChatRequest {
   const quirks = req.quirks ?? {}
   const specific = (req.providerOptions?.openai ?? {}) as OpenAIRequestOptions
+  const messages = req.messages.map(toOpenAIMessage)
+  // Durable system prompt → first `role: "system"` message. Joined with
+  // blank lines so multiple snippets read as separate paragraphs without
+  // bleeding into each other.
+  if (req.prompt && req.prompt.length > 0) {
+    messages.unshift({ content: req.prompt.join("\n\n"), role: "system" })
+  }
   const out: OpenAIChatRequest = {
-    messages: req.messages.map(toOpenAIMessage),
+    messages,
     model: req.model,
     stream: true,
     stream_options: { include_usage: true },
