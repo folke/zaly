@@ -529,7 +529,7 @@ function* handleChunk(
           input: chunk.usage?.prompt_tokens ?? 0,
           output: chunk.usage?.completion_tokens ?? 0,
           ...(chunk.usage?.prompt_tokens_details?.cached_tokens !== undefined
-            ? { cachedInput: chunk.usage.prompt_tokens_details.cached_tokens }
+            ? { cacheRead: chunk.usage.prompt_tokens_details.cached_tokens }
             : {}),
         },
       }
@@ -546,7 +546,7 @@ function* handleChunk(
         input: chunk.usage.prompt_tokens ?? 0,
         output: chunk.usage.completion_tokens ?? 0,
         ...(chunk.usage.prompt_tokens_details?.cached_tokens !== undefined
-          ? { cachedInput: chunk.usage.prompt_tokens_details.cached_tokens }
+          ? { cacheRead: chunk.usage.prompt_tokens_details.cached_tokens }
           : {}),
       },
     }

@@ -29,8 +29,11 @@ export function addUsage(a: TokenCount, b: TokenCount): TokenCount {
     input: a.input + b.input,
     output: a.output + b.output,
   }
-  if (a.cachedInput !== undefined || b.cachedInput !== undefined) {
-    out.cachedInput = (a.cachedInput ?? 0) + (b.cachedInput ?? 0)
+  if (a.cacheRead !== undefined || b.cacheRead !== undefined) {
+    out.cacheRead = (a.cacheRead ?? 0) + (b.cacheRead ?? 0)
+  }
+  if (a.cacheWrite !== undefined || b.cacheWrite !== undefined) {
+    out.cacheWrite = (a.cacheWrite ?? 0) + (b.cacheWrite ?? 0)
   }
   if (a.reasoning !== undefined || b.reasoning !== undefined) {
     out.reasoning = (a.reasoning ?? 0) + (b.reasoning ?? 0)

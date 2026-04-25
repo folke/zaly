@@ -535,7 +535,7 @@ describe("openai: stream parsing", () => {
     expect(call.params).toBe("{not valid")
   })
 
-  test("usage with cached_tokens maps to cachedInput", async () => {
+  test("usage with cached_tokens maps to cacheRead", async () => {
     const { fetch } = recordFetch(
       sseResponse([
         chunk({ content: "ok" }),
@@ -554,9 +554,9 @@ describe("openai: stream parsing", () => {
       provider.stream({ messages: [{ content: "q", role: "user" }], model: "m" })
     )
     const finish = events.find((e) => e.type === "finish") as {
-      usage: { input: number; output: number; cachedInput?: number }
+      usage: { input: number; output: number; cacheRead?: number }
     }
-    expect(finish.usage).toEqual({ cachedInput: 80, input: 123, output: 7 })
+    expect(finish.usage).toEqual({ cacheRead: 80, input: 123, output: 7 })
   })
 
   test("finish_reason length maps to 'length'", async () => {

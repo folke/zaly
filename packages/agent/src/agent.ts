@@ -213,7 +213,7 @@ export class AgentSession extends Emitter {
       this.#opts.contextLimit !== undefined &&
       isContextOverflow({
         contextLimit: this.#opts.contextLimit,
-        usageInput: collected.usage.input + (collected.usage.cachedInput ?? 0),
+        usageInput: collected.usage.input + (collected.usage.cacheRead ?? 0),
       })
     )
       return { kind: "context-overflow", ...result }

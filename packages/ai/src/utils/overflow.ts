@@ -66,7 +66,7 @@ export interface OverflowCheck {
    *  Error object — so callers can pre-extract from native errors,
    *  response bodies, or structured error responses uniformly. */
   message?: string
-  /** `usage.input + usage.cachedInput` from a successful response.
+  /** `usage.input + usage.cacheRead` from a successful response.
    *  Combined with `contextLimit` detects silent overflow — providers
    *  that accept out-of-budget requests and truncate rather than
    *  error. Cached input still counts against the window. */
@@ -90,7 +90,7 @@ export interface OverflowCheck {
  *
  * // After a successful turn, to catch silent-overflow providers:
  * if (isContextOverflow({
- *   usageInput: usage.input + (usage.cachedInput ?? 0),
+ *   usageInput: usage.input + (usage.cacheRead ?? 0),
  *   contextLimit: model.options.limit.context,
  * })) {
  *   await compact()

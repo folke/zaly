@@ -144,15 +144,25 @@ export type FinishReason =
   | "error"
   | "other"
 
-/** Token accounting returned at end-of-stream (`finish.usage`). Provider
- *  is the source of truth — we don't count locally.
- *  `cachedInput` is the portion of the input that was a cache hit
- *  (Anthropic `cache_read_input_tokens`, OpenAI
- *  `prompt_tokens_details.cached_tokens`). */
+/** Token accounting returned at end-of-stream (`finish.usage`).
+ *  Provider is the source of truth — we don't count locally.
+ *
+ *  Cache fields are split because Anthropic's pricing differs by
+ *  direction (writes ~25% premium, reads ~10% of input price).
+ *  OpenAI only reports reads (`prompt_tokens_details.cached_tokens`);
+ *  writes are free and never appear.
+ *
+ *  `input` is the full prompt size (cached + uncached) — what counts
+ *  toward the context window. */
 export interface TokenCount {
   input: number
   output: number
-  cachedInput?: number
+  /** Portion of `input` served from cache. Anthropic
+   *  `cache_read_input_tokens`, OpenAI `prompt_tokens_details.cached_tokens`. */
+  cacheRead?: number
+  /** Portion of `input` that wrote new cache entries. Anthropic
+   *  `cache_creation_input_tokens`. Absent on OpenAI. */
+  cacheWrite?: number
   reasoning?: number
 }
 
