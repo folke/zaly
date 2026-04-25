@@ -1,36 +1,5 @@
 {
   "$schema": "file:///home/folke/projects/zaly/packages/tui/assets/schemas/theme.schema.json",
-  "code": {
-    "bg": "#d0d5e3"
-  },
-  "title": {
-    "bold": true,
-    "fg": "#2e7de9"
-  },
-  "warn": "#8c6c3e",
-  "primary": "#2e7de9",
-  "line": "#a8aecb",
-  "fg": "#3760bf",
-  "diffContext": {
-    "bg": "#d5d9e4"
-  },
-  "diffDel": {
-    "bg": "#dababe"
-  },
-  "diffAdd": {
-    "bg": "#b7ced5"
-  },
-  "mdTable": "#b15c00",
-  "mdHr": {
-    "bold": true,
-    "fg": "#b15c00"
-  },
-  "mdListUnchecked": {
-    "fg": "#2e7de9"
-  },
-  "mdListChecked": {
-    "fg": "#387068"
-  },
   "mdListBullet": {
     "fg": "#b15c00"
   },
@@ -38,9 +7,10 @@
     "fg": "#848cb5",
     "italic": true
   },
+  "border": "#4094a3",
   "mdLink": {
-    "underline": true,
-    "fg": "#118c74"
+    "fg": "#118c74",
+    "underline": true
   },
   "mdCodeBlock": {
     "bg": "#d0d5e3",
@@ -50,47 +20,77 @@
     "bg": "#a1a6c5",
     "fg": "#2e7de9"
   },
-  "error": "#c64343",
-  "mdHeading5": {
-    "bg": "#dad4e8",
-    "bold": true,
-    "fg": "#9854f1"
-  },
-  "mdHeading4": {
-    "bg": "#ccd9dc",
-    "bold": true,
-    "fg": "#118c74"
-  },
-  "mdHeading3": {
-    "bg": "#d3d7d6",
-    "bold": true,
-    "fg": "#587539"
-  },
-  "mdHeading2": {
-    "bg": "#d9d6d6",
-    "bold": true,
-    "fg": "#8c6c3e"
-  },
-  "success": "#118c74",
-  "info": "#07879d",
-  "muted": "#a8aecb",
-  "dim": "#6172b0",
-  "accent": "#b15c00",
-  "mdHeading": {
-    "bg": "#cfd8e7",
-    "bold": true,
-    "fg": "#2e7de9"
-  },
-  "mdHeading1": {
-    "bg": "#cfd8e7",
+  "title": {
     "bold": true,
     "fg": "#2e7de9"
   },
   "mdHeading6": {
-    "bg": "#d7d3e3",
     "bold": true,
+    "bg": "#d7d3e3",
     "fg": "#7847bd"
   },
+  "mdHeading5": {
+    "bold": true,
+    "bg": "#dad4e8",
+    "fg": "#9854f1"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "bg": "#ccd9dc",
+    "fg": "#118c74"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "bg": "#d3d7d6",
+    "fg": "#587539"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "bg": "#d9d6d6",
+    "fg": "#8c6c3e"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "bg": "#cfd8e7",
+    "fg": "#2e7de9"
+  },
+  "mdHeading": {
+    "bold": true,
+    "bg": "#cfd8e7",
+    "fg": "#2e7de9"
+  },
+  "muted": "#a8aecb",
+  "line": "#a8aecb",
+  "dim": "#6172b0",
+  "warn": "#8c6c3e",
+  "accent": "#b15c00",
+  "info": "#07879d",
+  "error": "#c64343",
+  "fg": "#3760bf",
+  "diffContext": {
+    "bg": "#d5d9e4"
+  },
   "bg": "#e1e2e7",
-  "border": "#4094a3"
+  "diffDel": {
+    "bg": "#dababe"
+  },
+  "mdTable": "#b15c00",
+  "diffAdd": {
+    "bg": "#b7ced5"
+  },
+  "success": "#118c74",
+  "mdHr": {
+    "bold": true,
+    "fg": "#b15c00"
+  },
+  "code": {
+    "bg": "#d0d5e3"
+  },
+  "mdListUnchecked": {
+    "fg": "#2e7de9"
+  },
+  "mdListChecked": {
+    "fg": "#387068"
+  },
+  "primary": "#2e7de9"
 }

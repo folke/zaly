@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
 /**
  * Fetch the models.dev catalog, snapshot it to `assets/models.json`,
  * and print stats so we can decide on chunking / size trade-offs.
@@ -5,8 +7,6 @@
  * Run:  bun packages/ai/scripts/fetch-models.ts
  */
 import { gzipSync } from "node:zlib"
-import { mkdirSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
 
 const CATALOG_URL = "https://models.dev/api.json"
 const OUT_DIR = join(import.meta.dirname, "..", "assets")
@@ -88,9 +88,7 @@ const OPENAI_FAMILY = new Set([
 ])
 const ANTHROPIC_FAMILY = new Set(["@ai-sdk/anthropic"])
 const supported = providers.filter((p) => OPENAI_FAMILY.has(p.npm) || ANTHROPIC_FAMILY.has(p.npm))
-const skipped = providers.filter(
-  (p) => !OPENAI_FAMILY.has(p.npm) && !ANTHROPIC_FAMILY.has(p.npm)
-)
+const skipped = providers.filter((p) => !OPENAI_FAMILY.has(p.npm) && !ANTHROPIC_FAMILY.has(p.npm))
 const supportedModels = supported.reduce((n, p) => n + Object.keys(p.models).length, 0)
 console.log(`  supported:   ${supported.length} providers · ${supportedModels} models`)
 console.log(`  skipped:     ${skipped.length} providers · ${skipped.map((p) => p.id).join(", ")}`)
@@ -108,7 +106,7 @@ const rows = providers
     }
   })
   .toSorted((a, b) => b.kb - a.kb)
-for (const r of rows) {
+for (const r of rows.slice(0, 10)) {
   console.log(
     `  ${r.id.padEnd(28)}  ${r.count.toString().padStart(3)} models  ${r.kb.toFixed(1).padStart(6)} KB  ${r.npm}`
   )
@@ -118,9 +116,7 @@ console.log()
 console.log("── feature coverage ─────────────────────────────────────────")
 const reasoning = allModels.filter((m) => m.reasoning).length
 const toolCall = allModels.filter((m) => m.tool_call).length
-const multimodal = allModels.filter((m) =>
-  m.modalities.input.some((x) => x !== "text")
-).length
+const multimodal = allModels.filter((m) => m.modalities.input.some((x) => x !== "text")).length
 const responsesShape = allModels.filter((m) => m.provider?.shape === "responses").length
 console.log(`  reasoning:        ${reasoning} / ${allModels.length}`)
 console.log(`  tool_call:        ${toolCall} / ${allModels.length}`)

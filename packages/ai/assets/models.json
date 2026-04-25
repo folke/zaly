@@ -13690,15 +13690,15 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.28,
-        "output": 0.42,
+        "input": 0.14,
+        "output": 0.28,
         "cache_read": 0.028
       },
       "limit": {
-        "context": 131072,
-        "output": 8192
+        "context": 1000000,
+        "output": 384000
       },
-      "maxTokens": 8192,
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://api.deepseek.com",
       "quirks": {
@@ -13731,15 +13731,99 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.28,
-        "output": 0.42,
+        "input": 0.14,
+        "output": 0.28,
         "cache_read": 0.028
       },
       "limit": {
-        "context": 128000,
-        "output": 64000
+        "context": 1000000,
+        "output": 384000
       },
-      "maxTokens": 64000,
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.deepseek.com",
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning_content",
+        "thinkingFormat": "deepseek"
+      }
+    },
+    "deepseek/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.deepseek.com",
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning_content",
+        "thinkingFormat": "deepseek"
+      }
+    },
+    "deepseek/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://api.deepseek.com",
       "quirks": {
@@ -20037,6 +20121,149 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/deepseek/deepseek-v4-flash": {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/deepseek/deepseek-v4-pro": {
+      "id": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/openai/gpt-5.5": {
+      "id": "openai/gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 920000,
+        "output": 130000
+      },
+      "maxTokens": 130000,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/openai/gpt-5.4": {
       "id": "openai/gpt-5.4",
       "name": "GPT-5.4",
@@ -21333,6 +21560,43 @@
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
+    "opencode-go/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://opencode.ai/zen/go/v1"
+    },
     "opencode-go/kimi-k2.6": {
       "id": "kimi-k2.6",
       "name": "Kimi K2.6 (3x limits)",
@@ -21368,6 +21632,43 @@
         "output": 65536
       },
       "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://opencode.ai/zen/go/v1"
+    },
+    "opencode-go/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
@@ -32985,6 +33286,42 @@
       "provider": "openai",
       "baseUrl": "https://api.novita.ai/openai"
     },
+    "xiaomi-token-plan-cn/mimo-v2.5-pro": {
+      "id": "mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo-v2.5-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-cn.xiaomimimo.com/v1"
+    },
     "xiaomi-token-plan-cn/mimo-v2-omni": {
       "id": "mimo-v2-omni",
       "name": "MiMo-V2-Omni",
@@ -33019,6 +33356,46 @@
       },
       "limit": {
         "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-cn.xiaomimimo.com/v1"
+    },
+    "xiaomi-token-plan-cn/mimo-v2.5": {
+      "id": "mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo-v2.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -46083,6 +46460,40 @@
       "provider": "openai",
       "baseUrl": "https://api.githubcopilot.com"
     },
+    "github-copilot/gpt-5.5": {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.githubcopilot.com"
+    },
     "github-copilot/gpt-5-mini": {
       "id": "gpt-5-mini",
       "name": "GPT-5-mini",
@@ -47026,6 +47437,82 @@
       },
       "limit": {
         "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-sgp.xiaomimimo.com/v1"
+    },
+    "xiaomi-token-plan-sgp/mimo-v2.5-pro": {
+      "id": "mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo-v2.5-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-sgp.xiaomimimo.com/v1"
+    },
+    "xiaomi-token-plan-sgp/mimo-v2.5": {
+      "id": "mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo-v2.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -48851,6 +49338,46 @@
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/gpt-5.5-pro": {
+      "id": "gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": false,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180,
+        "cache_read": 30
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "providerOverride": {
+        "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/gpt-5.1-codex": {
       "id": "gpt-5.1-codex",
       "name": "GPT-5.1 Codex",
@@ -48890,6 +49417,51 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
+    "opencode/gpt-5.5": {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 920000,
+        "output": 130000
+      },
+      "maxTokens": 130000,
+      "provider": "openai",
+      "providerOverride": {
+        "npm": "@ai-sdk/openai"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
     "opencode/gpt-5.4": {
       "id": "gpt-5.4",
       "name": "GPT-5.4",
@@ -48916,7 +49488,12 @@
       "cost": {
         "input": 2.5,
         "output": 15,
-        "cache_read": 0.25
+        "cache_read": 0.25,
+        "context_over_200k": {
+          "input": 5,
+          "output": 22.5,
+          "cache_read": 0.5
+        }
       },
       "limit": {
         "context": 1050000,
@@ -57466,45 +58043,6 @@
       "provider": "openai",
       "baseUrl": "https://ollama.com/v1"
     },
-    "zai-coding-plan/glm-5v-turbo": {
-      "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "release_date": "2026-04-01",
-      "last_updated": "2026-04-01",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
     "zai-coding-plan/glm-4.7": {
       "id": "glm-4.7",
       "name": "GLM-4.7",
@@ -57536,76 +58074,6 @@
       },
       "limit": {
         "context": 204800,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-5": {
-      "id": "glm-5",
-      "name": "GLM-5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "release_date": "2026-02-11",
-      "last_updated": "2026-02-11",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 204800,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.7-flashx": {
-      "id": "glm-4.7-flashx",
-      "name": "GLM-4.7-FlashX",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-01-19",
-      "last_updated": "2026-01-19",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.07,
-        "output": 0.4,
-        "cache_read": 0.01,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
         "output": 131072
       },
       "maxTokens": 131072,
@@ -57646,40 +58114,6 @@
         "output": 131072
       },
       "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.5": {
-      "id": "glm-4.5",
-      "name": "GLM-4.5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-07-28",
-      "last_updated": "2025-07-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 131072,
-        "output": 98304
-      },
-      "maxTokens": 98304,
       "provider": "openai",
       "baseUrl": "https://api.z.ai/api/coding/paas/v4"
     },
@@ -57740,176 +58174,6 @@
         ]
       },
       "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.5v": {
-      "id": "glm-4.5v",
-      "name": "GLM-4.5V",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-08-11",
-      "last_updated": "2025-08-11",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 64000,
-        "output": 16384
-      },
-      "maxTokens": 16384,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.6": {
-      "id": "glm-4.6",
-      "name": "GLM-4.6",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-09-30",
-      "last_updated": "2025-09-30",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 204800,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.6v": {
-      "id": "glm-4.6v",
-      "name": "GLM-4.6V",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-12-08",
-      "last_updated": "2025-12-08",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.5-flash": {
-      "id": "glm-4.5-flash",
-      "name": "GLM-4.5-Flash",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-07-28",
-      "last_updated": "2025-07-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 131072,
-        "output": 98304
-      },
-      "maxTokens": 98304,
-      "provider": "openai",
-      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
-    },
-    "zai-coding-plan/glm-4.7-flash": {
-      "id": "glm-4.7-flash",
-      "name": "GLM-4.7-Flash",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-01-19",
-      "last_updated": "2026-01-19",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
       "cost": {
         "input": 0,
         "output": 0,
@@ -58349,45 +58613,6 @@
       "provider": "openai",
       "baseUrl": "https://inference.baseten.co/v1"
     },
-    "zhipuai-coding-plan/glm-5v-turbo": {
-      "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "release_date": "2026-04-01",
-      "last_updated": "2026-04-01",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
     "zhipuai-coding-plan/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -58422,210 +58647,6 @@
         "output": 131072
       },
       "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.6v-flash": {
-      "id": "glm-4.6v-flash",
-      "name": "GLM-4.6V-Flash",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-12-08",
-      "last_updated": "2025-12-08",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.7-flash": {
-      "id": "glm-4.7-flash",
-      "name": "GLM-4.7-Flash",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-01-19",
-      "last_updated": "2026-01-19",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.5-flash": {
-      "id": "glm-4.5-flash",
-      "name": "GLM-4.5-Flash",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-07-28",
-      "last_updated": "2025-07-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 131072,
-        "output": 98304
-      },
-      "maxTokens": 98304,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.6v": {
-      "id": "glm-4.6v",
-      "name": "GLM-4.6V",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-12-08",
-      "last_updated": "2025-12-08",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.6": {
-      "id": "glm-4.6",
-      "name": "GLM-4.6",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-09-30",
-      "last_updated": "2025-09-30",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 204800,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.5v": {
-      "id": "glm-4.5v",
-      "name": "GLM-4.5V",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-08-11",
-      "last_updated": "2025-08-11",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 64000,
-        "output": 16384
-      },
-      "maxTokens": 16384,
       "provider": "openai",
       "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
     },
@@ -58697,110 +58718,6 @@
         "output": 98304
       },
       "maxTokens": 98304,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.5": {
-      "id": "glm-4.5",
-      "name": "GLM-4.5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2025-07-28",
-      "last_updated": "2025-07-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 131072,
-        "output": 98304
-      },
-      "maxTokens": 98304,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-4.7-flashx": {
-      "id": "glm-4.7-flashx",
-      "name": "GLM-4.7-FlashX",
-      "family": "glm-flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-01-19",
-      "last_updated": "2026-01-19",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.07,
-        "output": 0.4,
-        "cache_read": 0.01,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 200000,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
-    },
-    "zhipuai-coding-plan/glm-5": {
-      "id": "glm-5",
-      "name": "GLM-5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "release_date": "2026-02-11",
-      "last_updated": "2026-02-11",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0,
-        "cache_write": 0
-      },
-      "limit": {
-        "context": 204800,
-        "output": 131072
-      },
-      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
     },
@@ -59554,7 +59471,7 @@
     },
     "firmware/zai-glm-5-1": {
       "id": "zai-glm-5-1",
-      "name": "GLM-5",
+      "name": "Z.AI GLM-5.1",
       "family": "glm",
       "attachment": true,
       "reasoning": false,
@@ -65535,6 +65452,80 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
+    "nvidia/deepseek-ai/deepseek-v4-flash": {
+      "id": "deepseek-ai/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/deepseek-ai/deepseek-v4-pro": {
+      "id": "deepseek-ai/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
     "inference/mistral/mistral-nemo-12b-instruct": {
       "id": "mistral/mistral-nemo-12b-instruct",
       "name": "Mistral Nemo 12B Instruct",
@@ -66006,7 +65997,12 @@
       "cost": {
         "input": 5,
         "output": 30,
-        "cache_read": 0.5
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
       },
       "limit": {
         "context": 1050000,
@@ -79396,6 +79392,43 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/grok-4": {
       "id": "grok-4",
       "name": "Grok 4",
@@ -79526,6 +79559,45 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/kimi-k2.6": {
+      "id": "kimi-k2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.16
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -79875,6 +79947,43 @@
         "output": 128000
       },
       "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -85765,6 +85874,42 @@
       "provider": "openai",
       "baseUrl": "https://api.together.xyz/v1"
     },
+    "togetherai/deepseek-ai/DeepSeek-V4-Pro": {
+      "id": "deepseek-ai/DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 2.1,
+        "output": 4.4,
+        "cache_read": 0.2
+      },
+      "limit": {
+        "context": 512000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
     "togetherai/openai/gpt-oss-120b": {
       "id": "openai/gpt-oss-120b",
       "name": "GPT OSS 120B",
@@ -88451,6 +88596,82 @@
       },
       "limit": {
         "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-ams.xiaomimimo.com/v1"
+    },
+    "xiaomi-token-plan-ams/mimo-v2.5-pro": {
+      "id": "mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo-v2.5-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://token-plan-ams.xiaomimimo.com/v1"
+    },
+    "xiaomi-token-plan-ams/mimo-v2.5": {
+      "id": "mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo-v2.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 1000000,
         "output": 128000
       },
       "maxTokens": 128000,
