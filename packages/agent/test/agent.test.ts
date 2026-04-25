@@ -2,7 +2,7 @@ import type { Message } from "@zaly/ai"
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { mockModel, runAgentTurn, throwingModel } from "./helpers.ts"
+import { mockModel, runAgent, throwingModel } from "./helpers.ts"
 
 const Add = defineTool({
   call: ({ a, b }) => a + b,
@@ -10,7 +10,7 @@ const Add = defineTool({
   params: Type.Object({ a: Type.Number(), b: Type.Number() }),
 })
 
-describe("AgentSession — no tool calls", () => {
+describe("Agent — no tool calls", () => {
   test("completes in one step when the model stops", async () => {
     const model = mockModel([
       [
@@ -18,7 +18,7 @@ describe("AgentSession — no tool calls", () => {
         { finishReason: "stop", type: "finish", usage: { input: 10, output: 2 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "hi", role: "user" }],
       model,
     })
@@ -28,7 +28,7 @@ describe("AgentSession — no tool calls", () => {
   })
 })
 
-describe("AgentSession — tool-calls loop", () => {
+describe("Agent — tool-calls loop", () => {
   test("executes a tool call and continues until natural stop", async () => {
     const model = mockModel([
       [
@@ -40,7 +40,7 @@ describe("AgentSession — tool-calls loop", () => {
         { finishReason: "stop", type: "finish", usage: { input: 15, output: 8 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "what is 2+3?", role: "user" }],
       model,
       request: { tools: [Add] },
@@ -65,7 +65,7 @@ describe("AgentSession — tool-calls loop", () => {
         { finishReason: "stop", type: "finish", usage: { input: 8, output: 1 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model,
       request: { tools: [Add] },
@@ -86,7 +86,7 @@ describe("AgentSession — tool-calls loop", () => {
         { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "loop", role: "user" }],
       maxSteps: 2,
       model,
@@ -97,7 +97,7 @@ describe("AgentSession — tool-calls loop", () => {
   })
 })
 
-describe("AgentSession — usage accumulation", () => {
+describe("Agent — usage accumulation", () => {
   test("totalUsage sums across all streams; usage is the last step's", async () => {
     const model = mockModel([
       [
@@ -109,7 +109,7 @@ describe("AgentSession — usage accumulation", () => {
         { finishReason: "stop", type: "finish", usage: { input: 20, output: 3 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model,
       request: { tools: [Add] },
@@ -119,7 +119,7 @@ describe("AgentSession — usage accumulation", () => {
   })
 })
 
-describe("AgentSession — token budget", () => {
+describe("Agent — token budget", () => {
   test("stops with token-budget when summed usage exceeds the cap", async () => {
     const model = mockModel([
       [
@@ -131,7 +131,7 @@ describe("AgentSession — token budget", () => {
         { finishReason: "tool-calls", type: "finish", usage: { input: 80, output: 40 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model,
       request: { tools: [Add] },
@@ -142,7 +142,7 @@ describe("AgentSession — token budget", () => {
   })
 })
 
-describe("AgentSession — max tool errors", () => {
+describe("Agent — max tool errors", () => {
   test("stops after N consecutive failing tool calls", async () => {
     const model = mockModel([
       [
@@ -158,7 +158,7 @@ describe("AgentSession — max tool errors", () => {
         { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       // Disable loop detection so repeated identical failing calls
       // don't trip "loop-detected" before the error cap fires.
@@ -191,7 +191,7 @@ describe("AgentSession — max tool errors", () => {
         { finishReason: "stop", type: "finish", usage: { input: 1, output: 1 } },
       ],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       maxToolErrors: 2,
       model,
@@ -201,9 +201,9 @@ describe("AgentSession — max tool errors", () => {
   })
 })
 
-describe("AgentSession — context overflow", () => {
+describe("Agent — context overflow", () => {
   test("detects overflow from a thrown stream error", async () => {
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model: throwingModel("This model's maximum context length is 8192 tokens."),
     })
@@ -214,7 +214,7 @@ describe("AgentSession — context overflow", () => {
     const model = mockModel([
       [{ finishReason: "stop", type: "finish", usage: { input: 9000, output: 5 } }],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       contextLimit: 8000,
       initialMessages: [{ content: "go", role: "user" }],
       model,
@@ -223,7 +223,7 @@ describe("AgentSession — context overflow", () => {
   })
 
   test("genuine errors surface as stopReason: error", async () => {
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       model: throwingModel("network down"),
     })
@@ -240,7 +240,7 @@ function sameAddCall(id: string): {
   return { id, name: "add", params: { a: 1, b: 1 }, type: "tool-call" }
 }
 
-describe("AgentSession — loop detection", () => {
+describe("Agent — loop detection", () => {
   test("stops with loop-detected after N identical consecutive calls", async () => {
     // Three iterations, each calling add(1,1) — trips loopConsecutive=3.
     const sameCall = sameAddCall
@@ -249,7 +249,7 @@ describe("AgentSession — loop detection", () => {
       [sameCall("c2"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
       [sameCall("c3"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
     ])
-    const result = await runAgentTurn({
+    const result = await runAgent({
       initialMessages: [{ content: "go", role: "user" }],
       loopConsecutive: 3,
       model,

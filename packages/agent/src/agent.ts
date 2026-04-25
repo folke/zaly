@@ -1,37 +1,37 @@
 // oxlint-disable no-await-in-loop
-import type { Message, TokenCount, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type { Message, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
-import type { AgentSessionOptions, SessionSnapshot, StepResult } from "./types.ts"
+import type { AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
 import { Emitter } from "./events.ts"
 import { StopPolicy } from "./policy.ts"
-import { extractToolCalls, unknownToolResult } from "./utils.ts"
+import { Session } from "./session.ts"
+import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
 
 /**
- * Long-lived agent session. Owns the conversation, the run loop, the
- * inline / send queues, and the status state machine. Built on top of
- * `@zaly/ai`'s provider transport and tool primitives.
+ * Long-lived agent — drives the multi-turn loop, owns the run-time
+ * status / queues, and delegates conversation state to a `Session`.
  *
  * Typical interactive use:
  *
  * ```ts
- * const session = new AgentSession({ model, request: { tools } })
- * const off = session.on((e) => render(e))
- * session.send({ role: "user", content: "hi" })          // auto-runs
+ * const agent = new Agent({ model, request: { tools } })
+ * agent.session.on("node", (e) => render(e))
+ * agent.send({ role: "user", content: "hi" })          // auto-runs
  * // …user types again later…
- * session.send({ role: "user", content: "follow-up" })   // queues if running
+ * agent.send({ role: "user", content: "follow-up" })   // queues if running
  * ```
  *
  * Headless / one-shot use is just a thin wrapper on top — see
- * `runAgentTurn` in the test helpers.
+ * `runAgent` in the test helpers.
  */
-export class AgentSession extends Emitter<AgentEvent> {
-  readonly #opts: AgentSessionOptions
+export class Agent extends Emitter<AgentEvent> {
+  readonly #opts: AgentOptions
   readonly #toolIndex = new Map<string, Tool>()
   readonly #policy: StopPolicy
+  readonly session: Session
 
-  #messages: Message[]
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
 
@@ -43,35 +43,42 @@ export class AgentSession extends Emitter<AgentEvent> {
   #lastError?: Error
   #lastStopReason?: AgentStopReason
 
-  constructor(opts: AgentSessionOptions) {
+  constructor(opts: AgentOptions) {
     super()
     this.#opts = opts
-    this.#messages = [...(opts.initialMessages ?? [])]
+    this.session =
+      opts.session ??
+      new Session({
+        initialMessages: opts.initialMessages,
+        modelId: opts.model.id,
+        prompt: opts.prompt,
+      })
     for (const t of opts.request?.tools ?? []) this.#toolIndex.set(t.name, t)
     this.#policy = new StopPolicy(opts)
     this.#policy.attach(this)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
-      console.error("AgentSession event handler threw an error", error)
+      console.error("Agent event handler threw an error", error)
     }
   }
 
   // ── Read ──────────────────────────────────────────────────────────────
 
+  /** Active conversation — delegates to the underlying `Session`. */
   get messages(): readonly Message[] {
-    return this.#messages
+    return this.session.messages
   }
   get status(): AgentStatus {
     return this.#status
   }
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
-  get usage(): TokenCount {
+  get usage() {
     return this.#policy.usage
   }
   /** Cumulative token usage across every step in the current run.
    *  Useful for billing-style displays. */
-  get totalUsage(): TokenCount {
+  get totalUsage() {
     return this.#policy.totalUsage
   }
   /** Logical size of the current conversation in tokens — what the
@@ -97,27 +104,6 @@ export class AgentSession extends Emitter<AgentEvent> {
     return this.#opts.prompt
   }
 
-  // ── Mutate (used by compactor and external callers) ─────────────────
-
-  /** Append one or more messages to the conversation. Each message
-   *  emits a `message` event in order. Does NOT trigger the loop —
-   *  use `send()` for that. */
-  add(...messages: Message[]): void {
-    for (const message of messages) {
-      this.#messages.push(message)
-      this.emit({ message, type: "message" })
-    }
-  }
-
-  /** Replace the conversation wholesale. Used by compactors / replay
-   *  / branching. Emits a `replace` event with both the previous and
-   *  new arrays so subscribers can diff or fully re-render. */
-  replace(messages: Message[]): void {
-    const before = this.#messages
-    this.#messages = [...messages]
-    this.emit({ after: this.#messages, before, type: "replace" })
-  }
-
   // ── Input ────────────────────────────────────────────────────────────
 
   /** Append a message and (re)start the loop. The user spoke; the agent
@@ -126,7 +112,7 @@ export class AgentSession extends Emitter<AgentEvent> {
    *  stops. Otherwise the loop starts immediately. */
   send(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
-      this.add(message)
+      this.session.add(message)
       void this.run()
     } else {
       this.#sendQueue.push(message)
@@ -135,7 +121,7 @@ export class AgentSession extends Emitter<AgentEvent> {
 
   /** Inject a message into the *current* turn — flushed into the
    *  conversation right before the next step's stream. If the
-   *  session is idle/paused, behaves like `send`. */
+   *  agent is idle/paused, behaves like `send`. */
   inject(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
       this.send(message)
@@ -146,7 +132,7 @@ export class AgentSession extends Emitter<AgentEvent> {
 
   // ── Loop control ─────────────────────────────────────────────────────
 
-  /** Drive steps until the session goes idle (no queued messages and
+  /** Drive steps until the agent goes idle (no queued messages and
    *  the model stopped naturally) or hits a non-recoverable stop.
    *  Doubles as a resume from `paused` — drains queued messages and
    *  picks the loop back up. If a run is already in flight, returns
@@ -165,7 +151,7 @@ export class AgentSession extends Emitter<AgentEvent> {
     this.#abortController = new AbortController()
     const stream = this.#opts.model.stream({
       ...this.#opts.request,
-      messages: this.#messages,
+      messages: [...this.session.messages],
       prompt: this.prompt,
       signal: this.#abortController.signal,
     })
@@ -182,7 +168,7 @@ export class AgentSession extends Emitter<AgentEvent> {
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
     if (this.#injectQueue.length > 0) {
-      for (const m of this.#injectQueue.splice(0)) this.add(m)
+      this.session.add(...this.#injectQueue.splice(0))
     }
 
     this.#setStatus("streaming")
@@ -218,7 +204,7 @@ export class AgentSession extends Emitter<AgentEvent> {
     )
       return { kind: "context-overflow", ...result }
 
-    this.add(collected.message)
+    this.session.add(collected.message)
 
     const calls = extractToolCalls(collected.message)
     if (calls.length === 0) return { kind: "natural", ...result }
@@ -247,7 +233,7 @@ export class AgentSession extends Emitter<AgentEvent> {
       })
     }
     const message: Message<"tool"> = { content: resultParts, role: "tool" }
-    this.add(message)
+    this.session.add(message)
     return message
   }
 
@@ -257,23 +243,10 @@ export class AgentSession extends Emitter<AgentEvent> {
     this.#pauseRequested = true
   }
 
-  /** Abort the in-flight stream immediately. The session lands in
+  /** Abort the in-flight stream immediately. The agent lands in
    *  `paused` with `lastError` set to an AbortError. */
   abort(): void {
     this.#abortController?.abort()
-  }
-
-  // ── Persistence ──────────────────────────────────────────────────────
-
-  serialize(): SessionSnapshot {
-    return {
-      lastError: this.#lastError
-        ? { message: this.#lastError.message, name: this.#lastError.name }
-        : undefined,
-      lastStopReason: this.#lastStopReason,
-      messages: [...this.#messages],
-      usage: { ...this.usage },
-    }
   }
 
   // ── Internals ────────────────────────────────────────────────────────
@@ -298,7 +271,7 @@ export class AgentSession extends Emitter<AgentEvent> {
       if (outcome.kind === "natural") {
         // Drain follow-up queue if anything arrived during the turn.
         if (this.#sendQueue.length > 0) {
-          for (const m of this.#sendQueue.splice(0)) this.add(m)
+          this.session.add(...this.#sendQueue.splice(0))
           continue
         }
         return this.#stop("natural")

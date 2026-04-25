@@ -1,13 +1,13 @@
-import type { AgentEvent, AgentStatus } from "../src/events.ts"
+import type { AgentStatus } from "../src/events.ts"
 
 import { describe, expect, test } from "vitest"
 import { Emitter } from "../src/events.ts"
 
 type FakeEvent = { type: "status"; status: AgentStatus } | { type: "message"; text: string }
 
-class FakeEmitter extends Emitter {
+class FakeEmitter extends Emitter<FakeEvent> {
   fire(event: FakeEvent): void {
-    this.emit(event as AgentEvent)
+    this.emit(event)
   }
 }
 
@@ -15,7 +15,7 @@ describe("Emitter", () => {
   test("on(handler) receives every event", () => {
     const seen: FakeEvent["type"][] = []
     const e = new FakeEmitter()
-    e.on((event) => seen.push(event.type as FakeEvent["type"]))
+    e.on((event) => seen.push(event.type))
     e.fire({ status: "idle", type: "status" })
     e.fire({ text: "hi", type: "message" })
     expect(seen).toEqual(["status", "message"])

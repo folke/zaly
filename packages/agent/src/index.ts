@@ -1,6 +1,7 @@
 export * from "./agent.ts"
 export * from "./events.ts"
 export * from "./policy.ts"
+export * from "./session.ts"
 export type * from "./types.ts"
 export * from "./utils/index.ts"
 export * from "./utils/uuid.ts"

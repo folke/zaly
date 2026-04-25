@@ -1,11 +1,11 @@
 import type { Message, Model, StreamEvent, TokenCount } from "@zaly/ai"
 import type { AgentStopReason } from "../src/events.ts"
-import type { AgentSessionOptions } from "../src/types.ts"
+import type { AgentOptions } from "../src/types.ts"
 
-import { AgentSession } from "../src/agent.ts"
+import { Agent } from "../src/agent.ts"
 
 /** Build a minimal `Model` from a list of scripted stream-event arrays
- *  (one per turn). Only the fields `AgentSession` reads are populated. */
+ *  (one per turn). Only the fields `Agent` reads are populated. */
 export function mockModel(scripts: StreamEvent[][]): Model {
   // oxlint-disable-next-line no-unused-vars -- closure mutation
   let turn = 0
@@ -33,20 +33,17 @@ export function throwingModel(message: string): Model {
   } as Model
 }
 
-/** One-shot wrapper around `AgentSession`. Convenient for tests,
- *  evals, and headless batch jobs that don't need the interactive
- *  session machinery. Equivalent to:
+/** One-shot wrapper around `Agent`. Convenient for tests, evals, and
+ *  headless batch jobs that don't need the interactive session
+ *  machinery. Equivalent to:
  *
  *  ```ts
- *  const s = new AgentSession(opts)
- *  if (firstMessage) s.send(firstMessage)
- *  await s.run()
- *  ```
- *
- *  Returns the resulting messages, summed usage, and the loop's stop
- *  reason — same shape as the old `runAgentTurn`. */
-export async function runAgentTurn(
-  opts: AgentSessionOptions & { send?: Message<"user" | "system"> }
+ *  const a = new Agent(opts)
+ *  if (firstMessage) a.send(firstMessage)
+ *  await a.run()
+ *  ``` */
+export async function runAgent(
+  opts: AgentOptions & { send?: Message<"user" | "system"> }
 ): Promise<{
   messages: Message[]
   /** Last step's usage. */
@@ -57,15 +54,15 @@ export async function runAgentTurn(
   steps: number
   error?: Error
 }> {
-  const session = new AgentSession(opts)
-  if (opts.send) session.send(opts.send)
-  const stopReason = await session.run()
+  const agent = new Agent(opts)
+  if (opts.send) agent.send(opts.send)
+  const stopReason = await agent.run()
   return {
-    error: session.lastError,
-    messages: [...session.messages],
-    steps: session.steps,
+    error: agent.lastError,
+    messages: [...agent.messages],
+    steps: agent.steps,
     stopReason,
-    totalUsage: session.totalUsage,
-    usage: session.usage,
+    totalUsage: agent.totalUsage,
+    usage: agent.usage,
   }
 }

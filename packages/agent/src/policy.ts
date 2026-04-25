@@ -1,6 +1,6 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
 import type { AgentEvent, AgentStopReason, Emitter } from "./events.ts"
-import { addUsage } from "./utils.ts"
+import { addUsage } from "./utils/index.ts"
 
 /** Caps + heuristics that can end a run early. Wired into the
  *  `AgentSession` loop via a single `detect()` call after each step. */
@@ -82,7 +82,7 @@ export class StopPolicy {
   // ── Wiring ────────────────────────────────────────────────────────────
 
   /** Subscribe to an emitter. Returns the unsubscribe function. */
-  attach(emitter: Emitter): () => void {
+  attach(emitter: Emitter<AgentEvent>): () => void {
     return emitter.on((event) => this.handle(event))
   }
 
