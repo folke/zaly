@@ -36,7 +36,6 @@ export default defineConfig({
     ...themeEntries,
   },
   exports: {
-    devExports: "bun",
     // `ansi`/`md` are entries only so tsdown emits them as separate
     // chunks (for `publishConfig.imports` to point at). They're not
     // part of the public surface — drop the auto-generated subpaths.

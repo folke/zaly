@@ -5,13 +5,12 @@ import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
-import { sliceAnsi, stringWidth } from "../style/ansi.ts"
-
 import { Node, isNode } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
+import { sliceAnsi, stringWidth } from "../style/ansi.ts"
 
 export type Padding =
   | number
@@ -42,7 +41,6 @@ export interface BoxStyle extends StyleState, Flexible {
   borderTitleStyle?: string | Style
 }
 
-// oxlint-disable-next-line typescript/no-unnecessary-type-arguments
 export class Box extends Node<BoxStyle> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state
@@ -170,4 +168,3 @@ function padRow(row: string, width: number): string {
   if (w < width) return row + " ".repeat(width - w)
   return sliceAnsi(row, 0, width)
 }
-

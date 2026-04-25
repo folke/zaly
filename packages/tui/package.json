@@ -59,13 +59,13 @@
     "build:themes": "bun scripts/build-themes.ts",
     "build:shiki-themes": "bun scripts/build-shiki-themes.ts",
     "build:typia": "bun scripts/build-schemas.ts",
-    "check": "cd ../../; oxlint packages/tui",
+    "check": "oxlint",
     "docs:api": "typedoc",
     "docs:dev": "bun run docs:api && vitepress dev docs",
     "docs:build": "bun run docs:api && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "test": "bun test:node && bun test:bun",
-    "test:node": "cd ../../; vitest --project @zaly/tui run",
+    "test:node": "vitest -r ../../ --project @zaly/tui run",
     "test:bun": "bun test --only-failures"
   },
   "dependencies": {
@@ -78,19 +78,9 @@
     "wrap-ansi": "^10.0.0"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.2",
     "@typia/transform": "^12.0.2",
     "ghostty-web": "^0.4.0",
-    "mitata": "^1.0.34",
-    "publint": "^0.3.18",
-    "tsdown": "^0.21.9",
-    "type-fest": "^5.6.0",
-    "typedoc": "^0.28.19",
-    "typedoc-plugin-markdown": "^4.11.0",
-    "typedoc-vitepress-theme": "^1.1.2",
-    "typescript": "^6.0.3",
-    "vitepress": "^1.6.4",
-    "vitepress-plugin-group-icons": "^1.7.5"
+    "type-fest": "^5.6.0"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"
@@ -99,7 +89,6 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": [],
   "inlinedDependencies": {
     "ansi-regex": "6.2.2",
     "ansi-styles": "6.2.3",
@@ -109,5 +98,6 @@
     "string-width": "8.2.0",
     "strip-ansi": "7.2.0",
     "wrap-ansi": "10.0.0"
-  }
+  },
+  "trustedDependencies": []
 }

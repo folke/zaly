@@ -1,96 +1,96 @@
 {
   "$schema": "file:///home/folke/projects/zaly/packages/tui/assets/schemas/theme.schema.json",
-  "mdListBullet": {
-    "fg": "#ff966c"
-  },
-  "mdQuote": {
-    "fg": "#636da6",
-    "italic": true
-  },
+  "accent": "#ff966c",
+  "bg": "#222436",
   "border": "#589ed7",
-  "mdLink": {
-    "fg": "#4fd6be",
-    "underline": true
+  "code": {
+    "bg": "#1e2030"
+  },
+  "diffAdd": {
+    "bg": "#2a4556"
+  },
+  "diffContext": {
+    "bg": "#252a3f"
+  },
+  "diffDel": {
+    "bg": "#4b2a3d"
+  },
+  "dim": "#828bb8",
+  "error": "#c53b53",
+  "fg": "#c8d3f5",
+  "info": "#0db9d7",
+  "line": "#3b4261",
+  "mdCode": {
+    "bg": "#444a73",
+    "fg": "#82aaff"
   },
   "mdCodeBlock": {
     "bg": "#1e2030",
     "fg": "#c8d3f5"
   },
-  "mdCode": {
-    "bg": "#444a73",
-    "fg": "#82aaff"
-  },
-  "title": {
+  "mdHeading": {
+    "bg": "#2c314a",
     "bold": true,
     "fg": "#82aaff"
-  },
-  "mdHeading6": {
-    "bold": true,
-    "bg": "#383148",
-    "fg": "#fca7ea"
-  },
-  "mdHeading5": {
-    "bold": true,
-    "bg": "#32304a",
-    "fg": "#c099ff"
-  },
-  "mdHeading4": {
-    "bold": true,
-    "bg": "#273644",
-    "fg": "#4fd6be"
-  },
-  "mdHeading3": {
-    "bold": true,
-    "bg": "#32383f",
-    "fg": "#c3e88d"
-  },
-  "mdHeading2": {
-    "bold": true,
-    "bg": "#38343d",
-    "fg": "#ffc777"
   },
   "mdHeading1": {
-    "bold": true,
     "bg": "#2c314a",
+    "bold": true,
     "fg": "#82aaff"
   },
-  "mdHeading": {
+  "mdHeading2": {
+    "bg": "#38343d",
     "bold": true,
-    "bg": "#2c314a",
-    "fg": "#82aaff"
+    "fg": "#ffc777"
   },
-  "muted": "#3b4261",
-  "line": "#3b4261",
-  "dim": "#828bb8",
-  "warn": "#ffc777",
-  "accent": "#ff966c",
-  "info": "#0db9d7",
-  "error": "#c53b53",
-  "fg": "#c8d3f5",
-  "diffContext": {
-    "bg": "#252a3f"
+  "mdHeading3": {
+    "bg": "#32383f",
+    "bold": true,
+    "fg": "#c3e88d"
   },
-  "bg": "#222436",
-  "diffDel": {
-    "bg": "#4b2a3d"
+  "mdHeading4": {
+    "bg": "#273644",
+    "bold": true,
+    "fg": "#4fd6be"
   },
-  "mdTable": "#ff966c",
-  "diffAdd": {
-    "bg": "#2a4556"
+  "mdHeading5": {
+    "bg": "#32304a",
+    "bold": true,
+    "fg": "#c099ff"
   },
-  "success": "#4fd6be",
+  "mdHeading6": {
+    "bg": "#383148",
+    "bold": true,
+    "fg": "#fca7ea"
+  },
   "mdHr": {
     "bold": true,
     "fg": "#ff966c"
   },
-  "code": {
-    "bg": "#1e2030"
+  "mdLink": {
+    "fg": "#4fd6be",
+    "underline": true
   },
-  "mdListUnchecked": {
-    "fg": "#82aaff"
+  "mdListBullet": {
+    "fg": "#ff966c"
   },
   "mdListChecked": {
     "fg": "#4fd6be"
   },
-  "primary": "#82aaff"
+  "mdListUnchecked": {
+    "fg": "#82aaff"
+  },
+  "mdQuote": {
+    "fg": "#636da6",
+    "italic": true
+  },
+  "mdTable": "#ff966c",
+  "muted": "#3b4261",
+  "primary": "#82aaff",
+  "success": "#4fd6be",
+  "title": {
+    "bold": true,
+    "fg": "#82aaff"
+  },
+  "warn": "#ffc777"
 }

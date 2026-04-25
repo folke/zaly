@@ -13,27 +13,34 @@
   "type": "module",
   "scripts": {
     "check": "oxlint",
+    "pkg": "bun --workspaces install",
     "fix": "oxlint --fix",
     "rules": "bun ./scripts/oxlint-rules.ts",
     "out": "bun outdated; bun outdated --filter '*'",
-    "up": "bun update --latest; cd packages/cli && bun update --latest; cd ../tui && bun update --latest",
-    "build": "bun run --filter @zaly/cli build:typia && tsdown",
+    "up": "bun --workspaces update --latest",
+    "build": "bun build:assets && tsdown",
+    "build:assets": "bun run --sequential --no-exit-on-error --workspaces 'build:*'",
     "test": "bun test:node && bun test:bun",
     "test:node": "vitest run",
-    "test:bun": "bun test --only-failures",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "test:bun": "bun test --no-env-file",
+    "test:live": "bun test live"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.12",
-    "@typescript/native-preview": "^7.0.0-dev.20260420.1",
-    "oxfmt": "^0.45.0",
-    "oxlint": "^1.60.0",
-    "oxlint-tsgolint": "^0.21.1",
-    "tsdown": "^0.21.9",
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@types/bun": "^1.3.13",
+    "@typescript/native-preview": "^7.0.0-dev.20260425.1",
+    "mitata": "^1.0.34",
+    "oxfmt": "^0.46.0",
+    "oxlint": "^1.61.0",
+    "oxlint-tsgolint": "^0.22.0",
+    "publint": "^0.3.18",
+    "tsdown": "^0.21.10",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
+    "typedoc-vitepress-theme": "^1.1.2",
     "vitepress": "^1.6.4",
-    "vitest": "^4.1.4"
+    "vitepress-plugin-group-icons": "^1.7.5",
+    "vitest": "^4.1.5"
   },
   "peerDependencies": {
     "typescript": "^6.0.3"

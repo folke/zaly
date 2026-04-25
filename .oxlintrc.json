@@ -9,7 +9,7 @@
     "node": true
   },
   "plugins": ["eslint", "typescript", "unicorn", "oxc", "import"],
-  "ignorePatterns": ["foo*.ts", "**/gen/*.ts"],
+  "ignorePatterns": ["foo*.ts"],
   "rules": {
     "capitalized-comments": "off", // 98
     "new-cap": ["warn", { "capIsNewExceptionPattern": "(Value|Type|Schema|compiled\\w*)\\." }],
@@ -83,7 +83,7 @@
   },
   "overrides": [
     {
-      "files": ["!packages/*/src/**/*.ts"],
+      "files": ["!src/**/*.ts"],
       "rules": {
         "eslint/no-console": "off",
         "eslint/sort-keys": "off",
@@ -97,7 +97,8 @@
       }
     },
     {
-      "files": ["packages/cli/**/*.ts"],
+      // TODO: move this in the cli package once we have one
+      "files": ["clisrc/**/*.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",

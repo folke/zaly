@@ -7,12 +7,14 @@
     "url": "git+https://github.com/folke/zaly.git"
   },
   "files": [
-    "src/**/*",
     "dist/**/*"
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -24,21 +26,16 @@
   },
   "scripts": {
     "build": "tsdown --cwd ../../ --filter @zaly/agent",
-    "check": "cd ../../; oxlint packages/agent",
+    "check": "oxlint",
     "test": "bun test:node && bun test:bun",
-    "test:node": "cd ../../; vitest --project @zaly/agent run",
+    "test:node": "vitest -r ../../ --project @zaly/agent run",
     "test:bun": "bun test --only-failures"
   },
   "dependencies": {
-    "@zaly/ai": "workspace:*"
+    "@zaly/ai": "workspace:*",
+    "typebox": "^1.1.33"
   },
-  "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.2",
-    "publint": "^0.3.18",
-    "tsdown": "^0.21.9",
-    "typebox": "^1.1.33",
-    "typescript": "^6.0.3"
-  },
+  "devDependencies": {},
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"

@@ -21,7 +21,9 @@
 
     "noUnusedLocals": true,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+
+    "customConditions": ["bun"]
   },
   "exclude": ["dist"]
 }

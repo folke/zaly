@@ -10,7 +10,7 @@ export default defineConfig({
     sourcemap: true,
   },
   exports: {
-    devExports: true,
+    devExports: "bun",
   },
   format: ["esm"],
   publint: true,

@@ -2,9 +2,9 @@ import type { BaseState, RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { Color } from "../style/color.ts"
 
-import { stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
+import { stringWidth } from "../style/ansi.ts"
 
 /**
  * Frame sets from the common terminal-spinner vocabulary. Pick one to taste.
@@ -52,7 +52,6 @@ export interface SpinnerState extends BaseState {
  * don't have to remember a `.start()` call. Forgetting to `.stop()`
  * is harmless — the unref'd timer doesn't pin the event loop.
  */
-// eslint-disable-next-line typescript-eslint/no-unnecessary-type-arguments -- explicit SpinnerState is load-bearing for `this.state`.
 export class Spinner extends Node<SpinnerState> {
   #timer?: ReturnType<typeof setInterval>
 
