@@ -8,7 +8,7 @@ import { join } from "node:path"
 const tokyonightDir = process.env.TOKYONIGHT_DIR ?? join(homedir(), "projects/tokyonight.nvim")
 
 console.log(`Building tokyonight extras in ${tokyonightDir} …`)
-const build = spawnSync("./scripts/build", {
+const build = spawnSync("./scripts/build", ["zaly"], {
   cwd: tokyonightDir,
   stdio: "inherit",
 })
