@@ -1,6 +1,6 @@
 import { Type } from "typebox"
 import { defineTool, loadModel } from "@zaly/ai"
-import { runAgentTurn } from "@zaly/agent"
+import { AgentSession } from "@zaly/agent"
 
 const multiply = defineTool({
   name: "multiply",
@@ -11,14 +11,14 @@ const multiply = defineTool({
 
 const model = await loadModel("openai/gpt-4o-mini")
 
-const result = await runAgentTurn({
+const session = new AgentSession({
   model,
-  request: {
-    messages: [{ content: "What is 17 × 23?", role: "user" }],
-    tools: [multiply],
-  },
+  request: { tools: [multiply] },
 })
 
-console.log("stopReason:", result.stopReason)
-console.log("last message:", JSON.stringify(result.messages.at(-1), undefined, 2))
-console.log("usage:", result.usage)
+session.send({ content: "What is 17 × 23?", role: "user" })
+const stopReason = await session.run()
+
+console.log("stopReason:", stopReason)
+console.log("last message:", JSON.stringify(session.messages.at(-1), undefined, 2))
+console.log("usage:", session.usage)

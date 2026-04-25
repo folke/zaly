@@ -1,176 +1,243 @@
 // oxlint-disable no-await-in-loop
-import type {
-  CollectOptions,
-  FinishReason,
-  GenerateRequest,
-  Message,
-  Model,
-  TokenCount,
-  Tool,
-  ToolCallPart,
-  ToolResult,
-  ToolResultPart,
-} from "@zaly/ai"
-import { collect, isContextOverflow, runTool, ToolError } from "@zaly/ai"
-import type { LoopDetector } from "./looping.ts"
+import type { Message, TokenCount, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type { AgentStatus, AgentStopReason } from "./events.ts"
+import type { AgentSessionOptions, SessionSnapshot, StepResult } from "./types.ts"
 
-/** Input for `runAgentTurn`. The `Model` knows its provider, local id,
- *  and quirks; the loop just threads conversation state and forwards
- *  request-level knobs (reasoning, tool choice, temperature, etc.).
- *  Custom providers go through the catalog (`addModels` /
- *  `registerAdapter`) and arrive here as `Model` like any other.
- *
- *  `onEvent` / `onMessage` mirror the callback shape on `collect`: they
- *  fire as the turn runs but never block the stream. */
-export interface RunAgentOptions extends CollectOptions {
-  model: Model
-  request: Omit<GenerateRequest, "model">
-  /** Hard ceiling on provider round-trips. Prevents runaway tool loops
-   *  when the model refuses to stop calling tools. Default: 50. */
-  maxIterations?: number
-  /** Cumulative token cap across the whole turn (`usage.input +
-   *  usage.output` summed across iterations). Distinct from
-   *  `request.maxTokens`, which caps a single response. When the
-   *  budget is exceeded, the loop stops with `stopReason: "token-budget"`. */
-  tokenBudget?: number
-  /** Bail out after this many consecutive failing tool calls. A
-   *  successful tool call resets the streak. Use to stop wedged
-   *  agents that can't recover from a broken tool. */
-  maxToolErrors?: number
-  /** Model's declared context window. When set, after each successful
-   *  iteration the loop checks `usage.input + usage.cachedInput`
-   *  against this and stops with `stopReason: "context-overflow"` on
-   *  silent overflow (provider accepted but truncated). The reactive
-   *  error-message check runs unconditionally — this is only for the
-   *  proactive arm. */
-  contextLimit?: number
-  /** Predicate over the running tool-call history. When it returns
-   *  true the loop stops with `stopReason: "loop-detected"`. Use
-   *  `createLoopDetector` from `./utils` for the default heuristics. */
-  loopDetector?: LoopDetector
-  /** Called after each completed sub-stream with the assembled
-   *  assistant message + any tool messages appended in this iteration. */
-  onMessage?: (message: Message) => void | Promise<unknown>
-  /** Called after each tool execution — useful for UI / telemetry that
-   *  wants to show per-call status without reconstructing from
-   *  `onMessage`. */
-  onToolResult?: (call: ToolCallPart, result: ToolResult) => void | Promise<unknown>
-}
-
-/** Outcome of one agent turn — the delta of messages produced, a
- *  stop-reason discriminator, and summed usage across every provider
- *  call in the loop. The original request messages are *not* included
- *  in `messages` so callers can append directly onto their existing
- *  conversation. */
-export interface AgentTurnResult {
-  /** Last provider finishReason (the one that ended the loop). */
-  finishReason: FinishReason
-  /** Number of provider round-trips executed. */
-  iterations: number
-  /** Assistant + tool messages produced during this turn. */
-  messages: Message[]
-  /** Why the loop terminated:
-   *  - `natural`         — model returned without a tool call
-   *  - `max-iterations`  — hit `maxIterations`; model may still want more
-   *  - `token-budget`    — summed usage exceeded `tokenBudget`
-   *  - `loop-detected`   — `loopDetector` flagged repetition
-   *  - `max-tool-errors` — too many consecutive failing tool calls
-   *  - `context-overflow`— request overflowed the context window
-   *  - `error`           — a non-recoverable error; see `error` */
-  stopReason:
-    | "natural"
-    | "max-iterations"
-    | "token-budget"
-    | "loop-detected"
-    | "max-tool-errors"
-    | "context-overflow"
-    | "error"
-  /** Summed token usage across every provider call. */
-  usage: TokenCount
-  /** Present only when `stopReason === "error"`. */
-  error?: Error
-}
+import { collect, isContextOverflow, runTool } from "@zaly/ai"
+import { Emitter } from "./events.ts"
+import { StopPolicy } from "./policy.ts"
+import { extractToolCalls, unknownToolResult } from "./utils.ts"
 
 /**
- * Run a full agent turn: repeatedly stream from the provider, execute
- * any tool calls the model emits, and feed the results back in —
- * until the model stops calling tools, an error occurs, or
- * `maxIterations` is reached.
+ * Long-lived agent session. Owns the conversation, the run loop, the
+ * inline / send queues, and the status state machine. Built on top of
+ * `@zaly/ai`'s provider transport and tool primitives.
  *
- * Design notes:
- *   - One provider call per iteration. Tool calls within a single
- *     stream all execute before the next iteration; we send one
- *     consolidated `tool` message back.
- *   - Tool failures (invalid input, thrown ToolError, unknown tool)
- *     become `isError: true` tool-results and the loop continues —
- *     the model is expected to read them and retry / recover.
- *   - Usage is summed across iterations, so the outer scheduler sees
- *     the real cost of the turn, not just the last round-trip.
+ * Typical interactive use:
+ *
+ * ```ts
+ * const session = new AgentSession({ model, request: { tools } })
+ * const off = session.on((e) => render(e))
+ * session.send({ role: "user", content: "hi" })          // auto-runs
+ * // …user types again later…
+ * session.send({ role: "user", content: "follow-up" })   // queues if running
+ * ```
+ *
+ * Headless / one-shot use is just a thin wrapper on top — see
+ * `runAgentTurn` in the test helpers.
  */
-export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResult> {
-  const maxIterations = opts.maxIterations ?? 50
-  const toolIndex = new Map<string, Tool>()
-  for (const t of opts.request.tools ?? []) toolIndex.set(t.name, t)
+export class AgentSession extends Emitter {
+  readonly #opts: AgentSessionOptions
+  readonly #toolIndex = new Map<string, Tool>()
+  readonly #policy: StopPolicy
 
-  const produced: Message[] = []
-  const conversation: Message[] = [...opts.request.messages]
-  const callHistory: ToolCallPart[] = []
-  let usage: TokenCount = { input: 0, output: 0 }
-  let iterations = 0
-  let consecutiveErrors = 0
-  let finishReason: FinishReason = "other"
+  #messages: Message[]
+  #injectQueue: Message[] = []
+  #sendQueue: Message[] = []
 
-  while (iterations < maxIterations) {
-    iterations++
+  #status: AgentStatus = "idle"
+  #abortController?: AbortController
+  #pauseRequested = false
+  #runPromise?: Promise<AgentStopReason>
+
+  #lastError?: Error
+  #lastStopReason?: AgentStopReason
+
+  constructor(opts: AgentSessionOptions) {
+    super()
+    this.#opts = opts
+    this.#messages = [...(opts.initialMessages ?? [])]
+    for (const t of opts.request?.tools ?? []) this.#toolIndex.set(t.name, t)
+    this.#policy = new StopPolicy(opts)
+    this.#policy.attach(this)
+    this.onEmitError = (error) => {
+      // oxlint-disable-next-line no-console
+      console.error("AgentSession event handler threw an error", error)
+    }
+  }
+
+  // ── Read ──────────────────────────────────────────────────────────────
+
+  get messages(): readonly Message[] {
+    return this.#messages
+  }
+  get status(): AgentStatus {
+    return this.#status
+  }
+  /** Token usage from the most recent step's response. Drives
+   *  `contextSize` and any "this turn used N tokens" UI. */
+  get usage(): TokenCount {
+    return this.#policy.usage
+  }
+  /** Cumulative token usage across every step in the current run.
+   *  Useful for billing-style displays. */
+  get totalUsage(): TokenCount {
+    return this.#policy.totalUsage
+  }
+  /** Logical size of the current conversation in tokens — what the
+   *  next request will send as input. Equals the last step's
+   *  `input + output` (since the model's reply becomes part of the
+   *  next prompt). Returns 0 before any step has run. */
+  get contextSize(): number {
+    return this.usage.input + this.usage.output
+  }
+  get lastError(): Error | undefined {
+    return this.#lastError
+  }
+  get lastStopReason(): AgentStopReason | undefined {
+    return this.#lastStopReason
+  }
+  get steps(): number {
+    return this.#policy.steps
+  }
+  /** Durable system prompt — currently the value supplied at
+   *  construction. Exposed as a getter so subclasses or future
+   *  setter overrides have a single resolution point. */
+  get prompt(): string[] | undefined {
+    return this.#opts.prompt
+  }
+
+  // ── Mutate (used by compactor and external callers) ─────────────────
+
+  /** Append one or more messages to the conversation. Each message
+   *  emits a `message` event in order. Does NOT trigger the loop —
+   *  use `send()` for that. */
+  add(...messages: Message[]): void {
+    for (const message of messages) {
+      this.#messages.push(message)
+      this.emit({ message, type: "message" })
+    }
+  }
+
+  /** Replace the conversation wholesale. Used by compactors / replay
+   *  / branching. Emits a `replace` event with both the previous and
+   *  new arrays so subscribers can diff or fully re-render. */
+  replace(messages: Message[]): void {
+    const before = this.#messages
+    this.#messages = [...messages]
+    this.emit({ after: this.#messages, before, type: "replace" })
+  }
+
+  // ── Input ────────────────────────────────────────────────────────────
+
+  /** Append a message and (re)start the loop. The user spoke; the agent
+   *  responds. If a loop is currently running, the message lands on the
+   *  follow-up queue and is processed after the current turn naturally
+   *  stops. Otherwise the loop starts immediately. */
+  send(message: Message): void {
+    if (this.#status === "idle" || this.#status === "paused") {
+      this.add(message)
+      void this.run()
+    } else {
+      this.#sendQueue.push(message)
+    }
+  }
+
+  /** Inject a message into the *current* turn — flushed into the
+   *  conversation right before the next step's stream. If the
+   *  session is idle/paused, behaves like `send`. */
+  inject(message: Message): void {
+    if (this.#status === "idle" || this.#status === "paused") {
+      this.send(message)
+    } else {
+      this.#injectQueue.push(message)
+    }
+  }
+
+  // ── Loop control ─────────────────────────────────────────────────────
+
+  /** Drive steps until the session goes idle (no queued messages and
+   *  the model stopped naturally) or hits a non-recoverable stop.
+   *  Doubles as a resume from `paused` — drains queued messages and
+   *  picks the loop back up. If a run is already in flight, returns
+   *  the existing promise. */
+  run(): Promise<AgentStopReason> {
+    if (this.#runPromise) return this.#runPromise
+    this.#pauseRequested = false
+    this.#lastError = undefined
+    this.#runPromise = this.#loop().finally(() => {
+      this.#runPromise = undefined
+    })
+    return this.#runPromise
+  }
+
+  async #collect() {
+    this.#abortController = new AbortController()
+    const stream = this.#opts.model.stream({
+      ...this.#opts.request,
+      messages: this.#messages,
+      prompt: this.prompt,
+      signal: this.#abortController.signal,
+    })
+    return await collect(stream, {
+      onEvent: (event) => {
+        this.emit({ event, type: "stream-event" })
+        void this.#opts.onEvent?.(event)
+      },
+      onUpdate: this.#opts.onUpdate,
+    })
+  }
+
+  /** Run exactly one step. Useful for tests and custom drivers
+   *  that want to interleave logic between steps. */
+  async step(): Promise<StepResult> {
+    if (this.#injectQueue.length > 0) {
+      for (const m of this.#injectQueue.splice(0)) this.add(m)
+    }
+
+    this.#setStatus("streaming")
+
     let collected
     try {
-      const stream = opts.model.stream({ ...opts.request, messages: conversation })
-      collected = await collect(stream, { onEvent: opts.onEvent, onUpdate: opts.onUpdate })
+      collected = await this.#collect()
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
       const overflow = isContextOverflow({ message: err.message })
       return {
         error: err,
         finishReason: overflow ? "length" : "error",
-        iterations,
-        messages: produced,
-        stopReason: overflow ? "context-overflow" : "error",
-        usage,
+        kind: overflow ? "context-overflow" : "error",
+        usage: { input: 0, output: 0 },
       }
     }
 
-    usage = addUsage(usage, collected.usage)
-    finishReason = collected.finishReason
-    produced.push(collected.message)
-    conversation.push(collected.message)
-    await opts.onMessage?.(collected.message)
+    const result: Omit<StepResult, "kind"> = {
+      finishReason: collected.finishReason,
+      message: collected.message,
+      usage: collected.usage,
+    }
 
+    // Silent-overflow check BEFORE committing the message — gives the
+    // session a chance to drop it and retry on a compacted history.
     if (
-      opts.contextLimit !== undefined &&
+      this.#opts.contextLimit !== undefined &&
       isContextOverflow({
-        contextLimit: opts.contextLimit,
+        contextLimit: this.#opts.contextLimit,
         usageInput: collected.usage.input + (collected.usage.cachedInput ?? 0),
       })
-    ) {
-      return { finishReason, iterations, messages: produced, stopReason: "context-overflow", usage }
-    }
+    )
+      return { kind: "context-overflow", ...result }
 
-    const toolCalls = extractToolCalls(collected.message)
-    if (toolCalls.length === 0) {
-      return {
-        finishReason,
-        iterations,
-        messages: produced,
-        stopReason: "natural",
-        usage,
-      }
-    }
+    this.add(collected.message)
 
+    const calls = extractToolCalls(collected.message)
+    if (calls.length === 0) return { kind: "natural", ...result }
+
+    return {
+      kind: "tool-calls",
+      toolMessage: await this.#runTools(calls),
+      ...result,
+    }
+  }
+
+  async #runTools(calls: ToolCallPart[]) {
+    this.#setStatus("running-tools")
     const resultParts: ToolResultPart[] = []
-    for (const call of toolCalls) {
-      const tool = toolIndex.get(call.name)
+    for (const call of calls) {
+      this.emit({ call, type: "tool-call" })
+      const tool = this.#toolIndex.get(call.name)
       const result = tool ? await runTool(tool, call.params) : unknownToolResult(call.name)
-      await opts.onToolResult?.(call, result)
+      this.emit({ call, result, type: "tool-result" })
       resultParts.push({
         id: call.id,
         isError: result.isError,
@@ -178,58 +245,89 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResu
         result: result.result,
         type: "tool-result",
       })
-      callHistory.push(call)
-      consecutiveErrors = result.isError ? consecutiveErrors + 1 : 0
     }
+    const message: Extract<Message, { role: "tool" }> = { content: resultParts, role: "tool" }
+    this.add(message)
+    return message
+  }
 
-    const toolMessage: Message = { content: resultParts, role: "tool" }
-    produced.push(toolMessage)
-    conversation.push(toolMessage)
-    await opts.onMessage?.(toolMessage)
+  /** Pause after the current step completes. The loop exits with
+   *  `stopReason: "paused"`; queued messages are preserved. */
+  pause(): void {
+    this.#pauseRequested = true
+  }
 
-    if (opts.loopDetector?.(callHistory) === true) {
-      return { finishReason, iterations, messages: produced, stopReason: "loop-detected", usage }
+  /** Abort the in-flight stream immediately. The session lands in
+   *  `paused` with `lastError` set to an AbortError. */
+  abort(): void {
+    this.#abortController?.abort()
+  }
+
+  // ── Persistence ──────────────────────────────────────────────────────
+
+  serialize(): SessionSnapshot {
+    return {
+      lastError: this.#lastError
+        ? { message: this.#lastError.message, name: this.#lastError.name }
+        : undefined,
+      lastStopReason: this.#lastStopReason,
+      messages: [...this.#messages],
+      usage: { ...this.usage },
     }
-    if (opts.maxToolErrors !== undefined && consecutiveErrors >= opts.maxToolErrors) {
-      return { finishReason, iterations, messages: produced, stopReason: "max-tool-errors", usage }
+  }
+
+  // ── Internals ────────────────────────────────────────────────────────
+
+  async #loop(): Promise<AgentStopReason> {
+    // Reset per-run counters (steps, consecutive errors, call history).
+    // Token totals stay sticky across resets — they're billing-style
+    // displays, not per-turn caps.
+    this.#policy.reset()
+
+    for (;;) {
+      if (this.#pauseRequested) return this.#stop("paused")
+
+      const outcome = await this.step()
+      this.emit({ outcome: outcome.kind, type: "step-end" })
+
+      if (outcome.kind === "error") {
+        this.#lastError = outcome.error
+        return this.#stop(outcome.error?.name === "AbortError" ? "aborted" : "error")
+      }
+
+      if (outcome.kind === "natural") {
+        // Drain follow-up queue if anything arrived during the turn.
+        if (this.#sendQueue.length > 0) {
+          for (const m of this.#sendQueue.splice(0)) this.add(m)
+          continue
+        }
+        return this.#stop("natural")
+      }
+
+      if (outcome.kind === "context-overflow") {
+        if (!this.#opts.compact) return this.#stop("context-overflow")
+        // Compactor mutates the conversation; the rejected message is
+        // not committed — next step retries on the compacted state.
+        await this.#opts.compact(this)
+        continue
+      }
+
+      // outcome.kind === "tool-calls" — consult the policy.
+      const stop = this.#policy.detect()
+      if (stop) return this.#stop(stop)
     }
-    if (opts.tokenBudget !== undefined && usage.input + usage.output > opts.tokenBudget) {
-      return { finishReason, iterations, messages: produced, stopReason: "token-budget", usage }
-    }
   }
 
-  return {
-    finishReason,
-    iterations,
-    messages: produced,
-    stopReason: "max-iterations",
-    usage,
+  #stop(reason: AgentStopReason): AgentStopReason {
+    this.#lastStopReason = reason
+    this.#setStatus(reason === "natural" ? "idle" : "paused")
+    this.emit({ reason, type: "stop", usage: this.usage })
+    return reason
   }
-}
 
-function extractToolCalls(message: Extract<Message, { role: "assistant" }>): ToolCallPart[] {
-  if (typeof message.content === "string") return []
-  return message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
-}
-
-function unknownToolResult(name: string): ToolResult {
-  const err = new ToolError({
-    code: "UNKNOWN_TOOL",
-    message: `no tool named "${name}" is registered for this turn`,
-  })
-  return { isError: true, result: `❌ ${err.code}: ${err.message}` }
-}
-
-function addUsage(a: TokenCount, b: TokenCount): TokenCount {
-  const out: TokenCount = {
-    input: a.input + b.input,
-    output: a.output + b.output,
+  #setStatus(status: AgentStatus): void {
+    if (this.#status === status) return
+    this.#status = status
+    this.emit({ status, type: "status" })
   }
-  if (a.cachedInput !== undefined || b.cachedInput !== undefined) {
-    out.cachedInput = (a.cachedInput ?? 0) + (b.cachedInput ?? 0)
-  }
-  if (a.reasoning !== undefined || b.reasoning !== undefined) {
-    out.reasoning = (a.reasoning ?? 0) + (b.reasoning ?? 0)
-  }
-  return out
 }
