@@ -1,5 +1,6 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
 import type { AgentEvent, AgentStopReason, Emitter } from "./events.ts"
+
 import { addUsage } from "./utils/index.ts"
 
 /** Caps + heuristics that can end a run early. Wired into the
@@ -50,7 +51,7 @@ export class StopPolicy {
 
   #steps = 0
   #consecutiveErrors = 0
-  #callHistory: ToolCallPart[] = []
+  #calls: ToolCallPart[] = []
   #usage: TokenCount = { input: 0, output: 0 }
   #totalUsage: TokenCount = { input: 0, output: 0 }
 
@@ -75,8 +76,8 @@ export class StopPolicy {
     return this.#consecutiveErrors
   }
   /** Tool-call history fed to the loop detector. Read-only. */
-  get callHistory(): readonly ToolCallPart[] {
-    return this.#callHistory
+  get calls(): readonly ToolCallPart[] {
+    return this.#calls
   }
 
   // ── Wiring ────────────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ export class StopPolicy {
         break
       }
       case "tool-call": {
-        this.#callHistory.push(event.call)
+        this.#calls.push(event.call)
         break
       }
       case "tool-result": {
@@ -119,7 +120,7 @@ export class StopPolicy {
   reset(opts: { keepUsage?: boolean } = {}): void {
     this.#steps = 0
     this.#consecutiveErrors = 0
-    this.#callHistory = []
+    this.#calls = []
     if (opts.keepUsage === false) {
       this.#usage = { input: 0, output: 0 }
       this.#totalUsage = { input: 0, output: 0 }
@@ -155,7 +156,7 @@ export class StopPolicy {
   // ── Loop detection internals ─────────────────────────────────────────
 
   #detectLoop(): boolean {
-    const calls = this.#callHistory
+    const calls = this.#calls
     if (calls.length === 0) return false
 
     const consecutive = this.#opts.loopConsecutive ?? 3
