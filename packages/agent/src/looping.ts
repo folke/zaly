@@ -1,4 +1,4 @@
-import type { ToolCallPart } from "../types.ts"
+import type { ToolCallPart } from "@zaly/ai"
 
 /** Predicate over the tool-call history of an agent turn. Returns
  *  `true` when the loop runner should bail out — typically because

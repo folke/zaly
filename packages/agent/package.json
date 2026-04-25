@@ -1,5 +1,5 @@
 {
-  "name": "@zaly/ai",
+  "name": "@zaly/agent",
   "version": "0.0.0",
   "license": "MIT",
   "repository": {
@@ -26,21 +26,20 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/ai",
-    "build:providers": "bun scripts/fetch-models.ts && bun scripts/build-providers.ts",
-    "check": "cd ../../; oxlint packages/ai",
+    "build": "tsdown --cwd ../../ --filter @zaly/agent",
+    "check": "cd ../../; oxlint packages/agent",
     "test": "bun test:node && bun test:bun",
-    "test:node": "cd ../../; vitest --project @zaly/ai run",
+    "test:node": "cd ../../; vitest --project @zaly/agent run",
     "test:bun": "bun test --only-failures"
   },
   "dependencies": {
-    "jsonrepair": "^3.14.0",
-    "typebox": "^1.1.33"
+    "@zaly/ai": "workspace:*"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "publint": "^0.3.18",
     "tsdown": "^0.21.9",
+    "typebox": "^1.1.33",
     "typescript": "^6.0.3"
   },
   "engines": {

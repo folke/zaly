@@ -1,6 +1,6 @@
+import type { ToolCallPart } from "@zaly/ai"
 import { describe, expect, test } from "vitest"
-import { createLoopDetector } from "../../src/utils/looping.ts"
-import type { ToolCallPart } from "../../src/types.ts"
+import { createLoopDetector } from "../src/looping.ts"
 
 function call(name: string, params: unknown, id = `c-${Math.random()}`): ToolCallPart {
   return { id, name, params, type: "tool-call" }

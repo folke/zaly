@@ -3,28 +3,28 @@ import type {
   CollectOptions,
   FinishReason,
   GenerateRequest,
-  Provider,
+  Message,
+  Model,
   TokenCount,
-} from "./provider.ts"
-import type { ToolResult } from "./tools.ts"
-import type { Message, Tool, ToolCallPart, ToolResultPart } from "./types.ts"
+  Tool,
+  ToolCallPart,
+  ToolResult,
+  ToolResultPart,
+} from "@zaly/ai"
+import { collect, isContextOverflow, runTool, ToolError } from "@zaly/ai"
+import type { LoopDetector } from "./looping.ts"
 
-import { collect } from "./provider.ts"
-import { runTool, ToolError } from "./tools.ts"
-import { isContextOverflow } from "./utils/overflow.ts"
-import type { LoopDetector } from "./utils/looping.ts"
-
-/** Input for `runAgentTurn`. Holds the provider + full `GenerateRequest`
- *  so callers can configure any per-request knob (reasoning, tool choice,
- *  temperature) the same way they would for a single `stream`. The
- *  agent loop threads the growing conversation back into the request
- *  across iterations — callers never reassemble messages themselves.
+/** Input for `runAgentTurn`. The `Model` knows its provider, local id,
+ *  and quirks; the loop just threads conversation state and forwards
+ *  request-level knobs (reasoning, tool choice, temperature, etc.).
+ *  Custom providers go through the catalog (`addModels` /
+ *  `registerAdapter`) and arrive here as `Model` like any other.
  *
  *  `onEvent` / `onMessage` mirror the callback shape on `collect`: they
  *  fire as the turn runs but never block the stream. */
 export interface RunAgentOptions extends CollectOptions {
-  provider: Provider
-  request: GenerateRequest
+  model: Model
+  request: Omit<GenerateRequest, "model">
   /** Hard ceiling on provider round-trips. Prevents runaway tool loops
    *  when the model refuses to stop calling tools. Default: 50. */
   maxIterations?: number
@@ -124,7 +124,7 @@ export async function runAgentTurn(opts: RunAgentOptions): Promise<AgentTurnResu
     iterations++
     let collected
     try {
-      const stream = opts.provider.stream({ ...opts.request, messages: conversation })
+      const stream = opts.model.stream({ ...opts.request, messages: conversation })
       collected = await collect(stream, { onEvent: opts.onEvent, onUpdate: opts.onUpdate })
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
