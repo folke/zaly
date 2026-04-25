@@ -1,6 +1,6 @@
 // oxlint-disable no-await-in-loop
 import type { Message, TokenCount, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
-import type { AgentStatus, AgentStopReason } from "./events.ts"
+import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentSessionOptions, SessionSnapshot, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
@@ -26,7 +26,7 @@ import { extractToolCalls, unknownToolResult } from "./utils.ts"
  * Headless / one-shot use is just a thin wrapper on top — see
  * `runAgentTurn` in the test helpers.
  */
-export class AgentSession extends Emitter {
+export class AgentSession extends Emitter<AgentEvent> {
   readonly #opts: AgentSessionOptions
   readonly #toolIndex = new Map<string, Tool>()
   readonly #policy: StopPolicy

@@ -40,11 +40,13 @@ export type AgentEvent =
 
 // ── Emitter ──────────────────────────────────────────────────────────────
 
-type AgentEventType = AgentEvent["type"]
+/** A discriminated event union shape — every variant has a `type`. */
+type EventBase = { type: string }
 
-/** Listener that receives every event in the union. */
-export type Listener<E extends AgentEventType = AgentEventType> = (
-  event: Extract<AgentEvent, { type: E }>
+/** Listener narrowed by event-type tag. With no tag (or the full
+ *  union as tag), it receives every event. */
+export type Listener<E extends EventBase, K extends E["type"] = E["type"]> = (
+  event: Extract<E, { type: K }>,
 ) => void
 
 /** Tiny typed event emitter. Two `on` overloads:
@@ -57,60 +59,62 @@ export type Listener<E extends AgentEventType = AgentEventType> = (
  *  handler reference). `on` and `once` also return an unsubscribe
  *  function for the common "store + cleanup" pattern.
  *
- *  Listener throws are caught + logged so a buggy subscriber never
- *  takes down the emitter loop. */
-export class Emitter {
-  readonly #listeners = new Map<AgentEventType | "all", Set<Listener>>([["all", new Set()]])
-  readonly #wrappers = new WeakMap<Listener, Listener>()
+ *  Listener throws are caught and surfaced via `onEmitError` (silent
+ *  if unset) so a buggy subscriber never takes down the emitter loop. */
+export class Emitter<E extends EventBase> {
+  readonly #listeners = new Map<E["type"] | "all", Set<Listener<E>>>([
+    ["all", new Set()],
+  ])
+  readonly #wrappers = new WeakMap<Listener<E>, Listener<E>>()
   onEmitError?: (error: unknown) => void
 
-  on(fn: Listener): () => void
-  on<E extends AgentEventType>(type: E, fn: Listener<E>): () => void
-  on(typeOrHandler: AgentEventType | Listener, handler?: Listener): () => void {
-    return this.#on(typeOrHandler, handler)
+  on(fn: Listener<E>): () => void
+  on<K extends E["type"]>(type: K, fn: Listener<E, K>): () => void
+  on(typeOrFn: unknown, fn?: unknown): () => void {
+    return this.#on(typeOrFn, fn)
   }
 
-  once(fn: Listener): () => void
-  once<E extends AgentEventType>(type: E, fn: Listener<E>): () => void
-  once(typeOrHandler: AgentEventType | Listener, handler?: Listener): () => void {
-    return this.#on(typeOrHandler, handler, true)
+  once(fn: Listener<E>): () => void
+  once<K extends E["type"]>(type: K, fn: Listener<E, K>): () => void
+  once(typeOrFn: unknown, fn?: unknown): () => void {
+    return this.#on(typeOrFn, fn, true)
   }
 
-  #on(typeOrFn: AgentEventType | Listener, fn?: Listener, once?: boolean): () => void {
-    fn ??= typeOrFn as Listener
-    const type = typeof typeOrFn === "function" ? "all" : typeOrFn
-    let wrapped: Listener | undefined
+  #on(typeOrFn: unknown, maybeFn?: unknown, once?: boolean): () => void {
+    const handler = (typeof typeOrFn === "function" ? typeOrFn : maybeFn) as Listener<E>
+    const type = typeof typeOrFn === "function" ? ("all" as const) : (typeOrFn as E["type"])
+    let wrapped: Listener<E> | undefined
     if (once) {
       wrapped = (event) => {
-        this.off(fn)
-        fn(event)
+        this.off(handler)
+        handler(event)
       }
-      this.#wrappers.set(fn, wrapped)
+      this.#wrappers.set(handler, wrapped)
     }
     let set = this.#listeners.get(type)
     if (!set) {
       set = new Set()
       this.#listeners.set(type, set)
     }
-    set.add(wrapped ?? fn)
-    return () => this.off(fn)
+    set.add(wrapped ?? handler)
+    return () => this.off(handler)
   }
 
   /** Remove a previously-registered listener. Pass the same function
    *  reference used with `on` / `once`. */
-  off(fn: Listener): void {
-    fn = this.#wrappers.get(fn) ?? fn
-    for (const set of this.#listeners.values()) set.delete(fn)
+  off(fn: Listener<E>): void {
+    const target = this.#wrappers.get(fn) ?? fn
+    for (const set of this.#listeners.values()) set.delete(target)
   }
 
-  protected emit(event: AgentEvent): void {
+  protected emit(event: E): void {
     const listeners = [
       ...(this.#listeners.get("all") ?? []),
       ...(this.#listeners.get(event.type) ?? []),
     ]
     for (const fn of listeners)
       try {
-        fn(event)
+        fn(event as Extract<E, { type: typeof event.type }>)
       } catch (error) {
         this.onEmitError?.(error)
       }
