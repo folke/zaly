@@ -111,10 +111,8 @@ describe("runTool — output validation", () => {
     result: Type.Object({ n: Type.Number() }),
   })
 
-  test("catches output that violates the output schema", async () => {
-    const r = await runTool(Echo, { n: 1 })
-    expect(r.isError).toBe(true)
-    expect(String(r.result)).toMatch(/output|internal/i)
+  test("throws when output violates the schema (implementation bug, not LLM error)", async () => {
+    await expect(runTool(Echo, { n: 1 })).rejects.toThrow()
   })
 })
 

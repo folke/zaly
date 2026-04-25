@@ -129,7 +129,7 @@ export interface Tool<Params = unknown, Result = unknown> {
   params: unknown
   result?: unknown
   validateParams(params: unknown): Params
-  validateResult?(result: unknown): Result
+  validateResult?(result: unknown): Awaited<Result>
   call(params: Params): Promise<Result>
   _types?: { input: Params; output: Result }
 }

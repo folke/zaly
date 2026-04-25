@@ -6,18 +6,16 @@ export type ValidateResult<T> =
   | { success: true; data: T }
   | { success: false; errors: TLocalizedValidationError[] }
 
-/** Validate `value` against `schema`.
+/** Ad-hoc schema validation. Wraps TypeBox's `Value.Check`/`Value.Errors`
+ *  in a discriminated result so callers don't have to pattern-match
+ *  on a tuple or catch exceptions.
  *
- *  Uses TypeBox's fast `Check` on the happy path and only pays for
- *  `Errors` when validation fails. Returns a discriminated result so
- *  callers never have to pattern-match on exceptions.
+ *  This walks the schema each call. For hot paths (e.g. tool argument
+ *  validation that runs every turn) compile the schema once via
+ *  `Schema.Compile(schema)` and call `.Check`/`.Errors` directly —
+ *  `defineTool` does that internally.
  */
-export function validate<S extends TSchema>(
-  schema: S,
-  value: unknown,
-): ValidateResult<Static<S>> {
-  if (Value.Check(schema, value)) {
-    return { data: value, success: true }
-  }
+export function validate<S extends TSchema>(schema: S, value: unknown): ValidateResult<Static<S>> {
+  if (Value.Check(schema, value)) return { data: value, success: true }
   return { errors: Value.Errors(schema, value), success: false }
 }

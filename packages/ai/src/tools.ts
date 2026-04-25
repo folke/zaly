@@ -1,10 +1,10 @@
 import type { Static, TObject, TSchema } from "typebox"
+import Schema from "typebox/schema"
 import type { Tool } from "./types.ts"
 
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"
-import { validate } from "./json/validate.ts"
 
 /**
  * Structured error a tool's `execute` can throw to signal a business
@@ -70,6 +70,8 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
   params: Params
   result?: Result
 }): Tool<Static<Params>, Static<Result>> {
+  const compiledParams = Schema.Compile(def.params)
+  const compiledResult = def.result ? Schema.Compile(def.result) : undefined
   // oxlint-disable-next-line sort-keys
   return {
     name: def.name,
@@ -79,25 +81,17 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
     call: async (args) => def.call(args),
     validateParams(args: unknown): Static<Params> {
       const coerced = coerce(def.params, args)
-      const result = validate(def.params, coerced)
-      if (result.success) return result.data
+      if (compiledParams.Check(coerced)) return coerced
+      const [, errors] = compiledParams.Errors(coerced)
       throw new ToolError({
         code: "INVALID_INPUT",
-        data: result.errors,
-        message: stringifyErrors(def.params, coerced, result.errors),
+        data: errors,
+        message: stringifyErrors(def.params, coerced, errors),
       })
     },
-    validateResult: def.result
-      ? (result: unknown): Static<Result> => {
-          const outputSchema = def.result as Result
-          const r = validate(outputSchema, result)
-          if (r.success) return r.data
-          throw new ToolError({
-            code: "INVALID_OUTPUT",
-            data: r.errors,
-            message: stringifyErrors(outputSchema, result, r.errors),
-          })
-        }
+    validateResult: compiledResult
+      ? (result: unknown): Awaited<Static<Result>> =>
+          compiledResult.Parse(result) as Awaited<Static<Result>>
       : undefined,
   }
 }
@@ -124,29 +118,25 @@ export async function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown): Promise
     args = parsed.data
   }
 
-  let input: I
+  let params: I
   try {
-    input = tool.validateParams(args)
+    params = tool.validateParams(args)
   } catch (error) {
     return toErrorResult(error)
   }
 
-  let output: O
+  let result: Awaited<O>
   try {
-    output = await tool.call(input)
+    result = await tool.call(params)
   } catch (error) {
     return toErrorResult(error)
   }
 
   if (tool.validateResult) {
-    try {
-      output = tool.validateResult(output)
-    } catch (error) {
-      return toErrorResult(error)
-    }
+    result = tool.validateResult(result)
   }
 
-  return { isError: false, result: output }
+  return { isError: false, result }
 }
 
 function toErrorResult(err: unknown): ToolResult {
