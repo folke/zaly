@@ -31,10 +31,11 @@
     "test": "bun test && vitest -r ../../ --project @zaly/ai run"
   },
   "dependencies": {
-    "jsonrepair": "^3.14.0",
+    "jsonrepair": "^3.14.0"
+  },
+  "peerDependencies": {
     "typebox": "^1.1.33"
   },
-  "devDependencies": {},
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"

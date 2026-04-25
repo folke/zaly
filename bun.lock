@@ -30,6 +30,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@zaly/ai": "workspace:*",
+      },
+      "peerDependencies": {
         "typebox": "^1.1.33",
       },
     },
@@ -38,6 +40,8 @@
       "version": "0.0.0",
       "dependencies": {
         "jsonrepair": "^3.14.0",
+      },
+      "peerDependencies": {
         "typebox": "^1.1.33",
       },
     },
