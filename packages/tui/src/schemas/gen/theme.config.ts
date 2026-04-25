@@ -132,7 +132,7 @@ const toStyle = (() => { const _io0 = (input: any): boolean => (undefined === in
     }
     return input;
 }; })();
-const toStep = (() => { const _iv1 = new Set(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]); const _av2 = new Set(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]); const __is = (input: any): input is ColorStep => true === _iv1.has(input); let _errorFactory: any; return (input: any, errorFactory?: (p: import("typia").TypeGuardError.IProps) => Error): ColorStep => {
+const toStep = (() => { const _iv1 = new Set(["100", "200", "300", "400", "50", "500", "600", "700", "800", "900", "950"]); const _av2 = new Set(["100", "200", "300", "400", "50", "500", "600", "700", "800", "900", "950"]); const __is = (input: any): input is ColorStep => true === _iv1.has(input); let _errorFactory: any; return (input: any, errorFactory?: (p: import("typia").TypeGuardError.IProps) => Error): ColorStep => {
     if (false === __is(input)) {
         _errorFactory = errorFactory;
         ((input: any, _path: string, _exceptionable: boolean = true) => true === _av2.has(input) || __typia_transform__assertGuard._assertGuard(true, {
