@@ -35,8 +35,8 @@ describe("Session — add", () => {
   test("appends with parentUuid pointing at previous head", () => {
     const s = new Session()
     const startId = s.head!
-    const [u1] = s.add(u("hi"))
-    const [u2] = s.add(u("again"))
+    const u1 = s.add(u("hi"))
+    const u2 = s.add(u("again"))
     expect(s.nodes.get(u1)?.parentUuid).toBe(startId)
     expect(s.nodes.get(u2)?.parentUuid).toBe(u1)
     expect(s.head).toBe(u2)
@@ -48,7 +48,9 @@ describe("Session — add", () => {
     s.on("node", (e) => {
       if (e.node.type === "message") seen.push((e.node.message as { content: string }).content)
     })
-    s.add(u("a"), u("b"), u("c"))
+    s.add(u("a"))
+    s.add(u("b"))
+    s.add(u("c"))
     expect(seen).toEqual(["a", "b", "c"])
   })
 })
@@ -81,8 +83,9 @@ describe("Session — compact", () => {
 describe("Session — navigate", () => {
   test("navigating to an older node truncates active to that node's chain", () => {
     const s = new Session()
-    const [u1] = s.add(u("first"))
-    s.add(u("second"), u("third"))
+    const u1 = s.add(u("first"))
+    s.add(u("second"))
+    s.add(u("third"))
     s.navigate(u1)
     expect(s.head).toBe(u1)
     expect(s.messages).toEqual([u("first")])
@@ -90,8 +93,9 @@ describe("Session — navigate", () => {
 
   test("navigating then adding creates a new branch — pre-navigate messages stay in nodes", () => {
     const s = new Session()
-    const [u1] = s.add(u("first"))
-    const [, u3] = s.add(u("alt"), u("alt2"))
+    const u1 = s.add(u("first"))
+    s.add(u("alt"))
+    const u3 = s.add(u("alt2"))
     expect(s.nodes.size).toBe(4)
     s.navigate(u1)
     s.add(u("branched"))

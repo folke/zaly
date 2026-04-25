@@ -1,7 +1,7 @@
 import type { AuthProvider } from "./auth.ts"
-import type { GenerateRequest, Provider, StreamEvent } from "./provider.ts"
+import type { GenerateRequest, Provider, StreamEvent, TokenCount, Usage } from "./provider.ts"
 import type { BuiltinProvider } from "./providers/index.ts"
-import type { ModelOptions, ProviderOptions } from "./types.ts"
+import type { Cost, ModelOptions, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
@@ -59,9 +59,52 @@ export async function loadModel(
     options,
     provider,
     stream(req) {
-      return provider.stream({ ...req, model: options.id, quirks: req.quirks ?? options.quirks })
+      const inner = provider.stream({
+        ...req,
+        model: options.id,
+        quirks: req.quirks ?? options.quirks,
+      })
+      return options.cost ? augmentUsage(inner, options.cost) : inner
     },
   }
+}
+
+/** Wrap a provider's stream so the `finish` event's `usage` carries
+ *  computed `cost`. All other events pass through unchanged. */
+async function* augmentUsage(
+  stream: AsyncIterable<StreamEvent>,
+  prices: Cost
+): AsyncIterable<StreamEvent> {
+  for await (const ev of stream) {
+    yield ev.type === "finish"
+      ? { ...ev, usage: { ...ev.usage, cost: computeCost(ev.usage, prices) } }
+      : ev
+  }
+}
+
+/** Compute per-field USD cost from token counts + a price table.
+ *  Models.dev prices are USD per million tokens. Cache reads/writes
+ *  fall back to the input price when the catalog doesn't break them
+ *  out (rare — most providers publish all three).
+ *
+ *  `input` here is the *uncached* portion, since the cached portion is
+ *  billed at `cacheRead` rate. We derive uncached as
+ *  `usage.input − cacheRead − cacheWrite` to avoid double-counting. */
+function computeCost(usage: Usage, prices: Cost): TokenCount {
+  const cacheRead = usage.cacheRead ?? 0
+  const cacheWrite = usage.cacheWrite ?? 0
+  const uncachedInput = Math.max(0, usage.input - cacheRead - cacheWrite)
+  const M = 1_000_000
+  const cost: TokenCount = {
+    input: (uncachedInput * prices.input) / M,
+    output: (usage.output * prices.output) / M,
+  }
+  if (cacheRead > 0) cost.cacheRead = (cacheRead * (prices.cache_read ?? prices.input)) / M
+  if (cacheWrite > 0) cost.cacheWrite = (cacheWrite * (prices.cache_write ?? prices.input)) / M
+  if (usage.reasoning !== undefined && prices.reasoning !== undefined) {
+    cost.reasoning = (usage.reasoning * prices.reasoning) / M
+  }
+  return cost
 }
 
 async function resolve(id: string): Promise<ModelOptions> {

@@ -168,7 +168,7 @@ export class Agent extends Emitter<AgentEvent> {
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
     if (this.#injectQueue.length > 0) {
-      this.session.add(...this.#injectQueue.splice(0))
+      for (const m of this.#injectQueue.splice(0)) this.session.add(m)
     }
 
     this.#setStatus("streaming")
@@ -204,7 +204,11 @@ export class Agent extends Emitter<AgentEvent> {
     )
       return { kind: "context-overflow", ...result }
 
-    this.session.add(collected.message)
+    this.session.add(collected.message, {
+      finishReason: collected.finishReason,
+      modelId: this.#opts.model.id,
+      usage: collected.usage,
+    })
 
     const calls = extractToolCalls(collected.message)
     if (calls.length === 0) return { kind: "natural", ...result }
@@ -271,7 +275,7 @@ export class Agent extends Emitter<AgentEvent> {
       if (outcome.kind === "natural") {
         // Drain follow-up queue if anything arrived during the turn.
         if (this.#sendQueue.length > 0) {
-          this.session.add(...this.#sendQueue.splice(0))
+          for (const m of this.#sendQueue.splice(0)) this.session.add(m)
           continue
         }
         return this.#stop("natural")

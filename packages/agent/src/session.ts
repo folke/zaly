@@ -1,4 +1,4 @@
-import type { Message } from "@zaly/ai"
+import type { FinishReason, Message, Usage } from "@zaly/ai"
 import { Emitter } from "./events.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -14,7 +14,7 @@ export type SessionNode = {
   ts: number
 } & (
   | { type: "session-start"; modelId?: string; prompt?: string[] }
-  | { type: "message"; message: Message }
+  | ({ type: "message"; message: Message } & MessageMeta)
   | {
       type: "compact"
       /** Whether the loop kicked off compaction itself or the user did. */
@@ -25,6 +25,19 @@ export type SessionNode = {
       durationMs?: number
     }
 )
+
+/** Optional per-message metadata. Populated for assistant nodes the
+ *  agent commits after a step (carrying model + usage + finish info);
+ *  unset for user / tool messages or anything added directly. */
+export interface MessageMeta {
+  /** Model id that produced this message, when known. Lets readers
+   *  attribute cost / detect model swaps without separate records. */
+  modelId?: string
+  /** Token usage from the step that produced this message. */
+  usage?: Usage
+  /** Provider-side finish reason for the step. */
+  finishReason?: FinishReason
+}
 
 // ── Events ───────────────────────────────────────────────────────────────
 
@@ -93,7 +106,7 @@ export class Session extends Emitter<SessionEvent> {
     this.#head = start.uuid
     this.emit({ node: start, type: "node" })
 
-    if (opts.initialMessages?.length) this.add(...opts.initialMessages)
+    for (const m of opts.initialMessages ?? []) this.add(m)
   }
 
   // ── Read ──────────────────────────────────────────────────────────────
@@ -117,26 +130,24 @@ export class Session extends Emitter<SessionEvent> {
 
   // ── Mutate ────────────────────────────────────────────────────────────
 
-  /** Append one or more messages. Each is recorded as a `message`
-   *  node parented to the current head; head advances per message,
-   *  and `node` events fire in order. Returns the assigned uuids. */
-  add(...messages: Message[]): string[] {
-    const uuids: string[] = []
-    for (const message of messages) {
-      const node: SessionNode = {
-        message,
-        parentUuid: this.#head,
-        ts: Date.now(),
-        type: "message",
-        uuid: uuidv7(),
-      }
-      this.#nodes.set(node.uuid, node)
-      this.#head = node.uuid
-      this.#messages.push(message)
-      uuids.push(node.uuid)
-      this.emit({ node, type: "node" })
+  /** Append a message. The new node is parented to the current head,
+   *  head advances, and a `node` event fires. Optional `meta` carries
+   *  usage / model / finish info — populate it for assistant turns
+   *  the agent commits after a step. Returns the assigned uuid. */
+  add(message: Message, meta?: MessageMeta): string {
+    const node: SessionNode = {
+      message,
+      parentUuid: this.#head,
+      ts: Date.now(),
+      type: "message",
+      uuid: uuidv7(),
+      ...meta,
     }
-    return uuids
+    this.#nodes.set(node.uuid, node)
+    this.#head = node.uuid
+    this.#messages.push(message)
+    this.emit({ node, type: "node" })
+    return node.uuid
   }
 
   /** Mark a compaction boundary. Subsequent `add()` calls land after

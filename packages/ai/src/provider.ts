@@ -131,7 +131,7 @@ export type StreamEvent =
   | { type: "text-delta"; delta: string }
   | { type: "reasoning-delta"; delta: string; signature?: string }
   | { type: "tool-call"; id: string; name: string; params: unknown }
-  | { type: "finish"; finishReason: FinishReason; usage: TokenCount }
+  | { type: "finish"; finishReason: FinishReason; usage: Usage }
   | { type: "error"; error: Error }
 
 /** Why the provider stopped generating. Normalised across providers —
@@ -164,6 +164,16 @@ export interface TokenCount {
    *  `cache_creation_input_tokens`. Absent on OpenAI. */
   cacheWrite?: number
   reasoning?: number
+}
+
+/** Token accounting + optional cost breakdown. `cost` mirrors the
+ *  shape of TokenCount — `cost.input` is dollars (USD) for input
+ *  tokens, `cost.output` for output tokens, etc. Populated by
+ *  `Model.stream` when the catalog has pricing for the model;
+ *  consumers of `provider.stream` directly (bypassing the catalog)
+ *  see the raw `TokenCount` without `.cost`. */
+export interface Usage extends TokenCount {
+  cost?: TokenCount
 }
 
 /** Optional side-channels for `collect`. Both sync and async callbacks
@@ -203,11 +213,11 @@ export async function collect(
 ): Promise<{
   message: Message<"assistant">
   finishReason: FinishReason
-  usage: TokenCount
+  usage: Usage
 }> {
   const parts: (TextPart | ReasoningPart | ToolCallPart)[] = []
   let finishReason: FinishReason = "other"
-  let usage: TokenCount = { input: 0, output: 0 }
+  let usage: Usage = { input: 0, output: 0 }
 
   // Text and reasoning deltas coalesce into a single part each, in
   // emission order — if the provider interleaves (text → tool → text),
