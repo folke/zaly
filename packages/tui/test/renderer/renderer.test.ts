@@ -88,7 +88,6 @@ describe("renderer.walk — tree traversal", () => {
     const b = text("b")
     r.ui.root.add(box({}, a, b))
     const seen: Node[] = []
-    // oxlint-disable-next-line typescript/consistent-return
     r.walk((n) => {
       seen.push(n)
       if (seen.length === 2) return "stop"

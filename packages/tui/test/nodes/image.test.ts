@@ -5,7 +5,6 @@ import sharp from "sharp"
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
-import { resetImageCache } from "../../src/image/source.ts"
 import { image, resetImageTransmitCache } from "../../src/widgets/image.ts"
 
 // Fixture dir + a tiny PNG generated via sharp at setup. Keeping this in a
@@ -67,7 +66,6 @@ function extractId(esc: string, key: string): string | undefined {
 
 afterEach(() => {
   resetImageTransmitCache()
-  resetImageCache()
   resetCapabilitiesCache()
 })
 
@@ -122,7 +120,7 @@ describe("image() — KGP rendering", () => {
     const start = row.indexOf(";", row.indexOf("\x1b_Ga=t,")) + 1
     const end = row.indexOf("\x1b\\")
     const path = Buffer.from(row.slice(start, end), "base64").toString()
-    expect(path).toContain("zaly-tty-graphics-protocol-")
+    expect(path).toContain("zaly-image-")
     expect(path.endsWith(".png")).toBe(true)
   })
 

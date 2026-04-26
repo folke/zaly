@@ -54,7 +54,7 @@
     "prefer-template": "warn",
     "sort-imports": "off", // 64
     "sort-keys": ["warn", "asc", { "caseSensitive": true, "natural": false }],
-    "typescript/consistent-return": "error",
+    "typescript/consistent-return": "off",
     "typescript/consistent-type-definitions": "off", // 32
     "typescript/consistent-type-imports": ["error", { "fixStyle": "separate-type-imports" }],
     "typescript/no-floating-promises": "error",

@@ -1,4 +1,3 @@
-// oxlint-disable typescript/consistent-return
 import type { IJsonSchemaUnit } from "typia"
 
 import { TypiaGenerator } from "@typia/transform"
