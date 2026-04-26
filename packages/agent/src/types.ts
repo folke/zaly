@@ -9,6 +9,7 @@ import type {
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
+import type { PermissionOptions } from "./permissions/index.ts"
 import type { Session } from "./session.ts"
 import type { StopOptions } from "./stop.ts"
 
@@ -35,6 +36,7 @@ export interface AgentOptions extends CollectOptions {
    *  loop-detection tuning. Grouped under one key to keep the agent's
    *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */
   stop?: StopOptions
+  permissions?: PermissionOptions
   /** Per-call passthrough knobs (`temperature`, `toolChoice`,
    *  `reasoning`, `responseFormat`, …). The agent owns `model`,
    *  `messages`, `prompt`, and `tools` — those have dedicated

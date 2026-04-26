@@ -1,11 +1,13 @@
 // oxlint-disable no-await-in-loop
 import type { Message, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
+import type { PermissionPolicy } from "./permissions/index.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
+import { definePermissions } from "./permissions/index.ts"
 import { Session } from "./session.ts"
 import { StopPolicy } from "./stop.ts"
 import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
@@ -29,7 +31,8 @@ import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
  */
 export class Agent extends Emitter<AgentEvent> {
   readonly #opts: AgentOptions
-  readonly #policy: StopPolicy
+  readonly #stopPolicy: StopPolicy
+  readonly #permissions: PermissionPolicy
   readonly session: Session
 
   #tools: Tool[] = []
@@ -56,8 +59,9 @@ export class Agent extends Emitter<AgentEvent> {
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
     for (const m of opts.messages ?? []) this.session.add(m)
     this.tools = opts.tools ?? []
-    this.#policy = new StopPolicy(opts.stop)
-    this.#policy.attach(this)
+    this.#stopPolicy = new StopPolicy(opts.stop)
+    this.#stopPolicy.attach(this)
+    this.#permissions = definePermissions(opts.permissions)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -76,12 +80,12 @@ export class Agent extends Emitter<AgentEvent> {
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
   get usage() {
-    return this.#policy.usage
+    return this.#stopPolicy.usage
   }
   /** Cumulative token usage across every step in the current run.
    *  Useful for billing-style displays. */
   get totalUsage() {
-    return this.#policy.totalUsage
+    return this.#stopPolicy.totalUsage
   }
   /** Logical size of the current conversation in tokens — what the
    *  next request will send as input. Equals the last step's
@@ -97,7 +101,7 @@ export class Agent extends Emitter<AgentEvent> {
     return this.#lastStopReason
   }
   get steps(): number {
-    return this.#policy.steps
+    return this.#stopPolicy.steps
   }
   /** Durable system prompt sent on every step. Mutable: assign to
    *  swap behaviour mid-conversation; the change applies on the next
@@ -117,6 +121,10 @@ export class Agent extends Emitter<AgentEvent> {
   }
   set tools(next: Tool[]) {
     this.#tools = next
+  }
+
+  get permissions(): PermissionPolicy {
+    return this.#permissions
   }
 
   // ── Input ────────────────────────────────────────────────────────────
@@ -275,7 +283,7 @@ export class Agent extends Emitter<AgentEvent> {
     // Reset per-run counters (steps, consecutive errors, call history).
     // Token totals stay sticky across resets — they're billing-style
     // displays, not per-turn caps.
-    this.#policy.reset()
+    this.#stopPolicy.reset()
 
     for (;;) {
       if (this.#pauseRequested) return this.#stop("paused")
@@ -306,7 +314,7 @@ export class Agent extends Emitter<AgentEvent> {
       }
 
       // outcome.kind === "tool-calls" — consult the policy.
-      const stop = this.#policy.detect()
+      const stop = this.#stopPolicy.detect()
       if (stop) return this.#stop(stop)
     }
   }

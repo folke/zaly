@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "@zaly/ai": "workspace:*",
-    "@zaly/shared": "workspace:*"
+    "@zaly/shared": "workspace:*",
+    "shell-quote": "^1.8.3"
   },
   "peerDependencies": {
     "typebox": "^1.1.33"
@@ -39,5 +40,8 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
+  },
+  "devDependencies": {
+    "@types/shell-quote": "^1.7.5"
   }
 }
