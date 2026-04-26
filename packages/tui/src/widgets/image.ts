@@ -10,7 +10,7 @@ import {
   resetTransmitCache,
   transmitOnce,
 } from "../image/kitty.ts"
-import { imageInfo } from "../image/source.ts"
+import { imageInfo } from "@zaly/shared"
 
 export interface ImageState extends BaseState {
   /**

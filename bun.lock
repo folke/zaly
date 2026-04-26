@@ -30,6 +30,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@zaly/ai": "workspace:*",
+        "@zaly/shared": "workspace:*",
       },
       "peerDependencies": {
         "typebox": "^1.1.33",
@@ -45,11 +46,21 @@
         "typebox": "^1.1.33",
       },
     },
+    "packages/shared": {
+      "name": "@zaly/shared",
+      "version": "0.0.0",
+      "dependencies": {
+        "image-meta": "^0.2.2",
+      },
+      "optionalDependencies": {
+        "sharp": "^0.34.5",
+      },
+    },
     "packages/tui": {
       "name": "@zaly/tui",
       "version": "0.0.0",
       "dependencies": {
-        "image-meta": "^0.2.2",
+        "@zaly/shared": "workspace:*",
         "marked": "^18.0.2",
         "shiki": "^4.0.2",
         "slice-ansi": "^9.0.0",
@@ -61,9 +72,6 @@
         "@typia/transform": "^12.0.2",
         "ghostty-web": "^0.4.0",
         "type-fest": "^5.6.0",
-      },
-      "optionalDependencies": {
-        "sharp": "^0.34.5",
       },
     },
   },
@@ -563,6 +571,8 @@
     "@zaly/agent": ["@zaly/agent@workspace:packages/agent"],
 
     "@zaly/ai": ["@zaly/ai@workspace:packages/ai"],
+
+    "@zaly/shared": ["@zaly/shared@workspace:packages/shared"],
 
     "@zaly/tui": ["@zaly/tui@workspace:packages/tui"],
 

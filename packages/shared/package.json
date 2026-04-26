@@ -1,5 +1,5 @@
 {
-  "name": "@zaly/agent",
+  "name": "@zaly/shared",
   "version": "0.0.0",
   "license": "MIT",
   "repository": {
@@ -25,16 +25,15 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/agent",
+    "build": "tsdown --cwd ../../ --filter @zaly/shared",
     "check": "oxlint",
-    "test": "bun test && vitest -r ../../ --project @zaly/agent run"
+    "test": "bun test && vitest -r ../../ --project @zaly/shared run"
   },
   "dependencies": {
-    "@zaly/ai": "workspace:*",
-    "@zaly/shared": "workspace:*"
+    "image-meta": "^0.2.2"
   },
-  "peerDependencies": {
-    "typebox": "^1.1.33"
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
   },
   "engines": {
     "bun": ">=1.2",

@@ -4,6 +4,7 @@ import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
+import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { StopPolicy } from "./policy.ts"
 import { Session } from "./session.ts"
@@ -192,7 +193,7 @@ export class Agent extends Emitter<AgentEvent> {
     try {
       collected = await this.#collect()
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error))
+      const err = toError(error)
       const overflow = isContextOverflow({ message: err.message })
       return {
         error: err,

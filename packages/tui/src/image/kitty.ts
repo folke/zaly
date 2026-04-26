@@ -16,11 +16,10 @@
  * Reference: https://sw.kovidgoyal.net/kitty/graphics-protocol/
  */
 
-import type { ImageInfo } from "./source.ts"
+import type { ImageInfo } from "@zaly/shared"
 
+import { imageConvert, imageHash } from "@zaly/shared"
 import { isRemoteSession } from "./capabilities.ts"
-import { imageHash } from "./detect.ts"
-import { imageConvert } from "./source.ts"
 
 const CHUNK_SIZE = 4096
 

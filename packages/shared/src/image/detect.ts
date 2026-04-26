@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
+import { hash } from "../utils.ts"
 
 export type ImageFormat = (typeof formats)[number]
 
@@ -73,7 +73,7 @@ export async function imageDetect(src: string): Promise<DetectedImage | undefine
 }
 
 export function imageHash(img: DetectedImage): string {
-  return (img.hash ??= createHash("sha256").update(img.data).digest("hex").slice(0, 16))
+  return (img.hash ??= hash(img.data).slice(0, 16))
 }
 
 function detectFromBase64(mime: string, data: Uint8Array): DetectedImage | undefined {

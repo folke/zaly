@@ -1,5 +1,6 @@
+import { safeStat } from "@zaly/shared"
 import { execSync, spawn } from "node:child_process"
-import { mkdtempSync, statSync, writeFileSync } from "node:fs"
+import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { platform } from "node:process"
@@ -470,11 +471,7 @@ async function windowsImage(): Promise<ClipboardImage | undefined> {
     `if ($img) { $img.Save('${tmp.replace(/\\/g, String.raw`\\`)}') }`,
   ].join("; ")
   await run("powershell", ["-NoProfile", "-NoLogo", "-Command", script])
-  try {
-    if (statSync(tmp).size > 0) return { kind: "image", path: tmp, type: "image/png" }
-  } catch {
-    /* no image on clipboard */
-  }
+  if ((safeStat(tmp)?.size ?? 0) > 0) return { kind: "image", path: tmp, type: "image/png" }
   return undefined
 }
 

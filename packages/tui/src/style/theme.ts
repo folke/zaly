@@ -3,7 +3,8 @@ import type { Style } from "./ansi.ts"
 import type { Color } from "./color.ts"
 import type { ShikiTheme } from "./shiki.ts"
 
-import { readFileSync, statSync } from "node:fs"
+import { safeStat } from "@zaly/shared"
+import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
 import { themes } from "../themes/index.ts"
@@ -158,14 +159,6 @@ export function resolveTheme(theme: unknown): Theme {
   return { ...defaults, ...rest }
 }
 
-function isFile(path: string): boolean {
-  try {
-    return statSync(path).isFile()
-  } catch {
-    return false
-  }
-}
-
 function tryWithError<T>(fn: () => T, errorMsg: string): T {
   try {
     return fn()
@@ -190,7 +183,7 @@ export async function loadTheme(
 ): Promise<Theme> {
   if (name === "ansi") return { ...defaults }
   const files = (opts?.dirs ?? []).map((dir) => resolve(dir, `${name}.json`))
-  for (const path of files) if (isFile(path)) return loadThemeFile(path)
+  for (const path of files) if (safeStat(path)?.isFile()) return loadThemeFile(path)
 
   const builtin = (themes as Partial<typeof themes>)[name as ThemeName]
   if (builtin) return await builtin()

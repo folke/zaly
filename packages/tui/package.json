@@ -67,7 +67,7 @@
     "test": "bun test && vitest -r ../../ --project @zaly/tui run"
   },
   "dependencies": {
-    "image-meta": "^0.2.2",
+    "@zaly/shared": "workspace:*",
     "marked": "^18.0.2",
     "shiki": "^4.0.2",
     "slice-ansi": "^9.0.0",
@@ -79,9 +79,6 @@
     "@typia/transform": "^12.0.2",
     "ghostty-web": "^0.4.0",
     "type-fest": "^5.6.0"
-  },
-  "optionalDependencies": {
-    "sharp": "^0.34.5"
   },
   "engines": {
     "bun": ">=1.2",
