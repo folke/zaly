@@ -6,7 +6,7 @@ import type {
   StreamEvent,
   TokenCount,
 } from "../provider.ts"
-import type { CacheHint, Message, ProviderOptions, Tool } from "../types.ts"
+import type { CacheHint, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
 
 import { stringifyToolResult } from "../tools.ts"
 
@@ -33,8 +33,7 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
   const doFetch = config.fetch ?? fetch
   const caching = config.caching !== false
 
-  const auth = (): Record<string, string> =>
-    config.apiKey ? { "x-api-key": config.apiKey } : {}
+  const auth = (): Record<string, string> => (config.apiKey ? { "x-api-key": config.apiKey } : {})
 
   return {
     id: "anthropic",
@@ -68,9 +67,7 @@ interface AnthropicRequest {
   messages: AnthropicMessage[]
   system?: string | AnthropicTextBlock[]
   tools?: AnthropicTool[]
-  tool_choice?:
-    | { type: "auto" | "any" | "none" }
-    | { type: "tool"; name: string }
+  tool_choice?: { type: "auto" | "any" | "none" } | { type: "tool"; name: string }
   temperature?: number
   stop_sequences?: string[]
   thinking?: { type: "enabled"; budget_tokens: number }
@@ -105,7 +102,23 @@ interface AnthropicToolResultBlock {
   cache_control?: { type: "ephemeral" }
 }
 
+interface AnthropicImageBlock {
+  type: "image"
+  source: { type: "base64"; media_type: string; data: string } | { type: "url"; url: string }
+  cache_control?: { type: "ephemeral" }
+}
+
+interface AnthropicDocumentBlock {
+  type: "document"
+  source:
+    | { type: "base64"; media_type: "application/pdf"; data: string }
+    | { type: "url"; url: string }
+  cache_control?: { type: "ephemeral" }
+}
+
 type AnthropicContentBlock =
+  | AnthropicDocumentBlock
+  | AnthropicImageBlock
   | AnthropicTextBlock
   | AnthropicThinkingBlock
   | AnthropicToolUseBlock
@@ -287,17 +300,65 @@ function toAnthropicMessages(messages: Message[], caching: boolean): AnthropicMe
 
 function supportsCacheControl(
   block: AnthropicContentBlock
-): block is AnthropicTextBlock | AnthropicToolResultBlock {
-  return block.type === "text" || block.type === "tool_result"
+): block is
+  | AnthropicDocumentBlock
+  | AnthropicImageBlock
+  | AnthropicTextBlock
+  | AnthropicToolResultBlock {
+  return (
+    block.type === "text" ||
+    block.type === "tool_result" ||
+    block.type === "image" ||
+    block.type === "document"
+  )
+}
+
+/** Translate one `ImagePart` to Anthropic's `image` content block.
+ *  Anthropic accepts both base64 (with `media_type`) and URL sources. */
+function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
+  if (part.source.type === "base64") {
+    return {
+      source: { data: part.source.data, media_type: part.mime, type: "base64" },
+      type: "image",
+    }
+  }
+  return { source: { type: "url", url: part.source.url }, type: "image" }
+}
+
+/** Translate one `PdfPart` to Anthropic's `document` content block.
+ *  Anthropic does both vision (renders pages) and text extraction in
+ *  one call — no need to pre-extract on the consumer side. */
+function toAnthropicDocumentBlock(part: PdfPart): AnthropicDocumentBlock {
+  if (part.source.type === "base64") {
+    return {
+      source: { data: part.source.data, media_type: "application/pdf", type: "base64" },
+      type: "document",
+    }
+  }
+  return { source: { type: "url", url: part.source.url }, type: "document" }
 }
 
 function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): AnthropicMessage {
   switch (msg.role) {
     case "user": {
-      const content: AnthropicContentBlock[] =
-        typeof msg.content === "string"
-          ? [{ text: msg.content, type: "text" }]
-          : msg.content.map((p) => ({ text: p.text, type: "text" as const }))
+      let content: AnthropicContentBlock[]
+      if (typeof msg.content === "string") {
+        content = [{ text: msg.content, type: "text" }]
+      } else {
+        content = []
+        for (const p of msg.content) {
+          if (p.type === "text") content.push({ text: p.text, type: "text" })
+          else if (p.type === "image") content.push(toAnthropicImageBlock(p))
+          else if (p.type === "pdf") content.push(toAnthropicDocumentBlock(p))
+          else {
+            // Audio and video aren't supported by Anthropic.
+            throw new Error(
+              `Anthropic does not accept ${p.type} attachments. ` +
+                `Use a different provider (Gemini supports audio/video).`
+            )
+          }
+        }
+      }
       return { content, role: "user" }
     }
     case "assistant": {

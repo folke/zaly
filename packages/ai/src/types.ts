@@ -18,6 +18,24 @@ export interface TextPart {
   text: string
 }
 
+type FilePart<T extends string, MT extends string = string> = {
+  type: T
+  mimeType: MT
+  source: { type: "base64"; data: string } | { type: "url"; url: string }
+}
+
+export type ImagePart = FilePart<"image", "image/png" | "image/jpeg" | "image/webp"> & {
+  detail?: "low" | "high" | "auto"
+}
+
+export type PdfPart = FilePart<"pdf", "application/pdf">
+
+export type AudioPart = FilePart<"audio", "audio/mpeg" | "audio/wav">
+
+export type VideoPart = FilePart<"video", "video/mp4" | "video/webm">
+
+export type Attachment = ImagePart | PdfPart | AudioPart | VideoPart
+
 /** Assistant-emitted tool invocation. `args` is the decoded argument
  *  object — adapters JSON-encode when a provider expects a string. */
 export interface ToolCallPart {
@@ -90,7 +108,7 @@ type M =
     }
   | {
       role: "user"
-      content: string | TextPart[]
+      content: string | (TextPart | Attachment)[]
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }

@@ -88,6 +88,139 @@ describe("openai: request translation", () => {
     expect(body.messages).toEqual([{ content: "hi", role: "user" }])
   })
 
+  test("user message with ImagePart serializes to image_url (base64 → data: URL)", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              { text: "what is this?", type: "text" },
+              {
+                detail: "high",
+                mime: "image/png",
+                source: { data: "iVBORw0K", type: "base64" },
+                type: "image",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "gpt-4o-mini",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { text: "what is this?", type: "text" },
+      {
+        image_url: { detail: "high", url: "data:image/png;base64,iVBORw0K" },
+        type: "image_url",
+      },
+    ])
+  })
+
+  test("user message with ImagePart (url source) passes the url through", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              {
+                mime: "image/jpeg",
+                source: { type: "url", url: "https://example.com/cat.jpg" },
+                type: "image",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "gpt-4o-mini",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      {
+        image_url: { url: "https://example.com/cat.jpg" },
+        type: "image_url",
+      },
+    ])
+  })
+
+  test("user message with AudioPart serializes to input_audio (mp3)", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              {
+                mime: "audio/mpeg",
+                source: { data: "//uQxAA...", type: "base64" },
+                type: "audio",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "gpt-4o-audio-preview",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { input_audio: { data: "//uQxAA...", format: "mp3" }, type: "input_audio" },
+    ])
+  })
+
+  test("user message with AudioPart serializes to input_audio (wav)", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              { mime: "audio/wav", source: { data: "RIFF...", type: "base64" }, type: "audio" },
+            ],
+            role: "user",
+          },
+        ],
+        model: "gpt-4o-audio-preview",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { input_audio: { data: "RIFF...", format: "wav" }, type: "input_audio" },
+    ])
+  })
+
+  test("AudioPart with URL source throws (not accepted by Chat Completions)", async () => {
+    const { fetch } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await expect(
+      drain(
+        provider.stream({
+          messages: [
+            {
+              content: [
+                {
+                  mime: "audio/mpeg",
+                  source: { type: "url", url: "https://example.com/x.mp3" },
+                  type: "audio",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-audio-preview",
+        })
+      )
+    ).rejects.toThrow(/base64 source/)
+  })
+
   test("user TextPart[] becomes content-parts array", async () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })

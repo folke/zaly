@@ -25,9 +25,7 @@ describe("anthropic: request translation", () => {
     expect(body.model).toBe("claude-sonnet-4-5")
     expect(body.stream).toBe(true)
     expect(body.system).toBe("be concise")
-    expect(body.messages).toEqual([
-      { content: [{ text: "hi", type: "text" }], role: "user" },
-    ])
+    expect(body.messages).toEqual([{ content: [{ text: "hi", type: "text" }], role: "user" }])
   })
 
   test("max_tokens defaults when caller omits it", async () => {
@@ -90,6 +88,170 @@ describe("anthropic: request translation", () => {
     expect((recorded[0].body as { system: unknown }).system).toEqual([
       { cache_control: { type: "ephemeral" }, text: "long preamble", type: "text" },
     ])
+  })
+
+  test("user message with ImagePart (base64) serializes to an image block", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              { text: "what is this?", type: "text" },
+              {
+                mime: "image/png",
+                source: { data: "iVBORw0K", type: "base64" },
+                type: "image",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { text: "what is this?", type: "text" },
+      {
+        source: { data: "iVBORw0K", media_type: "image/png", type: "base64" },
+        type: "image",
+      },
+    ])
+  })
+
+  test("user message with ImagePart (url) serializes to an image block with url source", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              {
+                mime: "image/jpeg",
+                source: { type: "url", url: "https://example.com/cat.jpg" },
+                type: "image",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { source: { type: "url", url: "https://example.com/cat.jpg" }, type: "image" },
+    ])
+  })
+
+  test("cache hint on user message with image marks the image block", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            cache: { type: "ephemeral" },
+            content: [
+              {
+                mime: "image/png",
+                source: { data: "iVBORw0K", type: "base64" },
+                type: "image",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: { cache_control?: unknown }[] }[] }
+    expect(body.messages[0].content[0].cache_control).toEqual({ type: "ephemeral" })
+  })
+
+  test("user message with PdfPart (base64) serializes to a document block", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              { text: "summarize this", type: "text" },
+              {
+                mime: "application/pdf",
+                source: { data: "JVBERi0...", type: "base64" },
+                type: "pdf",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { text: "summarize this", type: "text" },
+      {
+        source: { data: "JVBERi0...", media_type: "application/pdf", type: "base64" },
+        type: "document",
+      },
+    ])
+  })
+
+  test("user message with PdfPart (url) serializes to a document block with url source", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            content: [
+              {
+                mime: "application/pdf",
+                source: { type: "url", url: "https://example.com/paper.pdf" },
+                type: "pdf",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[0].content).toEqual([
+      { source: { type: "url", url: "https://example.com/paper.pdf" }, type: "document" },
+    ])
+  })
+
+  test("cache hint on a PDF-only message marks the document block", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          {
+            cache: { type: "ephemeral" },
+            content: [
+              {
+                mime: "application/pdf",
+                source: { data: "JVBERi0...", type: "base64" },
+                type: "pdf",
+              },
+            ],
+            role: "user",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: { cache_control?: unknown }[] }[] }
+    expect(body.messages[0].content[0].cache_control).toEqual({ type: "ephemeral" })
   })
 
   test("user TextPart[] becomes text content blocks", async () => {
@@ -192,9 +354,7 @@ describe("anthropic: request translation", () => {
       })
     )
     expect((recorded[0].body as { messages: unknown[] }).messages[2]).toEqual({
-      content: [
-        { content: '{"temp":18}', tool_use_id: "c1", type: "tool_result" },
-      ],
+      content: [{ content: '{"temp":18}', tool_use_id: "c1", type: "tool_result" }],
       role: "user",
     })
   })
@@ -279,7 +439,9 @@ describe("anthropic: request translation", () => {
         model: "m",
       })
     )
-    expect((recorded[0].body as { messages: { content: unknown[] }[] }).messages[0].content).toEqual([
+    expect(
+      (recorded[0].body as { messages: { content: unknown[] }[] }).messages[0].content
+    ).toEqual([
       { text: "a", type: "text" },
       { cache_control: { type: "ephemeral" }, text: "b", type: "text" },
     ])
@@ -389,9 +551,9 @@ describe("anthropic: request translation", () => {
         reasoning: { budget: 2048, effort: "low" },
       })
     )
-    expect((recorded[0].body as { thinking: { budget_tokens: number } }).thinking.budget_tokens).toBe(
-      2048
-    )
+    expect(
+      (recorded[0].body as { thinking: { budget_tokens: number } }).thinking.budget_tokens
+    ).toBe(2048)
   })
 
   test("reasoning.effort: 'off' omits thinking", async () => {

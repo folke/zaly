@@ -7,7 +7,7 @@ import type {
   StreamEvent,
   TokenCount,
 } from "../provider.ts"
-import type { Message, ProviderOptions, Quirks, Tool } from "../types.ts"
+import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
 import { stringifyToolResult } from "../tools.ts"
 
@@ -135,10 +135,10 @@ type OpenAIMessage =
     }
   | { role: "tool"; tool_call_id: string; content: string }
 
-interface OpenAIContentPart {
-  type: "text"
-  text: string
-}
+type OpenAIContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
+  | { type: "input_audio"; input_audio: { data: string; format: "wav" | "mp3" } }
 
 function buildRequest(req: GenerateRequest): OpenAIChatRequest {
   const quirks = req.quirks ?? {}
@@ -294,6 +294,30 @@ function toOpenAITool(tool: Tool, strict: boolean): OpenAITool {
   }
 }
 
+/** Translate one `ImagePart` to OpenAI's `image_url` content part.
+ *  base64 sources pack into a `data:` URL; url sources pass through. */
+function toOpenAIImagePart(part: ImagePart): OpenAIContentPart {
+  const url =
+    part.source.type === "url" ? part.source.url : `data:${part.mime};base64,${part.source.data}`
+  return {
+    image_url: { url, ...(part.detail ? { detail: part.detail } : {}) },
+    type: "image_url",
+  }
+}
+
+/** Translate one `AudioPart` to OpenAI's `input_audio` content part.
+ *  Only available on the gpt-4o-audio-preview family of models. URL
+ *  sources aren't accepted for audio — must be inline base64. */
+function toOpenAIAudioPart(part: AudioPart): OpenAIContentPart {
+  if (part.source.type !== "base64") {
+    throw new Error(
+      "OpenAI input_audio requires a base64 source — URL audio sources aren't accepted."
+    )
+  }
+  const format = part.mime === "audio/wav" ? "wav" : "mp3"
+  return { input_audio: { data: part.source.data, format }, type: "input_audio" }
+}
+
 function toOpenAIMessage(msg: Message): OpenAIMessage {
   switch (msg.role) {
     case "system": {
@@ -301,13 +325,25 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
     }
     case "user": {
       if (typeof msg.content === "string") return { content: msg.content, role: "user" }
-      // TextPart[] → content parts. Chat Completions accepts parts for
-      // multimodal input; we only emit `text` parts today (images land
-      // when we add multimodal support to the core types).
-      return {
-        content: msg.content.map((p) => ({ text: p.text, type: "text" as const })),
-        role: "user",
+      // (Text | Attachment)[] → content parts. Image attachments serialize
+      // to `image_url`, with base64 sources packed as a `data:` URL. PDF /
+      // audio / video attachments aren't supported on Chat Completions —
+      // throw a clear error rather than silently dropping them.
+      const parts: OpenAIContentPart[] = []
+      for (const p of msg.content) {
+        if (p.type === "text") parts.push({ text: p.text, type: "text" })
+        else if (p.type === "image") parts.push(toOpenAIImagePart(p))
+        else if (p.type === "audio") parts.push(toOpenAIAudioPart(p))
+        else {
+          // PDF/video aren't accepted by Chat Completions. (PDF lands on
+          // OpenAI Responses; video isn't supported anywhere here.)
+          throw new Error(
+            `OpenAI Chat Completions does not accept ${p.type} attachments. ` +
+              `Convert upstream or use a different provider/endpoint.`
+          )
+        }
       }
+      return { content: parts, role: "user" }
     }
     case "assistant": {
       if (typeof msg.content === "string") return { content: msg.content, role: "assistant" }
