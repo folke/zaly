@@ -1,4 +1,5 @@
 import type { Message } from "@zaly/ai"
+
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
@@ -89,7 +90,7 @@ describe("Agent — tool-calls loop", () => {
     const result = await runAgent({
       messages: [{ content: "loop", role: "user" }],
       model,
-      policy: { maxSteps: 2 },
+      stop: { maxSteps: 2 },
       tools: [Add],
     })
     expect(result.steps).toBe(2)
@@ -134,7 +135,7 @@ describe("Agent — token budget", () => {
     const result = await runAgent({
       messages: [{ content: "go", role: "user" }],
       model,
-      policy: { tokenBudget: 80 },
+      stop: { tokenBudget: 80 },
       tools: [Add],
     })
     expect(result.stopReason).toBe("token-budget")
@@ -161,7 +162,7 @@ describe("Agent — max tool errors", () => {
     const result = await runAgent({
       messages: [{ content: "go", role: "user" }],
       model,
-      policy: {
+      stop: {
         // Disable loop detection so repeated identical failing calls
         // don't trip "loop-detected" before the error cap fires.
         loopConsecutive: Infinity,
@@ -196,7 +197,7 @@ describe("Agent — max tool errors", () => {
     const result = await runAgent({
       messages: [{ content: "go", role: "user" }],
       model,
-      policy: { maxToolErrors: 2 },
+      stop: { maxToolErrors: 2 },
       tools: [Add],
     })
     expect(result.stopReason).toBe("natural")
@@ -247,14 +248,23 @@ describe("Agent — loop detection", () => {
     // Three iterations, each calling add(1,1) — trips loopConsecutive=3.
     const sameCall = sameAddCall
     const model = mockModel([
-      [sameCall("c1"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
-      [sameCall("c2"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
-      [sameCall("c3"), { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } }],
+      [
+        sameCall("c1"),
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        sameCall("c2"),
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
+      [
+        sameCall("c3"),
+        { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+      ],
     ])
     const result = await runAgent({
       messages: [{ content: "go", role: "user" }],
       model,
-      policy: { loopConsecutive: 3 },
+      stop: { loopConsecutive: 3 },
       tools: [Add],
     })
     expect(result.stopReason).toBe("loop-detected")

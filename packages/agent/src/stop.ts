@@ -5,7 +5,7 @@ import { addUsage } from "./utils/index.ts"
 
 /** Caps + heuristics that can end a run early. Wired into the
  *  `AgentSession` loop via a single `detect()` call after each step. */
-export interface StopPolicyOptions {
+export interface StopOptions {
   /** Hard ceiling on provider round-trips per `run()`. Default: 50. */
   maxSteps?: number
   /** Cumulative token cap across the whole `run()`
@@ -47,7 +47,7 @@ export interface StopPolicyOptions {
  * events manually with `handle(event)` for custom drivers.
  */
 export class StopPolicy {
-  readonly #opts: StopPolicyOptions
+  readonly #opts: StopOptions
 
   #steps = 0
   #consecutiveErrors = 0
@@ -55,7 +55,7 @@ export class StopPolicy {
   #usage: TokenCount = { input: 0, output: 0 }
   #totalUsage: TokenCount = { input: 0, output: 0 }
 
-  constructor(opts: StopPolicyOptions = {}) {
+  constructor(opts: StopOptions = {}) {
     this.#opts = opts
   }
 

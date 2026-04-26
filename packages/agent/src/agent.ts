@@ -6,8 +6,8 @@ import type { AgentOptions, StepResult } from "./types.ts"
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
-import { StopPolicy } from "./policy.ts"
 import { Session } from "./session.ts"
+import { StopPolicy } from "./stop.ts"
 import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
 
 /**
@@ -56,7 +56,7 @@ export class Agent extends Emitter<AgentEvent> {
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
     for (const m of opts.messages ?? []) this.session.add(m)
     this.tools = opts.tools ?? []
-    this.#policy = new StopPolicy(opts.policy)
+    this.#policy = new StopPolicy(opts.stop)
     this.#policy.attach(this)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
