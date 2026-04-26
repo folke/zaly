@@ -16,8 +16,11 @@
  * Reference: https://sw.kovidgoyal.net/kitty/graphics-protocol/
  */
 
+import type { ImageInfo } from "./source.ts"
+
 import { isRemoteSession } from "./capabilities.ts"
-import { pngBytes, pngPath } from "./source.ts"
+import { imageHash } from "./detect.ts"
+import { imageConvert } from "./source.ts"
 
 const CHUNK_SIZE = 4096
 
@@ -51,23 +54,26 @@ const transmitCache = new Map<string, CacheEntry>()
  * The caller is expected to combine this with `placement(...)` on every
  * render to actually paint the image at the right cell rectangle.
  */
-export async function transmitOnce(src: string): Promise<{ imageId: number; transmit: string }> {
-  let entry = transmitCache.get(src)
+export async function transmitOnce(
+  info: ImageInfo
+): Promise<{ imageId: number; transmit: string } | undefined> {
+  const key = imageHash(info)
+  let entry = transmitCache.get(key)
   if (entry === undefined) {
+    const png = await imageConvert(info, "png")
+    if (!png) return undefined
     const promise = (async () => {
       const id = allocateImageId()
       // Under SSH the terminal can't read files on the local side, so
       // fall back to bytes-in-band (`t=d`). Locally we pass a path and
       // the transmit payload stays under 1KB.
-      if (isRemoteSession()) {
-        const bytes = await pngBytes(src)
-        return { id, seq: transmitBytes(id, bytes) }
+      if (isRemoteSession() || !png.path) {
+        return { id, seq: transmitBytes(id, png.data) }
       }
-      const { path } = await pngPath(src)
-      return { id, seq: transmitFile(id, path) }
+      return { id, seq: transmitFile(id, png.path) }
     })()
     entry = { promise, sent: false }
-    transmitCache.set(src, entry)
+    transmitCache.set(key, entry)
   }
   const prep = await entry.promise
   if (entry.sent) return { imageId: prep.id, transmit: "" }

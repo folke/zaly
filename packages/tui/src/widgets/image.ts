@@ -10,7 +10,7 @@ import {
   resetTransmitCache,
   transmitOnce,
 } from "../image/kitty.ts"
-import { imageBytes, imageMetadata } from "../image/source.ts"
+import { imageInfo } from "../image/source.ts"
 
 export interface ImageState extends BaseState {
   /**
@@ -48,14 +48,20 @@ export class Image extends Node<ImageState> {
     this.on("unmount", () => this.#delete?.())
   }
 
+  get fallback(): string[] {
+    return [this.state.alt ?? `[Image: ${this.state.src}]`]
+  }
+
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const protocol = imageCapabilities().protocol
     if (protocol === undefined) {
       return [this.state.alt ?? `[Image: ${this.state.src}]`]
     }
 
-    const meta = await imageMetadata(this.state.src)
-    const { cols, rows } = dims(this.state, meta, Math.min(ctx.width, 80))
+    const img = await imageInfo(this.state.src)
+    if (!img) return this.fallback
+
+    const { cols, rows } = dims(this.state, img, Math.min(ctx.width, 80))
     const blank = " ".repeat(cols)
 
     // Row 0 carries the protocol escape(s) at the target cursor position.
@@ -64,12 +70,12 @@ export class Image extends Node<ImageState> {
     // `cols` spaces. Rows 1..r-1 are pure spaces that the image overlays.
     let lead: string
     if (protocol === "kitty") {
-      const { imageId, transmit } = await transmitOnce(this.state.src)
-      this.#delete = () => deletePlacement(imageId, this.#placementId)
-      lead = transmit + placement(imageId, this.#placementId, { cols, rows })
+      const t = await transmitOnce(img)
+      if (!t) return this.fallback
+      this.#delete = () => deletePlacement(t.imageId, this.#placementId)
+      lead = t.transmit + placement(t.imageId, this.#placementId, { cols, rows })
     } else {
-      const bytes = await imageBytes(this.state.src)
-      lead = encodeIterm2(Buffer.from(bytes).toString("base64"), {
+      lead = encodeIterm2(Buffer.from(img.data).toString("base64"), {
         height: `${rows}`,
         preserveAspectRatio: true,
         width: `${cols}`,

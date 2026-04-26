@@ -1,34 +1,30 @@
 import type sharpType from "sharp"
+import type { DetectedImage, ImageFormat } from "./detect.ts"
 
-import { createHash } from "node:crypto"
-import { existsSync } from "node:fs"
-import { readFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
 import { imageMeta } from "image-meta"
+import { existsSync } from "node:fs"
+import { writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { imageDetect, imageHash } from "./detect.ts"
 
 /** Source-image metadata used for layout + format dispatch. */
-export interface ImageMetadata {
+export type ImageInfo<T extends ImageFormat = ImageFormat> = DetectedImage<T> & {
   width: number
   height: number
-  /** Format as reported by image-meta: "png", "jpg", "gif", "webp", ... */
-  type: string | undefined
 }
 
-/**
- * A source resolved to an absolute PNG path on the local filesystem —
- * the shape KGP wants for `t=f`. Non-PNG sources get one-shot converted
- * via sharp into a cached temp PNG.
+/** Formats sharp can *write*. PNG/JPEG/WebP/GIF/AVIF/TIFF/JP2 in default
+ *  builds; HEIC output requires a licensed libheif build and is omitted
+ *  on purpose (most sharp installs reject `heif({ compression: 'hevc' })`).
  */
-export interface PngPath {
-  path: string
-  width: number
-  height: number
-}
+const SHARP_WRITERS = {
+  jpeg: (s: sharpType.Sharp) => s.jpeg(),
+  png: (s: sharpType.Sharp) => s.png(),
+  webp: (s: sharpType.Sharp) => s.webp(),
+} as const satisfies Partial<Record<ImageFormat, (s: sharpType.Sharp) => sharpType.Sharp>>
 
-const metaCache = new Map<string, Promise<ImageMetadata>>()
-const pngPathCache = new Map<string, Promise<PngPath>>()
-const bytesCache = new Map<string, Promise<Uint8Array>>()
+type WritableFormat = keyof typeof SHARP_WRITERS
 
 // sharp is only needed when we have to convert a non-PNG to PNG. Both
 // its ESM graph and its native binding are heavy (~50ms cold), so we
@@ -43,96 +39,40 @@ async function getSharp(): Promise<typeof sharpType> {
     throw new Error(
       "@zaly/tui: `sharp` is required to render non-PNG images " +
         "(jpg, webp, gif). Install it with `bun add sharp` (or your " +
-        "package manager's equivalent), or use PNG sources directly.",
+        "package manager's equivalent), or use PNG sources directly."
     )
   }
 }
 
 /** Read dims + format via image-meta. Works on PNG/JPEG/GIF/WebP/AVIF/... */
-export function imageMetadata(src: string): Promise<ImageMetadata> {
-  let hit = metaCache.get(src)
-  if (hit === undefined) {
-    hit = loadMetadata(src)
-    metaCache.set(src, hit)
-  }
-  return hit
-}
-
-async function loadMetadata(src: string): Promise<ImageMetadata> {
-  // image-meta only looks at file headers — reading a small prefix is
-  // enough for every format we care about, and keeps us from slurping a
-  // 5MB wallpaper just to learn it's 2912×1632.
-  const bytes = await readHeader(src)
-  const meta = imageMeta(bytes)
+export async function imageInfo(src: string): Promise<ImageInfo | undefined> {
+  const img = await imageDetect(src)
+  if (!img) return undefined
+  const meta = imageMeta(img.data)
   if (meta.width === undefined || meta.height === undefined) {
     throw new Error(`Could not read image dimensions: ${src}`)
   }
-  return { height: meta.height, type: meta.type, width: meta.width }
+  return { ...img, height: meta.height, width: meta.width }
 }
 
-async function readHeader(src: string): Promise<Uint8Array> {
-  // 64KB covers PNG (24 bytes), JPEG (varies but fits), WebP (~4KB), AVIF
-  // (metadata can be farther in but 64KB is safe for typical producers).
-  // Falls back to the full file on tiny images.
-  const buf = await readFile(src)
-  return buf.length <= 65_536 ? buf : buf.subarray(0, 65_536)
-}
+export async function imageConvert<T extends WritableFormat>(
+  img: ImageInfo,
+  format: T | [T, ...T[]]
+): Promise<undefined | ImageInfo<T>> {
+  const formats = Array.isArray(format) ? format : [format]
 
-/**
- * Resolve `src` to an absolute PNG path for KGP. PNG sources pass
- * through; others get converted once per process to a temp file and
- * cached by src path. The temp filename includes `tty-graphics-protocol`
- * per the KGP cleanup convention.
- */
-export function pngPath(src: string): Promise<PngPath> {
-  let hit = pngPathCache.get(src)
-  if (hit === undefined) {
-    hit = resolvePng(src)
-    pngPathCache.set(src, hit)
-  }
-  return hit
-}
+  if (formats.includes(img.format as T)) return img as ImageInfo<T>
 
-async function resolvePng(src: string): Promise<PngPath> {
-  const meta = await imageMetadata(src)
-  const abs = resolve(src)
-  if (meta.type === "png") return { height: meta.height, path: abs, width: meta.width }
+  const hash = imageHash(img)
+  const target = formats[0]
+  const tempPath = join(tmpdir(), `zaly-image-${hash}.${target}`)
 
-  const key = createHash("sha256").update(abs).digest("hex").slice(0, 16)
-  const tempPath = join(tmpdir(), `zaly-tty-graphics-protocol-${key}.png`)
-  if (!existsSync(tempPath)) {
-    const sharp = await getSharp()
-    await sharp(src).png().toFile(tempPath)
-  }
-  return { height: meta.height, path: tempPath, width: meta.width }
-}
+  if (existsSync(tempPath)) return (await imageInfo(tempPath)) as ImageInfo<T> | undefined
 
-/**
- * Read the raw source bytes. For iTerm2 which accepts PNG/JPEG/GIF/WebP
- * inline with no server-side conversion — we just base64 these and ship.
- */
-export function imageBytes(src: string): Promise<Uint8Array> {
-  let hit = bytesCache.get(src)
-  if (hit === undefined) {
-    hit = readFile(src)
-    bytesCache.set(src, hit)
-  }
-  return hit
-}
+  const sharp = await getSharp()
+  const pipeline = SHARP_WRITERS[target](sharp(img.data))
+  const { data, info } = await pipeline.toBuffer({ resolveWithObject: true })
 
-/**
- * Read PNG bytes for KGP bytes-in-band (`t=d`) — used when the client and
- * terminal don't share a filesystem (SSH). Walks through `pngPath()` so
- * non-PNG sources get converted on the way.
- */
-export async function pngBytes(src: string): Promise<Uint8Array> {
-  const { path } = await pngPath(src)
-  return readFile(path)
-}
-
-/** Drop all cached metadata + resolved paths + bytes. Mostly for tests. */
-export function resetImageCache(): void {
-  metaCache.clear()
-  pngPathCache.clear()
-  bytesCache.clear()
+  await writeFile(tempPath, data)
+  return { data, format: target, height: info.height, path: tempPath, width: info.width }
 }
