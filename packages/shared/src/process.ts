@@ -104,6 +104,10 @@ export class Spawn {
   readonly child: ChildProcess
   readonly #stdoutChunks: Buffer[] = []
   readonly #stderrChunks: Buffer[] = []
+  /** stdout + stderr chunks in arrival order — for terminal-shaped
+   *  output where the consumer wants the experience of running the
+   *  command at a shell prompt rather than the streams split. */
+  readonly #combinedChunks: Buffer[] = []
   readonly #subscribers = new Set<Subscriber>()
 
   #buffered = 0
@@ -150,6 +154,7 @@ export class Spawn {
 
     this.child.stdout?.on("data", (data: Buffer) => {
       this.#stdoutChunks.push(data)
+      this.#combinedChunks.push(data)
       this.#emit({ data, type: "stdout" })
       if (opts.maxBuffer !== undefined) {
         this.#buffered += data.length
@@ -158,6 +163,7 @@ export class Spawn {
     })
     this.child.stderr?.on("data", (data: Buffer) => {
       this.#stderrChunks.push(data)
+      this.#combinedChunks.push(data)
       this.#emit({ data, type: "stderr" })
       if (opts.maxBuffer !== undefined) {
         this.#buffered += data.length
@@ -211,6 +217,23 @@ export class Spawn {
   }
   get done(): boolean {
     return this.#exited
+  }
+
+  /** Snapshot of stdout accumulated so far. Always returns the full
+   *  buffer (cumulative since spawn) — for incremental "since last
+   *  call" semantics, callers track their own offset and slice. */
+  get stdout(): Buffer {
+    return Buffer.concat(this.#stdoutChunks)
+  }
+  /** Snapshot of stderr accumulated so far. See `stdout`. */
+  get stderr(): Buffer {
+    return Buffer.concat(this.#stderrChunks)
+  }
+  /** Snapshot of stdout+stderr in arrival order — what the user would
+   *  see running the command at a shell prompt. Loses stream-of-origin
+   *  info; for that, use `stdout`/`stderr` separately. */
+  get combined(): Buffer {
+    return Buffer.concat(this.#combinedChunks)
   }
 
   // ── Result (buffered) ──────────────────────────────────────────────
