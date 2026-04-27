@@ -8,6 +8,56 @@ import type {
   ToolCallPart,
 } from "./types.ts"
 
+/** Conversational input — what's being conversed about. Stable across
+ *  the run (mutated turn-by-turn as the conversation grows); separate
+ *  from the per-call `StreamOptions` knobs that may vary per request. */
+export interface Context {
+  /** Durable system prompt — the agent's identity / behavior steering.
+   *  Provider adapters route this to the appropriate slot (OpenAI:
+   *  prepended `system` message; Anthropic: top-level `system` field). */
+  prompt?: string[]
+  /** The conversation so far. Last message is what the model responds to. */
+  messages: Message[]
+  /** Tools available for the model to call this turn. */
+  tools?: Tool[]
+}
+
+/** Per-call stream knobs. Distinct from `Context` because these typically
+ *  *don't* change across turns of the same run (one model id, one
+ *  reasoning effort, one tool choice strategy) — but they're still
+ *  per-call rather than baked into the model instance. */
+export interface StreamOptions {
+  temperature?: number
+  maxTokens?: number
+  stopSequences?: string[]
+  toolChoice?: ToolChoice
+  reasoning?: ReasoningOptions
+  responseFormat?: ResponseFormat
+  /** Grammar-enforce tool argument schemas where the provider supports
+   *  it (OpenAI `strict: true`). Default off: MCP-supplied schemas
+   *  often use features strict mode rejects, and our validation
+   *  feedback loop recovers from wrong-shape args anyway. */
+  strictTools?: boolean
+  /** Abort signal — cancels the in-flight stream. */
+  signal?: AbortSignal
+  /** Power-user escape hatch for provider-specific flags. Adapters
+   *  read keys they own; unknown keys are ignored. */
+  providerOptions?: RequestProviderOptions
+}
+
+/** What a `Provider` adapter receives. Internal — assembled by
+ *  `Model.stream` from a `Context`, `StreamOptions`, and the model's
+ *  routing metadata (id + quirks). Callers never construct this
+ *  directly; they go through `Model.stream(ctx, opts)`. */
+export interface ProviderRequest {
+  /** Model id local to the adapter (no `provider/` prefix). */
+  model: string
+  ctx: Context
+  opts: StreamOptions
+  /** Adapter-dispatch quirks resolved from the catalog or per-model. */
+  quirks?: Quirks
+}
+
 /**
  * Contract every provider adapter implements. Intentionally single-
  * method: `stream` is the one primitive, `complete` is a helper that
@@ -22,59 +72,7 @@ import type {
  */
 export interface Provider<T extends string = string> {
   id: T
-  stream(req: GenerateRequest): AsyncIterable<StreamEvent>
-}
-
-/**
- * Input to `stream` / `complete`. `model` is a `provider/id` URI — the
- * registry splits on the first `/` and passes the remainder through to
- * the adapter in `model` unchanged (adapters never see their own prefix).
- *
- * Field layering:
- *   - Top-level fields are user-facing request config — the kind of
- *     knob a user would set via a slash command (`/effort`,
- *     `/temperature`, `/tool-choice`). Provider-agnostic;
- *     adapters translate to each provider's native wire shape.
- *   - `providerOptions` is the escape hatch for power-user flags that
- *     only make sense on one provider.
- *   - Per-message `cache` + `providerOptions` are hints placed by the
- *     harness (cache cut-points, Anthropic thinking passthroughs).
- */
-export interface GenerateRequest {
-  model: string
-  messages: Message[]
-  tools?: Tool[]
-  /** Durable system prompt. Adapters route this to the provider's
-   *  dedicated slot (OpenAI: prepended `role: "system"` message;
-   *  Anthropic: top-level `system` field; Gemini: `systemInstruction`).
-   *  Joined with blank-line separators where the wire format expects a
-   *  single string. Distinct from `role: "system"` messages in
-   *  `messages`, which are mid-conversation steering and follow each
-   *  provider's interleaved-system policy. */
-  prompt?: string[]
-
-  // ── User-facing request config ────────────────────────────────────
-  temperature?: number
-  maxTokens?: number
-  stopSequences?: string[]
-  toolChoice?: ToolChoice
-  reasoning?: ReasoningOptions
-  responseFormat?: ResponseFormat
-  /** Grammar-enforce tool argument schemas where the provider supports
-   *  it (OpenAI `strict: true`). Default off: MCP-supplied schemas
-   *  often use features strict mode rejects, and our validation
-   *  feedback loop recovers from wrong-shape args anyway. */
-  strictTools?: boolean
-
-  // ── Control ───────────────────────────────────────────────────────
-  signal?: AbortSignal
-
-  // ── Adapter dispatch (populated by `loadModel` from the model's
-  //    catalog quirks; callers normally don't set this directly) ────
-  quirks?: Quirks
-
-  // ── Power-user escape hatch ───────────────────────────────────────
-  providerOptions?: RequestProviderOptions
+  stream(req: ProviderRequest): AsyncIterable<StreamEvent>
 }
 
 /** Tool-use control. `{ name }` forces the named tool; `"required"`

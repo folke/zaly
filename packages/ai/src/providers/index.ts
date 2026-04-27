@@ -15,6 +15,7 @@ export const providers = {
 } as const satisfies Record<string, ProviderLoader>
 
 export type BuiltinProvider = keyof typeof providers
+export type AnyProvider = BuiltinProvider | (string & {})
 
 /** Runtime-registered adapters. Parallel with `customModels` /
  *  `addModels`: lets third-party packages register their own adapter
@@ -36,10 +37,7 @@ const customAdapters = new Map<string, ProviderLoader>()
  *  }))
  *  ```
  */
-export function registerAdapter<T extends string>(
-  name: T,
-  loader: ProviderLoader<T>
-): void {
+export function registerProvider<T extends string>(name: T, loader: ProviderLoader<T>): void {
   customAdapters.set(name, loader as ProviderLoader)
 }
 

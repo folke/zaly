@@ -34,12 +34,11 @@ console.log()
 let mode: "reasoning" | "text" | undefined
 const { finishReason, message, usage } = await collect(
   model.stream({
-    maxTokens: 1024,
     messages: [
       { content: "You are a concise assistant.", role: "system" },
       { content: "Write a two-sentence haiku about the terminal.", role: "user" },
-    ],
-  }),
+    ]}, {
+    maxTokens: 1024}),
   {
     onEvent: (e) => {
       if (e.type === "reasoning-delta") {

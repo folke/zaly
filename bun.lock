@@ -44,6 +44,7 @@
       "name": "@zaly/ai",
       "version": "0.0.0",
       "dependencies": {
+        "@zaly/shared": "workspace:*",
         "jsonrepair": "^3.14.0",
       },
       "peerDependencies": {

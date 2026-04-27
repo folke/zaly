@@ -1,25 +1,50 @@
 import type { AuthProvider } from "./auth.ts"
-import type { GenerateRequest, Provider, StreamEvent, TokenCount, Usage } from "./provider.ts"
-import type { BuiltinProvider } from "./providers/index.ts"
+import type {
+  Context,
+  Provider,
+  StreamEvent,
+  StreamOptions,
+  TokenCount,
+  Usage,
+} from "./provider.ts"
+import type { AnyProvider } from "./providers/index.ts"
 import type { Cost, ModelOptions, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
 import { loadProvider } from "./providers/index.ts"
 
-/** Shape of a loaded model. `stream` is the underlying `Provider`'s
- *  stream with `model` pre-filled and quirks auto-attached, so callers
- *  don't repeat themselves every turn.
+/** A loaded model, ready to stream. Wraps the underlying `Provider`
+ *  with the model id and quirks pre-attached, so callers just supply
+ *  `Context` (prompt + messages + tools) and per-call `StreamOptions`.
  *
  *  `provider` is exposed for power-user reuse — a long-running app
  *  with many models on the same endpoint can share the same adapter
  *  instance (and therefore the same fetch / retry / connection pool)
  *  by constructing it once and passing it via `options.fetch`. */
-export interface Model<T extends BuiltinProvider = BuiltinProvider> {
-  id: string
-  options: ModelOptions
-  provider: Provider<T>
-  stream(req: Omit<GenerateRequest, "model">): AsyncIterable<StreamEvent>
+export class Model<T extends AnyProvider = string> {
+  readonly id: string
+  readonly options: ModelOptions
+  readonly provider: Provider<T>
+
+  constructor(args: { id: string; options: ModelOptions; provider: Provider<T> }) {
+    this.id = args.id
+    this.options = args.options
+    this.provider = args.provider
+  }
+
+  /** Stream a turn against this model. Returns the underlying
+   *  provider stream; if the model has catalog cost data, `finish`
+   *  events get a populated `usage.cost` breakdown. */
+  stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
+    const inner = this.provider.stream({
+      ctx,
+      model: this.options.id,
+      opts,
+      quirks: this.options.quirks,
+    })
+    return this.options.cost ? augmentUsage(inner, this.options.cost) : inner
+  }
 }
 
 /**
@@ -54,19 +79,7 @@ export async function loadModel(
       ? source
       : `${options.providerInfo?.id ?? options.provider}/${options.id}`
 
-  return {
-    id,
-    options,
-    provider,
-    stream(req) {
-      const inner = provider.stream({
-        ...req,
-        model: options.id,
-        quirks: req.quirks ?? options.quirks,
-      })
-      return options.cost ? augmentUsage(inner, options.cost) : inner
-    },
-  }
+  return new Model({ id, options, provider })
 }
 
 /** Wrap a provider's stream so the `finish` event's `usage` carries
@@ -125,12 +138,9 @@ async function resolve(id: string): Promise<ModelOptions> {
  *  `ProviderOptions` extension (timeout, proxy, etc.) flows through
  *  automatically. `apiKey` and `headers` from the caller's options
  *  win over auth-resolved values. */
-async function buildAdapter(
-  options: ModelOptions,
-  auth: AuthProvider
-): Promise<Provider<BuiltinProvider>> {
+async function buildAdapter(options: ModelOptions, auth: AuthProvider): Promise<Provider> {
   const creds = await auth.getAuth(options)
-  return await loadProvider(options.provider as BuiltinProvider, {
+  return await loadProvider(options.provider, {
     ...options,
     apiKey: options.apiKey ?? creds?.apiKey,
     headers: { ...creds?.headers, ...options.headers },

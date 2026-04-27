@@ -1,15 +1,16 @@
-import { describe, expect, test } from "vitest"
 import type { Provider, StreamEvent } from "../src/provider.ts"
-import { collect } from "../src/provider.ts"
+
+import { describe, expect, test } from "vitest"
 import { loadModel } from "../src/model.ts"
 import { addModels } from "../src/models.ts"
-import { registerAdapter } from "../src/providers/index.ts"
+import { collect } from "../src/provider.ts"
+import { registerProvider } from "../src/providers/index.ts"
 
 // ── Local mock provider (registered once for the whole file) ───────────
 
 let scriptedEvents: StreamEvent[] = []
 
-registerAdapter(
+registerProvider(
   "mock-cost-test",
   (): Promise<Provider<"mock-cost-test">> =>
     Promise.resolve({
@@ -17,7 +18,7 @@ registerAdapter(
       async *stream() {
         for (const ev of scriptedEvents) yield ev
       },
-    }),
+    })
 )
 
 addModels({
@@ -65,9 +66,7 @@ describe("Model.stream — cost augmentation", () => {
   })
 
   test("models without a price table get usage but no cost", async () => {
-    scriptedEvents = [
-      { finishReason: "stop", type: "finish", usage: { input: 100, output: 10 } },
-    ]
+    scriptedEvents = [{ finishReason: "stop", type: "finish", usage: { input: 100, output: 10 } }]
     const model = await loadModel("mock-cost-test/freebie")
     const { usage } = await collect(model.stream({ messages: [{ content: "hi", role: "user" }] }))
     expect(usage.input).toBe(100)

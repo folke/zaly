@@ -1,11 +1,12 @@
 import type {
   FinishReason,
-  GenerateRequest,
   Provider,
+  ProviderRequest,
   ReasoningOptions,
   ResponseFormat,
   StreamEvent,
   TokenCount,
+  ToolChoice,
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
@@ -39,7 +40,7 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
 
   return {
     id: "openai",
-    async *stream(req: GenerateRequest): AsyncIterable<StreamEvent> {
+    async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = buildRequest(req)
       const response = await doFetch(`${baseUrl}/chat/completions`, {
         body: JSON.stringify(body),
@@ -49,13 +50,13 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
           ...config.headers,
         },
         method: "POST",
-        signal: req.signal,
+        signal: req.opts.signal,
       })
       if (!response.ok || response.body === null) {
         const text = await response.text().catch(() => "")
         throw new Error(`OpenAI ${response.status}: ${text || response.statusText}`)
       }
-      yield* parseStream(response.body, req.quirks, req.signal)
+      yield* parseStream(response.body, req.quirks, req.opts.signal)
     },
   }
 }
@@ -140,19 +141,20 @@ type OpenAIContentPart =
   | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
   | { type: "input_audio"; input_audio: { data: string; format: "wav" | "mp3" } }
 
-function buildRequest(req: GenerateRequest): OpenAIChatRequest {
+function buildRequest(req: ProviderRequest): OpenAIChatRequest {
   const quirks = req.quirks ?? {}
-  const specific = (req.providerOptions?.openai ?? {}) as OpenAIRequestOptions
+  const { ctx, opts } = req
+  const specific = (opts.providerOptions?.openai ?? {}) as OpenAIRequestOptions
   // flatMap because a single source message can produce multiple wire
   // messages — specifically, tool results with image/audio attachments
   // emit a tool message + a synthetic user message carrying the
   // attachments (Chat Completions tool messages are string-only).
-  const messages = req.messages.flatMap(toOpenAIMessages)
+  const messages = ctx.messages.flatMap(toOpenAIMessages)
   // Durable system prompt → first `role: "system"` message. Joined with
   // blank lines so multiple snippets read as separate paragraphs without
   // bleeding into each other.
-  if (req.prompt && req.prompt.length > 0) {
-    messages.unshift({ content: req.prompt.join("\n\n"), role: "system" })
+  if (ctx.prompt && ctx.prompt.length > 0) {
+    messages.unshift({ content: ctx.prompt.join("\n\n"), role: "system" })
   }
   const out: OpenAIChatRequest = {
     messages,
@@ -162,26 +164,26 @@ function buildRequest(req: GenerateRequest): OpenAIChatRequest {
   }
 
   // Temperature: drop silently when quirks flag the model as rejecting it.
-  if (req.temperature !== undefined && quirks.temperatureSupported !== false) {
-    out.temperature = req.temperature
+  if (opts.temperature !== undefined && quirks.temperatureSupported !== false) {
+    out.temperature = opts.temperature
   }
-  if (req.maxTokens !== undefined) {
+  if (opts.maxTokens !== undefined) {
     const field = quirks.maxTokensField ?? "max_tokens"
-    out[field] = req.maxTokens
+    out[field] = opts.maxTokens
   }
-  if (req.stopSequences !== undefined) out.stop = req.stopSequences
+  if (opts.stopSequences !== undefined) out.stop = opts.stopSequences
 
-  if (req.tools !== undefined && req.tools.length > 0) {
+  if (ctx.tools !== undefined && ctx.tools.length > 0) {
     // `strictTools` at request level wins over quirks-level default.
-    const strict = (req.strictTools ?? quirks.strictTools) === true
-    out.tools = req.tools.map((t) => toOpenAITool(t, strict))
-    if (req.toolChoice !== undefined) out.tool_choice = toOpenAIToolChoice(req.toolChoice)
+    const strict = (opts.strictTools ?? quirks.strictTools) === true
+    out.tools = ctx.tools.map((t) => toOpenAITool(t, strict))
+    if (opts.toolChoice !== undefined) out.tool_choice = toOpenAIToolChoice(opts.toolChoice)
   }
 
-  writeThinking(out, req.reasoning?.effort, quirks)
+  writeThinking(out, opts.reasoning?.effort, quirks)
 
-  if (req.responseFormat !== undefined) {
-    out.response_format = toOpenAIResponseFormat(req.responseFormat)
+  if (opts.responseFormat !== undefined) {
+    out.response_format = toOpenAIResponseFormat(opts.responseFormat)
   }
 
   if (specific.parallelToolCalls !== undefined) out.parallel_tool_calls = specific.parallelToolCalls
@@ -270,7 +272,7 @@ function clampEffort(
 }
 
 function toOpenAIToolChoice(
-  choice: NonNullable<GenerateRequest["toolChoice"]>
+  choice: NonNullable<ToolChoice>
 ): NonNullable<OpenAIChatRequest["tool_choice"]> {
   if (typeof choice === "string") return choice
   return { function: { name: choice.name }, type: "function" }

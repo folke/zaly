@@ -12,6 +12,8 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
+import type { AnyProvider } from "./providers/index.ts"
+
 /** Plain text in user, assistant, or tool-result content. */
 export interface TextPart {
   type: "text"
@@ -101,7 +103,7 @@ export interface ReasoningPart {
  *  power-user knobs that only make sense on one provider
  *  (`logit_bias`, `service_tier`, OpenRouter routing preferences,
  *  Anthropic metadata, etc.) — for cross-cutting concerns (reasoning,
- *  tool choice, response format) use the top-level `GenerateRequest`
+ *  tool choice, response format) use the top-level `StreamOptions`
  *  fields instead. */
 export interface RequestProviderOptions {
   openai?: Record<string, unknown>
@@ -427,7 +429,7 @@ export interface Quirks {
 export interface ModelOptions extends ProviderOptions, Omit<ModelInfo, "provider"> {
   /** Provider name — e.g. `"openai"`, `"openrouter"`. Resolves against
    *  the runtime catalog to pick the adapter family. */
-  provider: string
+  provider: AnyProvider
   /** Per-model wire override (renamed from `ModelInfo.provider`). When
    *  set, fields on this object take precedence over the provider's
    *  defaults — used by a minority of catalog entries to route a

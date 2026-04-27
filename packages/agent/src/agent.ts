@@ -172,13 +172,17 @@ export class Agent extends Emitter<AgentEvent> {
 
   async #collect() {
     this.#abortController = new AbortController()
-    const stream = this.#opts.model.stream({
-      ...this.#opts.request,
-      messages: [...this.session.messages],
-      prompt: this.#prompt,
-      signal: this.#abortController.signal,
-      tools: this.#tools,
-    })
+    const stream = this.#opts.model.stream(
+      {
+        messages: [...this.session.messages],
+        prompt: this.#prompt,
+        tools: this.#tools,
+      },
+      {
+        ...this.#opts.request,
+        signal: this.#abortController.signal,
+      }
+    )
     return await collect(stream, {
       onEvent: (event) => {
         this.emit({ event, type: "stream-event" })

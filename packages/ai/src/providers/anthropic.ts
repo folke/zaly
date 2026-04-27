@@ -1,10 +1,11 @@
 import type {
   FinishReason,
-  GenerateRequest,
   Provider,
+  ProviderRequest,
   ReasoningOptions,
   StreamEvent,
   TokenCount,
+  ToolChoice,
 } from "../provider.ts"
 import type {
   Attachment,
@@ -45,7 +46,7 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
 
   return {
     id: "anthropic",
-    async *stream(req: GenerateRequest): AsyncIterable<StreamEvent> {
+    async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = buildRequest(req, caching)
       const response = await doFetch(`${baseUrl}/messages`, {
         body: JSON.stringify(body),
@@ -56,13 +57,13 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
           ...config.headers,
         },
         method: "POST",
-        signal: req.signal,
+        signal: req.opts.signal,
       })
       if (!response.ok || response.body === null) {
         const text = await response.text().catch(() => "")
         throw new Error(`Anthropic ${response.status}: ${text || response.statusText}`)
       }
-      yield* parseStream(response.body, req.signal)
+      yield* parseStream(response.body, req.opts.signal)
     },
   }
 }
@@ -155,28 +156,29 @@ interface AnthropicRequestOptions {
   cacheTools?: boolean
 }
 
-function buildRequest(req: GenerateRequest, caching: boolean): AnthropicRequest {
-  const specific = (req.providerOptions?.anthropic ?? {}) as AnthropicRequestOptions
+function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest {
+  const { ctx, opts } = req
+  const specific = (opts.providerOptions?.anthropic ?? {}) as AnthropicRequestOptions
   // Anthropic requires max_tokens. Fall back to a generous default if
   // the caller didn't set one — `Model.stream` fills this from
   // `limit.output` for catalog-routed calls.
-  const maxTokens = req.maxTokens ?? 4096
+  const maxTokens = opts.maxTokens ?? 4096
 
   // Pull out role:"system" messages and merge with `prompt[]` into the
   // top-level `system` slot. Both are durable system context on the
   // wire; Anthropic doesn't support mid-conversation system messages.
   const systemBlocks: AnthropicTextBlock[] = []
   const conversational: Message[] = []
-  for (const msg of req.messages) {
+  for (const msg of ctx.messages) {
     if (msg.role === "system") {
       systemBlocks.push(asTextBlock(msg.content, caching ? msg.cache : undefined))
     } else {
       conversational.push(msg)
     }
   }
-  if (req.prompt && req.prompt.length > 0) {
+  if (ctx.prompt && ctx.prompt.length > 0) {
     // Durable prompt prepends — same ordering rule as the OpenAI adapter.
-    systemBlocks.unshift(...req.prompt.map((text) => ({ text, type: "text" as const })))
+    systemBlocks.unshift(...ctx.prompt.map((text) => ({ text, type: "text" as const })))
   }
 
   const out: AnthropicRequest = {
@@ -194,20 +196,20 @@ function buildRequest(req: GenerateRequest, caching: boolean): AnthropicRequest 
         : systemBlocks
   }
 
-  if (req.temperature !== undefined) out.temperature = req.temperature
-  if (req.stopSequences !== undefined) out.stop_sequences = req.stopSequences
+  if (opts.temperature !== undefined) out.temperature = opts.temperature
+  if (opts.stopSequences !== undefined) out.stop_sequences = opts.stopSequences
 
-  if (req.tools !== undefined && req.tools.length > 0) {
-    out.tools = req.tools.map((t) => toAnthropicTool(t))
+  if (ctx.tools !== undefined && ctx.tools.length > 0) {
+    out.tools = ctx.tools.map((t) => toAnthropicTool(t))
     if (specific.cacheTools === true && caching) {
       // Marker on the last tool covers all tools above it in the cache
       // prefix, per Anthropic's caching rules.
       out.tools[out.tools.length - 1].cache_control = { type: "ephemeral" }
     }
-    if (req.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(req.toolChoice)
+    if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  const thinking = thinkingBudget(req.reasoning, maxTokens)
+  const thinking = thinkingBudget(opts.reasoning, maxTokens)
   if (thinking !== undefined) out.thinking = thinking
 
   if (specific.userId !== undefined) out.metadata = { user_id: specific.userId }
@@ -229,7 +231,7 @@ function toAnthropicTool(tool: Tool): AnthropicTool {
 }
 
 function toAnthropicToolChoice(
-  choice: NonNullable<GenerateRequest["toolChoice"]>
+  choice: NonNullable<ToolChoice>
 ): NonNullable<AnthropicRequest["tool_choice"]> {
   if (choice === "auto") return { type: "auto" }
   if (choice === "required") return { type: "any" }

@@ -1,9 +1,9 @@
 import type {
   CollectOptions,
   FinishReason,
-  GenerateRequest,
   Message,
   Model,
+  StreamOptions,
   TokenCount,
   Tool,
 } from "@zaly/ai"
@@ -41,7 +41,7 @@ export interface AgentOptions extends CollectOptions {
    *  `reasoning`, `responseFormat`, …). The agent owns `model`,
    *  `messages`, `prompt`, and `tools` — those have dedicated
    *  top-level fields here. */
-  request?: Omit<GenerateRequest, "model" | "messages" | "prompt" | "tools">
+  request?: StreamOptions
   /** Pre-built `Session` to use. Useful for resuming a persisted
    *  conversation or for sharing one Session across multiple Agents
    *  (e.g. swapping models). When omitted, a fresh in-memory Session

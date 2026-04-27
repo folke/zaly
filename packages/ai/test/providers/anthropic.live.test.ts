@@ -24,13 +24,12 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
     const model = await loadModel(MODEL)
     const { finishReason, message, usage } = await collect(
       model.stream({
-        maxTokens: 20,
         messages: [
           { content: "Reply with just the word 'pong'.", role: "system" },
           { content: "ping", role: "user" },
-        ],
-        temperature: 0,
-      })
+        ]}, {
+        maxTokens: 20,
+        temperature: 0})
     )
     expect(finishReason).toBe("stop")
     expect(usage.input).toBeGreaterThan(0)
@@ -44,18 +43,17 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
     const events: StreamEvent[] = []
     await collect(
       model.stream({
-        // Long enough to span multiple SSE chunks. Anthropic tends to
-        // emit one chunk per ~80–120 chars, so a two-sentence answer
-        // gives us multiple deltas without being expensive.
-        maxTokens: 80,
         messages: [
           {
             content: "Write two short sentences about why bytes are useful. No preamble.",
             role: "user",
           },
-        ],
-        temperature: 0,
-      }),
+        ]}, {
+        // Long enough to span multiple SSE chunks. Anthropic tends to
+        // emit one chunk per ~80–120 chars, so a two-sentence answer
+        // gives us multiple deltas without being expensive.
+        maxTokens: 80,
+        temperature: 0}),
       { onEvent: (e) => void events.push(e) }
     )
     const deltas = events.filter((e) => e.type === "text-delta")
@@ -78,12 +76,11 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
     }
     const { finishReason, message } = await collect(
       model.stream({
-        maxTokens: 100,
         messages: [{ content: "Use the get_weather tool for Tokyo.", role: "user" }],
+        tools: [tool]}, {
+        maxTokens: 100,
         temperature: 0,
-        toolChoice: { name: "get_weather" },
-        tools: [tool],
-      })
+        toolChoice: { name: "get_weather" }})
     )
     const calls = asArray(message.content).filter((p) => p.type === "tool-call")
     expect(calls).toHaveLength(1)
@@ -97,11 +94,10 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
     const model = await loadModel(MODEL)
     const controller = new AbortController()
     const stream = model.stream({
+      messages: [{ content: "Write a 300-word essay about terminals.", role: "user" }]}, {
       maxTokens: 500,
-      messages: [{ content: "Write a 300-word essay about terminals.", role: "user" }],
       signal: controller.signal,
-      temperature: 0,
-    })
+      temperature: 0})
     setTimeout(() => controller.abort(), 150)
     await expect(
       (async () => {
@@ -117,10 +113,9 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
     const snapshots: number[] = []
     await collect(
       model.stream({
+        messages: [{ content: "Write one short sentence about bytes.", role: "user" }]}, {
         maxTokens: 30,
-        messages: [{ content: "Write one short sentence about bytes.", role: "user" }],
-        temperature: 0,
-      }),
+        temperature: 0}),
       {
         onUpdate: (msg) => {
           snapshots.push(extractText(msg.content).length)
@@ -148,10 +143,10 @@ describe.skipIf(!hasKey)("anthropic: live", () => {
       { content: "ping", role: "user" as const },
     ]
 
-    const first = await collect(model.stream({ maxTokens: 10, messages, temperature: 0 }))
+    const first = await collect(model.stream({ messages}, { maxTokens: 10, temperature: 0 }))
     // Cache writes can take a moment to become readable across the fleet.
     await new Promise((r) => setTimeout(r, 1000))
-    const second = await collect(model.stream({ maxTokens: 10, messages, temperature: 0 }))
+    const second = await collect(model.stream({ messages}, { maxTokens: 10, temperature: 0 }))
 
     // Wire integration is what we own: the cache_control hint must round-trip
     // and produce non-zero cache_creation OR cache_read on each call. Whether
