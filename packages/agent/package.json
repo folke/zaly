@@ -30,6 +30,7 @@
     "@zaly/ai": "workspace:*",
     "@zaly/shared": "workspace:*",
     "ignore": "^7.0.5",
+    "jsonpath-plus": "^10.3.0",
     "pathe": "^2.0.3",
     "shell-quote": "^1.8.3"
   },
