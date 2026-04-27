@@ -1,5 +1,4 @@
-import { safeStat } from "@zaly/shared"
-import { execSync, spawn } from "node:child_process"
+import { isSSH, safeStat, spawn, spawnText, spawnWithInput, which } from "@zaly/shared"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { platform } from "node:process"
@@ -20,12 +19,9 @@ import { join } from "pathe"
  *   5. WSL             → `win32yank.exe`
  *   6. Windows         → PowerShell `Get-Clipboard`
  *
- * The chosen provider is cached per process.
- *
- * This file is the only place in the package that spawns external
- * processes; everything else is pure. If a probe fails or no tool is
- * available, the public API returns `undefined` and callers should
- * treat it as "clipboard not reachable" rather than an error.
+ * The chosen provider is cached per process. Spawn primitives live in
+ * `@zaly/shared/process` — this file is just glue plus the per-platform
+ * AppleScript/PowerShell snippets.
  */
 
 // ---- types -----------------------------------------------------------
@@ -77,14 +73,6 @@ interface Provider {
   writeText?: (text: string) => Promise<boolean>
 }
 
-/** `true` when this process looks like it's running inside an SSH
- *  session. Native clipboard tools on the remote host would write to
- *  the *remote* clipboard — useless — so we skip them and always emit
- *  OSC 52 instead, which routes through the user's local terminal. */
-function isSSH(): boolean {
-  return Boolean(process.env.SSH_TTY ?? process.env.SSH_CONNECTION ?? process.env.SSH_CLIENT)
-}
-
 // ---- public API ------------------------------------------------------
 
 let cached: Provider | undefined
@@ -121,12 +109,6 @@ async function readClipboard(kind?: ClipboardKind): Promise<ClipboardContent | u
   const p = getClipboard()
   if (!p) return undefined
   try {
-    // Pass the hint through to the backend so it can take a direct
-    // fetch path instead of enumerating types. Note: `kind: "text"`
-    // still returns whatever's at `text/plain` even when an image or
-    // file list is also on the clipboard — file managers / browsers
-    // usually provide a text fallback (URL, file path) that's often
-    // what the caller wants.
     return await p.read(kind)
   } catch {
     return undefined
@@ -152,9 +134,9 @@ function resetClipboardCache(): void {
  *   - **Neither** → OSC 52 anyway, fire-and-forget.
  *
  * Resolves to `true` on best-effort delivery; `false` only when we had
- * nothing to try. Note that OSC 52 writes are silent by design — the
- * terminal never confirms receipt — so `true` means "we emitted" not
- * "the user's clipboard definitely has it".
+ * nothing to try. OSC 52 writes are silent by design — the terminal
+ * never confirms receipt — so `true` means "we emitted" not "the
+ * user's clipboard definitely has it".
  */
 async function writeClipboardText(text: string): Promise<boolean> {
   if (isSSH()) {
@@ -184,9 +166,6 @@ async function writeClipboardText(text: string): Promise<boolean> {
  * await clipboard.write("hello")
  * clipboard.reset()
  * ```
- *
- * Equivalent to the individual `readClipboard` / `writeClipboardText` /
- * `resetClipboardCache` exports — use whichever form reads best.
  */
 export const clipboard = {
   read: readClipboard,
@@ -205,38 +184,25 @@ function writeOsc52(text: string): void {
 // ---- detection -------------------------------------------------------
 
 function detect(): Provider | undefined {
-  // macOS: `pbpaste` is always present on macOS. No env check needed.
-  if (platform === "darwin" && has("pbpaste")) return macos()
+  if (platform === "darwin" && which("pbpaste")) return macos()
 
   // Wayland before X11 — XWayland means both vars can be set on a
   // Wayland session, and wl-paste is the right tool there.
-  if (process.env.WAYLAND_DISPLAY && has("wl-paste")) return wayland()
+  if (process.env.WAYLAND_DISPLAY && which("wl-paste")) return wayland()
 
   // X11: prefer xsel (nicer selection handling, per Neovim), then xclip.
   if (process.env.DISPLAY) {
-    if (has("xsel")) return xsel()
-    if (has("xclip")) return xclip()
+    if (which("xsel")) return xsel()
+    if (which("xclip")) return xclip()
   }
 
   // WSL exposes Windows' clipboard via win32yank if the user installed it.
-  if (has("win32yank.exe")) return wsl()
+  if (which("win32yank.exe")) return wsl()
 
   // Plain Windows: PowerShell is always present on supported versions.
   if (platform === "win32") return windows()
 
   return undefined
-}
-
-function has(cmd: string): boolean {
-  // `which` on unix, `where` on windows — cheapest portable check.
-  const probe = platform === "win32" ? `where ${cmd}` : `command -v ${cmd}`
-  try {
-    // `execSync` already runs via the shell; no extra option needed.
-    execSync(probe, { stdio: "ignore" })
-    return true
-  } catch {
-    return false
-  }
 }
 
 // ---- backends --------------------------------------------------------
@@ -258,13 +224,13 @@ function macos(): Provider {
       if (files) return files
       return macosText()
     },
-    writeText: (text) => runWithInput("pbcopy", [], text),
+    writeText: (text) => spawnWithInput("pbcopy", [], text),
   }
 }
 
 async function macosText(): Promise<ClipboardText | undefined> {
-  const text = await run("pbpaste", [])
-  return text && text !== "" ? { kind: "text", text } : undefined
+  const text = await spawnText("pbpaste", [])
+  return text === undefined ? undefined : { kind: "text", text }
 }
 
 async function macosImage(): Promise<ClipboardImage | undefined> {
@@ -277,8 +243,8 @@ async function macosImage(): Promise<ClipboardImage | undefined> {
       return ""
     end try
   `
-  const out = await run("osascript", ["-e", script])
-  if (!out || out.trim() === "") return undefined
+  const out = await spawnText("osascript", ["-e", script])
+  if (!out) return undefined
   return writeTempPng(Buffer.from(out.trim(), "base64"))
 }
 
@@ -302,7 +268,7 @@ async function macosFiles(): Promise<ClipboardFiles | undefined> {
       end try
     end try
   `
-  const out = await run("osascript", ["-e", script])
+  const out = await spawnText("osascript", ["-e", script])
   if (!out) return undefined
   const paths = out
     .split(/\r?\n/)
@@ -315,14 +281,11 @@ function wayland(): Provider {
   return {
     id: "wl-paste",
     read: async (kind) => {
-      // Fast path when the caller already knows what it wants — skip
-      // `--list-types` enumeration and fetch directly. Empty stdout
-      // from wl-paste on a missing type surfaces as `undefined`.
       if (kind === "image") return waylandImage()
       if (kind === "files") return waylandFiles()
       if (kind === "text") return waylandText()
       // Richest-first: one `--list-types` call decides everything.
-      const types = await run("wl-paste", ["--list-types"])
+      const types = await spawnText("wl-paste", ["--list-types"])
       if (!types) return undefined
       if (/\bimage\/png\b/.test(types)) {
         const img = await waylandImage()
@@ -334,30 +297,30 @@ function wayland(): Provider {
       }
       return waylandText()
     },
-    writeText: (text) => runWithInput("wl-copy", ["--type", "text/plain"], text),
+    writeText: (text) => spawnWithInput("wl-copy", ["--type", "text/plain"], text),
   }
 }
 
 async function waylandImage(): Promise<ClipboardImage | undefined> {
-  const bytes = await runBinary("wl-paste", ["--type", "image/png"])
-  return bytes && bytes.length > 0 ? writeTempPng(bytes) : undefined
+  const r = await spawn("wl-paste", ["--type", "image/png"])
+  return r.code === 0 && r.stdout.length > 0 ? writeTempPng(r.stdout) : undefined
 }
 
 async function waylandFiles(): Promise<ClipboardFiles | undefined> {
-  const paths = parseUriList(await run("wl-paste", ["--type", "text/uri-list"]))
+  const paths = parseUriList(await spawnText("wl-paste", ["--type", "text/uri-list"]))
   return paths.length > 0 ? { kind: "files", paths } : undefined
 }
 
 async function waylandText(): Promise<ClipboardText | undefined> {
-  const text = await run("wl-paste", ["--no-newline"])
-  return text && text !== "" ? { kind: "text", text } : undefined
+  const text = await spawnText("wl-paste", ["--no-newline"])
+  return text === undefined ? undefined : { kind: "text", text }
 }
 
 function xsel(): Provider {
   // xsel doesn't support MIME-typed targets (no image or file-list
   // reads). When xclip is also installed, delegate non-text reads to
   // it and keep xsel for text only.
-  const xclipFallback = has("xclip")
+  const xclipFallback = which("xclip")
   return {
     id: xclipFallback ? "xsel+xclip" : "xsel",
     read: async (kind) => {
@@ -370,7 +333,7 @@ function xsel(): Provider {
       }
       return xselText()
     },
-    writeText: (text) => runWithInput("xsel", ["--nodetach", "-i", "-b"], text),
+    writeText: (text) => spawnWithInput("xsel", ["--nodetach", "-i", "-b"], text),
   }
 }
 
@@ -383,13 +346,13 @@ function xclip(): Provider {
       if (kind === "text") return xclipText()
       return xclipRead()
     },
-    writeText: (text) => runWithInput("xclip", ["-quiet", "-i", "-selection", "clipboard"], text),
+    writeText: (text) => spawnWithInput("xclip", ["-quiet", "-i", "-selection", "clipboard"], text),
   }
 }
 
 async function xclipRead(): Promise<ClipboardContent | undefined> {
   // One TARGETS call covers the whole decision tree.
-  const targets = await run("xclip", ["-selection", "clipboard", "-t", "TARGETS", "-o"])
+  const targets = await spawnText("xclip", ["-selection", "clipboard", "-t", "TARGETS", "-o"])
   if (!targets) return undefined
   if (/\bimage\/png\b/.test(targets)) {
     const img = await xclipImage()
@@ -403,25 +366,25 @@ async function xclipRead(): Promise<ClipboardContent | undefined> {
 }
 
 async function xclipImage(): Promise<ClipboardImage | undefined> {
-  const bytes = await runBinary("xclip", ["-selection", "clipboard", "-t", "image/png", "-o"])
-  return bytes && bytes.length > 0 ? writeTempPng(bytes) : undefined
+  const r = await spawn("xclip", ["-selection", "clipboard", "-t", "image/png", "-o"])
+  return r.code === 0 && r.stdout.length > 0 ? writeTempPng(r.stdout) : undefined
 }
 
 async function xclipFiles(): Promise<ClipboardFiles | undefined> {
   const paths = parseUriList(
-    await run("xclip", ["-selection", "clipboard", "-t", "text/uri-list", "-o"])
+    await spawnText("xclip", ["-selection", "clipboard", "-t", "text/uri-list", "-o"])
   )
   return paths.length > 0 ? { kind: "files", paths } : undefined
 }
 
 async function xclipText(): Promise<ClipboardText | undefined> {
-  const text = await run("xclip", ["-o", "-selection", "clipboard"])
-  return text && text !== "" ? { kind: "text", text } : undefined
+  const text = await spawnText("xclip", ["-o", "-selection", "clipboard"])
+  return text === undefined ? undefined : { kind: "text", text }
 }
 
 async function xselText(): Promise<ClipboardText | undefined> {
-  const text = await run("xsel", ["-o", "-b"])
-  return text && text !== "" ? { kind: "text", text } : undefined
+  const text = await spawnText("xsel", ["-o", "-b"])
+  return text === undefined ? undefined : { kind: "text", text }
 }
 
 function wsl(): Provider {
@@ -432,10 +395,10 @@ function wsl(): Provider {
     id: "win32yank",
     read: async (kind) => {
       if (kind === "image" || kind === "files") return undefined
-      const text = await run("win32yank.exe", ["-o", "--lf"])
-      return text && text !== "" ? { kind: "text", text } : undefined
+      const text = await spawnText("win32yank.exe", ["-o", "--lf"])
+      return text === undefined ? undefined : { kind: "text", text }
     },
-    writeText: (text) => runWithInput("win32yank.exe", ["-i", "--crlf"], text),
+    writeText: (text) => spawnWithInput("win32yank.exe", ["-i", "--crlf"], text),
   }
 }
 
@@ -452,13 +415,13 @@ function windows(): Provider {
       if (files) return files
       return windowsText()
     },
-    writeText: (text) => runWithInput("clip", [], text),
+    writeText: (text) => spawnWithInput("clip", [], text),
   }
 }
 
 async function windowsText(): Promise<ClipboardText | undefined> {
-  const text = await run("powershell", ["-NoProfile", "-NoLogo", "-Command", "Get-Clipboard"])
-  return text && text !== "" ? { kind: "text", text } : undefined
+  const text = await spawnText("powershell", ["-NoProfile", "-NoLogo", "-Command", "Get-Clipboard"])
+  return text === undefined ? undefined : { kind: "text", text }
 }
 
 async function windowsImage(): Promise<ClipboardImage | undefined> {
@@ -470,13 +433,13 @@ async function windowsImage(): Promise<ClipboardImage | undefined> {
     "$img = [System.Windows.Forms.Clipboard]::GetImage()",
     `if ($img) { $img.Save('${tmp.replace(/\\/g, String.raw`\\`)}') }`,
   ].join("; ")
-  await run("powershell", ["-NoProfile", "-NoLogo", "-Command", script])
+  await spawnText("powershell", ["-NoProfile", "-NoLogo", "-Command", script])
   if ((safeStat(tmp)?.size ?? 0) > 0) return { kind: "image", path: tmp, type: "image/png" }
   return undefined
 }
 
 async function windowsFiles(): Promise<ClipboardFiles | undefined> {
-  const out = await run("powershell", [
+  const out = await spawnText("powershell", [
     "-NoProfile",
     "-NoLogo",
     "-Command",
@@ -490,58 +453,7 @@ async function windowsFiles(): Promise<ClipboardFiles | undefined> {
   return paths.length > 0 ? { kind: "files", paths } : undefined
 }
 
-// ---- spawn helpers ---------------------------------------------------
-
-interface SpawnResult {
-  code: number
-  stdout: Buffer
-  stderr: Buffer
-}
-
-function spawnAsync(cmd: string, args: readonly string[]): Promise<SpawnResult> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] })
-    const stdout: Buffer[] = []
-    const stderr: Buffer[] = []
-    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk))
-    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk))
-    child.once("error", reject)
-    child.once("close", (code) => {
-      resolve({
-        code: code ?? 0,
-        stderr: Buffer.concat(stderr),
-        stdout: Buffer.concat(stdout),
-      })
-    })
-  })
-}
-
-async function run(cmd: string, args: readonly string[]): Promise<string | undefined> {
-  const { code, stdout } = await spawnAsync(cmd, args)
-  if (code !== 0) return undefined
-  const text = stdout.toString("utf8")
-  return text === "" ? undefined : text
-}
-
-async function runBinary(cmd: string, args: readonly string[]): Promise<Buffer | undefined> {
-  const { code, stdout } = await spawnAsync(cmd, args)
-  if (code !== 0) return undefined
-  return stdout.length === 0 ? undefined : stdout
-}
-
-/** Spawn a command and pipe `input` to its stdin. Used by all the
- *  clipboard-write backends, which uniformly take the text to copy
- *  via stdin. Resolves to `true` on a clean exit, `false` otherwise. */
-function runWithInput(cmd: string, args: readonly string[], input: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: ["pipe", "ignore", "ignore"] })
-    child.once("error", () => resolve(false))
-    child.once("close", (code) => resolve(code === 0))
-    child.stdin.end(input, "utf8")
-  })
-}
-
-// ---- temp files ------------------------------------------------------
+// ---- temp files + URI list parsing ----------------------------------
 
 function writeTempPng(bytes: Buffer): ClipboardImage {
   const path = writeTempPath("zaly-clip-", ".png")
