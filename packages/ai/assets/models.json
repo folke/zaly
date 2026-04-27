@@ -14310,6 +14310,42 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/openrouter/pareto-code": {
+      "id": "openrouter/pareto-code",
+      "name": "Pareto Code Router",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 200000,
+        "output": 200000
+      },
+      "maxTokens": 200000,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/openrouter/elephant-alpha": {
       "id": "openrouter/elephant-alpha",
       "name": "Elephant (free)",
@@ -20248,10 +20284,10 @@
       },
       "limit": {
         "context": 1050000,
-        "input": 920000,
-        "output": 130000
+        "input": 922000,
+        "output": 128000
       },
-      "maxTokens": 130000,
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://openrouter.ai/api/v1",
       "headers": {
@@ -20445,6 +20481,110 @@
         "output": 8192
       },
       "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/xiaomi/mimo-v2.5-pro": {
+      "id": "xiaomi/mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/xiaomi/mimo-v2.5": {
+      "id": "xiaomi/mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08,
+        "context_over_200k": {
+          "input": 0.8,
+          "output": 4,
+          "cache_read": 0.16
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://openrouter.ai/api/v1",
       "headers": {
@@ -21478,7 +21618,7 @@
         }
       },
       "limit": {
-        "context": 262144,
+        "context": 1000000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -21587,7 +21727,7 @@
       "cost": {
         "input": 0.14,
         "output": 0.28,
-        "cache_read": 0.028
+        "cache_read": 0.0028
       },
       "limit": {
         "context": 1000000,
@@ -21662,7 +21802,7 @@
       "cost": {
         "input": 1.74,
         "output": 3.48,
-        "cache_read": 0.145
+        "cache_read": 0.0145
       },
       "limit": {
         "context": 1000000,
@@ -24158,6 +24298,39 @@
       "provider": "openai",
       "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
     },
+    "alibaba-cn/qwen3.6-max-preview": {
+      "id": "qwen3.6-max-preview",
+      "name": "Qwen3.6 Max Preview",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.32,
+        "output": 7.9,
+        "cache_read": 0.132
+      },
+      "limit": {
+        "context": 245800,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    },
     "alibaba-cn/qwen2-5-omni-7b": {
       "id": "qwen2-5-omni-7b",
       "name": "Qwen2.5-Omni 7B",
@@ -24749,6 +24922,80 @@
         "output": 65536
       },
       "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    },
+    "alibaba-cn/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    },
+    "alibaba-cn/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
     },
@@ -28055,6 +28302,43 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://router.huggingface.co/v1"
+    },
+    "huggingface/deepseek-ai/DeepSeek-V4-Pro": {
+      "id": "deepseek-ai/DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
       "provider": "openai",
       "baseUrl": "https://router.huggingface.co/v1"
     },
@@ -32415,6 +32699,44 @@
       "provider": "openai",
       "baseUrl": "https://api.novita.ai/openai"
     },
+    "novita-ai/qwen/qwen3.6-27b": {
+      "id": "qwen/qwen3.6-27b",
+      "name": "Qwen3.6-27B",
+      "family": "qwen3.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.6,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.novita.ai/openai"
+    },
     "novita-ai/qwen/qwen3.5-27b": {
       "id": "qwen/qwen3.5-27b",
       "name": "Qwen3.5-27B",
@@ -33283,6 +33605,80 @@
         "output": 262144
       },
       "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.novita.ai/openai"
+    },
+    "novita-ai/deepseek/deepseek-v4-flash": {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
+      "provider": "openai",
+      "baseUrl": "https://api.novita.ai/openai"
+    },
+    "novita-ai/deepseek/deepseek-v4-pro": {
+      "id": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
       "provider": "openai",
       "baseUrl": "https://api.novita.ai/openai"
     },
@@ -48605,45 +49001,6 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
-    "opencode/claude-3-5-haiku": {
-      "id": "claude-3-5-haiku",
-      "name": "Claude Haiku 3.5",
-      "family": "claude-haiku",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-07-31",
-      "release_date": "2024-10-22",
-      "last_updated": "2024-10-22",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.8,
-        "output": 4,
-        "cache_read": 0.08,
-        "cache_write": 1
-      },
-      "limit": {
-        "context": 200000,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "anthropic",
-      "providerOverride": {
-        "npm": "@ai-sdk/anthropic"
-      },
-      "baseUrl": "https://opencode.ai/zen/v1"
-    },
     "opencode/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -49452,10 +49809,10 @@
       },
       "limit": {
         "context": 1050000,
-        "input": 920000,
-        "output": 130000
+        "input": 922000,
+        "output": 128000
       },
-      "maxTokens": 130000,
+      "maxTokens": 128000,
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
@@ -57752,6 +58109,32 @@
       "provider": "openai",
       "baseUrl": "https://ollama.com/v1"
     },
+    "ollama-cloud/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "deepseek-v4-flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1048576,
+        "output": 1048576
+      },
+      "maxTokens": 1048576,
+      "provider": "openai",
+      "baseUrl": "https://ollama.com/v1"
+    },
     "ollama-cloud/glm-4.6": {
       "id": "glm-4.6",
       "name": "glm-4.6",
@@ -60357,6 +60740,39 @@
       "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.moonshot.cn/v1"
+    },
+    "abliteration-ai/abliterated-model": {
+      "id": "abliterated-model",
+      "name": "Abliterated Model",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": false,
+      "temperature": true,
+      "release_date": "2026-01-06",
+      "last_updated": "2026-01-06",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 3,
+        "output": 3
+      },
+      "limit": {
+        "context": 150000,
+        "input": 150000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.abliteration.ai/v1"
     },
     "wafer.ai/Qwen3.5-397B-A17B": {
       "id": "Qwen3.5-397B-A17B",
@@ -66006,8 +66422,8 @@
       },
       "limit": {
         "context": 1050000,
-        "input": 920000,
-        "output": 130000
+        "input": 922000,
+        "output": 128000
       },
       "experimental": {
         "modes": {
@@ -66025,7 +66441,7 @@
           }
         }
       },
-      "maxTokens": 130000,
+      "maxTokens": 128000,
       "provider": "openai",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
@@ -87621,6 +88037,51 @@
       "provider": "openai",
       "baseUrl": "https://api.hpc-ai.com/inference/v1"
     },
+    "xiaomi/mimo-v2.5-pro": {
+      "id": "mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.xiaomimimo.com/v1"
+    },
     "xiaomi/mimo-v2-omni": {
       "id": "mimo-v2-omni",
       "name": "MiMo-V2-Omni",
@@ -87658,6 +88119,47 @@
         "output": 128000
       },
       "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.xiaomimimo.com/v1"
+    },
+    "xiaomi/mimo-v2.5": {
+      "id": "mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08,
+        "context_over_200k": {
+          "input": 0.8,
+          "output": 4,
+          "cache_read": 0.16
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://api.xiaomimimo.com/v1"
     },
@@ -89690,6 +90192,16 @@
       "api": "https://api.moonshot.cn/v1",
       "name": "Moonshot AI (China)",
       "doc": "https://platform.moonshot.cn/docs/api/chat"
+    },
+    "abliteration-ai": {
+      "id": "abliteration-ai",
+      "env": [
+        "ABLIT_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.abliteration.ai/v1",
+      "name": "abliteration.ai",
+      "doc": "https://docs.abliteration.ai/models"
     },
     "wafer.ai": {
       "id": "wafer.ai",
