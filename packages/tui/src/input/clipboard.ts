@@ -2,8 +2,8 @@ import { safeStat } from "@zaly/shared"
 import { execSync, spawn } from "node:child_process"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
 import { platform } from "node:process"
+import { join } from "pathe"
 
 /**
  * Read text or image content from the system clipboard.

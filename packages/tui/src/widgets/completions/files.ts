@@ -3,7 +3,7 @@ import type { CompletionSource, Matcher } from "../autocomplete.ts"
 import type { MenuItem } from "../menu.ts"
 
 import { readdir } from "node:fs/promises"
-import { resolve } from "node:path"
+import { resolve } from "pathe"
 import { fuzzyScore } from "./fuzzy.ts"
 
 export interface FilesSourceOptions {

@@ -4,7 +4,7 @@ import type { ImageInfo } from "./info.ts"
 
 import { writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { join } from "pathe"
 import { safeStat } from "../utils.ts"
 import { imageHash } from "./detect.ts"
 import { imageInfo } from "./info.ts"

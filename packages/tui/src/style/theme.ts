@@ -5,7 +5,7 @@ import type { ShikiTheme } from "./shiki.ts"
 
 import { safeStat } from "@zaly/shared"
 import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
+import { resolve } from "pathe"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
 import { themes } from "../themes/index.ts"
 

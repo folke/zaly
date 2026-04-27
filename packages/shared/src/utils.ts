@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto"
-import { statSync, readFileSync } from "node:fs"
+import { readFileSync, statSync } from "node:fs"
 import { readFile } from "node:fs/promises"
+import { homedir } from "node:os"
+import { dirname, join, relative, resolve } from "pathe"
+import { reverseResolveAlias } from "pathe/utils"
 
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R
 
@@ -37,4 +40,33 @@ export function safeStringify(value: unknown): string {
   } catch {
     return String(value)
   }
+}
+
+export function findUp(root: string, name: string, stop?: string) {
+  let current = resolve(root)
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
+  while (true) {
+    const check = join(current, name)
+    if (safeStat(check)?.isFile()) return check
+    if (stop && safeStat(join(current, stop))) return // reached stop directory without finding the file
+    const next = dirname(current)
+    if (next === current) break // reached filesystem root
+    current = next
+  }
+}
+
+// Similar to path.resolve but also expands ~ to the user home directory
+export function normPath(...paths: string[]) {
+  return resolve(...paths.map((p) => p.replace(/^~(?=\/|\\|$)/, homedir())))
+}
+
+export function gitRoot(path: string) {
+  return findUp(path, ".git")
+}
+
+export function prettyPath(path: string) {
+  let rel = relative(process.cwd(), path)
+  rel = rel === "" ? "." : rel
+  rel = rel.startsWith("..") ? (reverseResolveAlias(path, { "~": homedir() })[0] ?? path) : rel
+  return rel
 }

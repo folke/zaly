@@ -38,7 +38,7 @@
     "no-magic-numbers": "off", // 278
     "no-restricted-imports": [
       "error",
-      { "paths": ["slice-ansi", "string-width", "wrap-ansi"] },
+      { "paths": ["slice-ansi", "string-width", "wrap-ansi", "node:path", "path"] },
       {
         "patterns": [
           { "regex": "marked\\.[tj]s" },
@@ -87,24 +87,14 @@
       "rules": {
         "eslint/no-console": "off",
         "eslint/sort-keys": "off",
-        "eslint/no-await-in-loop": "off"
+        "eslint/no-await-in-loop": "off",
+        "no-restricted-imports": "off"
       }
     },
     {
       "files": ["*.vue"],
       "rules": {
         "unicorn/filename-case": "off"
-      }
-    },
-    {
-      // TODO: move this in the cli package once we have one
-      "files": ["clisrc/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          { "paths": ["node:path", "path", "std-env", "#ansi", "#md"] }
-        ],
-        "eslint/no-console": "off"
       }
     }
   ]

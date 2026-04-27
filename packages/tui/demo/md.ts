@@ -3,9 +3,7 @@ import type { RenderMarkdown } from "../src/markdown/index.ts"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { box, createCtx, markdown } from "../src/index.ts"
-// oxlint-disable-next-line no-restricted-imports
 import { renderMarkdown as bunRenderer } from "../src/runtime/md.bun.ts"
-// oxlint-disable-next-line no-restricted-imports
 import { renderMarkdown as markedRenderer } from "../src/runtime/md.node.ts"
 
 const here = dirname(fileURLToPath(import.meta.url))

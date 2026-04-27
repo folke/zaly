@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises"
-import { resolve } from "node:path"
+import { resolve } from "pathe"
 import { hash } from "../utils.ts"
 
 export type ImageFormat = (typeof formats)[number]

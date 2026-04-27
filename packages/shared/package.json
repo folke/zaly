@@ -27,7 +27,8 @@
     "test": "bun test && vitest -r ../../ --project @zaly/shared run"
   },
   "dependencies": {
-    "image-meta": "^0.2.2"
+    "image-meta": "^0.2.2",
+    "pathe": "^2.0.3"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"
