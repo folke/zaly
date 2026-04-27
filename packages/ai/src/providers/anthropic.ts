@@ -12,11 +12,14 @@ import type {
   CacheHint,
   ImagePart,
   Message,
+  MetaPart,
   PdfPart,
   ProviderOptions,
   TextPart,
   Tool,
 } from "../types.ts"
+
+import { flattenMeta } from "../tools.ts"
 
 
 /**
@@ -340,15 +343,17 @@ function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
 
 /** Map a tool result's `content` to the shape Anthropic's
  *  `tool_result.content` accepts: a string (passes through) or an
- *  array of text + image blocks. PDFs and audio/video aren't allowed
- *  inside tool_result on Anthropic's wire — degrade to text
- *  placeholders so the model still has *some* signal. */
+ *  array of text + image blocks. `MetaPart`s flatten to `<tag>JSON</tag>`
+ *  text via `flattenMeta`. PDFs and audio/video aren't allowed inside
+ *  tool_result on Anthropic's wire — degrade to text placeholders so
+ *  the model still has *some* signal. */
 function toAnthropicToolResultContent(
-  content: string | (TextPart | Attachment)[]
+  content: string | (TextPart | MetaPart | Attachment)[]
 ): AnthropicToolResultBlock["content"] {
-  if (typeof content === "string") return content
+  const flattened = flattenMeta(content)
+  if (typeof flattened === "string") return flattened
   const out: (AnthropicTextBlock | AnthropicImageBlock)[] = []
-  for (const p of content) {
+  for (const p of flattened) {
     if (p.type === "text") out.push({ text: p.text, type: "text" })
     else if (p.type === "image") out.push(toAnthropicImageBlock(p))
     else out.push({ text: `[${p.type} attachment omitted; not allowed in tool_result]`, type: "text" })
@@ -377,7 +382,11 @@ function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): Anthro
         content = [{ text: msg.content, type: "text" }]
       } else {
         content = []
-        for (const p of msg.content) {
+        // Flatten MetaPart → TextPart at the boundary so the loop below
+        // only deals with text + attachments.
+        const flat = flattenMeta(msg.content)
+        const parts = typeof flat === "string" ? [{ text: flat, type: "text" as const }] : flat
+        for (const p of parts) {
           if (p.type === "text") content.push({ text: p.text, type: "text" })
           else if (p.type === "image") content.push(toAnthropicImageBlock(p))
           else if (p.type === "pdf") content.push(toAnthropicDocumentBlock(p))

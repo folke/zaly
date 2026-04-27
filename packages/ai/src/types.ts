@@ -25,6 +25,30 @@ export interface TextPart {
   format?: string
 }
 
+/** Structured metadata embedded in tool-result content (and potentially
+ *  other places). Survives end-to-end as a structured part so the TUI
+ *  can render it richly; collapses to a `<tag>JSON</tag>` `TextPart` at
+ *  the provider boundary via `toTextPart` so the model sees a clean
+ *  XML-tagged block.
+ *
+ *  Use cases:
+ *    - Truncation summaries: `{ tag: "truncation", data: { total: 1200, fullPath: "..." } }`
+ *    - Tool status: `{ tag: "shell", data: { status: "running", id: "sh_abc" } }`
+ *    - Mid-conversation system notes: `{ tag: "system", data: "user reset the file" }`
+ *    - Generic tool ack: `{ data: { ok: true, bytes: 234 } }` → wraps in `<meta>`
+ *
+ *  `data` is `unknown` so callers can pass either a string (used
+ *  verbatim) or any object (JSON-stringified at flatten-time). */
+export interface MetaPart {
+  type: "meta"
+  data: unknown
+  /** XML wrapper tag. Defaults to `"meta"`. Use a semantic tag when the
+   *  meta has clear intent the model should recognize (`"truncation"`,
+   *  `"shell"`, `"system"`). Stay consistent across tools for the same
+   *  concept. */
+  tag?: string
+}
+
 type FilePart<T extends string, MT extends string = string> = {
   type: T
   mime: MT
@@ -81,7 +105,7 @@ export interface ToolResultPart {
   type: "tool-result"
   id: string
   name: string
-  content: string | (TextPart | Attachment)[]
+  content: string | (TextPart | MetaPart | Attachment)[]
   isError?: boolean
   /** Set when `isError: true` and a structured `ToolError` was caught.
    *  Invisible to providers — pure metadata for downstream consumers. */
@@ -141,7 +165,7 @@ type M =
     }
   | {
       role: "user"
-      content: string | (TextPart | Attachment)[]
+      content: string | (TextPart | MetaPart | Attachment)[]
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }
@@ -176,6 +200,34 @@ export type Message<T extends M["role"] = M["role"]> = Extract<M, { role: T }>
  *  The `_types` phantom is there so callers can narrow `result` by name
  *  when they own both the definition and the consumer. It carries no
  *  runtime value and is erased at compile time. */
+/** Per-call context handed to tools at dispatch time. Most tools ignore
+ *  it; rich tools (bash, future browser, anything that wants permission
+ *  checks or session-scoped state) read from it.
+ *
+ *  Extensible via TypeScript declaration merging — each module that
+ *  needs to expose a context capability declares its own slice:
+ *
+ *  ```ts
+ *  // in @zaly/agent/src/types.ts
+ *  declare module "@zaly/ai" {
+ *    interface ToolContext {
+ *      perms?: PermissionManager
+ *      spawns?: SpawnRegistry
+ *      files?: FileTracker
+ *    }
+ *  }
+ *  ```
+ *
+ *  After the augmenting module is imported anywhere in the project,
+ *  tools see fully-typed access to those keys without casts. */
+export interface ToolContext {
+  /** Session cwd — anchor for path resolution and bash-spawn cwd. */
+  cwd?: string
+  /** Agent-level abort. Tools that spawn long-running work should pass
+   *  this through to `Spawn`/`fetch` so cancellation propagates. */
+  signal?: AbortSignal
+}
+
 export interface Tool<Params = unknown, Result = unknown> {
   name: string
   desc?: string
@@ -183,7 +235,7 @@ export interface Tool<Params = unknown, Result = unknown> {
   result?: unknown
   validateParams(params: unknown): Params
   validateResult?(result: unknown): Awaited<Result>
-  call(params: Params): Promise<Result>
+  call(params: Params, ctx?: ToolContext): Promise<Result>
   _types?: { input: Params; output: Result }
 }
 

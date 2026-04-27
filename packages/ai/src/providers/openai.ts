@@ -10,7 +10,7 @@ import type {
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
-import { hasAttachments, stringifyToolResult } from "../tools.ts"
+import { flattenMeta, hasAttachments, stringifyToolResult } from "../tools.ts"
 
 /**
  * OpenAI Chat Completions adapter.
@@ -325,7 +325,27 @@ function toOpenAIAudioPart(part: AudioPart): OpenAIContentPart {
 }
 
 function toOpenAIMessages(msg: Message): OpenAIMessage[] {
-  return [toOpenAIMessage(msg), ...attachmentSpilloverFor(msg)]
+  // `role: "tool"` is special — Chat Completions requires one wire
+  // message per `tool_call_id`, but the kernel's `Message<"tool">` packs
+  // all the results from one parallel-tool batch into a single message
+  // (one entry per result). Expand 1:N here. Other roles are 1:1 plus
+  // optional attachment spillover.
+  if (msg.role === "tool") {
+    return [...msg.content.map(toolPartToWireMessage), ...attachmentSpilloverFor(msg)]
+  }
+  return [toOpenAIMessage(msg)]
+}
+
+function toolPartToWireMessage(part: Message<"tool">["content"][number]): OpenAIMessage {
+  const body = stringifyToolResult(part.content)
+  const marker = hasAttachments(part.content)
+    ? "\n[attachments delivered as the next user message]"
+    : ""
+  return {
+    content: (part.isError === true ? `ERROR: ${body}` : body) + marker,
+    role: "tool",
+    tool_call_id: part.id,
+  }
 }
 
 /** When a `role: "tool"` message has rich content with non-text parts,
@@ -345,7 +365,11 @@ function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
       else if (att.type === "audio") userParts.push(toOpenAIAudioPart(att))
       // PDF / video aren't accepted on Chat Completions even via user
       // messages — drop with a text marker.
-      else userParts.push({ text: `[${att.type} attachment dropped; not accepted by this endpoint]`, type: "text" })
+      else
+        userParts.push({
+          text: `[${att.type} attachment dropped; not accepted by this endpoint]`,
+          type: "text",
+        })
     }
     if (userParts.length > 0) out.push({ content: userParts, role: "user" })
   }
@@ -359,12 +383,16 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
     }
     case "user": {
       if (typeof msg.content === "string") return { content: msg.content, role: "user" }
+      // Flatten MetaPart → TextPart at the boundary so the loop below
+      // only sees text + attachments.
+      const flat = flattenMeta(msg.content)
+      if (typeof flat === "string") return { content: flat, role: "user" }
       // (Text | Attachment)[] → content parts. Image attachments serialize
       // to `image_url`, with base64 sources packed as a `data:` URL. PDF /
       // audio / video attachments aren't supported on Chat Completions —
       // throw a clear error rather than silently dropping them.
       const parts: OpenAIContentPart[] = []
-      for (const p of msg.content) {
+      for (const p of flat) {
         if (p.type === "text") parts.push({ text: p.text, type: "text" })
         else if (p.type === "image") parts.push(toOpenAIImagePart(p))
         else if (p.type === "audio") parts.push(toOpenAIAudioPart(p))
@@ -405,26 +433,10 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
       return out
     }
     case "tool": {
-      // One `role: "tool"` message per result. Callers that pack
-      // multiple results into one Message get split here.
-      if (msg.content.length === 0) {
-        throw new Error("tool message requires at least one tool-result part")
-      }
-      // Adapter emits the first — the kernel is expected to emit one
-      // `role: "tool"` Message per tool result upstream. This keeps
-      // the 1:1 invariant with OpenAI's shape without silent merges.
-      // Non-text parts get spilled into a synthetic user message by
-      // `attachmentSpilloverFor`; here we just stringify the body.
-      const part = msg.content[0]
-      const body = stringifyToolResult(part.content)
-      const marker = hasAttachments(part.content)
-        ? "\n[attachments delivered as the next user message]"
-        : ""
-      return {
-        content: (part.isError === true ? `ERROR: ${body}` : body) + marker,
-        role: "tool",
-        tool_call_id: part.id,
-      }
+      // Tool messages are expanded 1:N upstream in `toOpenAIMessages`.
+      // This branch should never be reached at runtime — guard for
+      // misuse if someone calls `toOpenAIMessage` directly.
+      throw new Error("tool messages must be routed through toOpenAIMessages")
     }
     default: {
       // Exhaustiveness guard — `msg` is `never` here if every role
@@ -568,7 +580,11 @@ function* handleChunk(
     if (reasoningDelta !== undefined && reasoningDelta !== "") {
       yield { delta: reasoningDelta, type: "reasoning-delta" }
     }
-    if (delta?.content !== undefined && delta.content !== "") {
+    // Strict type-guard: some OpenAI-compat proxies (notably Gemini's)
+    // send `delta.content` as `null` or `0` during encrypted-thinking
+    // phases. Forwarding those would concatenate "null"/"0" into the
+    // text part. Drop anything that isn't a non-empty string.
+    if (typeof delta?.content === "string" && delta.content !== "") {
       yield { delta: delta.content, type: "text-delta" }
     }
     if (delta?.tool_calls !== undefined) {
@@ -651,14 +667,26 @@ function mapFinishReason(reason: string): FinishReason {
 
 /** Read the streaming reasoning delta from whichever field this
  *  provider uses. When `reasoningField` is set in quirks, that field
- *  wins; otherwise we try the three known fields in order. */
+ *  wins; otherwise we try the three known fields in order.
+ *
+ *  Coerced to `string | undefined` because providers don't all honour
+ *  the documented shape — Gemini and some proxies surface
+ *  `reasoning_details` as a structured object/array instead of a
+ *  string. Returning a non-string would propagate into a
+ *  `reasoning-delta` event and crash any consumer that writes it to a
+ *  stream (e.g. `process.stdout.write`). Drop silently rather than
+ *  guess at extraction; provider-specific quirks can supply a richer
+ *  reader if needed. */
 function readReasoningField(
   delta: OpenAIDelta | undefined,
   field: Quirks["reasoningField"]
 ): string | undefined {
   if (delta === undefined) return undefined
-  if (field !== undefined) return delta[field]
-  return delta.reasoning ?? delta.reasoning_content ?? delta.reasoning_details
+  const raw =
+    field !== undefined
+      ? delta[field]
+      : (delta.reasoning ?? delta.reasoning_content ?? delta.reasoning_details)
+  return typeof raw === "string" ? raw : undefined
 }
 
 function abortError(): Error {
