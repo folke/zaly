@@ -16,7 +16,7 @@ export function mockModel(scripts: StreamEvent[][]): Model {
     async *stream() {
       for (const ev of scripts[turn++]) yield ev
     },
-  } as Model
+  } as unknown as Model
 }
 
 /** Build a `Model` whose `stream` blocks until `release(events)` is
@@ -41,7 +41,7 @@ export function pendingModel(): {
         const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
         for (const ev of events) yield ev
       },
-    } as Model,
+    } as unknown as Model,
     release(events: StreamEvent[]): void {
       const next = waiting.shift()
       if (!next) throw new Error("pendingModel.release: no pending stream")
@@ -62,7 +62,7 @@ export function throwingModel(message: string): Model {
     async *stream() {
       throw new Error(message)
     },
-  } as Model
+  } as unknown as Model
 }
 
 /** One-shot wrapper around `Agent`. Convenient for tests, evals, and

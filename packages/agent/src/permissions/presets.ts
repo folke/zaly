@@ -1,5 +1,5 @@
 import type { PermissionOptions } from "./policy.ts"
-import type { Rule, Verdict } from "./rules.ts"
+import type { Rule, Verdict } from "./bash/rules.ts"
 
 import { allowWithin, combineFileRules, denySensitive } from "./files.ts"
 

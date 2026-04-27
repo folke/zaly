@@ -1,10 +1,10 @@
 import type { Rule } from "../src/permissions/index.ts"
 
 import { describe, expect, test } from "vitest"
-import { checkBash } from "../src/permissions/check.ts"
+import { checkBash } from "../src/permissions/bash/check.ts"
+import { parseBash } from "../src/permissions/bash/parser.ts"
+import { matchRule } from "../src/permissions/bash/rules.ts"
 import { definePermissions } from "../src/permissions/index.ts"
-import { parseBash } from "../src/permissions/parser.ts"
-import { matchRule } from "../src/permissions/rules.ts"
 
 describe("parseBash — basics", () => {
   test("plain command", () => {

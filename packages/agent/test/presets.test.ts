@@ -1,7 +1,7 @@
 import type { PermissionPolicy, PermissionOptions, PresetName } from "../src/permissions/index.ts"
 
 import { describe, expect, test } from "vitest"
-import { checkBash } from "../src/permissions/check.ts"
+import { checkBash } from "../src/permissions/bash/check.ts"
 import {
   combineFileRules,
   denySensitive,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
-import { checkBash } from "../src/permissions/check.ts"
+import { checkBash } from "../src/permissions/bash/check.ts"
+import { parseBash } from "../src/permissions/bash/parser.ts"
 import { definePermissions } from "../src/permissions/index.ts"
-import { parseBash } from "../src/permissions/parser.ts"
 import bash from "./bash.json" with { type: "json" }
 
 /**

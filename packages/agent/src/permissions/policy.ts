@@ -1,11 +1,11 @@
-import type { CheckResult } from "./check.ts"
-import type { Segment } from "./parser.ts"
+import type { CheckResult } from "./bash/check.ts"
+import type { Segment } from "./bash/parser.ts"
+import type { Rule, Verdict } from "./bash/rules.ts"
 import type { PermissionPresetName } from "./presets.ts"
-import type { Rule, Verdict } from "./rules.ts"
 
-import { checkBash } from "./check.ts"
+import { checkBash } from "./bash/check.ts"
+import { combine, resolveRules } from "./bash/rules.ts"
 import { permissionPresets } from "./presets.ts"
-import { combine, resolveRules } from "./rules.ts"
 
 export type PermissionOptions = {
   preset?: PermissionPresetName

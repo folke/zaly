@@ -1,5 +1,5 @@
 import type { ParseResult, Segment } from "./parser.ts"
-import type { PermissionPolicy } from "./policy.ts"
+import type { PermissionPolicy } from "../policy.ts"
 import type { Verdict } from "./rules.ts"
 
 import { isAbsolute } from "node:path"

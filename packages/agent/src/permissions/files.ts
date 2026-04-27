@@ -1,7 +1,7 @@
-import type { Verdict } from "./rules.ts"
+import type { Verdict } from "./bash/rules.ts"
 
 import { isAbsolute, relative, resolve } from "node:path"
-import { combine } from "./rules.ts"
+import { combine } from "./bash/rules.ts"
 
 /** True if `path` is at or below `root` after path resolution. Handles
  *  relative paths by resolving against cwd. Defends against `..`
