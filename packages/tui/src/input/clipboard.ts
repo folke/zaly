@@ -1,4 +1,4 @@
-import { isSSH, safeStat, spawn, spawnText, spawnWithInput, which } from "@zaly/shared"
+import { isSSH, safeStat, Spawn, spawnText, spawnWithInput, which } from "@zaly/shared"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { platform } from "node:process"
@@ -302,7 +302,7 @@ function wayland(): Provider {
 }
 
 async function waylandImage(): Promise<ClipboardImage | undefined> {
-  const r = await spawn("wl-paste", ["--type", "image/png"])
+  const r = await new Spawn("wl-paste", ["--type", "image/png"]).result
   return r.code === 0 && r.stdout.length > 0 ? writeTempPng(r.stdout) : undefined
 }
 
@@ -366,7 +366,7 @@ async function xclipRead(): Promise<ClipboardContent | undefined> {
 }
 
 async function xclipImage(): Promise<ClipboardImage | undefined> {
-  const r = await spawn("xclip", ["-selection", "clipboard", "-t", "image/png", "-o"])
+  const r = await new Spawn("xclip", ["-selection", "clipboard", "-t", "image/png", "-o"]).result
   return r.code === 0 && r.stdout.length > 0 ? writeTempPng(r.stdout) : undefined
 }
 
