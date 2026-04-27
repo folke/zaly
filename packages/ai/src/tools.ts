@@ -1,7 +1,8 @@
 import type { Static, TObject, TSchema } from "typebox"
-import Schema from "typebox/schema"
-import type { Tool } from "./types.ts"
+import type { Attachment, TextPart, Tool, ToolErrorInfo } from "./types.ts"
 
+import { safeStringify } from "@zaly/shared"
+import Schema from "typebox/schema"
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"
@@ -37,15 +38,41 @@ export class ToolError extends Error {
     this.data = opts.data
     this.retryable = opts.retryable ?? false
   }
+
+  /** Render this error as a compact block the model can read. The code
+   *  goes first (stable, model can branch on it), message next, optional
+   *  `retry: true` marker. For `INVALID_INPUT` the message is already
+   *  the annotated JSONC from `stringifyErrors` — passed through verbatim.
+   *
+   *  Distinct from `toString()` (which keeps the standard Error shape
+   *  for generic error handlers / logs / telemetry). `format()` is the
+   *  LLM-facing serialization. */
+  format(): string {
+    if (this.code === "INVALID_INPUT") return `❌ ${this.code}\n${this.message}`
+    const lines = [`❌ ${this.code}: ${this.message}`]
+    if (this.retryable) lines.push("retry: true")
+    return lines.join("\n")
+  }
+
+  static from(error: unknown): ToolError {
+    if (error instanceof ToolError) return error
+    return new ToolError({
+      cause: error,
+      code: "INTERNAL",
+      message: error instanceof Error ? error.message : String(error),
+    })
+  }
 }
 
 /** Normalised tool execution outcome — maps 1:1 to `ToolResultPart`.
  *  `isError: true` is the LLM-facing signal that the call failed; the
- *  `result` field carries either the tool's success output or a
- *  formatted error payload the model should read. */
+ *  `content` field carries the tool's success output (string or rich
+ *  part array) or a formatted error payload the model should read.
+ *  `error` carries structured info for richer downstream rendering. */
 export interface ToolResult {
   isError: boolean
-  result: unknown
+  content: string | (TextPart | Attachment)[]
+  error?: ToolErrorInfo
 }
 
 /** Declarative tool factory. Wires `validateInput` and (optionally)
@@ -136,53 +163,72 @@ export async function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown): Promise
     result = tool.validateResult(result)
   }
 
-  return { isError: false, result }
+  return { content: normalizeToolReply(result), isError: false }
 }
 
 function toErrorResult(err: unknown): ToolResult {
-  if (err instanceof ToolError) {
-    return {
-      isError: true,
-      result: formatToolError(err),
-    }
-  }
-  const message = err instanceof Error ? err.message : String(err)
+  const te = ToolError.from(err)
   return {
+    content: te.format(),
+    error: {
+      code: te.code,
+      data: te.data,
+      message: te.message,
+      retryable: te.retryable,
+    },
     isError: true,
-    result: formatToolError(new ToolError({ code: "INTERNAL", message })),
   }
 }
 
-/** Serialize a tool result for the wire.
- *
- *  Every provider expects a string (OpenAI `tool` message `content`,
- *  Anthropic `tool_result.content` in its string form, Gemini
- *  `functionResponse.response` — stringified for models that don't
- *  accept raw objects). We keep `ToolResult.result` as `unknown` so
- *  handlers return what's natural (`"hello"` vs `{ x: 1 }` vs `5`)
- *  and collapse to a string here at the adapter boundary.
- *
- *    - `string` passes through verbatim — no extra quoting that
- *      would make the model parse around.
- *    - everything else goes through `JSON.stringify`. Objects,
- *      arrays, numbers, booleans, `null` all round-trip cleanly.
- *    - `undefined` / `NaN` / circular refs → the adapter gets
- *      `"null"` / a best-effort stringification; they're tool
- *      bugs the model can't fix, so we don't try to paper over them.
- */
-export function stringifyToolResult(result: unknown): string {
-  return typeof result === "string" ? result : JSON.stringify(result)
+const PART_TYPES = new Set(["text", "image", "pdf", "audio", "video"])
+
+function isContentPart(v: unknown): v is TextPart | Attachment {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    "type" in v &&
+    typeof (v as { type: unknown }).type === "string" &&
+    PART_TYPES.has((v as { type: string }).type)
+  )
 }
 
-/** Format a ToolError into a compact block the model can read. The
- *  code goes first (stable, model can branch on it), message next,
- *  optional `retry: true` marker, and for `INVALID_INPUT` the message
- *  is already the annotated JSONC — passed through verbatim. */
-export function formatToolError(err: ToolError): string {
-  if (err.code === "INVALID_INPUT") {
-    return `❌ ${err.code}\n${err.message}`
+/** Map a tool's return value into the `ToolResult.content` shape:
+ *  - string → as-is (no `format`)
+ *  - undefined → "" (no `format`)
+ *  - single Part → wrapped in array
+ *  - array of Parts → used as-is
+ *  - everything else (object / array / number / boolean / null) →
+ *    JSON-stringified, wrapped in a `TextPart` with `format: "json"`
+ *    so renderers can pick `util.inspect` / a JSON highlighter / etc. */
+export function normalizeToolReply(value: unknown): string | (TextPart | Attachment)[] {
+  if (typeof value === "string") return value
+  if (value === undefined) return ""
+  if (Array.isArray(value) && value.length > 0 && value.every(isContentPart)) {
+    return value
   }
-  const lines = [`❌ ${err.code}: ${err.message}`]
-  if (err.retryable) lines.push("retry: true")
-  return lines.join("\n")
+  if (isContentPart(value)) return [value]
+  return [{ format: "json", text: safeStringify(value), type: "text" }]
+}
+
+/** Serialize a tool-result `content` value to a single string —
+ *  the lowest-common-denominator shape for providers whose tool message
+ *  is string-only (e.g. OpenAI Chat Completions, even after the rich-
+ *  content fallback splits attachments off into a separate user
+ *  message; the tool message itself still wants a string body).
+ *
+ *  - `string` → passes through verbatim.
+ *  - array → text parts joined with newlines; non-text parts replaced
+ *    with a `[image]` / `[pdf]` / etc. placeholder so the model has
+ *    *some* hint that an attachment lives in the next message. */
+export function stringifyToolResult(content: string | (TextPart | Attachment)[]): string {
+  if (typeof content === "string") return content
+  return content.map((p) => (p.type === "text" ? p.text : `[${p.type}]`)).join("\n")
+}
+
+/** Returns true if any non-text part is present in a tool-result
+ *  content value — signal to provider adapters that a fallback emit
+ *  may be needed. */
+export function hasAttachments(content: string | (TextPart | Attachment)[]): boolean {
+  if (typeof content === "string") return false
+  return content.some((p) => p.type !== "text")
 }

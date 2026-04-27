@@ -6,9 +6,17 @@ import type {
   StreamEvent,
   TokenCount,
 } from "../provider.ts"
-import type { CacheHint, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
+import type {
+  Attachment,
+  CacheHint,
+  ImagePart,
+  Message,
+  PdfPart,
+  ProviderOptions,
+  TextPart,
+  Tool,
+} from "../types.ts"
 
-import { stringifyToolResult } from "../tools.ts"
 
 /**
  * Anthropic Messages API adapter.
@@ -97,7 +105,10 @@ interface AnthropicToolUseBlock {
 interface AnthropicToolResultBlock {
   type: "tool_result"
   tool_use_id: string
-  content: string
+  /** Anthropic accepts either a string (legacy/simple) or an array of
+   *  text + image blocks. Document/PDF blocks are not allowed inside
+   *  tool_result; PDFs in tool results degrade to text placeholders. */
+  content: string | (AnthropicTextBlock | AnthropicImageBlock)[]
   is_error?: boolean
   cache_control?: { type: "ephemeral" }
 }
@@ -325,6 +336,24 @@ function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
   return { source: { type: "url", url: part.source.url }, type: "image" }
 }
 
+/** Map a tool result's `content` to the shape Anthropic's
+ *  `tool_result.content` accepts: a string (passes through) or an
+ *  array of text + image blocks. PDFs and audio/video aren't allowed
+ *  inside tool_result on Anthropic's wire — degrade to text
+ *  placeholders so the model still has *some* signal. */
+function toAnthropicToolResultContent(
+  content: string | (TextPart | Attachment)[]
+): AnthropicToolResultBlock["content"] {
+  if (typeof content === "string") return content
+  const out: (AnthropicTextBlock | AnthropicImageBlock)[] = []
+  for (const p of content) {
+    if (p.type === "text") out.push({ text: p.text, type: "text" })
+    else if (p.type === "image") out.push(toAnthropicImageBlock(p))
+    else out.push({ text: `[${p.type} attachment omitted; not allowed in tool_result]`, type: "text" })
+  }
+  return out
+}
+
 /** Translate one `PdfPart` to Anthropic's `document` content block.
  *  Anthropic does both vision (renders pages) and text extraction in
  *  one call — no need to pre-extract on the consumer side. */
@@ -393,8 +422,11 @@ function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): Anthro
       // One Anthropic tool_result block per ToolResultPart. Multiple
       // results from a single tool message all sit inside the same user
       // message; subsequent tool messages get coalesced upstream.
+      // Rich content (text + images) maps to tool_result.content[]
+      // blocks natively; PDFs aren't allowed inside tool_result so
+      // degrade to a text placeholder.
       const content: AnthropicContentBlock[] = msg.content.map((part) => ({
-        content: stringifyToolResult(part.result),
+        content: toAnthropicToolResultContent(part.content),
         is_error: part.isError === true ? true : undefined,
         tool_use_id: part.id,
         type: "tool_result",

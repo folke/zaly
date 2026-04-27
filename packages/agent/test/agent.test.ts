@@ -51,7 +51,9 @@ describe("Agent — tool-calls loop", () => {
     const roles = result.messages.map((m) => m.role)
     expect(roles).toEqual(["user", "assistant", "tool", "assistant"])
     const toolMsg = result.messages[2] as Message<"tool">
-    expect(toolMsg.content[0].result).toBe(5)
+    expect(toolMsg.content[0].content).toEqual([
+      { format: "json", text: "5", type: "text" },
+    ])
     expect(toolMsg.content[0].isError).toBe(false)
   })
 
@@ -73,7 +75,9 @@ describe("Agent — tool-calls loop", () => {
     })
     const toolMsg = result.messages[2] as Message<"tool">
     expect(toolMsg.content[0].isError).toBe(true)
-    expect(String(toolMsg.content[0].result)).toMatch(/UNKNOWN_TOOL|mystery/)
+    const c = toolMsg.content[0].content
+    const text = typeof c === "string" ? c : c.map((p) => (p.type === "text" ? p.text : "")).join("")
+    expect(text).toMatch(/UNKNOWN_TOOL|mystery/)
   })
 
   test("stops after maxSteps even if the model keeps calling tools", async () => {

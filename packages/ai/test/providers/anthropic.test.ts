@@ -172,6 +172,58 @@ describe("anthropic: request translation", () => {
     expect(body.messages[0].content[0].cache_control).toEqual({ type: "ephemeral" })
   })
 
+  test("tool result with rich content (text + image) serializes as tool_result blocks", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          { content: "x", role: "user" },
+          {
+            content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
+            role: "assistant",
+          },
+          {
+            content: [
+              {
+                content: [
+                  { text: "screenshot:", type: "text" },
+                  {
+                    mime: "image/png",
+                    source: { data: "iVBORw0K", type: "base64" },
+                    type: "image",
+                  },
+                ],
+                id: "c1",
+                name: "shot",
+                type: "tool-result",
+              },
+            ],
+            role: "tool",
+          },
+        ],
+        model: "m",
+      })
+    )
+    const body = recorded[0].body as { messages: { content: unknown[] }[] }
+    expect(body.messages[2]).toEqual({
+      content: [
+        {
+          content: [
+            { text: "screenshot:", type: "text" },
+            {
+              source: { data: "iVBORw0K", media_type: "image/png", type: "base64" },
+              type: "image",
+            },
+          ],
+          tool_use_id: "c1",
+          type: "tool_result",
+        },
+      ],
+      role: "user",
+    })
+  })
+
   test("user message with PdfPart (base64) serializes to a document block", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
@@ -346,7 +398,9 @@ describe("anthropic: request translation", () => {
             role: "assistant",
           },
           {
-            content: [{ id: "c1", name: "get_weather", result: { temp: 18 }, type: "tool-result" }],
+            content: [
+              { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
+            ],
             role: "tool",
           },
         ],
@@ -374,11 +428,11 @@ describe("anthropic: request translation", () => {
             role: "assistant",
           },
           {
-            content: [{ id: "c1", name: "a", result: 1, type: "tool-result" }],
+            content: [{ content: "1", id: "c1", name: "a", type: "tool-result" }],
             role: "tool",
           },
           {
-            content: [{ id: "c2", name: "b", result: 2, type: "tool-result" }],
+            content: [{ content: "2", id: "c2", name: "b", type: "tool-result" }],
             role: "tool",
           },
         ],
@@ -409,7 +463,7 @@ describe("anthropic: request translation", () => {
             role: "assistant",
           },
           {
-            content: [{ id: "c1", isError: true, name: "t", result: "boom", type: "tool-result" }],
+            content: [{ content: "boom", id: "c1", isError: true, name: "t", type: "tool-result" }],
             role: "tool",
           },
         ],

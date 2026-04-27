@@ -1,6 +1,7 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
 import type { AgentEvent, AgentStopReason, Emitter } from "./events.ts"
 
+import { safeStringify } from "@zaly/shared"
 import { addUsage } from "./utils/index.ts"
 
 /** Caps + heuristics that can end a run early. Wired into the
@@ -188,5 +189,5 @@ export class StopPolicy {
 }
 
 function hashCall(call: ToolCallPart): string {
-  return `${call.name}\0${JSON.stringify(call.params)}`
+  return `${call.name}\0${safeStringify(call.params)}`
 }

@@ -25,7 +25,7 @@ for (;;) {
   const results = await Promise.all(
     calls.map(async (c) => {
       const r = await runTool(multiply, c.params)
-      return { id: c.id, isError: r.isError, name: c.name, result: r.result, type: "tool-result" as const }
+      return { content: r.content, id: c.id, isError: r.isError, name: c.name, type: "tool-result" as const }
     }),
   )
   messages.push({ content: results, role: "tool" })

@@ -9,7 +9,7 @@ import type {
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
-import { stringifyToolResult } from "../tools.ts"
+import { hasAttachments, stringifyToolResult } from "../tools.ts"
 
 /**
  * OpenAI Chat Completions adapter.
@@ -143,7 +143,11 @@ type OpenAIContentPart =
 function buildRequest(req: GenerateRequest): OpenAIChatRequest {
   const quirks = req.quirks ?? {}
   const specific = (req.providerOptions?.openai ?? {}) as OpenAIRequestOptions
-  const messages = req.messages.map(toOpenAIMessage)
+  // flatMap because a single source message can produce multiple wire
+  // messages — specifically, tool results with image/audio attachments
+  // emit a tool message + a synthetic user message carrying the
+  // attachments (Chat Completions tool messages are string-only).
+  const messages = req.messages.flatMap(toOpenAIMessages)
   // Durable system prompt → first `role: "system"` message. Joined with
   // blank lines so multiple snippets read as separate paragraphs without
   // bleeding into each other.
@@ -318,6 +322,34 @@ function toOpenAIAudioPart(part: AudioPart): OpenAIContentPart {
   return { input_audio: { data: part.source.data, format }, type: "input_audio" }
 }
 
+function toOpenAIMessages(msg: Message): OpenAIMessage[] {
+  return [toOpenAIMessage(msg), ...attachmentSpilloverFor(msg)]
+}
+
+/** When a `role: "tool"` message has rich content with non-text parts,
+ *  Chat Completions can't carry them in the tool message itself. Emit
+ *  a synthetic `role: "user"` message right after, holding just the
+ *  attachments, so the model still sees them in conversation order. */
+function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
+  if (msg.role !== "tool") return []
+  const out: OpenAIMessage[] = []
+  for (const part of msg.content) {
+    if (typeof part.content === "string") continue
+    const attachments = part.content.filter((p) => p.type !== "text")
+    if (attachments.length === 0) continue
+    const userParts: OpenAIContentPart[] = []
+    for (const att of attachments) {
+      if (att.type === "image") userParts.push(toOpenAIImagePart(att))
+      else if (att.type === "audio") userParts.push(toOpenAIAudioPart(att))
+      // PDF / video aren't accepted on Chat Completions even via user
+      // messages — drop with a text marker.
+      else userParts.push({ text: `[${att.type} attachment dropped; not accepted by this endpoint]`, type: "text" })
+    }
+    if (userParts.length > 0) out.push({ content: userParts, role: "user" })
+  }
+  return out
+}
+
 function toOpenAIMessage(msg: Message): OpenAIMessage {
   switch (msg.role) {
     case "system": {
@@ -379,10 +411,15 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
       // Adapter emits the first — the kernel is expected to emit one
       // `role: "tool"` Message per tool result upstream. This keeps
       // the 1:1 invariant with OpenAI's shape without silent merges.
+      // Non-text parts get spilled into a synthetic user message by
+      // `attachmentSpilloverFor`; here we just stringify the body.
       const part = msg.content[0]
-      const body = stringifyToolResult(part.result)
+      const body = stringifyToolResult(part.content)
+      const marker = hasAttachments(part.content)
+        ? "\n[attachments delivered as the next user message]"
+        : ""
       return {
-        content: part.isError === true ? `ERROR: ${body}` : body,
+        content: (part.isError === true ? `ERROR: ${body}` : body) + marker,
         role: "tool",
         tool_call_id: part.id,
       }

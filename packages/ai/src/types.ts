@@ -12,15 +12,20 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
-/** Plain text in user or assistant content. */
+/** Plain text in user, assistant, or tool-result content. */
 export interface TextPart {
   type: "text"
   text: string
+  /** Renderer hint for how to display the text — free-form format
+   *  identifier ("json", "markdown", "typescript", "diff", "html", …).
+   *  Providers ignore this field; only `text` reaches the model. The
+   *  TUI uses it to pick a syntax highlighter or markdown renderer. */
+  format?: string
 }
 
 type FilePart<T extends string, MT extends string = string> = {
   type: T
-  mimeType: MT
+  mime: MT
   source: { type: "base64"; data: string } | { type: "url"; url: string }
 }
 
@@ -45,14 +50,40 @@ export interface ToolCallPart {
   params: unknown
 }
 
-/** Tool response carried on a `tool`-role message. `result` is left as
- *  `unknown` — callers narrow by `name` when they own both sides. */
+/** Structured error info captured when a tool's `call` throws a
+ *  `ToolError` (or any other error wrapped as one). The model only
+ *  reads the formatted error from `ToolResultPart.content`; this
+ *  field is metadata the TUI / logger can render richly (badge for
+ *  `code`, JSON block for `data`, retry icon, color by category). */
+export interface ToolErrorInfo {
+  code: string
+  message: string
+  data?: unknown
+  retryable?: boolean
+}
+
+/** Tool response carried on a `tool`-role message. `content` mirrors
+ *  user-message shape: a string for the common stringified case, or
+ *  an ordered array for rich results that mix text with image / pdf /
+ *  audio / video parts (e.g. a screenshot tool returning a description
+ *  plus the bytes).
+ *
+ *  Provider serialization:
+ *    - Anthropic: `tool_result.content[]` supports text + image blocks
+ *      natively; passes through.
+ *    - OpenAI Chat Completions: tool message content is string-only.
+ *      Adapter joins text parts as the tool message body and emits a
+ *      synthetic user message immediately after carrying any non-text
+ *      parts (images / pdf / audio / video). */
 export interface ToolResultPart {
   type: "tool-result"
   id: string
   name: string
-  result: unknown
+  content: string | (TextPart | Attachment)[]
   isError?: boolean
+  /** Set when `isError: true` and a structured `ToolError` was caught.
+   *  Invisible to providers — pure metadata for downstream consumers. */
+  error?: ToolErrorInfo
 }
 
 /** Assistant reasoning (Anthropic "thinking", OpenAI reasoning models).

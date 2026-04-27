@@ -30,3 +30,11 @@ export function toError(err: unknown): Error {
 export const safeReadFile = safeAsyncFn(readFile)
 export const safeReadFileSync = safeFn((path: string) => readFileSync(path, "utf8"))
 export const safeStat = safeFn(statSync)
+
+export function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? v.toString() : v))
+  } catch {
+    return String(value)
+  }
+}

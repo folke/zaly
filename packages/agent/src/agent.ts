@@ -253,10 +253,11 @@ export class Agent extends Emitter<AgentEvent> {
       const result = tool ? await runTool(tool, call.params) : unknownToolResult(call.name)
       this.emit({ call, result, type: "tool-result" })
       resultParts.push({
+        content: result.content,
+        error: result.error,
         id: call.id,
         isError: result.isError,
         name: call.name,
-        result: result.result,
         type: "tool-result",
       })
     }

@@ -39,19 +39,38 @@ describe("defineTool", () => {
 })
 
 describe("runTool — happy path", () => {
-  test("returns output with isError=false", async () => {
+  test("number return wraps as JSON-formatted text part", async () => {
     const r = await runTool(Adder, { a: 2, b: 3 })
-    expect(r).toEqual({ isError: false, result: 5 })
+    expect(r).toEqual({
+      content: [{ format: "json", text: "5", type: "text" }],
+      isError: false,
+    })
   })
 
   test("accepts a JSON string for args", async () => {
     const r = await runTool(Adder, '{"a": 2, "b": 3}')
-    expect(r).toEqual({ isError: false, result: 5 })
+    expect((r.content as { text: string }[])[0].text).toBe("5")
   })
 
   test("applies coercion through runTool", async () => {
     const r = await runTool(Adder, { a: "10", b: "20" })
-    expect(r).toEqual({ isError: false, result: 30 })
+    expect((r.content as { text: string }[])[0].text).toBe("30")
+  })
+})
+
+describe("runTool — object return wraps as JSON-formatted text part", () => {
+  const Json = defineTool({
+    call: () => ({ conditions: "sunny", temp: 72 }),
+    params: Type.Object({}),
+    name: "weather",
+  })
+
+  test("object → array with TextPart + format: 'json'", async () => {
+    const r = await runTool(Json, {})
+    expect(r.isError).toBe(false)
+    expect(r.content).toEqual([
+      { format: "json", text: '{"conditions":"sunny","temp":72}', type: "text" },
+    ])
   })
 })
 
@@ -59,7 +78,13 @@ describe("runTool — validation failures", () => {
   test("returns annotated error on invalid args", async () => {
     const r = await runTool(Adder, { a: "notanumber" })
     expect(r.isError).toBe(true)
-    expect(String(r.result)).toMatch(/❌/)
+    expect(stringifyToolResult(r.content)).toMatch(/❌/)
+  })
+
+  test("populates structured error.code + error.message", async () => {
+    const r = await runTool(Adder, { a: "notanumber" })
+    expect(r.error?.code).toBe("INVALID_INPUT")
+    expect(r.error?.message).toBeTruthy()
   })
 
   test("returns parse error on unsalvageable JSON string", async () => {
@@ -84,9 +109,37 @@ describe("runTool — tool errors", () => {
   test("surfaces ToolError code + message", async () => {
     const r = await runTool(Failing, { id: "42" })
     expect(r.isError).toBe(true)
-    const msg = String(r.result)
+    const msg = stringifyToolResult(r.content)
     expect(msg).toContain("NOT_FOUND")
     expect(msg).toContain("record not found")
+  })
+
+  test("errors land as a string content (no parts)", async () => {
+    const r = await runTool(Failing, { id: "42" })
+    expect(typeof r.content).toBe("string")
+  })
+
+  test("structured error preserves code, data, retryable from ToolError", async () => {
+    const r = await runTool(Failing, { id: "42" })
+    expect(r.error).toEqual({
+      code: "NOT_FOUND",
+      data: { id: "42" },
+      message: "record not found",
+      retryable: false,
+    })
+  })
+
+  test("non-ToolError throws are wrapped as INTERNAL", async () => {
+    const Throws = defineTool({
+      call: () => {
+        throw new Error("oops")
+      },
+      params: Type.Object({}),
+      name: "throws",
+    })
+    const r = await runTool(Throws, {})
+    expect(r.error?.code).toBe("INTERNAL")
+    expect(r.error?.message).toBe("oops")
   })
 
   test("wraps unknown throws as internal errors", async () => {
@@ -99,7 +152,7 @@ describe("runTool — tool errors", () => {
     })
     const r = await runTool(Throws, {})
     expect(r.isError).toBe(true)
-    expect(String(r.result)).toContain("boom")
+    expect(stringifyToolResult(r.content)).toContain("boom")
   })
 })
 
@@ -122,15 +175,25 @@ describe("stringifyToolResult", () => {
     expect(stringifyToolResult("")).toBe("")
   })
 
-  test("objects and arrays get JSON-encoded", () => {
-    expect(stringifyToolResult({ a: 1 })).toBe('{"a":1}')
-    expect(stringifyToolResult([1, 2, 3])).toBe("[1,2,3]")
+  test("array of text parts joins with newlines", () => {
+    expect(
+      stringifyToolResult([
+        { text: "line one", type: "text" },
+        { text: "line two", type: "text" },
+      ])
+    ).toBe("line one\nline two")
   })
 
-  test("primitives stringify to their JSON form", () => {
-    expect(stringifyToolResult(5)).toBe("5")
-    expect(stringifyToolResult(true)).toBe("true")
-    // eslint-disable-next-line unicorn/no-null
-    expect(stringifyToolResult(null)).toBe("null")
+  test("non-text parts become bracketed placeholders", () => {
+    expect(
+      stringifyToolResult([
+        { text: "look at this", type: "text" },
+        {
+          mime: "image/png",
+          source: { data: "iVBORw0K", type: "base64" },
+          type: "image",
+        },
+      ])
+    ).toBe("look at this\n[image]")
   })
 })

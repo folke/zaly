@@ -216,7 +216,11 @@ describe("Agent — emitted events", () => {
       tools: [Add],
     })
     agent.on("tool-call", (e) => calls.push(e.call.name))
-    agent.on("tool-result", (e) => results.push(String(e.result.result)))
+    agent.on("tool-result", (e) => {
+      const c = e.result.content
+      const text = typeof c === "string" ? c : c.map((p) => (p.type === "text" ? p.text : "")).join("")
+      results.push(text)
+    })
     await agent.run()
     expect(calls).toEqual(["add"])
     expect(results).toEqual(["5"])
@@ -321,7 +325,9 @@ describe("Agent — mutable prompt + tools", () => {
     agent.send({ content: "go", role: "user" })
     await agent.run()
     const toolMsg = agent.messages[2] as Message<"tool">
-    expect(toolMsg.content[0].result).toBe(3)
+    expect(toolMsg.content[0].content).toEqual([
+      { format: "json", text: "3", type: "text" },
+    ])
     expect(toolMsg.content[0].isError).toBe(false)
   })
 })

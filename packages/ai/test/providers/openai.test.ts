@@ -322,7 +322,9 @@ describe("openai: request translation", () => {
             role: "assistant",
           },
           {
-            content: [{ id: "c1", name: "get_weather", result: { temp: 18 }, type: "tool-result" }],
+            content: [
+              { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
+            ],
             role: "tool",
           },
         ],
@@ -335,6 +337,56 @@ describe("openai: request translation", () => {
       content: '{"temp":18}',
       role: "tool",
       tool_call_id: "c1",
+    })
+  })
+
+  test("tool result with attachments spills into a synthetic user message", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream({
+        messages: [
+          { content: "x", role: "user" },
+          {
+            content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
+            role: "assistant",
+          },
+          {
+            content: [
+              {
+                content: [
+                  { text: "screenshot:", type: "text" },
+                  {
+                    mime: "image/png",
+                    source: { data: "iVBORw0K", type: "base64" },
+                    type: "image",
+                  },
+                ],
+                id: "c1",
+                name: "shot",
+                type: "tool-result",
+              },
+            ],
+            role: "tool",
+          },
+        ],
+        model: "gpt-4o-mini",
+      })
+    )
+    const body = recorded[0].body as { messages: ({ role: string; content: unknown })[] }
+    // Tool message: stringified text body + marker; attachments not embedded.
+    expect(body.messages[2]).toMatchObject({
+      role: "tool",
+      tool_call_id: "c1",
+    })
+    expect(body.messages[2].content).toMatch(/screenshot/)
+    expect(body.messages[2].content).toMatch(/attachments delivered/)
+    // Synthetic user message right after, carrying the image part.
+    expect(body.messages[3]).toEqual({
+      content: [
+        { image_url: { url: "data:image/png;base64,iVBORw0K" }, type: "image_url" },
+      ],
+      role: "user",
     })
   })
 

@@ -18,7 +18,11 @@ export function unknownToolResult(name: string): ToolResult {
     code: "UNKNOWN_TOOL",
     message: `no tool named "${name}" is registered for this turn`,
   })
-  return { isError: true, result: `❌ ${err.code}: ${err.message}` }
+  return {
+    content: `❌ ${err.code}: ${err.message}`,
+    error: { code: err.code, message: err.message },
+    isError: true,
+  }
 }
 
 /** Sum two TokenCounts. Optional fields are only present in the result
