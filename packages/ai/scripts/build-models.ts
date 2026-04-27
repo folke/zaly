@@ -15,13 +15,12 @@
  * Run:  bun packages/ai/scripts/build-providers.ts
  */
 import type { BuiltinProvider } from "../src/providers/index.ts"
-import type { ModelInfo, ModelOptions, ProviderInfo, Quirks } from "../src/types.ts"
+import type { ModelInfo, ModelSpec, ProviderInfo, Quirks } from "../src/types.ts"
+import type { ProviderOverride } from "./overrides.ts"
 
 import { writeFileSync } from "node:fs"
 import { join } from "node:path"
 import snapshot from "../assets/snapshot.json" with { type: "json" }
-import type { ProviderOverride } from "./overrides.ts"
-
 import { overrides } from "./overrides.ts"
 
 const AI_DIR = join(import.meta.dirname, "..")
@@ -31,7 +30,7 @@ const MODEL_IDS_FILE = join(AI_DIR, "assets", "model-ids.json")
 /** Pre-resolved ModelOptions as stored on disk. `providerInfo` is
  *  intentionally absent — it lives in the shared `providers` map to
  *  avoid duplication across entries of the same provider. */
-type StoredModelOptions = Omit<ModelOptions, "providerInfo">
+type StoredModelOptions = Omit<ModelSpec, "providerInfo">
 
 /** Provider metadata minus the nested `models` sub-record. We store
  *  models flat under `output.models` so this field would otherwise

@@ -426,7 +426,7 @@ export interface Quirks {
  *
  *  Collapsing ModelInfo in avoids the `options.info.limit.context`
  *  ceremony; everything a user touches lives at one level. */
-export interface ModelOptions extends ProviderOptions, Omit<ModelInfo, "provider"> {
+export interface ModelSpec extends ProviderOptions, Omit<ModelInfo, "provider"> {
   /** Provider name — e.g. `"openai"`, `"openrouter"`. Resolves against
    *  the runtime catalog to pick the adapter family. */
   provider: AnyProvider

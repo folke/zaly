@@ -8,7 +8,7 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/index.ts"
-import type { Cost, ModelOptions, ProviderOptions } from "./types.ts"
+import type { Cost, ModelSpec, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
@@ -24,13 +24,13 @@ import { loadProvider } from "./providers/index.ts"
  *  by constructing it once and passing it via `options.fetch`. */
 export class Model<T extends AnyProvider = string> {
   readonly id: string
-  readonly options: ModelOptions
+  readonly spec: ModelSpec
   readonly provider: Provider<T>
 
-  constructor(args: { id: string; options: ModelOptions; provider: Provider<T> }) {
-    this.id = args.id
-    this.options = args.options
-    this.provider = args.provider
+  constructor(opts: { id: string; spec: ModelSpec; provider: Provider<T> }) {
+    this.id = opts.id
+    this.spec = opts.spec
+    this.provider = opts.provider
   }
 
   /** Stream a turn against this model. Returns the underlying
@@ -39,11 +39,21 @@ export class Model<T extends AnyProvider = string> {
   stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
     const inner = this.provider.stream({
       ctx,
-      model: this.options.id,
+      model: this.spec.id,
       opts,
-      quirks: this.options.quirks,
+      quirks: this.spec.quirks,
     })
-    return this.options.cost ? augmentUsage(inner, this.options.cost) : inner
+    return this.spec.cost ? this.#augment(inner) : inner
+  }
+
+  /** Wrap a provider's stream so the `finish` event's `usage` carries
+   *  computed `cost`. All other events pass through unchanged. */
+  async *#augment(stream: AsyncIterable<StreamEvent>): AsyncIterable<StreamEvent> {
+    for await (const ev of stream) {
+      if (this.spec.cost && ev.type === "finish")
+        ev.usage = { ...ev.usage, cost: computeCost(ev.usage, this.spec.cost) }
+      yield ev
+    }
   }
 }
 
@@ -61,38 +71,31 @@ export class Model<T extends AnyProvider = string> {
  * one-off specs without committing them globally.
  */
 export async function loadModel(
-  source: string | ModelOptions,
+  source: string | ModelSpec,
   overrides?: Partial<ProviderOptions>,
   auth: AuthProvider = envAuth
 ): Promise<Model> {
-  const base: ModelOptions = typeof source === "string" ? await resolve(source) : source
-  const options: ModelOptions = { ...base, ...overrides }
-  const provider = await buildAdapter(options, auth)
-  // URI form — preserve the caller's id when they passed a string (so
-  // catalog lookups round-trip `"openrouter/kimi/k2"` even though
-  // `options.provider` now holds the adapter name `"openai"`). For
-  // in-memory ModelOptions, synthesise from providerInfo.id (endpoint
-  // name) with `options.provider` as a fallback when providerInfo is
-  // absent.
+  // Full model URI. Get from the catalog if it's a string; if it's already a spec, construct
   const id =
     typeof source === "string"
       ? source
-      : `${options.providerInfo?.id ?? options.provider}/${options.id}`
+      : `${source.providerInfo?.id ?? source.provider}/${source.id}`
 
-  return new Model({ id, options, provider })
-}
-
-/** Wrap a provider's stream so the `finish` event's `usage` carries
- *  computed `cost`. All other events pass through unchanged. */
-async function* augmentUsage(
-  stream: AsyncIterable<StreamEvent>,
-  prices: Cost
-): AsyncIterable<StreamEvent> {
-  for await (const ev of stream) {
-    yield ev.type === "finish"
-      ? { ...ev, usage: { ...ev.usage, cost: computeCost(ev.usage, prices) } }
-      : ev
+  const base = typeof source === "string" ? await getModel(source) : source
+  if (base === undefined) {
+    throw new Error(
+      `Unknown model "${id}". Use \`addModels({ "${id}": { … } })\` to register a custom one.`
+    )
   }
+  const spec: ModelSpec = { ...base, ...overrides }
+  const creds = await auth.getAuth(spec)
+  const provider = await loadProvider(spec.provider, {
+    ...spec,
+    apiKey: spec.apiKey ?? creds?.apiKey,
+    headers: { ...creds?.headers, ...spec.headers },
+  })
+
+  return new Model({ id, provider, spec })
 }
 
 /** Compute per-field USD cost from token counts + a price table.
@@ -118,31 +121,4 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
     cost.reasoning = (usage.reasoning * prices.reasoning) / M
   }
   return cost
-}
-
-async function resolve(id: string): Promise<ModelOptions> {
-  const opts = await getModel(id)
-  if (opts === undefined) {
-    throw new Error(
-      `Unknown model "${id}". Use \`addModels({ "${id}": { … } })\` to register a custom one.`
-    )
-  }
-  return opts
-}
-
-/** Construct the adapter for a pre-resolved `ModelOptions`. Everything
- *  about HOW to reach the endpoint is already on `options` (baseUrl,
- *  headers, quirks); `auth` resolves credentials.
- *
- *  Options spread in full rather than field-by-field: any future
- *  `ProviderOptions` extension (timeout, proxy, etc.) flows through
- *  automatically. `apiKey` and `headers` from the caller's options
- *  win over auth-resolved values. */
-async function buildAdapter(options: ModelOptions, auth: AuthProvider): Promise<Provider> {
-  const creds = await auth.getAuth(options)
-  return await loadProvider(options.provider, {
-    ...options,
-    apiKey: options.apiKey ?? creds?.apiKey,
-    headers: { ...creds?.headers, ...options.headers },
-  })
 }

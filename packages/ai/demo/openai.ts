@@ -23,9 +23,9 @@ const model = await loadModel(id)
 
 console.log(`→ ${model.id}`)
 console.log(
-  `  context ${model.options.limit.context}` +
-    ` · output ${model.options.limit.output}` +
-    ` · reasoning ${model.options.reasoning ? "yes" : "no"}`
+  `  context ${model.spec.limit.context}` +
+    ` · output ${model.spec.limit.output}` +
+    ` · reasoning ${model.spec.reasoning ? "yes" : "no"}`
 )
 console.log()
 
@@ -33,12 +33,17 @@ console.log()
 // `text-delta`; we dim them so the final answer stands out.
 let mode: "reasoning" | "text" | undefined
 const { finishReason, message, usage } = await collect(
-  model.stream({
-    messages: [
-      { content: "You are a concise assistant.", role: "system" },
-      { content: "Write a two-sentence haiku about the terminal.", role: "user" },
-    ]}, {
-    maxTokens: 1024}),
+  model.stream(
+    {
+      messages: [
+        { content: "You are a concise assistant.", role: "system" },
+        { content: "Write a two-sentence haiku about the terminal.", role: "user" },
+      ],
+    },
+    {
+      maxTokens: 1024,
+    }
+  ),
   {
     onEvent: (e) => {
       if (e.type === "reasoning-delta") {

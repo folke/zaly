@@ -11,7 +11,7 @@ export function mockModel(scripts: StreamEvent[][]): Model {
   let turn = 0
   return {
     id: "mock/x",
-    options: { id: "x", provider: "mock" } as Model["options"],
+    spec: { id: "x", provider: "mock" } as Model["spec"],
     provider: {} as Model["provider"],
     async *stream() {
       for (const ev of scripts[turn++]) yield ev
@@ -35,7 +35,7 @@ export function pendingModel(): {
     },
     model: {
       id: "mock/x",
-      options: {} as Model["options"],
+      spec: {} as Model["spec"],
       provider: {} as Model["provider"],
       async *stream() {
         const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
@@ -56,7 +56,7 @@ export function pendingModel(): {
 export function throwingModel(message: string): Model {
   return {
     id: "mock/x",
-    options: {} as Model["options"],
+    spec: {} as Model["spec"],
     provider: {} as Model["provider"],
     // eslint-disable-next-line require-yield
     async *stream() {

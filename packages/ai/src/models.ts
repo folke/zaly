@@ -1,5 +1,5 @@
 import type { AuthProvider } from "./auth.ts"
-import type { Modality, ModelOptions, ProviderInfo } from "./types.ts"
+import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
 
 import { hasAuth } from "./auth.ts"
 
@@ -30,7 +30,7 @@ export function parseModelId(id: string): { provider: string; model: string } {
 /** On-disk catalog shape emitted by `scripts/build-providers.ts`. */
 interface Catalog {
   providers: Record<string, Omit<ProviderInfo, "models">>
-  models: Record<string, Omit<ModelOptions, "providerInfo">>
+  models: Record<string, Omit<ModelSpec, "providerInfo">>
 }
 
 let catalogPromise: Promise<Catalog> | undefined
@@ -44,12 +44,12 @@ function loadCatalog(): Promise<Catalog> {
 
 // ── Runtime-registered custom catalog ───────────────────────────────────
 
-const customModels = new Map<string, ModelOptions>()
+const customModels = new Map<string, ModelSpec>()
 
 /** Register custom model entries. Overrides any existing entry with
  *  the same id (custom or built-in). Persists for the lifetime of
  *  the process — nothing is written to disk. */
-export function addModels(models: Record<string, ModelOptions>): void {
+export function addModels(models: Record<string, ModelSpec>): void {
   for (const [id, opts] of Object.entries(models)) customModels.set(id, opts)
 }
 
@@ -57,7 +57,7 @@ export function addModels(models: Record<string, ModelOptions>): void {
  *  Built-in entries come pre-resolved from the generator — quirks,
  *  baseUrl, headers, maxTokens are all baked in; we just attach
  *  `providerInfo` from the shared providers map. */
-export async function getModel(id: string): Promise<ModelOptions | undefined> {
+export async function getModel(id: string): Promise<ModelSpec | undefined> {
   const custom = customModels.get(id)
   if (custom !== undefined) return custom
   return await resolveBuiltin(id)
@@ -79,7 +79,7 @@ export interface ModelFilter {
   modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
 }
 
-export async function filterModel(m: ModelOptions, opts?: ModelFilter): Promise<boolean> {
+export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
   if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth))) return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
@@ -89,7 +89,7 @@ export async function filterModel(m: ModelOptions, opts?: ModelFilter): Promise<
 /** Normalise the shorthand/object form and check membership against
  *  the model's declared input/output modalities. Shorthand targets
  *  input because "find me a vision model" is the common case. */
-function matchesModality(m: ModelOptions, spec: NonNullable<ModelFilter["modality"]>): boolean {
+function matchesModality(m: ModelSpec, spec: NonNullable<ModelFilter["modality"]>): boolean {
   const normalised =
     typeof spec === "string" || Array.isArray(spec) ? { input: [spec].flat() } : spec
   if (
@@ -112,16 +112,16 @@ function matchesModality(m: ModelOptions, spec: NonNullable<ModelFilter["modalit
 /** Every model we know about, keyed by id. Includes runtime-registered
  *  custom models. For just ids (autocomplete sources), use
  *  `listModelIds` — one compact JSON, no catalog load needed. */
-export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelOptions>> {
+export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
   const catalog = await loadCatalog()
-  const entries: [string, ModelOptions][] = Object.entries(catalog.models).map(([id, stored]) => [
+  const entries: [string, ModelSpec][] = Object.entries(catalog.models).map(([id, stored]) => [
     id,
     attachProviderInfo(stored, catalog, id),
   ])
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.
   const verdicts = await Promise.all(entries.map(([, m]) => filterModel(m, opts)))
-  const out: Record<string, ModelOptions> = {}
+  const out: Record<string, ModelSpec> = {}
   for (const [i, [id, m]] of entries.entries()) {
     if (verdicts[i]) out[id] = m
   }
@@ -147,7 +147,7 @@ export async function builtinProviders(): Promise<
   return catalog.providers
 }
 
-async function resolveBuiltin(id: string): Promise<ModelOptions | undefined> {
+async function resolveBuiltin(id: string): Promise<ModelSpec | undefined> {
   const catalog = await loadCatalog()
   const stored = (catalog.models as Record<string, Catalog["models"][string] | undefined>)[id]
   if (stored === undefined) return undefined
@@ -162,7 +162,7 @@ function attachProviderInfo(
   stored: Catalog["models"][string],
   catalog: Catalog,
   id: string
-): ModelOptions {
+): ModelSpec {
   const { provider: endpointId } = parseModelId(id)
   const providerMeta = (
     catalog.providers as Record<string, Catalog["providers"][string] | undefined>

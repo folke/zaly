@@ -1,4 +1,4 @@
-import type { ModelOptions } from "./types.ts"
+import type { ModelSpec } from "./types.ts"
 
 /**
  * Auth-related primitives. Centralises credential resolution so
@@ -26,7 +26,7 @@ export interface AuthCredentials {
  *  tokens; the default env reader completes synchronously (Promise
  *  wrapping is negligible overhead). */
 export interface AuthProvider {
-  getAuth(model: ModelOptions): AuthCredentials | undefined | Promise<AuthCredentials | undefined>
+  getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>
 }
 
 /** Default provider — reads `process.env`. Walks `providerInfo.env`
@@ -78,6 +78,6 @@ export function chainAuth(...providers: AuthProvider[]): AuthProvider {
  *  await isAvailable(m, chainAuth(codex, env))
  *  ```
  */
-export async function hasAuth(m: ModelOptions, auth: AuthProvider = envAuth): Promise<boolean> {
+export async function hasAuth(m: ModelSpec, auth: AuthProvider = envAuth): Promise<boolean> {
   return (await auth.getAuth(m)) !== undefined
 }
