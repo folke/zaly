@@ -5,7 +5,7 @@ import type { Rule, Verdict } from "./rules.ts"
 
 import { checkBash } from "./check.ts"
 import { permissionPresets } from "./presets.ts"
-import { resolveRules } from "./rules.ts"
+import { combine, resolveRules } from "./rules.ts"
 
 export type PermissionOptions = {
   preset?: PermissionPresetName
@@ -41,6 +41,12 @@ export class PermissionPolicy {
 
   get preset(): PermissionPresetName | undefined {
     return this.#opts.preset
+  }
+
+  /** Combine verdicts from multiple checks into one final verdict. */
+  resolve(input: Verdict | CheckResult | (Verdict | CheckResult)[]): Verdict {
+    const all = [input].flat().map((x) => (typeof x === "string" ? x : x.verdict))
+    return all.reduce(combine, "allow")
   }
 
   bash(input: string): CheckResult {
