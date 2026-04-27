@@ -23,7 +23,7 @@ export type AnyProvider = BuiltinProvider | (string & {})
  *  precedence over built-ins with the same name, so a user can also
  *  swap in a customised drop-in replacement (e.g. a proxied
  *  `createOpenAI` with extra instrumentation). */
-const customAdapters = new Map<string, ProviderLoader>()
+const customProviders = new Map<string, ProviderLoader>()
 
 /** Register an adapter at runtime. Idempotent per key — calling twice
  *  with the same name replaces the previous entry. Typed generically
@@ -38,22 +38,20 @@ const customAdapters = new Map<string, ProviderLoader>()
  *  ```
  */
 export function registerProvider<T extends string>(name: T, loader: ProviderLoader<T>): void {
-  customAdapters.set(name, loader as ProviderLoader)
+  customProviders.set(name, loader as ProviderLoader)
 }
 
 /** Resolve an adapter by name. Custom registrations win over
  *  built-ins; unknown names throw with the current registry listing
  *  for debuggability. */
-export async function loadProvider<T extends BuiltinProvider>(
-  name: BuiltinProvider,
+export async function loadProvider<T extends AnyProvider>(
+  name: T,
   opts: ProviderOptions
-): Promise<Provider<T>>
-export async function loadProvider(name: string, opts: ProviderOptions): Promise<Provider>
-export async function loadProvider(name: string, opts: ProviderOptions): Promise<Provider> {
-  const custom = customAdapters.get(name)
-  if (custom !== undefined) return await custom(opts)
-  const builtin = (providers as Record<string, ProviderLoader | undefined>)[name]
-  if (builtin !== undefined) return await builtin(opts)
-  const known = [...customAdapters.keys(), ...Object.keys(providers)].toSorted().join(", ")
+): Promise<Provider<T>> {
+  const custom = customProviders.get(name)
+  if (custom !== undefined) return (await custom(opts)) as Provider<T>
+  const builtin = providers[name as BuiltinProvider] as ProviderLoader | undefined
+  if (builtin !== undefined) return (await builtin(opts)) as Provider<T>
+  const known = [...customProviders.keys(), ...Object.keys(providers)].toSorted().join(", ")
   throw new Error(`Unknown adapter "${name}". Registered: ${known}.`)
 }
