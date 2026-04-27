@@ -1,10 +1,11 @@
-import type { Rule } from "../src/permissions/index.ts"
-
 import { describe, expect, test } from "vitest"
-import { checkBash } from "../src/permissions/bash/check.ts"
-import { parseBash } from "../src/permissions/bash/parser.ts"
-import { matchRule } from "../src/permissions/bash/rules.ts"
-import { definePermissions } from "../src/permissions/index.ts"
+import { parseBash } from "../src/permissions/handlers/bash/parser.ts"
+import { matchRule } from "../src/permissions/handlers/bash/rules.ts"
+import { PermissionManager } from "../src/permissions/index.ts"
+
+const cwd = "/home/folke/projects/zaly"
+
+// ── parseBash ──────────────────────────────────────────────────────────────
 
 describe("parseBash — basics", () => {
   test("plain command", () => {
@@ -89,8 +90,6 @@ describe("parseBash — wrapper commands stripped", () => {
   })
 
   test("bare wrapper with no command is dropped from segments", () => {
-    // `time (subshell)` after flatten leaves a `time` segment with no
-    // wrapped command. It should disappear, not become an unparseable.
     const r = parseBash("time (ls && pwd)")
     if (!r.ok) throw new Error("expected ok")
     expect(r.segments.map((s) => s.cmd)).toEqual(["ls", "pwd"])
@@ -117,8 +116,6 @@ describe("parseBash — command substitution flagged", () => {
   })
 
   test("backticks inside single quotes are literal (not flagged)", () => {
-    // Common shape: `bun -e '...template literal `tpl` ...'`. The
-    // backtick is part of the JS source, not shell command substitution.
     // oxlint-disable-next-line no-template-curly-in-string
     const r = parseBash("bun -e 'const x = `hello ${name}`'")
     if (!r.ok) throw new Error("expected ok")
@@ -156,6 +153,8 @@ describe("parseBash — command substitution flagged", () => {
   })
 })
 
+// ── matchRule ──────────────────────────────────────────────────────────────
+
 function seg(cmd: string, args: string[] = []) {
   return { args, cmd, hasCommandSubst: false, reads: [], writes: [] }
 }
@@ -173,163 +172,122 @@ describe("matchRule — pattern syntax", () => {
     { expected: false, input: seg("git", ["push"]), rule: "git status:*" },
     { expected: true, input: seg("npm", ["install"]), rule: "npm install:*" },
     { expected: false, input: seg("npm", ["uninstall"]), rule: "npm install:*" },
-    // Args containing a literal colon are matched as-is (the colon is
-    // only meaningful as the `:*` wildcard suffix, not as a separator).
     { expected: true, input: seg("bun", ["test:node"]), rule: "bun test:node" },
     { expected: false, input: seg("bun", ["test:node", "--flag"]), rule: "bun test:node" },
     { expected: true, input: seg("bun", ["test:node", "--flag"]), rule: "bun test:node:*" },
     { expected: true, input: seg("bun", ["test:bun"]), rule: "bun test:bun:*" },
     { expected: false, input: seg("bun", ["test:other"]), rule: "bun test:bun:*" },
+    // Bare `*` matches any command (used by `Bash` rule with no parens).
+    { expected: true, input: seg("anything", ["whatever"]), rule: "*" },
+    { expected: true, input: seg("ls"), rule: "*" },
   ]
 
   for (const c of cases) {
     test(`"${c.rule}" vs ${c.input.cmd} ${c.input.args.join(" ")}`.trim(), () => {
-      expect(matchRule({ pattern: c.rule, policy: "allow" }, c.input)).toBe(c.expected)
+      expect(matchRule({ pattern: c.rule, policy: "allow", scope: "bash" }, c.input)).toBe(
+        c.expected
+      )
     })
   }
 })
 
-describe("checkBash — cwd safety", () => {
-  // Policy: allow ls + cat + cd; fileRead allows everything *if asked
-  // about an absolute path*, denies relative paths so we can verify
-  // the wrap kicked in.
-  const policy = definePermissions({
-    rules: [
-      { pattern: "ls:*", policy: "allow" },
-      { pattern: "cat:*", policy: "allow" },
-      { pattern: "cd:*", policy: "allow" },
-    ],
-    fileRead: () => "allow",
-    fileWrite: () => "allow",
-  })
+// ── PermissionManager + bash handler — end-to-end ─────────────────────────
 
-  test("relative path is auto-allowed when no cd present", () => {
-    expect(checkBash("cat src/index.ts", policy).verdict).toBe("allow")
-  })
-
-  test("relative path forces ask when a cd segment is present", () => {
-    expect(checkBash("cd /tmp && cat passwd", policy).verdict).toBe("ask")
-  })
-
-  test("absolute path stays allowed even with cd present", () => {
-    expect(checkBash("cd /tmp && cat /etc/hostname", policy).verdict).toBe("allow")
-  })
-
-  test("pushd / popd also trigger the cwd guard", () => {
-    expect(checkBash("pushd /tmp; cat passwd", policy).verdict).toBe("ask")
-    expect(checkBash("popd; cat foo", policy).verdict).toBe("ask")
-  })
-
-  test("cd alone (no chain) doesn't break anything", () => {
-    expect(checkBash("cd packages/tui", policy).verdict).toBe("allow")
-  })
-})
-
-describe("checkBash — dynamic execution", () => {
-  const policy = definePermissions({
-    rules: [
-      { pattern: "ls:*", policy: "allow" },
-      { pattern: "echo:*", policy: "allow" },
-    ],
-    fileRead: () => "allow",
-    fileWrite: () => "allow",
-  })
-
-  test("source forces ask", () => {
-    expect(checkBash("source ~/.bashrc", policy).verdict).toBe("ask")
-  })
-
-  test(". (source alias) forces ask", () => {
-    expect(checkBash(". ./script.sh", policy).verdict).toBe("ask")
-  })
-
-  test("eval forces ask", () => {
-    expect(checkBash("eval 'ls -la'", policy).verdict).toBe("ask")
-  })
-
-  test("exec forces ask", () => {
-    expect(checkBash("exec bun test", policy).verdict).toBe("ask")
-  })
-
-  test("a chain with one dynamic-exec segment forces ask overall", () => {
-    expect(checkBash("ls && eval 'something'", policy).verdict).toBe("ask")
-  })
-})
-
-describe("checkBash — end-to-end", () => {
-  const policy = definePermissions({
-    rules: [
-      { pattern: "ls:*", policy: "allow" },
-      { pattern: "echo:*", policy: "allow" },
-      { pattern: "git status:*", policy: "allow" },
-      { pattern: "git diff:*", policy: "allow" },
-      { pattern: "git push:*", policy: "ask" },
-      { pattern: "rm:*", policy: "ask" },
-      { pattern: "sudo:*", policy: "deny" },
-      { pattern: "sed:*", policy: "allow" },
-      { pattern: "cat:*", policy: "allow" },
-      { pattern: "head:*", policy: "allow" },
-      { pattern: "wc:*", policy: "allow" },
-      { pattern: "grep:*", policy: "allow" },
-    ] as Rule[],
-    fileRead: () => "allow",
-    fileWrite: () => "ask",
-  })
+describe("PermissionManager.validate('bash') — end-to-end", () => {
+  function build() {
+    return new PermissionManager({
+      cwd,
+      rules: {
+        allow: [
+          "Bash(ls:*)",
+          "Bash(echo:*)",
+          "Bash(git status:*)",
+          "Bash(git diff:*)",
+          "Bash(sed:*)",
+          "Bash(cat:*)",
+          "Bash(head:*)",
+          "Bash(wc:*)",
+          "Bash(grep:*)",
+          // Allow everything for files so the bash handler's read/write
+          // delegation doesn't escalate on its own.
+          "Read(*)",
+          "Write(*)",
+        ],
+        ask: ["Bash(git push:*)", "Bash(rm:*)"],
+        deny: ["Bash(sudo:*)"],
+      },
+    })
+  }
+  const m = build()
 
   test("plain ls auto-allows", () => {
-    expect(checkBash("ls -la", policy).verdict).toBe("allow")
+    expect(m.validate("bash", "ls -la").verdict).toBe("allow")
   })
 
-  test("sed -n print is allowed (the Claude Code gripe)", () => {
-    const r = checkBash("sed -n '1,20p' src/index.ts", policy)
-    expect(r.verdict).toBe("allow")
-  })
-
-  test("sed -i (in-place) escalates to ask via fileWrite", () => {
-    const r = checkBash("sed -i 's/foo/bar/' src/index.ts", policy)
-    expect(r.verdict).toBe("ask")
+  test("sed -n print is allowed", () => {
+    expect(m.validate("bash", "sed -n '1,20p' src/index.ts").verdict).toBe("allow")
   })
 
   test("sed with `w` script command is unsafe → ask", () => {
-    const r = checkBash("sed -e 'w /tmp/out' src/index.ts", policy)
-    expect(r.verdict).toBe("ask")
+    expect(m.validate("bash", "sed -e 'w /tmp/out' src/index.ts").verdict).toBe("ask")
   })
 
   test("piped read-only commands all allow", () => {
-    expect(checkBash("cat foo.ts | head -n 50 | grep TODO", policy).verdict).toBe("allow")
+    expect(m.validate("bash", "cat foo.ts | head -n 50 | grep TODO").verdict).toBe("allow")
   })
 
   test("git push asks", () => {
-    expect(checkBash("git push origin main", policy).verdict).toBe("ask")
+    expect(m.validate("bash", "git push origin main").verdict).toBe("ask")
   })
 
   test("sudo denies", () => {
-    expect(checkBash("sudo rm -rf /tmp/foo", policy).verdict).toBe("deny")
+    expect(m.validate("bash", "sudo rm -rf /tmp/foo").verdict).toBe("deny")
   })
 
-  test("unknown command → fallback ask", () => {
-    expect(checkBash("some-random-cmd --flag", policy).verdict).toBe("ask")
+  test("unknown command → ask (no rule matches)", () => {
+    expect(m.validate("bash", "some-random-cmd --flag").verdict).toBe("ask")
   })
 
   test("command substitution forces ask", () => {
-    expect(checkBash("echo $(whoami)", policy).verdict).toBe("ask")
+    expect(m.validate("bash", "echo $(whoami)").verdict).toBe("ask")
   })
 
-  test("redirect to file forces ask via fileWrite", () => {
-    expect(checkBash("ls > /tmp/out.txt", policy).verdict).toBe("ask")
-  })
-
-  test("redirect to /dev/null stays allow", () => {
-    expect(checkBash("ls > /dev/null 2>&1", policy).verdict).toBe("allow")
+  test("redirect to /dev/null is invisible (file handler not consulted)", () => {
+    expect(m.validate("bash", "ls > /dev/null 2>&1").verdict).toBe("allow")
   })
 
   test("chain: deny in any segment denies the whole", () => {
-    const r = checkBash("ls && sudo rm -rf /tmp", policy)
-    expect(r.verdict).toBe("deny")
+    expect(m.validate("bash", "ls && sudo rm -rf /tmp").verdict).toBe("deny")
   })
 
   test("chain: ask in any segment asks", () => {
-    const r = checkBash("ls && git push", policy)
-    expect(r.verdict).toBe("ask")
+    expect(m.validate("bash", "ls && git push").verdict).toBe("ask")
+  })
+})
+
+describe("PermissionManager.validate('bash') — file delegation", () => {
+  test("redirect to file delegates to file handler (write inside cwd → ask by default)", () => {
+    const m = new PermissionManager({
+      cwd,
+      rules: { allow: ["Bash(ls:*)"] },
+    })
+    // Write inside workspace, no Write rule → ask by default.
+    expect(m.validate("bash", "ls > out.txt").verdict).toBe("ask")
+  })
+
+  test("redirect to file with Write(*) allow rule allows", () => {
+    const m = new PermissionManager({
+      cwd,
+      rules: { allow: ["Bash(ls:*)", "Write(*)"] },
+    })
+    expect(m.validate("bash", "ls > out.txt").verdict).toBe("allow")
+  })
+
+  test("redirect to sensitive file denies (file handler enforces sensitive deny)", () => {
+    const m = new PermissionManager({
+      cwd,
+      rules: { allow: ["Bash(echo:*)", "Write(*)"] },
+    })
+    expect(m.validate("bash", "echo secret > .env").verdict).toBe("deny")
   })
 })

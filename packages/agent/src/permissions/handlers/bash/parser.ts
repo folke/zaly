@@ -23,7 +23,7 @@ export type ParseResult =
 /** Targets a redirect can write to without filesystem implications.
  *  Anything else is treated as a file write and goes through fileWrite
  *  policy. */
-export const SAFE_REDIRECT_TARGETS = new Set([
+const SAFE_REDIRECT_TARGETS = new Set([
   "/dev/null",
   "/dev/stderr",
   "/dev/stdout",

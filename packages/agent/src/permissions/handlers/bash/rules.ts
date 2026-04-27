@@ -1,6 +1,5 @@
+import type { Rule, Verdict } from "../../types.ts"
 import type { Segment } from "./parser.ts"
-
-export type Verdict = "allow" | "deny" | "ask"
 
 /** A command-pattern rule.
  *
@@ -17,10 +16,6 @@ export type Verdict = "allow" | "deny" | "ask"
  *  other. The `:` character is only meaningful as the trailing `:*`
  *  wildcard suffix — anywhere else (including inside an arg like
  *  `test:node`) it's a literal character. */
-export interface Rule {
-  pattern: string
-  policy: Verdict
-}
 
 interface ParsedPattern {
   cmd: string
@@ -71,6 +66,8 @@ function matchPart(part: string, value: string): boolean {
 /** Test whether a parsed segment matches a rule pattern. */
 export function matchRule(rule: Rule, seg: Segment): boolean {
   const p = parsePattern(rule.pattern)
+  // Bare `*` (e.g. from a `Bash` rule with no parens) matches any command.
+  if (p.cmd === "*" && p.parts.length === 0) return true
   if (p.cmd !== seg.cmd) return false
   if (seg.args.length < p.parts.length) return false
   for (let i = 0; i < p.parts.length; i++) {

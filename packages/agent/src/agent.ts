@@ -1,13 +1,12 @@
 // oxlint-disable no-await-in-loop
 import type { Message, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
-import type { PermissionPolicy } from "./permissions/index.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, runTool } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
-import { definePermissions } from "./permissions/index.ts"
+import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session.ts"
 import { StopPolicy } from "./stop.ts"
 import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
@@ -32,7 +31,7 @@ import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
 export class Agent extends Emitter<AgentEvent> {
   readonly #opts: AgentOptions
   readonly #stopPolicy: StopPolicy
-  readonly #permissions: PermissionPolicy
+  readonly #permissions: PermissionManager
   readonly session: Session
 
   #tools: Tool[] = []
@@ -61,7 +60,7 @@ export class Agent extends Emitter<AgentEvent> {
     this.tools = opts.tools ?? []
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
-    this.#permissions = definePermissions(opts.permissions)
+    this.#permissions = new PermissionManager(opts.permissions)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -123,7 +122,7 @@ export class Agent extends Emitter<AgentEvent> {
     this.#tools = next
   }
 
-  get permissions(): PermissionPolicy {
+  get permissions(): PermissionManager {
     return this.#permissions
   }
 

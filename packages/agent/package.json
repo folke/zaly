@@ -42,5 +42,8 @@
   },
   "devDependencies": {
     "@types/shell-quote": "^1.7.5"
+  },
+  "inlinedDependencies": {
+    "pathe": "2.0.3"
   }
 }

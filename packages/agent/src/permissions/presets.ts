@@ -1,182 +1,181 @@
-import type { PermissionOptions } from "./policy.ts"
-import type { Rule, Verdict } from "./bash/rules.ts"
+import type { Verdict } from "./types.ts"
 
-import { allowWithin, combineFileRules, denySensitive } from "./files.ts"
-
+/**
+ * Permission presets — verdict-keyed pattern lists in the same shape
+ * `parseRules` accepts. The TUI exposes these as `--preset strict`,
+ * `--preset readonly`, etc.; the manager resolves the chosen preset to
+ * the structured `Rule<string>[]` at construction.
+ *
+ * Pattern grammar:
+ *   "Bash(ls:*)"   → bash command pattern
+ *   "Read(/src/**)" → workspace-relative gitignore pattern
+ *   "Read(*)"       → matches every read in any workspace
+ *   "Bash"          → bare scope, equivalent to `Bash(*)` (match any cmd)
+ */
 export type PermissionPresetName = "strict" | "readonly" | "permissive" | "yolo"
 
-export interface PermissionPreset extends Required<PermissionOptions> {
-  preset: PermissionPresetName
+export interface PermissionPreset {
   description: string
+  rules: Partial<Record<Verdict, string[]>>
 }
 
-// ── Rule sets ────────────────────────────────────────────────────────────
+// ── Pattern groups ─────────────────────────────────────────────────────────
 
 /** Read-only utilities the model can run without surprises: file
- *  inspection, search, and metadata. None of these modify state. */
-const READONLY_TOOLS: Rule[] = [
-  { pattern: "ls:*", policy: "allow" },
-  { pattern: "cat:*", policy: "allow" },
-  { pattern: "head:*", policy: "allow" },
-  { pattern: "tail:*", policy: "allow" },
-  { pattern: "wc:*", policy: "allow" },
-  { pattern: "find:*", policy: "allow" },
-  { pattern: "grep:*", policy: "allow" },
-  { pattern: "rg:*", policy: "allow" },
-  { pattern: "fd:*", policy: "allow" },
-  { pattern: "sort:*", policy: "allow" },
-  { pattern: "uniq:*", policy: "allow" },
-  { pattern: "cut:*", policy: "allow" },
-  { pattern: "diff:*", policy: "allow" },
-  { pattern: "stat:*", policy: "allow" },
-  { pattern: "file:*", policy: "allow" },
-  { pattern: "realpath:*", policy: "allow" },
-  { pattern: "readlink:*", policy: "allow" },
-  { pattern: "basename:*", policy: "allow" },
-  { pattern: "dirname:*", policy: "allow" },
-  { pattern: "echo:*", policy: "allow" },
-  { pattern: "printf:*", policy: "allow" },
-  { pattern: "sed:*", policy: "allow" }, // file writes still gated by fileWrite
-  { pattern: "awk:*", policy: "allow" },
-  { pattern: "xxd:*", policy: "allow" },
-  { pattern: "hexdump:*", policy: "allow" },
-  { pattern: "od:*", policy: "allow" },
-  { pattern: "tree:*", policy: "allow" },
-  { pattern: "pwd", policy: "allow" },
-  { pattern: "true", policy: "allow" },
-  { pattern: "false", policy: "allow" },
-  { pattern: "which:*", policy: "allow" },
-  { pattern: "type:*", policy: "allow" },
-  { pattern: "command:*", policy: "allow" },
-  { pattern: "test:*", policy: "allow" },
-  { pattern: "cd:*", policy: "allow" },
+ *  inspection, search, metadata. None of these modify state on their own.
+ *  (`sed`/`awk` writes still gated by Write rules via the bash handler's
+ *  composition with the file handler.) */
+const READONLY_BASH = [
+  "Bash(ls:*)",
+  "Bash(cat:*)",
+  "Bash(head:*)",
+  "Bash(tail:*)",
+  "Bash(wc:*)",
+  "Bash(find:*)",
+  "Bash(grep:*)",
+  "Bash(rg:*)",
+  "Bash(fd:*)",
+  "Bash(sort:*)",
+  "Bash(uniq:*)",
+  "Bash(cut:*)",
+  "Bash(diff:*)",
+  "Bash(stat:*)",
+  "Bash(file:*)",
+  "Bash(realpath:*)",
+  "Bash(readlink:*)",
+  "Bash(basename:*)",
+  "Bash(dirname:*)",
+  "Bash(echo:*)",
+  "Bash(printf:*)",
+  "Bash(sed:*)",
+  "Bash(awk:*)",
+  "Bash(xxd:*)",
+  "Bash(hexdump:*)",
+  "Bash(od:*)",
+  "Bash(tree:*)",
+  "Bash(pwd)",
+  "Bash(true)",
+  "Bash(false)",
+  "Bash(which:*)",
+  "Bash(type:*)",
+  "Bash(command:*)",
+  "Bash(test:*)",
+  "Bash(cd:*)",
 ]
 
 /** Read-only git + GitHub CLI subcommands. */
-const READONLY_GIT: Rule[] = [
-  { pattern: "git status:*", policy: "allow" },
-  { pattern: "git log:*", policy: "allow" },
-  { pattern: "git diff:*", policy: "allow" },
-  { pattern: "git show:*", policy: "allow" },
-  { pattern: "git show-ref:*", policy: "allow" },
-  { pattern: "git branch:*", policy: "allow" },
-  { pattern: "git remote:*", policy: "allow" },
-  { pattern: "git rev-parse:*", policy: "allow" },
-  { pattern: "git config --get:*", policy: "allow" },
-  { pattern: "gh issue list:*", policy: "allow" },
-  { pattern: "gh issue view:*", policy: "allow" },
-  { pattern: "gh pr list:*", policy: "allow" },
-  { pattern: "gh pr view:*", policy: "allow" },
-  { pattern: "gh repo view:*", policy: "allow" },
+const READONLY_GIT = [
+  "Bash(git status:*)",
+  "Bash(git log:*)",
+  "Bash(git diff:*)",
+  "Bash(git show:*)",
+  "Bash(git show-ref:*)",
+  "Bash(git branch:*)",
+  "Bash(git remote:*)",
+  "Bash(git rev-parse:*)",
+  "Bash(git config --get:*)",
+  "Bash(gh issue list:*)",
+  "Bash(gh issue view:*)",
+  "Bash(gh pr list:*)",
+  "Bash(gh pr view:*)",
+  "Bash(gh repo view:*)",
 ]
 
-/** Common dev workflow commands — build, test, typecheck. Don't include
- *  package management (`npm install`, `bun add`) — those reach the
- *  network and can drag arbitrary code in. */
-const DEV_BASIC: Rule[] = [
-  { pattern: "bun test:*", policy: "allow" },
-  { pattern: "bun test:node:*", policy: "allow" },
-  { pattern: "bun test:bun:*", policy: "allow" },
-  { pattern: "bun check:*", policy: "allow" },
-  { pattern: "bun run:*", policy: "allow" },
-  { pattern: "bun build:*", policy: "allow" },
-  { pattern: "bunx tsc:*", policy: "allow" },
-  { pattern: "bun tsc:*", policy: "allow" },
-  { pattern: "bun x tsc:*", policy: "allow" },
-  { pattern: "bunx vitest:*", policy: "allow" },
-  { pattern: "bun x vitest:*", policy: "allow" },
-  { pattern: "bunx oxlint:*", policy: "allow" },
-  { pattern: "bun x oxlint:*", policy: "allow" },
-  { pattern: "oxlint:*", policy: "allow" },
+/** Common dev-workflow commands — build, test, typecheck. Excludes
+ *  package management (`npm install`, `bun add`) which can drag arbitrary
+ *  code in over the network. */
+const DEV_BASIC = [
+  "Bash(bun test:*)",
+  "Bash(bun test:node:*)",
+  "Bash(bun test:bun:*)",
+  "Bash(bun check:*)",
+  "Bash(bun run:*)",
+  "Bash(bun build:*)",
+  "Bash(bunx tsc:*)",
+  "Bash(bun tsc:*)",
+  "Bash(bun x tsc:*)",
+  "Bash(bunx vitest:*)",
+  "Bash(bun x vitest:*)",
+  "Bash(bunx oxlint:*)",
+  "Bash(bun x oxlint:*)",
+  "Bash(oxlint:*)",
 ]
 
-/** Hard denies — never auto-allow, regardless of preset. */
-const HARD_DENIES: Rule[] = [{ pattern: "sudo:*", policy: "deny" }]
+/** Hard denies — never auto-allowed, regardless of preset. */
+const HARD_DENIES = ["Bash(sudo:*)"]
 
 /** Broader rules unlocked by the permissive preset. Trades some safety
  *  for speed — appropriate for frontier models with strong instruction
- *  following. Includes ad-hoc bun/npm script execution but not package
- *  management or network installers. */
-const PERMISSIVE_EXTRAS: Rule[] = [
-  { pattern: "bun -e:*", policy: "allow" },
-  { pattern: "bun:*", policy: "allow" },
-  { pattern: "node:*", policy: "allow" },
-  { pattern: "node -e:*", policy: "allow" },
-  { pattern: "make:*", policy: "allow" },
-  { pattern: "mkdir:*", policy: "allow" },
-  { pattern: "cp:*", policy: "allow" },
-  { pattern: "mv:*", policy: "allow" },
-  { pattern: "touch:*", policy: "allow" },
-  { pattern: "ln:*", policy: "allow" },
-  { pattern: "chmod:*", policy: "allow" },
-  { pattern: "git add:*", policy: "allow" },
-  { pattern: "git commit:*", policy: "allow" },
-  { pattern: "git checkout:*", policy: "allow" },
-  { pattern: "git restore:*", policy: "allow" },
-  { pattern: "git stash:*", policy: "allow" },
-  { pattern: "git fetch:*", policy: "allow" },
-  { pattern: "git pull:*", policy: "allow" },
-  { pattern: "curl:*", policy: "allow" },
-  { pattern: "jq:*", policy: "allow" },
-  { pattern: "perl -e:*", policy: "allow" },
-  { pattern: "timeout:*", policy: "allow" },
-  { pattern: "for:*", policy: "allow" },
-  { pattern: "while:*", policy: "allow" },
+ *  following. Includes ad-hoc bun/node evals and git mutations. */
+const PERMISSIVE_EXTRAS = [
+  "Bash(bun -e:*)",
+  "Bash(bun:*)",
+  "Bash(node:*)",
+  "Bash(node -e:*)",
+  "Bash(make:*)",
+  "Bash(mkdir:*)",
+  "Bash(cp:*)",
+  "Bash(mv:*)",
+  "Bash(touch:*)",
+  "Bash(ln:*)",
+  "Bash(chmod:*)",
+  "Bash(git add:*)",
+  "Bash(git commit:*)",
+  "Bash(git checkout:*)",
+  "Bash(git restore:*)",
+  "Bash(git stash:*)",
+  "Bash(git fetch:*)",
+  "Bash(git pull:*)",
+  "Bash(curl:*)",
+  "Bash(jq:*)",
+  "Bash(perl -e:*)",
+  "Bash(timeout:*)",
+  "Bash(for:*)",
+  "Bash(while:*)",
 ]
 
-// ── Presets ──────────────────────────────────────────────────────────────
-
-const askAll = (): Verdict => "ask"
-const allowAll = (): Verdict => "allow"
-
-/** Files inside cwd are allowed for read; everything else asks.
- *  Sensitive paths (`.env*`, `.ssh/`, etc.) are denied even within cwd. */
-function readFromCwd(): (path: string) => Verdict {
-  return combineFileRules([denySensitive(), allowWithin(process.cwd())], "ask")
-}
-
-/** Files inside cwd are allowed for write (sensitive paths still denied);
- *  everything else asks. */
-function writeInCwd(): (path: string) => Verdict {
-  return combineFileRules([denySensitive(), allowWithin(process.cwd())], "ask")
-}
+// ── Presets ────────────────────────────────────────────────────────────────
 
 // oxlint-disable sort-keys
 export const permissionPresets = {
   strict: {
-    preset: "strict",
     description: "Ask for everything. No commands or file ops auto-allowed.",
-    fallback: "ask",
-    rules: [...HARD_DENIES],
-    fileRead: askAll,
-    fileWrite: askAll,
+    rules: {
+      deny: HARD_DENIES,
+      // Override the file handler's default-allow-on-read inside workspace.
+      ask: ["Read(*)", "Write(*)"],
+    },
   },
   readonly: {
-    preset: "readonly",
     description:
       "Auto-allow read-only utilities, git read-only ops, and common build/test commands. " +
-      "File reads inside cwd are allowed (sensitive paths denied); writes always ask.",
-    fallback: "ask",
-    rules: [...HARD_DENIES, ...READONLY_TOOLS, ...READONLY_GIT, ...DEV_BASIC],
-    fileRead: readFromCwd(),
-    fileWrite: askAll,
+      "Reads inside the workspace are allowed (sensitive paths denied); writes always ask.",
+    rules: {
+      deny: HARD_DENIES,
+      allow: [...READONLY_BASH, ...READONLY_GIT, ...DEV_BASIC],
+    },
   },
   permissive: {
-    preset: "permissive",
     description:
       "Readonly preset plus broader dev commands (file moves, ad-hoc bun/node evals, " +
-      "git mutations, network fetches). Calibrated for frontier models.",
-    fallback: "ask",
-    rules: [...HARD_DENIES, ...READONLY_TOOLS, ...READONLY_GIT, ...DEV_BASIC, ...PERMISSIVE_EXTRAS],
-    fileRead: readFromCwd(),
-    fileWrite: writeInCwd(),
+      "git mutations, network fetches) and writes inside the workspace.",
+    rules: {
+      deny: HARD_DENIES,
+      allow: [
+        ...READONLY_BASH,
+        ...READONLY_GIT,
+        ...DEV_BASIC,
+        ...PERMISSIVE_EXTRAS,
+        // Allow writes inside any workspace (sensitive paths still denied
+        // by the file handler before rule resolution).
+        "Write(*)",
+      ],
+    },
   },
   yolo: {
-    preset: "yolo",
     description: "Allow everything. No prompts. Use only when you trust the model and the task.",
-    fallback: "allow",
-    rules: [],
-    fileRead: allowAll,
-    fileWrite: allowAll,
+    rules: {
+      allow: ["Bash", "Read(*)", "Write(*)"],
+    },
   },
 } as const satisfies Record<PermissionPresetName, PermissionPreset>
