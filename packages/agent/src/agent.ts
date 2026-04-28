@@ -7,7 +7,7 @@ import { collect, isContextOverflow } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
-import { Session } from "./session.ts"
+import { Session } from "./session/index.ts"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { extractToolCalls } from "./utils/index.ts"
@@ -446,23 +446,20 @@ export class Agent extends Emitter<AgentEvent> {
   }
 
   #setStatus(status: AgentStatus): void {
-    if (this.#status === status) return
-    // Transitioning into active work (streaming) is the unambiguous
-    // "loop has woken up" signal. Pending wakeups were fallback timers
-    // for exactly this; clear them and carry over their hints.
-    if (status === "streaming") this.#cancelAllWakeups()
+    const prev = this.#status
+    if (prev === status) return
+    // Cancel wakeups only when an EXTERNAL wake-up brings the loop back
+    // to active (idle/paused → streaming). Mid-turn transitions
+    // (running-tools → streaming) are the same turn continuing — a
+    // wakeup the model just scheduled mid-tool-call would otherwise be
+    // killed before it ever fires. The "external wake-up" cases that
+    // *should* cancel: a `task-done` inject, a heartbeat, a user
+    // message — all route through `inject` → `send` → `run` from the
+    // idle/paused state, hitting this branch correctly.
+    if (status === "streaming" && (prev === "idle" || prev === "paused")) {
+      this.#cancelAllWakeups()
+    }
     this.#status = status
     this.emit({ status, type: "status" })
   }
-}
-
-/** Minimal XML escaper for wakeup-tag attributes / bodies. Same shape
- *  as the helper in `tasks.ts`; inlined here to keep the wakeup paths
- *  self-contained (no circular import). */
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }

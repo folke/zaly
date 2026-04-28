@@ -1,6 +1,7 @@
 import type {
   Message,
   MetaPart,
+  TextPart,
   Tool,
   ToolCallPart,
   ToolContext,
@@ -9,7 +10,7 @@ import type {
   Streamable as TStreamable,
 } from "@zaly/ai"
 
-import { formatToolError, isStreamable, runTool, ToolError, stringifyContent } from "@zaly/ai"
+import { formatToolError, isStreamable, runTool, stringifyContent, ToolError } from "@zaly/ai"
 import { Emitter } from "./events.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -20,25 +21,20 @@ const DEFAULT_GRACE_MS = 10_000
  *  `done` = result captured, no longer mutating. */
 export type TaskStatus = "pending" | "running" | "done"
 
-/** Public task shape. The Tasks registry exposes these via `running()`
- *  and `finished()`. Tools that introspect the registry (`task_list`,
- *  `task_wait`) read this surface. */
-export interface Task {
-  id: string
-  type: string
-  desc: string
-  status: TaskStatus
-  /** When set, this task is queued behind another and won't start until
-   *  the named task transitions to `done`. */
-  waitingFor?: string
-  /** Wallclock at registration. */
-  startedAt: number
-  /** Wallclock at completion; set once status is `done`. */
-  finishedAt?: number
-  /** Final result; set once status is `done`. */
-  result?: ToolResult
-}
-
+/** Public projection of a registered task. Status-discriminated so the
+ *  fields visible at any moment are exactly the ones that make sense
+ *  for that lifecycle stage:
+ *
+ *    - `running`: `elapsedMs` since start; `hasNewOutput` when the
+ *      streamable signals that `task_poll` would yield bytes.
+ *    - `pending`: queued behind another task (`waitingFor`); `elapsedMs`
+ *      counts time-since-registration.
+ *    - `done`: settled. Carries `durationMs` and the captured `result`.
+ *
+ *  This is the only public task type — the registry exposes it via
+ *  `running()` / `finished()` / `get()`, events carry it (`task-done`
+ *  is narrowed to `status: "done"` so listeners get `result` typed
+ *  without checks), and `task_list` JSON-stringifies it directly. */
 export type TaskInfo = {
   id: string
   type: string
@@ -46,8 +42,13 @@ export type TaskInfo = {
 } & (
   | { status: "running"; elapsedMs: number; hasNewOutput?: boolean }
   | { status: "pending"; waitingFor: string; elapsedMs: number }
-  | { status: "done"; durationMs: number }
+  | { status: "done"; durationMs: number; result: ToolResult }
 )
+
+/** A `TaskInfo` known to be in the `done` state. `task-done` event
+ *  payloads use this so listeners get `result` and `durationMs` typed
+ *  without manual narrowing. */
+export type DoneTaskInfo = Extract<TaskInfo, { status: "done" }>
 
 /** Events emitted by a `Tasks` instance. `task-done` only fires for
  *  completions that happen *outside* an in-flight `run()` round —
@@ -56,9 +57,9 @@ export type TaskInfo = {
  *  and at least one task is active), giving the agent a hook to keep
  *  the model engaged on long-running work. */
 export type TasksEvent =
-  | { type: "task-added"; task: Task }
-  | { type: "task-removed"; task: Task }
-  | { type: "task-done"; task: Task }
+  | { type: "task-added"; task: TaskInfo }
+  | { type: "task-removed"; task: TaskInfo }
+  | { type: "task-done"; task: DoneTaskInfo }
   | { type: "heartbeat"; running: readonly TaskInfo[] }
 
 /** Augment ToolMeta so tools and consumers can read freshness/state info
@@ -78,19 +79,37 @@ declare module "@zaly/ai" {
   }
 }
 
-interface InternalTask extends Task {
+/** Internal storage record. Not exposed — `toTaskInfo` projects it to
+ *  `TaskInfo` for any caller that crosses the boundary (events,
+ *  registry methods, the `task_*` tools). Carries everything the
+ *  registry needs to drive lifecycle transitions, plus the raw
+ *  timestamps `TaskInfo` derives elapsed/duration from. */
+interface InternalTask {
+  id: string
+  type: string
+  desc: string
+  status: TaskStatus
+  /** Wallclock at registration. */
+  startedAt: number
+  /** Wallclock at completion; set once status is `done`. */
+  finishedAt?: number
+  /** Captured result when status is `done`. */
+  result?: ToolResult
+  /** When set, this task is queued behind another and won't start until
+   *  the named task transitions to `done`. */
+  waitingFor?: string
   /** Streamable returned by the tool, if any — held so we can `abort()`
    *  on cancellation and call `poll()` for partial snapshots. */
   streamable?: TStreamable
   /** Resolves when the task transitions to `done`. Used by the round
-   *  race in `run()` and (later) by `task_wait`. */
+   *  race in `run()`. */
   donePromise: Promise<void>
   resolveDone: () => void
   /** When set, the task belongs to an in-flight `run()` round — its
    *  completion does *not* fire `task-done` (the round folds it into the
    *  returned parts instead). Cleared once the round ends. */
   ownerRound?: symbol
-  /** Stashed call so `runPending` can restart a pending task once its
+  /** Stashed call so a pending task can be restarted once its
    *  dependency completes. */
   pending?: { tool: Tool; call: ToolCallPart; ctx: ToolContext }
 }
@@ -145,33 +164,29 @@ export class Tasks extends Emitter<TasksEvent> {
   // ── Public registry surface ─────────────────────────────────────────
 
   /** Snapshot of every active task (pending or running). */
-  running(): readonly Task[] {
-    return [...this.#map.values()].filter((t) => t.status !== "done").map(toPublic)
+  running(): readonly TaskInfo[] {
+    return [...this.#map.values()]
+      .filter((t) => t.status !== "done")
+      .map((t) => toTaskInfo(t))
   }
 
   /** Snapshot of every task that has completed. Drops are by `remove()`
    *  or implicit retention; this list grows unless the caller prunes. */
-  finished(): readonly Task[] {
-    return [...this.#map.values()].filter((t) => t.status === "done").map(toPublic)
+  finished(): readonly DoneTaskInfo[] {
+    return [...this.#map.values()]
+      .filter((t): t is InternalTask & { status: "done" } => t.status === "done")
+      .map((t) => toTaskInfo(t) as DoneTaskInfo)
   }
 
-  /** Look up a task by id. Useful for `task_wait` / `task_kill`. */
-  get(id: string): Task | undefined {
+  /** Look up a task by id. Useful for `task_kill` / `task_poll`. */
+  get(id: string): TaskInfo | undefined {
     const t = this.#map.get(id)
-    return t ? toPublic(t) : undefined
+    return t ? toTaskInfo(t) : undefined
   }
 
+  /** Snapshot of every task in the registry — running, pending, and done. */
   info(): readonly TaskInfo[] {
-    const tasks = [...this.#map.values()]
-    return tasks.map((t) => {
-      const { id, status, type, desc } = t
-      const ms = (t.finishedAt ?? Date.now()) - t.startedAt
-      if (status === "running")
-        return { desc, elapsedMs: ms, hasNewOutput: t.streamable?.hasNew?.(), id, status, type }
-      if (status === "pending")
-        return { desc, elapsedMs: ms, id, status, type, waitingFor: t.waitingFor as string }
-      return { desc, durationMs: ms, id, status, type }
-    })
+    return [...this.#map.values()].map(toTaskInfo)
   }
 
   /** Non-consuming check: does the underlying streamable have output
@@ -226,7 +241,7 @@ export class Tasks extends Emitter<TasksEvent> {
     const task = this.#map.get(id)
     if (!task) return false
     this.#map.delete(id)
-    this.emit({ task: toPublic(task), type: "task-removed" })
+    this.emit({ task: toTaskInfo(task), type: "task-removed" })
     return true
   }
 
@@ -241,7 +256,9 @@ export class Tasks extends Emitter<TasksEvent> {
     task.result = result
     task.finishedAt = Date.now()
     task.resolveDone()
-    if (!task.ownerRound) this.emit({ task: toPublic(task), type: "task-done" })
+    if (!task.ownerRound) {
+      this.emit({ task: toTaskInfo(task) as DoneTaskInfo, type: "task-done" })
+    }
     this.#startReadyDependents(id, result)
     this.#syncHeartbeat()
   }
@@ -402,7 +419,7 @@ export class Tasks extends Emitter<TasksEvent> {
       waitingFor: opts.waitingFor,
     }
     this.#map.set(task.id, task)
-    this.emit({ task: toPublic(task), type: "task-added" })
+    this.emit({ task: toTaskInfo(task), type: "task-added" })
     this.#syncHeartbeat()
     return task
   }
@@ -541,16 +558,12 @@ export class Tasks extends Emitter<TasksEvent> {
       }
     }
 
-    // Pending: never started, will run when dependency completes.
+    // Pending: never started, will run when its dependency completes.
+    // Placeholder uses the standard TaskInfo shape so it's parseable
+    // the same way as task_list / heartbeat entries.
     if (task.status === "pending") {
       return {
-        content: [
-          {
-            data: `queued — will run after ${task.waitingFor} completes; result will arrive as a system message`,
-            tag: "task",
-            type: "meta",
-          },
-        ],
+        content: [{ data: toTaskInfo(task), tag: "task", type: "meta" }],
         id: call.id,
         isError: false,
         meta: stampTaskMeta(undefined, task),
@@ -606,21 +619,6 @@ function partialContentFrom(
   return [...snap.content]
 }
 
-/** Strip internal fields from a task record so the public surface stays
- *  immutable from the consumer's POV. */
-function toPublic(t: InternalTask): Task {
-  return {
-    desc: t.desc,
-    finishedAt: t.finishedAt,
-    id: t.id,
-    result: t.result,
-    startedAt: t.startedAt,
-    status: t.status,
-    type: t.type,
-    waitingFor: t.waitingFor,
-  }
-}
-
 /** Best-effort human-readable label for a tool call. Reads a
  *  `description` field from params if the tool defined one (bash does);
  *  otherwise falls back to the tool name. Kept short so log lines stay
@@ -652,31 +650,80 @@ function sleep(ms: number): Promise<void> {
   })
 }
 
+/** Render an array of `TaskInfo` as a `<tasks>` MetaPart for the model
+ *  (heartbeat pulses and `task_list`). Each task lands as one line of
+ *  JSON. The `result` field on done tasks is stripped — listing should
+ *  give an inventory, not historical output (the result was already
+ *  injected as a system message at task-done time, and re-shipping it
+ *  on every heartbeat / list call would be a token bomb). */
 export function taskInfoPart(info: readonly TaskInfo[]): MetaPart {
-  const data = info.length === 0 ? "no active tasks" : info.map((t) => JSON.stringify(t)).join("\n")
-  return { data, tag: "tasks", type: "meta" } satisfies MetaPart
+  if (info.length === 0) return { data: "no active tasks", tag: "tasks", type: "meta" }
+  const data = info.map((t) => JSON.stringify(t, omitResult)).join("\n")
+  return { data, tag: "tasks", type: "meta" }
 }
 
-/** Format a `task-done` event as a system message body for `Agent.inject`.
- *  Centralised so the framing is consistent (XML-tagged, parseable for
- *  TUI rendering) and so changes to the format hit one place. The body
- *  routes through `stringifyToolResult` so meta parts and attachments
- *  collapse the same way they would on the wire. */
-export function formatTaskCompletion(task: Task): string {
-  const head = `<task id="${task.id}" type="${escapeXml(task.type)}" desc="${escapeXml(task.desc)}">`
-  const body = task.result ? stringifyContent(task.result.content) : ""
-  return `${head}\n${body}\n</task>`
+/** JSON.stringify replacer that drops the `result` field. Used by
+ *  `taskInfoPart` to keep listing payloads bounded. */
+function omitResult(key: string, value: unknown): unknown {
+  return key === "result" ? undefined : value
+}
+
+function toTaskInfo(task: InternalTask): TaskInfo {
+  const { id, status, type, desc } = task
+  const ms = (task.finishedAt ?? Date.now()) - task.startedAt
+  if (status === "running") {
+    return { desc, elapsedMs: ms, hasNewOutput: task.streamable?.hasNew?.(), id, status, type }
+  }
+  if (status === "pending") {
+    return { desc, elapsedMs: ms, id, status, type, waitingFor: task.waitingFor ?? "" }
+  }
+  // status === "done" — `result` is set by `done()` before status flips,
+  // so the `?? formatToolError(...)` is just a defensive fallback for
+  // a malformed record (shouldn't happen in practice).
+  return {
+    desc,
+    durationMs: ms,
+    id,
+    result: task.result ?? formatToolError(new ToolError({
+      code: "INTERNAL",
+      message: `task "${task.id}" completed without a result`,
+    })),
+    status,
+    type,
+  }
+}
+
+/** Format a finished task as the parts of a system inject. Layout:
+ *
+ *    <task>{id, type, desc, status: "done", durationMs}</task>
+ *    {result body}
+ *
+ *  The header is the standard `TaskInfo`-shaped JSON so consumers
+ *  (model, TUI) can parse it the same way they parse `task_list` and
+ *  heartbeat output — same shape everywhere a task surfaces.
+ *
+ *  The body comes straight from `result.content`. For errors, that
+ *  already includes the `<error>{code, message, ...}</error>` MetaPart
+ *  + the formatted `❌ CODE: message` block (baked in by
+ *  `formatToolError`), so this function doesn't need to special-case
+ *  errors — the structured tag and human body ride along with the
+ *  result content for any tool failure, anywhere.
+ *
+ *  System messages can't carry attachments, so any image/pdf/etc. in
+ *  the result degrades to a `[image]` placeholder via
+ *  `stringifyContent` — best-effort, model still sees *something* was
+ *  there. */
+function formatTaskCompletion(task: DoneTaskInfo): (TextPart | MetaPart)[] {
+  const { result, ...header } = task
+  const parts: (TextPart | MetaPart)[] = [
+    { data: header, tag: "task", type: "meta" },
+  ]
+  const bodyText = stringifyContent(result.content)
+  if (bodyText !== "") parts.push({ text: bodyText, type: "text" })
+  return parts
 }
 
 /** Build an `inject`-ready system message for a finished task. */
-export function taskCompletionMessage(task: Task): Message<"system"> {
+export function taskCompletionMessage(task: DoneTaskInfo): Message<"system"> {
   return { content: formatTaskCompletion(task), role: "system" }
-}
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }
