@@ -20,7 +20,7 @@ import { uuidv7 } from "./utils/uuid.ts"
  * Typical interactive use:
  *
  * ```ts
- * const agent = new Agent({ model, tools })
+ * const agent = await Agent.load({ model, tools })
  * agent.session.on("node", (e) => render(e))
  * agent.send({ role: "user", content: "hi" })          // auto-runs
  * // …user types again later…
@@ -63,7 +63,12 @@ export class Agent extends Emitter<AgentEvent> {
   #lastError?: Error
   #lastStopReason?: AgentStopReason
 
-  constructor(opts: AgentOptions) {
+  /** Synchronous, low-level constructor. Prefer `Agent.load(opts)` —
+   *  it runs the same construction *plus* any async setup (skills
+   *  discovery, future warm-ups). The constructor is `protected` so
+   *  test doubles / subclasses can still call `super(opts)` directly,
+   *  but production code should always use the static factory. */
+  protected constructor(opts: AgentOptions) {
     super()
     this.#opts = opts
     this.#prompt = opts.prompt
@@ -106,6 +111,20 @@ export class Agent extends Emitter<AgentEvent> {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
     }
+  }
+
+  /** Recommended one-step path to a ready agent. Constructs the agent,
+   *  then runs any async setup the harness expects to be done before
+   *  the first `run()` (currently: skills discovery; future: MCP server
+   *  registration, model availability checks, …).
+   *
+   *  Tests / harnesses that want a synchronous build can subclass and
+   *  call the protected constructor, or skip the async setup with
+   *  `skills: false` and equivalent flags. */
+  static async load(opts: AgentOptions): Promise<Agent> {
+    const agent = new Agent(opts)
+    if (agent.#skills) await agent.#skills.load()
+    return agent
   }
 
   // ── Read ──────────────────────────────────────────────────────────────

@@ -24,14 +24,14 @@ afterEach(() => {
   for (const f of tmpFiles.splice(0)) if (existsSync(f)) rmSync(f, { force: true })
 })
 
-const buildParent = (childScripts: ReturnType<typeof okStop>[]): Agent =>
-  new Agent({ model: mockModel(childScripts) })
+const buildParent = async (childScripts: ReturnType<typeof okStop>[]): Promise<Agent> =>
+  Agent.load({ model: mockModel(childScripts) })
 
 const ctxFor = (parent: Agent): ToolContext => ({ agent: parent })
 
 describe("subagent tool", () => {
   test("happy path: spawns child, returns final assistant text", async () => {
-    const parent = buildParent([okStop("the answer is 42")])
+    const parent = await buildParent([okStop("the answer is 42")])
     const s = await subagentTool.call(
       { description: "answer the question", prompt: "you are a helper", task: "what's 6*7?" },
       ctxFor(parent)
@@ -56,7 +56,7 @@ describe("subagent tool", () => {
   })
 
   test("session JSONL file is written and contains the child's messages", async () => {
-    const parent = buildParent([okStop("hello from child")])
+    const parent = await buildParent([okStop("hello from child")])
     const s = await subagentTool.call(
       { description: "test session persistence", prompt: "p", task: "hi" },
       ctxFor(parent)
@@ -84,7 +84,7 @@ describe("subagent tool", () => {
       params: {},
       validateParams: () => ({}),
     }
-    const parent = new Agent({
+    const parent = await Agent.load({
       maxDepth: 1, // child at depth 1 == maxDepth → no subagent
       model: mockModel([okStop("k")]),
       tools: [subagentTool, dummyTool as never],
@@ -126,7 +126,7 @@ describe("subagent tool", () => {
   })
 
   test("hasNew() reflects pending text delta cursor", async () => {
-    const parent = buildParent([okStop("incremental")])
+    const parent = await buildParent([okStop("incremental")])
     const s = await subagentTool.call(
       { description: "x", prompt: "p", task: "t" },
       ctxFor(parent)
@@ -148,7 +148,7 @@ describe("subagent tool — depth limit", () => {
     // We can't easily reach in to inspect the child's tools without a
     // hook, so verify behaviorally: a child at the cap can still do work
     // but its meta records `depth === maxDepth`.
-    const parent = new Agent({
+    const parent = await Agent.load({
       maxDepth: 1,
       model: mockModel([okStop("done")]),
       tools: [subagentTool],

@@ -11,7 +11,7 @@ const multiply = defineTool({
 
 const model = await loadModel("openai/gpt-4o-mini")
 
-const agent = new Agent({
+const agent = await Agent.load({
   model,
   tools: [multiply],
 })

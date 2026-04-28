@@ -70,7 +70,7 @@ export function throwingModel(message: string): Model {
  *  machinery. Equivalent to:
  *
  *  ```ts
- *  const a = new Agent(opts)
+ *  const a = await Agent.load(opts)
  *  if (firstMessage) a.send(firstMessage)
  *  await a.run()
  *  ``` */
@@ -86,7 +86,7 @@ export async function runAgent(
   steps: number
   error?: Error
 }> {
-  const agent = new Agent(opts)
+  const agent = await Agent.load(opts)
   if (opts.send) agent.send(opts.send)
   const stopReason = await agent.run()
   return {

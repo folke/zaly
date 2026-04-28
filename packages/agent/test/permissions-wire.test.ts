@@ -114,7 +114,7 @@ describe("Tasks auto-check on tool dispatch", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = new Agent({
+    const agent = await Agent.load({
       model: mockModel(callThenStop("watch")),
       permissions: { rules: [{ pattern: "watch", policy: "deny", scope: "tool" }] },
       tools: [watcher],
@@ -128,7 +128,7 @@ describe("Tasks auto-check on tool dispatch", () => {
   })
 
   test("allowed tool runs normally", async () => {
-    const agent = new Agent({
+    const agent = await Agent.load({
       model: mockModel(callThenStop("noop")),
       permissions: { rules: [{ pattern: "noop", policy: "allow", scope: "tool" }] },
       tools: [noopTool],
@@ -142,7 +142,7 @@ describe("Tasks auto-check on tool dispatch", () => {
 
 describe("AgentOptions.allow — ask escalation", () => {
   test("ask without allow callback → deny", async () => {
-    const agent = new Agent({
+    const agent = await Agent.load({
       model: mockModel(callThenStop("noop")),
       permissions: { rules: [{ pattern: "noop", policy: "ask", scope: "tool" }] },
       tools: [noopTool],
@@ -165,7 +165,7 @@ describe("AgentOptions.allow — ask escalation", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = new Agent({
+    const agent = await Agent.load({
       allow: async () => true,
       model: mockModel(callThenStop("watch-ask")),
       permissions: { rules: [{ pattern: "watch-ask", policy: "ask", scope: "tool" }] },
@@ -186,7 +186,7 @@ describe("AgentOptions.allow — ask escalation", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = new Agent({
+    const agent = await Agent.load({
       allow: async () => false,
       model: mockModel(callThenStop("watch-deny")),
       permissions: { rules: [{ pattern: "watch-deny", policy: "ask", scope: "tool" }] },
@@ -201,7 +201,7 @@ describe("AgentOptions.allow — ask escalation", () => {
 
   test("allow callback receives scope, input, reason, suggestions", async () => {
     const seen: { scope?: string; input?: string; reason?: string; suggestions?: unknown } = {}
-    const agent = new Agent({
+    const agent = await Agent.load({
       allow: async (req) => {
         seen.scope = req.scope
         seen.input = req.input

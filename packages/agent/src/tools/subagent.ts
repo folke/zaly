@@ -78,7 +78,7 @@ export const subagentTool = defineTool({
     }),
   }),
 
-  call(args, ctx): Streamable {
+  async call(args, ctx): Promise<Streamable> {
     const parent = ctx.agent
     if (!parent) {
       throw new ToolError({
@@ -101,7 +101,11 @@ export const subagentTool = defineTool({
         : [...parent.tools]
 
     const session = new Session({ path: sessionPath })
-    const child = new Agent({
+    // `skills: false` — the parent's skill tool is already in `childTools`
+    // (because we copy `parent.tools` above and the agent merges the
+    // skill tool into its step list dynamically). Skipping the disk scan
+    // here keeps subagent spawn cheap.
+    const child = await Agent.load({
       depth,
       maxDepth: parent.maxDepth,
       model: parent.model,
@@ -109,6 +113,7 @@ export const subagentTool = defineTool({
       permissions: parent.permissions,
       prompt: [args.prompt],
       session,
+      skills: false,
       tools: childTools,
     })
 

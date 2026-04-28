@@ -74,13 +74,13 @@ if (claudePath) {
   )
 }
 
-function buildAgent(): Agent {
+async function buildAgent(): Promise<Agent> {
   // Pass the loaded Claude session through (consumed once); the Agent's
   // own `start()` is idempotent so the loaded session-start is preserved.
   const session = pendingClaude
   pendingClaude = undefined
 
-  const a = new Agent({
+  const a = await Agent.load({
     model,
     permissions: { preset: "yolo" },
     prompt: [
@@ -190,7 +190,7 @@ function buildAgent(): Agent {
   return a
 }
 
-let agent = buildAgent()
+let agent = await buildAgent()
 
 // ── REPL ─────────────────────────────────────────────────────────────────
 
@@ -271,7 +271,7 @@ for (;;) {
   if (/^\/reset$/i.test(input)) {
     process.stdout.write("\x1b[2m· disposing agent and starting fresh ·\x1b[0m\n")
     await agent.dispose()
-    agent = buildAgent()
+    agent = await buildAgent()
     continue
   }
 
