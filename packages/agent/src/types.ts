@@ -9,7 +9,13 @@ import type {
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
-import type { PermissionManager, PermissionOptions } from "./permissions/index.ts"
+import type {
+  PermissionManager,
+  PermissionOptions,
+  PermissionScope,
+  PermissionScopes,
+  Suggestion,
+} from "./permissions/index.ts"
 import type { Session } from "./session/index.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Tasks } from "./tasks.ts"
@@ -29,7 +35,35 @@ declare module "@zaly/ai" {
      *  Tasks-unaware and return a `Streamable` instead. */
     tasks?: Tasks
     messages?: readonly Message[]
+    /** Async permission check tools call before doing work. Resolves on
+     *  `allow`, throws a `ToolError(PERMISSION_DENIED)` on `deny`. For
+     *  `ask` verdicts, the agent invokes `AgentOptions.allow` (when
+     *  configured); if that returns `true` we resolve, otherwise we
+     *  throw. Absent on contexts without an Agent (eval / direct
+     *  `runTool`) — tools should treat a missing `need` as "no
+     *  permission system, allow."
+     *
+     *  Two layers of gating exist:
+     *    - `Tasks` auto-checks `tool` scope with the tool name on every
+     *      dispatch (so `tool(bash)` rules globally gate by name).
+     *    - Tools may opt into richer per-input checks via specialized
+     *      scopes (`bash(args.command)`, `read(path)`, …).
+     *
+     *  Scope names autocomplete from the `PermissionScopes` interface;
+     *  add your own via declaration merging. */
+    need?: <S extends PermissionScope>(scope: S, input: PermissionScopes[S]) => Promise<void>
   }
+}
+
+/** Information passed to `AgentOptions.allow` when an `ask` verdict
+ *  needs interactive resolution. Carry-everything shape so the harness
+ *  can render a useful prompt: which scope, which input, why the
+ *  manager paused, and what rule (if added) would have allowed it. */
+export interface PermissionRequest {
+  scope: string
+  input: string
+  reason: string
+  suggestions?: Suggestion[]
 }
 
 /** Outcome of a single step (one provider round-trip + tool batch).
@@ -104,6 +138,14 @@ export interface AgentOptions extends CollectOptions {
   heartbeatMs?: number
 
   // ── Recovery ───────────────────────────────────────────────────────
+  /** Resolver for `ask` permission verdicts. The agent invokes this
+   *  with the scope / input / reason / suggestions; resolve `true` to
+   *  allow the call, `false` to deny. Absent → ask defaults to deny.
+   *
+   *  Hook a TUI prompt here, or return `true` unconditionally for
+   *  unattended runs that should treat ask as allow (yolo-but-richer). */
+  allow?: (req: PermissionRequest) => Promise<boolean>
+
   /** Called when a step returns `context-overflow`. Should mutate the
    *  session (via `agent.session.compact()` after producing a summary)
    *  to fit within the context window. After it resolves the loop

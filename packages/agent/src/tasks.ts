@@ -485,30 +485,44 @@ export class Tasks extends Emitter<TasksEvent> {
     const ctx: ToolContext = { ...ctxBase, tasks: this }
     task.status = "running"
 
-    void runTool(tool, call.params, ctx, { streaming: true }).then((settled) => {
-      if (isStreamable(settled)) {
-        // Long-running — hold the streamable for partial snapshots /
-        // abort, wire its completion back through done().
-        task.streamable = settled
-        settled.done.then(
-          () => {
-            const snap = settled.poll()
-            this.done(task.id, {
-              content: snap.content,
-              error: snap.error,
-              isError: snap.isError,
-              meta: snap.meta,
-            })
-          },
-          // `done` shouldn't reject by contract; treat as internal bug.
-          (error: unknown) => this.done(task.id, formatToolError(error))
-        )
-        return
-      }
-      // Sync path: validation error, sync return, or thrown error —
-      // runTool has already formatted everything into a ToolResult.
-      this.done(task.id, settled)
-    })
+    // Tool-scope permission gate. Runs before validate/call so a denied
+    // tool name short-circuits cleanly without touching tool-defined
+    // params. Tools may layer richer per-input checks (`bash(command)`,
+    // `read(path)`, …) inside their own `call`. No-op when ctx.need is
+    // unset (eval / direct runTool harnesses).
+    const dispatchPromise = ctx.need
+      ? ctx.need("tool", tool.name).then(() => runTool(tool, call.params, ctx, { streaming: true }))
+      : runTool(tool, call.params, ctx, { streaming: true })
+
+    void dispatchPromise.then(
+      (settled) => {
+        if (isStreamable(settled)) {
+          // Long-running — hold the streamable for partial snapshots /
+          // abort, wire its completion back through done().
+          task.streamable = settled
+          settled.done.then(
+            () => {
+              const snap = settled.poll()
+              this.done(task.id, {
+                content: snap.content,
+                error: snap.error,
+                isError: snap.isError,
+                meta: snap.meta,
+              })
+            },
+            // `done` shouldn't reject by contract; treat as internal bug.
+            (error: unknown) => this.done(task.id, formatToolError(error))
+          )
+          return
+        }
+        // Sync path: validation error, sync return, or thrown error —
+        // runTool has already formatted everything into a ToolResult.
+        this.done(task.id, settled)
+      },
+      // The permission gate threw (or ToolError leaked from runTool).
+      // Either way, format and settle the task.
+      (error: unknown) => this.done(task.id, formatToolError(error))
+    )
   }
 
   /** Walk pending tasks; start any whose `dependsOn` just completed.

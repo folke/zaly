@@ -68,7 +68,11 @@ export const bashTool = defineTool({
     }),
   }),
 
-  call(args, ctx): Streamable {
+  async call(args, ctx): Promise<Streamable> {
+    // Permission gate. The bash handler validates the parsed command
+    // (segments, redirects, sensitive paths) and composes file-scope
+    // checks for any redirect targets via `ctx.validate`.
+    await ctx.need?.("bash", args.command)
     const cwd = ctx.cwd ?? process.cwd()
     const timeout = args.timeout
     const startedAt = Date.now()

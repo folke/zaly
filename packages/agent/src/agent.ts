@@ -3,7 +3,7 @@ import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/a
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
-import { collect, isContextOverflow } from "@zaly/ai"
+import { collect, isContextOverflow, ToolError } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
@@ -480,10 +480,37 @@ export class Agent extends Emitter<AgentEvent> {
       agent: this,
       cwd: this.#permissions.cwd,
       messages: this.session.messages,
+      need: (scope, input) => this.#need(scope, input),
       perms: this.#permissions,
       signal: this.#abortController?.signal,
       tasks: this.#tasks,
     }
+  }
+
+  /** Implementation of `ctx.need(scope, input)`. Resolves on `allow`,
+   *  throws a `PERMISSION_DENIED` `ToolError` on `deny`, and escalates
+   *  `ask` to `AgentOptions.allow` (treating it as `deny` when no
+   *  callback is configured). */
+  async #need(scope: string, input: string): Promise<void> {
+    const r = this.#permissions.validate(scope, input)
+    if (r.verdict === "allow") return
+    if (r.verdict === "ask" && this.#opts.allow) {
+      const ok = await this.#opts.allow({
+        input,
+        reason: r.reason,
+        scope,
+        suggestions: r.suggestions,
+      })
+      if (ok) return
+    }
+    throw new ToolError({
+      code: "PERMISSION_DENIED",
+      data: { input, scope, suggestions: r.suggestions, verdict: r.verdict },
+      message: r.reason,
+      // `ask` verdicts that the user denied this turn are retryable —
+      // they may add a rule later. Hard `deny` is not.
+      retryable: r.verdict === "ask",
+    })
   }
 
   /** Tear down session-scoped resources. Called on agent disposal — the

@@ -59,6 +59,7 @@ export const readTool = defineTool({
 
   async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
     const path = resolve(args.path)
+    await ctx.need?.("read", path)
 
     const fileStat = await stat(path).catch((error: unknown) => {
       throw new ToolError({

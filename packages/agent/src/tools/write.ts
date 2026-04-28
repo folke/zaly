@@ -37,6 +37,7 @@ export const writeTool = defineTool({
 
   async call(args, ctx): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
     const path = resolve(args.path)
+    await ctx.need?.("write", path)
 
     // Existing file → freshness required. New file → no requirement.
     if (safeStat(path)?.isFile()) assertFresh(path, ctx)
