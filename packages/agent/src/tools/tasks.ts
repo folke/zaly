@@ -1,0 +1,94 @@
+import type { ToolContext } from "@zaly/ai"
+import type { Task, Tasks } from "../tasks.ts"
+
+import { defineTool, ToolError } from "@zaly/ai"
+import { Type } from "typebox"
+
+/**
+ * Generic task management surface for the model.
+ *
+ *  - `task_list`: enumerate running and recently-finished tasks.
+ *  - `task_kill`: abort a running task. Idempotent.
+ *
+ * "Wait for a task" is intentionally absent — heartbeats keep the loop
+ * alive while tasks run, and `task-done` injects the final result as a
+ * system message automatically. If the model wants explicit polling
+ * cadence on something specific, it schedules a `wakeup` instead.
+ *
+ * Permission gating, when wired up, is the harness's concern; these
+ * tools are intentionally thin so the policy lives one layer up.
+ */
+
+// oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
+export const taskListTool = defineTool({
+  name: "task_list",
+  desc:
+    "List active and recently-finished tasks (running shells, subagents, " +
+    "any other long-running work the model has kicked off). Use this when " +
+    "you've lost track of an id, or to check which background work is " +
+    "still in flight.",
+  parallel: true,
+  params: Type.Object({
+    includeFinished: Type.Optional(
+      Type.Boolean({
+        description:
+          "When true, also include tasks that have already completed in this session. Default false.",
+      })
+    ),
+  }),
+
+  call(args, ctx) {
+    const tasks = requireTasks(ctx)
+    const list = [
+      ...tasks.running(),
+      ...(args.includeFinished ? tasks.finished() : []),
+    ]
+    if (list.length === 0) return "(no tasks)"
+    return list.map(formatTaskLine).join("\n")
+  },
+})
+
+// oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
+export const taskKillTool = defineTool({
+  name: "task_kill",
+  desc:
+    "Terminate a running task. Aborts the underlying work (e.g. SIGTERM " +
+    "→ SIGKILL for bash); pending tasks chained behind a killed task get " +
+    "auto-cancelled. Idempotent — safe to call on an already-finished task.",
+  params: Type.Object({
+    id: Type.String({ description: "Task id to terminate." }),
+  }),
+
+  call(args, ctx) {
+    const tasks = requireTasks(ctx)
+    const task = tasks.get(args.id)
+    if (!task) {
+      throw new ToolError({
+        code: "NOT_FOUND",
+        data: { id: args.id },
+        message: `no task with id "${args.id}"`,
+      })
+    }
+    tasks.abort(args.id, "killed via task_kill")
+    return `task ${args.id} aborted`
+  },
+})
+
+// ── Internals ──────────────────────────────────────────────────────────
+
+function requireTasks(ctx: ToolContext): Tasks {
+  if (!ctx.tasks) {
+    throw new ToolError({
+      code: "MISSING_TOOL_CONTEXT",
+      message: "task tools require a Tasks registry on the context (set up by the agent harness).",
+    })
+  }
+  return ctx.tasks
+}
+
+function formatTaskLine(task: Task): string {
+  const age = Date.now() - task.startedAt
+  const dur = task.finishedAt ? `${task.finishedAt - task.startedAt}ms` : `${age}ms+`
+  const dep = task.dependsOn ? ` ←${task.dependsOn}` : ""
+  return `${task.id} [${task.status}] ${task.type} (${dur})${dep} — ${task.desc}`
+}
