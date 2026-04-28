@@ -9,7 +9,6 @@ import type {
 } from "../provider.ts"
 import type {
   Attachment,
-  CacheHint,
   ImagePart,
   Message,
   MetaPart,
@@ -19,7 +18,7 @@ import type {
   Tool,
 } from "../types.ts"
 
-import { transformMeta, stringifyContent } from "../format.ts"
+import { transformMeta } from "../format.ts"
 
 /**
  * Anthropic Messages API adapter.
@@ -166,22 +165,20 @@ function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest 
   // `limit.output` for catalog-routed calls.
   const maxTokens = opts.maxTokens ?? 4096
 
-  // Pull out role:"system" messages and merge with `prompt[]` into the
-  // top-level `system` slot. Both are durable system context on the
-  // wire; Anthropic doesn't support mid-conversation system messages.
+  // The durable `prompt[]` is the only thing that lands in Anthropic's
+  // top-level `system` slot. Mid-conversation `role: "system"` messages
+  // (heartbeats, task completions, wakeups, ad-hoc injects) are
+  // converted to user messages with their content wrapped in a
+  // `<system>` MetaPart — Anthropic disallows mid-conversation system
+  // role outright, and reframing them this way preserves the "system
+  // note" signal while staying inside user/assistant alternation.
   const systemBlocks: AnthropicTextBlock[] = []
-  const conversational: Message[] = []
-  for (const msg of ctx.messages) {
-    if (msg.role === "system") {
-      systemBlocks.push(asTextBlock(stringifyContent(msg.content), caching ? msg.cache : undefined))
-    } else {
-      conversational.push(msg)
-    }
-  }
   if (ctx.prompt && ctx.prompt.length > 0) {
-    // Durable prompt prepends — same ordering rule as the OpenAI adapter.
-    systemBlocks.unshift(...ctx.prompt.map((text) => ({ text, type: "text" as const })))
+    systemBlocks.push(...ctx.prompt.map((text) => ({ text, type: "text" as const })))
   }
+  const conversational: Message[] = ctx.messages.map((msg) =>
+    msg.role === "system" ? systemToUser(msg) : msg
+  )
 
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
@@ -216,12 +213,6 @@ function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest 
 
   if (specific.userId !== undefined) out.metadata = { user_id: specific.userId }
   return out
-}
-
-function asTextBlock(text: string, cache: CacheHint | undefined): AnthropicTextBlock {
-  const block: AnthropicTextBlock = { text, type: "text" }
-  if (cache !== undefined) block.cache_control = { type: "ephemeral" }
-  return block
 }
 
 function toAnthropicTool(tool: Tool): AnthropicTool {
@@ -671,6 +662,30 @@ function* handleEvent(
     case "ping": {
       return
     }
+  }
+}
+
+/** Convert a mid-conversation `role: "system"` message into a user
+ *  message whose content is wrapped in a `<system>` MetaPart.
+ *
+ *  The durable system prompt (`AgentOptions.prompt`) is the only thing
+ *  that rides in the wire-level system slot. Mid-conversation system
+ *  notes (heartbeats, task completions, wakeups, ad-hoc injects) are
+ *  not durable context — they're events the model needs to react to in
+ *  the conversation flow.
+ *
+ *  Anthropic refuses mid-conversation system messages outright; OpenAI
+ *  accepts them but mixes them with the durable prompt in confusing
+ *  ways for long conversations. Reframing them as user messages with a
+ *  `<system>` MetaPart wrapper preserves the "this is a system note"
+ *  signal while staying within the providers' user/assistant alternation
+ *  model. */
+export function systemToUser(msg: Message<"system">): Message<"user"> {
+  return {
+    cache: msg.cache,
+    content: [{ data: msg.content, tag: "system", type: "meta" }],
+    providerOptions: msg.providerOptions,
+    role: "user",
   }
 }
 

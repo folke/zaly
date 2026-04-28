@@ -379,6 +379,9 @@ function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
 function toOpenAIMessage(msg: Message): OpenAIMessage {
   switch (msg.role) {
     case "system": {
+      // OpenAI accepts mid-conversation `role: "system"` natively, so we
+      // pass it straight through. (Anthropic doesn't, hence the
+      // `systemToUser` reframe over there.)
       return { content: stringifyContent(msg.content), role: "system" }
     }
     case "user": {

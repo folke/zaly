@@ -8,7 +8,12 @@ import { recordFetch, sseResponse, streamReq } from "../helpers/sse.ts"
 // ── Request translation ──────────────────────────────────────────────────
 
 describe("anthropic: request translation", () => {
-  test("system + user string content", async () => {
+  test("mid-conversation system message reframes as user with <system> wrap", async () => {
+    // Anthropic rejects mid-conversation system messages outright, and
+    // hoisting them to body.system would mix a one-off note with the
+    // durable prompt. The adapter converts them to user messages whose
+    // content is wrapped in a `<system>` MetaPart, preserving the
+    // "system note" signal while staying inside user/assistant alternation.
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -24,8 +29,20 @@ describe("anthropic: request translation", () => {
     const body = recorded[0].body as Record<string, unknown>
     expect(body.model).toBe("claude-sonnet-4-5")
     expect(body.stream).toBe(true)
-    expect(body.system).toBe("be concise")
-    expect(body.messages).toEqual([{ content: [{ text: "hi", type: "text" }], role: "user" }])
+    // No durable prompt → no system slot.
+    expect(body.system).toBeUndefined()
+    // System note rendered as user message with `<system>be concise</system>`,
+    // followed by the real user message. Anthropic merges consecutive
+    // same-role messages, so both user messages collapse into one.
+    expect(body.messages).toEqual([
+      {
+        content: [
+          { text: "<system>be concise</system>", type: "text" },
+          { text: "hi", type: "text" },
+        ],
+        role: "user",
+      },
+    ])
   })
 
   test("max_tokens defaults when caller omits it", async () => {
@@ -53,7 +70,7 @@ describe("anthropic: request translation", () => {
     expect((recorded[0].body as { max_tokens: number }).max_tokens).toBe(256)
   })
 
-  test("prompt[] is prepended to system blocks", async () => {
+  test("prompt[] populates the system slot; mid-convo system messages stay in conversation", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -66,14 +83,28 @@ describe("anthropic: request translation", () => {
         prompt: ["You are a tutor.", "Always show your work."],
       }))
     )
-    expect((recorded[0].body as { system: unknown }).system).toEqual([
+    const body = recorded[0].body as { system: unknown; messages: unknown }
+    // Only the durable prompt rides in the system slot.
+    expect(body.system).toEqual([
       { text: "You are a tutor.", type: "text" },
       { text: "Always show your work.", type: "text" },
-      { text: "be concise", type: "text" },
+    ])
+    // The session's `role: "system"` message becomes a wrapped user note.
+    expect(body.messages).toEqual([
+      {
+        content: [
+          { text: "<system>be concise</system>", type: "text" },
+          { text: "hi", type: "text" },
+        ],
+        role: "user",
+      },
     ])
   })
 
-  test("system message with cache hint sets cache_control on the block", async () => {
+  test("cache hint on a mid-convo system message attaches to the wrapped user content", async () => {
+    // The session message's `cache` hint propagates to the converted user
+    // message; Anthropic's per-message cache rule says the marker lands
+    // on the LAST content block of that message.
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -85,8 +116,14 @@ describe("anthropic: request translation", () => {
         model: "m",
       }))
     )
-    expect((recorded[0].body as { system: unknown }).system).toEqual([
-      { cache_control: { type: "ephemeral" }, text: "long preamble", type: "text" },
+    const body = recorded[0].body as { messages: { content: unknown }[]; system?: unknown }
+    expect(body.system).toBeUndefined()
+    // The wrapped system content + the user message merge into one
+    // `role: "user"` block (Anthropic-coalesce). The cache_control marker
+    // sits on the last block of the original system-converted message.
+    expect(body.messages[0].content).toEqual([
+      { cache_control: { type: "ephemeral" }, text: "<system>long preamble</system>", type: "text" },
+      { text: "hi", type: "text" },
     ])
   })
 
@@ -514,7 +551,6 @@ describe("anthropic: request translation", () => {
       }))
     )
     const body = recorded[0].body as Record<string, unknown>
-    expect(body.system).toBe("preamble")
     expect(JSON.stringify(body)).not.toContain("cache_control")
   })
 
