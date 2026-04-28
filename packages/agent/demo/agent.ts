@@ -75,12 +75,13 @@ if (claudePath) {
 }
 
 async function buildAgent(): Promise<Agent> {
-  // Pass the loaded Claude session through (consumed once); the Agent's
-  // own `start()` is idempotent so the loaded session-start is preserved.
-  const session = pendingClaude
+  // Pass the loaded Claude messages through (consumed once); the
+  // agent appends them to its fresh in-memory session.
+  const messages = pendingClaude?.messages
   pendingClaude = undefined
 
   const a = await Agent.load({
+    messages,
     model,
     permissions: { preset: "yolo" },
     prompt: [
@@ -88,7 +89,6 @@ async function buildAgent(): Promise<Agent> {
       "Use the available tools to answer questions about the project.",
       "Prefer fewer tool calls; batch independent reads in one turn when possible.",
     ],
-    session,
     tools: [
       bashTool,
       editTool,

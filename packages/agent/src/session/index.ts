@@ -1,7 +1,7 @@
 import type { FinishReason, Message, Usage } from "@zaly/ai"
 import type { WriteStream } from "node:fs"
 
-import { createWriteStream } from "node:fs"
+import { createWriteStream, existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { Emitter } from "../events.ts"
 import { uuidv7 } from "../utils/uuid.ts"
@@ -54,10 +54,16 @@ export type SessionEvent =
 // ── Session ──────────────────────────────────────────────────────────────
 
 export interface SessionOptions {
-  /** JSONL file to persist the session to. Each `node` event appends
-   *  one record. Open in append mode — existing content is preserved.
-   *  Use `Session.load(path)` to rehydrate from an existing file. */
+  /** JSONL file to persist the session to. If the file exists, its
+   *  records are read into the DAG before any `add()` calls; either way
+   *  the session opens it in append mode so subsequent commits land on
+   *  disk in real time. Omit for in-memory sessions. */
   path?: string
+  /** Initial head uuid — typically the latest record from disk. Set
+   *  this to navigate to a specific branch on load. Defaults to the
+   *  last record in the file (file order). Ignored when `path` is
+   *  unset or empty. */
+  head?: string
 }
 
 /** Metadata recorded on the `session-start` node by `start()`. Captures
@@ -90,6 +96,12 @@ export interface SessionStart {
  *
  * Branching, rewind, and replay all collapse to "set head." Nothing in
  * the format is destructive — old messages stay as orphan branches.
+ *
+ * Construction:
+ *   - Use `await Session.load(opts)` for the recommended path — handles
+ *     reading existing records + opening the writer in append mode.
+ *   - The constructor is `protected` so subclasses (test doubles) can
+ *     still extend `Session`, but production code goes through `load`.
  */
 export class Session extends Emitter<SessionEvent> {
   readonly #nodes = new Map<string, SessionNode>()
@@ -97,9 +109,61 @@ export class Session extends Emitter<SessionEvent> {
   #messages: Message[] = []
   #writer?: WriteStream
 
-  constructor(opts: SessionOptions = {}) {
+  /** Synchronous, low-level constructor. Prefer `Session.load(opts)` —
+   *  it runs the same construction *plus* file I/O (reading existing
+   *  records and opening the writer in append mode). The constructor
+   *  is `protected` so subclasses can still call `super()` directly. */
+  protected constructor() {
     super()
-    if (opts.path) this.#writer = createWriteStream(opts.path, { flags: "a" })
+  }
+
+  /** Recommended one-step path: construct, optionally hydrate from
+   *  `opts.path`, and open the writer for future appends. The returned
+   *  session is fully operational. */
+  static async load(opts: SessionOptions = {}): Promise<Session> {
+    const session = new Session()
+    if (opts.path !== undefined && opts.path !== "") {
+      await session.#hydrate(opts.path, opts.head)
+    }
+    return session
+  }
+
+  /** Load existing records from `path` (when the file exists) and open
+   *  the writer in append mode. New session-start / message / compact
+   *  nodes will land on disk as they're committed. */
+  async #hydrate(path: string, head?: string): Promise<void> {
+    if (existsSync(path)) {
+      const text = await readFile(path, "utf8")
+      const lines = text.split("\n")
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        if (line.length === 0) continue
+        let record: SessionNode
+        try {
+          record = JSON.parse(line) as SessionNode
+        } catch (error) {
+          // Tolerate a truncated last line (crash mid-write); anything
+          // else is real corruption.
+          if (i === lines.length - 1) continue
+          throw new Error(
+            `Session.load: malformed JSON at line ${i + 1} of "${path}": ${(error as Error).message}`,
+            { cause: error }
+          )
+        }
+        this.#nodes.set(record.uuid, record)
+      }
+      // Choose the head: explicit > last-on-file > none.
+      const last = [...this.#nodes.keys()].at(-1)
+      const target = head ?? last
+      if (head !== undefined && !this.#nodes.has(head)) {
+        throw new Error(`Session.load: head "${head}" not in file "${path}"`)
+      }
+      this.#head = target
+      this.#messages = this.#chain(target, { active: true })
+    }
+    // Open writer in append mode — creates the file on first write if
+    // it didn't exist.
+    this.#writer = createWriteStream(path, { flags: "a" })
   }
 
   /** Initialize the session by writing a `session-start` node. Called
@@ -208,62 +272,6 @@ export class Session extends Emitter<SessionEvent> {
     await new Promise<void>((resolve, reject) => {
       writer.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
     })
-  }
-
-  // ── Persistence ──────────────────────────────────────────────────────
-
-  /** Rehydrate a session from a JSONL file. Tolerant of a truncated
-   *  last line (crash mid-write). The reconstructed session continues
-   *  appending to the same file unless `append: false` is passed.
-   *
-   *  `fromUuid` selects the head — useful for branch-checkout. Defaults
-   *  to the latest record in the file (file order). */
-  static async load(
-    path: string,
-    opts: { fromUuid?: string; append?: boolean } = {}
-  ): Promise<Session> {
-    const text = await readFile(path, "utf8").catch((error) => {
-      throw new Error(`Session.load: cannot read "${path}": ${(error as Error).message}`, {
-        cause: error,
-      })
-    })
-    const lines = text.split("\n")
-    const records: SessionNode[] = []
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      if (line.length === 0) continue
-      try {
-        records.push(JSON.parse(line) as SessionNode)
-      } catch (error) {
-        // A truncated last line on crash is expected — tolerate it.
-        // Anything else is a real corruption signal.
-        if (i === lines.length - 1) continue
-        throw new Error(
-          `Session.load: malformed JSON at line ${i + 1}: ${(error as Error).message}`,
-          { cause: error }
-        )
-      }
-    }
-    if (records.length === 0) {
-      throw new Error(`Session.load: no records found in "${path}"`)
-    }
-
-    // Build empty session in-memory (no writer yet — we don't want to
-    // re-write the records we're loading), then load state.
-    const session = new Session()
-    for (const node of records) session.#nodes.set(node.uuid, node)
-
-    const head = opts.fromUuid ?? records[records.length - 1].uuid
-    if (!session.#nodes.has(head)) {
-      throw new Error(`Session.load: fromUuid "${head}" not in file "${path}"`)
-    }
-    session.#head = head
-    session.#messages = session.#chain(head, { active: true })
-
-    if (opts.append !== false) {
-      session.#writer = createWriteStream(path, { flags: "a" })
-    }
-    return session
   }
 
   // ── Internals ────────────────────────────────────────────────────────

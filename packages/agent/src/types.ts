@@ -16,7 +16,8 @@ import type {
   PermissionScopes,
   Suggestion,
 } from "./permissions/index.ts"
-import type { Session } from "./session/index.ts"
+import type { Session, SessionOptions } from "./session/index.ts"
+import type { Skills } from "./skills.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Tasks } from "./tasks.ts"
 
@@ -66,6 +67,16 @@ export interface PermissionRequest {
   suggestions?: Suggestion[]
 }
 
+/** Resolved-options shape handed to `Agent`'s protected constructor.
+ *  Identical to `AgentOptions` except `session` is the *built* `Session`
+ *  instance (constructed for you by `Agent.load`). Subclasses that call
+ *  `super(init)` directly need to provide their own pre-built session. */
+export interface AgentInit extends Omit<AgentOptions, "session" | "skills" | "cwd"> {
+  cwd: string
+  session: Session
+  skills?: Skills
+}
+
 /** Outcome of a single step (one provider round-trip + tool batch).
  *  Returned from `step()` so custom drivers can interleave their own
  *  logic between steps. */
@@ -81,6 +92,10 @@ export interface StepResult {
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
   model: Model
+  /** Initial working directory for the agent and its tools.
+   * Defaults to the process's current directory at load time.
+   */
+  cwd?: string
   /** Tools the model may call. Kernel-owned: the agent both passes
    *  these to the provider on every step and dispatches calls against
    *  them. Mutable post-construction via `agent.tools = …`. */
@@ -92,17 +107,23 @@ export interface AgentOptions extends CollectOptions {
   /** Either `PermissionOptions` (construct a fresh manager) or an
    *  existing `PermissionManager` instance to reuse — used by subagents
    *  to share the parent's workspaces + rules without copying. */
-  permissions?: PermissionOptions | PermissionManager
+  permissions?: Omit<PermissionOptions, "cwd"> | PermissionManager
   /** Per-call passthrough knobs (`temperature`, `toolChoice`,
    *  `reasoning`, `responseFormat`, …). The agent owns `model`,
    *  `messages`, `prompt`, and `tools` — those have dedicated
    *  top-level fields here. */
   request?: StreamOptions
-  /** Pre-built `Session` to use. Useful for resuming a persisted
-   *  conversation or for sharing one Session across multiple Agents
-   *  (e.g. swapping models). When omitted, a fresh in-memory Session
-   *  is created. Either way, `messages` (if any) are appended to it. */
-  session?: Session
+  /** Session for the conversation. Two flavours:
+   *    - `SessionOptions` (the common case) — `Agent.load` constructs
+   *      the session for you via `Session.load(opts)`. Pass
+   *      `{ path: "..." }` to persist; omit for in-memory.
+   *    - A pre-built `Session` instance — useful when sharing one
+   *      session across multiple Agents (model swaps) or when an
+   *      external loader (e.g. the Claude session importer) returns one.
+   *
+   *  When omitted, a fresh in-memory Session is created. Either way,
+   *  `messages` (if any) are appended to it. */
+  session?: SessionOptions | Session
   /** Initial messages appended to the session at construction. Useful
    *  for seeding a fresh conversation or for prepending fixed context
    *  to an existing session. */

@@ -1,5 +1,5 @@
 import type { Message } from "@zaly/ai"
-import type { SessionEvent, SessionNode, SessionOptions } from "../src/session/index.ts"
+import type { SessionEvent, SessionNode } from "../src/session/index.ts"
 
 import { describe, expect, test } from "vitest"
 import { Session } from "../src/session/index.ts"
@@ -7,10 +7,21 @@ import { Session } from "../src/session/index.ts"
 const u = (text: string): Message => ({ content: text, role: "user" })
 const a = (text: string): Message => ({ content: text, role: "assistant" })
 
+/** Sync sibling of `Session.load()` for the in-memory test path. The
+ *  base constructor is `protected`, so test files build instances via a
+ *  one-line subclass expression — same result, no async ceremony. */
+class TestSession extends Session {
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+  constructor() {
+    super()
+  }
+}
+const newSession = (): Session => new TestSession()
+
 /** Build a started session with optional seed messages — replaces the
  *  old `initialMessages` constructor convenience for tests. */
-function startedSession(opts?: SessionOptions, init?: Message[]): Session {
-  const s = new Session(opts)
+function startedSession(init?: Message[]): Session {
+  const s = newSession()
   s.start()
   for (const m of init ?? []) s.add(m)
   return s
@@ -18,14 +29,14 @@ function startedSession(opts?: SessionOptions, init?: Message[]): Session {
 
 describe("Session — basics", () => {
   test("constructor leaves the session unstarted (no nodes, undefined head)", () => {
-    const s = new Session()
+    const s = newSession()
     expect(s.messages).toEqual([])
     expect(s.head).toBeUndefined()
     expect(s.nodes.size).toBe(0)
   })
 
   test("start() seeds the session-start node with given metadata", () => {
-    const s = new Session()
+    const s = newSession()
     s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
     const start = s.nodes.get(s.head!) as Extract<SessionNode, { type: "session-start" }>
     expect(start.type).toBe("session-start")
@@ -35,7 +46,7 @@ describe("Session — basics", () => {
   })
 
   test("start() is idempotent — second call is a no-op", () => {
-    const s = new Session()
+    const s = newSession()
     s.start({ modelId: "first" })
     const firstHead = s.head
     s.start({ modelId: "second" })
@@ -45,7 +56,7 @@ describe("Session — basics", () => {
   })
 
   test("messages can be added in order after start()", () => {
-    const s = new Session()
+    const s = newSession()
     s.start()
     s.add(u("hi"))
     s.add(a("hello"))
@@ -80,7 +91,7 @@ describe("Session — add", () => {
 
 describe("Session — compact", () => {
   test("compaction marks a boundary; subsequent adds form the new active chain", () => {
-    const s = startedSession(undefined, [u("old"), a("older")])
+    const s = startedSession([u("old"), a("older")])
     expect(s.messages).toHaveLength(2)
     s.compact({ preTokens: 12_000, trigger: "auto" })
     expect(s.messages).toEqual([])
@@ -129,14 +140,14 @@ describe("Session — navigate", () => {
   })
 
   test("navigate(undefined) returns to root", () => {
-    const s = startedSession(undefined, [u("hi"), u("there")])
+    const s = startedSession([u("hi"), u("there")])
     s.navigate(undefined)
     expect(s.head).toBeUndefined()
     expect(s.messages).toEqual([])
   })
 
   test("navigate emits a navigate event with the new messages snapshot", () => {
-    const s = startedSession(undefined, [u("a"), u("b"), u("c")])
+    const s = startedSession([u("a"), u("b"), u("c")])
     const messageIds: string[] = []
     for (const [uuid, node] of s.nodes) {
       if (node.type === "message") messageIds.push(uuid)
@@ -152,14 +163,14 @@ describe("Session — navigate", () => {
   })
 
   test("navigating to an unknown uuid throws", () => {
-    const s = new Session()
+    const s = newSession()
     expect(() => s.navigate("not-a-real-uuid")).toThrow(/unknown uuid/)
   })
 })
 
 describe("Session — history", () => {
   test("returns empty when there's nothing past the active chain", () => {
-    const s = startedSession(undefined, [u("hi"), a("hello")])
+    const s = startedSession([u("hi"), a("hello")])
     expect(s.history()).toEqual([])
   })
 
@@ -214,14 +225,14 @@ describe("Session — JSONL persistence", () => {
 
   test("writes one record per node and round-trips via load", async () => {
     const file = path("roundtrip")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
     s.add(u("hi"))
     const aId = s.add(a("hello"), { modelId: "openai/gpt-4o", usage: { input: 5, output: 2 } })
     s.add(u("again"))
     await s.close()
 
-    const loaded = await Session.load(file)
+    const loaded = await Session.load({ path: file })
     expect(loaded.head).toBe(s.head)
     expect(loaded.messages).toEqual(s.messages)
     expect(loaded.nodes.size).toBe(s.nodes.size)
@@ -235,7 +246,7 @@ describe("Session — JSONL persistence", () => {
 
   test("compact + post-compact messages survive a round-trip", async () => {
     const file = path("compact")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start()
     s.add(u("old1"))
     s.add(a("old2"))
@@ -243,7 +254,7 @@ describe("Session — JSONL persistence", () => {
     s.add(u("fresh"))
     await s.close()
 
-    const loaded = await Session.load(file)
+    const loaded = await Session.load({ path: file })
     // Active chain stops at the compact, so only "fresh" is visible.
     expect(loaded.messages).toEqual([u("fresh")])
     // Pre-compact records still in the DAG (history).
@@ -252,34 +263,34 @@ describe("Session — JSONL persistence", () => {
 
   test("load picks the latest record as head by default", async () => {
     const file = path("latest")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start()
     s.add(u("a"))
     s.add(u("b"))
     const lastHead = s.head
     await s.close()
 
-    const loaded = await Session.load(file)
+    const loaded = await Session.load({ path: file })
     expect(loaded.head).toBe(lastHead)
   })
 
   test("load(path, { fromUuid }) navigates to a branch head", async () => {
     const file = path("branch")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start()
     s.add(u("first"))
     const branchPoint = s.head!
     s.add(u("alt-future"))
     await s.close()
 
-    const loaded = await Session.load(file, { fromUuid: branchPoint })
+    const loaded = await Session.load({ path: file, head: branchPoint })
     expect(loaded.head).toBe(branchPoint)
     expect(loaded.messages).toEqual([u("first")])
   })
 
   test("load tolerates a truncated last line (crash mid-write)", async () => {
     const file = path("truncated")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start()
     s.add(u("ok"))
     await s.close()
@@ -288,16 +299,16 @@ describe("Session — JSONL persistence", () => {
     const fs = await import("node:fs/promises")
     await fs.appendFile(file, '{"type":"message","message"', "utf8")
 
-    const loaded = await Session.load(file)
+    const loaded = await Session.load({ path: file })
     expect(loaded.messages).toEqual([u("ok")])
   })
 
   test("load throws on an unknown fromUuid", async () => {
     const file = path("badbranch")
-    const s = new Session({ path: file })
+    const s = await Session.load({ path: file })
     s.start()
     s.add(u("x"))
     await s.close()
-    await expect(Session.load(file, { fromUuid: "no-such-uuid" })).rejects.toThrow(/not in file/)
+    await expect(Session.load({ path: file, head: "no-such-uuid" })).rejects.toThrow(/not in file/)
   })
 })

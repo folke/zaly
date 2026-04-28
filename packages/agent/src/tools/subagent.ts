@@ -5,7 +5,6 @@ import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
 import { Agent } from "../agent.ts"
-import { Session } from "../session/index.ts"
 import { uuidv7 } from "../utils/uuid.ts"
 
 /**
@@ -100,7 +99,6 @@ export const subagentTool = defineTool({
         ? parent.tools.filter((t) => t.name !== "subagent")
         : [...parent.tools]
 
-    const session = new Session({ path: sessionPath })
     // `skills: false` — the parent's skill tool is already in `childTools`
     // (because we copy `parent.tools` above and the agent merges the
     // skill tool into its step list dynamically). Skipping the disk scan
@@ -112,7 +110,7 @@ export const subagentTool = defineTool({
       // Reuse the parent's manager so workspaces / rules carry over.
       permissions: parent.permissions,
       prompt: [args.prompt],
-      session,
+      session: { path: sessionPath },
       skills: false,
       tools: childTools,
     })
@@ -196,7 +194,7 @@ export const subagentTool = defineTool({
         async () => {
           // Flush + close the JSONL writer so the file is fully on disk
           // by the time the parent reads `sessionPath`.
-          await session.close()
+          await child.session.close()
           finalResult = buildResult(false)
         },
         async (error: unknown) => {
@@ -204,7 +202,7 @@ export const subagentTool = defineTool({
           // Don't reject the `done` promise — the harness's contract is
           // "completion is a final snapshot, not a throw."
           stopReason ??= "error"
-          await session.close().catch(() => undefined)
+          await child.session.close().catch(() => undefined)
           const meta = buildMeta(false)
           const message = error instanceof Error ? error.message : String(error)
           finalResult = {

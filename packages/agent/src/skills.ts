@@ -32,7 +32,7 @@ import { glob } from "./utils/glob.ts"
  *     when the catalog is empty. Lazily built; invalidated on reload.
  */
 
-const SKILLS_DIR = ".agent/skills"
+const SKILLS_DIR = ".agents/skills"
 
 export interface SkillEntry {
   name: string
@@ -58,15 +58,21 @@ export class Skills {
   readonly cwd: string
   #tool?: Tool
 
-  constructor(opts: SkillsOptions = {}) {
+  protected constructor(opts: SkillsOptions = {}) {
     this.cwd = opts.cwd ?? process.cwd()
+  }
+
+  static async load(opts?: SkillsOptions): Promise<Skills> {
+    const skills = new Skills(opts)
+    await skills.reload()
+    return skills
   }
 
   /** (Re)scan project + user `.agent/skills/` directories. Wipes the
    *  current catalog and the cached tool, then repopulates. Safe to
    *  call mid-session — agent uses `this.tool` per-step so the next
    *  request after reload picks up the change. */
-  async load(): Promise<void> {
+  async reload(): Promise<void> {
     this.catalog.clear()
     this.#tool = undefined
     // User first so project entries override on collision.
@@ -161,7 +167,12 @@ async function scanScope(root: string, scope: SkillEntry["scope"]): Promise<Skil
   // Depth 3 covers `.agent/skills/<name>/SKILL.md` and one extra level
   // (`.agent/skills/<category>/<name>/SKILL.md`). Bumping further pays
   // I/O cost we don't need for the skill convention.
-  for await (const rel of glob({ cwd: root, depth: 3, type: "file" })) {
+  for await (const rel of glob({
+    cwd: root,
+    depth: 3,
+    glob: ["**/*.md"],
+    type: "file",
+  })) {
     if (!rel.endsWith("/SKILL.md") && rel !== "SKILL.md") continue
     const path = join(root, rel)
     const dir = dirname(path)

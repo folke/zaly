@@ -1,10 +1,10 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
-import type { AgentOptions, StepResult } from "./types.ts"
+import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, ToolError } from "@zaly/ai"
-import { toError } from "@zaly/shared"
+import { toError, normPath } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session/index.ts"
@@ -32,7 +32,7 @@ import { uuidv7 } from "./utils/uuid.ts"
  * `runAgent` in the test helpers.
  */
 export class Agent extends Emitter<AgentEvent> {
-  readonly #opts: AgentOptions
+  readonly #opts: AgentInit
   readonly #stopPolicy: StopPolicy
   readonly #permissions: PermissionManager
   readonly #tasks: Tasks
@@ -48,6 +48,7 @@ export class Agent extends Emitter<AgentEvent> {
 
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
+  #cwd: string
 
   #status: AgentStatus = "idle"
   #abortController?: AbortController
@@ -66,17 +67,19 @@ export class Agent extends Emitter<AgentEvent> {
   #lastStopReason?: AgentStopReason
 
   /** Synchronous, low-level constructor. Prefer `Agent.load(opts)` —
-   *  it runs the same construction *plus* any async setup (skills
-   *  discovery, future warm-ups). The constructor is `protected` so
-   *  test doubles / subclasses can still call `super(opts)` directly,
-   *  but production code should always use the static factory. */
-  protected constructor(opts: AgentOptions) {
+   *  it runs the same construction *plus* any async setup (resolving
+   *  `session: SessionOptions` to a built `Session`, skills discovery,
+   *  future warm-ups). The constructor is `protected` so test doubles /
+   *  subclasses can still call `super(init)` directly; they're
+   *  responsible for providing a pre-built `Session` on `init.session`. */
+  protected constructor(opts: AgentInit) {
     super()
     this.#opts = opts
+    this.#cwd = opts.cwd
     this.#prompt = opts.prompt
     this.depth = opts.depth ?? 0
     this.maxDepth = opts.maxDepth ?? 2
-    this.session = opts.session ?? new Session()
+    this.session = opts.session
     // Idempotent — no-op on a loaded / pre-seeded session, so historical
     // metadata wins over whatever this Agent would record now.
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
@@ -108,14 +111,8 @@ export class Agent extends Emitter<AgentEvent> {
     this.#permissions =
       opts.permissions instanceof PermissionManager
         ? opts.permissions
-        : new PermissionManager(opts.permissions)
-    // Skills default to enabled; pass `skills: false` to opt out.
-    // Construction is cheap (no I/O) — the catalog populates only when
-    // `skills.load()` is awaited (caller-driven, so we don't block the
-    // agent on disk scans during construction).
-    if (opts.skills !== false) {
-      this.#skills = new Skills({ cwd: this.#permissions.cwd })
-    }
+        : new PermissionManager({ ...opts.permissions, cwd: this.#cwd })
+    this.#skills = opts.skills
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -131,9 +128,15 @@ export class Agent extends Emitter<AgentEvent> {
    *  call the protected constructor, or skip the async setup with
    *  `skills: false` and equivalent flags. */
   static async load(opts: AgentOptions): Promise<Agent> {
-    const agent = new Agent(opts)
-    if (agent.#skills) await agent.#skills.load()
-    return agent
+    // Resolve `session: SessionOptions | Session` → a built `Session`.
+    // Pre-built instances pass through (Claude loader, multi-agent
+    // sharing); options get hydrated from disk + writer-attached.
+    const session =
+      opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
+    const cwd = normPath(opts.cwd ?? process.cwd())
+    const skills = opts.skills === false ? undefined : await Skills.load({ cwd })
+    const init: AgentInit = { ...opts, cwd, session, skills }
+    return new Agent(init)
   }
 
   // ── Read ──────────────────────────────────────────────────────────────
@@ -530,7 +533,7 @@ export class Agent extends Emitter<AgentEvent> {
   #toolContext(): ToolContext {
     return {
       agent: this,
-      cwd: this.#permissions.cwd,
+      cwd: this.#cwd,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
       perms: this.#permissions,

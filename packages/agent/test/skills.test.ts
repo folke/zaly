@@ -43,9 +43,7 @@ const loadSkills = async (opts: { fakeUserHome?: string } = {}): Promise<Skills>
   const before = process.env.HOME
   if (opts.fakeUserHome) process.env.HOME = opts.fakeUserHome
   try {
-    const skills = new Skills({ cwd })
-    await skills.load()
-    return skills
+    return await Skills.load({ cwd })
   } finally {
     if (opts.fakeUserHome !== undefined) {
       if (before === undefined) delete process.env.HOME
@@ -131,7 +129,7 @@ describe("Skills — discovery", () => {
       meta: { description: "x", name: "second" },
       scope: "project",
     })
-    await skills.load()
+    await skills.reload()
     expect(skills.catalog.has("first")).toBe(true)
     expect(skills.catalog.has("second")).toBe(true)
   })
@@ -155,7 +153,7 @@ describe("Skills — discovery", () => {
       meta: { description: "x", name: "b" },
       scope: "project",
     })
-    await skills.load()
+    await skills.reload()
     expect(skills.tool).not.toBe(first)
   })
 })
@@ -279,7 +277,7 @@ describe("Skills — Agent integration", () => {
   test("Agent.skills exists by default; tool is undefined until load()", async () => {
     const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
-    const agent = await Agent.load({ model: mockModel([]), permissions: { cwd } })
+    const agent = await Agent.load({ model: mockModel([]), cwd })
     expect(agent.skills).toBeDefined()
     expect(agent.skills?.tool).toBeUndefined() // not loaded yet
   })
@@ -293,8 +291,8 @@ describe("Skills — Agent integration", () => {
     })
     const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
-    const agent = await Agent.load({ model: mockModel([]), permissions: { cwd } })
-    await agent.skills?.load()
+    const agent = await Agent.load({ model: mockModel([]), cwd })
+    await agent.skills?.reload()
     expect(agent.skills?.tool).toBeDefined()
     expect(agent.skills?.catalog.has("x")).toBe(true)
   })

@@ -9,11 +9,12 @@ import type {
 } from "@zaly/ai"
 
 import { readFile } from "node:fs/promises"
-import { Session } from "./index.ts"
 
 /**
  * Read a Claude Code session file (`.jsonl` from `~/.claude/projects/...`)
- * and rehydrate the active conversation chain into a fresh zaly `Session`.
+ * and return its active conversation chain as zaly `Message[]` — pass
+ * the result to `Agent.load({ messages, ... })` to seed a fresh agent
+ * with the imported history.
  *
  * Claude Code stores its conversation as one JSON record per line. The
  * active chain is reconstructed by walking `parentUuid` backward from the
@@ -44,11 +45,12 @@ import { Session } from "./index.ts"
  *
  * Lossy by design — tokens, finish reasons, model swaps, and timing
  * info from Claude's records are dropped because zaly's `Session.add`
- * doesn't expose those for arbitrary imports. The returned session has
- * no `path` attached; pass it into a fresh `new Session({ path })` if
- * you want to start persisting the imported chain in zaly format.
+ * doesn't expose those for arbitrary imports. The returned messages
+ * carry no `path` association; pass `session: { path: "..." }` to
+ * `Agent.load` alongside them if you want to start persisting the
+ * imported chain in zaly format.
  */
-export async function loadClaudeSession(path: string): Promise<Session> {
+export async function loadClaudeSession(path: string): Promise<{ messages: Message[] }> {
   const text = await readFile(path, "utf8").catch((error: unknown) => {
     throw new Error(
       `loadClaudeSession: cannot read "${path}": ${(error as Error).message}`,
@@ -60,8 +62,6 @@ export async function loadClaudeSession(path: string): Promise<Session> {
   const chain = walkChain(records)
   const toolNames = collectToolNames(chain)
 
-  const session = new Session()
-  session.start()
   const messages: Message[] = []
   for (const rec of chain) {
     const msg = toZalyMessage(rec, toolNames)
@@ -79,8 +79,7 @@ export async function loadClaudeSession(path: string): Promise<Session> {
     const last = messages.at(-1)!
     messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
   }
-  for (const m of messages) session.add(m)
-  return session
+  return { messages }
 }
 
 // ── Parsing ──────────────────────────────────────────────────────────────

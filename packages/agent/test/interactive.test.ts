@@ -251,14 +251,16 @@ describe("Agent — persistence integration", () => {
     // First Agent: run a single turn against a persisted session.
     // (When `session` is supplied, `initialMessages` is ignored — the
     //  session is the source of truth. Seed via `send()` instead.)
-    const session1 = new Session({ path: file })
-    const agent1 = await Agent.load({ model: mockModel([okStop()]), session: session1 })
+    const agent1 = await Agent.load({
+      model: mockModel([okStop()]),
+      session: { path: file },
+    })
     agent1.send({ content: "round 1", role: "user" })
     await agent1.run()
-    await session1.close()
+    await agent1.session.close()
 
     // Reload the session from disk; messages should round-trip.
-    const session2 = await Session.load(file)
+    const session2 = await Session.load({ path: file })
     expect(session2.messages.map((m) => m.role)).toEqual(["user", "assistant"])
 
     // Second Agent picks up the same session and continues.
