@@ -218,7 +218,8 @@ describe("Agent — emitted events", () => {
     agent.on("tool-call", (e) => calls.push(e.call.name))
     agent.on("tool-result", (e) => {
       const c = e.result.content
-      const text = typeof c === "string" ? c : c.map((p) => (p.type === "text" ? p.text : "")).join("")
+      const text =
+        typeof c === "string" ? c : c.map((p) => (p.type === "text" ? p.text : "")).join("")
       results.push(text)
     })
     await agent.run()
@@ -266,12 +267,7 @@ describe("Agent — persistence integration", () => {
     await agent2.run()
     await session2.close()
 
-    expect(agent2.messages.map((m) => m.role)).toEqual([
-      "user",
-      "assistant",
-      "user",
-      "assistant",
-    ])
+    expect(agent2.messages.map((m) => m.role)).toEqual(["user", "assistant", "user", "assistant"])
   })
 })
 
@@ -325,9 +321,7 @@ describe("Agent — mutable prompt + tools", () => {
     agent.send({ content: "go", role: "user" })
     await agent.run()
     const toolMsg = agent.messages[2] as Message<"tool">
-    expect(toolMsg.content[0].content).toEqual([
-      { format: "json", text: "3", type: "text" },
-    ])
+    expect(toolMsg.content[0].content).toEqual([{ format: "json", text: "3", type: "text" }])
     expect(toolMsg.content[0].isError).toBe(false)
   })
 })

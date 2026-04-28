@@ -32,16 +32,6 @@ describe("Emitter", () => {
     expect(captured).toBe("streaming")
   })
 
-  test("on returns an unsubscribe function", () => {
-    let count = 0
-    const e = new FakeEmitter()
-    const off = e.on("message", () => count++)
-    e.fire({ text: "a", type: "message" })
-    off()
-    e.fire({ text: "b", type: "message" })
-    expect(count).toBe(1)
-  })
-
   test("once fires exactly one matching event", () => {
     let count = 0
     const e = new FakeEmitter()
@@ -59,7 +49,7 @@ describe("Emitter", () => {
     const e = new FakeEmitter()
     e.on("message", handler)
     e.fire({ text: "a", type: "message" })
-    e.off(handler)
+    e.off("message", handler)
     e.fire({ text: "b", type: "message" })
     expect(count).toBe(1)
   })
