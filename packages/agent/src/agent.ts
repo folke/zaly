@@ -36,6 +36,11 @@ export class Agent extends Emitter<AgentEvent> {
   readonly #permissions: PermissionManager
   readonly #tasks: Tasks
   readonly session: Session
+  /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
+   *  `parent.depth + 1` when constructing their child. */
+  readonly depth: number
+  /** Cap on `depth` — see `AgentOptions.maxDepth`. */
+  readonly maxDepth: number
 
   #prompt?: string[]
 
@@ -62,6 +67,8 @@ export class Agent extends Emitter<AgentEvent> {
     super()
     this.#opts = opts
     this.#prompt = opts.prompt
+    this.depth = opts.depth ?? 0
+    this.maxDepth = opts.maxDepth ?? 2
     this.session = opts.session ?? new Session()
     // Idempotent — no-op on a loaded / pre-seeded session, so historical
     // metadata wins over whatever this Agent would record now.
@@ -88,7 +95,13 @@ export class Agent extends Emitter<AgentEvent> {
     })
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
-    this.#permissions = new PermissionManager(opts.permissions)
+    // `permissions` accepts either a `PermissionManager` instance (for
+    // sharing across nested agents — subagents reuse the parent's) or
+    // `PermissionOptions` (the common case: construct a fresh manager).
+    this.#permissions =
+      opts.permissions instanceof PermissionManager
+        ? opts.permissions
+        : new PermissionManager(opts.permissions)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -149,6 +162,13 @@ export class Agent extends Emitter<AgentEvent> {
   }
   set tools(next: Tool[]) {
     this.#tasks.tools = next
+  }
+
+  /** The model this agent is running on. Read-only — swap by constructing
+   *  a new agent (or wiring a custom dispatch into the underlying
+   *  `Provider`). Subagents pull this off the parent at spawn time. */
+  get model() {
+    return this.#opts.model
   }
 
   /** Long-running task registry — exposed for the TUI / introspection

@@ -218,7 +218,13 @@ describe("Tasks.run — streamable exceeds grace", () => {
     tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const parts = await tasks.run([callOf("stream")], {})
-    expect(parts[0].content).toBe("partial-output")
+    // Running placeholders are now structured: [partial text, <task> trailer].
+    if (typeof parts[0].content === "string") throw new Error("expected parts")
+    const text = parts[0].content.find((p) => p.type === "text")
+    if (!text) throw new Error("expected text part")
+    expect(text.text).toBe("partial-output")
+    const trailer = parts[0].content.find((p) => p.type === "meta" && p.tag === "task")
+    expect(trailer).toBeDefined()
     ctrl.finish()
     await flush()
   })

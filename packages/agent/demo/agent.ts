@@ -41,6 +41,7 @@ import {
   taskPollTool,
   wakeupTool,
   writeTool,
+  subagentTool,
 } from "../src/tools/index.ts"
 
 const id = process.env.MODEL ?? "anthropic/claude-sonnet-4-6"
@@ -88,7 +89,19 @@ function buildAgent(): Agent {
       "Prefer fewer tool calls; batch independent reads in one turn when possible.",
     ],
     session,
-    tools: [bashTool, editTool, fetchTool, readTool, searchTool, taskStopTool, taskListTool, taskPollTool, wakeupTool, writeTool],
+    tools: [
+      bashTool,
+      editTool,
+      fetchTool,
+      readTool,
+      searchTool,
+      taskStopTool,
+      taskListTool,
+      taskPollTool,
+      wakeupTool,
+      writeTool,
+      subagentTool,
+    ],
   })
 
   a.on("stream-event", ({ event }) => {
@@ -238,8 +251,8 @@ for (;;) {
       agent.on("status", handler)
     })
     const winner = await Promise.race([
-      inputPromise.then((v) => ({ tag: "input", value: v } as const)),
-      agentStarted.then(() => ({ tag: "agent" } as const)),
+      inputPromise.then((v) => ({ tag: "input", value: v }) as const),
+      agentStarted.then(() => ({ tag: "agent" }) as const),
     ])
     if (winner.tag === "agent") {
       // Agent woke itself (wakeup / task-done). Wait for it to finish,

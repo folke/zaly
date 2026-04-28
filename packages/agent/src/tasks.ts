@@ -1,4 +1,5 @@
 import type {
+  ContentPart,
   Message,
   MetaPart,
   TextPart,
@@ -572,11 +573,36 @@ export class Tasks extends Emitter<TasksEvent> {
       }
     }
 
-    // Running: capture whatever the streamable has so far (partial output).
+    // Running: capture whatever the streamable has so far (partial output)
+    // and append a `<task>` MetaPart with an explicit "still running"
+    // hint. Without the hint, models tend to treat partial output as a
+    // final answer and respond prematurely; with it they see the state
+    // structurally and know the final result will arrive as a later
+    // system message. Tagged `<task>` for symmetry with the pending /
+    // task_list / heartbeat / task-done entries — same shape everywhere
+    // a task surfaces.
     const snap = task.streamable?.poll()
-    const partialContent: ToolResultPart["content"] = partialContentFrom(snap)
+    const baseContent = partialContentFrom(snap)
+    const trailer: MetaPart = {
+      data: {
+        ...toTaskInfo(task),
+        hint:
+          "Task is still running. Partial output above. The final result " +
+          "will arrive as a system message when the task completes; you " +
+          "do not need to poll. Continue with other work or wait.",
+      },
+      tag: "task",
+      type: "meta",
+    }
+    const parts: ContentPart[] = []
+    if (typeof baseContent === "string") {
+      if (baseContent !== "") parts.push({ text: baseContent, type: "text" })
+    } else {
+      parts.push(...baseContent)
+    }
+    parts.push(trailer)
     return {
-      content: partialContent,
+      content: parts,
       id: call.id,
       isError: false,
       meta: stampTaskMeta(snap?.meta, task),

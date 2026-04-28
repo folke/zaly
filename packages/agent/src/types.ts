@@ -55,7 +55,10 @@ export interface AgentOptions extends CollectOptions {
    *  loop-detection tuning. Grouped under one key to keep the agent's
    *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */
   stop?: StopOptions
-  permissions?: PermissionOptions
+  /** Either `PermissionOptions` (construct a fresh manager) or an
+   *  existing `PermissionManager` instance to reuse — used by subagents
+   *  to share the parent's workspaces + rules without copying. */
+  permissions?: PermissionOptions | PermissionManager
   /** Per-call passthrough knobs (`temperature`, `toolChoice`,
    *  `reasoning`, `responseFormat`, …). The agent owns `model`,
    *  `messages`, `prompt`, and `tools` — those have dedicated
@@ -78,6 +81,20 @@ export interface AgentOptions extends CollectOptions {
   prompt?: string[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number
+  /** Nesting depth of this agent. `0` = top-level (user-facing).
+   *  Subagents bump this by 1 each time they spawn. The `subagent` tool
+   *  consults this to decide whether to expose itself to the spawned
+   *  child — at depth `maxDepth`, the child gets the parent's tool list
+   *  *without* the subagent tool, so recursion bottoms out cleanly.
+   *  Defaults to `0`. */
+  depth?: number
+  /** Maximum allowed agent depth. Subagents at depth `< maxDepth` may
+   *  spawn further subagents; at depth `>= maxDepth`, the subagent tool
+   *  is filtered out of their tool list (no error — the model just
+   *  doesn't see it). Defaults to `2`, giving root → child → grandchild.
+   *  Top-level only — children inherit this from the parent at spawn
+   *  time. */
+  maxDepth?: number
   /** Heartbeat interval (ms) for the Tasks registry. While at least one
    *  task is pending or running, the agent injects a `<heartbeat>` system
    *  message at this cadence so the model sees what's still going and
