@@ -115,9 +115,18 @@ describe("runTool — tool errors", () => {
     expect(msg).toContain("record not found")
   })
 
-  test("errors land as a string content (no parts)", async () => {
+  test("errors carry a structured <error> MetaPart + formatted text body", async () => {
     const r = await runTool(Failing, { id: "42" }, {})
-    expect(typeof r.content).toBe("string")
+    expect(Array.isArray(r.content)).toBe(true)
+    const parts = r.content as ({ type: string } & Record<string, unknown>)[]
+    // First part is the structured error MetaPart — carries `code` and
+    // any structured `data`, but NOT `message` (the body already has it).
+    expect(parts[0]).toMatchObject({ tag: "error", type: "meta" })
+    expect(parts[0].data).toEqual({ code: "NOT_FOUND", data: { id: "42" } })
+    // Second part is the human-readable formatted block (carries the message).
+    expect(parts[1]).toMatchObject({ type: "text" })
+    expect(parts[1].text).toContain("NOT_FOUND")
+    expect(parts[1].text).toContain("record not found")
   })
 
   test("structured error preserves code, data, retryable from ToolError", async () => {

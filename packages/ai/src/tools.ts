@@ -1,5 +1,5 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type { Streamable, Tool, ToolContext, ToolResult } from "./types.ts"
+import type { Streamable, Tool, ToolContext, ToolErrorInfo, ToolResult } from "./types.ts"
 
 import Schema from "typebox/schema"
 import { toContent } from "./format.ts"
@@ -145,21 +145,41 @@ function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   return tool.validateParams(args)
 }
 
-/** Wrap any thrown value as a `ToolResult` with `isError: true`. The
- *  formatted message lands in `content` so the model can read it; the
- *  structured `error` field carries the same info for downstream
- *  consumers (TUI badges, telemetry). Identical for `ToolError` and
- *  generic throws — the latter are coerced via `ToolError.from`. */
+/** Wrap any thrown value as a `ToolResult` with `isError: true`.
+ *
+ *  The `content` carries two things:
+ *    - an `<error>` MetaPart with the parts the body doesn't already
+ *      convey (`code`, optional structured `data`, optional `retryable`)
+ *      — so the model can branch on `code` programmatically without
+ *      re-parsing the human text;
+ *    - the formatted human-readable error block (`❌ CODE: message`)
+ *      as a TextPart, which carries the message verbatim.
+ *
+ *  `message` is intentionally NOT in the MetaPart — it lives in the
+ *  TextPart, no need to duplicate it on the wire. The full structured
+ *  info (including `message`) is still on `ToolResult.error` as a
+ *  sidecar for downstream consumers (TUI badges, telemetry). Identical
+ *  for `ToolError` and generic throws — the latter are coerced via
+ *  `ToolError.from`. */
 export function formatToolError(err: unknown): ToolResult {
   const te = ToolError.from(err)
+  const error: ToolErrorInfo = {
+    code: te.code,
+    data: te.data,
+    message: te.message,
+    retryable: te.retryable,
+  }
+  // Strip `message` from the MetaPart payload — the formatted body
+  // already shows it. `data` and `retryable` drop via JSON when absent.
+  const wireError: Record<string, unknown> = { code: te.code }
+  if (te.data !== undefined) wireError.data = te.data
+  if (te.retryable) wireError.retryable = true
   return {
-    content: te.format(),
-    error: {
-      code: te.code,
-      data: te.data,
-      message: te.message,
-      retryable: te.retryable,
-    },
+    content: [
+      { data: wireError, tag: "error", type: "meta" },
+      { text: te.format(), type: "text" },
+    ],
+    error,
     isError: true,
   }
 }
