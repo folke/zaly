@@ -31,17 +31,18 @@ import { createInterface } from "node:readline/promises"
 import { Agent } from "../src/agent.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import {
+  agentSendTool,
+  agentSpawnTool,
   bashTool,
   editTool,
   fetchTool,
   readTool,
   searchTool,
-  taskStopTool,
   taskListTool,
   taskPollTool,
+  taskStopTool,
   wakeupTool,
   writeTool,
-  subagentTool,
 } from "../src/tools/index.ts"
 
 const id = process.env.MODEL ?? "anthropic/claude-sonnet-4-6"
@@ -83,11 +84,12 @@ async function buildAgent(): Promise<Agent> {
   const a = await Agent.load({
     messages,
     model,
+    session: { path: "agent-session.jsonl" },
     permissions: { preset: "yolo" },
     prompt: [
-      "You are a concise coding assistant.",
+      "You are zaly, a concise coding assistant.",
       "Use the available tools to answer questions about the project.",
-      "Prefer fewer tool calls; batch independent reads in one turn when possible.",
+      "Prefer batching multiple tool calls where it makes sense.",
     ],
     tools: [
       bashTool,
@@ -100,7 +102,9 @@ async function buildAgent(): Promise<Agent> {
       taskPollTool,
       wakeupTool,
       writeTool,
-      subagentTool,
+      agentSpawnTool,
+      agentSendTool,
+      // subagentTool,
     ],
   })
 

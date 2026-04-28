@@ -10,6 +10,7 @@ import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session/index.ts"
 import { Skills } from "./skills.ts"
 import { StopPolicy } from "./stop.ts"
+import { Swarm } from "./swarm.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { extractToolCalls } from "./utils/index.ts"
 import { uuidv7 } from "./utils/uuid.ts"
@@ -37,6 +38,7 @@ export class Agent extends Emitter<AgentEvent> {
   readonly #permissions: PermissionManager
   readonly #tasks: Tasks
   readonly #skills?: Skills
+  readonly #swarm: Swarm
   readonly session: Session
   /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
    *  `parent.depth + 1` when constructing their child. */
@@ -114,6 +116,7 @@ export class Agent extends Emitter<AgentEvent> {
         ? opts.permissions
         : new PermissionManager({ ...opts.permissions, cwd: this.#cwd })
     this.#skills = opts.skills
+    this.#swarm = opts.swarm ?? new Swarm()
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -170,6 +173,11 @@ export class Agent extends Emitter<AgentEvent> {
       model: this.model,
       permissions: this.#permissions,
       skills: false,
+      // Propagate the swarm so the child + every grandchild address
+      // each other through the same registry. Override-able via
+      // `overrides.swarm` if a caller wants the child outside the
+      // tree (rare).
+      swarm: this.#swarm,
       tools,
       ...overrides,
     })
@@ -252,6 +260,13 @@ export class Agent extends Emitter<AgentEvent> {
    *  installed skills mid-session. */
   get skills(): Skills | undefined {
     return this.#skills
+  }
+
+  /** Swarm registry this agent belongs to. `undefined` for standalone
+   *  agents. Children inherit this via `Agent.child(...)`. The TUI
+   *  reads it for `/agents` listings; tools read it via `ctx.swarm`. */
+  get swarm(): Swarm | undefined {
+    return this.#swarm
   }
 
   /** Long-running task registry — exposed for the TUI / introspection
@@ -580,6 +595,7 @@ export class Agent extends Emitter<AgentEvent> {
       need: (scope, input) => this.#need(scope, input),
       perms: this.#permissions,
       signal: this.#abortController?.signal,
+      swarm: this.#swarm,
       tasks: this.#tasks,
     }
   }

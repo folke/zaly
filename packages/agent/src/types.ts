@@ -18,6 +18,7 @@ import type {
 } from "./permissions/index.ts"
 import type { Session, SessionOptions } from "./session/index.ts"
 import type { Skills } from "./skills.ts"
+import type { Swarm } from "./swarm.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Tasks } from "./tasks.ts"
 
@@ -36,6 +37,12 @@ declare module "@zaly/ai" {
      *  Tasks-unaware and return a `Streamable` instead. */
     tasks?: Tasks
     messages?: readonly Message[]
+    /** Swarm registry — populated when the running agent was
+     *  constructed with one (or inherited it from its parent). Tools
+     *  that spawn or message subagents (`agent_spawn`, `agent_send`)
+     *  read this. Absent on standalone agents and on test contexts
+     *  that build a `ToolContext` by hand. */
+    swarm?: Swarm
     /** Async permission check tools call before doing work. Resolves on
      *  `allow`, throws a `ToolError(PERMISSION_DENIED)` on `deny`. For
      *  `ask` verdicts, the agent invokes `AgentOptions.allow` (when
@@ -156,6 +163,13 @@ export interface AgentOptions extends CollectOptions {
    *  and exposes the activation tool to the model. Set `false` to skip
    *  skills entirely (no `skills` getter, no scanning, no tool). */
   skills?: boolean
+  /** Optional `Swarm` registry. When set, this agent participates in a
+   *  multi-agent swarm — children spawned via `agent.child()` inherit
+   *  the same swarm, and tools like `agent_spawn` / `agent_send`
+   *  become functional via `ctx.swarm`. The swarm is shared by every
+   *  agent in the tree; only the root needs to be configured with one.
+   *  Children inherit it automatically. */
+  swarm?: Swarm
 
   /** Heartbeat interval (ms) for the Tasks registry. While at least one
    *  task is pending or running, the agent injects a `<heartbeat>` system
