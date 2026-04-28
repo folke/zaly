@@ -47,7 +47,7 @@ export function findUp(root: string, name: string, stop?: string) {
   // oxlint-disable-next-line typescript/no-unnecessary-condition
   while (true) {
     const check = join(current, name)
-    if (safeStat(check)?.isFile()) return check
+    if (safeStat(check)) return check
     if (stop && safeStat(join(current, stop))) return // reached stop directory without finding the file
     const next = dirname(current)
     if (next === current) break // reached filesystem root
