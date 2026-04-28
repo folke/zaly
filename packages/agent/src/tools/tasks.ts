@@ -1,8 +1,9 @@
-import type { MetaPart, ToolContext } from "@zaly/ai"
+import type { ToolContext } from "@zaly/ai"
 import type { Tasks } from "../tasks.ts"
 
 import { defineTool, ToolError } from "@zaly/ai"
 import { Type } from "typebox"
+import { taskInfoPart } from "../tasks.ts"
 
 /**
  * Generic task management surface for the model.
@@ -39,12 +40,14 @@ export const taskListTool = defineTool({
 
   call(args, ctx) {
     const tasks = requireTasks(ctx)
+    // Routes through `taskInfoPart` so the `result` strip + line-per-task
+    // JSON format stays consistent with heartbeat output. Done tasks
+    // surface only their identity / timing, not their (potentially huge)
+    // captured body.
     const info = tasks
       .info()
-      .filter((task) => (args.includeFinished ? true : task.status !== "done"))
-    const data =
-      info.length === 0 ? "no active tasks" : info.map((t) => JSON.stringify(t)).join("\n")
-    return { data, tag: "tasks", type: "meta" } satisfies MetaPart
+      .filter((task) => args.includeFinished === true || task.status !== "done")
+    return taskInfoPart(info)
   },
 })
 
