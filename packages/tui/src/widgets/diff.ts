@@ -3,8 +3,8 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { TextStyle } from "./text.ts"
 
-import { stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
+import { stringWidth } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
 import { Code } from "./code.ts"
 
@@ -169,7 +169,6 @@ async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]
   return renderRows(ctx, rows, origLines.length, editedLines.length)
 }
 
-// oxlint-disable-next-line max-params
 async function highlightPair(
   ctx: RenderCtx,
   state: DiffState,
@@ -200,7 +199,6 @@ async function highlightPair(
   }
 }
 
-// oxlint-disable-next-line max-params
 function renderRows(
   ctx: RenderCtx,
   rows: DiffRow[],

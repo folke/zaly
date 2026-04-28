@@ -179,7 +179,13 @@ export interface CacheHint {
 type M =
   | {
       role: "system"
-      content: string
+      /** String for the common case; `(TextPart | MetaPart)[]` when the
+       *  message wants to ride structured metadata to downstream consumers
+       *  (e.g. the TUI rendering carry-over wakeup hints, task completion
+       *  details, or heartbeat pulses). Provider adapters flatten meta to
+       *  XML-tagged text on the wire — the model sees identical content
+       *  either way. */
+      content: string | (TextPart | MetaPart)[]
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }
@@ -279,10 +285,52 @@ export interface Tool<Params = unknown, Result = unknown> {
   desc?: string
   params: unknown
   result?: unknown
+  /** When `true`, multiple in-flight calls of this tool from the same
+   *  assistant message run concurrently. When `false` (default), the
+   *  harness chains them: a slow call promotes to a background task and
+   *  subsequent calls become pending tasks that start only after their
+   *  predecessor completes. Tools with side-effects (write, edit, install)
+   *  should keep the default; pure-read tools (read, fetch, list) can opt
+   *  in by setting `parallel: true`. */
+  parallel?: boolean
   validateParams(params: unknown): Params
   validateResult?(result: unknown): Awaited<Result>
   call(params: Params, ctx: ToolContext): Promise<Result>
   _types?: { input: Params; output: Result }
+}
+
+/** A long-running tool result. Tools that may take longer than the
+ *  harness's grace window return one of these instead of a `ToolResult`,
+ *  letting the harness race completion against the grace and either
+ *  surface the final result or promote the work to a background task.
+ *
+ *  - `poll()` is synchronous and returns the current state — partial or
+ *    final. After `running` flips to `false`, subsequent calls return
+ *    the same final snapshot.
+ *  - `done` resolves when `poll().running` would flip to `false`. Never
+ *    rejects — completion is reflected in the snapshot, not as an error.
+ *  - `abort()` requests termination of the underlying work. Idempotent.
+ *
+ *  Tool authors don't need to know about Tasks or the agent loop — they
+ *  return a Streamable, the harness handles the rest. The runtime guard
+ *  `isStreamable` (in `@zaly/ai/tools`) detects this shape. */
+export interface Streamable {
+  poll(): ToolResult & { running: boolean }
+  done: Promise<void>
+  abort(): void
+}
+
+/** Normalised tool execution outcome — maps 1:1 to `ToolResultPart`.
+ *  `isError: true` is the LLM-facing signal that the call failed; the
+ *  `content` field carries the tool's success output (string or rich
+ *  part array) or a formatted error payload the model should read.
+ *  `error` carries structured info for richer downstream rendering;
+ *  `meta` is wire-invisible sidecar data the tool wrote to `ctx.meta`. */
+export interface ToolResult {
+  isError: boolean
+  content: string | (TextPart | MetaPart | Attachment)[]
+  error?: ToolErrorInfo
+  meta?: ToolMeta
 }
 
 // ── Catalog types ────────────────────────────────────────────────────────

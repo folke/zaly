@@ -1,5 +1,7 @@
-export { bashKillTool, bashTool, bashWaitTool } from "./bash.ts"
+export { bashTool } from "./bash.ts"
 export { editTool } from "./edit.ts"
 export { fetchTool } from "./fetch.ts"
 export { readTool } from "./read.ts"
+export { taskKillTool, taskListTool } from "./tasks.ts"
+export { wakeupTool } from "./wakeup.ts"
 export { writeTool } from "./write.ts"

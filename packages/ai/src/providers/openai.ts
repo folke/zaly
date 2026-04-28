@@ -10,7 +10,12 @@ import type {
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
-import { flattenMeta, hasAttachments, stringifyToolResult } from "../tools.ts"
+import {
+  flattenMeta,
+  hasAttachments,
+  stringifySystemContent,
+  stringifyToolResult,
+} from "../tools.ts"
 
 /**
  * OpenAI Chat Completions adapter.
@@ -379,7 +384,7 @@ function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
 function toOpenAIMessage(msg: Message): OpenAIMessage {
   switch (msg.role) {
     case "system": {
-      return { content: msg.content, role: "system" }
+      return { content: stringifySystemContent(msg.content), role: "system" }
     }
     case "user": {
       if (typeof msg.content === "string") return { content: msg.content, role: "user" }

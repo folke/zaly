@@ -2,11 +2,11 @@ import type { Static, TObject, TSchema } from "typebox"
 import type {
   Attachment,
   MetaPart,
+  Streamable,
   TextPart,
   Tool,
   ToolContext,
-  ToolErrorInfo,
-  ToolMeta,
+  ToolResult,
 } from "./types.ts"
 
 import { safeStringify } from "@zaly/shared"
@@ -14,6 +14,20 @@ import Schema from "typebox/schema"
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"
+
+export type { Streamable, ToolResult } from "./types.ts"
+
+/** Runtime guard for `Streamable`. Harnesses use this to branch tool
+ *  returns into the sync vs. potentially-long-running path. */
+export function isStreamable(value: unknown): value is Streamable {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Streamable).poll === "function" &&
+    typeof (value as Streamable).abort === "function" &&
+    (value as Streamable).done instanceof Promise
+  )
+}
 
 /**
  * Structured error a tool's `execute` can throw to signal a business
@@ -72,24 +86,6 @@ export class ToolError extends Error {
   }
 }
 
-/** Normalised tool execution outcome — maps 1:1 to `ToolResultPart`.
- *  `isError: true` is the LLM-facing signal that the call failed; the
- *  `content` field carries the tool's success output (string or rich
- *  part array) or a formatted error payload the model should read.
- *  `error` carries structured info for richer downstream rendering. */
-export interface ToolResult {
-  isError: boolean
-  content: string | (TextPart | MetaPart | Attachment)[]
-  error?: ToolErrorInfo
-  /** Whatever the tool wrote to `ctx.meta` during the call. `runTool`
-   *  hands each call a fresh empty `meta` slot on a per-call ctx copy,
-   *  reads it back after the call, and surfaces it here only when
-   *  non-empty. Wire-invisible — providers never see this. Used by
-   *  cross-tool plumbing like file-freshness tracking; see `ToolMeta`
-   *  in `@zaly/ai/types` for the extension pattern. */
-  meta?: ToolMeta
-}
-
 /** Declarative tool factory. Wires `validateInput` and (optionally)
  *  `validateOutput` from TypeBox schemas: inputs are coerced then
  *  validated (LLM-lenient), outputs are validated strictly (tool bug
@@ -110,6 +106,7 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
   call: (args: Static<Params>, ctx: ToolContext) => Static<Result> | Promise<Static<Result>>
   name: string
   params: Params
+  parallel?: boolean
   result?: Result
 }): Tool<Static<Params>, Static<Result>> {
   const compiledParams = Schema.Compile(def.params)
@@ -119,6 +116,7 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
     name: def.name,
     desc: def.desc,
     params: def.params,
+    parallel: def.parallel,
     result: def.result,
     call: async (args, ctx) => def.call(args, ctx),
     validateParams(args: unknown): Static<Params> {
@@ -138,56 +136,29 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
   }
 }
 
-/** Execute a tool end-to-end: parse (if string) → validateInput →
- *  execute → validateOutput (if declared). Every failure path returns
- *  a `ToolResult` with `isError: true` and a model-readable message —
- *  the caller never has to try/catch.
- *
- *  The formatted error on `INVALID_INPUT` is annotated JSONC from
- *  `stringifyErrors`, which the model can patch up and retry; on
- *  `INVALID_OUTPUT` or `INTERNAL` the format is a short code + message
- *  block the model can quote back but shouldn't try to "fix."
- */
-export async function runTool<I, O>(
-  tool: Tool<I, O>,
-  rawArgs: unknown,
-  ctx: ToolContext
-): Promise<ToolResult> {
-  ctx = { ...ctx, meta: {} }
+/** Parse and validate raw tool arguments. JSON-string inputs are decoded
+ *  first; the result is run through `tool.validateParams` (which coerces
+ *  LLM quirks before strict schema check). Throws `ToolError` on parse
+ *  or validation failure — callers wrap with `formatToolError` to land
+ *  back on a `ToolResult`. */
+export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   let args = rawArgs
   if (typeof args === "string") {
     const parsed = parseJson(args)
     if (!parsed.success) {
-      return toErrorResult(
-        new ToolError({ code: "INVALID_INPUT", message: `invalid JSON: ${parsed.error}` })
-      )
+      throw new ToolError({ code: "INVALID_INPUT", message: `invalid JSON: ${parsed.error}` })
     }
     args = parsed.data
   }
-
-  let params: I
-  try {
-    params = tool.validateParams(args)
-  } catch (error) {
-    return toErrorResult(error)
-  }
-
-  let result: Awaited<O>
-  try {
-    result = await tool.call(params, ctx)
-  } catch (error) {
-    return toErrorResult(error)
-  }
-
-  if (tool.validateResult) {
-    result = tool.validateResult(result)
-  }
-  const meta = Object.keys(ctx.meta ?? {}).length > 0 ? ctx.meta : undefined
-
-  return { content: normalizeToolReply(result), isError: false, meta }
+  return tool.validateParams(args)
 }
 
-function toErrorResult(err: unknown): ToolResult {
+/** Wrap any thrown value as a `ToolResult` with `isError: true`. The
+ *  formatted message lands in `content` so the model can read it; the
+ *  structured `error` field carries the same info for downstream
+ *  consumers (TUI badges, telemetry). Identical for `ToolError` and
+ *  generic throws — the latter are coerced via `ToolError.from`. */
+export function formatToolError(err: unknown): ToolResult {
   const te = ToolError.from(err)
   return {
     content: te.format(),
@@ -199,6 +170,103 @@ function toErrorResult(err: unknown): ToolResult {
     },
     isError: true,
   }
+}
+
+/** Build a successful `ToolResult` from a tool's raw return value. Runs
+ *  the optional `validateResult` schema (strict — drift is a tool bug)
+ *  and normalises the value into the parts shape. `meta` comes from the
+ *  per-call `ctx.meta` slot the harness manages. */
+export function formatToolResult<O>(
+  tool: Tool<unknown, O>,
+  raw: Awaited<O>,
+  meta?: ToolResult["meta"]
+): ToolResult {
+  const validated = tool.validateResult ? tool.validateResult(raw) : raw
+  return { content: normalizeToolReply(validated), isError: false, meta }
+}
+
+/** Pull the per-call sidecar slot off a ctx, returning `undefined` when
+ *  the tool didn't write anything. The harness sets `ctx.meta = {}` on
+ *  a per-call copy before invoking the tool; this helper centralises
+ *  the "absent if empty" rule so result shapes stay clean. */
+export function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
+  return Object.keys(ctx.meta ?? {}).length > 0 ? ctx.meta : undefined
+}
+
+/** Execute a tool end-to-end: parse (if string) → validateInput →
+ *  execute → validateOutput (if declared). Every failure path returns
+ *  a `ToolResult` with `isError: true` and a model-readable message —
+ *  the caller never has to try/catch.
+ *
+ *  The formatted error on `INVALID_INPUT` is annotated JSONC from
+ *  `stringifyErrors`, which the model can patch up and retry; on
+ *  `INVALID_OUTPUT` or `INTERNAL` the format is a short code + message
+ *  block the model can quote back but shouldn't try to "fix."
+ *
+ *  Streamable returns are blocked on — `runTool` awaits the streamable's
+ *  `done` and surfaces the final snapshot. Use `Tasks.run` (in `@zaly/agent`)
+ *  if you want grace-window promotion to background tasks instead.
+ *
+ *  This is the convenience all-in-one wrapper. Long-running harnesses
+ *  compose `validateToolParams` / `formatToolResult` / `formatToolError`
+ *  directly so they can interleave streamable detection between
+ *  `tool.call` and result formatting.
+ */
+export async function runTool<I, O>(
+  tool: Tool<I, O>,
+  rawArgs: unknown,
+  ctx: ToolContext
+): Promise<ToolResult>
+export async function runTool<I, O>(
+  tool: Tool<I, O>,
+  rawArgs: unknown,
+  ctx: ToolContext,
+  opts: { streaming: true }
+): Promise<ToolResult | Streamable>
+export async function runTool<I, O>(
+  tool: Tool<I, O>,
+  rawArgs: unknown,
+  ctx: ToolContext,
+  opts?: { streaming?: boolean }
+): Promise<ToolResult | Streamable> {
+  ctx = { ...ctx, meta: {} }
+  const streaming = opts?.streaming ?? false
+
+  let params: I
+  try {
+    params = validateToolParams(tool, rawArgs)
+  } catch (error) {
+    return formatToolError(error)
+  }
+
+  let result: Awaited<O>
+  try {
+    result = await tool.call(params, ctx)
+  } catch (error) {
+    return formatToolError(error)
+  }
+
+  if (isStreamable(result)) {
+    if (streaming) {
+      // Streaming caller (Tasks.run) wants the Streamable handle so it
+      // can attach to the round race / promote to a background task.
+      // Don't validate or normalise — the snapshot's content shape is
+      // the tool's contract, not the declared `Result` schema.
+      return result
+    }
+    // Block until completion, then surface the final snapshot. No
+    // promotion path here — that's `Tasks.run`'s job.
+    await result.done
+    const snap = result.poll()
+    return {
+      content: snap.content,
+      error: snap.error,
+      isError: snap.isError,
+      meta: snap.meta ?? readToolMeta(ctx),
+    }
+  }
+
+  return formatToolResult(tool, result, readToolMeta(ctx))
 }
 
 const PART_TYPES = new Set(["text", "meta", "image", "pdf", "audio", "video"])
@@ -253,6 +321,15 @@ export function flattenMeta(
 ): string | (TextPart | Attachment)[] {
   if (typeof content === "string") return content
   return content.map((p) => (p.type === "meta" ? toTextPart(p) : p))
+}
+
+/** Collapse a system message's content to a single string. Used at
+ *  provider boundaries because both Anthropic (top-level `system` slot)
+ *  and OpenAI (`role: "system"` content) take strings only. MetaParts
+ *  flatten to their `<tag>JSON</tag>` form; text parts join with newlines. */
+export function stringifySystemContent(content: string | (TextPart | MetaPart)[]): string {
+  if (typeof content === "string") return content
+  return content.map((p) => (p.type === "meta" ? toTextPart(p).text : p.text)).join("\n")
 }
 
 /** Serialize a tool-result `content` value to a single string —

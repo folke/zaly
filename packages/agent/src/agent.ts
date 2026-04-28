@@ -1,15 +1,18 @@
 // oxlint-disable no-await-in-loop
-import type { Message, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
+import type { Task } from "./tasks.ts"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
-import { collect, isContextOverflow, runTool } from "@zaly/ai"
+import { collect, isContextOverflow } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session.ts"
 import { StopPolicy } from "./stop.ts"
-import { extractToolCalls, unknownToolResult } from "./utils/index.ts"
+import { Tasks, taskCompletionMessage } from "./tasks.ts"
+import { extractToolCalls } from "./utils/index.ts"
+import { uuidv7 } from "./utils/uuid.ts"
 
 /**
  * Long-lived agent — drives the multi-turn loop, owns the run-time
@@ -32,9 +35,9 @@ export class Agent extends Emitter<AgentEvent> {
   readonly #opts: AgentOptions
   readonly #stopPolicy: StopPolicy
   readonly #permissions: PermissionManager
+  readonly #tasks: Tasks
   readonly session: Session
 
-  #tools: Tool[] = []
   #prompt?: string[]
 
   #injectQueue: Message[] = []
@@ -43,7 +46,15 @@ export class Agent extends Emitter<AgentEvent> {
   #status: AgentStatus = "idle"
   #abortController?: AbortController
   #pauseRequested = false
-  #runPromise?: Promise<AgentStopReason>
+  #running?: Promise<AgentStopReason>
+
+  /** Pending future-injects scheduled via `scheduleWakeup`. Cleared
+   *  whenever the loop becomes active for any reason — the scheduled
+   *  inject was a fallback "wake me up at time T if nothing else does,"
+   *  and once something else has, the timer is moot. Hints from cancelled
+   *  wakeups carry over as a system message so the intent doesn't
+   *  evaporate. */
+  readonly #wakeups = new Map<string, { timer: ReturnType<typeof setTimeout>; hint?: string }>()
 
   #lastError?: Error
   #lastStopReason?: AgentStopReason
@@ -57,7 +68,22 @@ export class Agent extends Emitter<AgentEvent> {
     // metadata wins over whatever this Agent would record now.
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
     for (const m of opts.messages ?? []) this.session.add(m)
-    this.tools = opts.tools ?? []
+    this.#tasks = new Tasks()
+    this.#tasks.tools = opts.tools ?? []
+    this.#tasks.heartbeatMs = opts.heartbeatMs
+    // Post-round task completions inject a system message into the next
+    // step, surfacing the result to the model. Round-internal completions
+    // are folded into the round's returned parts and don't fire here.
+    this.#tasks.on("task-done", ({ task }) => {
+      this.inject(taskCompletionMessage(task))
+    })
+    // Heartbeats keep the agent loop alive while long-running tasks are
+    // in flight. Each pulse injects a small system note listing what's
+    // still going — the model sees it, the loop ticks, the model can
+    // decide whether to wait or do other work.
+    this.#tasks.on("heartbeat", ({ running }) => {
+      this.inject({ content: heartbeatMessage(running), role: "system" })
+    })
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
     this.#permissions = new PermissionManager(opts.permissions)
@@ -114,12 +140,20 @@ export class Agent extends Emitter<AgentEvent> {
 
   /** Tools the model may call. Mutable: assign to swap the available
    *  set mid-conversation; the new set applies on the next step.
-   *  Setting rebuilds the dispatch table. */
+   *  Storage lives on the `Tasks` registry — same instance the agent
+   *  uses to dispatch and bookkeep long-running work. */
   get tools(): readonly Tool[] {
-    return this.#tools
+    return this.#tasks.tools
   }
   set tools(next: Tool[]) {
-    this.#tools = next
+    this.#tasks.tools = next
+  }
+
+  /** Long-running task registry — exposed for the TUI / introspection
+   *  tools (`task_list`, etc.). Mutating directly is a foot-gun;
+   *  prefer the agent's higher-level surface. */
+  get tasks(): Tasks {
+    return this.#tasks
   }
 
   get permissions(): PermissionManager {
@@ -152,6 +186,58 @@ export class Agent extends Emitter<AgentEvent> {
     }
   }
 
+  /** Schedule a one-shot wake-up at `delayMs` from now. The agent will
+   *  receive a system message at that time IF nothing else has woken
+   *  the loop in the meantime — task-done injects, heartbeats, and user
+   *  messages all auto-cancel pending wakeups (their job was to ensure
+   *  the agent gets a turn; if it's already getting one, the timer is
+   *  redundant).
+   *
+   *  Cancelled wakeups don't silently disappear — their `hint`s, if any,
+   *  are folded into a system message that lands in the next step
+   *  alongside whatever woke the loop. The model sees the hints with a
+   *  `status="cancelled"` marker so it knows the timer didn't fire.
+   *
+   *  Returns the wakeup id (mostly for telemetry / TUI display — the
+   *  model can't usefully cancel it later, since by the time it has a
+   *  turn to call cancel, the wakeup has either fired or been cancelled
+   *  for it). */
+  scheduleWakeup(opts: { delayMs: number; hint?: string }): string {
+    const id = uuidv7()
+    const timer = setTimeout(() => {
+      this.#wakeups.delete(id)
+      this.inject({
+        content: `<wakeup id="${id}">${escapeXml(opts.hint ?? "")}</wakeup>`,
+        role: "system",
+      })
+    }, opts.delayMs)
+    timer.unref()
+    this.#wakeups.set(id, { hint: opts.hint, timer })
+    return id
+  }
+
+  /** Cancel all pending wakeups, surfacing their hints as a single
+   *  system message so the model can see what was queued. Called from
+   *  `#setStatus` whenever the agent transitions to `streaming` — that's
+   *  the unambiguous "loop is active" signal. */
+  #cancelAllWakeups(): void {
+    if (this.#wakeups.size === 0) return
+    const carried: { id: string; hint: string }[] = []
+    for (const [id, { hint, timer }] of this.#wakeups) {
+      clearTimeout(timer)
+      if (hint) carried.push({ hint, id })
+    }
+    this.#wakeups.clear()
+    if (carried.length > 0) {
+      const parts: MetaPart[] = carried.map((c) => ({
+        data: { hint: c.hint, id: c.id, status: "cancelled" as const },
+        tag: "wakeup",
+        type: "meta",
+      }))
+      this.#injectQueue.push({ content: parts, role: "system" })
+    }
+  }
+
   // ── Loop control ─────────────────────────────────────────────────────
 
   /** Drive steps until the agent goes idle (no queued messages and
@@ -160,13 +246,13 @@ export class Agent extends Emitter<AgentEvent> {
    *  picks the loop back up. If a run is already in flight, returns
    *  the existing promise. */
   run(): Promise<AgentStopReason> {
-    if (this.#runPromise) return this.#runPromise
+    if (this.#running) return this.#running
     this.#pauseRequested = false
     this.#lastError = undefined
-    this.#runPromise = this.#loop().finally(() => {
-      this.#runPromise = undefined
+    this.#running = this.#loop().finally(() => {
+      this.#running = undefined
     })
-    return this.#runPromise
+    return this.#running
   }
 
   async #collect() {
@@ -175,7 +261,7 @@ export class Agent extends Emitter<AgentEvent> {
       {
         messages: [...this.session.messages],
         prompt: this.#prompt,
-        tools: this.#tools,
+        tools: [...this.#tasks.tools],
       },
       {
         ...this.#opts.request,
@@ -249,18 +335,18 @@ export class Agent extends Emitter<AgentEvent> {
 
   async #runTools(calls: ToolCallPart[]) {
     this.#setStatus("running-tools")
-    const resultParts: ToolResultPart[] = []
-    for (const call of calls) {
-      this.emit({ call, type: "tool-call" })
-      const tool = this.#tools.find((t) => t.name === call.name)
-      const result = tool ? await runTool(tool, call.params) : unknownToolResult(call.name)
-      this.emit({ call, result, type: "tool-result" })
-      resultParts.push({
-        content: result.content,
-        error: result.error,
-        id: call.id,
-        isError: result.isError,
-        name: call.name,
+    for (const call of calls) this.emit({ call, type: "tool-call" })
+
+    // The whole batch — including streamable promotion, parallel chains,
+    // grace timing, and ownerRound suppression — lives in Tasks.run().
+    // What lands back here is a 1:1 array of result parts ready to commit.
+    const resultParts = await this.#tasks.run(calls, this.#toolContext())
+
+    for (let i = 0; i < calls.length; i++) {
+      const part = resultParts[i]
+      this.emit({
+        call: calls[i],
+        result: { content: part.content, error: part.error, isError: part.isError ?? false, meta: part.meta },
         type: "tool-result",
       })
     }
@@ -330,9 +416,55 @@ export class Agent extends Emitter<AgentEvent> {
     return reason
   }
 
+  /** Build the per-step `ToolContext` handed to each tool. The session
+   *  cwd, an abort signal scoped to the in-flight stream, and the
+   *  long-running spawn registry are all surfaced here. */
+  #toolContext(): ToolContext {
+    return {
+      agent: this,
+      cwd: this.#permissions.cwd,
+      messages: this.session.messages,
+      perms: this.#permissions,
+      signal: this.#abortController?.signal,
+      tasks: this.#tasks,
+    }
+  }
+
+  /** Tear down session-scoped resources. Called on agent disposal — the
+   *  agent doesn't auto-dispose today, so callers (TUI on quit, headless
+   *  runner on completion) should invoke this explicitly. */
+  async dispose(): Promise<void> {
+    this.#cancelAllWakeups()
+    await this.#tasks.killAll()
+  }
+
   #setStatus(status: AgentStatus): void {
     if (this.#status === status) return
+    // Transitioning into active work (streaming) is the unambiguous
+    // "loop has woken up" signal. Pending wakeups were fallback timers
+    // for exactly this; clear them and carry over their hints.
+    if (status === "streaming") this.#cancelAllWakeups()
     this.#status = status
     this.emit({ status, type: "status" })
   }
+}
+
+/** Minimal XML escaper for wakeup-tag attributes / bodies. Same shape
+ *  as the helper in `tasks.ts`; inlined here to keep the wakeup paths
+ *  self-contained (no circular import). */
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
+/** Format a heartbeat as a system message body. One line per running
+ *  task with id, type, age, and desc — terse so back-to-back heartbeats
+ *  don't bloat the conversation. */
+function heartbeatMessage(running: readonly Task[]): string {
+  if (running.length === 0) return `<heartbeat tasks="0"/>`
+  const now = Date.now()
+  const lines = running.map((t) => {
+    const age = `${now - t.startedAt}ms`
+    return `${t.id} [${t.status}] ${t.type} (${age}) — ${t.desc}`
+  })
+  return `<heartbeat tasks="${running.length}">\n${lines.join("\n")}\n</heartbeat>`
 }

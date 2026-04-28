@@ -9,9 +9,28 @@ import type {
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
-import type { PermissionOptions } from "./permissions/index.ts"
+import type { PermissionManager, PermissionOptions } from "./permissions/index.ts"
 import type { Session } from "./session.ts"
 import type { StopOptions } from "./stop.ts"
+import type { Tasks } from "./tasks.ts"
+
+// Declaration-merge agent-side capabilities into ToolContext. Importing
+// any agent code (which any consumer ultimately does) loads this file,
+// so tools see properly-typed access to these keys without casts. Each
+// is optional because non-agent harnesses (`runTool` called directly,
+// tests, evals) may pass a smaller context.
+declare module "@zaly/ai" {
+  interface ToolContext {
+    /** Permissions registry — manager.validate(scope, input) for tools
+     *  that gate themselves. */
+    perms?: PermissionManager
+    /** Long-running task registry. Tools that need to introspect (the
+     *  task management tools) read it; ordinary tools can stay
+     *  Tasks-unaware and return a `Streamable` instead. */
+    tasks?: Tasks
+    messages?: readonly Message[]
+  }
+}
 
 /** Outcome of a single step (one provider round-trip + tool batch).
  *  Returned from `step()` so custom drivers can interleave their own
@@ -59,6 +78,13 @@ export interface AgentOptions extends CollectOptions {
   prompt?: string[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number
+  /** Heartbeat interval (ms) for the Tasks registry. While at least one
+   *  task is pending or running, the agent injects a `<heartbeat>` system
+   *  message at this cadence so the model sees what's still going and
+   *  the loop stays alive. Leave undefined to disable. Tune for the
+   *  workload — interactive sessions often want 30s; batch / autonomous
+   *  runs may want 5m. */
+  heartbeatMs?: number
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Called when a step returns `context-overflow`. Should mutate the

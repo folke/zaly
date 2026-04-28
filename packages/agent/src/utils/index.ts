@@ -1,30 +1,12 @@
-import type { Message, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai"
-
-import { ToolError } from "@zaly/ai"
+import type { Message, TokenCount, ToolCallPart } from "@zaly/ai"
 
 export * from "./output.ts"
-export * from "./spawn-registry.ts"
 
 /** Pull tool-call parts out of an assistant message. Returns `[]` for
  *  the string-content shorthand or a content array with no calls. */
 export function extractToolCalls(message: Message<"assistant">): ToolCallPart[] {
   if (typeof message.content === "string") return []
   return message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
-}
-
-/** Synthesize the tool-result payload returned when the model calls a
- *  tool that wasn't registered for this turn. The model sees a stable
- *  `UNKNOWN_TOOL` code and a human-readable message it can recover from. */
-export function unknownToolResult(name: string): ToolResult {
-  const err = new ToolError({
-    code: "UNKNOWN_TOOL",
-    message: `no tool named "${name}" is registered for this turn`,
-  })
-  return {
-    content: `❌ ${err.code}: ${err.message}`,
-    error: { code: err.code, message: err.message },
-    isError: true,
-  }
 }
 
 /** Sum two TokenCounts. Optional fields are only present in the result

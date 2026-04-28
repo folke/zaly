@@ -19,7 +19,7 @@ import type {
   Tool,
 } from "../types.ts"
 
-import { flattenMeta } from "../tools.ts"
+import { flattenMeta, stringifySystemContent } from "../tools.ts"
 
 
 /**
@@ -174,7 +174,9 @@ function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest 
   const conversational: Message[] = []
   for (const msg of ctx.messages) {
     if (msg.role === "system") {
-      systemBlocks.push(asTextBlock(msg.content, caching ? msg.cache : undefined))
+      systemBlocks.push(
+        asTextBlock(stringifySystemContent(msg.content), caching ? msg.cache : undefined)
+      )
     } else {
       conversational.push(msg)
     }
