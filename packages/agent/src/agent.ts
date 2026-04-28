@@ -209,7 +209,7 @@ export class Agent extends Emitter<AgentEvent> {
     const timer = setTimeout(() => {
       this.#wakeups.delete(id)
       this.inject({
-        content: `<wakeup id="${id}">${escapeXml(opts.hint ?? "")}</wakeup>`,
+        content: [{ data: { hint: opts.hint, id }, tag: "wakeup", type: "meta" }],
         role: "system",
       })
     }, opts.delayMs)
