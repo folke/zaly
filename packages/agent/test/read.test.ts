@@ -1,10 +1,11 @@
-import type { MetaPart, TextPart } from "@zaly/ai"
+import type { Message, MetaPart, TextPart, ToolContext, ToolResultPart } from "@zaly/ai"
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { readTool } from "../src/tools/read.ts"
+import { ToolError } from "@zaly/ai"
+import { assertFresh, readTool, trackFile } from "../src/tools/read.ts"
 
 type ReadResult = string | (TextPart | MetaPart)[]
 
@@ -105,5 +106,101 @@ describe("read tool — negative offset (tail-style)", () => {
     const data = meta.data as { showing: [number, number]; total: number }
     expect(data.total).toBe(200)
     expect(data.showing).toEqual([151, 170])
+  })
+})
+
+describe("read tool — error paths", () => {
+  test("missing file → NOT_FOUND ToolError", async () => {
+    await expect(callRead({ path: join(dir, "nope.txt") })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    })
+  })
+
+  test("path that resolves to a directory → NOT_A_FILE", async () => {
+    const sub = join(dir, "subdir")
+    mkdirSync(sub, { recursive: true })
+    await expect(callRead({ path: sub })).rejects.toMatchObject({ code: "NOT_A_FILE" })
+  })
+
+  test("offset past end yields a clear placeholder string", async () => {
+    const path = fileWith(5)
+    const r = await callRead({ offset: 999, path })
+    expect(typeof r).toBe("string")
+    expect(r as string).toMatch(/past end/)
+  })
+
+  test("over-long lines are truncated inline with a marker", async () => {
+    const path = join(dir, "long.txt")
+    writeFileSync(path, "x".repeat(3000))
+    const body = await readBody({ path })
+    expect(body).toMatch(/line truncated, 3000 chars/)
+  })
+
+  test("non-image binary file → BINARY_FILE ToolError", async () => {
+    const path = join(dir, "bin.dat")
+    writeFileSync(path, Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 0]))
+    await expect(callRead({ path })).rejects.toMatchObject({ code: "BINARY_FILE" })
+  })
+
+  test("PNG image returns an ImagePart attachment", async () => {
+    // Real 1×1 PNG so imageInfo can read dimensions.
+    const path = join(dir, "tiny.png")
+    writeFileSync(
+      path,
+      Buffer.from(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082",
+        "hex"
+      )
+    )
+    const r = await callRead({ path })
+    if (typeof r === "string") throw new Error("expected parts array")
+    const img = (r as { type: string }[]).find((p) => p.type === "image")
+    expect(img).toBeDefined()
+  })
+})
+
+describe("trackFile / assertFresh", () => {
+  function withReadOf(path: string, mtime: number): Message<"tool"> {
+    const part: ToolResultPart = {
+      content: "",
+      id: "1",
+      meta: { file: { kind: "read", mtime, path } },
+      name: "read",
+      type: "tool-result",
+    }
+    return { content: [part], role: "tool" }
+  }
+
+  test("trackFile mutates ctx.meta.file", () => {
+    const ctx: ToolContext = {}
+    trackFile({ kind: "read", mtime: 123, path: "/x" }, ctx)
+    expect(ctx.meta?.file).toEqual({ kind: "read", mtime: 123, path: "/x" })
+  })
+
+  test("assertFresh throws NOT_FOUND when the path doesn't exist", () => {
+    const ctx: ToolContext = { messages: [] }
+    expect(() => assertFresh(join(dir, "missing-fresh.txt"), ctx)).toThrow(ToolError)
+  })
+
+  test("assertFresh throws NOT_READ when no prior read for this path", () => {
+    const path = join(dir, "fresh-not-read.txt")
+    writeFileSync(path, "hello")
+    expect(() => assertFresh(path, { messages: [] })).toThrow(/read this file before/i)
+  })
+
+  test("assertFresh succeeds when a recent read message records the current mtime", () => {
+    const path = join(dir, "fresh-ok.txt")
+    writeFileSync(path, "hello")
+    const mtime = statSync(path).mtimeMs
+    const ctx: ToolContext = { messages: [withReadOf(path, mtime)] }
+    expect(() => assertFresh(path, ctx)).not.toThrow()
+  })
+
+  test("assertFresh throws STALE when the prior read mtime no longer matches", () => {
+    const path = join(dir, "fresh-stale.txt")
+    writeFileSync(path, "hello")
+    // Pretend we read this file with a different mtime.
+    const ctx: ToolContext = { messages: [withReadOf(path, 1)] }
+    expect(() => assertFresh(path, ctx)).toThrow(/changed since last read/)
   })
 })

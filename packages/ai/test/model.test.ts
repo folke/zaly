@@ -44,6 +44,27 @@ addModels({
   },
 })
 
+describe("loadModel — error paths", () => {
+  test("throws a helpful error for unknown ids", async () => {
+    await expect(loadModel("not-a-real-provider/not-a-real-model")).rejects.toThrow(
+      /Unknown model.*addModels/s
+    )
+  })
+
+  test("accepts an inline ModelSpec without a catalog lookup", async () => {
+    const m = await loadModel({
+      attachment: false,
+      id: "inline",
+      limit: { context: 1000, output: 100 },
+      modalities: { input: ["text"], output: ["text"] },
+      name: "Inline",
+      provider: "mock-cost-test" as never,
+      reasoning: false,
+    })
+    expect(m.id).toBe("mock-cost-test/inline")
+  })
+})
+
 describe("Model.stream — cost augmentation", () => {
   test("populates usage.cost from the catalog price table", async () => {
     scriptedEvents = [
