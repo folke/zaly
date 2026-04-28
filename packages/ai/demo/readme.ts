@@ -1,6 +1,7 @@
-import { Type } from "typebox"
-import { collect, defineTool, loadModel, runTool } from "@zaly/ai"
 import type { Message, ToolCallPart } from "@zaly/ai"
+
+import { collect, defineTool, loadModel, runTool } from "@zaly/ai"
+import { Type } from "typebox"
 
 const multiply = defineTool({
   name: "multiply",
@@ -18,15 +19,21 @@ for (;;) {
   messages.push(message)
 
   const calls = (Array.isArray(message.content) ? message.content : []).filter(
-    (p): p is ToolCallPart => p.type === "tool-call",
+    (p): p is ToolCallPart => p.type === "tool-call"
   )
   if (calls.length === 0) break
 
   const results = await Promise.all(
     calls.map(async (c) => {
-      const r = await runTool(multiply, c.params)
-      return { content: r.content, id: c.id, isError: r.isError, name: c.name, type: "tool-result" as const }
-    }),
+      const r = await runTool(multiply, c.params, {})
+      return {
+        content: r.content,
+        id: c.id,
+        isError: r.isError,
+        name: c.name,
+        type: "tool-result" as const,
+      }
+    })
   )
   messages.push({ content: results, role: "tool" })
 }

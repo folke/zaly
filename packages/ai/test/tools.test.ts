@@ -40,7 +40,7 @@ describe("defineTool", () => {
 
 describe("runTool — happy path", () => {
   test("number return wraps as JSON-formatted text part", async () => {
-    const r = await runTool(Adder, { a: 2, b: 3 })
+    const r = await runTool(Adder, { a: 2, b: 3 }, {})
     expect(r).toEqual({
       content: [{ format: "json", text: "5", type: "text" }],
       isError: false,
@@ -48,12 +48,12 @@ describe("runTool — happy path", () => {
   })
 
   test("accepts a JSON string for args", async () => {
-    const r = await runTool(Adder, '{"a": 2, "b": 3}')
+    const r = await runTool(Adder, '{"a": 2, "b": 3}', {})
     expect((r.content as { text: string }[])[0].text).toBe("5")
   })
 
   test("applies coercion through runTool", async () => {
-    const r = await runTool(Adder, { a: "10", b: "20" })
+    const r = await runTool(Adder, { a: "10", b: "20" }, {})
     expect((r.content as { text: string }[])[0].text).toBe("30")
   })
 })
@@ -66,7 +66,7 @@ describe("runTool — object return wraps as JSON-formatted text part", () => {
   })
 
   test("object → array with TextPart + format: 'json'", async () => {
-    const r = await runTool(Json, {})
+    const r = await runTool(Json, {}, {})
     expect(r.isError).toBe(false)
     expect(r.content).toEqual([
       { format: "json", text: '{"conditions":"sunny","temp":72}', type: "text" },
@@ -76,19 +76,19 @@ describe("runTool — object return wraps as JSON-formatted text part", () => {
 
 describe("runTool — validation failures", () => {
   test("returns annotated error on invalid args", async () => {
-    const r = await runTool(Adder, { a: "notanumber" })
+    const r = await runTool(Adder, { a: "notanumber" }, {})
     expect(r.isError).toBe(true)
     expect(stringifyToolResult(r.content)).toMatch(/❌/)
   })
 
   test("populates structured error.code + error.message", async () => {
-    const r = await runTool(Adder, { a: "notanumber" })
+    const r = await runTool(Adder, { a: "notanumber" }, {})
     expect(r.error?.code).toBe("INVALID_INPUT")
     expect(r.error?.message).toBeTruthy()
   })
 
   test("returns parse error on unsalvageable JSON string", async () => {
-    const r = await runTool(Adder, "")
+    const r = await runTool(Adder, "", {})
     expect(r.isError).toBe(true)
   })
 })
@@ -107,7 +107,7 @@ describe("runTool — tool errors", () => {
   })
 
   test("surfaces ToolError code + message", async () => {
-    const r = await runTool(Failing, { id: "42" })
+    const r = await runTool(Failing, { id: "42" }, {})
     expect(r.isError).toBe(true)
     const msg = stringifyToolResult(r.content)
     expect(msg).toContain("NOT_FOUND")
@@ -115,12 +115,12 @@ describe("runTool — tool errors", () => {
   })
 
   test("errors land as a string content (no parts)", async () => {
-    const r = await runTool(Failing, { id: "42" })
+    const r = await runTool(Failing, { id: "42" }, {})
     expect(typeof r.content).toBe("string")
   })
 
   test("structured error preserves code, data, retryable from ToolError", async () => {
-    const r = await runTool(Failing, { id: "42" })
+    const r = await runTool(Failing, { id: "42" }, {})
     expect(r.error).toEqual({
       code: "NOT_FOUND",
       data: { id: "42" },
@@ -137,7 +137,7 @@ describe("runTool — tool errors", () => {
       params: Type.Object({}),
       name: "throws",
     })
-    const r = await runTool(Throws, {})
+    const r = await runTool(Throws, {}, {})
     expect(r.error?.code).toBe("INTERNAL")
     expect(r.error?.message).toBe("oops")
   })
@@ -150,7 +150,7 @@ describe("runTool — tool errors", () => {
       params: Type.Object({}),
       name: "throws",
     })
-    const r = await runTool(Throws, {})
+    const r = await runTool(Throws, {}, {})
     expect(r.isError).toBe(true)
     expect(stringifyToolResult(r.content)).toContain("boom")
   })
@@ -165,7 +165,7 @@ describe("runTool — output validation", () => {
   })
 
   test("throws when output violates the schema (implementation bug, not LLM error)", async () => {
-    await expect(runTool(Echo, { n: 1 })).rejects.toThrow()
+    await expect(runTool(Echo, { n: 1 }, {})).rejects.toThrow()
   })
 })
 

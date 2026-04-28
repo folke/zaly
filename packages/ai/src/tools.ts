@@ -1,5 +1,13 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type { Attachment, MetaPart, TextPart, Tool, ToolContext, ToolErrorInfo } from "./types.ts"
+import type {
+  Attachment,
+  MetaPart,
+  TextPart,
+  Tool,
+  ToolContext,
+  ToolErrorInfo,
+  ToolMeta,
+} from "./types.ts"
 
 import { safeStringify } from "@zaly/shared"
 import Schema from "typebox/schema"
@@ -73,6 +81,13 @@ export interface ToolResult {
   isError: boolean
   content: string | (TextPart | MetaPart | Attachment)[]
   error?: ToolErrorInfo
+  /** Whatever the tool wrote to `ctx.meta` during the call. `runTool`
+   *  hands each call a fresh empty `meta` slot on a per-call ctx copy,
+   *  reads it back after the call, and surfaces it here only when
+   *  non-empty. Wire-invisible — providers never see this. Used by
+   *  cross-tool plumbing like file-freshness tracking; see `ToolMeta`
+   *  in `@zaly/ai/types` for the extension pattern. */
+  meta?: ToolMeta
 }
 
 /** Declarative tool factory. Wires `validateInput` and (optionally)
@@ -92,7 +107,7 @@ export interface ToolResult {
  *  ``` */
 export function defineTool<Params extends TObject, Result extends TSchema = TSchema>(def: {
   desc?: string
-  call: (args: Static<Params>, ctx?: ToolContext) => Static<Result> | Promise<Static<Result>>
+  call: (args: Static<Params>, ctx: ToolContext) => Static<Result> | Promise<Static<Result>>
   name: string
   params: Params
   result?: Result
@@ -135,10 +150,11 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
  */
 export async function runTool<I, O>(
   tool: Tool<I, O>,
-  rawArgs: string | I,
-  ctx?: ToolContext
+  rawArgs: unknown,
+  ctx: ToolContext
 ): Promise<ToolResult> {
-  let args: unknown = rawArgs
+  ctx = { ...ctx, meta: {} }
+  let args = rawArgs
   if (typeof args === "string") {
     const parsed = parseJson(args)
     if (!parsed.success) {
@@ -166,8 +182,9 @@ export async function runTool<I, O>(
   if (tool.validateResult) {
     result = tool.validateResult(result)
   }
+  const meta = Object.keys(ctx.meta ?? {}).length > 0 ? ctx.meta : undefined
 
-  return { content: normalizeToolReply(result), isError: false }
+  return { content: normalizeToolReply(result), isError: false, meta }
 }
 
 function toErrorResult(err: unknown): ToolResult {

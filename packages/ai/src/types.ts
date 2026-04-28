@@ -110,6 +110,26 @@ export interface ToolResultPart {
   /** Set when `isError: true` and a structured `ToolError` was caught.
    *  Invisible to providers — pure metadata for downstream consumers. */
   error?: ToolErrorInfo
+  /** Sidecar payload the tool wrote to `ctx.meta` during the call —
+   *  not serialized to the wire, not shown to the model. Rides alongside
+   *  this result in the message list so other tools and the TUI can
+   *  inspect it later (e.g. file freshness derives the most recent
+   *  observed `mtime` for a path by scanning these). Disappears with the
+   *  message itself on compaction or masking — that's the point: when
+   *  the conversation no longer contains the read, the model genuinely
+   *  hasn't seen the file, and write/edit will demand a re-read.
+   *
+   *  `ToolMeta` is an empty interface that tool packages extend via
+   *  declaration merging:
+   *
+   *  ```ts
+   *  declare module "@zaly/ai" {
+   *    interface ToolMeta {
+   *      file?: { kind: "read" | "write" | "edit"; path: string; mtime: number }
+   *    }
+   *  }
+   *  ``` */
+  meta?: ToolMeta
 }
 
 /** Assistant reasoning (Anthropic "thinking", OpenAI reasoning models).
@@ -226,7 +246,33 @@ export interface ToolContext {
   /** Agent-level abort. Tools that spawn long-running work should pass
    *  this through to `Spawn`/`fetch` so cancellation propagates. */
   signal?: AbortSignal
+  /** Per-call sidecar slot. `runTool` initialises this to a fresh `{}`
+   *  on a per-call copy of the ctx; tools mutate it during execution
+   *  (`ctx.meta.file = { ... }`) to record machine-readable breadcrumbs
+   *  that survive into `ToolResultPart.meta`. Wire-invisible — the model
+   *  never sees this. Use `ToolMeta` declaration merging to type the
+   *  shape; see the type below. */
+  meta?: ToolMeta
 }
+
+/** Open shape for sidecar metadata tools attach to a result. Empty by
+ *  default; tool packages extend it via TypeScript declaration merging:
+ *
+ *  ```ts
+ *  // in @zaly/agent/tools/read.ts
+ *  declare module "@zaly/ai" {
+ *    interface ToolMeta {
+ *      file?: { kind: "read" | "write" | "edit"; path: string; mtime: number }
+ *    }
+ *  }
+ *  ```
+ *
+ *  Each tool that introduces a new field declares it next to the tool
+ *  itself. Once the augmenting module is imported anywhere in the
+ *  project, every tool's `ctx.meta` and every `ToolResultPart.meta`
+ *  picks up the field with full types — no casts, no central registry. */
+// oxlint-disable-next-line typescript/no-empty-interface
+export interface ToolMeta {}
 
 export interface Tool<Params = unknown, Result = unknown> {
   name: string
@@ -235,7 +281,7 @@ export interface Tool<Params = unknown, Result = unknown> {
   result?: unknown
   validateParams(params: unknown): Params
   validateResult?(result: unknown): Awaited<Result>
-  call(params: Params, ctx?: ToolContext): Promise<Result>
+  call(params: Params, ctx: ToolContext): Promise<Result>
   _types?: { input: Params; output: Result }
 }
 

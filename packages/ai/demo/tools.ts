@@ -36,4 +36,4 @@ const tool = defineTool({
   },
 })
 
-console.log(await tool.call({ timezone: "Europe/Berlin" }))
+console.log(await tool.call({ timezone: "Europe/Berlin" }, {}))
