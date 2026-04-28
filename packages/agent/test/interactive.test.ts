@@ -342,6 +342,53 @@ describe("Agent — final-state APIs", () => {
   })
 })
 
+describe("Agent — wakeup queue draining", () => {
+  test("wakeup that fires during streaming surfaces in the SAME run, not the next user turn", async () => {
+    const m = pendingModel()
+    const agent = new Agent({ model: m.model })
+    const run = agent.run()
+
+    // Wait for the first stream to be in flight (status=streaming).
+    while (m.pending === 0) await tick()
+
+    // Schedule a wakeup with a tiny delay, then deliver the stream's
+    // natural-stop AFTER the timer has had a chance to fire. The timer
+    // callback runs while status is still `streaming`, so `inject`
+    // pushes the wakeup into `#injectQueue` rather than via `send`.
+    agent.scheduleWakeup({ delayMs: 1, hint: "tick" })
+    await new Promise((r) => setTimeout(r, 5))
+
+    // First stream ends naturally. Pre-fix this stopped the loop with
+    // the wakeup orphaned in `#injectQueue`. Post-fix the loop continues
+    // and the next step drains it.
+    m.release(okStop())
+
+    // The continuation step needs another stream — release it too.
+    while (m.pending === 0) await tick()
+    m.release(okStop())
+
+    const reason = await run
+    expect(reason).toBe("natural")
+
+    const roles = agent.messages.map((msg) => msg.role)
+    // user-driven kickoff is absent (this run started with no messages),
+    // so we expect: assistant (initial), system (wakeup drained), assistant.
+    expect(roles).toEqual(["assistant", "system", "assistant"])
+
+    const wakeup = agent.messages[1]
+    if (wakeup.role !== "system" || typeof wakeup.content === "string") {
+      throw new Error("expected structured system wakeup message")
+    }
+    const meta = wakeup.content[0]
+    expect(meta.type).toBe("meta")
+    if (meta.type !== "meta") throw new Error("type narrow")
+    expect(meta.tag).toBe("wakeup")
+    // Crucially: NOT cancelled — this was an organic fire, not
+    // `#cancelAllWakeups`.
+    expect((meta.data as { status?: string }).status).toBeUndefined()
+  })
+})
+
 function tick(): Promise<void> {
   return new Promise((res) => setTimeout(res, 0))
 }

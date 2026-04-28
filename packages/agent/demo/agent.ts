@@ -35,7 +35,7 @@ import {
   editTool,
   fetchTool,
   readTool,
-  taskKillTool,
+  taskStopTool,
   taskListTool,
   taskPollTool,
   wakeupTool,
@@ -87,7 +87,7 @@ function buildAgent(): Agent {
       "Prefer fewer tool calls; batch independent reads in one turn when possible.",
     ],
     session,
-    tools: [bashTool, editTool, fetchTool, readTool, taskKillTool, taskListTool, taskPollTool, wakeupTool, writeTool],
+    tools: [bashTool, editTool, fetchTool, readTool, taskStopTool, taskListTool, taskPollTool, wakeupTool, writeTool],
   })
 
   a.on("stream-event", ({ event }) => {

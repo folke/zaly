@@ -9,7 +9,7 @@ import { taskInfoPart } from "../tasks.ts"
  * Generic task management surface for the model.
  *
  *  - `task_list`: enumerate running and recently-finished tasks.
- *  - `task_kill`: abort a running task. Idempotent.
+ *  - `task_stop`: abort a running task. Idempotent.
  *
  * "Wait for a task" is intentionally absent — heartbeats keep the loop
  * alive while tasks run, and `task-done` injects the final result as a
@@ -79,14 +79,14 @@ export const taskPollTool = defineTool({
 })
 
 // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
-export const taskKillTool = defineTool({
-  name: "task_kill",
+export const taskStopTool = defineTool({
+  name: "task_stop",
   desc:
-    "Terminate a running task. Aborts the underlying work (e.g. SIGTERM " +
-    "→ SIGKILL for bash); pending tasks chained behind a killed task get " +
+    "Stop a running task. Aborts the underlying work (e.g. SIGTERM " +
+    "→ SIGKILL for bash); pending tasks chained behind a stopped task get " +
     "auto-cancelled. Idempotent — safe to call on an already-finished task.",
   params: Type.Object({
-    id: Type.String({ description: "Task id to terminate." }),
+    id: Type.String({ description: "Task id to stop." }),
   }),
 
   call(args, ctx) {
@@ -99,8 +99,8 @@ export const taskKillTool = defineTool({
         message: `no task with id "${args.id}"`,
       })
     }
-    tasks.abort(args.id, "killed via task_kill")
-    return `task ${args.id} aborted`
+    tasks.abort(args.id, "stopped via task_stop")
+    return `task ${args.id} stopped`
   },
 })
 

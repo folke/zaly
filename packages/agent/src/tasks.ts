@@ -178,7 +178,7 @@ export class Tasks extends Emitter<TasksEvent> {
       .map((t) => toTaskInfo(t) as DoneTaskInfo)
   }
 
-  /** Look up a task by id. Useful for `task_kill` / `task_poll`. */
+  /** Look up a task by id. Useful for `task_stop` / `task_poll`. */
   get(id: string): TaskInfo | undefined {
     const t = this.#map.get(id)
     return t ? toTaskInfo(t) : undefined

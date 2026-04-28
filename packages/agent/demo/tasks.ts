@@ -3,7 +3,7 @@
  * the long-running-task lifecycle.
  *
  * Each section runs a real interaction against the real `Tasks` registry
- * (with `bashTool`, `task_list`, `task_poll`, `task_kill`) and prints the
+ * (with `bashTool`, `task_list`, `task_poll`, `task_stop`) and prints the
  * exact text the model would receive — i.e. tool-result content after
  * `transformMeta` + `stringifyContent`, and system injects after the
  * same flattening.
@@ -20,7 +20,7 @@ import type { TaskInfo } from "../src/tasks.ts"
 import { stringifyContent, transformMeta } from "@zaly/ai"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "../src/index.ts"
 import { bashTool } from "../src/tools/bash.ts"
-import { taskKillTool, taskListTool, taskPollTool } from "../src/tools/tasks.ts"
+import { taskStopTool, taskListTool, taskPollTool } from "../src/tools/tasks.ts"
 import { uuidv7 } from "../src/utils/uuid.ts"
 
 // ── tiny output helpers ─────────────────────────────────────────────────
@@ -73,7 +73,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
 }
 
-const TOOLS = [bashTool, taskListTool, taskPollTool, taskKillTool]
+const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
 
 // ════════════════════════════════════════════════════════════════════════
 // 1. Fast bash — completes inside the grace window

@@ -420,6 +420,14 @@ export class Agent extends Emitter<AgentEvent> {
           for (const m of this.#sendQueue.splice(0)) this.session.add(m)
           continue
         }
+        // Wakeups (or any other inject) that fired while the agent was
+        // streaming / running-tools land in `#injectQueue`. If we stop
+        // here without giving them a turn, they get drained at the top
+        // of the next unrelated user turn — surfacing the wakeup AFTER
+        // the user's reply, with no `status="cancelled"` marker since it
+        // never went through `#cancelAllWakeups`. Continue the loop so
+        // `step()` drains them next iteration.
+        if (this.#injectQueue.length > 0) continue
         return this.#stop("natural")
       }
 

@@ -19,7 +19,7 @@ import { summarizeOutput } from "../utils/output.ts"
  *    against a grace window. Sub-grace commands appear synchronous to the
  *    model; longer ones promote to a background task and the model gets
  *    a partial snapshot now plus a system-message completion later.
- *  - `task_wait` lets the model block on a still-running bash; `task_kill`
+ *  - `task_wait` lets the model block on a still-running bash; `task_stop`
  *    aborts one. (No more bash_wait / bash_kill — the generic surface
  *    covers it.)
  *  - `timeout` is now a real kill deadline. The Spawn aborts itself when
@@ -37,7 +37,7 @@ import { summarizeOutput } from "../utils/output.ts"
  * advising the read tool instead.
  *
  * Cancellation — `ctx.signal` (agent abort) propagates to the spawn.
- * `task_kill(id)` calls the streamable's `abort()`, which aborts the spawn.
+ * `task_stop(id)` calls the streamable's `abort()`, which aborts the spawn.
  */
 const DEFAULT_TIMEOUT_MS = 600_000 // 10 min — real kill deadline
 const DEFAULT_MAX_BUFFER = 5 * 1024 * 1024 // 5 MB
@@ -49,7 +49,7 @@ export const bashTool = defineTool({
     "Run a bash command. Returns its output once the command exits, or a " +
     "partial snapshot if the command is still running after the harness's " +
     "grace window — in that case the eventual result arrives as a system " +
-    "message. Use `task_wait` to block on a long-running shell, `task_kill` " +
+    "message. Use `task_wait` to block on a long-running shell, `task_stop` " +
     "to terminate one. `timeout` is a real kill deadline (default 10 min).",
   params: Type.Object({
     command: Type.String({ description: "The shell command to run, evaluated by `bash -c`." }),
