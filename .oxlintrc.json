@@ -29,6 +29,7 @@
     "import/prefer-default-export": "off", // 10
     "init-declarations": "off", // 4
     "max-statements": "off", // 26
+    "max-params": ["warn", 4],
     "no-console": "warn",
     "no-continue": "off", // 24
     "no-control-regex": "off", // 2

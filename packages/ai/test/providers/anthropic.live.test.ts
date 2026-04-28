@@ -2,12 +2,18 @@ import type { StreamEvent } from "../../src/provider.ts"
 import type { Tool } from "../../src/types.ts"
 
 /**
- * Live integration tests. Skipped unless `ANTHROPIC_API_KEY` is set.
+ * Live integration tests. Opt-in only — skipped unless BOTH:
+ *   - `LIVE=1` (or any truthy value) is set, AND
+ *   - `ANTHROPIC_API_KEY` is available.
  *
- * Run from the repo root so the top-level `.env` is picked up:
+ * The `LIVE` gate exists because the bare `bun test` runner picks these
+ * up by filename even though our default `test` script tries to skip
+ * them via `--no-env-file`. Without the explicit opt-in, a forgotten
+ * env-loaded shell would silently start hitting paid APIs. Run them via
+ * `bun test:live` (sets `LIVE=1` for you) or manually:
  *
- *   bun test:node packages/ai/test/providers/anthropic.live.test.ts
- *   MODEL=anthropic/claude-sonnet-4-6 bun test:node …    (override)
+ *   LIVE=1 bun test:node packages/ai/test/providers/anthropic.live.test.ts
+ *   LIVE=1 MODEL=anthropic/claude-sonnet-4-6 bun test:node …    (override)
  *
  * Cost control: Haiku by default, short prompts, small token caps;
  * ~6 requests per run.
@@ -16,10 +22,10 @@ import { describe, expect, test } from "vitest"
 import { loadModel } from "../../src/model.ts"
 import { collect } from "../../src/provider.ts"
 
-const hasKey = Boolean(process.env.ANTHROPIC_API_KEY)
+const enabled = Boolean(process.env.LIVE) && Boolean(process.env.ANTHROPIC_API_KEY)
 const MODEL = process.env.MODEL ?? "anthropic/claude-haiku-4-5"
 
-describe.skipIf(!hasKey)("anthropic: live", () => {
+describe.skipIf(!enabled)("anthropic: live", () => {
   test("basic completion returns text + usage", async () => {
     const model = await loadModel(MODEL)
     const { finishReason, message, usage } = await collect(

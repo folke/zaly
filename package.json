@@ -21,7 +21,7 @@
     "build": "bun build:assets && tsdown",
     "build:assets": "bun run --sequential --no-exit-on-error --workspaces 'build:*'",
     "test": "bun test --no-env-file && bun vitest",
-    "test:live": "bun test live"
+    "test:live": "LIVE=1 bun test live"
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
