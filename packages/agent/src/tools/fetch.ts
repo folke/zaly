@@ -94,6 +94,7 @@ export const fetchTool = defineTool({
     "use `jsonpath` (e.g. `$.items[*].name`) to extract a subset and " +
     "minimise tokens. Best for APIs — for web pages, use the browser tool.",
   name: "fetch",
+  parallel: true,
 
   // oxlint-disable-next-line sort-keys -- semantic param order: url, method, headers, query, body, jsonpath
   params: Type.Object({

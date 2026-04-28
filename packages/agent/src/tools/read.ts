@@ -37,6 +37,7 @@ export const readTool = defineTool({
     "Read a file. Text files return numbered lines (`cat -n` style). " +
     "Image files return as image attachments. " +
     "Use `offset`/`limit` to slice large files (default limit: 2000 lines).",
+  parallel: true,
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
     path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
