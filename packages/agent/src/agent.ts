@@ -82,7 +82,7 @@ export class Agent extends Emitter<AgentEvent> {
     // `*new*` marker so the model knows to call `task_poll` if it cares.
     this.#tasks.on("heartbeat", ({ running }) => {
       this.inject({
-        content: [{ data: "", tag: "heartbeat", type: "meta" }, taskInfoPart(running)],
+        content: [{ data: taskInfoPart(running), tag: "heartbeat", type: "meta" }],
         role: "system",
       })
     })

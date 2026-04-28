@@ -28,8 +28,9 @@ export function toContent(value: unknown): Content {
   return [{ format: "json", text: safeStringify(value), type: "text" }]
 }
 
-export function stringifyContent(content: Content): string {
+export function stringifyContent(content: Content | ContentPart): string {
   if (typeof content === "string") return content
+  if (isContentPart(content)) content = [content]
   return content
     .map((p) => {
       if (p.type === "text") return p.text
@@ -42,7 +43,7 @@ export function stringifyContent(content: Content): string {
 export function toXml(data: unknown, tag?: string): string {
   const cleaned = (tag ?? "meta").replace(/[^A-Za-z0-9-]/g, "")
   const safeTag = cleaned === "" ? "meta" : cleaned
-  const body = (typeof data === "string" ? data : safeStringify(data)).trim()
+  const body = stringifyContent(toContent(data)).trim()
   const text = body.includes("\n") ? `\n${body}\n` : body
   return `<${safeTag}>${text}</${safeTag}>`
 }
