@@ -1,5 +1,5 @@
-import type { ToolContext } from "@zaly/ai"
-import type { Task, Tasks } from "../tasks.ts"
+import type { MetaPart, ToolContext } from "@zaly/ai"
+import type { Tasks } from "../tasks.ts"
 
 import { defineTool, ToolError } from "@zaly/ai"
 import { Type } from "typebox"
@@ -39,12 +39,39 @@ export const taskListTool = defineTool({
 
   call(args, ctx) {
     const tasks = requireTasks(ctx)
-    const list = [
-      ...tasks.running(),
-      ...(args.includeFinished ? tasks.finished() : []),
-    ]
-    if (list.length === 0) return "(no tasks)"
-    return list.map(formatTaskLine).join("\n")
+    const info = tasks
+      .info()
+      .filter((task) => (args.includeFinished ? true : task.status !== "done"))
+    const data =
+      info.length === 0 ? "no active tasks" : info.map((t) => JSON.stringify(t)).join("\n")
+    return { data, tag: "tasks", type: "meta" } satisfies MetaPart
+  },
+})
+
+// oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
+export const taskPollTool = defineTool({
+  name: "task_poll",
+  desc:
+    "Read the latest incremental output from a running task. Returns " +
+    "only what's arrived since the previous `task_poll` (or since the " +
+    "task's running placeholder was first surfaced). Use when a heartbeat " +
+    "flagged a task with `*new*`, or to peek at progress on a long " +
+    "command (build, test run, tail -f). Errors if the task is already " +
+    "done (its result was injected as a system message) or has no " +
+    "streaming output.",
+  parallel: true,
+  params: Type.Object({
+    id: Type.String({ description: "Task id to poll." }),
+  }),
+
+  call(args, ctx) {
+    const tasks = requireTasks(ctx)
+    const snap = tasks.pollOutput(args.id)
+    // The snapshot's `content` already carries any streamable-emitted
+    // MetaParts (bash's `<shell>`, etc.), so the model sees status +
+    // incremental output in one go. Returning content directly avoids
+    // the JSON-stringify path normalize would take on a ToolResult shape.
+    return snap.content
   },
 })
 
@@ -84,11 +111,4 @@ function requireTasks(ctx: ToolContext): Tasks {
     })
   }
   return ctx.tasks
-}
-
-function formatTaskLine(task: Task): string {
-  const age = Date.now() - task.startedAt
-  const dur = task.finishedAt ? `${task.finishedAt - task.startedAt}ms` : `${age}ms+`
-  const dep = task.dependsOn ? ` ←${task.dependsOn}` : ""
-  return `${task.id} [${task.status}] ${task.type} (${dur})${dep} — ${task.desc}`
 }

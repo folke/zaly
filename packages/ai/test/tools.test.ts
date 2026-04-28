@@ -1,6 +1,7 @@
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { defineTool, runTool, ToolError, stringifyToolResult } from "../src/tools.ts"
+import { stringifyContent } from "../src/format.ts"
+import { defineTool, runTool, ToolError } from "../src/tools.ts"
 
 const Adder = defineTool({
   desc: "add two numbers",
@@ -78,7 +79,7 @@ describe("runTool — validation failures", () => {
   test("returns annotated error on invalid args", async () => {
     const r = await runTool(Adder, { a: "notanumber" }, {})
     expect(r.isError).toBe(true)
-    expect(stringifyToolResult(r.content)).toMatch(/❌/)
+    expect(stringifyContent(r.content)).toMatch(/❌/)
   })
 
   test("populates structured error.code + error.message", async () => {
@@ -109,7 +110,7 @@ describe("runTool — tool errors", () => {
   test("surfaces ToolError code + message", async () => {
     const r = await runTool(Failing, { id: "42" }, {})
     expect(r.isError).toBe(true)
-    const msg = stringifyToolResult(r.content)
+    const msg = stringifyContent(r.content)
     expect(msg).toContain("NOT_FOUND")
     expect(msg).toContain("record not found")
   })
@@ -152,7 +153,7 @@ describe("runTool — tool errors", () => {
     })
     const r = await runTool(Throws, {}, {})
     expect(r.isError).toBe(true)
-    expect(stringifyToolResult(r.content)).toContain("boom")
+    expect(stringifyContent(r.content)).toContain("boom")
   })
 })
 
@@ -169,15 +170,15 @@ describe("runTool — output validation", () => {
   })
 })
 
-describe("stringifyToolResult", () => {
+describe("stringifyContent", () => {
   test("strings pass through verbatim", () => {
-    expect(stringifyToolResult("hello")).toBe("hello")
-    expect(stringifyToolResult("")).toBe("")
+    expect(stringifyContent("hello")).toBe("hello")
+    expect(stringifyContent("")).toBe("")
   })
 
   test("array of text parts joins with newlines", () => {
     expect(
-      stringifyToolResult([
+      stringifyContent([
         { text: "line one", type: "text" },
         { text: "line two", type: "text" },
       ])
@@ -186,7 +187,7 @@ describe("stringifyToolResult", () => {
 
   test("non-text parts become bracketed placeholders", () => {
     expect(
-      stringifyToolResult([
+      stringifyContent([
         { text: "look at this", type: "text" },
         {
           mime: "image/png",

@@ -95,6 +95,11 @@ export const bashTool = defineTool({
         () => undefined,
         () => undefined
       ),
+      // Non-consuming check used by heartbeats: is there incremental
+      // output the model hasn't seen since the last `poll()`? Lets the
+      // heartbeat flag this task with `*new*` without advancing the
+      // cursor (which would consume the bytes for any later poll).
+      hasNew: () => proc.combined.length > cursor.combined,
       poll: () => snapshot({ cursor, logPath, proc, startedAt }),
     }
   },

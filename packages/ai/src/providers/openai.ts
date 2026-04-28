@@ -10,12 +10,7 @@ import type {
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
-import {
-  flattenMeta,
-  hasAttachments,
-  stringifySystemContent,
-  stringifyToolResult,
-} from "../tools.ts"
+import { hasAttachments, stringifyContent, transformMeta } from "../format.ts"
 
 /**
  * OpenAI Chat Completions adapter.
@@ -342,7 +337,7 @@ function toOpenAIMessages(msg: Message): OpenAIMessage[] {
 }
 
 function toolPartToWireMessage(part: Message<"tool">["content"][number]): OpenAIMessage {
-  const body = stringifyToolResult(part.content)
+  const body = stringifyContent(part.content)
   const marker = hasAttachments(part.content)
     ? "\n[attachments delivered as the next user message]"
     : ""
@@ -384,13 +379,13 @@ function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
 function toOpenAIMessage(msg: Message): OpenAIMessage {
   switch (msg.role) {
     case "system": {
-      return { content: stringifySystemContent(msg.content), role: "system" }
+      return { content: stringifyContent(msg.content), role: "system" }
     }
     case "user": {
       if (typeof msg.content === "string") return { content: msg.content, role: "user" }
       // Flatten MetaPart → TextPart at the boundary so the loop below
       // only sees text + attachments.
-      const flat = flattenMeta(msg.content)
+      const flat = transformMeta(msg.content)
       if (typeof flat === "string") return { content: flat, role: "user" }
       // (Text | Attachment)[] → content parts. Image attachments serialize
       // to `image_url`, with base64 sources packed as a `data:` URL. PDF /

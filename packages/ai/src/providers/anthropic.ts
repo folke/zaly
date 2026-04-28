@@ -19,8 +19,7 @@ import type {
   Tool,
 } from "../types.ts"
 
-import { flattenMeta, stringifySystemContent } from "../tools.ts"
-
+import { transformMeta, stringifyContent } from "../format.ts"
 
 /**
  * Anthropic Messages API adapter.
@@ -174,9 +173,7 @@ function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest 
   const conversational: Message[] = []
   for (const msg of ctx.messages) {
     if (msg.role === "system") {
-      systemBlocks.push(
-        asTextBlock(stringifySystemContent(msg.content), caching ? msg.cache : undefined)
-      )
+      systemBlocks.push(asTextBlock(stringifyContent(msg.content), caching ? msg.cache : undefined))
     } else {
       conversational.push(msg)
     }
@@ -346,19 +343,20 @@ function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
 /** Map a tool result's `content` to the shape Anthropic's
  *  `tool_result.content` accepts: a string (passes through) or an
  *  array of text + image blocks. `MetaPart`s flatten to `<tag>JSON</tag>`
- *  text via `flattenMeta`. PDFs and audio/video aren't allowed inside
+ *  text via `transformMeta`. PDFs and audio/video aren't allowed inside
  *  tool_result on Anthropic's wire — degrade to text placeholders so
  *  the model still has *some* signal. */
 function toAnthropicToolResultContent(
   content: string | (TextPart | MetaPart | Attachment)[]
 ): AnthropicToolResultBlock["content"] {
-  const flattened = flattenMeta(content)
+  const flattened = transformMeta(content)
   if (typeof flattened === "string") return flattened
   const out: (AnthropicTextBlock | AnthropicImageBlock)[] = []
   for (const p of flattened) {
     if (p.type === "text") out.push({ text: p.text, type: "text" })
     else if (p.type === "image") out.push(toAnthropicImageBlock(p))
-    else out.push({ text: `[${p.type} attachment omitted; not allowed in tool_result]`, type: "text" })
+    else
+      out.push({ text: `[${p.type} attachment omitted; not allowed in tool_result]`, type: "text" })
   }
   return out
 }
@@ -386,7 +384,7 @@ function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): Anthro
         content = []
         // Flatten MetaPart → TextPart at the boundary so the loop below
         // only deals with text + attachments.
-        const flat = flattenMeta(msg.content)
+        const flat = transformMeta(msg.content)
         const parts = typeof flat === "string" ? [{ text: flat, type: "text" as const }] : flat
         for (const p of parts) {
           if (p.type === "text") content.push({ text: p.text, type: "text" })

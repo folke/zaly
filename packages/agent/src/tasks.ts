@@ -1,5 +1,6 @@
 import type {
   Message,
+  MetaPart,
   Tool,
   ToolCallPart,
   ToolContext,
@@ -8,13 +9,7 @@ import type {
   Streamable as TStreamable,
 } from "@zaly/ai"
 
-import {
-  formatToolError,
-  isStreamable,
-  runTool,
-  stringifyToolResult,
-  ToolError,
-} from "@zaly/ai"
+import { formatToolError, isStreamable, runTool, ToolError, stringifyContent } from "@zaly/ai"
 import { Emitter } from "./events.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -35,7 +30,7 @@ export interface Task {
   status: TaskStatus
   /** When set, this task is queued behind another and won't start until
    *  the named task transitions to `done`. */
-  dependsOn?: string
+  waitingFor?: string
   /** Wallclock at registration. */
   startedAt: number
   /** Wallclock at completion; set once status is `done`. */
@@ -43,6 +38,16 @@ export interface Task {
   /** Final result; set once status is `done`. */
   result?: ToolResult
 }
+
+export type TaskInfo = {
+  id: string
+  type: string
+  desc: string
+} & (
+  | { status: "running"; elapsedMs: number; hasNewOutput?: boolean }
+  | { status: "pending"; waitingFor: string; elapsedMs: number }
+  | { status: "done"; durationMs: number }
+)
 
 /** Events emitted by a `Tasks` instance. `task-done` only fires for
  *  completions that happen *outside* an in-flight `run()` round —
@@ -54,7 +59,7 @@ export type TasksEvent =
   | { type: "task-added"; task: Task }
   | { type: "task-removed"; task: Task }
   | { type: "task-done"; task: Task }
-  | { type: "heartbeat"; running: readonly Task[] }
+  | { type: "heartbeat"; running: readonly TaskInfo[] }
 
 /** Augment ToolMeta so tools and consumers can read freshness/state info
  *  off `ToolResultPart.meta.task`. The registry stamps this on every
@@ -156,6 +161,65 @@ export class Tasks extends Emitter<TasksEvent> {
     return t ? toPublic(t) : undefined
   }
 
+  info(): readonly TaskInfo[] {
+    const tasks = [...this.#map.values()]
+    return tasks.map((t) => {
+      const { id, status, type, desc } = t
+      const ms = (t.finishedAt ?? Date.now()) - t.startedAt
+      if (status === "running")
+        return { desc, elapsedMs: ms, hasNewOutput: t.streamable?.hasNew?.(), id, status, type }
+      if (status === "pending")
+        return { desc, elapsedMs: ms, id, status, type, waitingFor: t.waitingFor as string }
+      return { desc, durationMs: ms, id, status, type }
+    })
+  }
+
+  /** Non-consuming check: does the underlying streamable have output
+   *  the model hasn't seen since the last `poll()`? Returns false for
+   *  tasks without a streamable, completed tasks, or streamables that
+   *  don't implement the optional `hasNew` hook (no signal to give).
+   *  Used by heartbeats to flag tasks worth polling. */
+  hasNewOutput(id: string): boolean {
+    const t = this.#map.get(id)
+    if (t?.status !== "running" || !t.streamable) return false
+    return t.streamable.hasNew?.() ?? false
+  }
+
+  /** Poll a task's streamable for incremental output without changing
+   *  its lifecycle state. Advances the streamable's cursor — the next
+   *  call returns only what arrived since *this* one. Returns the same
+   *  `ToolResult` shape the original tool produces (parts + meta).
+   *  Errors when the task is unknown, already done, or has no streamable
+   *  (the latter is the case for plain-Promise tools — there's no
+   *  partial state to read). */
+  pollOutput(id: string): ToolResult & { running: boolean } {
+    const t = this.#map.get(id)
+    if (!t) {
+      throw new ToolError({
+        code: "NOT_FOUND",
+        data: { id },
+        message: `no task with id "${id}"`,
+      })
+    }
+    if (t.status === "done") {
+      throw new ToolError({
+        code: "TASK_DONE",
+        data: { id },
+        message: `task "${id}" has already completed; its result was injected as a system message`,
+      })
+    }
+    if (!t.streamable) {
+      throw new ToolError({
+        code: "NOT_STREAMABLE",
+        data: { id },
+        message:
+          `task "${id}" has no incremental output — it's a plain-Promise tool ` +
+          `whose result is delivered all-at-once when complete`,
+      })
+    }
+    return t.streamable.poll()
+  }
+
   /** Drop a task from the registry — does not abort. Caller is
    *  responsible for `abort()`-ing if the task is still running. */
   remove(id: string): boolean {
@@ -225,7 +289,7 @@ export class Tasks extends Emitter<TasksEvent> {
     const want = hasActive && this.#heartbeatMs !== undefined
     if (want && !this.#heartbeatTimer) {
       this.#heartbeatTimer = setInterval(() => {
-        this.emit({ running: this.running(), type: "heartbeat" })
+        this.emit({ running: this.info().filter((t) => t.status !== "done"), type: "heartbeat" })
       }, this.#heartbeatMs)
       this.#heartbeatTimer.unref()
     } else if (!want && this.#heartbeatTimer) {
@@ -264,7 +328,7 @@ export class Tasks extends Emitter<TasksEvent> {
 
       if (chainHead && !parallel) {
         // Queue behind the chain head — won't start until that finishes.
-        tasks.push(this.#registerPending({ call, ctxBase, dependsOn: chainHead, round, tool }))
+        tasks.push(this.#registerPending({ call, ctxBase, round, tool, waitingFor: chainHead }))
         chainHead = tasks[tasks.length - 1].id
         continue
       }
@@ -319,7 +383,7 @@ export class Tasks extends Emitter<TasksEvent> {
     id: string
     type: string
     desc: string
-    dependsOn?: string
+    waitingFor?: string
     round: symbol
   }): InternalTask {
     let resolveDone!: () => void
@@ -327,7 +391,6 @@ export class Tasks extends Emitter<TasksEvent> {
       resolveDone = r
     })
     const task: InternalTask = {
-      dependsOn: opts.dependsOn,
       desc: opts.desc,
       donePromise,
       id: opts.id,
@@ -336,6 +399,7 @@ export class Tasks extends Emitter<TasksEvent> {
       startedAt: Date.now(),
       status: "pending",
       type: opts.type,
+      waitingFor: opts.waitingFor,
     }
     this.#map.set(task.id, task)
     this.emit({ task: toPublic(task), type: "task-added" })
@@ -349,7 +413,7 @@ export class Tasks extends Emitter<TasksEvent> {
     call: ToolCallPart
     tool: Tool
     ctxBase: ToolContext
-    dependsOn: string
+    waitingFor: string
     round: symbol
   }): InternalTask {
     // oxlint-disable-next-line sort-keys -- semantic field order
@@ -357,7 +421,7 @@ export class Tasks extends Emitter<TasksEvent> {
       id: uuidv7(),
       type: opts.tool.name,
       desc: descOfCall(opts.call),
-      dependsOn: opts.dependsOn,
+      waitingFor: opts.waitingFor,
       round: opts.round,
     })
     task.pending = { call: opts.call, ctx: opts.ctxBase, tool: opts.tool }
@@ -434,7 +498,7 @@ export class Tasks extends Emitter<TasksEvent> {
    *  in `done` with an `UPSTREAM_FAILED` result. */
   #startReadyDependents(completedId: string, completedResult: ToolResult): void {
     for (const t of this.#map.values()) {
-      if (t.status !== "pending" || t.dependsOn !== completedId) continue
+      if (t.status !== "pending" || t.waitingFor !== completedId) continue
       if (completedResult.isError) {
         // Skip dependent — its predecessor failed.
         this.done(
@@ -455,7 +519,7 @@ export class Tasks extends Emitter<TasksEvent> {
       const pending = t.pending
       if (!pending) continue
       t.pending = undefined
-      t.dependsOn = undefined
+      t.waitingFor = undefined
       t.ownerRound = undefined // round has ended; future done() fires the event
       this.#dispatch(t, pending.tool, pending.call, pending.ctx)
     }
@@ -482,7 +546,7 @@ export class Tasks extends Emitter<TasksEvent> {
       return {
         content: [
           {
-            data: `queued — will run after ${task.dependsOn} completes; result will arrive as a system message`,
+            data: `queued — will run after ${task.waitingFor} completes; result will arrive as a system message`,
             tag: "task",
             type: "meta",
           },
@@ -520,7 +584,7 @@ function stampTaskMeta(
   return {
     ...base,
     task: {
-      dependsOn: task.dependsOn,
+      dependsOn: task.waitingFor,
       desc: task.desc,
       durationMs: task.finishedAt ? task.finishedAt - task.startedAt : undefined,
       id: task.id,
@@ -546,7 +610,6 @@ function partialContentFrom(
  *  immutable from the consumer's POV. */
 function toPublic(t: InternalTask): Task {
   return {
-    dependsOn: t.dependsOn,
     desc: t.desc,
     finishedAt: t.finishedAt,
     id: t.id,
@@ -554,6 +617,7 @@ function toPublic(t: InternalTask): Task {
     startedAt: t.startedAt,
     status: t.status,
     type: t.type,
+    waitingFor: t.waitingFor,
   }
 }
 
@@ -588,6 +652,11 @@ function sleep(ms: number): Promise<void> {
   })
 }
 
+export function taskInfoPart(info: readonly TaskInfo[]): MetaPart {
+  const data = info.length === 0 ? "no active tasks" : info.map((t) => JSON.stringify(t)).join("\n")
+  return { data, tag: "tasks", type: "meta" } satisfies MetaPart
+}
+
 /** Format a `task-done` event as a system message body for `Agent.inject`.
  *  Centralised so the framing is consistent (XML-tagged, parseable for
  *  TUI rendering) and so changes to the format hit one place. The body
@@ -595,7 +664,7 @@ function sleep(ms: number): Promise<void> {
  *  collapse the same way they would on the wire. */
 export function formatTaskCompletion(task: Task): string {
   const head = `<task id="${task.id}" type="${escapeXml(task.type)}" desc="${escapeXml(task.desc)}">`
-  const body = task.result ? stringifyToolResult(task.result.content) : ""
+  const body = task.result ? stringifyContent(task.result.content) : ""
   return `${head}\n${body}\n</task>`
 }
 

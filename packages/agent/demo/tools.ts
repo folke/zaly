@@ -1,6 +1,6 @@
 import type { ToolContext } from "@zaly/ai"
 
-import { runTool, stringifyToolResult } from "@zaly/ai"
+import { runTool, stringifyContent } from "@zaly/ai"
 import { bashTool } from "../src/index.ts"
 
 const ctx: ToolContext = {}
@@ -24,5 +24,5 @@ const ret = await Promise.all([
   ),
 ])
 
-const parts = ret.map((r) => stringifyToolResult(r.content)).join("\n\n")
+const parts = ret.map((r) => stringifyContent(r.content)).join("\n\n")
 console.log(parts)

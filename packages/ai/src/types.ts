@@ -28,8 +28,8 @@ export interface TextPart {
 /** Structured metadata embedded in tool-result content (and potentially
  *  other places). Survives end-to-end as a structured part so the TUI
  *  can render it richly; collapses to a `<tag>JSON</tag>` `TextPart` at
- *  the provider boundary via `toTextPart` so the model sees a clean
- *  XML-tagged block.
+ *  the provider boundary via `transformMeta` (in `@zaly/ai/format`) so
+ *  the model sees a clean XML-tagged block.
  *
  *  Use cases:
  *    - Truncation summaries: `{ tag: "truncation", data: { total: 1200, fullPath: "..." } }`
@@ -88,6 +88,9 @@ export interface ToolErrorInfo {
   retryable?: boolean
 }
 
+export type ContentPart = TextPart | MetaPart | Attachment
+export type Content = string | ContentPart[]
+
 /** Tool response carried on a `tool`-role message. `content` mirrors
  *  user-message shape: a string for the common stringified case, or
  *  an ordered array for rich results that mix text with image / pdf /
@@ -105,7 +108,7 @@ export interface ToolResultPart {
   type: "tool-result"
   id: string
   name: string
-  content: string | (TextPart | MetaPart | Attachment)[]
+  content: Content
   isError?: boolean
   /** Set when `isError: true` and a structured `ToolError` was caught.
    *  Invisible to providers — pure metadata for downstream consumers. */
@@ -306,7 +309,13 @@ export interface Tool<Params = unknown, Result = unknown> {
  *
  *  - `poll()` is synchronous and returns the current state — partial or
  *    final. After `running` flips to `false`, subsequent calls return
- *    the same final snapshot.
+ *    the same final snapshot. **Advances any internal cursor**: a tool
+ *    that streams incremental output (bash) returns only what's new
+ *    since the previous poll.
+ *  - `hasNew?()` is the non-consuming companion: returns `true` if a
+ *    `poll()` right now would produce non-empty new content. Heartbeats
+ *    use it to flag tasks worth polling. Tools without progressive
+ *    output can omit it; consumers fall back to "no hint".
  *  - `done` resolves when `poll().running` would flip to `false`. Never
  *    rejects — completion is reflected in the snapshot, not as an error.
  *  - `abort()` requests termination of the underlying work. Idempotent.
@@ -316,6 +325,7 @@ export interface Tool<Params = unknown, Result = unknown> {
  *  `isStreamable` (in `@zaly/ai/tools`) detects this shape. */
 export interface Streamable {
   poll(): ToolResult & { running: boolean }
+  hasNew?(): boolean
   done: Promise<void>
   abort(): void
 }
@@ -328,7 +338,7 @@ export interface Streamable {
  *  `meta` is wire-invisible sidecar data the tool wrote to `ctx.meta`. */
 export interface ToolResult {
   isError: boolean
-  content: string | (TextPart | MetaPart | Attachment)[]
+  content: Content
   error?: ToolErrorInfo
   meta?: ToolMeta
 }

@@ -1,6 +1,5 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
-import type { Task } from "./tasks.ts"
 import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentOptions, StepResult } from "./types.ts"
 
@@ -10,7 +9,7 @@ import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session.ts"
 import { StopPolicy } from "./stop.ts"
-import { Tasks, taskCompletionMessage } from "./tasks.ts"
+import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { extractToolCalls } from "./utils/index.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -79,10 +78,13 @@ export class Agent extends Emitter<AgentEvent> {
     })
     // Heartbeats keep the agent loop alive while long-running tasks are
     // in flight. Each pulse injects a small system note listing what's
-    // still going — the model sees it, the loop ticks, the model can
-    // decide whether to wait or do other work.
+    // still going. Tasks with incremental output ready to read get a
+    // `*new*` marker so the model knows to call `task_poll` if it cares.
     this.#tasks.on("heartbeat", ({ running }) => {
-      this.inject({ content: heartbeatMessage(running), role: "system" })
+      this.inject({
+        content: [{ data: "", tag: "heartbeat", type: "meta" }, taskInfoPart(running)],
+        role: "system",
+      })
     })
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
@@ -346,7 +348,12 @@ export class Agent extends Emitter<AgentEvent> {
       const part = resultParts[i]
       this.emit({
         call: calls[i],
-        result: { content: part.content, error: part.error, isError: part.isError ?? false, meta: part.meta },
+        result: {
+          content: part.content,
+          error: part.error,
+          isError: part.isError ?? false,
+          meta: part.meta,
+        },
         type: "tool-result",
       })
     }
@@ -453,18 +460,9 @@ export class Agent extends Emitter<AgentEvent> {
  *  as the helper in `tasks.ts`; inlined here to keep the wakeup paths
  *  self-contained (no circular import). */
 function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-}
-
-/** Format a heartbeat as a system message body. One line per running
- *  task with id, type, age, and desc — terse so back-to-back heartbeats
- *  don't bloat the conversation. */
-function heartbeatMessage(running: readonly Task[]): string {
-  if (running.length === 0) return `<heartbeat tasks="0"/>`
-  const now = Date.now()
-  const lines = running.map((t) => {
-    const age = `${now - t.startedAt}ms`
-    return `${t.id} [${t.status}] ${t.type} (${age}) — ${t.desc}`
-  })
-  return `<heartbeat tasks="${running.length}">\n${lines.join("\n")}\n</heartbeat>`
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
 }

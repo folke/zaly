@@ -1,16 +1,8 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type {
-  Attachment,
-  MetaPart,
-  Streamable,
-  TextPart,
-  Tool,
-  ToolContext,
-  ToolResult,
-} from "./types.ts"
+import type { Streamable, Tool, ToolContext, ToolResult } from "./types.ts"
 
-import { safeStringify } from "@zaly/shared"
 import Schema from "typebox/schema"
+import { toContent } from "./format.ts"
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"
@@ -141,7 +133,7 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
  *  LLM quirks before strict schema check). Throws `ToolError` on parse
  *  or validation failure — callers wrap with `formatToolError` to land
  *  back on a `ToolResult`. */
-export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
+function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   let args = rawArgs
   if (typeof args === "string") {
     const parsed = parseJson(args)
@@ -182,7 +174,7 @@ export function formatToolResult<O>(
   meta?: ToolResult["meta"]
 ): ToolResult {
   const validated = tool.validateResult ? tool.validateResult(raw) : raw
-  return { content: normalizeToolReply(validated), isError: false, meta }
+  return { content: toContent(validated), isError: false, meta }
 }
 
 /** Pull the per-call sidecar slot off a ctx, returning `undefined` when
@@ -208,9 +200,8 @@ export function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
  *  if you want grace-window promotion to background tasks instead.
  *
  *  This is the convenience all-in-one wrapper. Long-running harnesses
- *  compose `validateToolParams` / `formatToolResult` / `formatToolError`
- *  directly so they can interleave streamable detection between
- *  `tool.call` and result formatting.
+ *  pass `{ streaming: true }` to opt out of the block-on-streamable
+ *  behaviour and get the `Streamable` handle for grace-window racing.
  */
 export async function runTool<I, O>(
   tool: Tool<I, O>,
@@ -269,97 +260,3 @@ export async function runTool<I, O>(
   return formatToolResult(tool, result, readToolMeta(ctx))
 }
 
-const PART_TYPES = new Set(["text", "meta", "image", "pdf", "audio", "video"])
-
-function isContentPart(v: unknown): v is TextPart | MetaPart | Attachment {
-  return (
-    typeof v === "object" &&
-    v !== null &&
-    "type" in v &&
-    typeof (v as { type: unknown }).type === "string" &&
-    PART_TYPES.has((v as { type: string }).type)
-  )
-}
-
-/** Map a tool's return value into the `ToolResult.content` shape:
- *  - string → as-is (no `format`)
- *  - undefined → "" (no `format`)
- *  - single Part → wrapped in array
- *  - array of Parts → used as-is
- *  - everything else (object / array / number / boolean / null) →
- *    JSON-stringified, wrapped in a `TextPart` with `format: "json"`
- *    so renderers can pick `util.inspect` / a JSON highlighter / etc. */
-function normalizeToolReply(value: unknown): string | (TextPart | MetaPart | Attachment)[] {
-  if (typeof value === "string") return value
-  if (value === undefined) return ""
-  if (Array.isArray(value) && value.length > 0 && value.every(isContentPart)) {
-    return value
-  }
-  if (isContentPart(value)) return [value]
-  return [{ format: "json", text: safeStringify(value), type: "text" }]
-}
-
-/** Convert a `MetaPart` to a wire-friendly `TextPart` by JSON-stringifying
- *  the data and wrapping in an XML-style tag the model can recognize.
- *  String `data` is used verbatim (natural for `tag: "system"` use);
- *  anything else goes through `safeStringify`.
- *
- *  Tag names get the strip-then-fallback treatment so a malformed `tag`
- *  ("tool meta") doesn't produce broken XML — drops to "meta". */
-export function toTextPart(part: MetaPart): TextPart {
-  const cleaned = (part.tag ?? "meta").replace(/[^A-Za-z0-9-]/g, "")
-  const tag = cleaned === "" ? "meta" : cleaned
-  const body = typeof part.data === "string" ? part.data : safeStringify(part.data)
-  return { text: `<${tag}>${body}</${tag}>`, type: "text" }
-}
-
-/** Flatten any `MetaPart`s in a content array into `TextPart`s, leaving
- *  other parts untouched. Provider adapters call this before iterating
- *  content for wire translation. */
-export function flattenMeta(
-  content: string | (TextPart | MetaPart | Attachment)[]
-): string | (TextPart | Attachment)[] {
-  if (typeof content === "string") return content
-  return content.map((p) => (p.type === "meta" ? toTextPart(p) : p))
-}
-
-/** Collapse a system message's content to a single string. Used at
- *  provider boundaries because both Anthropic (top-level `system` slot)
- *  and OpenAI (`role: "system"` content) take strings only. MetaParts
- *  flatten to their `<tag>JSON</tag>` form; text parts join with newlines. */
-export function stringifySystemContent(content: string | (TextPart | MetaPart)[]): string {
-  if (typeof content === "string") return content
-  return content.map((p) => (p.type === "meta" ? toTextPart(p).text : p.text)).join("\n")
-}
-
-/** Serialize a tool-result `content` value to a single string —
- *  the lowest-common-denominator shape for providers whose tool message
- *  is string-only (e.g. OpenAI Chat Completions, even after the rich-
- *  content fallback splits attachments off into a separate user
- *  message; the tool message itself still wants a string body).
- *
- *  - `string` → passes through verbatim.
- *  - array → text parts joined with newlines; meta parts get flattened
- *    via `toTextPart` first; non-text/non-meta parts replaced with a
- *    `[image]` / `[pdf]` / etc. placeholder so the model has *some*
- *    hint that an attachment lives in the next message. */
-export function stringifyToolResult(
-  content: string | (TextPart | MetaPart | Attachment)[]
-): string {
-  if (typeof content === "string") return content
-  return content
-    .map((p) => {
-      if (p.type === "text") return p.text
-      if (p.type === "meta") return toTextPart(p).text
-      return `[${p.type}]`
-    })
-    .join("\n")
-}
-
-/** Returns true if any non-text part is present in a tool-result
- *  content value — signal to provider adapters that a fallback emit
- *  may be needed. */
-export function hasAttachments(content: string | (TextPart | MetaPart | Attachment)[]): boolean {
-  if (typeof content === "string") return false
-  return content.some((p) => p.type !== "text" && p.type !== "meta")
-}
