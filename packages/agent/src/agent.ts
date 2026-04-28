@@ -45,6 +45,7 @@ export class Agent extends Emitter<AgentEvent> {
   readonly maxDepth: number
 
   #prompt?: string[]
+  #parent?: Agent
 
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
@@ -139,6 +140,43 @@ export class Agent extends Emitter<AgentEvent> {
     return new Agent(init)
   }
 
+  /** Spawn a child agent that inherits this agent's runtime defaults —
+   *  cwd, model, permissions, full effective tool list (user tools +
+   *  the loaded skill tool), `depth + 1`, and `maxDepth`. Pass
+   *  `overrides` to specialize: typical ones are `prompt` (the child
+   *  has its own role), `session` (the child writes to its own JSONL),
+   *  and `tools` (curated subset).
+   *
+   *  Used by the `subagent` tool for delegation; equally useful for
+   *  ad-hoc parallel-agent patterns (multiple children working on
+   *  pieces of a task in parallel).
+   *
+   *  Depth cap: when the child would be at `maxDepth`, the `subagent`
+   *  tool is filtered out of its inherited tool list so recursion
+   *  bottoms out cleanly. The model just doesn't see the tool — no
+   *  error path. */
+  async child(overrides: Partial<AgentOptions> = {}): Promise<Agent> {
+    const childDepth = overrides.depth ?? this.depth + 1
+    // Inherit the *effective* step tool list (includes the loaded
+    // `skill` tool). The child opts out of its own skill scan since
+    // the catalog is shared.
+    const inherited = this.#stepTools()
+    const tools =
+      childDepth >= this.maxDepth ? inherited.filter((t) => t.name !== "subagent") : inherited
+    const ret = await Agent.load({
+      cwd: this.#cwd,
+      depth: childDepth,
+      maxDepth: this.maxDepth,
+      model: this.model,
+      permissions: this.#permissions,
+      skills: false,
+      tools,
+      ...overrides,
+    })
+    ret.#parent = this
+    return ret
+  }
+
   // ── Read ──────────────────────────────────────────────────────────────
 
   /** Active conversation — delegates to the underlying `Session`. */
@@ -182,6 +220,10 @@ export class Agent extends Emitter<AgentEvent> {
   }
   set prompt(value: string[] | undefined) {
     this.#prompt = value
+  }
+
+  get parent(): Agent | undefined {
+    return this.#parent
   }
 
   /** Tools the model may call. Mutable: assign to swap the available

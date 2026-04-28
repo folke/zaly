@@ -4,7 +4,6 @@ import { defineTool, stringifyContent, ToolError } from "@zaly/ai"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
-import { Agent } from "../agent.ts"
 import { uuidv7 } from "../utils/uuid.ts"
 
 /**
@@ -87,33 +86,17 @@ export const subagentTool = defineTool({
     }
 
     const id = uuidv7()
-    const depth = parent.depth + 1
     const sessionPath = join(tmpdir(), `zaly-subagent-${id}.jsonl`)
     const startedAt = Date.now()
 
-    // Filter out `subagent` itself from the child's tools when the child
-    // is at the depth cap. Avoids recursion past `maxDepth` without
-    // surfacing an error to the model — it just doesn't see the tool.
-    const childTools =
-      depth >= parent.maxDepth
-        ? parent.tools.filter((t) => t.name !== "subagent")
-        : [...parent.tools]
-
-    // `skills: false` — the parent's skill tool is already in `childTools`
-    // (because we copy `parent.tools` above and the agent merges the
-    // skill tool into its step list dynamically). Skipping the disk scan
-    // here keeps subagent spawn cheap.
-    const child = await Agent.load({
-      depth,
-      maxDepth: parent.maxDepth,
-      model: parent.model,
-      // Reuse the parent's manager so workspaces / rules carry over.
-      permissions: parent.permissions,
+    // `parent.child(...)` handles all the inheritance — cwd, model,
+    // permissions, depth + 1, tool list (incl. the loaded skill tool),
+    // and the `subagent`-tool filtering at the depth cap.
+    const child = await parent.child({
       prompt: [args.prompt],
       session: { path: sessionPath },
-      skills: false,
-      tools: childTools,
     })
+    const depth = child.depth
 
     // Cursor over the child's running text so `poll()` returns only
     // what's new since the last call (mirrors the bash-tool pattern).

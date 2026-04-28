@@ -22,7 +22,7 @@ const writeSkill = (opts: {
   refs?: Record<string, string>
 }) => {
   const root =
-    opts.scope === "project" ? join(cwd, ".agent/skills") : join(cwd, "user/.agent/skills")
+    opts.scope === "project" ? join(cwd, ".agents/skills") : join(cwd, "user/.agents/skills")
   const dir = join(root, opts.dirname)
   mkdirSync(dir, { recursive: true })
   writeFileSync(
@@ -41,14 +41,15 @@ const writeSkill = (opts: {
  *  can exercise user-scope discovery without touching the real one. */
 const loadSkills = async (opts: { fakeUserHome?: string } = {}): Promise<Skills> => {
   const before = process.env.HOME
-  if (opts.fakeUserHome) process.env.HOME = opts.fakeUserHome
+  // Default to a per-test isolated `$HOME` so a real `~/.agents/skills/`
+  // on the developer's machine doesn't leak into the catalog. Tests
+  // exercising user-scope discovery override with `fakeUserHome`.
+  process.env.HOME = opts.fakeUserHome ?? join(cwd, "no-such-home")
   try {
     return await Skills.load({ cwd })
   } finally {
-    if (opts.fakeUserHome !== undefined) {
-      if (before === undefined) delete process.env.HOME
-      else process.env.HOME = before
-    }
+    if (before === undefined) delete process.env.HOME
+    else process.env.HOME = before
   }
 }
 
@@ -239,7 +240,7 @@ describe("Skills.tool — activation", () => {
 
 describe("Skills — frontmatter parsing", () => {
   test("tolerates unquoted descriptions containing colons", async () => {
-    const dir = join(cwd, ".agent/skills/colons")
+    const dir = join(cwd, ".agents/skills/colons")
     mkdirSync(dir, { recursive: true })
     writeFileSync(
       join(dir, "SKILL.md"),
@@ -250,7 +251,7 @@ describe("Skills — frontmatter parsing", () => {
   })
 
   test("strips surrounding quotes from values", async () => {
-    const dir = join(cwd, ".agent/skills/quoted")
+    const dir = join(cwd, ".agents/skills/quoted")
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, "SKILL.md"), `---\nname: "quoted"\ndescription: 'q-desc'\n---\nbody`)
     const skills = await loadSkills()
@@ -258,7 +259,7 @@ describe("Skills — frontmatter parsing", () => {
   })
 
   test("missing description → skill skipped", async () => {
-    const dir = join(cwd, ".agent/skills/incomplete")
+    const dir = join(cwd, ".agents/skills/incomplete")
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, "SKILL.md"), "---\nname: incomplete\n---\nbody")
     const skills = await loadSkills()
@@ -274,15 +275,16 @@ describe("Skills — Agent integration", () => {
     expect(agent.skills).toBeUndefined()
   })
 
-  test("Agent.skills exists by default; tool is undefined until load()", async () => {
+  test("Agent.skills is defined by default but tool is undefined when no skills exist", async () => {
     const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
-    const agent = await Agent.load({ model: mockModel([]), cwd })
+    process.env.HOME = join(cwd, "no-such-home")
+    const agent = await Agent.load({ cwd, model: mockModel([]) })
     expect(agent.skills).toBeDefined()
-    expect(agent.skills?.tool).toBeUndefined() // not loaded yet
+    expect(agent.skills?.tool).toBeUndefined() // catalog is empty
   })
 
-  test("after load() with skills present, agent.skills.tool is defined", async () => {
+  test("Agent.load eagerly populates the skills catalog when skills are present", async () => {
     writeSkill({
       body: "body",
       dirname: "x",
@@ -291,8 +293,8 @@ describe("Skills — Agent integration", () => {
     })
     const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
-    const agent = await Agent.load({ model: mockModel([]), cwd })
-    await agent.skills?.reload()
+    process.env.HOME = join(cwd, "no-such-home")
+    const agent = await Agent.load({ cwd, model: mockModel([]) })
     expect(agent.skills?.tool).toBeDefined()
     expect(agent.skills?.catalog.has("x")).toBe(true)
   })
