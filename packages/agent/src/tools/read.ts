@@ -1,8 +1,8 @@
-import type { Attachment, ImagePart, TextPart } from "@zaly/ai"
+import type { Attachment, ImagePart, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
 import type { ImageInfo } from "@zaly/shared"
 
 import { defineTool, ToolError } from "@zaly/ai"
-import { imageConvert, imageInfo } from "@zaly/shared"
+import { imageConvert, imageInfo, safeStat } from "@zaly/shared"
 import { readFile, stat } from "node:fs/promises"
 import { resolve } from "pathe"
 import { Type } from "typebox"
@@ -54,7 +54,7 @@ export const readTool = defineTool({
     ),
   }),
 
-  async call(args): Promise<string | (TextPart | Attachment)[]> {
+  async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
     const path = resolve(args.path)
 
     const fileStat = await stat(path).catch((error: unknown) => {
@@ -88,11 +88,76 @@ export const readTool = defineTool({
       })
     }
 
-    return formatTextSlice(data.toString("utf8"), args.offset ?? 1, args.limit ?? DEFAULT_LIMIT)
+    // Record the read so the freshness tracker knows we've seen this
+    // file's current bytes. write/edit consult this before mutating.
+    trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
+
+    return formatTextSlice(data.toString("utf8"), {
+      limit: args.limit ?? DEFAULT_LIMIT,
+      offset: args.offset ?? 1,
+      path,
+    })
   },
 })
 
-function formatTextSlice(content: string, offset: number, limit: number): string {
+declare module "@zaly/ai" {
+  interface ToolMeta {
+    file?: { path: string; mtime: number; kind: "read" | "write" | "edit" }
+  }
+}
+
+export function trackFile(track: ToolMeta["file"], ctx: ToolContext): void {
+  ctx.meta ??= {}
+  ctx.meta.file = track
+}
+
+export function assertFresh(path: string, ctx: ToolContext) {
+  path = resolve(path)
+  const mtime = safeStat(path)?.mtimeMs
+  if (mtime === undefined)
+    throw new ToolError({ code: "NOT_FOUND", message: `${path}: file not found` })
+  const messages = ctx.messages
+  if (!messages) throw freshnessError(path, "NOT_READ")
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]
+    if (m.role !== "tool") continue
+    const freshness = m.content.find((p) => p.meta?.file?.path === path)?.meta?.file
+    if (freshness?.mtime === mtime) return // Fresh! The file's mtime matches what we saw at read time.
+    if (freshness !== undefined) throw freshnessError(path, "STALE")
+  }
+  throw freshnessError(path, "NOT_READ")
+}
+
+/** Build the canonical "you need to read this first" error. Used by
+ *  `write` (existing files only) and `edit` (always). The `code` is
+ *  stable so the model can branch on it; the message tells the model
+ *  what to do next; `data.reason` distinguishes never-read vs
+ *  changed-since-read for downstream renderers. */
+export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): ToolError {
+  return new ToolError({
+    code: "FILE_NOT_FRESH",
+    data: { path, reason },
+    message:
+      reason === "NOT_READ"
+        ? `${path}: read this file before mutating it.`
+        : `${path}: file changed since last read. Re-read before mutating.`,
+  })
+}
+
+interface FormatOpts {
+  path: string
+  offset: number
+  limit: number
+}
+
+/** Format a slice of file content as numbered lines plus, when the
+ *  slice doesn't cover the whole file, a `<truncation>` MetaPart with
+ *  structured info. Untruncated reads return a plain string for the
+ *  cleanest model surface. */
+function formatTextSlice(
+  content: string,
+  { path, offset, limit }: FormatOpts
+): string | (TextPart | MetaPart)[] {
   const lines = content.split("\n")
   // `split` on a final newline produces a trailing empty string — drop
   // it so a 3-line file with trailing LF reads as 3 lines, not 4.
@@ -114,10 +179,22 @@ function formatTextSlice(content: string, offset: number, limit: number): string
     out.push(`${lineNo}\t${line}`)
   }
 
-  if (end < lines.length) {
-    out.push(`(showing ${start + 1}-${end} of ${lines.length} lines; pass offset/limit for more)`)
+  const text = out.join("\n")
+  const truncated = end < lines.length || start > 0
+
+  if (!truncated) return text
+
+  const meta: MetaPart = {
+    data: {
+      hint: "pass offset and limit to read more",
+      path,
+      showing: [start + 1, end],
+      total: lines.length,
+    },
+    tag: "truncation",
+    type: "meta",
   }
-  return out.join("\n")
+  return [meta, { text, type: "text" }]
 }
 
 /** Wrap a converted image as an `ImagePart`. Format is one of the three

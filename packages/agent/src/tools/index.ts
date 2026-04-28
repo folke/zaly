@@ -1,3 +1,4 @@
+export { bashKillTool, bashTool, bashWaitTool } from "./bash.ts"
 export { editTool } from "./edit.ts"
 export { fetchTool } from "./fetch.ts"
 export { readTool } from "./read.ts"

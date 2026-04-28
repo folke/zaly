@@ -1,5 +1,9 @@
+import type { MetaPart, TextPart } from "@zaly/ai"
+
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
+
+const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps runaway HTML pages
 
 /**
  * Fetch a URL and return the response — JSON when the server speaks JSON,
@@ -17,7 +21,8 @@ import { Type } from "typebox"
  * a wrapping permission layer (rule-based or explicit allowlist).
  */
 export const fetchTool = defineTool({
-  async call(args) {
+  async call(args): Promise<(MetaPart | TextPart)[]> {
+    const t0 = Date.now()
     const url = new URL(args.url)
     if (args.query) {
       for (const [k, v] of Object.entries(args.query)) url.searchParams.set(k, v)
@@ -51,13 +56,38 @@ export const fetchTool = defineTool({
       body = JSONPath({ json: body as object, path: args.jsonpath })
     }
 
-    return {
-      body,
-      headers: Object.fromEntries(res.headers),
+    // Stringify the body for display. JSON pretty-prints; raw text is
+    // used as-is.
+    const bodyText = typeof body === "string" ? body : JSON.stringify(body, undefined, 2)
+
+    // Cap the body before it reaches the model. Total bytes received is
+    // surfaced via the meta so the model can decide whether to refetch
+    // with `jsonpath` or use a different tool (browser for HTML, etc.).
+    const totalBytes = Buffer.byteLength(bodyText, "utf8")
+    const truncated = totalBytes > DEFAULT_MAX_BODY_BYTES
+    const displayed = truncated ? bodyText.slice(0, DEFAULT_MAX_BODY_BYTES) : bodyText
+
+    const meta: Record<string, unknown> = {
+      contentType: contentType || undefined,
+      durationMs: Date.now() - t0,
       ok: res.ok,
       status: res.status,
       statusText: res.statusText,
     }
+    if (truncated) {
+      meta.truncated = {
+        bytes: totalBytes,
+        hint:
+          args.jsonpath === undefined
+            ? "body exceeded limit; pass `jsonpath` to filter, or use the browser tool for HTML."
+            : "filtered body still exceeded limit; tighten the JSONPath expression.",
+        limit: DEFAULT_MAX_BODY_BYTES,
+      }
+    }
+
+    const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "fetch", type: "meta" }]
+    if (displayed !== "") parts.push({ format: isJson ? "json" : undefined, text: displayed, type: "text" })
+    return parts
   },
   desc:
     "Fetch a URL and return the response. JSON responses are parsed; " +

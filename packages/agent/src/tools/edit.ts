@@ -1,7 +1,8 @@
 import { defineTool, ToolError } from "@zaly/ai"
-import { readFile, writeFile } from "node:fs/promises"
+import { readFile, writeFile, stat } from "node:fs/promises"
 import { resolve } from "pathe"
 import { Type } from "typebox"
+import { assertFresh, trackFile } from "./read.ts"
 
 /**
  * Apply one or more exact-text replacements to a file.
@@ -45,8 +46,15 @@ export const editTool = defineTool({
     ),
   }),
 
-  async call(args): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
+  async call(
+    args,
+    ctx
+  ): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
     const path = resolve(args.path)
+
+    // Edit always requires freshness — the operation is content-aware,
+    // so the model must have seen the current bytes.
+    assertFresh(path, ctx)
 
     const original = await readFile(path, "utf8").catch((error: unknown) => {
       throw new ToolError({
@@ -58,6 +66,8 @@ export const editTool = defineTool({
 
     const updated = applyEdits(original, args.edits, path)
     await writeFile(path, updated, "utf8")
+    const fstat = await stat(path)
+    trackFile({ kind: "edit", mtime: fstat.mtimeMs, path }, ctx)
 
     const bytes = Buffer.byteLength(updated, "utf8")
     const lines = countLines(updated)
@@ -103,7 +113,12 @@ function applyEdits(original: string, edits: readonly EditSpec[], path: string):
           `Add surrounding context to make it unique.`,
       })
     }
-    matches.push({ end: first + edit.oldText.length, newText: edit.newText, spec: edit, start: first })
+    matches.push({
+      end: first + edit.oldText.length,
+      newText: edit.newText,
+      spec: edit,
+      start: first,
+    })
   }
 
   // 2. Sort by start; verify no overlap. Equal start positions are

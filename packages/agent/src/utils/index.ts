@@ -1,11 +1,13 @@
 import type { Message, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai"
+
 import { ToolError } from "@zaly/ai"
+
+export * from "./output.ts"
+export * from "./spawn-registry.ts"
 
 /** Pull tool-call parts out of an assistant message. Returns `[]` for
  *  the string-content shorthand or a content array with no calls. */
-export function extractToolCalls(
-  message: Message<"assistant">,
-): ToolCallPart[] {
+export function extractToolCalls(message: Message<"assistant">): ToolCallPart[] {
   if (typeof message.content === "string") return []
   return message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
 }

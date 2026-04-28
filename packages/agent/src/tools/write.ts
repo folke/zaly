@@ -1,7 +1,9 @@
 import { defineTool, ToolError } from "@zaly/ai"
-import { mkdir, writeFile } from "node:fs/promises"
+import { safeStat } from "@zaly/shared"
+import { mkdir, writeFile, stat } from "node:fs/promises"
 import { dirname, resolve } from "pathe"
 import { Type } from "typebox"
+import { assertFresh, trackFile } from "./read.ts"
 
 /**
  * Write a file to disk. Overwrites if the file exists; creates parent
@@ -11,26 +13,33 @@ import { Type } from "typebox"
  * line-ending normalisation, no whitespace stripping. The model
  * supplies the bytes it wants on disk.
  *
+ * Freshness: when the target file already exists, the model must have
+ * read it in this session and the on-disk mtime must be unchanged
+ * since that read. Otherwise the tool refuses with `FILE_NOT_FRESH` —
+ * "read this file before overwriting it." New files (path doesn't
+ * exist) bypass this check; nothing to be fresh against.
+ *
  * Returns a small acknowledgement (`{ ok, bytes, lines }`) rather than
- * echoing the content back — the model already has it. Line count is
- * useful so the model can confirm what was actually persisted (a
- * "wrote 1 line" reply when 100 were expected catches truncation bugs).
+ * echoing the content back — the model already has it.
  */
 // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
 export const writeTool = defineTool({
   name: "write",
   desc:
-    "Write content to a file. Overwrites existing files; creates parent " +
-    "directories as needed. Returns the byte count and line count of the " +
-    "written file.",
+    "Write content to a file. Overwrites existing files (must be read first); " +
+    "creates parent directories as needed. Returns the byte count and line " +
+    "count of the written file.",
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
     path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
     content: Type.String({ description: "File contents to write, verbatim." }),
   }),
 
-  async call(args): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
+  async call(args, ctx): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
     const path = resolve(args.path)
+
+    // Existing file → freshness required. New file → no requirement.
+    if (safeStat(path)?.isFile()) assertFresh(path, ctx)
 
     try {
       await mkdir(dirname(path), { recursive: true })
@@ -42,6 +51,11 @@ export const writeTool = defineTool({
         message: `failed to write ${path}: ${error instanceof Error ? error.message : String(error)}`,
       })
     }
+
+    // Record post-write so the model can re-edit without an immediate
+    // re-read. Captures the new mtime.
+    const fstat = await stat(path)
+    trackFile({ kind: "write", mtime: fstat.mtimeMs, path }, ctx)
 
     const bytes = Buffer.byteLength(args.content, "utf8")
     const lines = countLines(args.content)
