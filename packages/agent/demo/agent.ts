@@ -245,7 +245,7 @@ for (;;) {
       // then loop back to show the prompt.
       rl.write("", { ctrl: true, name: "u" }) // clear partial input
       process.stdout.write("\n")
-      await agent.run()
+      await agent.waitIdle()
       continue
     }
     input = winner.value.trim()
@@ -262,7 +262,11 @@ for (;;) {
   }
 
   agent.send({ content: input, role: "user" })
-  await agent.run()
+  // `waitIdle` over `await agent.run()`: tolerates concurrent
+  // harness-driven runs (wakeup / task-done) — the user's send may
+  // queue into an already-running cycle, and waitIdle awaits whichever
+  // promise the loop is on.
+  await agent.waitIdle()
 }
 
 await cleanup()

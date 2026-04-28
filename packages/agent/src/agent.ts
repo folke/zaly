@@ -362,6 +362,27 @@ export class Agent extends Emitter<AgentEvent> {
     return message
   }
 
+  /** Resolve when the agent is in a quiescent state — `idle` or
+   *  `paused`. If a run is currently in flight (or was just kicked off
+   *  synchronously by `send` / `inject` / a wakeup), waits for it to
+   *  settle before returning the final status. If no run is in flight,
+   *  resolves immediately with the current status.
+   *
+   *  Use this in REPL-style drivers to await the loop without racing
+   *  with internally-triggered runs (the wakeup timer, heartbeat, or
+   *  task-completion injects all spawn `void this.run()` independently
+   *  of caller-driven `await agent.run()`). The `#running` promise is
+   *  set synchronously inside `run()` before any await point, so this
+   *  catches every kicked-off cycle including the one `send` just fired.
+   *
+   *  Errors from the loop are swallowed — callers read `agent.lastError`
+   *  / `agent.lastStopReason` for diagnostics. The point of `waitIdle`
+   *  is just to know "the loop is no longer driving." */
+  async waitIdle(): Promise<AgentStatus> {
+    if (this.#running) await this.#running.catch(() => undefined)
+    return this.#status
+  }
+
   /** Pause after the current step completes. The loop exits with
    *  `stopReason: "paused"`; queued messages are preserved. */
   pause(): void {
