@@ -66,7 +66,7 @@
     "pathe": "^2.0.3",
     "shiki": "^4.0.2",
     "slice-ansi": "^9.0.0",
-    "string-width": "^8.2.0",
+    "string-width": "^8.2.1",
     "typia": "^12.0.2",
     "wrap-ansi": "^10.0.0"
   },
