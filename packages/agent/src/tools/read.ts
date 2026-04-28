@@ -43,8 +43,12 @@ export const readTool = defineTool({
     path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
     offset: Type.Optional(
       Type.Integer({
-        description: "1-based line number to start at. Defaults to 1.",
-        minimum: 1,
+        description:
+          "1-based line number to start at. Negative values count from " +
+          "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
+          "with the default limit returns the last 50 lines, like " +
+          "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
+          "starting 50 from the end. Defaults to 1.",
       })
     ),
     limit: Type.Optional(
@@ -164,7 +168,11 @@ function formatTextSlice(
   // it so a 3-line file with trailing LF reads as 3 lines, not 4.
   if (lines.at(-1) === "") lines.pop()
 
-  const start = offset - 1
+  // Negative offset = "from the end" — Python-slice / `tail -n` semantic.
+  // `-1000` on a 30-line file clamps to 0 (read whole file) rather than
+  // erroring; `0` is treated as `1` (head, off-by-one tolerance).
+  const start =
+    offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
   const end = Math.min(lines.length, start + limit)
   if (start >= lines.length) {
     return `(file has ${lines.length} lines; offset ${offset} is past end)`
