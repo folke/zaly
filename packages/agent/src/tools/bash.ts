@@ -1,6 +1,6 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, formatToolError, ToolError } from "@zaly/ai"
 import { Spawn } from "@zaly/shared"
 import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
@@ -116,7 +116,7 @@ interface SnapshotOpts {
 
 /** Build the current `ToolResult` snapshot for a running or exited bash
  *  command. Slices incremental output since the last poll, summarises
- *  it head+tail, and stamps a `<shell>` MetaPart with status info. */
+ *  it head+tail, and stamps a `<bash>` MetaPart with status info. */
 function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResult & {
   running: boolean
 } {
@@ -146,7 +146,7 @@ function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResul
     meta.truncated = { fullOutputPath: logPath, totalLines: summary.totalLines }
   }
 
-  const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "shell", type: "meta" }]
+  const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "bash", type: "meta" }]
   if (summary.text !== "") parts.push({ text: summary.text, type: "text" })
 
   return {
@@ -156,24 +156,23 @@ function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResul
   }
 }
 
-/** Build a ToolResult for the binary-output error case. The `read` tool
- *  hint points at the on-disk log so the model can pipe it through a
- *  text-converting command if it actually needs to inspect the bytes. */
+/** Build a ToolResult for the binary-output error case. Routes through
+ *  `formatToolError` so the result picks up the standard `<error>` MetaPart
+ *  + formatted text body — same shape as any other tool error. The `read`
+ *  hint in the message points at the on-disk log so the model can pipe
+ *  it through a text-converting command if it actually needs the bytes. */
 function formatBinaryError(bytes: number, logPath: string): ToolResult {
-  const err = new ToolError({
-    code: "BINARY_OUTPUT",
-    data: { bytes, logPath },
-    message:
-      `bash command produced binary output (${bytes} bytes). ` +
-      `bash is not an image-extraction tool — use \`read\` on ${logPath} ` +
-      `if you need to inspect the bytes, or pipe through a text-converting ` +
-      `command (xxd, base64, file, etc.) and re-run.`,
-  })
-  return {
-    content: err.format(),
-    error: { code: err.code, data: err.data, message: err.message, retryable: err.retryable },
-    isError: true,
-  }
+  return formatToolError(
+    new ToolError({
+      code: "BINARY_OUTPUT",
+      data: { bytes, logPath },
+      message:
+        `bash command produced binary output (${bytes} bytes). ` +
+        `bash is not an image-extraction tool — use \`read\` on ${logPath} ` +
+        `if you need to inspect the bytes, or pipe through a text-converting ` +
+        `command (xxd, base64, file, etc.) and re-run.`,
+    })
+  )
 }
 
 /** Allocate a log path under a session-scoped tmp dir. The dir is shared
