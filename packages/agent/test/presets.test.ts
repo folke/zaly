@@ -144,7 +144,7 @@ describe("preset overrides", () => {
     const m = new PermissionManager({
       cwd,
       preset: "readonly",
-      rules: { deny: ["Bash(ls:*)"] },
+      rules: { deny: ["bash(ls:*)"] },
     })
     expect(m.validate("bash", "ls").verdict).toBe("deny")
   })
@@ -154,7 +154,7 @@ describe("preset overrides", () => {
     const extended = new PermissionManager({
       cwd,
       preset: "readonly",
-      rules: { allow: ["Bash(my-tool:*)"] },
+      rules: { allow: ["bash(my-tool:*)"] },
     })
     expect(base.validate("bash", "my-tool --foo").verdict).toBe("ask")
     expect(extended.validate("bash", "my-tool --foo").verdict).toBe("allow")

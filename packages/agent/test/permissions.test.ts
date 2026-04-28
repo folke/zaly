@@ -199,22 +199,22 @@ describe("PermissionManager.validate('bash') — end-to-end", () => {
       cwd,
       rules: {
         allow: [
-          "Bash(ls:*)",
-          "Bash(echo:*)",
-          "Bash(git status:*)",
-          "Bash(git diff:*)",
-          "Bash(sed:*)",
-          "Bash(cat:*)",
-          "Bash(head:*)",
-          "Bash(wc:*)",
-          "Bash(grep:*)",
+          "bash(ls:*)",
+          "bash(echo:*)",
+          "bash(git status:*)",
+          "bash(git diff:*)",
+          "bash(sed:*)",
+          "bash(cat:*)",
+          "bash(head:*)",
+          "bash(wc:*)",
+          "bash(grep:*)",
           // Allow everything for files so the bash handler's read/write
           // delegation doesn't escalate on its own.
-          "Read(*)",
-          "Write(*)",
+          "read(*)",
+          "write(*)",
         ],
-        ask: ["Bash(git push:*)", "Bash(rm:*)"],
-        deny: ["Bash(sudo:*)"],
+        ask: ["bash(git push:*)", "bash(rm:*)"],
+        deny: ["bash(sudo:*)"],
       },
     })
   }
@@ -269,7 +269,7 @@ describe("PermissionManager.validate('bash') — file delegation", () => {
   test("redirect to file delegates to file handler (write inside cwd → ask by default)", () => {
     const m = new PermissionManager({
       cwd,
-      rules: { allow: ["Bash(ls:*)"] },
+      rules: { allow: ["bash(ls:*)"] },
     })
     // Write inside workspace, no Write rule → ask by default.
     expect(m.validate("bash", "ls > out.txt").verdict).toBe("ask")
@@ -278,7 +278,7 @@ describe("PermissionManager.validate('bash') — file delegation", () => {
   test("redirect to file with Write(*) allow rule allows", () => {
     const m = new PermissionManager({
       cwd,
-      rules: { allow: ["Bash(ls:*)", "Write(*)"] },
+      rules: { allow: ["bash(ls:*)", "write(*)"] },
     })
     expect(m.validate("bash", "ls > out.txt").verdict).toBe("allow")
   })
@@ -286,7 +286,7 @@ describe("PermissionManager.validate('bash') — file delegation", () => {
   test("redirect to sensitive file denies (file handler enforces sensitive deny)", () => {
     const m = new PermissionManager({
       cwd,
-      rules: { allow: ["Bash(echo:*)", "Write(*)"] },
+      rules: { allow: ["bash(echo:*)", "write(*)"] },
     })
     expect(m.validate("bash", "echo secret > .env").verdict).toBe("deny")
   })

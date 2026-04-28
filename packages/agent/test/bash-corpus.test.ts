@@ -17,7 +17,7 @@ import bash from "./bash.json" with { type: "json" }
 const m = new PermissionManager({
   cwd: "/",
   preset: "permissive",
-  rules: { allow: ["Read(*)"] }, // permit reads anywhere for the snapshot
+  rules: { allow: ["read(*)"] }, // permit reads anywhere for the snapshot
 })
 
 describe("permissions: bash.json corpus coverage", () => {

@@ -7,10 +7,13 @@ import type { Verdict } from "./types.ts"
  * the structured `Rule<string>[]` at construction.
  *
  * Pattern grammar:
- *   "Bash(ls:*)"   → bash command pattern
- *   "Read(/src/**)" → workspace-relative gitignore pattern
- *   "Read(*)"       → matches every read in any workspace
- *   "Bash"          → bare scope, equivalent to `Bash(*)` (match any cmd)
+ *   "bash(ls:*)"     → bash command pattern
+ *   "read(/src/**)"  → workspace-relative gitignore pattern
+ *   "read(*)"        → matches every read in any workspace
+ *   "bash"           → bare scope, equivalent to `bash(*)` (match any cmd)
+ *
+ * Scope names are exact matches against the tool name they gate
+ * (snake_case). Underscored scopes work too (`task_stop`, `task_poll`).
  */
 export type PermissionPresetName = "strict" | "readonly" | "permissive" | "yolo"
 
@@ -26,112 +29,112 @@ export interface PermissionPreset {
  *  (`sed`/`awk` writes still gated by Write rules via the bash handler's
  *  composition with the file handler.) */
 const READONLY_BASH = [
-  "Bash(ls:*)",
-  "Bash(cat:*)",
-  "Bash(head:*)",
-  "Bash(tail:*)",
-  "Bash(wc:*)",
-  "Bash(find:*)",
-  "Bash(grep:*)",
-  "Bash(rg:*)",
-  "Bash(fd:*)",
-  "Bash(sort:*)",
-  "Bash(uniq:*)",
-  "Bash(cut:*)",
-  "Bash(diff:*)",
-  "Bash(stat:*)",
-  "Bash(file:*)",
-  "Bash(realpath:*)",
-  "Bash(readlink:*)",
-  "Bash(basename:*)",
-  "Bash(dirname:*)",
-  "Bash(echo:*)",
-  "Bash(printf:*)",
-  "Bash(sed:*)",
-  "Bash(awk:*)",
-  "Bash(xxd:*)",
-  "Bash(hexdump:*)",
-  "Bash(od:*)",
-  "Bash(tree:*)",
-  "Bash(pwd)",
-  "Bash(true)",
-  "Bash(false)",
-  "Bash(which:*)",
-  "Bash(type:*)",
-  "Bash(command:*)",
-  "Bash(test:*)",
-  "Bash(cd:*)",
+  "bash(ls:*)",
+  "bash(cat:*)",
+  "bash(head:*)",
+  "bash(tail:*)",
+  "bash(wc:*)",
+  "bash(find:*)",
+  "bash(grep:*)",
+  "bash(rg:*)",
+  "bash(fd:*)",
+  "bash(sort:*)",
+  "bash(uniq:*)",
+  "bash(cut:*)",
+  "bash(diff:*)",
+  "bash(stat:*)",
+  "bash(file:*)",
+  "bash(realpath:*)",
+  "bash(readlink:*)",
+  "bash(basename:*)",
+  "bash(dirname:*)",
+  "bash(echo:*)",
+  "bash(printf:*)",
+  "bash(sed:*)",
+  "bash(awk:*)",
+  "bash(xxd:*)",
+  "bash(hexdump:*)",
+  "bash(od:*)",
+  "bash(tree:*)",
+  "bash(pwd)",
+  "bash(true)",
+  "bash(false)",
+  "bash(which:*)",
+  "bash(type:*)",
+  "bash(command:*)",
+  "bash(test:*)",
+  "bash(cd:*)",
 ]
 
 /** Read-only git + GitHub CLI subcommands. */
 const READONLY_GIT = [
-  "Bash(git status:*)",
-  "Bash(git log:*)",
-  "Bash(git diff:*)",
-  "Bash(git show:*)",
-  "Bash(git show-ref:*)",
-  "Bash(git branch:*)",
-  "Bash(git remote:*)",
-  "Bash(git rev-parse:*)",
-  "Bash(git config --get:*)",
-  "Bash(gh issue list:*)",
-  "Bash(gh issue view:*)",
-  "Bash(gh pr list:*)",
-  "Bash(gh pr view:*)",
-  "Bash(gh repo view:*)",
+  "bash(git status:*)",
+  "bash(git log:*)",
+  "bash(git diff:*)",
+  "bash(git show:*)",
+  "bash(git show-ref:*)",
+  "bash(git branch:*)",
+  "bash(git remote:*)",
+  "bash(git rev-parse:*)",
+  "bash(git config --get:*)",
+  "bash(gh issue list:*)",
+  "bash(gh issue view:*)",
+  "bash(gh pr list:*)",
+  "bash(gh pr view:*)",
+  "bash(gh repo view:*)",
 ]
 
 /** Common dev-workflow commands — build, test, typecheck. Excludes
  *  package management (`npm install`, `bun add`) which can drag arbitrary
  *  code in over the network. */
 const DEV_BASIC = [
-  "Bash(bun test:*)",
-  "Bash(bun test:node:*)",
-  "Bash(bun test:bun:*)",
-  "Bash(bun check:*)",
-  "Bash(bun run:*)",
-  "Bash(bun build:*)",
-  "Bash(bunx tsc:*)",
-  "Bash(bun tsc:*)",
-  "Bash(bun x tsc:*)",
-  "Bash(bunx vitest:*)",
-  "Bash(bun x vitest:*)",
-  "Bash(bunx oxlint:*)",
-  "Bash(bun x oxlint:*)",
-  "Bash(oxlint:*)",
+  "bash(bun test:*)",
+  "bash(bun test:node:*)",
+  "bash(bun test:bun:*)",
+  "bash(bun check:*)",
+  "bash(bun run:*)",
+  "bash(bun build:*)",
+  "bash(bunx tsc:*)",
+  "bash(bun tsc:*)",
+  "bash(bun x tsc:*)",
+  "bash(bunx vitest:*)",
+  "bash(bun x vitest:*)",
+  "bash(bunx oxlint:*)",
+  "bash(bun x oxlint:*)",
+  "bash(oxlint:*)",
 ]
 
 /** Hard denies — never auto-allowed, regardless of preset. */
-const HARD_DENIES = ["Bash(sudo:*)"]
+const HARD_DENIES = ["bash(sudo:*)"]
 
 /** Broader rules unlocked by the permissive preset. Trades some safety
  *  for speed — appropriate for frontier models with strong instruction
  *  following. Includes ad-hoc bun/node evals and git mutations. */
 const PERMISSIVE_EXTRAS = [
-  "Bash(bun -e:*)",
-  "Bash(bun:*)",
-  "Bash(node:*)",
-  "Bash(node -e:*)",
-  "Bash(make:*)",
-  "Bash(mkdir:*)",
-  "Bash(cp:*)",
-  "Bash(mv:*)",
-  "Bash(touch:*)",
-  "Bash(ln:*)",
-  "Bash(chmod:*)",
-  "Bash(git add:*)",
-  "Bash(git commit:*)",
-  "Bash(git checkout:*)",
-  "Bash(git restore:*)",
-  "Bash(git stash:*)",
-  "Bash(git fetch:*)",
-  "Bash(git pull:*)",
-  "Bash(curl:*)",
-  "Bash(jq:*)",
-  "Bash(perl -e:*)",
-  "Bash(timeout:*)",
-  "Bash(for:*)",
-  "Bash(while:*)",
+  "bash(bun -e:*)",
+  "bash(bun:*)",
+  "bash(node:*)",
+  "bash(node -e:*)",
+  "bash(make:*)",
+  "bash(mkdir:*)",
+  "bash(cp:*)",
+  "bash(mv:*)",
+  "bash(touch:*)",
+  "bash(ln:*)",
+  "bash(chmod:*)",
+  "bash(git add:*)",
+  "bash(git commit:*)",
+  "bash(git checkout:*)",
+  "bash(git restore:*)",
+  "bash(git stash:*)",
+  "bash(git fetch:*)",
+  "bash(git pull:*)",
+  "bash(curl:*)",
+  "bash(jq:*)",
+  "bash(perl -e:*)",
+  "bash(timeout:*)",
+  "bash(for:*)",
+  "bash(while:*)",
 ]
 
 // ── Presets ────────────────────────────────────────────────────────────────
@@ -143,7 +146,7 @@ export const permissionPresets = {
     rules: {
       deny: HARD_DENIES,
       // Override the file handler's default-allow-on-read inside workspace.
-      ask: ["Read(*)", "Write(*)"],
+      ask: ["read(*)", "write(*)"],
     },
   },
   readonly: {
@@ -168,14 +171,14 @@ export const permissionPresets = {
         ...PERMISSIVE_EXTRAS,
         // Allow writes inside any workspace (sensitive paths still denied
         // by the file handler before rule resolution).
-        "Write(*)",
+        "write(*)",
       ],
     },
   },
   yolo: {
     description: "Allow everything. No prompts. Use only when you trust the model and the task.",
     rules: {
-      allow: ["Bash", "Read(*)", "Write(*)"],
+      allow: ["bash", "read(*)", "write(*)"],
     },
   },
 } as const satisfies Record<PermissionPresetName, PermissionPreset>

@@ -75,15 +75,21 @@ describe("PermissionManager — rules", () => {
 })
 
 describe("parseRules", () => {
-  test("Bash(ls:*) → bash scope, ls:* pattern", () => {
-    expect(parseRules({ allow: ["Bash(ls:*)"] })).toEqual([
+  test("bash(ls:*) → bash scope, ls:* pattern", () => {
+    expect(parseRules({ allow: ["bash(ls:*)"] })).toEqual([
       { pattern: "ls:*", policy: "allow", scope: "bash" },
     ])
   })
 
+  test("snake_case scope names round-trip (task_stop)", () => {
+    expect(parseRules({ allow: ["task_stop"] })).toEqual([
+      { pattern: "*", policy: "allow", scope: "task_stop" },
+    ])
+  })
+
   test("bare scope name → wildcard pattern", () => {
-    expect(parseRules({ allow: ["WebSearch"] })).toEqual([
-      { pattern: "*", policy: "allow", scope: "websearch" },
+    expect(parseRules({ allow: ["bash"] })).toEqual([
+      { pattern: "*", policy: "allow", scope: "bash" },
     ])
   })
 
@@ -94,8 +100,8 @@ describe("parseRules", () => {
 
   test("multiple verdicts and patterns parse together", () => {
     const r = parseRules({
-      allow: ["Bash(ls)", "Read(*)"],
-      deny: ["Bash(sudo)"],
+      allow: ["bash(ls)", "read(*)"],
+      deny: ["bash(sudo)"],
     })
     expect(r).toHaveLength(3)
     expect(r.map((x) => x.policy).toSorted()).toEqual(["allow", "allow", "deny"])
