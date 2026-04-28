@@ -129,6 +129,13 @@ export interface AgentOptions extends CollectOptions {
    *  Top-level only — children inherit this from the parent at spawn
    *  time. */
   maxDepth?: number
+  /** Enable the built-in `skill` tool (Agent Skills support). When
+   *  `true` (default), the agent constructs a `Skills` instance, scans
+   *  `${cwd}/.agent/skills/` and `~/.agent/skills/` on `skills.load()`,
+   *  and exposes the activation tool to the model. Set `false` to skip
+   *  skills entirely (no `skills` getter, no scanning, no tool). */
+  skills?: boolean
+
   /** Heartbeat interval (ms) for the Tasks registry. While at least one
    *  task is pending or running, the agent injects a `<heartbeat>` system
    *  message at this cadence so the model sees what's still going and

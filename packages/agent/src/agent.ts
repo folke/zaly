@@ -8,6 +8,7 @@ import { toError } from "@zaly/shared"
 import { Emitter } from "./events.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session/index.ts"
+import { Skills } from "./skills.ts"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { extractToolCalls } from "./utils/index.ts"
@@ -35,6 +36,7 @@ export class Agent extends Emitter<AgentEvent> {
   readonly #stopPolicy: StopPolicy
   readonly #permissions: PermissionManager
   readonly #tasks: Tasks
+  readonly #skills?: Skills
   readonly session: Session
   /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
    *  `parent.depth + 1` when constructing their child. */
@@ -107,6 +109,13 @@ export class Agent extends Emitter<AgentEvent> {
       opts.permissions instanceof PermissionManager
         ? opts.permissions
         : new PermissionManager(opts.permissions)
+    // Skills default to enabled; pass `skills: false` to opt out.
+    // Construction is cheap (no I/O) — the catalog populates only when
+    // `skills.load()` is awaited (caller-driven, so we don't block the
+    // agent on disk scans during construction).
+    if (opts.skills !== false) {
+      this.#skills = new Skills({ cwd: this.#permissions.cwd })
+    }
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -188,6 +197,16 @@ export class Agent extends Emitter<AgentEvent> {
    *  `Provider`). Subagents pull this off the parent at spawn time. */
   get model() {
     return this.#opts.model
+  }
+
+  /** Skills registry for this agent. `undefined` when constructed with
+   *  `skills: false`. The TUI uses this for `/skill` autocomplete; the
+   *  agent itself appends `skills.tool` to the model's tool list each
+   *  step so a loaded catalog is automatically reachable. Call
+   *  `agent.skills?.load()` to populate; re-call to pick up newly
+   *  installed skills mid-session. */
+  get skills(): Skills | undefined {
+    return this.#skills
   }
 
   /** Long-running task registry — exposed for the TUI / introspection
@@ -296,13 +315,22 @@ export class Agent extends Emitter<AgentEvent> {
     return this.#running
   }
 
+  /** Tools sent to the model on every request: user-managed tools from
+   *  `Tasks` plus the auto-managed `skill` tool (when the catalog is
+   *  non-empty). Same list also feeds dispatch via `#runTools`'s
+   *  `extraTools` so the skill call resolves to the same instance. */
+  #stepTools(): Tool[] {
+    const skill = this.#skills?.tool
+    return skill ? [...this.#tasks.tools, skill] : [...this.#tasks.tools]
+  }
+
   async #collect() {
     this.#abortController = new AbortController()
     const stream = this.#opts.model.stream(
       {
         messages: [...this.session.messages],
         prompt: this.#prompt,
-        tools: [...this.#tasks.tools],
+        tools: this.#stepTools(),
       },
       {
         ...this.#opts.request,
@@ -381,7 +409,12 @@ export class Agent extends Emitter<AgentEvent> {
     // The whole batch — including streamable promotion, parallel chains,
     // grace timing, and ownerRound suppression — lives in Tasks.run().
     // What lands back here is a 1:1 array of result parts ready to commit.
-    const resultParts = await this.#tasks.run(calls, this.#toolContext())
+    // The skill tool (when active) is passed via `extraTools` so dispatch
+    // can resolve `name: "skill"` calls without polluting `tasks.tools`.
+    const skill = this.#skills?.tool
+    const resultParts = await this.#tasks.run(calls, this.#toolContext(), {
+      extraTools: skill ? [skill] : [],
+    })
 
     for (let i = 0; i < calls.length; i++) {
       const part = resultParts[i]

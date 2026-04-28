@@ -330,13 +330,23 @@ export class Tasks extends Emitter<TasksEvent> {
    * produced these calls, so freshness checks can scan back through
    * prior tool results.
    */
-  async run(calls: readonly ToolCallPart[], ctxBase: ToolContext): Promise<ToolResultPart[]> {
+  async run(
+    calls: readonly ToolCallPart[],
+    ctxBase: ToolContext,
+    opts: { extraTools?: readonly Tool[] } = {}
+  ): Promise<ToolResultPart[]> {
     const round = Symbol("round")
     const tasks: InternalTask[] = []
     let chainHead: string | undefined
+    const extra = opts.extraTools ?? []
 
     for (const call of calls) {
-      const tool = this.#tools.find((t) => t.name === call.name)
+      // Look up in user-managed tools first, fall back to caller-supplied
+      // extras (skill tool, future system tools). Keeps Tasks's own
+      // tool registry decoupled from agent-level extras.
+      const tool =
+        this.#tools.find((t) => t.name === call.name) ??
+        extra.find((t) => t.name === call.name)
       if (!tool) {
         tasks.push(this.#startSyncResult(call, unknownToolResult(call.name), round))
         continue
