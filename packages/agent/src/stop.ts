@@ -84,7 +84,7 @@ export class StopPolicy {
   // ── Wiring ────────────────────────────────────────────────────────────
 
   /** Subscribe to an emitter. Returns the unsubscribe function. */
-  attach(emitter: Emitter<AgentEvent>): () => void {
+  attach(emitter: Emitter<AgentEvent>) {
     return emitter.on((event) => this.handle(event))
   }
 

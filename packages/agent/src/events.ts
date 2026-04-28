@@ -47,7 +47,7 @@ type EventBase = { type: string }
 /** Listener narrowed by event-type tag. With no tag (or the full
  *  union as tag), it receives every event. */
 export type Listener<E extends EventBase, K extends E["type"] = E["type"]> = (
-  event: Extract<E, { type: K }>,
+  event: Extract<E, { type: K }>
 ) => void
 
 /** Tiny typed event emitter. Two `on` overloads:
@@ -63,49 +63,52 @@ export type Listener<E extends EventBase, K extends E["type"] = E["type"]> = (
  *  Listener throws are caught and surfaced via `onEmitError` (silent
  *  if unset) so a buggy subscriber never takes down the emitter loop. */
 export class Emitter<E extends EventBase> {
-  readonly #listeners = new Map<E["type"] | "all", Set<Listener<E>>>([
-    ["all", new Set()],
-  ])
+  readonly #listeners = new Map<E["type"] | "all", Listener<E>[]>([["all", []]])
   readonly #wrappers = new WeakMap<Listener<E>, Listener<E>>()
   onEmitError?: (error: unknown) => void
 
-  on(fn: Listener<E>): () => void
-  on<K extends E["type"]>(type: K, fn: Listener<E, K>): () => void
-  on(typeOrFn: unknown, fn?: unknown): () => void {
+  on(fn: Listener<E>): this
+  on<K extends E["type"]>(type: K, fn: Listener<E, K>): this
+  on(typeOrFn: unknown, fn?: unknown): this {
     return this.#on(typeOrFn, fn)
   }
 
-  once(fn: Listener<E>): () => void
-  once<K extends E["type"]>(type: K, fn: Listener<E, K>): () => void
-  once(typeOrFn: unknown, fn?: unknown): () => void {
+  once(fn: Listener<E>): this
+  once<K extends E["type"]>(type: K, fn: Listener<E, K>): this
+  once(typeOrFn: unknown, fn?: unknown): this {
     return this.#on(typeOrFn, fn, true)
   }
 
-  #on(typeOrFn: unknown, maybeFn?: unknown, once?: boolean): () => void {
+  #on(typeOrFn: unknown, maybeFn?: unknown, once?: boolean): this {
     const handler = (typeof typeOrFn === "function" ? typeOrFn : maybeFn) as Listener<E>
     const type = typeof typeOrFn === "function" ? ("all" as const) : (typeOrFn as E["type"])
     let wrapped: Listener<E> | undefined
     if (once) {
       wrapped = (event) => {
-        this.off(handler)
+        this.off(type, handler)
         handler(event)
       }
       this.#wrappers.set(handler, wrapped)
     }
-    let set = this.#listeners.get(type)
-    if (!set) {
-      set = new Set()
-      this.#listeners.set(type, set)
-    }
-    set.add(wrapped ?? handler)
-    return () => this.off(handler)
+    const list = this.#listeners.get(type)
+    if (!list) this.#listeners.set(type, [wrapped ?? handler])
+    else list.push(wrapped ?? handler)
+    return this
   }
 
   /** Remove a previously-registered listener. Pass the same function
    *  reference used with `on` / `once`. */
-  off(fn: Listener<E>): void {
-    const target = this.#wrappers.get(fn) ?? fn
-    for (const set of this.#listeners.values()) set.delete(target)
+  off(fn: Listener<E>): this
+  off<K extends E["type"]>(type: K, fn: Listener<E, K>): this
+  off(typeOrFn: unknown, fn?: unknown): this {
+    const handler = (typeof typeOrFn === "function" ? typeOrFn : fn) as Listener<E>
+    const type = typeof typeOrFn === "function" ? ("all" as const) : (typeOrFn as E["type"])
+    const list = this.#listeners.get(type)
+    if (!list) return this
+    const idx = list.indexOf(this.#wrappers.get(handler) ?? handler)
+    if (idx === -1) return this
+    list.splice(idx, 1)
+    return this
   }
 
   protected emit(event: E): void {
