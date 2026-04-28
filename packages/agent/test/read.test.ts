@@ -26,7 +26,11 @@ function fileWith(lines: number): string {
 }
 
 async function callRead(args: Record<string, unknown>): Promise<ReadResult> {
-  return (await readTool.call(args as never, {})) as ReadResult
+  // Mirror the runtime path: coerce + apply schema defaults before
+  // invoking `call`. Calling `call` directly skips defaults like
+  // `limit` and `offset`, so the test would diverge from production.
+  const validated = readTool.validateParams(args)
+  return (await readTool.call(validated, {})) as ReadResult
 }
 
 /** `readTool.call` returns either a string (untruncated) or a parts array

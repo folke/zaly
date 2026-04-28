@@ -2,6 +2,7 @@ import type { ToolContext } from "@zaly/ai"
 
 import { runTool, stringifyContent } from "@zaly/ai"
 import { bashTool } from "../src/index.ts"
+import { searchTool } from "../src/tools/search.ts"
 
 const ctx: ToolContext = {}
 
@@ -15,10 +16,9 @@ const ret = await Promise.all([
     ctx
   ),
   runTool(
-    bashTool,
+    searchTool,
     {
-      command: "fd -IH",
-      description: "list all files",
+      query: "folke lemaitre",
     },
     ctx
   ),
