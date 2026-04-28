@@ -3,8 +3,8 @@ import type { WriteStream } from "node:fs"
 
 import { createWriteStream } from "node:fs"
 import { readFile } from "node:fs/promises"
-import { Emitter } from "./events.ts"
-import { uuidv7 } from "./utils/uuid.ts"
+import { Emitter } from "../events.ts"
+import { uuidv7 } from "../utils/uuid.ts"
 
 // ── Records ──────────────────────────────────────────────────────────────
 

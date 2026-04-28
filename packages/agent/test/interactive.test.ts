@@ -5,7 +5,7 @@ import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { Agent } from "../src/agent.ts"
-import { Session } from "../src/session.ts"
+import { Session } from "../src/session/index.ts"
 import { mockModel, pendingModel } from "./helpers.ts"
 
 const Add = defineTool({

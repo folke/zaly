@@ -10,7 +10,7 @@ import type {
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/index.ts"
-import type { Session } from "./session.ts"
+import type { Session } from "./session/index.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Tasks } from "./tasks.ts"
 

@@ -1,8 +1,8 @@
 import type { Message } from "@zaly/ai"
-import type { SessionEvent, SessionNode, SessionOptions } from "../src/session.ts"
+import type { SessionEvent, SessionNode, SessionOptions } from "../src/session/index.ts"
 
 import { describe, expect, test } from "vitest"
-import { Session } from "../src/session.ts"
+import { Session } from "../src/session/index.ts"
 
 const u = (text: string): Message => ({ content: text, role: "user" })
 const a = (text: string): Message => ({ content: text, role: "assistant" })
