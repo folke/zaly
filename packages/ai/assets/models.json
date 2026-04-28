@@ -15757,6 +15757,50 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "name": "Nemotron 3 Nano Omni (free)",
+      "family": "nemotron",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 256000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/nvidia/nemotron-3-nano-30b-a3b:free": {
       "id": "nvidia/nemotron-3-nano-30b-a3b:free",
       "name": "Nemotron 3 Nano 30B A3B (free)",
@@ -20507,6 +20551,51 @@
           "output": 22.5,
           "cache_read": 0.5
         }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/openai/gpt-5.5-pro": {
+      "id": "openai/gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180
       },
       "limit": {
         "context": 1050000,
@@ -58662,12 +58751,6 @@
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2025-05",
       "release_date": "2026-04-24",
       "last_updated": "2026-04-24",
       "modalities": {
@@ -58680,10 +58763,10 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 1000000,
-        "output": 384000
+        "context": 1048576,
+        "output": 1048576
       },
-      "maxTokens": 384000,
+      "maxTokens": 1048576,
       "provider": "openai",
       "baseUrl": "https://ollama.com/v1"
     },
@@ -59388,6 +59471,43 @@
         "output": 204000
       },
       "maxTokens": 204000,
+      "provider": "openai",
+      "baseUrl": "https://inference.baseten.co/v1"
+    },
+    "baseten/deepseek-ai/DeepSeek-V4-Pro": {
+      "id": "deepseek-ai/DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.15
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://inference.baseten.co/v1"
     },
@@ -64749,6 +64869,41 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
+    "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+      "name": "Nemotron 3 Nano Omni",
+      "family": "nemotron",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 256000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
     "nvidia/nvidia/nemotron-4-340b-instruct": {
       "id": "nvidia/nemotron-4-340b-instruct",
       "name": "Nemotron 4 340b Instruct",
@@ -68066,6 +68221,45 @@
       "limit": {
         "context": 400000,
         "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "quirks": {
+        "maxTokensField": "max_completion_tokens",
+        "thinkingFormat": "openai"
+      }
+    },
+    "openai/gpt-5.5-pro": {
+      "id": "gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
         "output": 128000
       },
       "maxTokens": 128000,
