@@ -31,7 +31,7 @@ export const fetchTool = defineTool({
     const res = await fetch(url, {
       body: args.body,
       headers: args.headers,
-      method: args.method ?? "GET",
+      method: args.method,
     })
 
     const contentType = res.headers.get("content-type") ?? ""
@@ -99,17 +99,15 @@ export const fetchTool = defineTool({
   // oxlint-disable-next-line sort-keys -- semantic param order: url, method, headers, query, body, jsonpath
   params: Type.Object({
     url: Type.String({ description: "Absolute URL." }),
-    method: Type.Optional(
-      Type.Union(
-        [
-          Type.Literal("GET"),
-          Type.Literal("POST"),
-          Type.Literal("PUT"),
-          Type.Literal("PATCH"),
-          Type.Literal("DELETE"),
-        ],
-        { default: "GET", description: "HTTP method. Defaults to GET." }
-      )
+    method: Type.Union(
+      [
+        Type.Literal("GET"),
+        Type.Literal("POST"),
+        Type.Literal("PUT"),
+        Type.Literal("PATCH"),
+        Type.Literal("DELETE"),
+      ],
+      { default: "GET", description: "HTTP method." }
     ),
     headers: Type.Optional(
       Type.Record(Type.String(), Type.String(), {

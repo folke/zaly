@@ -39,6 +39,95 @@ describe("defineTool", () => {
   })
 })
 
+describe("defineTool — TypeBox defaults", () => {
+  const Search = defineTool({
+    name: "search",
+    params: Type.Object({
+      query: Type.String(),
+      limit: Type.Number({ default: 10 }),
+      offset: Type.Integer({ default: 0 }),
+    }),
+    call: (args) => args,
+  })
+
+  test("missing optional with default is filled in", () => {
+    const input = Search.validateParams({ query: "tokyo" })
+    expect(input).toEqual({ query: "tokyo", limit: 10, offset: 0 })
+  })
+
+  test("explicitly-provided value beats the default", () => {
+    const input = Search.validateParams({ query: "x", limit: 5 })
+    expect(input).toEqual({ query: "x", limit: 5, offset: 0 })
+  })
+
+  test("default of 0 is treated as a real value, not 'missing'", () => {
+    // Off-by-one regression guard: `Value.Default` must distinguish
+    // "field absent" from "field present with falsy value." We pass
+    // `offset: 0` explicitly and expect it to round-trip — not get
+    // re-defaulted to anything else.
+    const input = Search.validateParams({ query: "x", offset: 0 })
+    expect(input.offset).toBe(0)
+  })
+
+  test("default applies after primitive coercion (string '5' → 5)", () => {
+    const input = Search.validateParams({ query: "x", limit: "5" })
+    expect(input).toEqual({ query: "x", limit: 5, offset: 0 })
+  })
+
+  test("default flows through runTool to the tool body", async () => {
+    const r = await runTool(Search, { query: "hello" }, {})
+    const text = (r.content as { text: string }[])[0].text
+    expect(JSON.parse(text)).toEqual({ query: "hello", limit: 10, offset: 0 })
+  })
+
+  test("default flows through runTool from a JSON-string args input", async () => {
+    const r = await runTool(Search, '{"query":"hi"}', {})
+    const text = (r.content as { text: string }[])[0].text
+    expect(JSON.parse(text)).toEqual({ query: "hi", limit: 10, offset: 0 })
+  })
+
+  test("nested object defaults are filled in recursively", () => {
+    const Nested = defineTool({
+      name: "nested",
+      params: Type.Object({
+        opts: Type.Object({
+          retries: Type.Number({ default: 3 }),
+          timeout: Type.Number({ default: 30 }),
+        }),
+      }),
+      call: (args) => args,
+    })
+    expect(Nested.validateParams({ opts: {} })).toEqual({
+      opts: { retries: 3, timeout: 30 },
+    })
+    expect(Nested.validateParams({ opts: { retries: 1 } })).toEqual({
+      opts: { retries: 1, timeout: 30 },
+    })
+  })
+
+  test("array element defaults are NOT injected for absent elements", () => {
+    // Sanity: defaults apply to declared properties, not array slots.
+    // The array stays [] when the model passes [].
+    const Tags = defineTool({
+      name: "tags",
+      params: Type.Object({
+        tags: Type.Array(Type.String(), { default: [] }),
+      }),
+      call: (args) => args,
+    })
+    expect(Tags.validateParams({})).toEqual({ tags: [] })
+    expect(Tags.validateParams({ tags: ["a"] })).toEqual({ tags: ["a"] })
+  })
+
+  test("default + bad type still errors after coercion can't fix it", () => {
+    expect(() => Search.validateParams({ query: 123, limit: "not-a-number" })).toThrow(/❌/)
+  })
+
+  test("required field with no default still required even when other fields default", () => {
+    expect(() => Search.validateParams({})).toThrow(/❌/)
+  })
+})
+
 describe("runTool — happy path", () => {
   test("number return wraps as JSON-formatted text part", async () => {
     const r = await runTool(Adder, { a: 2, b: 3 }, {})

@@ -36,27 +36,25 @@ export const readTool = defineTool({
   desc:
     "Read a file. Text files return numbered lines (`cat -n` style). " +
     "Image files return as image attachments. " +
-    "Use `offset`/`limit` to slice large files (default limit: 2000 lines).",
+    "Use `offset`/`limit` to slice large files.",
   parallel: true,
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
     path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
-    offset: Type.Optional(
-      Type.Integer({
-        description:
-          "1-based line number to start at. Negative values count from " +
-          "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
-          "with the default limit returns the last 50 lines, like " +
-          "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
-          "starting 50 from the end. Defaults to 1.",
-      })
-    ),
-    limit: Type.Optional(
-      Type.Integer({
-        description: `Maximum number of lines to return. Defaults to ${DEFAULT_LIMIT}.`,
-        minimum: 1,
-      })
-    ),
+    offset: Type.Integer({
+      default: 1,
+      description:
+        "1-based line number to start at. Negative values count from " +
+        "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
+        "with the default limit returns the last 50 lines, like " +
+        "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
+        "starting 50 from the end.",
+    }),
+    limit: Type.Integer({
+      default: DEFAULT_LIMIT,
+      description: "Maximum number of lines to return.",
+      minimum: 1,
+    }),
   }),
 
   async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
@@ -98,8 +96,8 @@ export const readTool = defineTool({
     trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
 
     return formatTextSlice(data.toString("utf8"), {
-      limit: args.limit ?? DEFAULT_LIMIT,
-      offset: args.offset ?? 1,
+      limit: args.limit,
+      offset: args.offset,
       path,
     })
   },

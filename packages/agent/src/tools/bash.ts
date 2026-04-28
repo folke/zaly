@@ -50,7 +50,7 @@ export const bashTool = defineTool({
     "partial snapshot if the command is still running after the harness's " +
     "grace window — in that case the eventual result arrives as a system " +
     "message. Use `task_wait` to block on a long-running shell, `task_stop` " +
-    "to terminate one. `timeout` is a real kill deadline (default 10 min).",
+    "to terminate one. `timeout` is a real kill deadline.",
   params: Type.Object({
     command: Type.String({ description: "The shell command to run, evaluated by `bash -c`." }),
     description: Type.String({
@@ -60,17 +60,17 @@ export const bashTool = defineTool({
         "~10 words. Don't restate the command itself — describe the intent " +
         '(e.g. "check the test suite passes", not "run bun test").',
     }),
-    timeout: Type.Optional(
-      Type.Integer({
-        description: `Kill deadline in ms. Default ${DEFAULT_TIMEOUT_MS} (10 min). The process IS killed when this elapses (SIGTERM → SIGKILL).`,
-        minimum: 1,
-      })
-    ),
+    timeout: Type.Integer({
+      default: DEFAULT_TIMEOUT_MS,
+      description:
+        "Kill deadline in ms. The process IS killed when this elapses (SIGTERM → SIGKILL).",
+      minimum: 1,
+    }),
   }),
 
   call(args, ctx): Streamable {
     const cwd = ctx.cwd ?? process.cwd()
-    const timeout = args.timeout ?? DEFAULT_TIMEOUT_MS
+    const timeout = args.timeout
     const startedAt = Date.now()
     const logPath = allocateLogPath()
 

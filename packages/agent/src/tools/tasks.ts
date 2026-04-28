@@ -30,12 +30,11 @@ export const taskListTool = defineTool({
     "still in flight.",
   parallel: true,
   params: Type.Object({
-    includeFinished: Type.Optional(
-      Type.Boolean({
-        description:
-          "When true, also include tasks that have already completed in this session. Default false.",
-      })
-    ),
+    includeFinished: Type.Boolean({
+      default: false,
+      description:
+        "When true, also include tasks that have already completed in this session.",
+    }),
   }),
 
   call(args, ctx) {
@@ -46,7 +45,7 @@ export const taskListTool = defineTool({
     // captured body.
     const info = tasks
       .info()
-      .filter((task) => args.includeFinished === true || task.status !== "done")
+      .filter((task) => args.includeFinished || task.status !== "done")
     return taskInfoPart(info)
   },
 })
