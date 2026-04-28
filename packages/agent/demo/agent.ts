@@ -17,6 +17,10 @@
  *   ANTHROPIC_API_KEY     for anthropic/* (default)
  *   OPENAI_API_KEY        for openai/*
  *   OPENROUTER_API_KEY    for openrouter/*
+ *   CLAUDE_SESSION        path to a Claude Code session .jsonl;
+ *                         loads the active chain so the next user
+ *                         message continues that conversation.
+ *                         `/reset` drops it.
  *
  * Permissions: uses the `yolo` preset so all tools auto-allow — fine
  * for a sandbox demo, NOT what you'd run against arbitrary user code.
@@ -25,7 +29,18 @@
 import { loadModel } from "@zaly/ai"
 import { createInterface } from "node:readline/promises"
 import { Agent } from "../src/agent.ts"
-import { bashTool, editTool, fetchTool, readTool, writeTool } from "../src/tools/index.ts"
+import { loadClaudeSession } from "../src/session/claude.ts"
+import {
+  bashTool,
+  editTool,
+  fetchTool,
+  readTool,
+  taskKillTool,
+  taskListTool,
+  taskPollTool,
+  wakeupTool,
+  writeTool,
+} from "../src/tools/index.ts"
 
 const id = process.env.MODEL ?? "anthropic/claude-sonnet-4-6"
 const model = await loadModel(id)
@@ -45,7 +60,24 @@ const resetMode = (): void => {
   mode = undefined
 }
 
+// Load a Claude Code session at startup if `CLAUDE_SESSION` points at a
+// .jsonl file. The first `buildAgent()` consumes it; `/reset` clears the
+// reference so subsequent rebuilds start fresh.
+const claudePath = process.env.CLAUDE_SESSION
+let pendingClaude: Awaited<ReturnType<typeof loadClaudeSession>> | undefined
+if (claudePath) {
+  pendingClaude = await loadClaudeSession(claudePath)
+  console.log(
+    `\x1b[2m· loaded ${pendingClaude.messages.length} messages from ${claudePath} ·\x1b[0m\n`
+  )
+}
+
 function buildAgent(): Agent {
+  // Pass the loaded Claude session through (consumed once); the Agent's
+  // own `start()` is idempotent so the loaded session-start is preserved.
+  const session = pendingClaude
+  pendingClaude = undefined
+
   const a = new Agent({
     model,
     permissions: { preset: "yolo" },
@@ -54,7 +86,8 @@ function buildAgent(): Agent {
       "Use the available tools to answer questions about the project.",
       "Prefer fewer tool calls; batch independent reads in one turn when possible.",
     ],
-    tools: [bashTool, editTool, fetchTool, readTool, writeTool],
+    session,
+    tools: [bashTool, editTool, fetchTool, readTool, taskKillTool, taskListTool, taskPollTool, wakeupTool, writeTool],
   })
 
   a.on("stream-event", ({ event }) => {
@@ -97,7 +130,10 @@ function buildAgent(): Agent {
     if (typeof result.content === "string") {
       preview = result.content.length > 200 ? `${result.content.slice(0, 197)}...` : result.content
     } else {
-      const totalLen = result.content.reduce((n, p) => n + (p.type === "text" ? p.text.length : 0), 0)
+      const totalLen = result.content.reduce(
+        (n, p) => n + (p.type === "text" ? p.text.length : 0),
+        0
+      )
       preview = `[${result.content.length} parts, ${totalLen} chars]`
     }
     const indented = preview.replaceAll(/^/gm, "  ")
@@ -179,10 +215,40 @@ console.log(
 )
 
 for (;;) {
+  // A wakeup (or task-done inject) may fire while we're blocked on
+  // readline. The agent calls `run()` internally but we're not awaiting
+  // it — the run floats, output prints, but the REPL never drains it.
+  // Fix: any time the agent transitions from idle to streaming without
+  // us having sent a message, re-attach by awaiting the existing run
+  // promise before going back to the prompt.
   let input: string
   try {
-    const raw = await rl.question("\x1b[36m›\x1b[0m ")
-    input = raw.trim()
+    const inputPromise = rl.question("\x1b[36m›\x1b[0m ")
+    // Race the prompt against an agent wake-up. If the agent starts
+    // running on its own (wakeup / task-done), await it first, then
+    // loop back and re-show the prompt.
+    const agentStarted = new Promise<void>((resolve) => {
+      const handler = ({ status }: { status: string }): void => {
+        if (status === "streaming") {
+          agent.off("status", handler)
+          resolve()
+        }
+      }
+      agent.on("status", handler)
+    })
+    const winner = await Promise.race([
+      inputPromise.then((v) => ({ tag: "input", value: v } as const)),
+      agentStarted.then(() => ({ tag: "agent" } as const)),
+    ])
+    if (winner.tag === "agent") {
+      // Agent woke itself (wakeup / task-done). Wait for it to finish,
+      // then loop back to show the prompt.
+      rl.write("", { ctrl: true, name: "u" }) // clear partial input
+      process.stdout.write("\n")
+      await agent.run()
+      continue
+    }
+    input = winner.value.trim()
   } catch {
     break
   }
