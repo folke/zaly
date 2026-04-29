@@ -3,6 +3,9 @@ import type { Node } from "../core/node.ts"
 import type { Image } from "../widgets/image.ts"
 import type { MdCallbacks, MdImageMeta } from "./types.ts"
 
+import { basename } from "pathe"
+import { stripAnsi } from "../style/ansi.ts"
+
 /** Minimal host shape the image callback needs. Any Node-like parent
  *  with a per-src `Image` cache satisfies it — the `Markdown` widget is
  *  the primary caller but the interface keeps this file decoupled from
@@ -67,46 +70,91 @@ export function createImageCallback(host: ImageHost): {
       // we have something to place.
       const { Image } = await import("../widgets/image.ts")
 
-      // Render each unique src once via the cached Image node.
-      const uniqueSrcs = [...new Set(entries.map((e) => e.src))]
-      const rowsBySrc = new Map<string, string[]>()
+      // One Image (and therefore one KGP `placementId`) per occurrence
+      // so multiple references to the same `src` show up as distinct
+      // placements on screen. Cache key is `${src}\0${ordinal-within-src}`
+      // — the ordinal makes each repeated reference stable across
+      // re-renders (slot 0 is always slot 0, so the placementId stays
+      // pinned and KGP gives a flicker-free move/resize). Image bytes
+      // are de-duped at a different layer (`transmitOnce` in kitty.ts),
+      // so multiple occurrences cost N placements but only one transmit.
+      const ordinals = new Map<string, number>()
+      const rowsByEntry: string[][] = []
       await Promise.all(
-        uniqueSrcs.map(async (src) => {
-          const alt = firstAltForSrc(entries, src)
-          let img = cache.get(src)
+        entries.map(async (entry, idx) => {
+          const ord = ordinals.get(entry.src) ?? 0
+          ordinals.set(entry.src, ord + 1)
+          const key = `${entry.src}\u0000${ord}`
+          let img = cache.get(key)
           if (img === undefined) {
-            img = new Image({ alt, src })
+            img = new Image({ alt: entry.alt, src: entry.src })
             host.add(img)
-            cache.set(src, img)
+            cache.set(key, img)
           }
-          rowsBySrc.set(src, await img.render(ctx))
+          rowsByEntry[idx] = await img.render(ctx)
         })
       )
 
-      return rendered.replaceAll(MARKER_RE, (match, idxStr: string, offset: number) => {
-        const entry = entries[Number(idxStr)]
-        const rows = rowsBySrc.get(entry.src) ?? []
-
-        // Block detection: a marker on its own line (surrounded by
-        // newlines or the string edge) gets the full image rows.
-        // Inline markers fall back to alt text so they don't shred the
-        // paragraph.
-        const atLineStart = offset === 0 || rendered[offset - 1] === "\n"
-        const endOffset = offset + match.length
-        const atLineEnd = endOffset === rendered.length || rendered[endOffset] === "\n"
-
-        if (atLineStart && atLineEnd && rows.length > 0) {
-          return rows.join("\n")
+      // Walk the rendered output line by line:
+      //   - Marker alone on its line (whitespace + ANSI tolerated) →
+      //     replace the line with the full image rows.
+      //   - Marker mid-line → inline ref placeholder, then splice the
+      //     image rows on the next line(s) so the picture still
+      //     appears below the surrounding text.
+      // Multiple markers on one mid-line all get inline refs; their
+      // image rows stack underneath in document order.
+      const out: string[] = []
+      for (const line of rendered.split("\n")) {
+        const matched: { entry: ImageEntry; rows: string[] }[] = []
+        for (const m of line.matchAll(MARKER_RE)) {
+          const idx = Number(m[1])
+          matched.push({ entry: entries[idx], rows: rowsByEntry[idx] ?? [] })
         }
-        return entry.alt === "" ? `[${entry.src}]` : `[${entry.alt}]`
-      })
+
+        if (matched.length === 0) {
+          out.push(line)
+          continue
+        }
+
+        const lineHasOnlyMarker =
+          matched.length === 1 && stripAnsi(line.replace(MARKER_RE, "")).trim() === ""
+
+        if (lineHasOnlyMarker && matched[0].rows.length > 0) {
+          out.push(...matched[0].rows)
+          continue
+        }
+
+        // Mid-line: replace each marker with a nice inline ref, then
+        // append every image's rows below the line in order. Skip rows
+        // that don't contain real graphics (KGP escapes) — when the
+        // terminal can't render images, `Image.render` falls back to a
+        // single-row alt-text representation, which would just
+        // duplicate the inline label we already emitted.
+        out.push(
+          line.replaceAll(MARKER_RE, (_, idxStr: string) => labelOf(entries[Number(idxStr)]))
+        )
+        for (const { rows } of matched) {
+          if (rows.some(isRealGraphics)) out.push(...rows)
+        }
+      }
+      return out.join("\n")
     },
   }
 }
 
+/** Friendly inline placeholder for an image that can't render at this
+ *  position. Prefers the markdown alt text; falls back to the basename
+ *  of the source path (so `[clip.png]` instead of `[/tmp/long/path/clip.png]`),
+ *  and "image" for anything weirder. */
+function labelOf(entry: ImageEntry): string {
+  const label = entry.alt !== "" ? entry.alt : basename(entry.src) || "image"
+  return `[${label}]`
+}
+
 const MARKER_RE = /<img id=(\d+)>/g
 
-function firstAltForSrc(entries: ImageEntry[], src: string): string {
-  for (const e of entries) if (e.src === src) return e.alt
-  return ""
+/** True when a row contains a Kitty Graphics Protocol escape (transmit
+ *  or place) — i.e. real image data, not the text alt fallback. */
+function isRealGraphics(row: string): boolean {
+  return row.includes("\x1b_G")
 }

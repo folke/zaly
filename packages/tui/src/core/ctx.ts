@@ -100,6 +100,13 @@ export interface MountCtx {
    *  pass a function for richer predicates. Same semantics as
    *  `Renderer.findNode`. */
   readonly findNode: (match: string | ((n: Node) => boolean)) => Node[]
+
+  /** Queue a side-channel ANSI payload (e.g. KGP image transmit) for
+   *  the renderer to flush before the next paint. Use this to keep
+   *  side-effecting bytes out of cached row strings — what `_render`
+   *  returns should be safe to reuse across paints, and transmit
+   *  bytes shouldn't be. */
+  readonly transmit: (seq: string) => void
 }
 
 /**

@@ -183,6 +183,37 @@ export class Terminal {
     this.#stdout.write(s)
   }
 
+  // ---------- side-channel transmit queue ----------
+  //
+  // Some terminal protocols separate "register data" from "place at
+  // cursor" — Kitty Graphics Protocol (KGP) being the canonical
+  // example: an image is transmitted once (`a=t`) and then placed
+  // many times (`a=p,i=N`). The transmit bytes don't have to live
+  // anywhere particular in the output stream — they just need to
+  // arrive before any placement that references them.
+  //
+  // Routing transmit bytes through this queue (instead of inlining
+  // them into rendered rows) lets the Node-level cache hold *pure
+  // placement* rows: safe to cache, safe to re-splice, no stray
+  // transmit ANSI surviving across paints. The renderer drains the
+  // queue once per frame, before composing the frame body.
+
+  readonly #pendingTransmits: string[] = []
+
+  /** Queue a side-channel ANSI payload (KGP transmit, etc.) for the
+   *  next `flushTransmits()`. No-op for empty strings. */
+  enqueueTransmit(seq: string): void {
+    if (seq) this.#pendingTransmits.push(seq)
+  }
+
+  /** Drain the transmit queue. Called by the renderer at the start of
+   *  each paint, before frame composition. Idempotent when empty. */
+  flushTransmits(): void {
+    if (this.#pendingTransmits.length === 0) return
+    this.#stdout.write(this.#pendingTransmits.join(""))
+    this.#pendingTransmits.length = 0
+  }
+
   /** Absolute cursor move (1-based). */
   moveTo(row: number, col = 1): string {
     return `${CSI}${row};${col}H`

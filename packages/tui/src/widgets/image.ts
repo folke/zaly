@@ -73,7 +73,18 @@ export class Image extends Node<ImageState> {
       const t = await transmitOnce(img)
       if (!t) return this.fallback
       this.#delete = () => deletePlacement(t.imageId, this.#placementId)
-      lead = t.transmit + placement(t.imageId, this.#placementId, { cols, rows })
+      // Route the transmit bytes through the side-channel queue (mount
+      // ctx → terminal). Cached rows then hold pure placement ANSI,
+      // which is safe to reuse across repaints. If we're rendering
+      // before mount (rare — tests, headless previews), fall back to
+      // inlining the transmit into the lead so the picture still
+      // shows correctly the first time.
+      if (this.ctx?.transmit && t.transmit) {
+        this.ctx.transmit(t.transmit)
+        lead = placement(t.imageId, this.#placementId, { cols, rows })
+      } else {
+        lead = t.transmit + placement(t.imageId, this.#placementId, { cols, rows })
+      }
     } else {
       lead = encodeIterm2(Buffer.from(img.data).toString("base64"), {
         height: `${rows}`,

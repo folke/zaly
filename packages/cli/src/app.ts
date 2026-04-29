@@ -1,7 +1,10 @@
 import type { Agent } from "@zaly/agent"
+import type { ContentPart, ImagePart, TextPart } from "@zaly/ai"
+import type { ImageInfo } from "@zaly/shared"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
 
+import { imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
@@ -21,6 +24,14 @@ export class App {
   readonly #busy = signal(false)
   readonly #status = signal("ready")
   readonly #model = signal("")
+
+  /** Images pasted into the input since the last submit, keyed by the
+   *  `[Image #n]` index inserted into the text. `part` is the encoded
+   *  payload sent to the agent; `path` is the on-disk source so the
+   *  stream's markdown view can render it inline via `![](path)`.
+   *  Cleared on every submit so indices stay small and per-message. */
+  readonly #images = new Map<number, { part: ImagePart; path: string }>()
+  #imageCounter = 0
 
   constructor(config: Config) {
     this.#config = config
@@ -66,13 +77,69 @@ export class App {
       self.setState({ cursor: 0, value: "" })
       void this.#submit(trimmed)
     })
+
+    // Image paste: reserve a `[Image #n]` placeholder in the input
+    // value at the cursor; on submit we'll swap placeholders for
+    // markdown image refs (so they render inline) and attach the
+    // ImagePart to the agent's message alongside the raw text.
+    this.#render.input.on("attach", ({ attachment: att }, self) => {
+      if (att.kind !== "image" && !att.type.startsWith("image/")) return
+      void (async () => {
+        const info = await imageInfo(att.path)
+        if (!info) return
+        const ready = await imageConvert(info, ["png", "jpeg", "webp"])
+        if (!ready) return
+        const idx = ++this.#imageCounter
+        this.#images.set(idx, { part: toImagePart(ready), path: att.path })
+        const tag = `[Image #${idx}]`
+        const v = self.state.value ?? ""
+        const c = self.state.cursor ?? 0
+        self.setState({
+          cursor: c + tag.length,
+          value: v.slice(0, c) + tag + v.slice(c),
+        })
+      })()
+    })
   }
 
-  async #submit(content: string): Promise<void> {
-    this.#render.stream.pushUser(content)
+  async #submit(text: string): Promise<void> {
+    // Collect images referenced in the text in input order. Pastes
+    // the user deleted before submit are silently dropped.
+    const re = /\[Image #(\d+)\]/g
+    const referenced: ImagePart[] = []
+    for (const m of text.matchAll(re)) {
+      const entry = this.#images.get(Number(m[1]))
+      if (entry) referenced.push(entry.part)
+    }
+
+    // Stream display: swap placeholders for markdown image refs on
+    // their own line. The markdown widget only renders an image as a
+    // block (real picture rows) when the `![](…)` reference sits alone
+    // on a line — inline refs fall back to alt text. Padding with blank
+    // lines triggers block render.
+    //
+    // The agent gets the raw text (with `[Image #n]` placeholders)
+    // plus the ImageParts as separate content entries — the model
+    // correlates them via the literal placeholder.
+    const display = text.replace(re, (whole, n) => {
+      const entry = this.#images.get(Number(n))
+      return entry ? `\n\n![](${entry.path})\n\n` : whole
+    })
+    this.#render.stream.pushUser(display)
+
+    const message =
+      referenced.length === 0
+        ? { content: text, role: "user" as const }
+        : {
+            content: [{ text, type: "text" } as TextPart, ...referenced] as ContentPart[],
+            role: "user" as const,
+          }
+
+    this.#images.clear()
+    this.#imageCounter = 0
     this.#busy[1](true)
     this.#status[1]("thinking")
-    this.#agent.inject({ content, role: "user" })
+    this.#agent.inject(message)
     await this.#agent.waitIdle()
   }
 
@@ -85,5 +152,15 @@ export class App {
     // Quick + dirty: rebuild everything except the renderer itself.
     // (Future: Renderer should expose `clear()` so we don't accumulate
     // history nodes across resets.)
+  }
+}
+
+/** Wrap a converted image as an `ImagePart` for an agent message. */
+function toImagePart(img: ImageInfo<"jpeg" | "webp" | "png">): ImagePart {
+  const mime = ({ jpeg: "image/jpeg", png: "image/png", webp: "image/webp" } as const)[img.format]
+  return {
+    mime,
+    source: { data: Buffer.from(img.data).toString("base64"), type: "base64" },
+    type: "image",
   }
 }

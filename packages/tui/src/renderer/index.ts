@@ -325,6 +325,7 @@ export class Renderer {
         open: (o) => this.overlay.open(o),
       },
       surface,
+      transmit: (seq) => this.terminal.enqueueTransmit(seq),
     }
   }
 
@@ -375,6 +376,12 @@ export class Renderer {
       this.ui.render(capture(2)),
       this.overlay.render(capture(3)),
     ])
+    // Flush any side-channel transmits (e.g. KGP image data queued by
+    // Image widgets during render) BEFORE entering the synced frame.
+    // The terminal stores transmitted bytes globally — placements in
+    // the frame body reference them by id and just need them to have
+    // arrived first.
+    this.terminal.flushTransmits()
     this.terminal.sync(() => {
       paints.toSorted((a, b) => a.order - b.order).forEach(({ paint }) => paint())
     })
