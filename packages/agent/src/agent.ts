@@ -12,6 +12,7 @@ import { Skills } from "./skills.ts"
 import { StopPolicy } from "./stop.ts"
 import { Swarm } from "./swarm.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
+import { toolRegistry } from "./tools/index.ts"
 import { extractToolCalls } from "./utils/index.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -139,7 +140,12 @@ export class Agent extends Emitter<AgentEvent> {
       opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
     const cwd = normPath(opts.cwd ?? process.cwd())
     const skills = opts.skills === false ? undefined : await Skills.load({ cwd })
-    const init: AgentInit = { ...opts, cwd, session, skills }
+    const tools: Tool[] = await Promise.all(
+      (opts.tools ?? []).map((t) =>
+        Promise.resolve(typeof t === "string" ? toolRegistry.load(t) : t)
+      )
+    )
+    const init: AgentInit = { ...opts, cwd, session, skills, tools }
     return new Agent(init)
   }
 

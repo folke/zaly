@@ -1,21 +1,7 @@
-import {
-  Agent,
-  agentSendTool,
-  agentSpawnTool,
-  bashTool,
-  editTool,
-  fetchTool,
-  loadClaudeSession,
-  readTool,
-  searchTool,
-  taskListTool,
-  taskPollTool,
-  taskStopTool,
-  wakeupTool,
-  writeTool,
-} from "@zaly/agent"
-import { loadModel } from "@zaly/ai"
 import type { Config } from "./config.ts"
+
+import { Agent, loadClaudeSession } from "@zaly/agent"
+import { loadModel } from "@zaly/ai"
 
 /**
  * Build a fresh Agent for the CLI. Mirrors demo/agent.ts in @zaly/agent
@@ -41,18 +27,19 @@ export async function buildAgent(config: Config): Promise<Agent> {
     ],
     session: { path: config.sessionPath },
     tools: [
-      agentSendTool,
-      agentSpawnTool,
-      bashTool,
-      editTool,
-      fetchTool,
-      readTool,
-      searchTool,
-      taskListTool,
-      taskPollTool,
-      taskStopTool,
-      wakeupTool,
-      writeTool,
+      "bash",
+      "edit",
+      "fetch",
+      "read",
+      "search",
+      "subagent",
+      "agent_send",
+      "agent_spawn",
+      "task_list",
+      "task_poll",
+      "task_stop",
+      "wakeup",
+      "write",
     ],
   })
 }

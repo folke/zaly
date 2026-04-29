@@ -18,9 +18,10 @@ import type {
 } from "./permissions/index.ts"
 import type { Session, SessionOptions } from "./session/index.ts"
 import type { Skills } from "./skills.ts"
-import type { Swarm } from "./swarm.ts"
 import type { StopOptions } from "./stop.ts"
+import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
+import type { ToolName } from "./tools/index.ts"
 
 // Declaration-merge agent-side capabilities into ToolContext. Importing
 // any agent code (which any consumer ultimately does) loads this file,
@@ -78,10 +79,11 @@ export interface PermissionRequest {
  *  Identical to `AgentOptions` except `session` is the *built* `Session`
  *  instance (constructed for you by `Agent.load`). Subclasses that call
  *  `super(init)` directly need to provide their own pre-built session. */
-export interface AgentInit extends Omit<AgentOptions, "session" | "skills" | "cwd"> {
+export interface AgentInit extends Omit<AgentOptions, "session" | "skills" | "cwd" | "tools"> {
   cwd: string
   session: Session
   skills?: Skills
+  tools?: Tool[]
 }
 
 /** Outcome of a single step (one provider round-trip + tool batch).
@@ -106,7 +108,7 @@ export interface AgentOptions extends CollectOptions {
   /** Tools the model may call. Kernel-owned: the agent both passes
    *  these to the provider on every step and dispatches calls against
    *  them. Mutable post-construction via `agent.tools = …`. */
-  tools?: Tool[]
+  tools?: (Tool | ToolName)[]
   /** Stop-policy knobs — `maxSteps`, `tokenBudget`, `maxToolErrors`,
    *  loop-detection tuning. Grouped under one key to keep the agent's
    *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */

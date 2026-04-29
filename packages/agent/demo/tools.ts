@@ -1,7 +1,7 @@
 import type { ToolContext } from "@zaly/ai"
 
 import { runTool, stringifyContent } from "@zaly/ai"
-import { bashTool } from "../src/index.ts"
+import { bashTool } from "../src/tools/bash.ts"
 import { searchTool } from "../src/tools/search.ts"
 
 const ctx: ToolContext = {}
