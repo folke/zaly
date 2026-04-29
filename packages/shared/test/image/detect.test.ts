@@ -100,9 +100,17 @@ describe("imageDetect — base64 data URI", () => {
     expect(r?.format).toBe("png")
     expect(r?.path).toBeUndefined()
   })
-  test("falls back to mime when bytes don't match a known signature", async () => {
+  test("falls back to mime for non-magic formats (TGA has no reliable signature)", async () => {
+    const r = await imageDetect(`data:image/x-tga;base64,${Buffer.from([1, 2, 3]).toString("base64")}`)
+    expect(r?.format).toBe("tga")
+  })
+  test("magic-detectable mime with bad bytes returns undefined", async () => {
+    // Strict rule: for formats covered by magic-byte detection
+    // (png, jpeg, webp, gif, ...), the bytes are authoritative. A
+    // claimed mime that contradicts the bytes — corrupt download or a
+    // lying server — must not be trusted.
     const r = await imageDetect(`data:image/webp;base64,${Buffer.from([1, 2, 3]).toString("base64")}`)
-    expect(r?.format).toBe("webp")
+    expect(r).toBeUndefined()
   })
   test("unsupported mime returns undefined", async () => {
     const r = await imageDetect(`data:image/totally-fake;base64,${Buffer.from([1, 2, 3]).toString("base64")}`)

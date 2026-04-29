@@ -1,14 +1,19 @@
 import { readFile } from "node:fs/promises"
+import { fileURLToPath } from "node:url"
 import { resolve } from "pathe"
-import { hash } from "../utils.ts"
+import { hash, safeFn } from "../utils.ts"
 
 export type ImageFormat = (typeof formats)[number]
 
 export type DetectedImage<T extends ImageFormat = ImageFormat> = {
   format: T
   data: Uint8Array
+  /** On-disk path, when the source resolved to a local file. */
   path?: string
+  /** Source URL, when the source was an http(s) URL or file URI. */
+  url?: string
   hash?: string
+  mime?: string
 }
 
 // oxfmt-ignore
@@ -54,45 +59,6 @@ const HEIC_BRANDS = new Set([
   "hevc", "hevx", "hevm", "hevs",
   "mif1", "msf1",
 ])
-
-const formatSet = new Set(formats)
-
-export function isImageFormat(format?: string): format is ImageFormat {
-  return formatSet.has(format as ImageFormat)
-}
-
-export async function imageDetect(src: string): Promise<DetectedImage | undefined> {
-  const [, mime, b64] = src.match(/^data:([^;]+);base64,(.+)$/) ?? []
-  if (mime && b64) return detectFromBase64(mime, Buffer.from(b64, "base64"))
-  src = resolve(src)
-  const data = await readFile(src).catch(() => undefined)
-  if (!data) return undefined
-  const format = sniffFormat(data)
-  if (format) return { data, format, path: src }
-  return detectFromExt(src, data)
-}
-
-export function imageHash(img: DetectedImage): string {
-  return (img.hash ??= hash(img.data).slice(0, 16))
-}
-
-function detectFromBase64(mime: string, data: Uint8Array): DetectedImage | undefined {
-  const format = sniffFormat(data)
-  if (format) return { data, format }
-  const guessed = mime
-    .match(/^[^/]+\/(?:x-)?([^+;\s]+)/i)?.[1]
-    .toLowerCase()
-    .replace(/^vnd\.[^.]+\./, "")
-  return isImageFormat(guessed) ? { data, format: guessed } : undefined
-}
-
-function detectFromExt(path: string, data: Uint8Array): DetectedImage | undefined {
-  const dot = path.lastIndexOf(".")
-  if (dot === -1) return undefined
-  const ext = path.slice(dot + 1).toLowerCase()
-  const format = extFormats[ext] ?? ext
-  return isImageFormat(format) && !MAGIC_FORMATS.has(format) ? { data, format, path } : undefined
-}
 
 /** Magic-byte signatures. `b` is the literal byte sequence at offset
  *  `o` (default 0) — strings are matched as ASCII. Multi-part entries
@@ -142,7 +108,7 @@ const NETPBM: Partial<Record<number, ImageFormat>> = {
 
 /** Formats whose magic bytes we sniff. If extension says one of these
  *  but the bytes didn't match, the file is corrupt/truncated/empty —
- *  reject in `detectFromExt` rather than handing bad bytes downstream. */
+ *  reject in `fromExt` rather than handing bad bytes downstream. */
 // oxfmt-ignore
 const MAGIC_FORMATS = new Set<ImageFormat>([
   ...MAGIC.map((m) => m.format),
@@ -150,6 +116,75 @@ const MAGIC_FORMATS = new Set<ImageFormat>([
   "pbm", "pgm", "ppm", "pam",  // Netpbm dispatch
   "svg",                        // text dispatch
 ])
+
+const formatSet = new Set(formats)
+type ImageData = Omit<DetectedImage, "format">
+
+export function imageHash(img: DetectedImage): string {
+  return (img.hash ??= hash(img.data).slice(0, 16))
+}
+
+export function isImageFormat(format?: string): format is ImageFormat {
+  return formatSet.has(format as ImageFormat)
+}
+
+/** Returns true when format exists and falls outside the magic-byte-detectable
+/*  set — i.e. when MIME/extension is the only way to identify it. */
+function isSpecialFormat(format?: string): format is ImageFormat {
+  return isImageFormat(format) && !MAGIC_FORMATS.has(format)
+}
+
+async function imageData(src: string): Promise<ImageData | undefined> {
+  // data URL: data:[<mime type>][;base64],<data>
+  const [, mime, b64] = src.match(/^data:([^;]+);base64,(.+)$/) ?? []
+  if (mime && b64) return { data: Buffer.from(b64, "base64"), mime }
+
+  // http(s) URL
+  if (/^https?:\/\//i.test(src)) {
+    const res = await fetch(src).catch(() => undefined)
+    if (!res || !res.ok) return undefined
+    const data = new Uint8Array(await res.arrayBuffer())
+    return { data, mime: res.headers.get("content-type") ?? undefined, url: src }
+  }
+
+  // file URL: file:///path/to/image.png
+  if (src.startsWith("file://")) {
+    let path = safeFn(() => fileURLToPath(src))()
+    path = path ? resolve(path) : undefined
+    const data = path ? await readFile(path).catch(() => undefined) : undefined
+    return data ? { data, path, url: src } : undefined
+  }
+
+  // Local file path
+  src = resolve(src)
+  const data = await readFile(src).catch(() => undefined)
+  return data ? { data, path: src } : undefined
+}
+
+export async function imageDetect(src: string): Promise<DetectedImage | undefined> {
+  const img = await imageData(src)
+  if (!img) return
+  let format = fromData(img.data)
+  format ??= img.mime ? fromMime(img.mime) : undefined
+  format ??= img.path ? fromExt(img.path) : undefined
+  return format ? { ...img, format } : undefined
+}
+
+function fromMime(mime: string): ImageFormat | undefined {
+  const guessed = mime
+    .match(/^[^/]+\/(?:x-)?([^+;\s]+)/i)?.[1]
+    .toLowerCase()
+    .replace(/^vnd\.[^.]+\./, "")
+  return isSpecialFormat(guessed) ? guessed : undefined
+}
+
+function fromExt(path: string): ImageFormat | undefined {
+  const dot = path.lastIndexOf(".")
+  if (dot === -1) return undefined
+  const ext = path.slice(dot + 1).toLowerCase()
+  const format = extFormats[ext] ?? ext
+  return isSpecialFormat(format) ? format : undefined
+}
 
 function matches(buf: Uint8Array, parts: Magic["parts"]): boolean {
   return parts.every(({ o = 0, b }) => {
@@ -166,7 +201,7 @@ function matches(buf: Uint8Array, parts: Magic["parts"]): boolean {
  *  `undefined` for formats with no reliable signature (TGA, most camera
  *  RAW variants, PCX/XPM/XBM) — those fall through to extension-based
  *  detection. */
-function sniffFormat(b: Uint8Array): ImageFormat | undefined {
+function fromData(b: Uint8Array): ImageFormat | undefined {
   if (b.length < 4) return undefined
   for (const m of MAGIC) {
     if (matches(b, m.parts)) return m.format
