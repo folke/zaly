@@ -36,7 +36,31 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
     }
 
     const ws = longestWorkspace(abs, ctx.workspaces)
-    if (ws === undefined) {
+    const inWorkspace = ws !== undefined
+
+    // Inside-workspace + path === root: the workspace itself (e.g. `find .`
+    // resolved to cwd). Workspace containment alone is enough to allow.
+    if (inWorkspace && abs === ws) return { verdict: "allow" }
+
+    // Outside any workspace, fall through to rule matching with `/` as
+    // synthetic root. Lets blanket rules like `read(*)` (yolo preset)
+    // override the default "ask outside workspace" verdict, while
+    // narrower presets keep the safer default.
+    const base = ws ?? "/"
+    const rel = relative(base, abs)
+
+    const { allow, ask, deny } = compileMatchers(base, ctx.rules)
+    if (deny.ignores(rel)) return { reason: `${abs}: denied by rule`, verdict: "deny" }
+    if (ask.ignores(rel)) return { reason: `${abs}: rule requires confirmation`, verdict: "ask" }
+    if (allow.ignores(rel)) return { verdict: "allow" }
+
+    // No rule matched. Defaults differ by location:
+    //   - Inside a workspace: reads ride on workspace trust → allow;
+    //     writes escalate → ask.
+    //   - Outside any workspace: always ask, and surface a
+    //     workspace-add suggestion so the user can promote the parent
+    //     dir without composing a rule by hand.
+    if (!inWorkspace) {
       const parent = dirname(abs)
       return {
         reason: `${abs}: outside any workspace`,
@@ -46,20 +70,6 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
         verdict: "ask",
       }
     }
-
-    const rel = relative(ws, abs)
-    // Path is the workspace root itself (e.g. `find .` resolved to cwd).
-    // No file to match against rules — workspace containment alone is
-    // enough to allow it.
-    if (rel === "") return { verdict: "allow" }
-
-    const { allow, ask, deny } = compileMatchers(ws, ctx.rules)
-    if (deny.ignores(rel)) return { reason: `${abs}: denied by rule`, verdict: "deny" }
-    if (ask.ignores(rel)) return { reason: `${abs}: rule requires confirmation`, verdict: "ask" }
-    if (allow.ignores(rel)) return { verdict: "allow" }
-
-    // No rule matched. Inside-workspace default depends on scope:
-    // reads ride on workspace trust; writes escalate.
     if (ctx.scope === "read") return { verdict: "allow" }
     return {
       reason: `${abs}: write requires confirmation`,
