@@ -21,6 +21,6 @@ const builtin = {
 } as const
 
 export type BuiltinTool = keyof typeof builtin
-export type ToolName = BuiltinTool | (string & {})
+export type AnyTool = BuiltinTool | (string & {})
 
 export const toolRegistry = createRegistry<Promise<Tool>>("tool").from(builtin)

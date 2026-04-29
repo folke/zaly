@@ -21,7 +21,7 @@ import type { Skills } from "./skills.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
-import type { ToolName } from "./tools/index.ts"
+import type { AnyTool } from "./tools/index.ts"
 
 // Declaration-merge agent-side capabilities into ToolContext. Importing
 // any agent code (which any consumer ultimately does) loads this file,
@@ -108,7 +108,7 @@ export interface AgentOptions extends CollectOptions {
   /** Tools the model may call. Kernel-owned: the agent both passes
    *  these to the provider on every step and dispatches calls against
    *  them. Mutable post-construction via `agent.tools = …`. */
-  tools?: (Tool | ToolName)[]
+  tools?: (Tool | AnyTool)[]
   /** Stop-policy knobs — `maxSteps`, `tokenBudget`, `maxToolErrors`,
    *  loop-detection tuning. Grouped under one key to keep the agent's
    *  top-level surface focused. Omit to use defaults (see `StopPolicy`). */
