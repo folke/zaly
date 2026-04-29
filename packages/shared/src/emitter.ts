@@ -17,7 +17,7 @@ type EmitArgs<E> = keyof E extends never ? [] : [event: E]
  *  instance (typed as `Self`, the polymorphic `this` of the class) so
  *  handlers can chain, mutate, or unsubscribe without closing over a
  *  separate reference. */
-export type Listener<E, Self> = (event: E, self: Self) => void
+export type Listener<E, Self, R extends void | Promise<void> = void> = (event: E, self: Self) => R
 
 /** Per-key event envelope — the payload plus its discriminator. This is
  *  the shape every listener receives, both typed and wildcard. */
@@ -28,7 +28,7 @@ export type EventOf<T extends EventMap, K extends keyof T & string> = { type: K 
 export type Envelope<T extends EventMap> = { [K in keyof T & string]: EventOf<T, K> }[keyof T &
   string]
 
-type AnyListener = Listener<unknown, unknown>
+type AnyListener<T extends void | Promise<void> = void> = Listener<unknown, unknown, T>
 
 /** Tiny typed event emitter, indexed by event name.
  *
@@ -55,21 +55,21 @@ type AnyListener = Listener<unknown, unknown>
  *  synthesized `{ type, ...payload }` envelope and fire *before* typed
  *  listeners on every emit, in registration order within the wildcard
  *  bucket. */
-class BaseEmitter<T extends EventMap = EventMap> {
-  readonly #listeners = new Map<string, AnyListener[]>([["all", []]])
-  readonly #wrappers = new WeakMap<AnyListener, AnyListener>()
+class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> = void> {
+  readonly #listeners = new Map<string, AnyListener<R>[]>([["all", []]])
+  readonly #wrappers = new WeakMap<AnyListener<R>, AnyListener<R>>()
   onEmitError?: (error: unknown) => void
 
-  on<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this>): this {
-    return this.#add(type, fn as AnyListener)
+  on<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
+    return this.#add(type, fn as AnyListener<R>)
   }
 
-  once<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this>): this {
-    const wrapped: AnyListener = (event, self) => {
+  once<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
+    const wrapped = ((event, self) => {
       this.off(type, fn)
-      fn(event as EventOf<T, K>, self as this)
-    }
-    this.#wrappers.set(fn as AnyListener, wrapped)
+      return fn(event as EventOf<T, K>, self as this)
+    }) as AnyListener<R>
+    this.#wrappers.set(fn as AnyListener<R>, wrapped)
     return this.#add(type, wrapped)
   }
 
@@ -80,14 +80,14 @@ class BaseEmitter<T extends EventMap = EventMap> {
    *
    *  Pass the same function reference used with the original
    *  registration. */
-  off<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this>): this
-  off(fn: Listener<Envelope<T>, this>): this
+  off<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this
+  off(fn: Listener<Envelope<T>, this, R>): this
   // Implementation signature — wider than the public overloads so the
   // typed listener positions remain assignable. Internal callers should
   // go through one of the typed overloads.
-  off(typeOrFn: string | Listener<any, this>, fn?: Listener<any, this>): this {
+  off(typeOrFn: string | Listener<any, this, R>, fn?: Listener<any, this, R>): this {
     const bucket = typeof typeOrFn === "string" ? typeOrFn : "all"
-    const handler = (typeof typeOrFn === "string" ? fn : typeOrFn) as AnyListener
+    const handler = (typeof typeOrFn === "string" ? fn : typeOrFn) as AnyListener<R>
     const list = this.#listeners.get(bucket)
     if (!list) return this
     const target = this.#wrappers.get(handler) ?? handler
@@ -102,34 +102,52 @@ class BaseEmitter<T extends EventMap = EventMap> {
    *  `{ type, ...payload }` envelope synthesized at dispatch time.
    *  Useful for logging, replay, or policy state machines that switch
    *  on `event.type`. */
-  all(fn: Listener<Envelope<T>, this>): this {
-    return this.#add("all", fn as AnyListener)
+  all(fn: Listener<Envelope<T>, this, R>): this {
+    return this.#add("all", fn as AnyListener<R>)
   }
 
-  emit<K extends keyof T & string>(type: K, ...args: EmitArgs<T[K]>): void {
+  emit<K extends keyof T & string>(type: K, ...args: EmitArgs<T[K]>): R {
     const all = this.#listeners.get("all") ?? []
     const typed = this.#listeners.get(type) ?? []
-    if (all.length === 0 && typed.length === 0) return
+    if (all.length === 0 && typed.length === 0) return undefined as R
 
-    // Single envelope for both typed and wildcard listeners.
-    // `args[0]` is undefined for empty-payload events — synthesize a
-    // bare object so spread always works.
     const event = { type, ...((args[0] ?? {}) as T[K]) } as EventOf<T, K>
+    const todo = [...all, ...typed]
 
-    // Wildcards first, in registration order; then typed listeners.
-    // Snapshot each list so mutations during iteration don't affect
-    // this dispatch.
-    for (const fn of [...all, ...typed])
+    // Run sync listeners in line until we hit an async one. From there,
+    // await sequentially. For sync-only emitters, listeners never return
+    // Promises, so the async branch never triggers — zero overhead.
+    for (let i = 0; i < todo.length; i++) {
+      let r: unknown
       try {
-        fn(event as unknown, this as unknown)
+        r = todo[i](event as unknown, this as unknown)
       } catch (error) {
         this.onEmitError?.(error)
+        continue
       }
+      if (r instanceof Promise) {
+        const rest = todo.slice(i + 1)
+        return (async () => {
+          await r.catch((error) => this.onEmitError?.(error))
+          for (const fn of rest) {
+            try {
+              const next = fn(event as unknown, this as unknown)
+              if (next instanceof Promise)
+                // oxlint-disable-next-line no-await-in-loop
+                await next.catch((error) => this.onEmitError?.(error))
+            } catch (error) {
+              this.onEmitError?.(error)
+            }
+          }
+        })() as R
+      }
+    }
+    return undefined as R
   }
 
   /** Append a listener to a bucket, creating the bucket on demand.
    *  Returns `this` so callers can chain. */
-  #add(bucket: string, fn: AnyListener): this {
+  #add(bucket: string, fn: AnyListener<R>): this {
     const list = this.#listeners.get(bucket)
     if (list) list.push(fn)
     else this.#listeners.set(bucket, [fn])
@@ -137,6 +155,16 @@ class BaseEmitter<T extends EventMap = EventMap> {
   }
 }
 
+/** Type gymnastics to get a single class with multiple generic event maps. The
+ * base class only has one generic param, so we intersect multiple instances
+ * to get the full set of event types. The `Emitter` constructor is then
+ * typed to produce the intersection. */
+export const Emitter = BaseEmitter as new <
+  A extends EventMap = EventMap,
+  B extends EventMap = EventMap,
+  C extends EventMap = EventMap,
+  D extends EventMap = EventMap,
+>() => Emitter<A, B, C, D>
 export type Emitter<
   A extends EventMap = EventMap,
   B extends EventMap = EventMap,
@@ -151,9 +179,18 @@ export type Emitter<
  * base class only has one generic param, so we intersect multiple instances
  * to get the full set of event types. The `Emitter` constructor is then
  * typed to produce the intersection. */
-export const Emitter = BaseEmitter as new <
+export const AsyncEmitter = BaseEmitter as new <
   A extends EventMap = EventMap,
   B extends EventMap = EventMap,
   C extends EventMap = EventMap,
   D extends EventMap = EventMap,
->() => Emitter<A, B, C, D>
+>() => AsyncEmitter<A, B, C, D>
+export type AsyncEmitter<
+  A extends EventMap = EventMap,
+  B extends EventMap = EventMap,
+  C extends EventMap = EventMap,
+  D extends EventMap = EventMap,
+> = InstanceType<typeof BaseEmitter<A, Promise<void>>> &
+  InstanceType<typeof BaseEmitter<B, Promise<void>>> &
+  InstanceType<typeof BaseEmitter<C, Promise<void>>> &
+  InstanceType<typeof BaseEmitter<D, Promise<void>>>
