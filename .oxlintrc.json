@@ -49,6 +49,7 @@
       }
     ],
     "no-ternary": "off",
+    "no-underscore-dangle": "off", // 4
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { "terms": ["todo", "fixme", "bug"], "location": "start" }],
     "prefer-destructuring": "off", // 3

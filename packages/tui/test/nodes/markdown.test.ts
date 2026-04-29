@@ -423,10 +423,16 @@ describe("markdown — Image instance cache", () => {
     resetCapabilitiesCache()
     resetTransmitCache()
 
+    // Bump `ctx.version` between paints — this mirrors the Renderer,
+    // which increments version per frame so each Node's per-version
+    // cache invalidates and `_render` runs again. With a stable
+    // version, the Node-level cache would return the first paint's
+    // rows verbatim (transmit ANSI included) and the second render
+    // would never go through `transmitOnce` to dedupe.
     const m = markdown(`![pic](${pngPath})`, { width: 40 })
-    const a = (await m.render(ctx(40))).join("\n")
+    const a = (await m.render({ ...ctx(40), version: 1 })).join("\n")
     m.state.content = `![pic](${pngPath}) more`
-    const b = (await m.render(ctx(40))).join("\n")
+    const b = (await m.render({ ...ctx(40), version: 2 })).join("\n")
 
     const transmitRe = /\x1b_Ga=t,/g
     const aTransmits = (a.match(transmitRe) ?? []).length

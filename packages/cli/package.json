@@ -6,15 +6,15 @@
     "type": "git",
     "url": "git+https://github.com/folke/zaly.git"
   },
+  "bin": {
+    "zaly": "./bin/zaly.ts"
+  },
   "files": [
     "src/**/*",
     "bin/**/*",
     "dist/**/*"
   ],
   "type": "module",
-  "bin": {
-    "zaly": "./bin/zaly.ts"
-  },
   "exports": {
     ".": "./src/index.ts",
     "./package.json": "./package.json"

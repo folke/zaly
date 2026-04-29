@@ -58,6 +58,9 @@ Read the [Bun docs](https://bun.com) for details.
 ## Image
 
 ![Apollo 17 — The Blue Marble (NASA, 1972)](${earth})
+
+## Remote image
+![Apolo 17](https://upload.wikimedia.org/wikipedia/commons/0/09/Apollo_17_Full_Earth_photo.jpg)
 `.trim()
 
 function column(title: string, render: RenderMarkdown) {

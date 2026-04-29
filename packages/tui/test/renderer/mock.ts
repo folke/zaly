@@ -33,6 +33,7 @@ export function mockMountCtx(
       open: () => {},
     },
     surface,
+    transmit: () => {},
     ...overrides,
   }
 }

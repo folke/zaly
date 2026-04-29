@@ -44,9 +44,12 @@ Here's a screenshot the agent attached:
 
 ![your wallpaper](/home/folke/.config/wall.png)
 
+
 The markdown renderer pre-renders \`![](…)\` refs and splices the image's
 \`Image\` node rows into the output. Block images (on their own line)
 work best.
+
+And here is an inline ![your wallpaper](/home/folke/.config/wall.png) image.
 `,
 
   `### What the surfaces do
