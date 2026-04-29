@@ -1,0 +1,50 @@
+{
+  "name": "@zaly/cli",
+  "version": "0.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/folke/zaly.git"
+  },
+  "files": [
+    "src/**/*",
+    "bin/**/*",
+    "dist/**/*"
+  ],
+  "type": "module",
+  "bin": {
+    "zaly": "./bin/zaly.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "bin": {
+      "zaly": "./dist/zaly.mjs"
+    },
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    }
+  },
+  "scripts": {
+    "build": "tsdown --cwd ../../ --filter @zaly/cli",
+    "check": "oxlint",
+    "test": "bun test && vitest -r ../../ --project @zaly/cli run"
+  },
+  "dependencies": {
+    "@zaly/agent": "workspace:*",
+    "@zaly/ai": "workspace:*",
+    "@zaly/shared": "workspace:*",
+    "@zaly/tui": "workspace:*"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
+  },
+  "engines": {
+    "bun": ">=1.2",
+    "node": ">=24"
+  }
+}
