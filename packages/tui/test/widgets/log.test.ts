@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { defaultTheme as theme } from "../../src/style/theme.ts"
+import { defaultTheme as theme } from "../../src/themes/index.ts"
 import { log } from "../../src/widgets/log.ts"
 
 const ctx = createCtx({ theme, width: 40 })

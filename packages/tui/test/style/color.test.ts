@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { colorParams } from "../../src/style/color.ts"
-import { defaultTheme } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/themes/index.ts"
 
 describe("colorParams — ANSI base names", () => {
   test("fg", () => {

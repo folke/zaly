@@ -5,6 +5,7 @@
     "shiki": {
       "type": "string",
       "enum": [
+        "red",
         "andromeeda",
         "aurora-x",
         "ayu-dark",
@@ -55,7 +56,6 @@
         "one-light",
         "plastic",
         "poimandres",
-        "red",
         "rose-pine",
         "rose-pine-dawn",
         "rose-pine-moon",
@@ -256,7 +256,7 @@
     "diffLine",
     "diffTitle"
   ],
-  "description": "A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers\nreference slots by key (`fg: \"primary\"` for colors, `borderStyle: \"border\"`\nfor style refs) and the framework resolves through the theme at render time.\n\nBuilt-in themes live as JSON under `assets/themes/`. `moon` is bundled as\na static import for zero-cost default access; load any other theme by\nname via `loadTheme(\"tokyonight-storm\")`.",
+  "description": "A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers\nreference slots by key (`fg: \"primary\"` for colors, `borderStyle: \"border\"`\nfor style refs) and the framework resolves through the theme at render time.\n\nBuilt-in themes live as JSON under `assets/themes/`. `tokyonight-moon` is\nbundled as the default; load any other theme by name via\n`loadTheme(\"tokyonight-storm\")`.",
   "definitions": {
     "Color": {
       "type": "string",
@@ -268,8 +268,8 @@
         {
           "type": "string",
           "enum": [
-            "red",
             "black",
+            "red",
             "green",
             "yellow",
             "blue",
@@ -278,8 +278,8 @@
             "white",
             "gray",
             "grey",
-            "brightRed",
             "brightBlack",
+            "brightRed",
             "brightGreen",
             "brightYellow",
             "brightBlue",
@@ -858,8 +858,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -868,8 +868,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -1454,8 +1454,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -1464,8 +1464,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -2041,8 +2041,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -2051,8 +2051,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",

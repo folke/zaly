@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { defaultTheme } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/themes/index.ts"
 import { Box } from "../../src/widgets/box.ts"
 import { Text } from "../../src/widgets/text.ts"
 

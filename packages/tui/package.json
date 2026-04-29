@@ -25,22 +25,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./themes": "./src/themes/index.ts",
-    "./package.json": "./package.json",
-    "./themes/*": {
-      "bun": "./src/themes/*.ts",
-      "default": "./dist/themes/*.mjs"
-    }
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./themes": "./dist/themes.mjs",
-      "./package.json": "./package.json",
-      "./themes/*": {
-        "bun": "./src/themes/*.ts",
-        "default": "./dist/themes/*.mjs"
-      }
+      "./package.json": "./package.json"
     },
     "imports": {
       "#ansi": "./dist/ansi.mjs",

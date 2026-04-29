@@ -8,7 +8,7 @@ import { createImageCallback } from "../../src/markdown/image.ts"
 import { renderMarkdown } from "#md"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { defaultTheme } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/themes/index.ts"
 
 const ctx = (width = 80) => createCtx({ theme: defaultTheme, width })
 

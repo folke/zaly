@@ -3,13 +3,13 @@ import type { InputRouter } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { Style } from "../style/ansi.ts"
 import type { StyleBuilder } from "../style/builder.ts"
-import type { Theme } from "../style/theme.ts"
+import type { Theme } from "../themes/index.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Node } from "./node.ts"
 import type { Reactive } from "./reactive.ts"
 
 import { style } from "../style/builder.ts"
-import { defaultTheme } from "../style/theme.ts"
+import { defaultTheme } from "../themes/index.ts"
 
 export type { StyleBuilder, Theme }
 

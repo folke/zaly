@@ -1,7 +1,7 @@
 // oxlint-disable unicorn/consistent-function-scoping
 import type { Style } from "./ansi.ts"
 import type { Step } from "./oklch.ts"
-import type { Theme } from "./theme.ts"
+import type { Theme } from "../themes/index.ts"
 
 import { steps as COLOR_STEPS, variant } from "./oklch.ts"
 

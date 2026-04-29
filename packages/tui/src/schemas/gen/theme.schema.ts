@@ -1,4 +1,4 @@
-import type { Theme } from "../../style/theme.ts";
+import type { Theme } from "../../themes/index.ts";
 export const ThemeSchema = {
     version: "3.0",
     components: {
@@ -9,6 +9,7 @@ export const ThemeSchema = {
                     shiki: {
                         type: "string",
                         "enum": [
+                            "red",
                             "andromeeda",
                             "aurora-x",
                             "ayu-dark",
@@ -59,7 +60,6 @@ export const ThemeSchema = {
                             "one-light",
                             "plastic",
                             "poimandres",
-                            "red",
                             "rose-pine",
                             "rose-pine-dawn",
                             "rose-pine-moon",
@@ -260,14 +260,14 @@ export const ThemeSchema = {
                     "diffLine",
                     "diffTitle"
                 ],
-                description: "A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers\nreference slots by key (`fg: \"primary\"` for colors, `borderStyle: \"border\"`\nfor style refs) and the framework resolves through the theme at render time.\n\nBuilt-in themes live as JSON under `assets/themes/`. `moon` is bundled as\na static import for zero-cost default access; load any other theme by\nname via `loadTheme(\"tokyonight-storm\")`."
+                description: "A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers\nreference slots by key (`fg: \"primary\"` for colors, `borderStyle: \"border\"`\nfor style refs) and the framework resolves through the theme at render time.\n\nBuilt-in themes live as JSON under `assets/themes/`. `tokyonight-moon` is\nbundled as the default; load any other theme by name via\n`loadTheme(\"tokyonight-storm\")`."
             },
             Color: {
                 type: "string",
                 pattern: "^((#(.*))|(#(.*)\\x2d100)|(#(.*)\\x2d200)|(#(.*)\\x2d300)|(#(.*)\\x2d400)|(#(.*)\\x2d50)|(#(.*)\\x2d500)|(#(.*)\\x2d600)|(#(.*)\\x2d700)|(#(.*)\\x2d800)|(#(.*)\\x2d900)|(#(.*)\\x2d950)|(shiki\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(fg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(bg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(primary\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(accent\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(dim\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(muted\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(success\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(info\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(warn\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(error\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(title\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(border\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(borderTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(line\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdBold\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdItalic\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdStrikethrough\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading1\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading2\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading3\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading4\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading5\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading6\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCode\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlock\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlockTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHr\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdLink\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListBullet\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListChecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListUnchecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdQuote\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTable\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTableHeader\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuLabel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuHint\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuActive\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(code\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(codeTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffAdd\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffContext\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffDel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffLine\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?))$",
                 "enum": [
-                    "red",
                     "black",
+                    "red",
                     "green",
                     "yellow",
                     "blue",
@@ -276,8 +276,8 @@ export const ThemeSchema = {
                     "white",
                     "gray",
                     "grey",
-                    "brightRed",
                     "brightBlack",
+                    "brightRed",
                     "brightGreen",
                     "brightYellow",
                     "brightBlue",
@@ -848,8 +848,8 @@ export const ThemeSchema = {
                         type: "string",
                         pattern: "^((#(.*))|(#(.*)\\x2d100)|(#(.*)\\x2d200)|(#(.*)\\x2d300)|(#(.*)\\x2d400)|(#(.*)\\x2d50)|(#(.*)\\x2d500)|(#(.*)\\x2d600)|(#(.*)\\x2d700)|(#(.*)\\x2d800)|(#(.*)\\x2d900)|(#(.*)\\x2d950)|(shiki\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(fg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(bg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(primary\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(accent\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(dim\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(muted\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(success\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(info\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(warn\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(error\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(title\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(border\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(borderTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(line\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdBold\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdItalic\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdStrikethrough\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading1\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading2\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading3\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading4\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading5\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading6\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCode\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlock\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlockTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHr\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdLink\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListBullet\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListChecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListUnchecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdQuote\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTable\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTableHeader\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuLabel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuHint\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuActive\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(code\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(codeTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffAdd\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffContext\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffDel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffLine\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?))$",
                         "enum": [
-                            "red",
                             "black",
+                            "red",
                             "green",
                             "yellow",
                             "blue",
@@ -858,8 +858,8 @@ export const ThemeSchema = {
                             "white",
                             "gray",
                             "grey",
-                            "brightRed",
                             "brightBlack",
+                            "brightRed",
                             "brightGreen",
                             "brightYellow",
                             "brightBlue",
@@ -1436,8 +1436,8 @@ export const ThemeSchema = {
                         type: "string",
                         pattern: "^((#(.*))|(#(.*)\\x2d100)|(#(.*)\\x2d200)|(#(.*)\\x2d300)|(#(.*)\\x2d400)|(#(.*)\\x2d50)|(#(.*)\\x2d500)|(#(.*)\\x2d600)|(#(.*)\\x2d700)|(#(.*)\\x2d800)|(#(.*)\\x2d900)|(#(.*)\\x2d950)|(shiki\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(fg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(bg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(primary\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(accent\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(dim\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(muted\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(success\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(info\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(warn\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(error\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(title\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(border\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(borderTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(line\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdBold\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdItalic\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdStrikethrough\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading1\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading2\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading3\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading4\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading5\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading6\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCode\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlock\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlockTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHr\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdLink\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListBullet\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListChecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListUnchecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdQuote\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTable\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTableHeader\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuLabel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuHint\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuActive\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(code\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(codeTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffAdd\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffContext\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffDel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffLine\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?))$",
                         "enum": [
-                            "red",
                             "black",
+                            "red",
                             "green",
                             "yellow",
                             "blue",
@@ -1446,8 +1446,8 @@ export const ThemeSchema = {
                             "white",
                             "gray",
                             "grey",
-                            "brightRed",
                             "brightBlack",
+                            "brightRed",
                             "brightGreen",
                             "brightYellow",
                             "brightBlue",
@@ -2015,8 +2015,8 @@ export const ThemeSchema = {
                         type: "string",
                         pattern: "^((#(.*))|(#(.*)\\x2d100)|(#(.*)\\x2d200)|(#(.*)\\x2d300)|(#(.*)\\x2d400)|(#(.*)\\x2d50)|(#(.*)\\x2d500)|(#(.*)\\x2d600)|(#(.*)\\x2d700)|(#(.*)\\x2d800)|(#(.*)\\x2d900)|(#(.*)\\x2d950)|(shiki\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(fg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(bg\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(primary\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(accent\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(dim\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(muted\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(success\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(info\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(warn\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(error\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(title\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(border\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(borderTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(line\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdBold\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdItalic\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdStrikethrough\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading1\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading2\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading3\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading4\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading5\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHeading6\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCode\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlock\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdCodeBlockTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdHr\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdLink\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListBullet\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListChecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdListUnchecked\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdQuote\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTable\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(mdTableHeader\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuLabel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuHint\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(menuActive\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(code\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(codeTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffAdd\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffContext\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffDel\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffLine\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)|(diffTitle\\/[+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?))$",
                         "enum": [
-                            "red",
                             "black",
+                            "red",
                             "green",
                             "yellow",
                             "blue",
@@ -2025,8 +2025,8 @@ export const ThemeSchema = {
                             "white",
                             "gray",
                             "grey",
-                            "brightRed",
                             "brightBlack",
+                            "brightRed",
                             "brightGreen",
                             "brightYellow",
                             "brightBlue",

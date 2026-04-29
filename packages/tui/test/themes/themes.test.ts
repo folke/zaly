@@ -1,5 +1,3 @@
-import type { ThemeName } from "../../src/themes/index.ts"
-
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -7,8 +5,7 @@ import { fileURLToPath } from "node:url"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/index.ts"
 import { resolveStyle } from "../../src/style/color.ts"
-import { defaultTheme, loadTheme, loadThemeFile } from "../../src/style/theme.ts"
-import { themes } from "../../src/themes/index.ts"
+import { defaultTheme, loadTheme, themeRegistry } from "../../src/themes/index.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.
 const ansi = await loadTheme("ansi")
@@ -93,8 +90,8 @@ describe("theme markdown slots — ansi", () => {
 })
 
 describe("built-in themes — load & validate", () => {
-  // Every bundled theme surfaces via the `themes` async loader map.
-  const names = Object.keys(themes) as ThemeName[]
+  // Every bundled theme surfaces via the registry.
+  const names = themeRegistry.keys()
 
   // `resolveTheme` skips validation for the hot path — built-in
   // theme JSON is dev-controlled, and typia's generated assertions
@@ -124,7 +121,10 @@ describe("built-in themes — load & validate", () => {
 
   for (const name of names) {
     test(`${name} loads and has core slots`, async () => {
-      const theme = await themes[name]()
+      // `loadTheme` (not `themeRegistry.load`) is the public path —
+      // the registry now stores `Partial<Theme>`, so defaults only fill
+      // in once `resolveTheme` runs inside `loadTheme`.
+      const theme = await loadTheme(name)
       expect(theme.primary).toBeDefined()
       expect(theme.border).toBeDefined()
       expect(theme.mdHeading1).toBeDefined()
@@ -158,9 +158,7 @@ describe("validateTheme — positive cases", () => {
   })
 
   test("step variant accepted on hex and slot", () => {
-    expect(() =>
-      validateTheme({ accent: "primary-300", primary: "#ff0000-500" })
-    ).not.toThrow()
+    expect(() => validateTheme({ accent: "primary-300", primary: "#ff0000-500" })).not.toThrow()
   })
 
   test("alpha variant accepted on slot ref", () => {
@@ -200,9 +198,7 @@ describe("validateTheme — negative cases", () => {
   test("color-only slot rejects a Style object", () => {
     // `primary` is one of the Color-typed slots (ColorKeys<Theme>); a
     // Style shape here should trip the isColorKey narrowing.
-    expect(() =>
-      validateTheme({ primary: { bold: true, fg: "red" } as never })
-    ).toThrow()
+    expect(() => validateTheme({ primary: { bold: true, fg: "red" } as never })).toThrow()
   })
 
   test("unknown step number rejected", () => {
@@ -211,15 +207,11 @@ describe("validateTheme — negative cases", () => {
   })
 
   test("invalid fg inside a Style rejected", () => {
-    expect(() =>
-      validateTheme({ title: { bold: true, fg: "not-a-color" } as never })
-    ).toThrow()
+    expect(() => validateTheme({ title: { bold: true, fg: "not-a-color" } as never })).toThrow()
   })
 
   test("invalid bg inside a Style rejected", () => {
-    expect(() =>
-      validateTheme({ title: { fg: "primary", bg: "not-a-color" } as never })
-    ).toThrow()
+    expect(() => validateTheme({ title: { fg: "primary", bg: "not-a-color" } as never })).toThrow()
   })
 
   test("non-string $schema rejected", () => {
@@ -267,17 +259,17 @@ describe("loadTheme", () => {
     afterAll(() => rmSync(dir, { force: true, recursive: true }))
 
     test("user dir resolves a custom theme", async () => {
-      const t = await loadTheme("custom", { dirs: [dir] })
+      const t = await loadTheme({ name: "custom", dirs: [dir] })
       expect(t.primary).toBe("#ff00ff")
     })
 
     test("user dir takes precedence over built-in for same name", async () => {
-      const t = await loadTheme("tokyonight-moon", { dirs: [dir] })
+      const t = await loadTheme({ name: "tokyonight-moon", dirs: [dir] })
       expect(t.primary).toBe("#123456")
     })
 
     test("falls back to built-in when user dirs miss", async () => {
-      const t = await loadTheme("ansi", { dirs: [dir] })
+      const t = await loadTheme({ name: "ansi", dirs: [dir] })
       expect(t.primary).toBe(ansi.primary)
     })
 
@@ -287,7 +279,7 @@ describe("loadTheme", () => {
         join(dir, "broken.json"),
         JSON.stringify({ primary: "not-a-color" }, undefined, 2)
       )
-      await expect(loadTheme("broken", { dirs: [dir] })).rejects.toThrow()
+      await expect(loadTheme({ name: "broken", dirs: [dir] })).rejects.toThrow()
     })
   })
 })
@@ -299,16 +291,14 @@ describe("loadThemeFile", () => {
   // `import.meta.resolve` returns a `file://` URL; convert to a plain
   // fs path so `loadThemeFile` (which uses `readFileSync`) is happy on
   // both Bun and Node.
-  const assetPath = fileURLToPath(
-    import.meta.resolve("../../assets/themes/tokyonight-moon.json"),
-  )
+  const assetPath = fileURLToPath(import.meta.resolve("../../assets/themes/tokyonight-moon.json"))
 
   test("loads a theme directly by path", async () => {
-    const t = await loadThemeFile(assetPath)
+    const t = await loadTheme({ path: assetPath })
     expect(t.primary).toBe(defaultTheme.primary)
   })
 
   test("unknown path throws", async () => {
-    await expect(loadThemeFile("/nope/does-not-exist.json")).rejects.toThrow()
+    await expect(loadTheme({ path: "/nope/does-not-exist.json" })).rejects.toThrow()
   })
 })

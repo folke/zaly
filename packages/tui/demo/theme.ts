@@ -1,5 +1,5 @@
 import { box, createCtx, loadTheme, text } from "@zaly/tui"
-import { themes } from "@zaly/tui/themes"
+import { themeRegistry } from "@zaly/tui/themes"
 
 /**
  * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`
@@ -21,14 +21,12 @@ const PANEL_WIDTH = 25
 // Pull every bundled theme from the async loader map, plus the pure-ansi
 // fallback (not a JSON — loaded via `loadTheme("ansi")`) as a final column
 // so the render shows how palette-only terminals resolve every slot.
-const names: string[] = [...Object.keys(themes), "ansi"]
+const names: string[] = [...themeRegistry.keys(), "ansi"]
 
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })
   for (const name of names.slice(i, i + CHUNK)) {
-    const theme = await (name === "ansi"
-      ? loadTheme("ansi")
-      : themes[name as keyof typeof themes]())
+    const theme = await loadTheme(name)
     const panel = box(
       { bg: theme.bg, border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
       text(({ style }) =>

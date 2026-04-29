@@ -2,7 +2,7 @@ import type { RenderCtx } from "../../src/core/ctx.ts"
 
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { defaultTheme as theme } from "../../src/style/theme.ts"
+import { defaultTheme as theme } from "../../src/themes/index.ts"
 import { diff } from "../../src/widgets/diff.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 80 })

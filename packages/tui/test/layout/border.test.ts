@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { borders, drawBorder, resolveBorder } from "../../src/layout/border.ts"
 import { style } from "../../src/style/builder.ts"
-import { defaultTheme } from "../../src/style/theme.ts"
+import { defaultTheme } from "../../src/themes/index.ts"
 
 describe("borders (presets)", () => {
   test("single preset uses box-drawing glyphs", () => {

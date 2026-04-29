@@ -11,7 +11,7 @@
 
 import { barplot, bench, summary } from "mitata"
 import { createCtx } from "../src/core/ctx.ts"
-import { defaultTheme } from "../src/style/theme.ts"
+import { defaultTheme } from "../src/themes/index.ts"
 import { box, text } from "../src/widgets/index.ts"
 
 const ctx = createCtx({ theme: defaultTheme, width: 80 })
