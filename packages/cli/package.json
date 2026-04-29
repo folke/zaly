@@ -38,7 +38,8 @@
     "@zaly/agent": "workspace:*",
     "@zaly/ai": "workspace:*",
     "@zaly/shared": "workspace:*",
-    "@zaly/tui": "workspace:*"
+    "@zaly/tui": "workspace:*",
+    "pathe": "^2.0.3"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"

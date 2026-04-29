@@ -1,14 +1,23 @@
 import type { Agent } from "@zaly/agent"
-import type { ContentPart, ImagePart, TextPart } from "@zaly/ai"
+import type { Attachment, ContentPart, ImagePart, PdfPart, TextPart } from "@zaly/ai"
 import type { ImageInfo } from "@zaly/shared"
+import type { Input, LogCallable } from "@zaly/tui"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
 
 import { imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
+import { readFile } from "node:fs/promises"
+import { basename } from "pathe"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
 import { buildRenderer } from "./render/index.ts"
+
+/** A staged attachment waiting to be sent. The `part` is what goes to
+ *  the agent, `path` is the on-disk source for stream-side markdown. */
+type StagedAttachment =
+  | { kind: "image"; part: ImagePart; path: string }
+  | { kind: "pdf"; part: PdfPart; path: string }
 
 /**
  * App = the long-lived glue between Agent and Renderer. Keeps state
@@ -20,18 +29,20 @@ export class App {
   readonly #config: Config
   #agent!: Agent
   #render!: RenderHandle
+  #log!: LogCallable
 
   readonly #busy = signal(false)
   readonly #status = signal("ready")
   readonly #model = signal("")
 
-  /** Images pasted into the input since the last submit, keyed by the
-   *  `[Image #n]` index inserted into the text. `part` is the encoded
-   *  payload sent to the agent; `path` is the on-disk source so the
-   *  stream's markdown view can render it inline via `![](path)`.
+  /** Attachments pasted since the last submit, keyed by the
+   *  `[Image #n]` / `[PDF #n]` index inserted into the input text.
+   *  `part` is the encoded payload sent to the agent; `path` is the
+   *  on-disk source so the stream's markdown view can render the
+   *  image inline (`![](path)`) or link the PDF (`[name](path)`).
    *  Cleared on every submit so indices stay small and per-message. */
-  readonly #images = new Map<number, { part: ImagePart; path: string }>()
-  #imageCounter = 0
+  readonly #attachments = new Map<number, StagedAttachment>()
+  #attachCounter = 0
 
   constructor(config: Config) {
     this.#config = config
@@ -53,6 +64,8 @@ export class App {
       model: this.#model[0],
       status: this.#status[0],
     })
+
+    this.#log = this.#render.renderer.log
 
     registerActions({
       agent: this.#agent,
@@ -78,52 +91,87 @@ export class App {
       void this.#submit(trimmed)
     })
 
-    // Image paste: reserve a `[Image #n]` placeholder in the input
-    // value at the cursor; on submit we'll swap placeholders for
-    // markdown image refs (so they render inline) and attach the
-    // ImagePart to the agent's message alongside the raw text.
+    // Paste flow: reserve a `[Image #n]` / `[PDF #n]` placeholder in
+    // the input at the cursor; on submit we'll swap placeholders for
+    // markdown refs (rendered inline) and ship the encoded part to
+    // the agent alongside the text. When the active model can't take
+    // that modality — or the file is something other than an image
+    // or PDF — paste the bare path as text so the user can keep
+    // editing and decide what to do with it.
     this.#render.input.on("attach", ({ attachment: att }, self) => {
-      if (att.kind !== "image" && !att.type.startsWith("image/")) return
-      void (async () => {
-        const info = await imageInfo(att.path)
-        if (!info) return
-        const ready = await imageConvert(info, ["png", "jpeg", "webp"])
-        if (!ready) return
-        const idx = ++this.#imageCounter
-        this.#images.set(idx, { part: toImagePart(ready), path: att.path })
-        const tag = `[Image #${idx}]`
-        const v = self.state.value ?? ""
-        const c = self.state.cursor ?? 0
-        self.setState({
-          cursor: c + tag.length,
-          value: v.slice(0, c) + tag + v.slice(c),
-        })
-      })()
+      void this.#stageAttachment(att, self)
     })
   }
 
+  async #stageAttachment(
+    att: { kind: "image" | "file"; path: string; type: string },
+    input: Input
+  ): Promise<void> {
+    const isImage = att.kind === "image" || att.type.startsWith("image/")
+    const isPdf =
+      att.kind === "file" &&
+      (att.type === "application/pdf" || att.path.toLowerCase().endsWith(".pdf"))
+
+    if (isImage && this.#agent.model.canAttach("image")) {
+      const info = await imageInfo(att.path)
+      if (!info) {
+        this.#log.error(`couldn't read image \`${att.path}\``)
+        return insertAtCursor(input, att.path)
+      }
+      const ready = await imageConvert(info, ["png", "jpeg", "webp"])
+      if (!ready) {
+        this.#log.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)
+        return insertAtCursor(input, att.path)
+      }
+      const idx = ++this.#attachCounter
+      this.#attachments.set(idx, { kind: "image", part: toImagePart(ready), path: att.path })
+      insertAtCursor(input, `[Image #${idx}]`)
+      return
+    }
+
+    if (isPdf && this.#agent.model.canAttach("pdf")) {
+      const data = await readFile(att.path).catch((error: unknown) => {
+        this.#log.error(`couldn't read **PDF** \`${att.path}\`: ${(error as Error).message}`)
+        return undefined
+      })
+      if (!data) return insertAtCursor(input, att.path)
+      const idx = ++this.#attachCounter
+      this.#attachments.set(idx, { kind: "pdf", part: toPdfPart(data), path: att.path })
+      insertAtCursor(input, `[PDF #${idx}]`)
+      return
+    }
+
+    // Unsupported modality, unknown file kind, or model doesn't accept
+    // attachments of this type — surface the path as plain text so the
+    // user can keep typing or remove it.
+    insertAtCursor(input, att.path)
+  }
+
   async #submit(text: string): Promise<void> {
-    // Collect images referenced in the text in input order. Pastes
-    // the user deleted before submit are silently dropped.
-    const re = /\[Image #(\d+)\]/g
-    const referenced: ImagePart[] = []
+    // Collect referenced attachments in document order. Pastes the
+    // user deleted before submit are silently dropped.
+    const re = /\[(Image|PDF) #(\d+)\]/g
+    const referenced: Attachment[] = []
     for (const m of text.matchAll(re)) {
-      const entry = this.#images.get(Number(m[1]))
+      const entry = this.#attachments.get(Number(m[2]))
       if (entry) referenced.push(entry.part)
     }
 
-    // Stream display: swap placeholders for markdown image refs on
-    // their own line. The markdown widget only renders an image as a
-    // block (real picture rows) when the `![](…)` reference sits alone
-    // on a line — inline refs fall back to alt text. Padding with blank
-    // lines triggers block render.
+    // Stream display: swap placeholders for markdown refs on their
+    // own line. The markdown widget only renders an image as a block
+    // (real picture rows) when the `![](…)` reference sits alone on
+    // a line — inline refs fall back to alt text. Padding with blank
+    // lines triggers block render. PDFs become regular markdown
+    // links so the user sees a clickable filename in the transcript.
     //
-    // The agent gets the raw text (with `[Image #n]` placeholders)
-    // plus the ImageParts as separate content entries — the model
-    // correlates them via the literal placeholder.
-    const display = text.replace(re, (whole, n) => {
-      const entry = this.#images.get(Number(n))
-      return entry ? `\n\n![](${entry.path})\n\n` : whole
+    // The agent gets the raw text (with `[Image #n]` / `[PDF #n]`
+    // placeholders) plus the encoded parts as separate content
+    // entries — the model correlates them via the literal placeholder.
+    const display = text.replace(re, (whole, _kind, n) => {
+      const entry = this.#attachments.get(Number(n))
+      if (!entry) return whole
+      if (entry.kind === "image") return `\n\n![](${entry.path})\n\n`
+      return `\n\n[${basename(entry.path)}](${entry.path})\n\n`
     })
     this.#render.stream.pushUser(display)
 
@@ -135,8 +183,8 @@ export class App {
             role: "user" as const,
           }
 
-    this.#images.clear()
-    this.#imageCounter = 0
+    this.#attachments.clear()
+    this.#attachCounter = 0
     this.#busy[1](true)
     this.#status[1]("thinking")
     this.#agent.inject(message)
@@ -163,4 +211,20 @@ function toImagePart(img: ImageInfo<"jpeg" | "webp" | "png">): ImagePart {
     source: { data: Buffer.from(img.data).toString("base64"), type: "base64" },
     type: "image",
   }
+}
+
+/** Wrap PDF bytes as a `PdfPart` for an agent message. */
+function toPdfPart(data: Uint8Array): PdfPart {
+  return {
+    mime: "application/pdf",
+    source: { data: Buffer.from(data).toString("base64"), type: "base64" },
+    type: "pdf",
+  }
+}
+
+/** Insert `s` at the input's current cursor and advance the cursor. */
+function insertAtCursor(input: Input, s: string): void {
+  const v = input.state.value ?? ""
+  const c = input.state.cursor ?? 0
+  input.setState({ cursor: c + s.length, value: v.slice(0, c) + s + v.slice(c) })
 }

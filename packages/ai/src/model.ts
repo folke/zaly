@@ -8,7 +8,7 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/index.ts"
-import type { Cost, ModelSpec, ProviderOptions } from "./types.ts"
+import type { Cost, Modality, ModelSpec, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
@@ -44,6 +44,11 @@ export class Model<T extends AnyProvider = string> {
       quirks: this.spec.quirks,
     })
     return this.spec.cost ? this.#augment(inner) : inner
+  }
+
+  canAttach(modality: Modality): boolean {
+    if (!this.spec.attachment) return false
+    return this.spec.modalities.input.includes(modality)
   }
 
   /** Wrap a provider's stream so the `finish` event's `usage` carries
