@@ -20595,7 +20595,11 @@
       "open_weights": false,
       "cost": {
         "input": 30,
-        "output": 180
+        "output": 180,
+        "context_over_200k": {
+          "input": 60,
+          "output": 270
+        }
       },
       "limit": {
         "context": 1050000,
@@ -31735,6 +31739,297 @@
       "provider": "openai",
       "baseUrl": "https://zenmux.ai/api/v1"
     },
+    "zenmux/deepseek/deepseek-v4-flash": {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/deepseek/deepseek-v4-pro": {
+      "id": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/tencent/hy3-preview": {
+      "id": "tencent/hy3-preview",
+      "name": "Hy3 preview",
+      "family": "Hy",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.172,
+        "output": 0.572,
+        "cache_read": 0.058,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 256000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/openai/gpt-5.5": {
+      "id": "openai/gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 12.5,
+              "output": 75,
+              "cache_read": 1.25
+            },
+            "provider": {
+              "body": {
+                "service_tier": "priority"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/openai/gpt-5.5-pro": {
+      "id": "openai/gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180,
+        "context_over_200k": {
+          "input": 60,
+          "output": 270
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/xiaomi/mimo-v2.5-pro": {
+      "id": "xiaomi/mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/xiaomi/mimo-v2.5": {
+      "id": "xiaomi/mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08,
+        "context_over_200k": {
+          "input": 0.8,
+          "output": 4,
+          "cache_read": 0.16
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
     "upstage/solar-pro2": {
       "id": "solar-pro2",
       "name": "solar-pro2",
@@ -34688,6 +34983,43 @@
         "output": 196608
       },
       "maxTokens": 196608,
+      "provider": "openai",
+      "baseUrl": "https://api.inference.wandb.ai/v1"
+    },
+    "wandb/zai-org/GLM-5.1": {
+      "id": "zai-org/GLM-5.1",
+      "name": "GLM-5.1",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-27",
+      "last_updated": "2026-03-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0.26,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 200000,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://api.inference.wandb.ai/v1"
     },
@@ -59049,6 +59381,45 @@
       "provider": "openai",
       "baseUrl": "https://api.z.ai/api/coding/paas/v4"
     },
+    "zai-coding-plan/glm-5v-turbo": {
+      "id": "glm-5v-turbo",
+      "name": "glm-5v-turbo",
+      "family": "glm",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-01",
+      "last_updated": "2026-04-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 200000,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.z.ai/api/coding/paas/v4"
+    },
     "the-grid-ai/text-prime": {
       "id": "text-prime",
       "name": "Text Prime",
@@ -68255,7 +68626,11 @@
       "open_weights": false,
       "cost": {
         "input": 30,
-        "output": 180
+        "output": 180,
+        "context_over_200k": {
+          "input": 60,
+          "output": 270
+        }
       },
       "limit": {
         "context": 1050000,
