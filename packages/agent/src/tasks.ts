@@ -12,7 +12,7 @@ import type {
 } from "@zaly/ai"
 
 import { formatToolError, isStreamable, runTool, stringifyContent, ToolError } from "@zaly/ai"
-import { Emitter } from "./events.ts"
+import { Emitter } from "@zaly/shared"
 import { uuidv7 } from "./utils/uuid.ts"
 
 const DEFAULT_GRACE_MS = 10_000
@@ -167,9 +167,7 @@ export class Tasks extends Emitter<TasksEvents> {
 
   /** Snapshot of every active task (pending or running). */
   running(): readonly TaskInfo[] {
-    return [...this.#map.values()]
-      .filter((t) => t.status !== "done")
-      .map((t) => toTaskInfo(t))
+    return [...this.#map.values()].filter((t) => t.status !== "done").map((t) => toTaskInfo(t))
   }
 
   /** Snapshot of every task that has completed. Drops are by `remove()`
@@ -346,8 +344,7 @@ export class Tasks extends Emitter<TasksEvents> {
       // extras (skill tool, future system tools). Keeps Tasks's own
       // tool registry decoupled from agent-level extras.
       const tool =
-        this.#tools.find((t) => t.name === call.name) ??
-        extra.find((t) => t.name === call.name)
+        this.#tools.find((t) => t.name === call.name) ?? extra.find((t) => t.name === call.name)
       if (!tool) {
         tasks.push(this.#startSyncResult(call, unknownToolResult(call.name), round))
         continue
@@ -735,10 +732,14 @@ function toTaskInfo(task: InternalTask): TaskInfo {
     desc,
     durationMs: ms,
     id,
-    result: task.result ?? formatToolError(new ToolError({
-      code: "INTERNAL",
-      message: `task "${task.id}" completed without a result`,
-    })),
+    result:
+      task.result ??
+      formatToolError(
+        new ToolError({
+          code: "INTERNAL",
+          message: `task "${task.id}" completed without a result`,
+        })
+      ),
     status,
     type,
   }
@@ -766,9 +767,7 @@ function toTaskInfo(task: InternalTask): TaskInfo {
  *  there. */
 function formatTaskCompletion(task: DoneTaskInfo): (TextPart | MetaPart)[] {
   const { result, ...header } = task
-  const parts: (TextPart | MetaPart)[] = [
-    { data: header, tag: "task", type: "meta" },
-  ]
+  const parts: (TextPart | MetaPart)[] = [{ data: header, tag: "task", type: "meta" }]
   const bodyText = stringifyContent(result.content)
   if (bodyText !== "") parts.push({ text: bodyText, type: "text" })
   return parts

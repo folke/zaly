@@ -1,5 +1,5 @@
 import type { Streamable, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Envelope } from "../src/events.ts"
+import type { Envelope } from "@zaly/shared"
 import type { DoneTaskInfo, TasksEvents } from "../src/tasks.ts"
 
 import { defineTool, ToolError } from "@zaly/ai"

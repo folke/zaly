@@ -1,7 +1,7 @@
 import type { AgentStatus } from "../src/events.ts"
 
+import { Emitter } from "@zaly/shared"
 import { describe, expect, test } from "vitest"
-import { Emitter } from "../src/events.ts"
 
 type FakeEvents = {
   status: { status: AgentStatus }

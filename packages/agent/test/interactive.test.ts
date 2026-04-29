@@ -1,5 +1,6 @@
 import type { Message, StreamEvent } from "@zaly/ai"
-import type { AgentEvents, AgentStopReason, Envelope } from "../src/events.ts"
+import type { Envelope } from "@zaly/shared"
+import type { AgentEvents, AgentStopReason } from "../src/events.ts"
 
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"

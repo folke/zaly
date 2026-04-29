@@ -1,5 +1,6 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
-import type { AgentEvents, AgentStopReason, Emitter, Envelope } from "./events.ts"
+import type { Emitter, Envelope } from "@zaly/shared"
+import type { AgentEvents, AgentStopReason } from "./events.ts"
 
 import { safeStringify } from "@zaly/shared"
 import { addUsage } from "./utils/index.ts"
