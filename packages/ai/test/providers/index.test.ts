@@ -1,7 +1,10 @@
 import type { Provider } from "../../src/provider.ts"
 
 import { describe, expect, test } from "vitest"
-import { loadProvider, registerProvider } from "../../src/providers/index.ts"
+import { providerRegistry } from "../../src/providers/index.ts"
+
+const loadProvider = providerRegistry.load.bind(providerRegistry)
+const registerProvider = providerRegistry.register.bind(providerRegistry)
 
 const fakeProvider = (id: string): Provider => ({
   id,
@@ -51,9 +54,7 @@ describe("loadProvider — custom registrations", () => {
 })
 
 describe("loadProvider — unknown adapter", () => {
-  test("throws with a list of registered names", async () => {
-    await expect(loadProvider("__definitely_not_a_provider__", {})).rejects.toThrow(
-      /Unknown adapter/
-    )
+  test("throws with a list of registered names", () => {
+    expect(() => loadProvider("__definitely_not_a_provider__", {})).toThrow(/Unknown provider/)
   })
 })

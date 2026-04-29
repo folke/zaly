@@ -1,6 +1,8 @@
 import type { Provider } from "../provider.ts"
 import type { ProviderOptions } from "../types.ts"
 
+import { createRegistry } from "@zaly/shared"
+
 export type ProviderLoader<T extends string = string> = (
   opts: ProviderOptions
 ) => Promise<Provider<T>>
@@ -17,41 +19,6 @@ export const providers = {
 export type BuiltinProvider = keyof typeof providers
 export type AnyProvider = BuiltinProvider | (string & {})
 
-/** Runtime-registered adapters. Parallel with `customModels` /
- *  `addModels`: lets third-party packages register their own adapter
- *  families without recompiling the core. Registrations take
- *  precedence over built-ins with the same name, so a user can also
- *  swap in a customised drop-in replacement (e.g. a proxied
- *  `createOpenAI` with extra instrumentation). */
-const customProviders = new Map<string, ProviderLoader>()
-
-/** Register an adapter at runtime. Idempotent per key — calling twice
- *  with the same name replaces the previous entry. Typed generically
- *  so the loader's `Provider<T>` return narrows to the caller's
- *  specified id string:
- *
- *  ```ts
- *  registerAdapter("my-proxy", async (opts) => ({
- *    id: "my-proxy",
- *    async *stream(req) { … },
- *  }))
- *  ```
- */
-export function registerProvider<T extends string>(name: T, loader: ProviderLoader<T>): void {
-  customProviders.set(name, loader as ProviderLoader)
-}
-
-/** Resolve an adapter by name. Custom registrations win over
- *  built-ins; unknown names throw with the current registry listing
- *  for debuggability. */
-export async function loadProvider<T extends AnyProvider>(
-  name: T,
-  opts: ProviderOptions
-): Promise<Provider<T>> {
-  const custom = customProviders.get(name)
-  if (custom !== undefined) return (await custom(opts)) as Provider<T>
-  const builtin = providers[name as BuiltinProvider] as ProviderLoader | undefined
-  if (builtin !== undefined) return (await builtin(opts)) as Provider<T>
-  const known = [...customProviders.keys(), ...Object.keys(providers)].toSorted().join(", ")
-  throw new Error(`Unknown adapter "${name}". Registered: ${known}.`)
-}
+export const providerRegistry = createRegistry<Promise<Provider>, ProviderOptions>("provider").from(
+  providers
+)

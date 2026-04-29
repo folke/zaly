@@ -12,7 +12,7 @@ import type { Cost, ModelSpec, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
 import { getModel } from "./models.ts"
-import { loadProvider } from "./providers/index.ts"
+import { providerRegistry } from "./providers/index.ts"
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -89,7 +89,7 @@ export async function loadModel(
   }
   const spec: ModelSpec = { ...base, ...overrides }
   const creds = await auth.getAuth(spec)
-  const provider = await loadProvider(spec.provider, {
+  const provider = await providerRegistry.load(spec.provider, {
     ...spec,
     apiKey: spec.apiKey ?? creds?.apiKey,
     headers: { ...creds?.headers, ...spec.headers },
