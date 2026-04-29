@@ -2,9 +2,10 @@ export type * from "./types.ts"
 export type { PermissionOptions } from "./manager.ts"
 export type { PermissionPresetName, PermissionPreset } from "./presets.ts"
 
-export { registerHandler } from "./handlers/index.ts"
+export { handlerRegistry } from "./handlers/index.ts"
 export type {
-  PermissionHandlers,
+  AnyScope,
+  BuiltinScope,
   PermissionScope,
   PermissionScopes,
 } from "./handlers/index.ts"

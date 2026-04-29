@@ -2,7 +2,7 @@ import type { PermissionPresetName } from "./presets.ts"
 import type { CheckResult, Rule, Verdict } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
-import { getHandler, registerHandler } from "./handlers/index.ts"
+import { handlerRegistry } from "./handlers/index.ts"
 import { permissionPresets } from "./presets.ts"
 
 export type PermissionOptions = {
@@ -51,7 +51,7 @@ export class PermissionManager {
   }
 
   /** Pass-through to the module-scoped handler registry. */
-  register = registerHandler
+  register = handlerRegistry.register.bind(handlerRegistry)
 
   // ── Workspaces ──────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ export class PermissionManager {
    *  errors (typos, unknown scopes, malformed pattern strings). The TUI
    *  can render these as a startup warning. */
   get invalidRules(): readonly Rule[] {
-    return this.#rules.filter((r) => !getHandler(r.scope))
+    return this.#rules.filter((r) => !handlerRegistry.has(r.scope))
   }
 
   addRule(rule: Rule): void {
@@ -90,8 +90,10 @@ export class PermissionManager {
   // ── Dispatch ────────────────────────────────────────────────────────
 
   validate(scope: string, input: string): CheckResult {
-    const handler = getHandler(scope)
-    if (!handler) throw new Error(`no permission handler registered for scope "${scope}"`)
+    if (!handlerRegistry.has(scope)) {
+      throw new Error(`no permission handler registered for scope "${scope}"`)
+    }
+    const handler = handlerRegistry.load(scope)
     const rules = this.#rules.filter((r) => r.scope === scope)
     return handler.validate(input, {
       cwd: this.cwd,
