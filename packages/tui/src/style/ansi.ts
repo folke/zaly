@@ -1,5 +1,5 @@
-import type { Color } from "./color.ts"
 import type { Theme } from "../themes/index.ts"
+import type { Color } from "./color.ts"
 
 import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
 import { colorParams } from "./color.ts"
@@ -10,6 +10,11 @@ export interface WrapOpts {
   mode?: "word" | "char"
 }
 
+// ---- ANSI escape categories -------------------------------------------
+const OSC_RE = /\x1b\][\s\S]*?(?:\x1b\\|\x07)/g
+const CSI_RE = /\x1b\[[\d;?]*[a-zA-Z]/g
+const APC_RE = /\u001B_[\s\S]*?\u001B\\/g
+
 // ---- APC-aware text primitives ----------------------------------------
 //
 // APC (Application Program Command) escapes — `ESC _ ... ESC \` — are
@@ -18,8 +23,6 @@ export interface WrapOpts {
 // visible width and must survive layout operations without being
 // truncated. The runtime shims below hand over to the Bun/Node
 // primitives with APCs extracted first and re-prepended after.
-
-const APC_RE = /\u001B_[\s\S]*?\u001B\\/g
 
 function extractApc(s: string): { apc: string; rest: string } {
   if (!s.includes("\u001B_")) return { apc: "", rest: s }
@@ -35,6 +38,18 @@ function extractApc(s: string): { apc: string; rest: string } {
  *  measuring. */
 export function stringWidth(s: string): number {
   return _stringWidth(extractApc(s).rest)
+}
+
+/** Strip terminal control sequences from `s`, leaving plain text.
+ *  Removes:
+ *    - SGR / CSI: `ESC [ ... <letter>` (color, cursor moves, etc.)
+ *    - OSC: `ESC ] ... ST` or `ESC ] ... BEL` (hyperlinks, titles)
+ *    - APC: `ESC _ ... ST` (KGP image transmits / placements)
+ *
+ *  Useful for emptiness checks, plain-text logging, and any context
+ *  where decorative ANSI mustn't influence the result. */
+export function stripAnsi(s: string): string {
+  return s.replace(APC_RE, "").replace(OSC_RE, "").replace(CSI_RE, "")
 }
 
 /** Cell-aware substring preserving SGR state. APC escapes are re-
