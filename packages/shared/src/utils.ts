@@ -70,3 +70,12 @@ export function prettyPath(path: string) {
   rel = rel.startsWith("..") ? (reverseResolveAlias(path, { "~": homedir() })[0] ?? path) : rel
   return rel
 }
+
+export function withError<T>(fn: () => T, errorMsg: string): T {
+  try {
+    return fn()
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    throw new Error(`${errorMsg}: ${msg}`, { cause: error })
+  }
+}
