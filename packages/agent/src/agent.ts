@@ -1,6 +1,6 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
-import type { AgentEvent, AgentStatus, AgentStopReason } from "./events.ts"
+import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
 import { collect, isContextOverflow, ToolError } from "@zaly/ai"
@@ -33,7 +33,7 @@ import { uuidv7 } from "./utils/uuid.ts"
  * Headless / one-shot use is just a thin wrapper on top — see
  * `runAgent` in the test helpers.
  */
-export class Agent extends Emitter<AgentEvent> {
+export class Agent extends Emitter<AgentEvents> {
   readonly #opts: AgentInit
   readonly #stopPolicy: StopPolicy
   readonly #permissions: PermissionManager
@@ -405,7 +405,7 @@ export class Agent extends Emitter<AgentEvent> {
     )
     return await collect(stream, {
       onEvent: (event) => {
-        this.emit({ event, type: "stream-event" })
+        this.emit("stream-event", { event })
         void this.#opts.onEvent?.(event)
       },
       onUpdate: this.#opts.onUpdate,
@@ -470,7 +470,7 @@ export class Agent extends Emitter<AgentEvent> {
 
   async #runTools(calls: ToolCallPart[]) {
     this.#setStatus("running-tools")
-    for (const call of calls) this.emit({ call, type: "tool-call" })
+    for (const call of calls) this.emit("tool-call", { call })
 
     // The whole batch — including streamable promotion, parallel chains,
     // grace timing, and ownerRound suppression — lives in Tasks.run().
@@ -484,7 +484,7 @@ export class Agent extends Emitter<AgentEvent> {
 
     for (let i = 0; i < calls.length; i++) {
       const part = resultParts[i]
-      this.emit({
+      this.emit("tool-result", {
         call: calls[i],
         result: {
           content: part.content,
@@ -492,7 +492,6 @@ export class Agent extends Emitter<AgentEvent> {
           isError: part.isError ?? false,
           meta: part.meta,
         },
-        type: "tool-result",
       })
     }
     const message: Message<"tool"> = { content: resultParts, role: "tool" }
@@ -545,7 +544,7 @@ export class Agent extends Emitter<AgentEvent> {
       if (this.#pauseRequested) return this.#stop("paused")
 
       const outcome = await this.step()
-      this.emit({ outcome: outcome.kind, type: "step-end" })
+      this.emit("step-end", { outcome: outcome.kind })
 
       if (outcome.kind === "error") {
         this.#lastError = outcome.error
@@ -586,7 +585,7 @@ export class Agent extends Emitter<AgentEvent> {
   #stop(reason: AgentStopReason): AgentStopReason {
     this.#lastStopReason = reason
     this.#setStatus(reason === "natural" ? "idle" : "paused")
-    this.emit({ reason, type: "stop", usage: this.usage })
+    this.emit("stop", { reason, usage: this.usage })
     return reason
   }
 
@@ -655,6 +654,6 @@ export class Agent extends Emitter<AgentEvent> {
       this.#cancelAllWakeups()
     }
     this.#status = status
-    this.emit({ status, type: "status" })
+    this.emit("status", { status })
   }
 }

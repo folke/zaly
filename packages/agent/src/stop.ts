@@ -1,5 +1,5 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
-import type { AgentEvent, AgentStopReason, Emitter } from "./events.ts"
+import type { AgentEvents, AgentStopReason, Emitter, Envelope } from "./events.ts"
 
 import { safeStringify } from "@zaly/shared"
 import { addUsage } from "./utils/index.ts"
@@ -83,14 +83,20 @@ export class StopPolicy {
 
   // ── Wiring ────────────────────────────────────────────────────────────
 
-  /** Subscribe to an emitter. Returns the unsubscribe function. */
-  attach(emitter: Emitter<AgentEvent>) {
-    return emitter.on((event) => this.handle(event))
+  /** Subscribe to an emitter. To detach later, register the listener
+   *  yourself and pass the same fn to `emitter.off(fn)`:
+   *
+   *    const handler = (e) => policy.handle(e)
+   *    emitter.all(handler)
+   *    // later:
+   *    emitter.off(handler) */
+  attach(emitter: Emitter<AgentEvents>): void {
+    emitter.all((event) => this.handle(event))
   }
 
   /** Feed a single event into the policy. Public so custom drivers
    *  can drive it without going through `attach`. */
-  handle(event: AgentEvent): void {
+  handle(event: Envelope<AgentEvents>): void {
     switch (event.type) {
       case "step-end": {
         this.#steps++
@@ -111,7 +117,7 @@ export class StopPolicy {
         }
         break
       }
-      // status / message / replace / stop — no policy state to update.
+      // status / stop — no policy state to update.
     }
   }
 

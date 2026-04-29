@@ -47,9 +47,10 @@ export interface MessageMeta {
 
 /** Events a `Session` emits when its state changes. Subscribers fire
  *  synchronously; throws are routed to `onEmitError`. */
-export type SessionEvent =
-  | { type: "node"; node: SessionNode }
-  | { type: "navigate"; head: string | undefined; messages: readonly Message[] }
+export type SessionEvents = {
+  node: { node: SessionNode }
+  navigate: { head: string | undefined; messages: readonly Message[] }
+}
 
 // ── Session ──────────────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ export interface SessionStart {
  *   - The constructor is `protected` so subclasses (test doubles) can
  *     still extend `Session`, but production code goes through `load`.
  */
-export class Session extends Emitter<SessionEvent> {
+export class Session extends Emitter<SessionEvents> {
   readonly #nodes = new Map<string, SessionNode>()
   #head?: string
   #messages: Message[] = []
@@ -249,7 +250,7 @@ export class Session extends Emitter<SessionEvent> {
     }
     this.#head = uuid
     this.#messages = this.#chain(uuid, { active: true })
-    this.emit({ head: uuid, messages: this.#messages, type: "navigate" })
+    this.emit("navigate", { head: uuid, messages: this.#messages })
   }
 
   /** Pre-active history of the current chain — messages from before
@@ -285,7 +286,7 @@ export class Session extends Emitter<SessionEvent> {
     if (node.type === "message") this.#messages.push(node.message)
     else if (node.type === "compact") this.#messages = []
     this.#writer?.write(`${JSON.stringify(node)}\n`)
-    this.emit({ node, type: "node" })
+    this.emit("node", { node })
     return node.uuid
   }
 

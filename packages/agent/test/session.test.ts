@@ -1,5 +1,5 @@
 import type { Message } from "@zaly/ai"
-import type { SessionEvent, SessionNode } from "../src/session/index.ts"
+import type { SessionEvents, SessionNode } from "../src/session/index.ts"
 
 import { describe, expect, test } from "vitest"
 import { Session } from "../src/session/index.ts"
@@ -153,7 +153,7 @@ describe("Session — navigate", () => {
       if (node.type === "message") messageIds.push(uuid)
     }
     const bUuid = messageIds[1] // chain: a → b → c; navigate to b
-    let captured: Extract<SessionEvent, { type: "navigate" }> | undefined
+    let captured: SessionEvents["navigate"] | undefined
     s.on("navigate", (e) => {
       captured = e
     })

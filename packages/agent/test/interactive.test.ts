@@ -1,5 +1,5 @@
 import type { Message, StreamEvent } from "@zaly/ai"
-import type { AgentEvent, AgentStopReason } from "../src/events.ts"
+import type { AgentEvents, AgentStopReason, Envelope } from "../src/events.ts"
 
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
@@ -186,12 +186,12 @@ describe("Agent — compact callback", () => {
 
 describe("Agent — emitted events", () => {
   test("emits status / stream-event / step-end / stop in order on a single turn", async () => {
-    const seen: AgentEvent["type"][] = []
+    const seen: Envelope<AgentEvents>["type"][] = []
     const agent = await Agent.load({
       messages: [{ content: "go", role: "user" }],
       model: mockModel([okStop()]),
     })
-    agent.on((e) => seen.push(e.type))
+    agent.all((e) => seen.push(e.type))
     await agent.run()
 
     // Expect at least: streaming → stream-event → text-delta + finish → step-end → stop

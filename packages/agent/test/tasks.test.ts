@@ -1,5 +1,6 @@
 import type { Streamable, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { DoneTaskInfo, TasksEvent } from "../src/tasks.ts"
+import type { Envelope } from "../src/events.ts"
+import type { DoneTaskInfo, TasksEvents } from "../src/tasks.ts"
 
 import { defineTool, ToolError } from "@zaly/ai"
 import { Type } from "typebox"
@@ -171,8 +172,8 @@ describe("Tasks.run — streamable within grace", () => {
     const ctrl = makeStreamable()
     tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
 
     const runP = tasks.run([callOf("stream")], {})
     await flush()
@@ -193,8 +194,8 @@ describe("Tasks.run — streamable exceeds grace", () => {
     const ctrl = makeStreamable()
     tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
 
     const parts = await tasks.run([callOf("stream")], {})
 
@@ -264,8 +265,8 @@ describe("Tasks.run — chain", () => {
       streamableTool({ name: "second", parallel: false, produce: () => b.streamable }),
     ]
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
 
     await tasks.run([callOf("first"), callOf("second")], {})
     a.finish({ content: "ok" })
@@ -377,8 +378,8 @@ describe("Tasks — public registry", () => {
     await tasks.run([callOf("sync", { value: "x" })], {})
     const id = tasks.finished()[0].id
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
     expect(tasks.remove(id)).toBe(true)
     expect(tasks.remove(id)).toBe(false)
     expect(events.some((e) => e.type === "task-removed")).toBe(true)
@@ -525,8 +526,8 @@ describe("Tasks.done direct", () => {
     const ctrl = makeStreamable()
     tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
 
     await tasks.run([callOf("stream")], {})
     // After the round, ownership is released. Settling now fires task-done.
@@ -549,8 +550,8 @@ describe("Tasks.heartbeatMs", () => {
     const ctrl = makeStreamable()
     tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
 
-    const events: TasksEvent[] = []
-    tasks.on((event) => events.push(event))
+    const events: Envelope<TasksEvents>[] = []
+    tasks.all((event) => events.push(event))
 
     await tasks.run([callOf("stream")], {})
     await sleep(80)

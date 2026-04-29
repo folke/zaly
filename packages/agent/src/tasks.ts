@@ -57,11 +57,12 @@ export type DoneTaskInfo = Extract<TaskInfo, { status: "done" }>
  *  instead. `heartbeat` fires periodically (when `heartbeatMs` is set
  *  and at least one task is active), giving the agent a hook to keep
  *  the model engaged on long-running work. */
-export type TasksEvent =
-  | { type: "task-added"; task: TaskInfo }
-  | { type: "task-removed"; task: TaskInfo }
-  | { type: "task-done"; task: DoneTaskInfo }
-  | { type: "heartbeat"; running: readonly TaskInfo[] }
+export type TasksEvents = {
+  "task-added": { task: TaskInfo }
+  "task-removed": { task: TaskInfo }
+  "task-done": { task: DoneTaskInfo }
+  heartbeat: { running: readonly TaskInfo[] }
+}
 
 /** Augment ToolMeta so tools and consumers can read freshness/state info
  *  off `ToolResultPart.meta.task`. The registry stamps this on every
@@ -133,7 +134,7 @@ interface InternalTask {
  * NOT fire `task-done`. Completions afterward fire normally — the agent
  * listens and injects a system message into the next step.
  */
-export class Tasks extends Emitter<TasksEvent> {
+export class Tasks extends Emitter<TasksEvents> {
   readonly #map = new Map<string, InternalTask>()
   #tools: Tool[] = []
   graceMs = DEFAULT_GRACE_MS
@@ -242,7 +243,7 @@ export class Tasks extends Emitter<TasksEvent> {
     const task = this.#map.get(id)
     if (!task) return false
     this.#map.delete(id)
-    this.emit({ task: toTaskInfo(task), type: "task-removed" })
+    this.emit("task-removed", { task: toTaskInfo(task) })
     return true
   }
 
@@ -258,7 +259,7 @@ export class Tasks extends Emitter<TasksEvent> {
     task.finishedAt = Date.now()
     task.resolveDone()
     if (!task.ownerRound) {
-      this.emit({ task: toTaskInfo(task) as DoneTaskInfo, type: "task-done" })
+      this.emit("task-done", { task: toTaskInfo(task) as DoneTaskInfo })
     }
     this.#startReadyDependents(id, result)
     this.#syncHeartbeat()
@@ -307,7 +308,7 @@ export class Tasks extends Emitter<TasksEvent> {
     const want = hasActive && this.#heartbeatMs !== undefined
     if (want && !this.#heartbeatTimer) {
       this.#heartbeatTimer = setInterval(() => {
-        this.emit({ running: this.info().filter((t) => t.status !== "done"), type: "heartbeat" })
+        this.emit("heartbeat", { running: this.info().filter((t) => t.status !== "done") })
       }, this.#heartbeatMs)
       this.#heartbeatTimer.unref()
     } else if (!want && this.#heartbeatTimer) {
@@ -430,7 +431,7 @@ export class Tasks extends Emitter<TasksEvent> {
       waitingFor: opts.waitingFor,
     }
     this.#map.set(task.id, task)
-    this.emit({ task: toTaskInfo(task), type: "task-added" })
+    this.emit("task-added", { task: toTaskInfo(task) })
     this.#syncHeartbeat()
     return task
   }

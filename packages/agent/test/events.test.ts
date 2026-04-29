@@ -3,41 +3,41 @@ import type { AgentStatus } from "../src/events.ts"
 import { describe, expect, test } from "vitest"
 import { Emitter } from "../src/events.ts"
 
-type FakeEvent = { type: "status"; status: AgentStatus } | { type: "message"; text: string }
-
-class FakeEmitter extends Emitter<FakeEvent> {
-  fire(event: FakeEvent): void {
-    this.emit(event)
-  }
+type FakeEvents = {
+  status: { status: AgentStatus }
+  message: { text: string }
 }
 
-describe("Emitter", () => {
-  test("on(handler) receives every event", () => {
-    const seen: FakeEvent["type"][] = []
-    const e = new FakeEmitter()
-    e.on((event) => seen.push(event.type))
-    e.fire({ status: "idle", type: "status" })
-    e.fire({ text: "hi", type: "message" })
-    expect(seen).toEqual(["status", "message"])
-  })
+class FakeEmitter extends Emitter<FakeEvents> {}
 
-  test("on(type, handler) is narrowed and skips other types", () => {
+describe("Emitter", () => {
+  test("on(type, handler) is narrowed to the event payload", () => {
     let captured: AgentStatus | undefined
     const e = new FakeEmitter()
     e.on("status", (event) => {
       captured = event.status
     })
-    e.fire({ text: "ignored", type: "message" })
-    e.fire({ status: "streaming", type: "status" })
+    e.emit("message", { text: "ignored" })
+    e.emit("status", { status: "streaming" })
     expect(captured).toBe("streaming")
+  })
+
+  test("listener receives the emitter as second arg (polymorphic this)", () => {
+    let captured: FakeEmitter | undefined
+    const e = new FakeEmitter()
+    e.on("status", (_event, self) => {
+      captured = self
+    })
+    e.emit("status", { status: "idle" })
+    expect(captured).toBe(e)
   })
 
   test("once fires exactly one matching event", () => {
     let count = 0
     const e = new FakeEmitter()
     e.once("message", () => count++)
-    e.fire({ text: "a", type: "message" })
-    e.fire({ text: "b", type: "message" })
+    e.emit("message", { text: "a" })
+    e.emit("message", { text: "b" })
     expect(count).toBe(1)
   })
 
@@ -48,9 +48,9 @@ describe("Emitter", () => {
     }
     const e = new FakeEmitter()
     e.on("message", handler)
-    e.fire({ text: "a", type: "message" })
+    e.emit("message", { text: "a" })
     e.off("message", handler)
-    e.fire({ text: "b", type: "message" })
+    e.emit("message", { text: "b" })
     expect(count).toBe(1)
   })
 
@@ -59,11 +59,11 @@ describe("Emitter", () => {
     const errors: unknown[] = []
     const e = new FakeEmitter()
     e.onEmitError = (err) => errors.push(err)
-    e.on(() => {
+    e.on("message", () => {
       throw new Error("boom")
     })
-    e.on(() => count++)
-    e.fire({ text: "a", type: "message" })
+    e.on("message", () => count++)
+    e.emit("message", { text: "a" })
     expect(count).toBe(1)
     expect(errors).toHaveLength(1)
     expect((errors[0] as Error).message).toBe("boom")

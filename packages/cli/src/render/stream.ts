@@ -28,7 +28,7 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
     return active
   }
 
-  const onStream = (e: { type: "stream-event"; event: StreamEvent }): void => {
+  const onStream = (e: { event: StreamEvent }): void => {
     if (
       e.event.type === "text-delta" &&
       typeof e.event.delta === "string" &&
@@ -38,13 +38,13 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       inner.state.content += e.event.delta
     }
   }
-  const onCall = (e: { type: "tool-call"; call: ToolCallPart }): void => {
+  const onCall = (e: { call: ToolCallPart }): void => {
     active = undefined
     const t = toolCall(e.call)
     tools.set(e.call.id, t)
     renderer.stream.append(t.node)
   }
-  const onResult = (e: { type: "tool-result"; call: ToolCallPart; result: ToolResult }): void => {
+  const onResult = (e: { call: ToolCallPart; result: ToolResult }): void => {
     tools.get(e.call.id)?.resolve(e.result)
     tools.delete(e.call.id)
   }
