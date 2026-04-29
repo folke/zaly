@@ -57,12 +57,12 @@ export class App {
 
   async #boot(): Promise<void> {
     this.#agent = await buildAgent(this.#config)
-    this.#model[1](this.#agent.model.id)
+    this.#model.set(this.#agent.model.id)
 
     this.#render = buildRenderer(this.#agent, {
-      busy: this.#busy[0],
-      model: this.#model[0],
-      status: this.#status[0],
+      busy: this.#busy.get,
+      model: this.#model.get,
+      status: this.#status.get,
     })
 
     this.#log = this.#render.renderer.log
@@ -75,8 +75,8 @@ export class App {
     })
 
     this.#agent.on("stop", ({ reason }) => {
-      this.#busy[1](false)
-      this.#status[1](reason === "error" ? "error" : "ready")
+      this.#busy.set(false)
+      this.#status.set(reason === "error" ? "error" : "ready")
       if (reason === "error" && this.#agent.lastError) {
         const err = this.#agent.lastError
         console.error(`${err.name}: ${err.message}`)
@@ -86,7 +86,7 @@ export class App {
 
     this.#render.input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
-      if (trimmed === "" || this.#busy[0]()) return
+      if (trimmed === "" || this.#busy.get()) return
       self.setState({ cursor: 0, value: "" })
       void this.#submit(trimmed)
     })
@@ -185,8 +185,8 @@ export class App {
 
     this.#attachments.clear()
     this.#attachCounter = 0
-    this.#busy[1](true)
-    this.#status[1]("thinking")
+    this.#busy.set(true)
+    this.#status.set("thinking")
     this.#agent.inject(message)
     await this.#agent.waitIdle()
   }
@@ -195,7 +195,7 @@ export class App {
     this.#render.stream.dispose()
     await this.#agent.dispose()
     this.#agent = await buildAgent(this.#config)
-    this.#model[1](this.#agent.model.id)
+    this.#model.set(this.#agent.model.id)
     // Re-bind stream + actions to the new agent. Renderer/UI stays.
     // Quick + dirty: rebuild everything except the renderer itself.
     // (Future: Renderer should expose `clear()` so we don't accumulate

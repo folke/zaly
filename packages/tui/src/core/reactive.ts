@@ -52,7 +52,10 @@ function withTracking<T>(ctx: TrackingCtx, fn: () => T): T {
  *  plain function-valued prop (label formatter, text callback, etc.). */
 const REACTIVE = Symbol.for("@zaly/tui/reactive")
 
-export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>]
+export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>] & {
+  readonly get: Accessor<T>
+  readonly set: Setter<T>
+}
 
 /** A read-only reactive source. Branded so `isAccessor` can detect it
  *  without false positives on arbitrary callables. */
@@ -83,7 +86,12 @@ export function unwrap<T>(v: Reactive<T>): T {
 }
 
 function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F {
-  Object.defineProperty(fn, REACTIVE, { configurable: false, enumerable: false, value: tag, writable: false })
+  Object.defineProperty(fn, REACTIVE, {
+    configurable: false,
+    enumerable: false,
+    value: tag,
+    writable: false,
+  })
   return fn
 }
 
@@ -139,7 +147,7 @@ export function signal<T>(initial: T): Signal<T> {
     for (const notify of snapshot) notify()
   }, "set") as Setter<T>
 
-  return [get, set] as const
+  return Object.assign([get, set] as const, { get, set }) as Signal<T>
 }
 
 // ---- effect ----------------------------------------------------------
