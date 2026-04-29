@@ -1,6 +1,6 @@
 import type { BaseState, RenderCtx } from "../core/ctx.ts"
-import type { TypedEmitter } from "../core/emitter.ts"
 import type { BaseEvents } from "../core/node.ts"
+import type { Emitter } from "@zaly/shared"
 
 import { isNode, Node } from "../core/node.ts"
 import { stackColumn } from "../layout/column.ts"
@@ -10,7 +10,7 @@ type Child = Node | false | null | undefined
 export type WidgetRenderFn<S, E extends BaseEvents> = (args: {
   state: S
   ctx: RenderCtx
-  emit: TypedEmitter<E>["emit"]
+  emit: Emitter<E>["emit"]
 }) => Node | Child[]
 
 /**
@@ -30,14 +30,17 @@ export type WidgetRenderFn<S, E extends BaseEvents> = (args: {
 export function widget<S extends object, E extends BaseEvents = BaseEvents>(
   initialState: S,
   render: WidgetRenderFn<S & BaseState, E>
-): Node<S & BaseState, E> {
-  return new Widget<S & BaseState, E>(initialState as S & BaseState, render)
+): Node<S & BaseState> & Emitter<E> {
+  return new Widget<S & BaseState>(initialState as S & BaseState, render) as unknown as Node<
+    S & BaseState
+  > &
+    Emitter<E>
 }
 
-class Widget<S extends BaseState, E extends BaseEvents> extends Node<S, E> {
-  readonly #renderFn: WidgetRenderFn<S, E>
+class Widget<S extends BaseState> extends Node<S> {
+  readonly #renderFn: WidgetRenderFn<S, BaseEvents>
 
-  constructor(initialState: S, renderFn: WidgetRenderFn<S, E>) {
+  constructor(initialState: S, renderFn: WidgetRenderFn<S, BaseEvents>) {
     super(initialState)
     this.#renderFn = renderFn
   }

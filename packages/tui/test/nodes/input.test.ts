@@ -168,7 +168,7 @@ describe("Input.actions — submit + newline", () => {
   test("submit emits with the current value", () => {
     const n = input({ value: "hi" })
     const seen: string[] = []
-    n.on("submit", (v) => seen.push(v))
+    n.on("submit", (v) => seen.push(v.value))
     n.actions["input.submit"]()
     expect(seen).toEqual(["hi"])
   })
@@ -218,35 +218,35 @@ describe("Input.actions — submit + newline", () => {
 describe("Input — printable-char fallback", () => {
   test("typing a char inserts at cursor and advances", () => {
     const n = input({ cursor: 1, value: "ab" })
-    n.emit("key", key("x", { text: "x" }))
+    n.emit("key", { key: key("x", { text: "x" }) })
     expect(n.state.value).toBe("axb")
     expect(n.state.cursor).toBe(2)
   })
 
   test("space is inserted like any other char", () => {
     const n = input({ cursor: 2, value: "ab" })
-    n.emit("key", key("space", { text: " " }))
+    n.emit("key", { key: key("space", { text: " " }) })
     expect(n.state.value).toBe("ab ")
     expect(n.state.cursor).toBe(3)
   })
 
   test("ctrl-modified keys are not inserted", () => {
     const n = input({ cursor: 1, value: "a" })
-    n.emit("key", key("a", { ctrl: true, text: "a" }))
+    n.emit("key", { key: key("a", { ctrl: true, text: "a" }) })
     expect(n.state.value).toBe("a")
   })
 
   test("printable-char insertion calls stop() on the event", () => {
     const n = input({ cursor: 0, value: "" })
     const ev = key("a", { text: "a" })
-    n.emit("key", ev)
+    n.emit("key", { key: ev })
     expect(ev.stopped).toBe(true)
   })
 
   test("unhandled keys (no text, non-printable) don't call stop()", () => {
     const n = input()
     const ev = key("f7")
-    n.emit("key", ev)
+    n.emit("key", { key: ev })
     expect(ev.stopped).toBe(false)
   })
 })
@@ -254,7 +254,7 @@ describe("Input — printable-char fallback", () => {
 describe("Input — paste", () => {
   test("paste inserts the whole payload at the cursor", () => {
     const n = input({ cursor: 1, value: "ac" })
-    n.emit("paste", paste("BB"))
+    n.emit("paste", { paste: paste("BB") })
     expect(n.state.value).toBe("aBBc")
     expect(n.state.cursor).toBe(3)
   })
@@ -286,7 +286,7 @@ describe("Input — end-to-end via router + keymap", () => {
   test("enter fires submit via keymap", () => {
     const { n, router } = mount({ value: "hi" })
     const seen: string[] = []
-    n.on("submit", (v) => seen.push(v))
+    n.on("submit", (v) => seen.push(v.value))
     router.dispatch({ event: key("enter"), type: "key" })
     expect(seen).toEqual(["hi"])
   })

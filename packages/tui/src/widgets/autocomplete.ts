@@ -3,7 +3,7 @@ import type { BaseEvents } from "../core/node.ts"
 import type { RoutedKey } from "../input/router.ts"
 import type { MenuItem, MenuRender } from "./menu.ts"
 
-import { Node } from "../core/node.ts"
+import { BaseNode } from "../core/node.ts"
 import { fuzzyScore } from "./completions/fuzzy.ts"
 import { Input } from "./input.ts"
 import { Menu } from "./menu.ts"
@@ -65,12 +65,12 @@ export interface AutocompleteOptions {
 }
 
 export interface AutocompleteEvents extends BaseEvents {
-  open: []
-  close: []
+  open: {}
+  close: {}
   /** Fired after an item is inserted into the input. Payload item type
    *  is `unknown` because sources may have different `T`; discriminate
    *  by source name and cast. */
-  complete: [source: string, item: unknown]
+  complete: { source: string; item: unknown }
 }
 
 interface Match {
@@ -80,6 +80,10 @@ interface Match {
   /** The query (text between trigger-end and cursor). */
   query: string
 }
+
+// const AutocompleteBase = Node as unknown as abstract new <T extends MenuItem>(
+//   ...args: ConstructorParameters<typeof Menu<T>>
+// ) => Node<MenuState<T>> & Emitter<MenuEvents<T> & EventMap>
 
 /**
  * Autocomplete popup bound to an `Input`. Watches the input's value and
@@ -109,17 +113,17 @@ interface Match {
  * source matches, `visible` flips to `false` and the widget takes
  * zero rows, so the footer naturally collapses.
  */
-export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
+export class Autocomplete extends BaseNode<AutocompleteState, AutocompleteEvents> {
   static readonly type = "autocomplete"
   override readonly type = Autocomplete.type
 
-  readonly menu: Menu<unknown>
+  readonly menu: Menu
   readonly #inputRef: Input | string
   readonly #sources: Record<string, CompletionSource<any>>
   #input?: Input
   #match: Match | undefined
   #cancelled = false
-  #keyListener?: (ev: RoutedKey) => void
+  #keyListener?: (ev: { key: RoutedKey }) => void
   #invalidateListener?: () => void
   /** Increments each time a refresh starts, so an in-flight async
    *  `complete()` can notice it's been superseded and bail before
@@ -131,8 +135,8 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     this.#inputRef = opts.input
     this.#sources = opts.sources
 
-    this.menu = new Menu<unknown>({
-      items: [],
+    this.menu = new Menu({
+      items: [] as MenuItem[],
       maxHeight: opts.maxHeight ?? 8,
       sticky: true,
     })
@@ -144,7 +148,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     if (this.#inputRef instanceof Input) this.#bindInput(this.#inputRef)
 
     // Bridge menu events to input rewrite.
-    this.menu.on("select", (item) => {
+    this.menu.on("select", ({ item }) => {
       this.#accept(item)
     })
     this.menu.on("cancel", () => {
@@ -200,7 +204,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
    * it pre-empts the input's own keymap-driven actions.
    */
   #installKeyIntercept(input: Input): void {
-    const listener = (ev: RoutedKey): void => {
+    const listener = ({ key: ev }: { key: RoutedKey }): void => {
       if (!this.open) return
       const id = ((): string | undefined => {
         switch (ev.pattern) {
@@ -338,7 +342,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
         value: value.slice(0, match.start) + accepted + tail,
       })
     }
-    this.emit("complete", match.source, item)
+    this.emit("complete", { item, source: match.source })
     this.#close()
   }
 

@@ -4,7 +4,7 @@ import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 
-import { Node } from "../core/node.ts"
+import { BaseNode } from "../core/node.ts"
 import { clipboard } from "../input/clipboard.ts"
 import { Text } from "./text.ts"
 
@@ -41,14 +41,18 @@ export type InputAttachment =
       type: string
     }
 
-export interface InputEvents extends BaseEvents {
+export type InputEvents = BaseEvents & {
   /** Fired when plain Enter is pressed. Payload is the current value. */
-  submit: [string]
+  submit: { value: string }
   /** Fired when the user pastes a non-text resource via the
    *  `input.paste` action. Images and file references both land here,
    *  discriminated by `attachment.kind`. One event fires per image
-   *  paste; one per file in a multi-file paste. */
-  attach: [attachment: InputAttachment]
+   *  paste; one per file in a multi-file paste.
+   *
+   *  Wrapped under `attachment` because `InputAttachment` carries its
+   *  own `type` field (MIME) that would shadow the envelope's `type`
+   *  discriminator if spread directly. */
+  attach: { attachment: InputAttachment }
 }
 
 /**
@@ -77,7 +81,7 @@ export interface InputEvents extends BaseEvents {
  * reserved footer when the Input's row count changes, so the stream
  * above shifts accordingly.
  */
-export class Input extends Node<InputState, InputEvents> {
+export class Input extends BaseNode<InputState, InputEvents> {
   /** Class-level scope tag used by the input router to bind keymaps. */
   static readonly type = "input"
 
@@ -187,12 +191,16 @@ export class Input extends Node<InputState, InputEvents> {
         const content = await clipboard.read()
         if (!content) return
         if (content.kind === "image") {
-          this.emit("attach", { kind: "image", path: content.path, type: content.type })
+          this.emit("attach", {
+            attachment: { kind: "image", path: content.path, type: content.type },
+          })
           return
         }
         if (content.kind === "files") {
           for (const path of content.paths) {
-            this.emit("attach", { kind: "file", path, type: guessMime(path) })
+            this.emit("attach", {
+              attachment: { kind: "file", path, type: guessMime(path) },
+            })
           }
           return
         }
@@ -206,18 +214,18 @@ export class Input extends Node<InputState, InputEvents> {
       })()
     },
     "input.submit": (): void => {
-      this.emit("submit", this.state.value ?? "")
+      this.emit("submit", { value: this.state.value ?? "" })
     },
   } satisfies ActionMap
 
   constructor(initial: InputState = {}) {
     const value = initial.value ?? ""
     super({ cursor: value.length, value, ...initial })
-    this.on("key", (ev) => {
-      this.#handleKey(ev)
+    this.on("key", ({ key }) => {
+      this.#handleKey(key)
     })
-    this.on("paste", (ev) => {
-      this.#handlePaste(ev)
+    this.on("paste", ({ paste }) => {
+      this.#handlePaste(paste)
     })
     this.on("focus", () => {
       this.#focused = true

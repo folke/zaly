@@ -18,26 +18,26 @@ renderer.ui.add(
     { bg: "bg", flexDirection: "column", padding: [0, 1] },
     text(
       ({ style }) =>
-        `${style.primary("›")} ${style.dim("enter to send · ctrl-v to paste · ctrl-c to quit")}`,
+        `${style.primary("›")} ${style.dim("enter to send · ctrl-v to paste · ctrl-c to quit")}`
     ),
     box(
       { flexDirection: "row", gap: 1 },
       text(({ style }) => style.primary("❯"), { width: 1 }),
       input({ placeholder: "type a message, paste an image…" })
         .focus()
-        .on("submit", (value, self) => {
+        .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
           renderer.stream.append(markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
         })
-        .on("attach", (att) => {
+        .on("attach", ({ attachment: att }) => {
           renderer.stream.append(markdown(`*pasted ${att.kind}:* \`${att.path}\``))
           if (att.kind === "image" || att.type.startsWith("image/")) {
             renderer.stream.append(image(att.path))
           }
-        }),
-    ),
-  ),
+        })
+    )
+  )
 )
 
 renderer.start()

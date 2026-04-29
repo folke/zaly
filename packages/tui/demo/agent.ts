@@ -217,7 +217,7 @@ async function streamReply(prompt: string, full: string): Promise<void> {
   setBusy(false)
 }
 
-composer.on("submit", (value, self) => {
+composer.on("submit", ({ value }, self) => {
   if (busy() || value.trim() === "") return
   self.setState({ cursor: 0, value: "" })
   const prompt = value.trim()

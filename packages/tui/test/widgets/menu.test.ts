@@ -1,5 +1,6 @@
 // oxlint-disable unicorn/no-await-expression-member
 import type { RenderCtx } from "../../src/core/ctx.ts"
+import type { MenuItem } from "../../src/widgets/menu.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
@@ -59,7 +60,7 @@ describe("menu", () => {
     m.on("select", fn)
     m.actions["menu.next"]()
     m.actions["menu.select"]()
-    expect(fn).toHaveBeenCalledWith(items[1], m)
+    expect(fn).toHaveBeenCalledWith({ item: items[1], type: "select" }, m)
   })
 
   test("cancel emits cancel", () => {
@@ -171,16 +172,21 @@ describe("menu", () => {
   })
 
   test("generic over item type — select payload is typed as T", () => {
-    interface Cmd { value: string; fn: () => void }
+    interface Cmd {
+      value: string
+      fn: () => void
+    }
     const fn = vi.fn()
     const m = menu<Cmd>({ items: [{ fn, value: "/quit" }] })
-    m.on("select", (it) => it.fn())
+    m.on("select", ({ item: it }) => it.fn())
     m.actions["menu.select"]()
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
   test("custom render is used for item rows; menuActive still paints selection", async () => {
-    interface Row { tag: string }
+    interface Row extends MenuItem {
+      tag: string
+    }
     const m = menu<Row>({
       items: [{ tag: "alpha" }, { tag: "beta" }, { tag: "gamma" }],
       render: (it, active) => `${active ? "→" : " "} ${it.tag}`,

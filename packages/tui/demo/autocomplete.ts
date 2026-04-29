@@ -83,7 +83,7 @@ renderer.ui.add(
       input({ placeholder: "try / or @ …" })
         .id("chat-input")
         .focus()
-        .on("submit", (value, self) => {
+        .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
           renderer.stream.append(markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })

@@ -78,7 +78,7 @@ describe("autocomplete", () => {
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
-    expect(cb).toHaveBeenCalledWith("slash", item, ac)
+    expect(cb).toHaveBeenCalledWith({ item, source: "slash", type: "complete" }, ac)
   })
 
   test("cancel hides the menu until a new trigger reopens it", async () => {
@@ -171,11 +171,11 @@ describe("autocomplete", () => {
     }
 
     expect(ac.menu.state.active).toBe(0)
-    i.emit("key", keyEv("down"))
+    i.emit("key", { key: keyEv("down") })
     expect(ac.menu.state.active).toBe(1)
-    i.emit("key", keyEv("up"))
+    i.emit("key", { key: keyEv("up") })
     expect(ac.menu.state.active).toBe(0)
-    i.emit("key", keyEv("enter"))
+    i.emit("key", { key: keyEv("enter") })
     expect(i.state.value).toBe("/a ")
     expect(ac.open).toBe(false)
   })

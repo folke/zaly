@@ -88,14 +88,14 @@ describe("widget()", () => {
   })
 
   test("emit is wired to custom node", async () => {
-    type E = { changed: [value: number] }
+    type E = { changed: { value: number } }
     const listener = vi.fn()
     const n = widget<{ v: number }, E & BaseEvents>({ v: 0 }, ({ state, emit }) => {
-      emit("changed", state.v)
+      emit("changed", { value: state.v })
       return text(`v=${state.v}`, { width: 5 })
     })
     n.on("changed", listener)
     await n.render(ctx(10))
-    expect(listener).toHaveBeenCalledWith(0, n)
+    expect(listener).toHaveBeenCalledWith({ type: "changed", value: 0 }, n)
   })
 })

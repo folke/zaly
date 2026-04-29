@@ -1,7 +1,7 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 
-import { Emitter } from "../core/emitter.ts"
+import { Emitter } from "@zaly/shared"
 
 /**
  * Events emitted by every renderer surface. `dirty` signals that a new
@@ -11,8 +11,8 @@ import { Emitter } from "../core/emitter.ts"
  *
  * @internal
  */
-export interface SurfaceEvents extends Record<string, unknown[]> {
-  dirty: []
+export type SurfaceEvents = {
+  dirty: {}
 }
 
 /**
@@ -35,7 +35,7 @@ export interface SurfaceEvents extends Record<string, unknown[]> {
  *
  * @internal
  */
-export abstract class Surface<E extends SurfaceEvents = SurfaceEvents> extends Emitter<E> {
+export abstract class Surface extends Emitter<SurfaceEvents> {
   #running = false
   #mountCtx?: MountCtx
 
@@ -44,7 +44,7 @@ export abstract class Surface<E extends SurfaceEvents = SurfaceEvents> extends E
    *  to every node they track so any mutation anywhere in their
    *  subtree flows back to the renderer scheduler. */
   protected readonly onDirty = (): void => {
-    this.emit("dirty" as keyof E & string, ...([] as unknown as E["dirty"]))
+    this.emit("dirty")
   }
 
   /** `true` between `onStart()` and `onStop()`. Subclasses read this

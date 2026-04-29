@@ -60,7 +60,7 @@ export class App {
       }
     })
 
-    this.#render.input.on("submit", (value, self) => {
+    this.#render.input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
       if (trimmed === "" || this.#busy[0]()) return
       self.setState({ cursor: 0, value: "" })

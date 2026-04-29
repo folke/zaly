@@ -48,7 +48,7 @@ describe("InputRouter — key dispatch", () => {
     const router = new InputRouter()
     const n = text("x")
     const received: string[] = []
-    n.on("key", (ev) => received.push(ev.name))
+    n.on("key", (ev) => received.push(ev.key.name))
     router.focus(n)
     router.dispatch({ event: makeKey("a"), type: "key" })
     expect(received).toEqual(["a"])
@@ -75,7 +75,7 @@ describe("InputRouter — key dispatch", () => {
     const seen: string[] = []
     child.on("key", (ev) => {
       seen.push("child")
-      ev.stop()
+      ev.key.stop()
     })
     parent.on("key", () => seen.push("parent"))
     router.focus(child)
@@ -105,7 +105,7 @@ describe("InputRouter — globals", () => {
     const router = new InputRouter()
     const n = text("x")
     const nodeSeen: string[] = []
-    n.on("key", (ev) => nodeSeen.push(ev.name))
+    n.on("key", (ev) => nodeSeen.push(ev.key.name))
     router.bind("ctrl-c", () => {
       throw new Error("should not fire")
     })
@@ -121,7 +121,7 @@ describe("InputRouter — globals", () => {
     const router = new InputRouter()
     const n = text("x")
     const nodeSeen: string[] = []
-    n.on("key", (ev) => nodeSeen.push(ev.name))
+    n.on("key", (ev) => nodeSeen.push(ev.key.name))
     router.bind("ctrl-c", () => true)
     router.focus(n)
     const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
@@ -199,7 +199,7 @@ describe("InputRouter — keymap → action dispatch", () => {
     const router = new InputRouter()
     const n = text("t")
     const seen: string[] = []
-    n.on("key", (ev) => seen.push(ev.name))
+    n.on("key", (ev) => seen.push(ev.key.name))
     router.focus(n)
     router.setKeymap({ enter: "input.foo" })
     // "a" isn't bound — bubbles as a raw key first anyway.
@@ -242,7 +242,7 @@ describe("InputRouter — paste", () => {
     const router = new InputRouter()
     const n = text("x")
     const texts: string[] = []
-    n.on("paste", (ev) => texts.push(ev.text))
+    n.on("paste", (ev) => texts.push(ev.paste.text))
     router.focus(n)
     router.dispatch({ text: "hello world", type: "paste" })
     expect(texts).toEqual(["hello world"])
@@ -255,8 +255,8 @@ describe("InputRouter — paste", () => {
     parent.add(child)
     const seen: string[] = []
     child.on("paste", (ev) => {
-      seen.push(`child:${ev.text}`)
-      ev.stop()
+      seen.push(`child:${ev.paste.text}`)
+      ev.paste.stop()
     })
     parent.on("paste", () => seen.push("parent"))
     router.focus(child)

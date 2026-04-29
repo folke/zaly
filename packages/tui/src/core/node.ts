@@ -2,24 +2,24 @@ import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
-import type { Events } from "./emitter.ts"
 
-import { Emitter } from "./emitter.ts"
+import { Emitter } from "@zaly/shared"
 import { unwrap, withActiveNode } from "./reactive.ts"
 
 export type { BaseState }
 
-/** Minimum event map every node carries. Custom event maps must intersect. */
-export interface BaseEvents extends Events {
-  invalidate: []
-  mount: []
-  unmount: []
-  focus: []
-  blur: []
-  key: [RoutedKey]
-  paste: [RoutedPaste]
-  childadded: [child: Node]
-  childremoved: [child: Node]
+/** Minimum event map every node carries. Custom event maps intersect
+ *  this with their own events via `&`. */
+export type BaseEvents = {
+  invalidate: {}
+  mount: {}
+  unmount: {}
+  focus: {}
+  blur: {}
+  key: { key: RoutedKey }
+  paste: { paste: RoutedPaste }
+  childadded: { child: Node }
+  childremoved: { child: Node }
 }
 
 /**
@@ -34,10 +34,7 @@ export interface BaseEvents extends Events {
  * the whole field instead.
  */
 
-export abstract class Node<
-  S extends BaseState = BaseState,
-  E extends BaseEvents = BaseEvents,
-> extends Emitter<E> {
+export abstract class Node<S extends BaseState = BaseState> extends Emitter<BaseEvents> {
   #cache?: { rows: string[]; version: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
@@ -208,7 +205,7 @@ export abstract class Node<
 
     const removed = this.#children.splice(adjustedStart, deleteCount, ...filtered)
     for (const c of removed) {
-      this.emit("childremoved", c)
+      this.emit("childremoved", { child: c })
       if (c.mounted) c.unmount()
       if (c.parent === this) c.#parent = undefined
     }
@@ -221,7 +218,7 @@ export abstract class Node<
         c.parent.remove(c)
       }
       c.#parent = this
-      this.emit("childadded", c)
+      this.emit("childadded", { child: c })
       if (this.#ctx !== undefined) c.mount(this.#ctx)
     }
     this.invalidate()
@@ -243,7 +240,7 @@ export abstract class Node<
     if (this.#ctx?.surface === ctx.surface) return this
     if (this.#ctx) {
       throw new Error(
-        `Node is already mounted on "${this.#ctx.surface}" (requested "${ctx.surface}"). Unmount first if you meant to move it.`,
+        `Node is already mounted on "${this.#ctx.surface}" (requested "${ctx.surface}"). Unmount first if you meant to move it.`
       )
     }
     this.#ctx = ctx
@@ -303,7 +300,14 @@ export abstract class Node<
   }
 }
 
-/** Runtime type guard for Node. 
+export const BaseNode = Node as unknown as abstract new <
+  T extends BaseState = BaseState,
+  E extends BaseEvents = BaseEvents,
+>(
+  ...args: ConstructorParameters<typeof Node<T>>
+) => Node<T> & Emitter<E & BaseEvents>
+
+/** Runtime type guard for Node.
  *
  * @internal*/
 export function isNode(x: unknown): x is Node {

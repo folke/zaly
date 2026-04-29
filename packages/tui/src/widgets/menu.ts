@@ -4,7 +4,7 @@ import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 
-import { Node } from "../core/node.ts"
+import { BaseNode } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 import { sliceAnsi, stringWidth } from "../style/ansi.ts"
@@ -62,9 +62,9 @@ export interface MenuState<T = MenuItem> extends StyleState {
 
 export interface MenuEvents<T = MenuItem> extends BaseEvents {
   /** Fired when the user picks the active item. Payload is the item. */
-  select: [T]
+  select: { item: T }
   /** Fired when the user cancels (esc). */
-  cancel: []
+  cancel: {}
 }
 
 /**
@@ -76,7 +76,7 @@ export interface MenuEvents<T = MenuItem> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Menu<T = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
+export class Menu<T extends MenuItem = MenuItem> extends BaseNode<MenuState<T>, MenuEvents<T>> {
   static readonly type = "menu"
   override readonly type = Menu.type
 
@@ -107,7 +107,7 @@ export class Menu<T = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
       const items = this.#items()
       if (items.length === 0) return
       const i = this.#active()
-      this.emit("select", items[i])
+      this.emit("select", { item: items[i] })
     },
   } satisfies ActionMap
 
@@ -219,7 +219,7 @@ export class Menu<T = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
 
     const out: string[] = []
     for (let i = start; i < start + rows; i++) {
-      const item = items[i]
+      const item = items[i] as T | undefined
       if (item === undefined) {
         // Sticky kept the row alive past the end of the (now shorter)
         // items list. Emit a full-width blank.
@@ -268,6 +268,6 @@ function fit(s: string, width: number): string {
  * m.on("select", (item) => console.log("picked", item.value))
  * ```
  */
-export function menu<T = MenuItem>(state: MenuState<T>): Menu<T> {
+export function menu<T extends MenuItem = MenuItem>(state: MenuState<T>): Menu<T> {
   return new Menu<T>(state)
 }
