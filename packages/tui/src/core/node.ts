@@ -33,8 +33,10 @@ export type BaseEvents = {
  * through nested objects/arrays (`n.state.padding[0] = 1`) do NOT — reassign
  * the whole field instead.
  */
-
-export abstract class Node<S extends BaseState = BaseState> extends Emitter<BaseEvents> {
+export abstract class Node<
+  S extends BaseState = BaseState,
+  E extends BaseEvents = BaseEvents,
+> extends Emitter<BaseEvents, E> {
   #cache?: { rows: string[]; version: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
@@ -299,13 +301,6 @@ export abstract class Node<S extends BaseState = BaseState> extends Emitter<Base
     return this
   }
 }
-
-export const BaseNode = Node as unknown as abstract new <
-  T extends BaseState = BaseState,
-  E extends BaseEvents = BaseEvents,
->(
-  ...args: ConstructorParameters<typeof Node<T>>
-) => Node<T> & Emitter<E & BaseEvents>
 
 /** Runtime type guard for Node.
  *

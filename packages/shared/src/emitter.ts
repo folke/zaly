@@ -55,7 +55,7 @@ type AnyListener = Listener<unknown, unknown>
  *  synthesized `{ type, ...payload }` envelope and fire *before* typed
  *  listeners on every emit, in registration order within the wildcard
  *  bucket. */
-export class Emitter<T extends EventMap = EventMap> {
+class BaseEmitter<T extends EventMap = EventMap> {
   readonly #listeners = new Map<string, AnyListener[]>([["all", []]])
   readonly #wrappers = new WeakMap<AnyListener, AnyListener>()
   onEmitError?: (error: unknown) => void
@@ -136,3 +136,24 @@ export class Emitter<T extends EventMap = EventMap> {
     return this
   }
 }
+
+export type Emitter<
+  A extends EventMap = EventMap,
+  B extends EventMap = EventMap,
+  C extends EventMap = EventMap,
+  D extends EventMap = EventMap,
+> = InstanceType<typeof BaseEmitter<A>> &
+  InstanceType<typeof BaseEmitter<B>> &
+  InstanceType<typeof BaseEmitter<C>> &
+  InstanceType<typeof BaseEmitter<D>>
+
+/** Type gymnastics to get a single class with multiple generic event maps. The
+ * base class only has one generic param, so we intersect multiple instances
+ * to get the full set of event types. The `Emitter` constructor is then
+ * typed to produce the intersection. */
+export const Emitter = BaseEmitter as new <
+  A extends EventMap = EventMap,
+  B extends EventMap = EventMap,
+  C extends EventMap = EventMap,
+  D extends EventMap = EventMap,
+>() => Emitter<A, B, C, D>

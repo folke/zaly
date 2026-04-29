@@ -4,7 +4,7 @@ import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 
-import { BaseNode } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 import { sliceAnsi, stringWidth } from "../style/ansi.ts"
@@ -76,7 +76,7 @@ export interface MenuEvents<T = MenuItem> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Menu<T extends MenuItem = MenuItem> extends BaseNode<MenuState<T>, MenuEvents<T>> {
+export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
   static readonly type = "menu"
   override readonly type = Menu.type
 

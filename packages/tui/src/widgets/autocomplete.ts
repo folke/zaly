@@ -3,7 +3,7 @@ import type { BaseEvents } from "../core/node.ts"
 import type { RoutedKey } from "../input/router.ts"
 import type { MenuItem, MenuRender } from "./menu.ts"
 
-import { BaseNode } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { fuzzyScore } from "./completions/fuzzy.ts"
 import { Input } from "./input.ts"
 import { Menu } from "./menu.ts"
@@ -113,7 +113,7 @@ interface Match {
  * source matches, `visible` flips to `false` and the widget takes
  * zero rows, so the footer naturally collapses.
  */
-export class Autocomplete extends BaseNode<AutocompleteState, AutocompleteEvents> {
+export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   static readonly type = "autocomplete"
   override readonly type = Autocomplete.type
 

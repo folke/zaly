@@ -4,7 +4,7 @@ import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 
-import { BaseNode } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { clipboard } from "../input/clipboard.ts"
 import { Text } from "./text.ts"
 
@@ -81,7 +81,7 @@ export type InputEvents = BaseEvents & {
  * reserved footer when the Input's row count changes, so the stream
  * above shifts accordingly.
  */
-export class Input extends BaseNode<InputState, InputEvents> {
+export class Input extends Node<InputState, InputEvents> {
   /** Class-level scope tag used by the input router to bind keymaps. */
   static readonly type = "input"
 
