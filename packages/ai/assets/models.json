@@ -21618,7 +21618,7 @@
     },
     "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo": {
       "id": "accounts/fireworks/routers/kimi-k2p5-turbo",
-      "name": "Kimi K2.5 Turbo (firepass)",
+      "name": "Kimi K2.5 Turbo",
       "family": "kimi-thinking",
       "attachment": false,
       "reasoning": true,
@@ -66964,6 +66964,39 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
+    "nvidia/mistralai/mistral-medium-3.5-128b": {
+      "id": "mistralai/mistral-medium-3.5-128b",
+      "name": "Mistral Medium 3.5 128B",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-29",
+      "last_updated": "2026-04-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
     "nvidia/deepseek-ai/deepseek-v4-flash": {
       "id": "deepseek-ai/deepseek-v4-flash",
       "name": "DeepSeek V4 Flash",
@@ -70312,39 +70345,6 @@
       "provider": "openai",
       "baseUrl": "https://router.requesty.ai/v1"
     },
-    "digitalocean/openai-gpt-5-2-pro": {
-      "id": "openai-gpt-5-2-pro",
-      "name": "GPT-5.2 pro",
-      "family": "gpt-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2025-08-31",
-      "release_date": "2025-12-11",
-      "last_updated": "2025-12-11",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 21,
-        "output": 168
-      },
-      "limit": {
-        "context": 400000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://inference.do-ai.run/v1"
-    },
     "digitalocean/openai-gpt-4o-mini": {
       "id": "openai-gpt-4o-mini",
       "name": "GPT-4o mini",
@@ -70414,6 +70414,41 @@
         "output": 32768
       },
       "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/nemotron-3-nano-omni": {
+      "id": "nemotron-3-nano-omni",
+      "name": "Nemotron Nano 3 Omni",
+      "family": "nemotron",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 0.9
+      },
+      "limit": {
+        "context": 65536,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -70531,6 +70566,38 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/qwen3.5-397b-a17b": {
+      "id": "qwen3.5-397b-a17b",
+      "name": "Qwen 3.5 397B A17B",
+      "family": "qwen3.5",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-02-15",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.55,
+        "output": 3.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 81920
+      },
+      "maxTokens": 81920,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/openai-o3": {
       "id": "openai-o3",
       "name": "o3",
@@ -70564,6 +70631,39 @@
         "output": 100000
       },
       "maxTokens": 100000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/openai-gpt-5.2-pro": {
+      "id": "openai-gpt-5.2-pro",
+      "name": "GPT-5.2 pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2025-12-11",
+      "last_updated": "2025-12-11",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 21,
+        "output": 168
+      },
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -70661,6 +70761,38 @@
       },
       "limit": {
         "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/mistral-3-14B": {
+      "id": "mistral-3-14B",
+      "name": "Ministral 3 14B Instruct",
+      "family": "ministral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2025-12-15",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.2,
+        "output": 0.2
+      },
+      "limit": {
+        "context": 262144,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -70838,6 +70970,40 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/llama-4-maverick": {
+      "id": "llama-4-maverick",
+      "name": "Llama 4 Maverick 17B 128E Instruct",
+      "family": "llama",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-08",
+      "release_date": "2025-04-05",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.25,
+        "output": 0.87
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/anthropic-claude-4.5-sonnet": {
       "id": "anthropic-claude-4.5-sonnet",
       "name": "Claude Sonnet 4.5",
@@ -70951,6 +71117,41 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/deepseek-3.2": {
+      "id": "deepseek-3.2",
+      "name": "DeepSeek V3.2",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2025-12-02",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.6
+      },
+      "limit": {
+        "context": 128000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/anthropic-claude-opus-4": {
       "id": "anthropic-claude-opus-4",
       "name": "Claude Opus 4",
@@ -71017,6 +71218,38 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/qwen3-coder-flash": {
+      "id": "qwen3-coder-flash",
+      "name": "Qwen3 Coder Flash",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2025-07-28",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.45,
+        "output": 1.7
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -71087,6 +71320,72 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/gemma-4-31B-it": {
+      "id": "gemma-4-31B-it",
+      "name": "Gemma 4 31B",
+      "family": "gemma",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.18,
+        "output": 0.5
+      },
+      "limit": {
+        "context": 256000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/nemotron-nano-12b-v2-vl": {
+      "id": "nemotron-nano-12b-v2-vl",
+      "name": "Nemotron Nano 12B v2 VL",
+      "family": "nemotron",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2025-12-01",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.2,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -71268,6 +71567,47 @@
         "output": 128000
       },
       "status": "beta",
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/openai-gpt-5.5": {
+      "id": "openai-gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
       "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
@@ -72655,6 +72995,39 @@
       "provider": "openai",
       "baseUrl": "https://api.mistral.ai/v1"
     },
+    "mistral/mistral-medium-2604": {
+      "id": "mistral-medium-2604",
+      "name": "Mistral Medium 3.5",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-29",
+      "last_updated": "2026-04-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.5,
+        "output": 7.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
     "mistral/devstral-small-2505": {
       "id": "devstral-small-2505",
       "name": "Devstral Small 2505",
@@ -72716,39 +73089,6 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://api.mistral.ai/v1"
-    },
-    "mistral/mistral-medium-latest": {
-      "id": "mistral-medium-latest",
-      "name": "Mistral Medium (latest)",
-      "family": "mistral-medium",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-05",
-      "release_date": "2025-05-07",
-      "last_updated": "2025-05-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.4,
-        "output": 2
-      },
-      "limit": {
-        "context": 128000,
-        "output": 16384
-      },
-      "maxTokens": 16384,
       "provider": "openai",
       "baseUrl": "https://api.mistral.ai/v1"
     },
@@ -72905,6 +73245,39 @@
       "cost": {
         "input": 0.4,
         "output": 2
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.mistral.ai/v1"
+    },
+    "mistral/mistral-medium-latest": {
+      "id": "mistral-medium-latest",
+      "name": "Mistral Medium (latest)",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-29",
+      "last_updated": "2026-04-29",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.5,
+        "output": 7.5
       },
       "limit": {
         "context": 262144,
@@ -73428,6 +73801,38 @@
       "provider": "openai",
       "baseUrl": "https://api.friendli.ai/serverless/v1"
     },
+    "cortecs/minimax-m2.7": {
+      "id": "minimax-m2.7",
+      "name": "MiniMax-m2.7",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.47,
+        "output": 1.4
+      },
+      "limit": {
+        "context": 202752,
+        "output": 196072
+      },
+      "maxTokens": 196072,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
     "cortecs/claude-haiku-4-5": {
       "id": "claude-haiku-4-5",
       "name": "Claude Haiku 4.5",
@@ -73830,38 +74235,6 @@
         "output": 400000
       },
       "maxTokens": 400000,
-      "provider": "openai",
-      "baseUrl": "https://api.cortecs.ai/v1"
-    },
-    "cortecs/minimax-M2.7": {
-      "id": "minimax-M2.7",
-      "name": "MiniMax-M2.7",
-      "family": "minimax",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.47,
-        "output": 1.4
-      },
-      "limit": {
-        "context": 202752,
-        "output": 131072
-      },
-      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
@@ -78456,6 +78829,39 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/qwen3.6-max-preview": {
+      "id": "qwen3.6-max-preview",
+      "name": "Qwen3.6 Max Preview",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.3,
+        "output": 7.8,
+        "cache_read": 0.13
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/gpt-oss-120b": {
       "id": "gpt-oss-120b",
       "name": "GPT OSS 120B",
@@ -79580,6 +79986,99 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/gpt-5.5": {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 12.5,
+              "output": 75,
+              "cache_read": 1.25
+            },
+            "provider": {
+              "body": {
+                "service_tier": "priority"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/qwen3.6-35b-a3b": {
+      "id": "qwen3.6-35b-a3b",
+      "name": "Qwen3.6 35B-A3B",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-17",
+      "last_updated": "2026-04-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.248,
+        "output": 1.485
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/qwen-omni-turbo": {
       "id": "qwen-omni-turbo",
       "name": "Qwen-Omni Turbo",
@@ -80113,6 +80612,42 @@
         "output": 16384
       },
       "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/qwen3.6-plus": {
+      "id": "qwen3.6-plus",
+      "name": "Qwen3.6 Plus",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.276,
+        "output": 1.651,
+        "cache_read": 0.028,
+        "cache_write": 0.344
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -82129,6 +82664,46 @@
         "output": 8192
       },
       "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/gpt-5.5-pro": {
+      "id": "gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180,
+        "context_over_200k": {
+          "input": 60,
+          "output": 270
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -85484,6 +86059,40 @@
       "provider": "openai",
       "baseUrl": "https://api.berget.ai/v1"
     },
+    "berget/mistralai/Mistral-Medium-3.5-128B": {
+      "id": "mistralai/Mistral-Medium-3.5-128B",
+      "name": "Mistral Medium 3.5 128B",
+      "family": "mistral-medium",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2026-04",
+      "release_date": "2026-04-29",
+      "last_updated": "2026-04-29",
+      "modalities": {
+        "input": [
+          "image",
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.65,
+        "output": 5.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.berget.ai/v1"
+    },
     "berget/meta-llama/Llama-3.3-70B-Instruct": {
       "id": "meta-llama/Llama-3.3-70B-Instruct",
       "name": "Llama 3.3 70B Instruct",
@@ -87233,6 +87842,37 @@
         "output": 130000
       },
       "maxTokens": 130000,
+      "provider": "openai",
+      "baseUrl": "https://api.together.xyz/v1"
+    },
+    "togetherai/Qwen/Qwen3.6-Plus": {
+      "id": "Qwen/Qwen3.6-Plus",
+      "name": "Qwen3.6 Plus",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-30",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 3
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 500000
+      },
+      "maxTokens": 500000,
       "provider": "openai",
       "baseUrl": "https://api.together.xyz/v1"
     },

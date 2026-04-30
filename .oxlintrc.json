@@ -12,7 +12,7 @@
   "ignorePatterns": ["foo*.ts"],
   "rules": {
     "capitalized-comments": "off", // 98
-    "new-cap": ["warn", { "capIsNewExceptionPattern": "(Value|Type|Schema|compiled\\w*)\\." }],
+    "new-cap": ["warn", { "capIsNewExceptionPattern": "(Intl|Value|Type|Schema|compiled\\w*)\\." }],
     "curly": "off", // 154
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "func-style": "off", // 58
