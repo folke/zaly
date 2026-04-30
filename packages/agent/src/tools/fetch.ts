@@ -1,6 +1,7 @@
-import type { MetaPart, TextPart } from "@zaly/ai"
+import type { Attachment, MetaPart, TextPart } from "@zaly/ai"
 
-import { defineTool } from "@zaly/ai"
+import { defineTool, toAttachment } from "@zaly/ai"
+import { fileDetect } from "@zaly/shared"
 import { Type } from "typebox"
 
 const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps runaway HTML pages
@@ -21,7 +22,7 @@ const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps 
  * a wrapping permission layer (rule-based or explicit allowlist).
  */
 export const fetchTool = defineTool({
-  async call(args): Promise<(MetaPart | TextPart)[]> {
+  async call(args): Promise<(Attachment | MetaPart | TextPart)[]> {
     const t0 = Date.now()
     const url = new URL(args.url)
     if (args.query) {
@@ -35,8 +36,32 @@ export const fetchTool = defineTool({
     })
 
     const contentType = res.headers.get("content-type") ?? ""
-    const text = await res.text()
-    const isJson = contentType.includes("json") || looksLikeJson(text)
+    const bytes = new Uint8Array(await res.arrayBuffer())
+
+    const meta: Record<string, unknown> = {
+      contentType: contentType || undefined,
+      durationMs: Date.now() - t0,
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+    }
+
+    // Magic-byte detection on the response bytes — catches mislabeled
+    // content (HTML served at /file.pdf, images served as
+    // application/octet-stream, etc.). Inlines as base64 (same shape as
+    // the `read` tool) so the model gets the bytes without the provider
+    // re-fetching from its own IP.
+    const file = await fileDetect({ data: bytes, mime: contentType || undefined, url: url.toString() })
+    if (file && (file.type === "image" || file.type === "pdf")) {
+      const att = await toAttachment(file)
+      if (att) return [{ data: meta, tag: "fetch", type: "meta" }, att]
+    }
+
+    const text = new TextDecoder().decode(bytes)
+    // `detectTextFormat` (inside fileDetect) already weighs MIME,
+    // extension, and content sniff — reuse its verdict instead of a
+    // parallel `looksLikeJson` heuristic.
+    const isJson = file?.type === "text" && file.format === "json"
 
     let body: unknown = text
     if (isJson) {
@@ -67,13 +92,6 @@ export const fetchTool = defineTool({
     const truncated = totalBytes > DEFAULT_MAX_BODY_BYTES
     const displayed = truncated ? bodyText.slice(0, DEFAULT_MAX_BODY_BYTES) : bodyText
 
-    const meta: Record<string, unknown> = {
-      contentType: contentType || undefined,
-      durationMs: Date.now() - t0,
-      ok: res.ok,
-      status: res.status,
-      statusText: res.statusText,
-    }
     if (truncated) {
       meta.truncated = {
         bytes: totalBytes,
@@ -86,13 +104,15 @@ export const fetchTool = defineTool({
     }
 
     const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "fetch", type: "meta" }]
-    if (displayed !== "") parts.push({ format: isJson ? "json" : undefined, text: displayed, type: "text" })
+    if (displayed !== "")
+      parts.push({ format: isJson ? "json" : undefined, text: displayed, type: "text" })
     return parts
   },
   desc:
     "Fetch a URL and return the response. JSON responses are parsed; " +
     "use `jsonpath` (e.g. `$.items[*].name`) to extract a subset and " +
-    "minimise tokens. Best for APIs — for web pages, use the browser tool.",
+    "minimise tokens. Image and PDF responses are delivered as " +
+    "attachments. Best for APIs — for web pages, use the browser tool.",
   name: "fetch",
   parallel: true,
 
@@ -135,11 +155,3 @@ export const fetchTool = defineTool({
     ),
   }),
 })
-
-/** Cheap JSON sniff for servers that send `text/plain` for JSON bodies
- *  (more common than it should be). Trims and checks the first
- *  non-whitespace char. */
-function looksLikeJson(text: string): boolean {
-  const trimmed = text.trimStart()
-  return trimmed.startsWith("{") || trimmed.startsWith("[")
-}
