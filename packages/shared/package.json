@@ -39,5 +39,6 @@
   },
   "inlinedDependencies": {
     "pathe": "2.0.3"
-  }
+  },
+  "trustedDependencies": ["sharp"]
 }

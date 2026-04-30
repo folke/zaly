@@ -72,7 +72,7 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": [],
+  "trustedDependencies": ["sharp"],
   "inlinedDependencies": {
     "ansi-regex": "6.2.2",
     "ansi-styles": "6.2.3",

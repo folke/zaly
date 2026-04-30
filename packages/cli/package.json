@@ -47,5 +47,6 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
-  }
+  },
+  "trustedDependencies": ["sharp"]
 }
