@@ -206,6 +206,20 @@ export class Session extends Emitter<SessionEvents> {
     return this.#nodes
   }
 
+  get root(): SessionNode | undefined {
+    return this.#nodes.get(this.#head ?? "")
+  }
+
+  get modelId(): string | undefined {
+    let node = this.root
+    while (node) {
+      if ((node.type === "message" || node.type === "session-start") && node.modelId)
+        return node.modelId
+      if (!node.parentUuid) break
+      node = this.#nodes.get(node.parentUuid)
+    }
+  }
+
   // ── Mutate ────────────────────────────────────────────────────────────
 
   /** Append a message. The new node is parented to the current head,
