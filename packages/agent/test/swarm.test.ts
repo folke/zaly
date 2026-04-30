@@ -1,10 +1,11 @@
+import type { Agent } from "../src/agent.ts"
+
 import { describe, expect, test } from "vitest"
-import { Agent } from "../src/agent.ts"
 import { Swarm } from "../src/swarm.ts"
-import { mockModel } from "./helpers.ts"
+import { loadAgent, mockModel } from "./helpers.ts"
 
 const buildRoot = async (): Promise<Agent> =>
-  Agent.load({ model: mockModel([]), skills: false })
+  loadAgent({ model: mockModel([]), skills: false })
 
 // The swarm injects via `agent.inject(...)` which queues into
 // `#injectQueue` while the agent is non-idle; for an idle agent it

@@ -7,14 +7,14 @@
  * exercised in the same path production uses.
  */
 import type { StreamEvent, Tool } from "@zaly/ai"
+import type { Agent } from "../src/agent.ts"
 
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { Agent } from "../src/agent.ts"
 import { PermissionManager } from "../src/permissions/index.ts"
 import { toolHandler } from "../src/permissions/handlers/tool.ts"
-import { mockModel } from "./helpers.ts"
+import { loadAgent, mockModel } from "./helpers.ts"
 
 const noopTool: Tool = defineTool({
   call: () => "ok",
@@ -114,7 +114,7 @@ describe("Tasks auto-check on tool dispatch", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       model: mockModel(callThenStop("watch")),
       permissions: { rules: [{ pattern: "watch", policy: "deny", scope: "tool" }] },
       tools: [watcher],
@@ -128,7 +128,7 @@ describe("Tasks auto-check on tool dispatch", () => {
   })
 
   test("allowed tool runs normally", async () => {
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       model: mockModel(callThenStop("noop")),
       permissions: { rules: [{ pattern: "noop", policy: "allow", scope: "tool" }] },
       tools: [noopTool],
@@ -142,7 +142,7 @@ describe("Tasks auto-check on tool dispatch", () => {
 
 describe("AgentOptions.allow — ask escalation", () => {
   test("ask without allow callback → deny", async () => {
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       model: mockModel(callThenStop("noop")),
       permissions: { rules: [{ pattern: "noop", policy: "ask", scope: "tool" }] },
       tools: [noopTool],
@@ -165,7 +165,7 @@ describe("AgentOptions.allow — ask escalation", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       allow: async () => true,
       model: mockModel(callThenStop("watch-ask")),
       permissions: { rules: [{ pattern: "watch-ask", policy: "ask", scope: "tool" }] },
@@ -186,7 +186,7 @@ describe("AgentOptions.allow — ask escalation", () => {
       parallel: true,
       params: Type.Object({}),
     })
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       allow: async () => false,
       model: mockModel(callThenStop("watch-deny")),
       permissions: { rules: [{ pattern: "watch-deny", policy: "ask", scope: "tool" }] },
@@ -201,7 +201,7 @@ describe("AgentOptions.allow — ask escalation", () => {
 
   test("allow callback receives scope, input, reason, suggestions", async () => {
     const seen: { scope?: string; input?: string; reason?: string; suggestions?: unknown } = {}
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       allow: async (req) => {
         seen.scope = req.scope
         seen.input = req.input

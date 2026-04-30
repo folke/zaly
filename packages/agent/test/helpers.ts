@@ -6,12 +6,28 @@ import { Agent } from "../src/agent.ts"
 
 /** Build a minimal `Model` from a list of scripted stream-event arrays
  *  (one per turn). Only the fields `Agent` reads are populated. */
+/** Minimal ModelSpec satisfying the now-required `limit` / `modalities`
+ *  fields. Shared by all mock model factories so consumers like
+ *  `Notifier` (context-pressure %), `Model.stream` (max-tokens default),
+ *  and the prompt registry can read those fields without crashes.
+ *  Numbers chosen large enough that test scenarios never accidentally
+ *  trip thresholds. */
+const mockSpec = {
+  attachment: true,
+  id: "x",
+  limit: { context: 1_000_000, output: 16_000 },
+  modalities: { input: ["text", "image"], output: ["text"] },
+  name: "mock",
+  provider: "mock",
+  reasoning: false,
+} as unknown as Model["spec"]
+
 export function mockModel(scripts: StreamEvent[][]): Model {
   // oxlint-disable-next-line no-unused-vars -- closure mutation
   let turn = 0
   return {
     id: "mock/x",
-    spec: { id: "x", provider: "mock" } as Model["spec"],
+    spec: mockSpec,
     provider: {} as Model["provider"],
     async *stream() {
       for (const ev of scripts[turn++]) yield ev
@@ -35,7 +51,7 @@ export function pendingModel(): {
     },
     model: {
       id: "mock/x",
-      spec: {} as Model["spec"],
+      spec: mockSpec,
       provider: {} as Model["provider"],
       async *stream() {
         const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
@@ -56,7 +72,7 @@ export function pendingModel(): {
 export function throwingModel(message: string): Model {
   return {
     id: "mock/x",
-    spec: {} as Model["spec"],
+    spec: mockSpec,
     provider: {} as Model["provider"],
     // eslint-disable-next-line require-yield
     async *stream() {
@@ -74,6 +90,15 @@ export function throwingModel(message: string): Model {
  *  if (firstMessage) a.send(firstMessage)
  *  await a.run()
  *  ``` */
+/** Test-mode wrapper around `Agent.load`. Disables the runtime
+ *  notifier by default so injected `<session-started>` / `<time>` /
+ *  `<context-pressure>` / etc. messages don't pollute test assertions
+ *  about conversation contents. Tests that *want* notifications can
+ *  pass `notify: true` (or a `NotifyOptions` object) explicitly. */
+export async function loadAgent(opts: AgentOptions): Promise<Agent> {
+  return Agent.load({ notify: false, ...opts })
+}
+
 export async function runAgent(
   opts: AgentOptions & { send?: Message<"user" | "system"> }
 ): Promise<{
@@ -86,7 +111,7 @@ export async function runAgent(
   steps: number
   error?: Error
 }> {
-  const agent = await Agent.load(opts)
+  const agent = await loadAgent(opts)
   if (opts.send) agent.send(opts.send)
   const stopReason = await agent.run()
   return {

@@ -1,10 +1,10 @@
 import type { MetaPart, Streamable, ToolContext, ToolResult } from "@zaly/ai"
+import type { Agent } from "../src/agent.ts"
 
 import { existsSync, readFileSync, rmSync } from "node:fs"
 import { afterEach, describe, expect, test } from "vitest"
-import { Agent } from "../src/agent.ts"
 import { subagentTool } from "../src/tools/subagent.ts"
-import { mockModel } from "./helpers.ts"
+import { loadAgent, mockModel } from "./helpers.ts"
 
 const okStop = (text = "child says hi") => [
   { delta: text, type: "text-delta" as const },
@@ -25,7 +25,7 @@ afterEach(() => {
 })
 
 const buildParent = async (childScripts: ReturnType<typeof okStop>[]): Promise<Agent> =>
-  Agent.load({ model: mockModel(childScripts) })
+  loadAgent({ model: mockModel(childScripts) })
 
 const ctxFor = (parent: Agent): ToolContext => ({ agent: parent })
 
@@ -84,7 +84,7 @@ describe("subagent tool", () => {
       params: {},
       validateParams: () => ({}),
     }
-    const parent = await Agent.load({
+    const parent = await loadAgent({
       maxDepth: 1, // child at depth 1 == maxDepth → no subagent
       model: mockModel([okStop("k")]),
       tools: [subagentTool, dummyTool as never],
@@ -148,7 +148,7 @@ describe("subagent tool — depth limit", () => {
     // We can't easily reach in to inspect the child's tools without a
     // hook, so verify behaviorally: a child at the cap can still do work
     // but its meta records `depth === maxDepth`.
-    const parent = await Agent.load({
+    const parent = await loadAgent({
       maxDepth: 1,
       model: mockModel([okStop("done")]),
       tools: [subagentTool],

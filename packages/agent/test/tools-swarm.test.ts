@@ -1,13 +1,14 @@
 import type { MetaPart, ToolContext } from "@zaly/ai"
 
+import type { Agent } from "../src/agent.ts"
+
 import { describe, expect, test } from "vitest"
-import { Agent } from "../src/agent.ts"
 import { agentSendTool, agentSpawnTool } from "../src/tools/swarm.ts"
 import { Swarm } from "../src/swarm.ts"
-import { mockModel } from "./helpers.ts"
+import { loadAgent, mockModel } from "./helpers.ts"
 
 const buildRoot = async (swarm?: Swarm): Promise<Agent> =>
-  Agent.load({ model: mockModel([]), skills: false, swarm })
+  loadAgent({ model: mockModel([]), skills: false, swarm })
 
 describe("agent_spawn tool", () => {
   test("spawns + registers a subagent in the swarm", async () => {

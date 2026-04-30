@@ -31,13 +31,13 @@ describe("anthropic: request translation", () => {
     expect(body.stream).toBe(true)
     // No durable prompt → no system slot.
     expect(body.system).toBeUndefined()
-    // System note rendered as user message with `<system>be concise</system>`,
+    // System note rendered as user message with `<system-reminder>be concise</system-reminder>`,
     // followed by the real user message. Anthropic merges consecutive
     // same-role messages, so both user messages collapse into one.
     expect(body.messages).toEqual([
       {
         content: [
-          { text: "<system>be concise</system>", type: "text" },
+          { text: "<system-reminder>be concise</system-reminder>", type: "text" },
           { text: "hi", type: "text" },
         ],
         role: "user",
@@ -93,7 +93,7 @@ describe("anthropic: request translation", () => {
     expect(body.messages).toEqual([
       {
         content: [
-          { text: "<system>be concise</system>", type: "text" },
+          { text: "<system-reminder>be concise</system-reminder>", type: "text" },
           { text: "hi", type: "text" },
         ],
         role: "user",
@@ -122,7 +122,7 @@ describe("anthropic: request translation", () => {
     // `role: "user"` block (Anthropic-coalesce). The cache_control marker
     // sits on the last block of the original system-converted message.
     expect(body.messages[0].content).toEqual([
-      { cache_control: { type: "ephemeral" }, text: "<system>long preamble</system>", type: "text" },
+      { cache_control: { type: "ephemeral" }, text: "<system-reminder>long preamble</system-reminder>", type: "text" },
       { text: "hi", type: "text" },
     ])
   })

@@ -269,9 +269,8 @@ describe("Skills — frontmatter parsing", () => {
 
 describe("Skills — Agent integration", () => {
   test("Agent.skills is undefined when constructed with `skills: false`", async () => {
-    const { Agent } = await import("../src/agent.ts")
-    const { mockModel } = await import("./helpers.ts")
-    const agent = await Agent.load({ model: mockModel([]), skills: false })
+    const { loadAgent, mockModel } = await import("./helpers.ts")
+    const agent = await loadAgent({ model: mockModel([]), skills: false })
     expect(agent.skills).toBeUndefined()
   })
 

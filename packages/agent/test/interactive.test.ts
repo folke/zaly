@@ -5,9 +5,8 @@ import type { AgentEvents, AgentStopReason } from "../src/events.ts"
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { Agent } from "../src/agent.ts"
 import { Session } from "../src/session/index.ts"
-import { mockModel, pendingModel } from "./helpers.ts"
+import { loadAgent, mockModel, pendingModel } from "./helpers.ts"
 
 const Add = defineTool({
   call: ({ a, b }) => a + b,
@@ -26,7 +25,7 @@ function okStop(): StreamEvent[] {
 describe("Agent — send/inject queueing", () => {
   test("send() during a running turn queues, drains after natural stop", async () => {
     const m = pendingModel()
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "first", role: "user" }],
       model: m.model,
     })
@@ -52,7 +51,7 @@ describe("Agent — send/inject queueing", () => {
 
   test("inject() during a running turn lands before the next step", async () => {
     const m = pendingModel()
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "first", role: "user" }],
       model: m.model,
       tools: [Add],
@@ -83,7 +82,7 @@ describe("Agent — send/inject queueing", () => {
   })
 
   test("send() while idle starts the loop immediately", async () => {
-    const agent = await Agent.load({ model: mockModel([okStop()]) })
+    const agent = await loadAgent({ model: mockModel([okStop()]) })
     agent.send({ content: "go", role: "user" })
     // run() returns the in-flight promise — wait it out via run().
     const reason = await agent.run()
@@ -95,7 +94,7 @@ describe("Agent — send/inject queueing", () => {
 describe("Agent — pause / abort", () => {
   test("pause() between steps stops with reason 'paused'; resume drains queue", async () => {
     const m = pendingModel()
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: m.model,
       tools: [Add],
@@ -122,7 +121,7 @@ describe("Agent — pause / abort", () => {
 
   test("abort() kills the in-flight stream; lands paused with AbortError", async () => {
     const m = pendingModel()
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: m.model,
     })
@@ -153,7 +152,7 @@ describe("Agent — compact callback", () => {
       ],
     ])
     let compactCalls = 0
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       compact: (a) => {
         compactCalls++
         a.session.compact({ trigger: "auto" })
@@ -176,7 +175,7 @@ describe("Agent — compact callback", () => {
     const model = mockModel([
       [{ finishReason: "stop", type: "finish", usage: { input: 9000, output: 5 } }],
     ])
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       contextLimit: 8000,
       messages: [{ content: "go", role: "user" }],
       model,
@@ -188,7 +187,7 @@ describe("Agent — compact callback", () => {
 describe("Agent — emitted events", () => {
   test("emits status / stream-event / step-end / stop in order on a single turn", async () => {
     const seen: Envelope<AgentEvents>["type"][] = []
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: mockModel([okStop()]),
     })
@@ -205,7 +204,7 @@ describe("Agent — emitted events", () => {
   test("emits tool-call + tool-result around tool dispatch", async () => {
     const calls: string[] = []
     const results: string[] = []
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: mockModel([
         [
@@ -233,7 +232,7 @@ describe("Agent — emitted events", () => {
     // constructor — before we can attach a listener — so we observe only
     // the messages that land *after* construction.
     const sessionNodes: string[] = []
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: mockModel([okStop()]),
     })
@@ -252,7 +251,7 @@ describe("Agent — persistence integration", () => {
     // First Agent: run a single turn against a persisted session.
     // (When `session` is supplied, `initialMessages` is ignored — the
     //  session is the source of truth. Seed via `send()` instead.)
-    const agent1 = await Agent.load({
+    const agent1 = await loadAgent({
       model: mockModel([okStop()]),
       session: { path: file },
     })
@@ -265,7 +264,7 @@ describe("Agent — persistence integration", () => {
     expect(session2.messages.map((m) => m.role)).toEqual(["user", "assistant"])
 
     // Second Agent picks up the same session and continues.
-    const agent2 = await Agent.load({ model: mockModel([okStop()]), session: session2 })
+    const agent2 = await loadAgent({ model: mockModel([okStop()]), session: session2 })
     agent2.send({ content: "round 2", role: "user" })
     await agent2.run()
     await session2.close()
@@ -290,7 +289,7 @@ describe("Agent — mutable prompt + tools", () => {
         }
       },
     } as never
-    const agent = await Agent.load({ model: recordingModel, prompt: ["original"] })
+    const agent = await loadAgent({ model: recordingModel, prompt: ["original"] })
     agent.send({ content: "go", role: "user" })
     await agent.run()
     expect(lastPrompt).toEqual(["original"])
@@ -308,7 +307,7 @@ describe("Agent — mutable prompt + tools", () => {
       name: "sub",
       params: Type.Object({ a: Type.Number(), b: Type.Number() }),
     })
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       model: mockModel([
         [
           { params: { a: 5, b: 2 }, id: "c1", name: "sub", type: "tool-call" },
@@ -331,7 +330,7 @@ describe("Agent — mutable prompt + tools", () => {
 
 describe("Agent — final-state APIs", () => {
   test("lastStopReason and totalUsage stay accessible after run()", async () => {
-    const agent = await Agent.load({
+    const agent = await loadAgent({
       messages: [{ content: "go", role: "user" }],
       model: mockModel([
         [{ finishReason: "stop", type: "finish", usage: { input: 7, output: 3 } }],
@@ -348,7 +347,7 @@ describe("Agent — final-state APIs", () => {
 describe("Agent — wakeup queue draining", () => {
   test("wakeup that fires during streaming surfaces in the SAME run, not the next user turn", async () => {
     const m = pendingModel()
-    const agent = await Agent.load({ model: m.model })
+    const agent = await loadAgent({ model: m.model })
     const run = agent.run()
 
     // Wait for the first stream to be in flight (status=streaming).
