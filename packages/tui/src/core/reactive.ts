@@ -39,10 +39,33 @@ interface TrackingCtx {
   register: (cleanup: () => void) => void
 }
 
-const activeCtx = new AsyncLocalStorage<TrackingCtx>()
+const activeCtx = new AsyncLocalStorage<TrackingCtx | undefined>()
 
 function withTracking<T>(ctx: TrackingCtx, fn: () => T): T {
   return activeCtx.run(ctx, fn)
+}
+
+/** Run `fn` outside any tracking scope. Signal reads inside don't
+ *  subscribe the surrounding render, and async work started inside
+ *  (timers, promises, intervals) doesn't capture the current ctx —
+ *  callbacks fire with `getStore() === undefined`.
+ *
+ *  Use this when starting persistent async work from inside a render
+ *  pass: a `setInterval` set up during `_render` would otherwise
+ *  inherit the render's ALS context, and every timer tick would look
+ *  like it's "inside" that render — its invalidates would be silently
+ *  suppressed.
+ *
+ *  ```ts
+ *  // inside _render() or a render-driven reconcile():
+ *  untracked(() => {
+ *    this.#timer = setInterval(() => this.invalidate(), speed)
+ *  })
+ *  ```
+ *
+ *  Equivalent to Solid's `untrack`. */
+export function untrack<T>(fn: () => T): T {
+  return activeCtx.run(undefined, fn)
 }
 
 // ---- public types ----------------------------------------------------
@@ -119,6 +142,22 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
     nodeCtx.set(node, ctx)
   }
   return withTracking(ctx, fn)
+}
+
+/** Whether we're currently executing inside `node`'s own render call
+ *  stack — i.e. this code path was reached synchronously (or via an
+ *  await preserved by `AsyncLocalStorage`) from `node`'s `withActiveNode`.
+ *
+ *  Used by `invalidate()` to suppress *internal* cascades — e.g.
+ *  Markdown mutating its child Text inside its own `_render`. External
+ *  mutations (network callbacks, event handlers) run outside any
+ *  render's ALS scope, so this returns `false` for them and they emit
+ *  normally even when a render is in flight.
+ *
+ *  @internal */
+export function inRenderContextOf(node: Node): boolean {
+  const active = activeCtx.getStore()
+  return active !== undefined && active === nodeCtx.get(node)
 }
 
 const nodeCtx = new WeakMap<Node, TrackingCtx>()
