@@ -5,7 +5,7 @@ import type { Input, LogCallable } from "@zaly/tui"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
 
-import { imageConvert, imageInfo } from "@zaly/shared"
+import { fileDetect, imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
 import { basename } from "pathe"
@@ -113,11 +113,12 @@ export class App {
       (att.type === "application/pdf" || att.path.toLowerCase().endsWith(".pdf"))
 
     if (isImage && this.#agent.model.canAttach("image")) {
-      const info = await imageInfo(att.path)
-      if (!info) {
+      const detected = await fileDetect(att.path)
+      if (detected?.type !== "image") {
         this.#log.error(`couldn't read image \`${att.path}\``)
         return insertAtCursor(input, att.path)
       }
+      const info = imageInfo(detected)
       const ready = await imageConvert(info, ["png", "jpeg", "webp"])
       if (!ready) {
         this.#log.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)

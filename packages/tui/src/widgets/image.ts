@@ -10,7 +10,7 @@ import {
   resetTransmitCache,
   transmitOnce,
 } from "../image/kitty.ts"
-import { imageInfo } from "@zaly/shared"
+import { fileDetect, imageInfo } from "@zaly/shared"
 
 export interface ImageState extends BaseState {
   /**
@@ -58,8 +58,9 @@ export class Image extends Node<ImageState> {
       return [this.state.alt ?? `[Image: ${this.state.src}]`]
     }
 
-    const img = await imageInfo(this.state.src)
-    if (!img) return this.fallback
+    const detected = await fileDetect(this.state.src)
+    if (detected?.type !== "image") return this.fallback
+    const img = imageInfo(detected)
 
     const { cols, rows } = dims(this.state, img, Math.min(ctx.width, 80))
     const blank = " ".repeat(cols)

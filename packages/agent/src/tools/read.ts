@@ -1,8 +1,15 @@
 import type { Attachment, ImagePart, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
-import type { ImageInfo } from "@zaly/shared"
+import type { FileData, ImageInfo } from "@zaly/shared"
 
 import { defineTool, ToolError } from "@zaly/ai"
-import { imageConvert, imageInfo, safeStat } from "@zaly/shared"
+import {
+  detect,
+  imageConvert,
+  imageDetector,
+  imageInfo,
+  isBinaryData,
+  safeStat,
+} from "@zaly/shared"
 import { readFile, stat } from "node:fs/promises"
 import { resolve } from "pathe"
 import { Type } from "typebox"
@@ -25,10 +32,6 @@ import { Type } from "typebox"
  */
 const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
-const BINARY_SAMPLE_BYTES = 8192
-
-// Null byte + control chars excluding tab (9), LF (10), CR (13).
-const BINARY_BYTE_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F]/
 
 // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
 export const readTool = defineTool({
@@ -73,18 +76,25 @@ export const readTool = defineTool({
     }
 
     const data = await readFile(path)
+    const file: FileData = { data, path }
 
-    // Binary check — sample the first N bytes so huge files don't pay the
-    // full scan. If it looks binary, branch to image detection or error.
-    const sample = data.subarray(0, BINARY_SAMPLE_BYTES).toString("utf8")
-    if (BINARY_BYTE_RE.test(sample)) {
-      const info = await imageInfo(path)
-      if (info !== undefined) {
-        // Provider adapters accept a small set of mimes; convert any
-        // detected image into one of them. No-op if already supported.
-        const ready = await imageConvert(info, ["png", "jpeg", "webp"])
-        if (ready !== undefined) return [toImagePart(ready)]
-      }
+    // Image first — magic bytes (and a few byte-level fallbacks like
+    // ISOBMFF brand parsing) decide cleanly. A file whose bytes match
+    // a known image format wins regardless of how text-y the rest of
+    // the byte stream looks.
+    const detected = detect(imageDetector, file)
+    if (detected) {
+      const info = imageInfo({ ...file, ...detected })
+      // Provider adapters accept a small set of MIMEs; convert any
+      // detected image into one of them. No-op if already supported.
+      const ready = await imageConvert(info, ["png", "jpeg", "webp"])
+      if (ready !== undefined) return [toImagePart(ready)]
+    }
+
+    // Threshold-based binary check — files with sporadic control bytes
+    // (logs with ANSI styling, source with form feeds) still read as
+    // text; only when binary content dominates the sample do we bail.
+    if (isBinaryData(data)) {
       throw new ToolError({
         code: "BINARY_FILE",
         data: { bytes: data.length, path },

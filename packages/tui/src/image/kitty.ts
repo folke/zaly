@@ -18,7 +18,7 @@
 
 import type { ImageInfo } from "@zaly/shared"
 
-import { imageConvert, imageHash } from "@zaly/shared"
+import { imageConvert, fileHash } from "@zaly/shared"
 import { isRemoteSession } from "./capabilities.ts"
 
 const CHUNK_SIZE = 4096
@@ -56,7 +56,7 @@ const transmitCache = new Map<string, CacheEntry>()
 export async function transmitOnce(
   info: ImageInfo
 ): Promise<{ imageId: number; transmit: string } | undefined> {
-  const key = imageHash(info)
+  const key = fileHash(info)
   let entry = transmitCache.get(key)
   if (entry === undefined) {
     const png = await imageConvert(info, "png")
