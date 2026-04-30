@@ -1,4 +1,6 @@
+export * from "./detect/index.ts"
 export * from "./emitter.ts"
+export * from "./files.ts"
 export * from "./image/index.ts"
 export * from "./process.ts"
 export * from "./registry.ts"

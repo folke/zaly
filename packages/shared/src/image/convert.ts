@@ -1,12 +1,12 @@
 import type sharpType from "sharp"
-import type { ImageFormat } from "./detect.ts"
+import type { ImageFormat } from "../detect/index.ts"
 import type { ImageInfo } from "./info.ts"
 
 import { writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
+import { fileHash } from "../files.ts"
 import { safeStat } from "../utils.ts"
-import { imageHash } from "./detect.ts"
 import { imageInfo } from "./info.ts"
 
 /** Formats sharp can *write*. PNG/JPEG/WebP/GIF/AVIF/TIFF/JP2 in default
@@ -33,18 +33,37 @@ export async function imageConvert<T extends WritableFormat>(
 
   if (formats.includes(img.format as T)) return img as ImageInfo<T>
 
-  const hash = imageHash(img)
+  const hash = fileHash(img)
   const target = formats[0]
   const tempPath = join(tmpdir(), `zaly-image-${hash}.${target}`)
 
-  if (safeStat(tempPath)?.isFile()) return (await imageInfo(tempPath)) as ImageInfo<T> | undefined
+  if (safeStat(tempPath)?.isFile()) {
+    // Reuse the cached converted file. We synthesise a `DetectedImage`
+    // shape directly — no need to re-fetch via the orchestrator since
+    // we already know the format and have the path.
+    const data = await readCached(tempPath)
+    if (data === undefined) return undefined
+    return imageInfo({ data, format: target, path: tempPath, type: "image" })
+  }
 
   const sharp = await getSharp()
   const pipeline = SHARP_WRITERS[target](sharp(img.data))
   const { data, info } = await pipeline.toBuffer({ resolveWithObject: true })
 
   await writeFile(tempPath, data)
-  return { data, format: target, height: info.height, path: tempPath, width: info.width }
+  return {
+    data,
+    format: target,
+    height: info.height,
+    path: tempPath,
+    type: "image",
+    width: info.width,
+  }
+}
+
+async function readCached(path: string): Promise<Uint8Array | undefined> {
+  const { readFile } = await import("node:fs/promises")
+  return readFile(path).catch(() => undefined)
 }
 
 // sharp is only needed when we have to convert. Both its ESM graph and

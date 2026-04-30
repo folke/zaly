@@ -7,6 +7,7 @@ const fakeImage = (format: ImageInfo["format"]): ImageInfo => ({
   format,
   height: 1,
   path: "/tmp/fake-source",
+  type: "image",
   width: 1,
 })
 
