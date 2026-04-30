@@ -1,45 +1,78 @@
 # Invalidation
 
-Every Node has a small amount of cache + invalidate machinery. Understanding it is useful when writing a custom widget, and essential when debugging a "why isn't this re-rendering" bug.
+Every Node has cache + invalidate machinery. Understanding it is useful when writing a custom widget, and essential when debugging a "why isn't this re-rendering" or "why is this re-rendering forever" bug.
 
 ## The cache
 
 ```ts
 #cache?: { rows: string[]; version: number }
+#invalidations = 0
 ```
 
-Set after `_render` completes. Reused on subsequent `render(ctx)` calls when `ctx.version === #cache.version`.
+`#cache` is set after `_render` completes (when the render's rows are valid). Reused on subsequent `render(ctx)` calls when `ctx.version === #cache.version`.
+
+`#invalidations` is a monotonic counter — bumped on every external invalidate, captured at the start of a render, and re-checked after `_render` resolves. If it moved during the render, the rows we just produced are stale (an external mutation landed mid-render), so the cache writeback is **skipped** and the next paint runs a fresh `_render` against the latest state.
 
 ## The cascade
 
 ```ts
 invalidate(): this {
-  const hadCache = this.#cache !== undefined
   this.#cache = undefined
-  if (this.#rendering) return this
+  if (inRenderContextOf(this)) return this
+  this.#invalidations++
   this.emit("invalidate")
-  if (hadCache) this.parent?.invalidate()
+  this.parent?.invalidate()
   return this
 }
 ```
 
 State proxies call `invalidate()` on every mutation. The node:
 
-1. Notes whether it had a cached result.
-2. Clears the cache.
-3. Emits `"invalidate"` (surfaces / effects subscribe here).
-4. Cascades to the parent **only if `hadCache`** — an optimization that avoids redundant ancestor walks when back-to-back writes land on a freshly invalidated node.
+1. Clears the cache.
+2. Checks `inRenderContextOf(this)` — short-circuits when the invalidate originates *inside this node's own render call stack* (see below).
+3. Otherwise, bumps `#invalidations`, emits `"invalidate"`, and **always** cascades to the parent. Surfaces dedupe via their own `scheduled` flag, so the per-invalidate cost is one tree walk + emit — cheap enough that the cascade never short-circuits based on cache state.
 
 The surface at the top of the tree catches `"invalidate"` on its root and schedules a repaint.
 
-## The `#rendering` guard
+## `inRenderContextOf` — the discriminator
 
-`render()` sets `#rendering = <promise>` while a render is in flight and clears it in `finally`. The guard on `invalidate()` exists so that *intentional* mid-render mutations don't cascade:
+```ts
+export function inRenderContextOf(node: Node): boolean {
+  const active = activeCtx.getStore()  // ALS lookup
+  return active !== undefined && active === nodeCtx.get(node)
+}
+```
 
-- [`markdown`](../widgets/markdown) calls `this.#text.setState({...})` inside `_render` to hand updated content to its Text child.
-- [`input`](../widgets/input) does the same with its Text child.
+`withActiveNode(node, fn)` runs `fn` with `node`'s tracking ctx as the active `AsyncLocalStorage` store. Awaits inside `fn` keep that ctx; *other* async work doesn't see it. So `inRenderContextOf(this)` answers a single question: **"is this `invalidate` call part of the in-flight render's own logic?"** Four cases:
 
-In both cases the current render already produces output that reflects the new state — cascading would schedule a redundant re-paint. The guard drops the cascade cleanly.
+| call site | ALS scope at call | `inRenderContextOf(this)` | behavior |
+|---|---|---|---|
+| `this.invalidate()` from inside `this._render` | `this`'s ctx | `true` | self-mutation; render reflects it. **Suppress.** |
+| Child `setState` from inside parent's `_render`, cascading up to parent | parent's ctx | `true` for parent | parent will call `child.render` next; rows reflect new state. **Suppress.** |
+| Child's own `_render` mutates something cascading up to parent | child's ctx | `false` for parent | parent's running render is based on pre-mutation tree. **Emit + cascade + bump.** |
+| External callback (network, timer, key event) mutates state during a render | `undefined` | `false` | external; must repaint. **Emit + cascade + bump.** |
+
+The first two cases produce rows that *do* reflect the new state — the cache writeback is valid, and we don't want a redundant repaint. The last two need the generation-mismatch check to skip the writeback so the next render sees a cache miss.
+
+This is what powers the Markdown→Text and Input→Text patterns: the parent mutates its child Text's state inside its own `_render` and then calls `text.render(ctx)` to get fresh rows. The cascade reaches the parent (it's nested inside `withActiveNode(parent)`), and the suppression ensures the parent doesn't schedule a redundant follow-up paint.
+
+## Async work started during `_render` — use `untrack`
+
+If you start a `setInterval`, `setTimeout`, or any persistent async work *from inside* `_render` (or any code reachable from `_render`), the async callback **inherits the render's ALS context**. Every fire of that timer/promise then looks like it's "inside" the render — and `invalidate` calls from inside the callback are silently suppressed.
+
+The Spinner widget hits this: its `#startTimer` is reachable from `_render` via the `running: false → true` reconcile path. Without escaping the ALS scope, the interval would be set up under `withActiveNode(spinner)`, every tick would run with `activeCtx === spinner`'s ctx, `inRenderContextOf(spinner) === true` → invalidate suppressed → spinner never re-renders.
+
+The fix is `untrack`:
+
+```ts
+import { untrack } from "@zaly/tui"
+
+#startTimer(): void {
+  this.#timer = untrack(() => setInterval(() => this.invalidate(), this.speed))
+}
+```
+
+`untrack(fn)` runs `fn` with the ALS store cleared. Async work started inside captures *no* context. Equivalent to Solid's `untrack`. See [Reactivity → untrack](../guide/reactivity#untrack).
 
 ## Visible: false caches too
 
@@ -52,25 +85,20 @@ if (!unwrap(this.state.visible ?? true)) {
 }
 ```
 
-Why: without this, a toggleable panel's first render-while-hidden would leave `#cache` undefined. A later flip-to-visible invalidate would check `hadCache` → `false` → no cascade to parent. The root surface would never get dirty and the panel wouldn't appear.
-
-Caching the empty result makes the invariant "a rendered node has a cache" hold regardless of visibility, so the cascade always propagates correctly.
+Caching the empty result keeps the cache invariant intact across visibility flips, so a later flip-to-visible invalidate produces a cache miss and a real render rather than serving the empty rows back.
 
 ## Custom widget checklist
 
 When building a widget by subclassing `Node`:
 
-- **Writes to `this.state.*` auto-invalidate.** No manual calls needed.
+- **Writes to `this.state.*` auto-invalidate** via the proxy. No manual calls needed.
 - **`this.setState({...})`** is the batched form — writes all keys then invalidates once.
-- **Never write state inside `_render`** if you can avoid it — use a parent-level effect, or pre-compute. The exceptions are legitimate child setup (Markdown → Text, Input → Text), and those rely on the `#rendering` guard to avoid feedback loops.
-- **`this.invalidate()` manually** is fine for derived / computed changes the proxy can't see (e.g. mutating a nested object, which the shallow proxy doesn't trap).
-
-## Effects and signals
-
-[Reactivity](../guide/reactivity) sits on top of the same machinery. An `effect(fn)` subscribes to the signals read during its run. When a signal writes, it calls `invalidate()` on every subscribed effect, which re-runs `fn`. Signals passed into state (`state.value = signalAccessor`) are unwrapped inside the active rendering context, so the node becomes a subscriber and re-renders on signal change.
+- **Writing state inside `_render` is allowed** — Markdown→Text and Input→Text rely on it. The ALS-based discriminator handles it correctly. But avoid it when an `effect`-driven reconcile or a pre-compute would do; explicit dependencies are easier to reason about.
+- **`this.invalidate()` manually** is fine for derived / computed changes the proxy can't see (e.g. mutating a nested object — the shallow proxy doesn't trap nested writes).
+- **Wrap `setInterval` / `setTimeout` / persistent async work in `untrack(...)`** if the setup site is reachable from `_render`. Otherwise the callback inherits the render's ALS scope and its invalidates get swallowed.
 
 ## Debugging
 
-- "Why isn't it re-rendering?" Start by checking `hadCache`. If the node's cache is `undefined` when invalidate fires, the cascade stops. The visible-false path is the usual culprit (see above).
-- "Why is it re-rendering extra?" A `this.state.*` write inside `_render` with the `#rendering` guard relaxed would do it. Also check for effect subscriptions that read state they shouldn't.
-- Subscribe to `"invalidate"` on a node for ad-hoc tracing — it's just an emitter event.
+- **"Why isn't it re-rendering?"** First check whether the invalidate site is inside an ALS-tracked render. A timer/interval set up inside `_render` (without `untrack`) is the usual culprit — `inRenderContextOf` returns `true` for every fire and silently suppresses.
+- **"Why is it re-rendering forever?"** Check for state writes inside `_render` that mutate a *non-child* node, or for an `effect` that writes the same signal it reads. The cascade is now unconditional, so a stray write produces a real loop.
+- **Subscribe to `"invalidate"`** on a node for ad-hoc tracing — it's just an emitter event. Counting events on each tick is a fast way to find runaway invalidates.
