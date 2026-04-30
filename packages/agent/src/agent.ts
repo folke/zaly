@@ -216,7 +216,12 @@ export class Agent extends Emitter<AgentEvents> {
    *  `input + output` (since the model's reply becomes part of the
    *  next prompt). Returns 0 before any step has run. */
   get contextSize(): number {
-    return this.usage.input + this.usage.output
+    return (
+      this.usage.input +
+      this.usage.output +
+      (this.usage.cacheRead ?? 0) +
+      (this.usage.cacheWrite ?? 0)
+    )
   }
   get lastError(): Error | undefined {
     return this.#lastError
