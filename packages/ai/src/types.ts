@@ -49,11 +49,16 @@ export interface MetaPart {
   tag?: string
 }
 
-type FilePart<T extends string, MT extends string = string> = {
+export type FilePart<T extends string = string, MT extends string = string> = {
   type: T
   mime: MT
-  source: { type: "base64"; data: string } | { type: "url"; url: string }
+  source:
+    | { type: "base64"; data: string }
+    | { type: "url"; url: string }
+    | { type: "file"; path: string }
 }
+
+export type FilePartSource = FilePart["source"]
 
 export type ImagePart = FilePart<"image", "image/png" | "image/jpeg" | "image/webp"> & {
   detail?: "low" | "high" | "auto"
