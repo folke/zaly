@@ -1,3 +1,4 @@
+import type { Inlined } from "../content/part.ts"
 import type {
   FinishReason,
   Provider,
@@ -7,7 +8,6 @@ import type {
   TokenCount,
   ToolChoice,
 } from "../provider.ts"
-import type { Inlined } from "../content/part.ts"
 import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
 
 import {
@@ -643,8 +643,7 @@ function* handleEvent(
       // without a separate channel.
       usageSoFar.input = u.input_tokens
       usageSoFar.output = u.output_tokens
-      if (u.cache_read_input_tokens !== undefined)
-        usageSoFar.cacheRead = u.cache_read_input_tokens
+      if (u.cache_read_input_tokens !== undefined) usageSoFar.cacheRead = u.cache_read_input_tokens
       if (u.cache_creation_input_tokens !== undefined)
         usageSoFar.cacheWrite = u.cache_creation_input_tokens
       return
