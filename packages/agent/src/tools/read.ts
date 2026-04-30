@@ -1,16 +1,8 @@
-import type { Attachment, ImagePart, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
-import type { FileData, ImageInfo } from "@zaly/shared"
+import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
 
-import { defineTool, ToolError } from "@zaly/ai"
-import {
-  detect,
-  imageConvert,
-  imageDetector,
-  imageInfo,
-  isBinaryData,
-  safeStat,
-} from "@zaly/shared"
-import { readFile, stat } from "node:fs/promises"
+import { defineTool, toAttachment, ToolError } from "@zaly/ai"
+import { fileDetect, safeStat } from "@zaly/shared"
+import { stat } from "node:fs/promises"
 import { resolve } from "pathe"
 import { Type } from "typebox"
 
@@ -75,38 +67,43 @@ export const readTool = defineTool({
       throw new ToolError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
     }
 
-    const data = await readFile(path)
-    const file: FileData = { data, path }
-
-    // Image first — magic bytes (and a few byte-level fallbacks like
-    // ISOBMFF brand parsing) decide cleanly. A file whose bytes match
-    // a known image format wins regardless of how text-y the rest of
-    // the byte stream looks.
-    const detected = detect(imageDetector, file)
-    if (detected) {
-      const info = imageInfo({ ...file, ...detected })
-      // Provider adapters accept a small set of MIMEs; convert any
-      // detected image into one of them. No-op if already supported.
-      const ready = await imageConvert(info, ["png", "jpeg", "webp"])
-      if (ready !== undefined) return [toImagePart(ready)]
+    const file = await fileDetect(path)
+    if (!file) {
+      throw new ToolError({
+        code: "READ_ERROR",
+        message: `${path}: could not read file`,
+      })
     }
 
     // Threshold-based binary check — files with sporadic control bytes
     // (logs with ANSI styling, source with form feeds) still read as
     // text; only when binary content dominates the sample do we bail.
-    if (isBinaryData(data)) {
+    if (file.type === "binary") {
       throw new ToolError({
         code: "BINARY_FILE",
-        data: { bytes: data.length, path },
-        message: `${path}: binary file (${data.length} bytes); not displayable as text`,
+        data: { bytes: file.data.length, path },
+        message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
       })
     }
+
+    const att = await toAttachment(file)
+    if (att) return [att]
+
+    if (file.type !== "text") {
+      throw new ToolError({
+        code: "UNSUPPORTED_FILE",
+        data: { path, type: file.type },
+        message: `${path}: unsupported file type ${file.type}`,
+      })
+    }
+
+    const text = new TextDecoder().decode(file.data)
 
     // Record the read so the freshness tracker knows we've seen this
     // file's current bytes. write/edit consult this before mutating.
     trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
 
-    return formatTextSlice(data.toString("utf8"), {
+    return formatTextSlice(text, {
       limit: args.limit,
       offset: args.offset,
       path,
@@ -180,8 +177,7 @@ function formatTextSlice(
   // Negative offset = "from the end" — Python-slice / `tail -n` semantic.
   // `-1000` on a 30-line file clamps to 0 (read whole file) rather than
   // erroring; `0` is treated as `1` (head, off-by-one tolerance).
-  const start =
-    offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
+  const start = offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
   const end = Math.min(lines.length, start + limit)
   if (start >= lines.length) {
     return `(file has ${lines.length} lines; offset ${offset} is past end)`
@@ -213,15 +209,4 @@ function formatTextSlice(
     type: "meta",
   }
   return [meta, { text, type: "text" }]
-}
-
-/** Wrap a converted image as an `ImagePart`. Format is one of the three
- *  supported by `imageConvert`'s target set, mapped to its MIME type. */
-function toImagePart(img: ImageInfo<"jpeg" | "webp" | "png">): ImagePart {
-  const mime = ({ jpeg: "image/jpeg", png: "image/png", webp: "image/webp" } as const)[img.format]
-  return {
-    mime,
-    source: { data: Buffer.from(img.data).toString("base64"), type: "base64" },
-    type: "image",
-  }
 }
