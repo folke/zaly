@@ -1,4 +1,5 @@
-import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
+import type { Attachment, MetaPart, TextPart, Tool, ToolContext, ToolMeta } from "@zaly/ai"
+import type { ToolInit } from "./index.ts"
 
 import { defineTool, toAttachment, AiError } from "@zaly/ai"
 import { fileDetect, safeStat } from "@zaly/shared"
@@ -25,91 +26,103 @@ import { Type } from "typebox"
 const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
-// oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
-export const readTool = defineTool({
-  name: "read",
-  desc:
-    "Read a file. Text files return numbered lines (`cat -n` style). " +
-    "Image files return as image attachments. " +
-    "Use `offset`/`limit` to slice large files.",
-  parallel: true,
-  // oxlint-disable-next-line sort-keys -- semantic param order
-  params: Type.Object({
-    path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
-    offset: Type.Integer({
-      default: 1,
-      description:
-        "1-based line number to start at. Negative values count from " +
-        "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
-        "with the default limit returns the last 50 lines, like " +
-        "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
-        "starting 50 from the end.",
+/** Build the `read` tool with model-aware schema description. The
+ *  attachment-shape blurb is included only when the loaded model
+ *  actually accepts the relevant modality — text-only models see a
+ *  description that promises only text output, so they don't reach
+ *  for the tool expecting images they can't process. */
+export function createReadTool(init: ToolInit): Tool {
+  const attachmentKinds: string[] = []
+  if (init.model.canAttach("image")) attachmentKinds.push("image")
+  if (init.model.canAttach("pdf")) attachmentKinds.push("pdf")
+  const attachmentBlurb =
+    attachmentKinds.length > 0
+      ? ` ${attachmentKinds.join("/")} files return as attachments.`
+      : ""
+
+  // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
+  return defineTool({
+    name: "read",
+    desc: `Read a file. Text files return numbered lines (\`cat -n\` style).${attachmentBlurb} Use \`offset\`/\`limit\` to slice large files.`,
+    parallel: true,
+    // oxlint-disable-next-line sort-keys -- semantic param order
+    params: Type.Object({
+      path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
+      offset: Type.Integer({
+        default: 1,
+        description:
+          "1-based line number to start at. Negative values count from " +
+          "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
+          "with the default limit returns the last 50 lines, like " +
+          "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
+          "starting 50 from the end.",
+      }),
+      limit: Type.Integer({
+        default: DEFAULT_LIMIT,
+        description: "Maximum number of lines to return.",
+        minimum: 1,
+      }),
     }),
-    limit: Type.Integer({
-      default: DEFAULT_LIMIT,
-      description: "Maximum number of lines to return.",
-      minimum: 1,
-    }),
-  }),
 
-  async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
-    const path = resolve(args.path)
-    await ctx.need?.("read", path)
+    async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
+      const path = resolve(args.path)
+      await ctx.need?.("read", path)
 
-    const fileStat = await stat(path).catch((error: unknown) => {
-      throw new AiError({
-        cause: error,
-        code: "NOT_FOUND",
-        message: `cannot read ${path}: file not found`,
+      const fileStat = await stat(path).catch((error: unknown) => {
+        throw new AiError({
+          cause: error,
+          code: "NOT_FOUND",
+          message: `cannot read ${path}: file not found`,
+        })
       })
-    })
-    if (!fileStat.isFile()) {
-      throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
-    }
+      if (!fileStat.isFile()) {
+        throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
+      }
 
-    const file = await fileDetect(path)
-    if (!file) {
-      throw new AiError({
-        code: "READ_ERROR",
-        message: `${path}: could not read file`,
+      const file = await fileDetect(path)
+      if (!file) {
+        throw new AiError({
+          code: "READ_ERROR",
+          message: `${path}: could not read file`,
+        })
+      }
+
+      // Threshold-based binary check — files with sporadic control bytes
+      // (logs with ANSI styling, source with form feeds) still read as
+      // text; only when binary content dominates the sample do we bail.
+      if (file.type === "binary") {
+        throw new AiError({
+          code: "BINARY_FILE",
+          data: { bytes: file.data.length, path },
+          message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
+        })
+      }
+
+      const att = await toAttachment(file)
+      if (att) return [att]
+
+      if (file.type !== "text") {
+        throw new AiError({
+          code: "UNSUPPORTED_FILE",
+          data: { path, type: file.type },
+          message: `${path}: unsupported file type ${file.type}`,
+        })
+      }
+
+      const text = new TextDecoder().decode(file.data)
+
+      // Record the read so the freshness tracker knows we've seen this
+      // file's current bytes. write/edit consult this before mutating.
+      trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
+
+      return formatTextSlice(text, {
+        limit: args.limit,
+        offset: args.offset,
+        path,
       })
-    }
-
-    // Threshold-based binary check — files with sporadic control bytes
-    // (logs with ANSI styling, source with form feeds) still read as
-    // text; only when binary content dominates the sample do we bail.
-    if (file.type === "binary") {
-      throw new AiError({
-        code: "BINARY_FILE",
-        data: { bytes: file.data.length, path },
-        message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
-      })
-    }
-
-    const att = await toAttachment(file)
-    if (att) return [att]
-
-    if (file.type !== "text") {
-      throw new AiError({
-        code: "UNSUPPORTED_FILE",
-        data: { path, type: file.type },
-        message: `${path}: unsupported file type ${file.type}`,
-      })
-    }
-
-    const text = new TextDecoder().decode(file.data)
-
-    // Record the read so the freshness tracker knows we've seen this
-    // file's current bytes. write/edit consult this before mutating.
-    trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
-
-    return formatTextSlice(text, {
-      limit: args.limit,
-      offset: args.offset,
-      path,
-    })
-  },
-})
+    },
+  })
+}
 
 declare module "@zaly/ai" {
   interface ToolMeta {

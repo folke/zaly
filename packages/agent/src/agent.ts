@@ -139,9 +139,10 @@ export class Agent extends Emitter<AgentEvents> {
       opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
     const cwd = normPath(opts.cwd ?? process.cwd())
     const skills = opts.skills === false ? undefined : await Skills.load({ cwd })
+    const toolInit = { cwd, model: opts.model }
     const tools: Tool[] = await Promise.all(
       (opts.tools ?? []).map((t) =>
-        Promise.resolve(typeof t === "string" ? toolRegistry.load(t) : t)
+        Promise.resolve(typeof t === "string" ? toolRegistry.load(t, toolInit) : t)
       )
     )
     const init: AgentInit = { ...opts, cwd, session, skills, tools }

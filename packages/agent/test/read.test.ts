@@ -1,11 +1,20 @@
-import type { Message, MetaPart, TextPart, ToolContext, ToolResultPart } from "@zaly/ai"
+import type { Message, MetaPart, Model, TextPart, ToolContext, ToolResultPart } from "@zaly/ai"
 
 import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { AiError } from "@zaly/ai"
-import { assertFresh, readTool, trackFile } from "../src/tools/read.ts"
+import { assertFresh, createReadTool, trackFile } from "../src/tools/read.ts"
+
+// Permissive model stub — the tests don't depend on the schema-desc
+// gating, just on tool behavior, so any Model that claims `canAttach`
+// for everything works. Cast through unknown because we're only
+// surfacing the one method the factory reads.
+const readTool = createReadTool({
+  cwd: process.cwd(),
+  model: { canAttach: () => true } as unknown as Model,
+})
 
 type ReadResult = string | (TextPart | MetaPart)[]
 
