@@ -51,6 +51,7 @@ export class Agent extends Emitter<AgentEvents> {
 
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
+  #notifyQueue: MetaPart[] = []
   #cwd: string
 
   #status: AgentStatus = "idle"
@@ -312,6 +313,18 @@ export class Agent extends Emitter<AgentEvents> {
     }
   }
 
+  notify(meta: Omit<MetaPart, "type">): void
+  notify(msg: string, tag?: string): void
+  notify(metaOrMsg: Omit<MetaPart, "type"> | string, tag?: string): void {
+    if (typeof metaOrMsg === "string")
+      this.#notifyQueue.push({
+        content: [{ text: metaOrMsg, type: "text" }],
+        tag: tag ?? "notify",
+        type: "meta",
+      })
+    else this.#notifyQueue.push({ ...metaOrMsg, type: "meta" } as MetaPart)
+  }
+
   /** Schedule a one-shot wake-up at `delayMs` from now. The agent will
    *  receive a system message at that time IF nothing else has woken
    *  the loop in the meantime — task-done injects, heartbeats, and user
@@ -443,6 +456,16 @@ export class Agent extends Emitter<AgentEvents> {
   /** Run exactly one step. Useful for tests and custom drivers
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
+    this.#notifier.check({ agent: this })
+    // Drain the notify queue into the inject queue as a single system message
+    if (this.#notifyQueue.length > 0) {
+      this.#injectQueue.push({
+        content: this.#notifyQueue.splice(0),
+        role: "system",
+      })
+    }
+
+    // Add any injected messages
     if (this.#injectQueue.length > 0) {
       for (const m of this.#injectQueue.splice(0)) this.session.add(m)
     }
