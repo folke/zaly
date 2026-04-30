@@ -1,5 +1,5 @@
 import type sharpType from "sharp"
-import type { ImageFormat } from "../detect/index.ts"
+import type { DetectedImage, ImageFormat } from "../detect/index.ts"
 import type { ImageInfo } from "./info.ts"
 
 import { writeFile } from "node:fs/promises"
@@ -26,12 +26,12 @@ export type WritableFormat = keyof typeof SHARP_WRITERS
  *  converted output is cached on disk in `tmpdir`, keyed by content
  *  hash, so repeat calls across processes reuse the same file. */
 export async function imageConvert<T extends WritableFormat>(
-  img: ImageInfo,
+  img: DetectedImage,
   format: T | [T, ...T[]]
-): Promise<ImageInfo<T> | undefined> {
+): Promise<ImageInfo<T> | DetectedImage<T> | undefined> {
   const formats = Array.isArray(format) ? format : [format]
 
-  if (formats.includes(img.format as T)) return img as ImageInfo<T>
+  if (formats.includes(img.format as T)) return img as DetectedImage<T>
 
   const hash = fileHash(img)
   const target = formats[0]
