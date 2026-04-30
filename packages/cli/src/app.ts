@@ -92,6 +92,12 @@ export class App {
       }
     })
 
+    // Replay the tail of a resumed conversation so the stream surface
+    // isn't empty on session load. 20 messages ≈ a handful of recent
+    // exchanges; older history stays in the session and is sent to the
+    // model on the next request — just not painted here.
+    this.#render.stream.replay(this.#agent.messages.slice(-50))
+
     this.#render.input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
       if (trimmed === "" || this.#busy.get()) return
