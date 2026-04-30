@@ -60,11 +60,14 @@ describe("NodeBase", () => {
     expect(fn).not.toHaveBeenCalled()
   })
 
-  test("invalidate emits on every mutation; parent cascade only on the first", async () => {
-    // Local emit is cheap and surfaces dedupe via their own scheduled
-    // flag, so we don't short-circuit it. The parent cascade *is*
-    // short-circuited — that's the optimization that keeps 500 rapid
-    // mutations from walking the whole tree 500 times.
+  test("invalidate emits on every mutation and always cascades to parent", async () => {
+    // Both local and cascade fire on every invalidate. Surfaces dedupe
+    // via their own scheduled flag, so the extra parent walks don't
+    // produce extra renders. We can't safely skip the cascade based on
+    // cache state because a node may intentionally skip caching (when
+    // a mid-render mutation makes the rows stale) — and the next
+    // invalidate must still dirty the parent so the surface schedules
+    // a fresh paint.
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
     parent.add(child)
@@ -81,7 +84,7 @@ describe("NodeBase", () => {
     child.state.text = "c"
 
     expect(localFn).toHaveBeenCalledTimes(3)
-    expect(parentFn).toHaveBeenCalledTimes(1)
+    expect(parentFn).toHaveBeenCalledTimes(3)
   })
 
   test("visible: false renders no rows without calling _render", async () => {
@@ -165,7 +168,12 @@ describe("NodeBase", () => {
     expect(parentFn).toHaveBeenCalledTimes(1)
   })
 
-  test("cascade short-circuits when parent already dirty", async () => {
+  test("cascade fires on every mutation; surfaces own the dedupe", async () => {
+    // Previously the cascade short-circuited on back-to-back writes,
+    // but that was unsafe: a node whose render skips caching (because
+    // a child mutation landed mid-render) would never dirty its parent
+    // again. Surfaces dedupe at their own `scheduled` flag, so the
+    // per-invalidate cost is one tree walk + emit — cheap.
     const parent = new TestNode({ count: 0, text: "p" })
     const child = new TestNode({ count: 0, text: "c" })
     parent.add(child)
@@ -176,7 +184,7 @@ describe("NodeBase", () => {
     child.state.text = "a"
     child.state.text = "b"
     child.state.text = "c"
-    expect(parentFn).toHaveBeenCalledTimes(1)
+    expect(parentFn).toHaveBeenCalledTimes(3)
   })
 
   test("invalidate returns this for chaining", async () => {

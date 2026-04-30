@@ -4,7 +4,7 @@ import type { Surface } from "../renderer/index.ts"
 import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
 
 import { Emitter } from "@zaly/shared"
-import { unwrap, withActiveNode } from "./reactive.ts"
+import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
 
 export type { BaseState }
 
@@ -40,6 +40,13 @@ export abstract class Node<
   #cache?: { rows: string[]; version: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
+  /** Bumped on every `invalidate()`. Captured at the start of a render
+   *  and re-checked after `_render` resolves: if the count moved, an
+   *  external mutation landed during the render and the rows we just
+   *  produced reflect pre-mutation state. We skip writing the cache in
+   *  that case so the surface's already-scheduled re-paint sees a
+   *  cache miss and re-renders against the latest state. */
+  #invalidations = 0
   readonly #children: Node[] = []
   readonly #state: S
   readonly state: S
@@ -122,22 +129,34 @@ export abstract class Node<
   }
 
   invalidate(): this {
-    // Always emit — surfaces (stream, UI) dedupe via their own
-    // `scheduled` flag, and a brand-new node whose cache has never
-    // been populated still needs to notify its surface that it wants
-    // a first flush. Cascade upward only when we actually had cached
-    // state to invalidate, so idle ancestor walks don't repeat for
-    // back-to-back state writes.
-    const hadCache = this.#cache !== undefined
     this.#cache = undefined
-    // avoid cascade during an active render — state mutations during
-    // render are allowed (e.g. Markdown setting its Text child's
-    // content inside `_render`). The current render's output already
-    // reflects the new state, so skipping the cascade avoids a
-    // redundant re-paint of an otherwise up-to-date tree.
-    if (this.#rendering) return this
+    // Suppress only when this invalidate originates from *inside this
+    // node's own render call stack* — e.g. Markdown mutating its child
+    // Text inside its own `_render`. The active render observes the
+    // mutation as part of its own logic and produces rows that already
+    // reflect it, so we skip the cascade *and* the generation bump:
+    // the cache writeback at the end of the render is valid.
+    //
+    // External mutations (network callbacks, event handlers) and
+    // mutations cascading up from a *deeper* render's own call stack
+    // (e.g. Text._render mutating something that bubbles to Markdown
+    // mid-Markdown-render) run outside *this* node's ALS scope, so
+    // `inRenderContextOf(this)` returns `false` and they emit + bump
+    // normally — the in-flight render's rows are stale, the cache
+    // writeback gets skipped, and the surface schedules a fresh paint.
+    if (inRenderContextOf(this)) return this
+    this.#invalidations++
+    // Always emit and always cascade — surfaces (stream, UI) dedupe
+    // via their own `scheduled` flag, and the parent's cache always
+    // includes whatever rows we returned last render, so a child
+    // mutation always implies a stale parent cache. (We previously
+    // skipped the cascade when `hadCache` was false, which was buggy:
+    // a node that intentionally doesn't cache — e.g. one whose
+    // `_render` mutates a child mid-render and skips the writeback —
+    // would silently fail to dirty its parent on the next mutation,
+    // pinning the surface to the first render's output.)
     this.emit("invalidate")
-    if (hadCache) this.parent?.invalidate()
+    this.parent?.invalidate()
     return this
   }
 
@@ -158,10 +177,18 @@ export abstract class Node<
         this.#cache = { rows: [], version: ctx.version }
         return this.#cache.rows
       }
-      if (this.#cache?.version !== ctx.version) {
-        this.#cache = { rows: await this._render(ctx), version: ctx.version }
+      if (this.#cache?.version === ctx.version) return this.#cache.rows
+      // Capture the invalidation count *before* awaiting `_render`. If
+      // it bumps mid-render, the rows we get back are based on stale
+      // state — the external mutation that bumped it has already
+      // emitted and re-scheduled the surface, so skip caching. The
+      // re-paint will run a fresh `_render` against the latest state.
+      const stamp = this.#invalidations
+      const rows = await this._render(ctx)
+      if (this.#invalidations === stamp) {
+        this.#cache = { rows, version: ctx.version }
       }
-      return this.#cache.rows
+      return rows
     })
     try {
       return await this.#rendering
