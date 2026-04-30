@@ -1,6 +1,6 @@
 import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
 
-import { defineTool, toAttachment, ToolError } from "@zaly/ai"
+import { defineTool, toAttachment, AiError } from "@zaly/ai"
 import { fileDetect, safeStat } from "@zaly/shared"
 import { stat } from "node:fs/promises"
 import { resolve } from "pathe"
@@ -57,19 +57,19 @@ export const readTool = defineTool({
     await ctx.need?.("read", path)
 
     const fileStat = await stat(path).catch((error: unknown) => {
-      throw new ToolError({
+      throw new AiError({
         cause: error,
         code: "NOT_FOUND",
         message: `cannot read ${path}: file not found`,
       })
     })
     if (!fileStat.isFile()) {
-      throw new ToolError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
+      throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
     }
 
     const file = await fileDetect(path)
     if (!file) {
-      throw new ToolError({
+      throw new AiError({
         code: "READ_ERROR",
         message: `${path}: could not read file`,
       })
@@ -79,7 +79,7 @@ export const readTool = defineTool({
     // (logs with ANSI styling, source with form feeds) still read as
     // text; only when binary content dominates the sample do we bail.
     if (file.type === "binary") {
-      throw new ToolError({
+      throw new AiError({
         code: "BINARY_FILE",
         data: { bytes: file.data.length, path },
         message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
@@ -90,7 +90,7 @@ export const readTool = defineTool({
     if (att) return [att]
 
     if (file.type !== "text") {
-      throw new ToolError({
+      throw new AiError({
         code: "UNSUPPORTED_FILE",
         data: { path, type: file.type },
         message: `${path}: unsupported file type ${file.type}`,
@@ -126,7 +126,7 @@ export function assertFresh(path: string, ctx: ToolContext) {
   path = resolve(path)
   const mtime = safeStat(path)?.mtimeMs
   if (mtime === undefined)
-    throw new ToolError({ code: "NOT_FOUND", message: `${path}: file not found` })
+    throw new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })
   const messages = ctx.messages
   if (!messages) throw freshnessError(path, "NOT_READ")
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -144,8 +144,8 @@ export function assertFresh(path: string, ctx: ToolContext) {
  *  stable so the model can branch on it; the message tells the model
  *  what to do next; `data.reason` distinguishes never-read vs
  *  changed-since-read for downstream renderers. */
-export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): ToolError {
-  return new ToolError({
+export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiError {
+  return new AiError({
     code: "FILE_NOT_FRESH",
     data: { path, reason },
     message:

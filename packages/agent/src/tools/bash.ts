@@ -1,6 +1,6 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
-import { defineTool, formatToolError, ToolError } from "@zaly/ai"
+import { defineTool, toErrorResult, AiError } from "@zaly/ai"
 import { Spawn } from "@zaly/shared"
 import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
@@ -161,13 +161,13 @@ function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResul
 }
 
 /** Build a ToolResult for the binary-output error case. Routes through
- *  `formatToolError` so the result picks up the standard `<error>` MetaPart
+ *  `toErrorResult` so the result picks up the standard `<error>` MetaPart
  *  + formatted text body — same shape as any other tool error. The `read`
  *  hint in the message points at the on-disk log so the model can pipe
  *  it through a text-converting command if it actually needs the bytes. */
 function formatBinaryError(bytes: number, logPath: string): ToolResult {
-  return formatToolError(
-    new ToolError({
+  return toErrorResult(
+    new AiError({
       code: "BINARY_OUTPUT",
       data: { bytes, logPath },
       message:

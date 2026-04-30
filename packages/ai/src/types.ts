@@ -36,18 +36,23 @@ export interface TextPart {
  *    - Tool status: `{ tag: "shell", data: { status: "running", id: "sh_abc" } }`
  *    - Mid-conversation system notes: `{ tag: "system", data: "user reset the file" }`
  *    - Generic tool ack: `{ data: { ok: true, bytes: 234 } }` → wraps in `<meta>`
+ *    - Nested content: `{ tag: "diff", content: [{ type: "text", text: "..." }] }`
  *
- *  `data` is `unknown` so callers can pass either a string (used
- *  verbatim) or any object (JSON-stringified at flatten-time). */
-export interface MetaPart {
+ *  Every MetaPart carries either a `data` payload (rendered as JSON in
+ *  the wrapper tag) **or** a `content` payload (rendered as nested
+ *  `Content` inside the wrapper). The two arms are mutually exclusive
+ *  so renderers and consumers can branch on the discriminator instead
+ *  of sniffing the shape of `data`. */
+export type MetaPart = {
   type: "meta"
-  data: unknown
   /** XML wrapper tag. Defaults to `"meta"`. Use a semantic tag when the
    *  meta has clear intent the model should recognize (`"truncation"`,
    *  `"shell"`, `"system"`). Stay consistent across tools for the same
    *  concept. */
   tag?: string
-}
+  data?: unknown
+  content?: Content
+} & ({ data: unknown } | { content: Content })
 
 export type FilePart<T extends string = string, MT extends string = string> = {
   type: T
@@ -81,15 +86,22 @@ export interface ToolCallPart {
   params: unknown
 }
 
-/** Structured error info captured when a tool's `call` throws a
- *  `ToolError` (or any other error wrapped as one). The model only
- *  reads the formatted error from `ToolResultPart.content`; this
- *  field is metadata the TUI / logger can render richly (badge for
- *  `code`, JSON block for `data`, retry icon, color by category). */
-export interface ToolErrorInfo {
-  code: string
+export type ErrorCode = Uppercase<string>
+
+/** Wire/structured shape of an error. Producers throw `AiError` (which
+ *  carries this plus a runtime `cause`); the runner serializes to this
+ *  shape for downstream consumers (TUI badges, telemetry) and for
+ *  embedding inline in content as `ErrorPart`. */
+export type ErrorInfo = {
+  /** Stable machine-readable identifier (UPPER_SNAKE). Lets recovery
+   *  logic and tests pattern-match without parsing prose. */
+  code: ErrorCode
+  /** Human-readable explanation. What the model and the user read. */
   message: string
+  /** Free-form structured data — extensible per-producer. */
   data?: unknown
+  /** When true, the same operation might succeed if retried (transient
+   *  network error, rate limit, etc.). */
   retryable?: boolean
 }
 
@@ -100,20 +112,8 @@ export interface ToolErrorInfo {
  *  ErrorPart on the wire — `errorToMeta()` (or equivalent) folds them
  *  into a `<error>` `MetaPart` before serialization, so the model gets
  *  a clear signal it can react to. */
-export interface ErrorPart {
+export type ErrorPart = ErrorInfo & {
   type: "error"
-  /** Stable machine-readable identifier (UPPER_SNAKE). Lets recovery
-   *  logic and tests pattern-match without parsing prose. */
-  code: string
-  /** Human-readable explanation. What the model and the user read. */
-  message: string
-  /** Free-form structured data — typed via declaration merging the
-   *  same way `ToolMeta` does, so each error producer can attach its
-   *  own shape without a central registry. */
-  data?: unknown
-  /** When true, the same operation might succeed if retried (transient
-   *  network error, rate limit, etc.). */
-  retryable?: boolean
 }
 
 export type ContentPart = TextPart | MetaPart | Attachment | ErrorPart
@@ -138,9 +138,9 @@ export interface ToolResultPart {
   name: string
   content: Content
   isError?: boolean
-  /** Set when `isError: true` and a structured `ToolError` was caught.
+  /** Set when `isError: true` and a structured `AiError` was caught.
    *  Invisible to providers — pure metadata for downstream consumers. */
-  error?: ToolErrorInfo
+  error?: ErrorInfo
   /** Sidecar payload the tool wrote to `ctx.meta` during the call —
    *  not serialized to the wire, not shown to the model. Rides alongside
    *  this result in the message list so other tools and the TUI can
@@ -367,7 +367,7 @@ export interface Streamable {
 export interface ToolResult {
   isError: boolean
   content: Content
-  error?: ToolErrorInfo
+  error?: ErrorInfo
   meta?: ToolMeta
 }
 

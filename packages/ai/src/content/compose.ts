@@ -2,7 +2,8 @@ import type { Attachment, ContentPart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
 import type { ContentTransform } from "./transform.ts"
 
-import { inlineFile, metaToTextPart, toAttachmentMeta, toErrorMeta } from "./part.ts"
+import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
+import { inlineFile } from "./part.ts"
 
 /**
  * Step-function helpers for `ContentTransform`. Each helper returns a
@@ -50,7 +51,7 @@ export function attachmentToMeta<K extends Attachment["type"]>(...kinds: readonl
       // The lint rule below misfires on `result.map` (the transform
       // method, not Array.map).
       // oxlint-disable-next-line unicorn/no-array-method-this-argument
-      result = result.map(k, toAttachmentMeta) as ContentTransform
+      result = result.map(k, fileToMetaPart) as ContentTransform
     }
     return result as ContentTransform<Exclude<T, { type: K }> | MetaPart>
   }
@@ -61,7 +62,7 @@ export function attachmentToMeta<K extends Attachment["type"]>(...kinds: readonl
  *  models recognize the tag and use it as a clear signal to
  *  course-correct. */
 export function errorToMeta() {
-  return <T extends ContentPart>(ct: ContentTransform<T>) => ct.map("error", toErrorMeta)
+  return <T extends ContentPart>(ct: ContentTransform<T>) => ct.map("error", errorToMetaPart)
 }
 
 /** Replace every `MetaPart` with its text serialization
@@ -89,9 +90,8 @@ export function inlineFileSources() {
       .mapAsync("audio", inlineFile)
       .mapAsync("video", inlineFile)
     return out as unknown as ContentTransform<
-      | Exclude<T, Attachment>
-      | (T extends Attachment ? Inlined<T> : never)
-      | MetaPart
+      Exclude<T, Attachment> | (T extends Attachment ? Inlined<T> : never) | MetaPart
     >
   }
 }
+

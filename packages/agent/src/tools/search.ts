@@ -1,6 +1,6 @@
 import type { MetaPart, TextPart } from "@zaly/ai"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
 
 /**
@@ -79,7 +79,7 @@ export const searchTool = defineTool({
   async call(args): Promise<(MetaPart | TextPart)[]> {
     const apiKey = process.env.BRAVE_API_KEY
     if (!apiKey || apiKey === "") {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_API_KEY",
         message:
           "search requires BRAVE_API_KEY in the environment. Get a key at " +
@@ -103,7 +103,7 @@ export const searchTool = defineTool({
 
     if (!res.ok) {
       const body = await res.text().catch(() => "")
-      throw new ToolError({
+      throw new AiError({
         code: "SEARCH_FAILED",
         data: { status: res.status, statusText: res.statusText },
         message: `Brave search failed (${res.status} ${res.statusText}): ${body.slice(0, 200)}`,

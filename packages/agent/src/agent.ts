@@ -3,7 +3,7 @@ import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/a
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
-import { collect, isContextOverflow, ToolError } from "@zaly/ai"
+import { collect, isContextOverflow, AiError } from "@zaly/ai"
 import { toError, normPath, Emitter } from "@zaly/shared"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session/index.ts"
@@ -102,7 +102,7 @@ export class Agent extends Emitter<AgentEvents> {
     // `*new*` marker so the model knows to call `task_poll` if it cares.
     this.#tasks.on("heartbeat", ({ running }) => {
       this.inject({
-        content: [{ data: taskInfoPart(running), tag: "heartbeat", type: "meta" }],
+        content: [{ content: [taskInfoPart(running)], tag: "heartbeat", type: "meta" }],
         role: "system",
       })
     })
@@ -605,7 +605,7 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   /** Implementation of `ctx.need(scope, input)`. Resolves on `allow`,
-   *  throws a `PERMISSION_DENIED` `ToolError` on `deny`, and escalates
+   *  throws a `PERMISSION_DENIED` `AiError` on `deny`, and escalates
    *  `ask` to `AgentOptions.allow` (treating it as `deny` when no
    *  callback is configured). */
   async #need(scope: string, input: string): Promise<void> {
@@ -620,7 +620,7 @@ export class Agent extends Emitter<AgentEvents> {
       })
       if (ok) return
     }
-    throw new ToolError({
+    throw new AiError({
       code: "PERMISSION_DENIED",
       data: { input, scope, suggestions: r.suggestions, verdict: r.verdict },
       message: r.reason,

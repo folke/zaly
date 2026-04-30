@@ -1,6 +1,6 @@
 import type { Message } from "@zaly/ai"
 
-import { defineTool } from "@zaly/ai"
+import { defineTool, stringifyContent } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { mockModel, runAgent, throwingModel } from "./helpers.ts"
@@ -75,9 +75,7 @@ describe("Agent — tool-calls loop", () => {
     })
     const toolMsg = result.messages[2] as Message<"tool">
     expect(toolMsg.content[0].isError).toBe(true)
-    const c = toolMsg.content[0].content
-    const text = typeof c === "string" ? c : c.map((p) => (p.type === "text" ? p.text : "")).join("")
-    expect(text).toMatch(/UNKNOWN_TOOL|mystery/)
+    expect(stringifyContent(toolMsg.content[0].content)).toMatch(/UNKNOWN_TOOL|mystery/)
   })
 
   test("stops after maxSteps even if the model keeps calling tools", async () => {

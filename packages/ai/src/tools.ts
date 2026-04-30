@@ -1,8 +1,10 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type { Streamable, Tool, ToolContext, ToolErrorInfo, ToolResult } from "./types.ts"
+import type { Streamable, Tool, ToolContext, ToolResult } from "./types.ts"
 
 import Schema from "typebox/schema"
 import { toContent } from "./content/format.ts"
+import { toErrorPart } from "./content/part.ts"
+import { AiError } from "./error.ts"
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"
@@ -19,63 +21,6 @@ export function isStreamable(value: unknown): value is Streamable {
     typeof (value as Streamable).abort === "function" &&
     (value as Streamable).done instanceof Promise
   )
-}
-
-/**
- * Structured error a tool's `execute` can throw to signal a business
- * failure — "not found", "rate limited", "permission denied". The
- * runner catches it and emits a shape the LLM can recognise and recover
- * from: stable `code` for branching, free-form `message` for the model,
- * optional `data` for tool-specific context, `retryable` to hint that a
- * retry might succeed (transient upstream, stale auth, etc.).
- *
- * Anything else `execute` throws is treated as an internal error: the
- * runner still returns a `tool-result` so the turn can continue, but
- * the code is `INTERNAL` and the message is generic — genuine bugs
- * shouldn't be teaching the model new escape hatches.
- */
-export class ToolError extends Error {
-  readonly code: string
-  readonly data?: unknown
-  readonly retryable: boolean
-
-  constructor(opts: {
-    code: string
-    data?: unknown
-    message: string
-    retryable?: boolean
-    cause?: unknown
-  }) {
-    super(opts.message, { cause: opts.cause })
-    this.name = "ToolError"
-    this.code = opts.code
-    this.data = opts.data
-    this.retryable = opts.retryable ?? false
-  }
-
-  /** Render this error as a compact block the model can read. The code
-   *  goes first (stable, model can branch on it), message next, optional
-   *  `retry: true` marker. For `INVALID_INPUT` the message is already
-   *  the annotated JSONC from `stringifyErrors` — passed through verbatim.
-   *
-   *  Distinct from `toString()` (which keeps the standard Error shape
-   *  for generic error handlers / logs / telemetry). `format()` is the
-   *  LLM-facing serialization. */
-  format(): string {
-    if (this.code === "INVALID_INPUT") return `❌ ${this.code}\n${this.message}`
-    const lines = [`❌ ${this.code}: ${this.message}`]
-    if (this.retryable) lines.push("retry: true")
-    return lines.join("\n")
-  }
-
-  static from(error: unknown): ToolError {
-    if (error instanceof ToolError) return error
-    return new ToolError({
-      cause: error,
-      code: "INTERNAL",
-      message: error instanceof Error ? error.message : String(error),
-    })
-  }
 }
 
 /** Declarative tool factory. Wires `validateInput` and (optionally)
@@ -115,7 +60,7 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
       const coerced = coerce(def.params, args)
       if (compiledParams.Check(coerced)) return coerced
       const [, errors] = compiledParams.Errors(coerced)
-      throw new ToolError({
+      throw new AiError({
         code: "INVALID_INPUT",
         data: errors,
         message: stringifyErrors(def.params, coerced, errors),
@@ -130,58 +75,30 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
 
 /** Parse and validate raw tool arguments. JSON-string inputs are decoded
  *  first; the result is run through `tool.validateParams` (which coerces
- *  LLM quirks before strict schema check). Throws `ToolError` on parse
- *  or validation failure — callers wrap with `formatToolError` to land
+ *  LLM quirks before strict schema check). Throws `AiError` on parse
+ *  or validation failure — callers wrap with `toErrorResult` to land
  *  back on a `ToolResult`. */
 function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   let args = rawArgs
   if (typeof args === "string") {
     const parsed = parseJson(args)
     if (!parsed.success) {
-      throw new ToolError({ code: "INVALID_INPUT", message: `invalid JSON: ${parsed.error}` })
+      throw new AiError({ code: "INVALID_INPUT", message: `invalid JSON: ${parsed.error}` })
     }
     args = parsed.data
   }
   return tool.validateParams(args)
 }
 
-/** Wrap any thrown value as a `ToolResult` with `isError: true`.
- *
- *  The `content` carries two things:
- *    - an `<error>` MetaPart with the parts the body doesn't already
- *      convey (`code`, optional structured `data`, optional `retryable`)
- *      — so the model can branch on `code` programmatically without
- *      re-parsing the human text;
- *    - the formatted human-readable error block (`❌ CODE: message`)
- *      as a TextPart, which carries the message verbatim.
- *
- *  `message` is intentionally NOT in the MetaPart — it lives in the
- *  TextPart, no need to duplicate it on the wire. The full structured
- *  info (including `message`) is still on `ToolResult.error` as a
- *  sidecar for downstream consumers (TUI badges, telemetry). Identical
- *  for `ToolError` and generic throws — the latter are coerced via
- *  `ToolError.from`. */
-export function formatToolError(err: unknown): ToolResult {
-  const te = ToolError.from(err)
-  const error: ToolErrorInfo = {
-    code: te.code,
-    data: te.data,
-    message: te.message,
-    retryable: te.retryable,
-  }
-  // Strip `message` from the MetaPart payload — the formatted body
-  // already shows it. `data` and `retryable` drop via JSON when absent.
-  const wireError: Record<string, unknown> = { code: te.code }
-  if (te.data !== undefined) wireError.data = te.data
-  if (te.retryable) wireError.retryable = true
-  return {
-    content: [
-      { data: wireError, tag: "error", type: "meta" },
-      { text: te.format(), type: "text" },
-    ],
-    error,
-    isError: true,
-  }
+/** Wrap any thrown value as a `ToolResult` with `isError: true`. The
+ *  thrown value is coerced via `AiError.from` and embedded as an
+ *  `ErrorPart` in `content`; the same structured shape is also surfaced
+ *  on the `.error` sidecar for downstream consumers (TUI badges,
+ *  telemetry). At the wire boundary the `ErrorPart` folds to a
+ *  `<error>` `MetaPart` via `errorToMeta()` (or equivalent). */
+export function toErrorResult(err: unknown): ToolResult {
+  const ep = toErrorPart(err)
+  return { content: [ep], error: ep, isError: true }
 }
 
 /** Build a successful `ToolResult` from a tool's raw return value. Runs
@@ -212,7 +129,7 @@ export function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
  *
  *  The formatted error on `INVALID_INPUT` is annotated JSONC from
  *  `stringifyErrors`, which the model can patch up and retry; on
- *  `INVALID_OUTPUT` or `INTERNAL` the format is a short code + message
+ *  `INVALID_OUTPUT` or `ERROR` the format is a short code + message
  *  block the model can quote back but shouldn't try to "fix."
  *
  *  Streamable returns are blocked on — `runTool` awaits the streamable's
@@ -247,14 +164,14 @@ export async function runTool<I, O>(
   try {
     params = validateToolParams(tool, rawArgs)
   } catch (error) {
-    return formatToolError(error)
+    return toErrorResult(error)
   }
 
   let result: Awaited<O>
   try {
     result = await tool.call(params, ctx)
   } catch (error) {
-    return formatToolError(error)
+    return toErrorResult(error)
   }
 
   if (isStreamable(result)) {
@@ -279,4 +196,3 @@ export async function runTool<I, O>(
 
   return formatToolResult(tool, result, readToolMeta(ctx))
 }
-

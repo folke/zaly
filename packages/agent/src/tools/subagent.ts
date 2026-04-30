@@ -1,6 +1,6 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
-import { defineTool, stringifyContent, ToolError } from "@zaly/ai"
+import { defineTool, stringifyContent, AiError } from "@zaly/ai"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
@@ -79,7 +79,7 @@ export const subagentTool = defineTool({
   async call(args, ctx): Promise<Streamable> {
     const parent = ctx.agent
     if (!parent) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "subagent requires an Agent reference on the context (set up by the agent harness).",
       })

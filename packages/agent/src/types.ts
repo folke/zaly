@@ -45,7 +45,7 @@ declare module "@zaly/ai" {
      *  that build a `ToolContext` by hand. */
     swarm?: Swarm
     /** Async permission check tools call before doing work. Resolves on
-     *  `allow`, throws a `ToolError(PERMISSION_DENIED)` on `deny`. For
+     *  `allow`, throws a `AiError(PERMISSION_DENIED)` on `deny`. For
      *  `ask` verdicts, the agent invokes `AgentOptions.allow` (when
      *  configured); if that returns `true` we resolve, otherwise we
      *  throw. Absent on contexts without an Agent (eval / direct

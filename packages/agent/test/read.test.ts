@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { ToolError } from "@zaly/ai"
+import { AiError } from "@zaly/ai"
 import { assertFresh, readTool, trackFile } from "../src/tools/read.ts"
 
 type ReadResult = string | (TextPart | MetaPart)[]
@@ -114,7 +114,7 @@ describe("read tool — negative offset (tail-style)", () => {
 })
 
 describe("read tool — error paths", () => {
-  test("missing file → NOT_FOUND ToolError", async () => {
+  test("missing file → NOT_FOUND AiError", async () => {
     await expect(callRead({ path: join(dir, "nope.txt") })).rejects.toMatchObject({
       code: "NOT_FOUND",
     })
@@ -140,7 +140,7 @@ describe("read tool — error paths", () => {
     expect(body).toMatch(/line truncated, 3000 chars/)
   })
 
-  test("non-image binary file → BINARY_FILE ToolError", async () => {
+  test("non-image binary file → BINARY_FILE AiError", async () => {
     const path = join(dir, "bin.dat")
     writeFileSync(path, Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 0]))
     await expect(callRead({ path })).rejects.toMatchObject({ code: "BINARY_FILE" })
@@ -183,7 +183,7 @@ describe("trackFile / assertFresh", () => {
 
   test("assertFresh throws NOT_FOUND when the path doesn't exist", () => {
     const ctx: ToolContext = { messages: [] }
-    expect(() => assertFresh(join(dir, "missing-fresh.txt"), ctx)).toThrow(ToolError)
+    expect(() => assertFresh(join(dir, "missing-fresh.txt"), ctx)).toThrow(AiError)
   })
 
   test("assertFresh throws NOT_READ when no prior read for this path", () => {

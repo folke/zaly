@@ -55,7 +55,7 @@ function showToolResult(part: ToolResultPart, label = "tool message"): void {
 function showHeartbeat(running: readonly TaskInfo[]): void {
   // Mirrors agent.ts heartbeat handler — same MetaPart envelope.
   const msg: Message<"system"> = {
-    content: [{ data: taskInfoPart(running), tag: "heartbeat", type: "meta" }],
+    content: [{ content: [taskInfoPart(running)], tag: "heartbeat", type: "meta" }],
     role: "system",
   }
   showSystemMessage(msg, "heartbeat inject")
@@ -118,7 +118,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
     makeCtx(tasks)
   )
   for (const p of parts) showToolResult(p, "tool message — running placeholder")
-  note("\n→ The model sees `status: \"running\"` and gets back control immediately.")
+  note('\n→ The model sees `status: "running"` and gets back control immediately.')
 
   await sleep(1500)
   console.log()
@@ -196,7 +196,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
     makeCtx(tasks)
   )
   for (const p of parts) showToolResult(p, "tool message")
-  note("\n→ First is `status: \"running\"`, second is `status: \"pending\"` waiting on the first.")
+  note('\n→ First is `status: "running"`, second is `status: "pending"` waiting on the first.')
 
   // Wait for both to complete + the chained dispatch to settle
   await sleep(1500)
@@ -264,10 +264,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   )
 
   // Now ask task_list (inside the same registry)
-  const parts = await tasks.run(
-    [call("task_list", { includeFinished: true })],
-    makeCtx(tasks)
-  )
+  const parts = await tasks.run([call("task_list", { includeFinished: true })], makeCtx(tasks))
   for (const p of parts) showToolResult(p, "task_list result")
   note("\n→ Each task on its own JSON line. `result` is stripped on done")
   note("  tasks — listing is an inventory, not a transcript.")
@@ -332,9 +329,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   // Case B: wakeup cancelled because task-done woke the loop first
   console.log()
   const cancelled: Message<"system"> = {
-    content: [
-      { data: { hint, id, status: "cancelled" }, tag: "wakeup", type: "meta" },
-    ],
+    content: [{ data: { hint, id, status: "cancelled" }, tag: "wakeup", type: "meta" }],
     role: "system",
   }
   showSystemMessage(cancelled, "wakeup cancelled (carry-over, sibling to task-done)")

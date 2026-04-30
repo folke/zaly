@@ -12,7 +12,11 @@ import { ContentTransform } from "../../src/content/transform.ts"
 
 const text = (s: string): TextPart => ({ text: s, type: "text" })
 const meta = (data: unknown, tag = "meta"): MetaPart => ({ data, tag, type: "meta" })
-const error = (code: string, message = "boom"): ErrorPart => ({ code, message, type: "error" })
+const error = (code: Uppercase<string>, message = "boom"): ErrorPart => ({
+  code,
+  message,
+  type: "error",
+})
 const image = (data = "AAA"): ImagePart => ({
   mime: "image/png",
   source: { data, type: "base64" },

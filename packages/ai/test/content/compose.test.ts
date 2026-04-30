@@ -107,7 +107,7 @@ describe("attachmentToMeta", () => {
 })
 
 describe("errorToMeta", () => {
-  test("replaces ErrorPart with a tagged MetaPart", async () => {
+  test("replaces ErrorPart with a tagged MetaPart carrying data + content", async () => {
     const out = await run(errorToMeta(), [
       text("ok"),
       error({ code: "BANG", data: { foo: "bar" }, message: "boom", retryable: true }),
@@ -119,20 +119,24 @@ describe("errorToMeta", () => {
     expect(m.type).toBe("meta")
     if (m.type !== "meta") return
     expect(m.tag).toBe("error")
+    // `data` carries the structured discriminator (no `message` — the
+    // body already shows it).
     expect(m.data).toEqual({
       code: "BANG",
       data: { foo: "bar" },
-      message: "boom",
       retryable: true,
     })
+    // `content` carries the human-readable formatted block (with
+    // `retry: true` marker since the source error is retryable).
+    expect(m.content).toEqual([{ text: "❌ BANG: boom\nretry: true", type: "text" }])
   })
 
   test("omits absent fields from the MetaPart payload", async () => {
     const out = await run(errorToMeta(), [error({ code: "X", message: "m" })])
     const m = out[0]
     if (m.type !== "meta") throw new Error("expected meta")
-    // No data/retryable present on the source error → not on the meta.
-    expect(m.data).toEqual({ code: "X", message: "m" })
+    // No data on source error and not retryable → omitted from the data payload.
+    expect(m.data).toEqual({ code: "X", data: undefined, retryable: undefined })
   })
 })
 

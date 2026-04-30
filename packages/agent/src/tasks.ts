@@ -11,7 +11,7 @@ import type {
   Streamable as TStreamable,
 } from "@zaly/ai"
 
-import { formatToolError, isStreamable, runTool, stringifyContent, ToolError } from "@zaly/ai"
+import { toErrorResult, isStreamable, runTool, stringifyContent, AiError } from "@zaly/ai"
 import { Emitter } from "@zaly/shared"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -210,21 +210,21 @@ export class Tasks extends Emitter<TasksEvents> {
   pollOutput(id: string): ToolResult & { running: boolean } {
     const t = this.#map.get(id)
     if (!t) {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_FOUND",
         data: { id },
         message: `no task with id "${id}"`,
       })
     }
     if (t.status === "done") {
-      throw new ToolError({
+      throw new AiError({
         code: "TASK_DONE",
         data: { id },
         message: `task "${id}" has already completed; its result was injected as a system message`,
       })
     }
     if (!t.streamable) {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_STREAMABLE",
         data: { id },
         message:
@@ -271,7 +271,7 @@ export class Tasks extends Emitter<TasksEvents> {
     if (!task || task.status === "done") return
     if (task.streamable) task.streamable.abort()
     if (task.status === "pending") {
-      this.done(id, formatToolError(new ToolError({ code: "TASK_ABORTED", message: reason })))
+      this.done(id, toErrorResult(new AiError({ code: "TASK_ABORTED", message: reason })))
     }
     // Running tasks: the streamable will eventually settle and call done()
     // via its watcher. We could force a synchronous "done" here, but
@@ -289,7 +289,7 @@ export class Tasks extends Emitter<TasksEvents> {
       if (t.status === "pending") {
         this.done(
           t.id,
-          formatToolError(new ToolError({ code: "TASK_ABORTED", message: "agent disposed" }))
+          toErrorResult(new AiError({ code: "TASK_ABORTED", message: "agent disposed" }))
         )
       }
     }
@@ -519,7 +519,7 @@ export class Tasks extends Emitter<TasksEvents> {
               })
             },
             // `done` shouldn't reject by contract; treat as internal bug.
-            (error: unknown) => this.done(task.id, formatToolError(error))
+            (error: unknown) => this.done(task.id, toErrorResult(error))
           )
           return
         }
@@ -527,9 +527,9 @@ export class Tasks extends Emitter<TasksEvents> {
         // runTool has already formatted everything into a ToolResult.
         this.done(task.id, settled)
       },
-      // The permission gate threw (or ToolError leaked from runTool).
+      // The permission gate threw (or AiError leaked from runTool).
       // Either way, format and settle the task.
-      (error: unknown) => this.done(task.id, formatToolError(error))
+      (error: unknown) => this.done(task.id, toErrorResult(error))
     )
   }
 
@@ -543,8 +543,8 @@ export class Tasks extends Emitter<TasksEvents> {
         // Skip dependent — its predecessor failed.
         this.done(
           t.id,
-          formatToolError(
-            new ToolError({
+          toErrorResult(
+            new AiError({
               code: "UPSTREAM_FAILED",
               data: { dependsOn: completedId },
               message: `skipped: upstream task ${completedId} failed`,
@@ -606,12 +606,12 @@ export class Tasks extends Emitter<TasksEvents> {
     const snap = task.streamable?.poll()
     const baseContent = partialContentFrom(snap)
     const trailer: MetaPart = {
+      content:
+        "Task is still running. Partial output above. The final result " +
+        "will arrive as a system message when the task completes; you " +
+        "do not need to poll. Continue with other work or wait.",
       data: {
         ...toTaskInfo(task),
-        hint:
-          "Task is still running. Partial output above. The final result " +
-          "will arrive as a system message when the task completes; you " +
-          "do not need to poll. Continue with other work or wait.",
       },
       tag: "task",
       type: "meta",
@@ -684,11 +684,11 @@ function descOfCall(call: ToolCallPart): string {
  *  `unknownToolResult` helper produced; inlined here to keep `tasks.ts`
  *  self-contained. */
 function unknownToolResult(name: string): ToolResult {
-  const err = new ToolError({
+  const err = new AiError({
     code: "UNKNOWN_TOOL",
     message: `no tool named "${name}" is registered for this turn`,
   })
-  return formatToolError(err)
+  return toErrorResult(err)
 }
 
 function sleep(ms: number): Promise<void> {
@@ -726,7 +726,7 @@ function toTaskInfo(task: InternalTask): TaskInfo {
     return { desc, elapsedMs: ms, id, status, type, waitingFor: task.waitingFor ?? "" }
   }
   // status === "done" — `result` is set by `done()` before status flips,
-  // so the `?? formatToolError(...)` is just a defensive fallback for
+  // so the `?? toErrorResult(...)` is just a defensive fallback for
   // a malformed record (shouldn't happen in practice).
   return {
     desc,
@@ -734,8 +734,8 @@ function toTaskInfo(task: InternalTask): TaskInfo {
     id,
     result:
       task.result ??
-      formatToolError(
-        new ToolError({
+      toErrorResult(
+        new AiError({
           code: "INTERNAL",
           message: `task "${task.id}" completed without a result`,
         })
@@ -757,7 +757,7 @@ function toTaskInfo(task: InternalTask): TaskInfo {
  *  The body comes straight from `result.content`. For errors, that
  *  already includes the `<error>{code, message, ...}</error>` MetaPart
  *  + the formatted `❌ CODE: message` block (baked in by
- *  `formatToolError`), so this function doesn't need to special-case
+ *  `toErrorResult`), so this function doesn't need to special-case
  *  errors — the structured tag and human body ride along with the
  *  result content for any tool failure, anywhere.
  *

@@ -1,4 +1,4 @@
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { readFile, writeFile, stat } from "node:fs/promises"
 import { resolve } from "pathe"
 import { Type } from "typebox"
@@ -59,7 +59,7 @@ export const editTool = defineTool({
     assertFresh(path, ctx)
 
     const original = await readFile(path, "utf8").catch((error: unknown) => {
-      throw new ToolError({
+      throw new AiError({
         cause: error,
         code: "FILE_NOT_FOUND",
         message: `cannot edit ${path}: file not found`,
@@ -91,7 +91,7 @@ function applyEdits(original: string, edits: readonly EditSpec[], path: string):
   const matches: { start: number; end: number; newText: string; spec: EditSpec }[] = []
   for (const [i, edit] of edits.entries()) {
     if (edit.oldText === "") {
-      throw new ToolError({
+      throw new AiError({
         code: "EMPTY_OLD_TEXT",
         data: { editIndex: i },
         message: `edit #${i}: oldText is empty (use \`write\` to create or fully replace a file)`,
@@ -99,7 +99,7 @@ function applyEdits(original: string, edits: readonly EditSpec[], path: string):
     }
     const first = original.indexOf(edit.oldText)
     if (first === -1) {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_FOUND",
         data: { editIndex: i, path, snippet: preview(edit.oldText) },
         message: `edit #${i}: oldText not found in ${path}`,
@@ -107,7 +107,7 @@ function applyEdits(original: string, edits: readonly EditSpec[], path: string):
     }
     const next = original.indexOf(edit.oldText, first + 1)
     if (next !== -1) {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_UNIQUE",
         data: { editIndex: i, occurrences: countOccurrences(original, edit.oldText), path },
         message:
@@ -128,7 +128,7 @@ function applyEdits(original: string, edits: readonly EditSpec[], path: string):
   matches.sort((a, b) => a.start - b.start)
   for (let i = 1; i < matches.length; i++) {
     if (matches[i].start < matches[i - 1].end) {
-      throw new ToolError({
+      throw new AiError({
         code: "OVERLAP",
         data: { a: matches[i - 1], b: matches[i] },
         message:

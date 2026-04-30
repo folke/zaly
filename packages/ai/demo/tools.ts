@@ -1,5 +1,5 @@
 import { Type } from "typebox"
-import { defineTool, ToolError } from "../src/index.ts"
+import { defineTool, AiError } from "../src/index.ts"
 
 const tool = defineTool({
   name: "time",
@@ -25,7 +25,7 @@ const tool = defineTool({
         }).format(date)
         return tzDate
       } catch (error) {
-        throw new ToolError({
+        throw new AiError({
           code: "INVALID_INPUT",
           message: `Invalid timezone: ${timezone}`,
           cause: error,

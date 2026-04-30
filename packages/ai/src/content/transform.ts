@@ -163,6 +163,28 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
     return parts as T[]
   }
 
+  /** Synchronous variant of `run`. Throws if any stage returns a
+   *  Promise — caller's responsibility to only use this on pipelines
+   *  built from sync primitives (`drop`, `map`, sync `rewrite`).
+   *
+   *  Useful for sync flatten paths like `stringifyContent` that can't
+   *  afford to be async. The runtime guard keeps the contract honest:
+   *  swapping in an async stage will fail loudly instead of returning
+   *  a `Promise` that callers silently stringify as `[object Promise]`. */
+  runSync(content: readonly ContentPart[]): T[] {
+    let parts: ContentPart[] = [...content]
+    for (const stage of this.#stages) {
+      const result = stage(parts)
+      if (result instanceof Promise) {
+        throw new Error(
+          "ContentTransform.runSync called on a pipeline with async stages — use run()"
+        )
+      }
+      parts = result
+    }
+    return parts as T[]
+  }
+
   // Append a stage; returns a new instance with a (possibly) different
   // type parameter. The cast is safe because the runtime stage shape
   // doesn't depend on `T` — only the static signatures of the public

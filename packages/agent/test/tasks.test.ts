@@ -2,7 +2,7 @@ import type { Streamable, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Envelope } from "@zaly/shared"
 import type { DoneTaskInfo, TasksEvents } from "../src/tasks.ts"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
 import { afterEach, describe, expect, test } from "vitest"
 import { taskCompletionMessage, taskInfoPart, Tasks } from "../src/tasks.ts"
@@ -32,13 +32,13 @@ const syncTool = defineTool({
   call: ({ value }) => value,
 })
 
-/** Sync tool that always throws a ToolError. */
+/** Sync tool that always throws a AiError. */
 const failTool = defineTool({
   name: "fail",
   parallel: true,
   params: Type.Object({}),
   call: () => {
-    throw new ToolError({ code: "BANG", message: "boom" })
+    throw new AiError({ code: "BANG", message: "boom" })
   },
 })
 
@@ -145,7 +145,7 @@ describe("Tasks.run — sync tool", () => {
     expect(parts[0].error?.code).toBe("INVALID_INPUT")
   })
 
-  test("thrown ToolError is captured into the result", async () => {
+  test("thrown AiError is captured into the result", async () => {
     const tasks = new Tasks()
     tasks.tools = [failTool]
     const parts = await tasks.run([callOf("fail")], {})

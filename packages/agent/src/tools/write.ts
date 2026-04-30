@@ -1,4 +1,4 @@
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { safeStat } from "@zaly/shared"
 import { mkdir, writeFile, stat } from "node:fs/promises"
 import { dirname, resolve } from "pathe"
@@ -46,7 +46,7 @@ export const writeTool = defineTool({
       await mkdir(dirname(path), { recursive: true })
       await writeFile(path, args.content, "utf8")
     } catch (error) {
-      throw new ToolError({
+      throw new AiError({
         cause: error,
         code: "WRITE_FAILED",
         message: `failed to write ${path}: ${error instanceof Error ? error.message : String(error)}`,

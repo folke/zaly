@@ -97,7 +97,7 @@ describe("search: offline (no API call)", () => {
     expect(v.count).toBe(5)
   })
 
-  test("missing BRAVE_API_KEY surfaces a clear ToolError", async () => {
+  test("missing BRAVE_API_KEY surfaces a clear AiError", async () => {
     const before = process.env.BRAVE_API_KEY
     delete process.env.BRAVE_API_KEY
     try {

@@ -1,7 +1,7 @@
 import type { ToolContext } from "@zaly/ai"
 import type { Tasks } from "../tasks.ts"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
 import { taskInfoPart } from "../tasks.ts"
 
@@ -92,7 +92,7 @@ export const taskStopTool = defineTool({
     const tasks = requireTasks(ctx)
     const task = tasks.get(args.id)
     if (!task) {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_FOUND",
         data: { id: args.id },
         message: `no task with id "${args.id}"`,
@@ -107,7 +107,7 @@ export const taskStopTool = defineTool({
 
 function requireTasks(ctx: ToolContext): Tasks {
   if (!ctx.tasks) {
-    throw new ToolError({
+    throw new AiError({
       code: "MISSING_TOOL_CONTEXT",
       message: "task tools require a Tasks registry on the context (set up by the agent harness).",
     })

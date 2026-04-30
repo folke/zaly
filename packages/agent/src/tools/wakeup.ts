@@ -1,6 +1,6 @@
 import type { Agent } from "../agent.ts"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
 
 /**
@@ -77,7 +77,7 @@ export const wakeupTool = defineTool({
 
   call(args, ctx) {
     if (!ctx.agent) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message:
           "wakeup requires an Agent reference on the context (set up by the agent harness).",

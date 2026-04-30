@@ -2,9 +2,20 @@ import type { DetectedFile, DetectedImage } from "@zaly/shared"
 import type { Attachment, ErrorPart, ImagePart, MetaPart, PdfPart } from "../types.ts"
 
 import { fileData, imageConvert } from "@zaly/shared"
-import { toXml } from "./format.ts"
+import { AiError } from "../error.ts"
 
 // ── Part constructors (raw → ContentPart) ────────────────────────────────
+
+export function toErrorPart(e: unknown): ErrorPart {
+  const error = AiError.from(e)
+  return {
+    code: error.code,
+    data: error.data,
+    message: error.message,
+    retryable: error.retryable,
+    type: "error",
+  }
+}
 
 /** Wrap a converted image as an `ImagePart` for an agent message. */
 export function toImagePart(img: DetectedImage<"jpeg" | "webp" | "png">): ImagePart {
@@ -37,49 +48,12 @@ export async function toAttachment(file: DetectedFile): Promise<Attachment | und
   return ready ? toImagePart(ready) : undefined
 }
 
-// ── Part-to-part converters (used by step helpers in compose.ts) ─────────
-
-/** Build the `<error>JSON</error>` MetaPart for one ErrorPart. */
-export function toErrorMeta(e: ErrorPart): MetaPart {
-  return {
-    data: {
-      code: e.code,
-      message: e.message,
-      ...(e.data !== undefined ? { data: e.data } : {}),
-      ...(e.retryable !== undefined ? { retryable: e.retryable } : {}),
-    },
-    tag: "error",
-    type: "meta",
-  }
-}
-
-/** Convert an attachment to a per-kind MetaPart carrying just enough
- *  info for the model to reason about it: mime + a source reference
- *  (url or path) when one is available. The kind becomes the *tag*
- *  itself (`<image>`, `<pdf>`, `<audio>`, `<video>`) — closer to
- *  "here's a file/url you can act on" than "an attachment was here."
- *  Base64 bytes are deliberately omitted (useless as text context,
- *  would balloon the prompt). */
-export function toAttachmentMeta(p: Attachment): MetaPart {
-  return {
-    data: { mime: p.mime, ...sourceRef(p.source) },
-    tag: p.type,
-    type: "meta",
-  }
-}
-
-/** Per-MetaPart serializer to TextPart. Used by the `metaToText` step
- *  and available for inline composition. */
-export function metaToTextPart(m: MetaPart): { text: string; type: "text" } {
-  return { text: toXml(m.data, m.tag), type: "text" }
-}
+// ── Async part converter ────────────────────────────────────────────────
 
 /** Per-attachment file-to-base64 inliner. Pass to `mapAsync(kind, …)`
  *  for each attachment kind you care about. Falls back to a `<file>`
  *  MetaPart on read failure. */
-export async function inlineFile<P extends Attachment>(
-  part: P
-): Promise<Inlined<P> | MetaPart> {
+export async function inlineFile<P extends Attachment>(part: P): Promise<Inlined<P> | MetaPart> {
   if (part.source.type !== "file") return part as Inlined<P>
   const file = await fileData({ path: part.source.path })
   if (!file) {
@@ -101,10 +75,4 @@ export async function inlineFile<P extends Attachment>(
  *  parent variant. */
 export type Inlined<P extends Attachment> = P & {
   source: Exclude<P["source"], { type: "file" }>
-}
-
-function sourceRef(s: Attachment["source"]): { url?: string; path?: string } {
-  if (s.type === "url") return { url: s.url }
-  if (s.type === "file") return { path: s.path }
-  return {}
 }

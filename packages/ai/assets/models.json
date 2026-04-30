@@ -224,11 +224,12 @@
     "302ai/claude-haiku-4-5": {
       "id": "claude-haiku-4-5",
       "name": "claude-haiku-4-5",
+      "family": "claude-haiku",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-02",
+      "knowledge": "2025-02-28",
       "release_date": "2025-10-16",
       "last_updated": "2025-10-16",
       "modalities": {
@@ -257,11 +258,12 @@
     "302ai/claude-opus-4-5-20251101": {
       "id": "claude-opus-4-5-20251101",
       "name": "claude-opus-4-5-20251101",
+      "family": "claude-opus",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-03-31",
       "release_date": "2025-11-25",
       "last_updated": "2025-11-25",
       "modalities": {
@@ -353,9 +355,13 @@
     "302ai/glm-5v-turbo": {
       "id": "glm-5v-turbo",
       "name": "glm-5v-turbo",
+      "family": "glm",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
       "temperature": true,
       "release_date": "2026-04-02",
       "last_updated": "2026-04-02",
@@ -419,11 +425,15 @@
     "302ai/glm-4.7": {
       "id": "glm-4.7",
       "name": "glm-4.7",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
       "temperature": true,
-      "knowledge": "2025-06",
+      "knowledge": "2025-04",
       "release_date": "2025-12-22",
       "last_updated": "2025-12-22",
       "modalities": {
@@ -434,13 +444,13 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.286,
         "output": 1.142
       },
       "limit": {
-        "context": 200000,
+        "context": 204800,
         "output": 131072
       },
       "maxTokens": 131072,
@@ -450,11 +460,12 @@
     "302ai/claude-3-5-haiku-20241022": {
       "id": "claude-3-5-haiku-20241022",
       "name": "claude-3-5-haiku-20241022",
+      "family": "claude-haiku",
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2024-07",
+      "knowledge": "2024-07-31",
       "release_date": "2024-10-22",
       "last_updated": "2024-10-22",
       "modalities": {
@@ -514,9 +525,13 @@
     "302ai/glm-5": {
       "id": "glm-5",
       "name": "glm-5",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
       "temperature": true,
       "release_date": "2026-02-12",
       "last_updated": "2026-02-12",
@@ -528,13 +543,13 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.6,
         "output": 2.6
       },
       "limit": {
-        "context": 200000,
+        "context": 204800,
         "output": 131072
       },
       "maxTokens": 131072,
@@ -607,11 +622,12 @@
     "302ai/claude-sonnet-4-6": {
       "id": "claude-sonnet-4-6",
       "name": "claude-sonnet-4-6",
+      "family": "claude-sonnet",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-08",
+      "knowledge": "2025-08-31",
       "release_date": "2026-02-18",
       "last_updated": "2026-03-13",
       "modalities": {
@@ -672,6 +688,7 @@
     "302ai/glm-4.7-flashx": {
       "id": "glm-4.7-flashx",
       "name": "glm-4.7-flashx",
+      "family": "glm-flash",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
@@ -687,7 +704,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.0715,
         "output": 0.429
@@ -798,11 +815,12 @@
     "302ai/claude-opus-4-7": {
       "id": "claude-opus-4-7",
       "name": "claude-opus-4-7",
+      "family": "claude-opus",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-05",
+      "knowledge": "2026-01-31",
       "release_date": "2026-04-17",
       "last_updated": "2026-04-17",
       "modalities": {
@@ -829,7 +847,7 @@
         }
       },
       "limit": {
-        "context": 200000,
+        "context": 1000000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -839,11 +857,13 @@
     "302ai/gpt-5-mini": {
       "id": "gpt-5-mini",
       "name": "gpt-5-mini",
+      "family": "gpt-mini",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-05-30",
       "release_date": "2025-08-08",
       "last_updated": "2025-08-08",
       "modalities": {
@@ -862,6 +882,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -964,11 +985,12 @@
     "302ai/claude-sonnet-4-5-20250929": {
       "id": "claude-sonnet-4-5-20250929",
       "name": "claude-sonnet-4-5-20250929",
+      "family": "claude-sonnet",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-07-31",
       "release_date": "2025-09-30",
       "last_updated": "2025-09-30",
       "modalities": {
@@ -1092,11 +1114,12 @@
     "302ai/claude-3-5-haiku-latest": {
       "id": "claude-3-5-haiku-latest",
       "name": "claude-3-5-haiku-latest",
+      "family": "claude-haiku",
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2024-07",
+      "knowledge": "2024-07-31",
       "release_date": "2024-10-22",
       "last_updated": "2024-10-22",
       "modalities": {
@@ -1157,11 +1180,13 @@
     "302ai/gpt-5.2": {
       "id": "gpt-5.2",
       "name": "gpt-5.2",
+      "family": "gpt",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2025-12-12",
       "last_updated": "2025-12-12",
       "modalities": {
@@ -1180,6 +1205,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -1189,11 +1215,13 @@
     "302ai/gpt-5.4-mini": {
       "id": "gpt-5.4-mini",
       "name": "gpt-5.4-mini",
+      "family": "gpt-mini",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-08",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2026-03-19",
       "last_updated": "2026-03-19",
       "modalities": {
@@ -1212,6 +1240,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -1221,9 +1250,14 @@
     "302ai/glm-5.1": {
       "id": "glm-5.1",
       "name": "glm-5.1",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
       "temperature": true,
       "release_date": "2026-04-10",
       "last_updated": "2026-04-10",
@@ -1283,11 +1317,13 @@
     "302ai/gpt-5.4-nano": {
       "id": "gpt-5.4-nano",
       "name": "gpt-5.4-nano",
+      "family": "gpt-nano",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-08",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2026-03-19",
       "last_updated": "2026-03-19",
       "modalities": {
@@ -1306,6 +1342,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -1315,11 +1352,12 @@
     "302ai/glm-4.5": {
       "id": "glm-4.5",
       "name": "GLM-4.5",
+      "family": "glm",
       "attachment": false,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2024-10",
+      "knowledge": "2025-04",
       "release_date": "2025-07-29",
       "last_updated": "2025-07-29",
       "modalities": {
@@ -1330,13 +1368,13 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.286,
         "output": 1.142
       },
       "limit": {
-        "context": 128000,
+        "context": 131072,
         "output": 98304
       },
       "maxTokens": 98304,
@@ -1346,11 +1384,13 @@
     "302ai/gpt-5.4-mini-2026-03-17": {
       "id": "gpt-5.4-mini-2026-03-17",
       "name": "gpt-5.4-mini-2026-03-17",
+      "family": "gpt-mini",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-08",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2026-03-19",
       "last_updated": "2026-03-19",
       "modalities": {
@@ -1369,6 +1409,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -1411,11 +1452,13 @@
     "302ai/gpt-5.2-chat-latest": {
       "id": "gpt-5.2-chat-latest",
       "name": "gpt-5.2-chat-latest",
+      "family": "gpt-codex",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2025-12-12",
       "last_updated": "2025-12-12",
       "modalities": {
@@ -1504,6 +1547,7 @@
     "302ai/glm-4.5-x": {
       "id": "glm-4.5-x",
       "name": "glm-4.5-x",
+      "family": "glm",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
@@ -1565,11 +1609,13 @@
     "302ai/gpt-5.1": {
       "id": "gpt-5.1",
       "name": "gpt-5.1",
+      "family": "gpt",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
       "release_date": "2025-11-14",
       "last_updated": "2025-11-14",
       "modalities": {
@@ -1588,6 +1634,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -1724,8 +1771,9 @@
     "302ai/glm-4.5-air": {
       "id": "glm-4.5-air",
       "name": "glm-4.5-air",
+      "family": "glm-air",
       "attachment": false,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
       "knowledge": "2025-04",
@@ -1739,25 +1787,71 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.1143,
         "output": 0.286
       },
       "limit": {
-        "context": 128000,
+        "context": 131072,
         "output": 98304
       },
       "maxTokens": 98304,
       "provider": "openai",
       "baseUrl": "https://api.302.ai/v1"
     },
+    "302ai/gpt-5.4-pro": {
+      "id": "gpt-5.4-pro",
+      "name": "gpt-5.4-pro",
+      "family": "gpt-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": false,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-05",
+      "last_updated": "2026-03-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180,
+        "cache_read": 0,
+        "cache_write": 0,
+        "context_over_200k": {
+          "input": 60,
+          "output": 270
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.302.ai/v1"
+    },
     "302ai/glm-5-turbo": {
       "id": "glm-5-turbo",
       "name": "glm-5-turbo",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
       "temperature": true,
       "release_date": "2026-03-16",
       "last_updated": "2026-03-16",
@@ -1817,11 +1911,12 @@
     "302ai/claude-opus-4-5": {
       "id": "claude-opus-4-5",
       "name": "claude-opus-4-5",
+      "family": "claude-opus",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-03-31",
       "release_date": "2025-11-25",
       "last_updated": "2025-11-25",
       "modalities": {
@@ -1850,23 +1945,25 @@
     "302ai/glm-4.5v": {
       "id": "glm-4.5v",
       "name": "GLM-4.5V",
+      "family": "glm",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2024-10",
+      "knowledge": "2025-04",
       "release_date": "2025-08-12",
       "last_updated": "2025-08-12",
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "video"
         ],
         "output": [
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.29,
         "output": 0.86
@@ -1882,11 +1979,12 @@
     "302ai/glm-4.6": {
       "id": "glm-4.6",
       "name": "glm-4.6",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-04",
       "release_date": "2025-09-30",
       "last_updated": "2025-09-30",
       "modalities": {
@@ -1897,13 +1995,13 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.286,
         "output": 1.142
       },
       "limit": {
-        "context": 200000,
+        "context": 204800,
         "output": 131072
       },
       "maxTokens": 131072,
@@ -2011,23 +2109,25 @@
     "302ai/glm-4.6v": {
       "id": "glm-4.6v",
       "name": "GLM-4.6V",
+      "family": "glm",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-04",
       "release_date": "2025-12-08",
       "last_updated": "2025-12-08",
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "video"
         ],
         "output": [
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "cost": {
         "input": 0.145,
         "output": 0.43
@@ -2043,17 +2143,19 @@
     "302ai/claude-opus-4-1-20250805": {
       "id": "claude-opus-4-1-20250805",
       "name": "claude-opus-4-1-20250805",
+      "family": "claude-opus",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-03-31",
       "release_date": "2025-08-05",
       "last_updated": "2025-08-05",
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -2072,14 +2174,58 @@
       "provider": "openai",
       "baseUrl": "https://api.302.ai/v1"
     },
+    "302ai/gpt-5.4": {
+      "id": "gpt-5.4",
+      "name": "gpt-5.4",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-05",
+      "last_updated": "2026-03-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2.5,
+        "output": 15,
+        "cache_read": 0.25,
+        "cache_write": 0,
+        "context_over_200k": {
+          "input": 5,
+          "output": 22.5
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.302.ai/v1"
+    },
     "302ai/gpt-5.1-chat-latest": {
       "id": "gpt-5.1-chat-latest",
       "name": "gpt-5.1-chat-latest",
+      "family": "gpt-codex",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
       "release_date": "2025-11-14",
       "last_updated": "2025-11-14",
       "modalities": {
@@ -2107,11 +2253,12 @@
     "302ai/claude-haiku-4-5-20251001": {
       "id": "claude-haiku-4-5-20251001",
       "name": "claude-haiku-4-5-20251001",
+      "family": "claude-haiku",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-02-28",
       "release_date": "2025-10-16",
       "last_updated": "2025-10-16",
       "modalities": {
@@ -2171,11 +2318,13 @@
     "302ai/gpt-5.4-nano-2026-03-17": {
       "id": "gpt-5.4-nano-2026-03-17",
       "name": "gpt-5.4-nano-2026-03-17",
+      "family": "gpt-nano",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-08",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
       "release_date": "2026-03-19",
       "last_updated": "2026-03-19",
       "modalities": {
@@ -2194,6 +2343,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -2203,11 +2353,12 @@
     "302ai/claude-sonnet-4-20250514": {
       "id": "claude-sonnet-4-20250514",
       "name": "claude-sonnet-4-20250514",
+      "family": "claude-sonnet",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-03-31",
       "release_date": "2025-05-22",
       "last_updated": "2025-05-22",
       "modalities": {
@@ -2267,11 +2418,12 @@
     "302ai/claude-opus-4-6": {
       "id": "claude-opus-4-6",
       "name": "claude-opus-4-6",
+      "family": "claude-opus",
       "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-05",
+      "knowledge": "2025-05-31",
       "release_date": "2026-02-06",
       "last_updated": "2026-03-13",
       "modalities": {
@@ -2335,6 +2487,7 @@
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
+      "structured_output": true,
       "temperature": true,
       "knowledge": "2024-04",
       "release_date": "2025-04-14",
@@ -2354,7 +2507,7 @@
         "output": 0.4
       },
       "limit": {
-        "context": 1000000,
+        "context": 1047576,
         "output": 32768
       },
       "maxTokens": 32768,
@@ -2395,11 +2548,13 @@
     "302ai/gpt-5-pro": {
       "id": "gpt-5-pro",
       "name": "gpt-5-pro",
+      "family": "gpt-pro",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
       "release_date": "2025-10-08",
       "last_updated": "2025-10-08",
       "modalities": {
@@ -2418,6 +2573,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 272000
       },
       "maxTokens": 272000,
@@ -2431,6 +2587,7 @@
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
+      "structured_output": true,
       "temperature": true,
       "knowledge": "2023-09",
       "release_date": "2024-05-13",
@@ -2438,7 +2595,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -2460,11 +2618,12 @@
     "302ai/claude-sonnet-4-5": {
       "id": "claude-sonnet-4-5",
       "name": "claude-sonnet-4-5",
+      "family": "claude-sonnet",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-07",
+      "knowledge": "2025-07-31",
       "release_date": "2025-09-30",
       "last_updated": "2025-09-30",
       "modalities": {
@@ -2493,11 +2652,13 @@
     "302ai/gpt-5": {
       "id": "gpt-5",
       "name": "gpt-5",
+      "family": "gpt",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
       "release_date": "2025-08-08",
       "last_updated": "2025-08-08",
       "modalities": {
@@ -2516,6 +2677,7 @@
       },
       "limit": {
         "context": 400000,
+        "input": 272000,
         "output": 128000
       },
       "maxTokens": 128000,
@@ -2556,11 +2718,12 @@
     "302ai/claude-opus-4-20250514": {
       "id": "claude-opus-4-20250514",
       "name": "claude-opus-4-20250514",
+      "family": "claude-opus",
       "attachment": true,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2025-03",
+      "knowledge": "2025-03-31",
       "release_date": "2025-05-22",
       "last_updated": "2025-05-22",
       "modalities": {
@@ -2589,6 +2752,7 @@
     "302ai/glm-for-coding": {
       "id": "glm-for-coding",
       "name": "glm-for-coding",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
@@ -2652,6 +2816,7 @@
     "302ai/glm-4.5-airx": {
       "id": "glm-4.5-airx",
       "name": "glm-4.5-airx",
+      "family": "glm",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
@@ -2687,6 +2852,7 @@
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
+      "structured_output": true,
       "temperature": true,
       "knowledge": "2024-04",
       "release_date": "2025-04-14",
@@ -2694,7 +2860,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -2706,7 +2873,7 @@
         "output": 8
       },
       "limit": {
-        "context": 1000000,
+        "context": 1047576,
         "output": 32768
       },
       "maxTokens": 32768,
@@ -2751,6 +2918,7 @@
       "attachment": true,
       "reasoning": false,
       "tool_call": true,
+      "structured_output": true,
       "temperature": true,
       "knowledge": "2024-04",
       "release_date": "2025-04-14",
@@ -2758,7 +2926,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -2770,7 +2939,7 @@
         "output": 1.6
       },
       "limit": {
-        "context": 1000000,
+        "context": 1047576,
         "output": 32768
       },
       "maxTokens": 32768,
@@ -50032,38 +50201,6 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
-    "opencode/ling-2.6-flash-free": {
-      "id": "ling-2.6-flash-free",
-      "name": "Ling 2.6 Flash Free",
-      "family": "ling-flash-free",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-06",
-      "release_date": "2026-04-21",
-      "last_updated": "2026-04-21",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 262100,
-        "output": 32800
-      },
-      "maxTokens": 32800,
-      "provider": "openai",
-      "baseUrl": "https://opencode.ai/zen/v1"
-    },
     "opencode/kimi-k2.6": {
       "id": "kimi-k2.6",
       "name": "Kimi K2.6",
@@ -61732,6 +61869,44 @@
       "provider": "openai",
       "baseUrl": "https://pass.wafer.ai/v1"
     },
+    "wafer.ai/DeepSeek-V4-Pro": {
+      "id": "DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://pass.wafer.ai/v1"
+    },
     "cohere/command-a-reasoning-08-2025": {
       "id": "command-a-reasoning-08-2025",
       "name": "Command A Reasoning",
@@ -72922,6 +73097,38 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1"
+    },
+    "ovhcloud/qwen3.5-9b": {
+      "id": "qwen3.5-9b",
+      "name": "Qwen3.5-9B",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-02-15",
+      "last_updated": "2026-02-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.15
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1"
     },

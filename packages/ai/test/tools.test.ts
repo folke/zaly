@@ -1,7 +1,8 @@
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { stringifyContent } from "../src/content/format.ts"
-import { defineTool, runTool, ToolError } from "../src/tools.ts"
+import { AiError } from "../src/error.ts"
+import { defineTool, runTool } from "../src/tools.ts"
 
 const Adder = defineTool({
   desc: "add two numbers",
@@ -186,7 +187,7 @@ describe("runTool — validation failures", () => {
 describe("runTool — tool errors", () => {
   const Failing = defineTool({
     call: () => {
-      throw new ToolError({
+      throw new AiError({
         code: "NOT_FOUND",
         data: { id: "42" },
         message: "record not found",
@@ -196,7 +197,7 @@ describe("runTool — tool errors", () => {
     name: "fail",
   })
 
-  test("surfaces ToolError code + message", async () => {
+  test("surfaces AiError code + message", async () => {
     const r = await runTool(Failing, { id: "42" }, {})
     expect(r.isError).toBe(true)
     const msg = stringifyContent(r.content)
@@ -204,31 +205,32 @@ describe("runTool — tool errors", () => {
     expect(msg).toContain("record not found")
   })
 
-  test("errors carry a structured <error> MetaPart + formatted text body", async () => {
+  test("errors carry a structured ErrorPart in content", async () => {
     const r = await runTool(Failing, { id: "42" }, {})
     expect(Array.isArray(r.content)).toBe(true)
     const parts = r.content as ({ type: string } & Record<string, unknown>)[]
-    // First part is the structured error MetaPart — carries `code` and
-    // any structured `data`, but NOT `message` (the body already has it).
-    expect(parts[0]).toMatchObject({ tag: "error", type: "meta" })
-    expect(parts[0].data).toEqual({ code: "NOT_FOUND", data: { id: "42" } })
-    // Second part is the human-readable formatted block (carries the message).
-    expect(parts[1]).toMatchObject({ type: "text" })
-    expect(parts[1].text).toContain("NOT_FOUND")
-    expect(parts[1].text).toContain("record not found")
-  })
-
-  test("structured error preserves code, data, retryable from ToolError", async () => {
-    const r = await runTool(Failing, { id: "42" }, {})
-    expect(r.error).toEqual({
+    // Single `ErrorPart` carries everything: `code`, `message`, `data`,
+    // `retryable`. The wire boundary folds it to a `<error>` `MetaPart`
+    // via `errorToMeta()` later in the pipeline.
+    expect(parts).toHaveLength(1)
+    expect(parts[0]).toMatchObject({
       code: "NOT_FOUND",
       data: { id: "42" },
       message: "record not found",
-      retryable: false,
+      type: "error",
     })
   })
 
-  test("non-ToolError throws are wrapped as INTERNAL", async () => {
+  test("structured error sidecar mirrors the ErrorPart fields", async () => {
+    const r = await runTool(Failing, { id: "42" }, {})
+    expect(r.error).toMatchObject({
+      code: "NOT_FOUND",
+      data: { id: "42" },
+      message: "record not found",
+    })
+  })
+
+  test("non-AiError throws are wrapped as ERROR", async () => {
     const Throws = defineTool({
       call: () => {
         throw new Error("oops")
@@ -237,7 +239,7 @@ describe("runTool — tool errors", () => {
       name: "throws",
     })
     const r = await runTool(Throws, {}, {})
-    expect(r.error?.code).toBe("INTERNAL")
+    expect(r.error?.code).toBe("ERROR")
     expect(r.error?.message).toBe("oops")
   })
 
@@ -283,7 +285,7 @@ describe("stringifyContent", () => {
     ).toBe("line one\nline two")
   })
 
-  test("non-text parts become bracketed placeholders", () => {
+  test("non-text parts flatten to <kind> meta tags carrying mime/source ref", () => {
     expect(
       stringifyContent([
         { text: "look at this", type: "text" },
@@ -293,6 +295,6 @@ describe("stringifyContent", () => {
           type: "image",
         },
       ])
-    ).toBe("look at this\n[image]")
+    ).toBe('look at this\n<image>{"mime":"image/png"}</image>')
   })
 })

@@ -1,6 +1,6 @@
 import type { MetaPart, TextPart, Tool } from "@zaly/ai"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { readFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "pathe"
@@ -128,7 +128,7 @@ export class Skills {
     const skill = this.catalog.get(requested)
     if (!skill) {
       const available = [...this.catalog.keys()]
-      throw new ToolError({
+      throw new AiError({
         code: "UNKNOWN_SKILL",
         data: { available, name: requested },
         message: `no skill named "${requested}". Available: ${available.join(", ")}`,

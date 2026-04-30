@@ -1,6 +1,6 @@
 import type { MetaPart, TextPart } from "@zaly/ai"
 
-import { defineTool, ToolError } from "@zaly/ai"
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
 
 /**
@@ -67,13 +67,13 @@ export const agentSpawnTool = defineTool({
 
   async call(args, ctx): Promise<(MetaPart | TextPart)[]> {
     if (!ctx.agent) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "agent_spawn requires an Agent reference on the context (set up by the agent harness).",
       })
     }
     if (!ctx.swarm) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message:
           "agent_spawn requires a Swarm registry. Construct the root agent with " +
@@ -123,13 +123,13 @@ export const agentSendTool = defineTool({
 
   call(args, ctx): string {
     if (!ctx.agent) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "agent_send requires an Agent reference on the context.",
       })
     }
     if (!ctx.swarm) {
-      throw new ToolError({
+      throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "agent_send requires a Swarm registry on the context.",
       })
@@ -139,7 +139,7 @@ export const agentSendTool = defineTool({
       const known = ctx.swarm.entries
         .map((e) => e.name)
         .filter((n) => n !== ctx.swarm?.find(ctx.agent!)?.name)
-      throw new ToolError({
+      throw new AiError({
         code: "UNKNOWN_AGENT",
         data: { available: known, to: args.to },
         message:
