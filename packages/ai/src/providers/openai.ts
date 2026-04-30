@@ -651,13 +651,7 @@ function* handleChunk(
       yield {
         finishReason: mapFinishReason(choice.finish_reason),
         type: "finish",
-        usage: {
-          input: chunk.usage?.prompt_tokens ?? 0,
-          output: chunk.usage?.completion_tokens ?? 0,
-          ...(chunk.usage?.prompt_tokens_details?.cached_tokens !== undefined
-            ? { cacheRead: chunk.usage.prompt_tokens_details.cached_tokens }
-            : {}),
-        },
+        usage: usageFromChunk(chunk.usage ?? {}),
       }
     }
   } else if (chunk.usage !== undefined) {
@@ -668,14 +662,23 @@ function* handleChunk(
     yield {
       finishReason: "stop",
       type: "finish",
-      usage: {
-        input: chunk.usage.prompt_tokens ?? 0,
-        output: chunk.usage.completion_tokens ?? 0,
-        ...(chunk.usage.prompt_tokens_details?.cached_tokens !== undefined
-          ? { cacheRead: chunk.usage.prompt_tokens_details.cached_tokens }
-          : {}),
-      },
+      usage: usageFromChunk(chunk.usage),
     }
+  }
+}
+
+/** Translate OpenAI's usage shape to the cross-provider `TokenCount`
+ *  convention: `input` is the *uncached* portion (full-rate billing),
+ *  `cacheRead` is the cached portion. OpenAI's `prompt_tokens` is the
+ *  full prompt size with `prompt_tokens_details.cached_tokens` as a
+ *  subset, so we subtract to land on the uncached count. */
+function usageFromChunk(usage: NonNullable<OpenAIChunk["usage"]>): TokenCount {
+  const promptTokens = usage.prompt_tokens ?? 0
+  const cached = usage.prompt_tokens_details?.cached_tokens
+  return {
+    input: cached !== undefined ? Math.max(0, promptTokens - cached) : promptTokens,
+    output: usage.completion_tokens ?? 0,
+    ...(cached !== undefined ? { cacheRead: cached } : {}),
   }
 }
 

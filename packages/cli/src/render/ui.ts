@@ -1,3 +1,4 @@
+import type { Usage } from "@zaly/ai"
 import type { Reactive, Renderer } from "@zaly/tui"
 
 import { box, text } from "@zaly/tui"
@@ -8,6 +9,7 @@ export interface UiState {
   busy: Reactive<boolean>
   model: Reactive<string>
   status: Reactive<string>
+  usage: Reactive<Usage>
 }
 
 /**

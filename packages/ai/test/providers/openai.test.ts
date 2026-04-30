@@ -741,7 +741,10 @@ describe("openai: stream parsing", () => {
     const finish = events.find((e) => e.type === "finish") as {
       usage: { input: number; output: number; cacheRead?: number }
     }
-    expect(finish.usage).toEqual({ cacheRead: 80, input: 123, output: 7 })
+    // `input` is the *uncached* portion (full-rate billing), so we
+    // subtract `cached_tokens` from OpenAI's inclusive `prompt_tokens`.
+    // 123 - 80 = 43.
+    expect(finish.usage).toEqual({ cacheRead: 80, input: 43, output: 7 })
   })
 
   test("finish_reason length maps to 'length'", async () => {

@@ -729,6 +729,10 @@ describe("anthropic: stream parsing", () => {
     const finish = events.find((e) => e.type === "finish") as {
       usage: { input: number; output: number; cacheRead?: number; cacheWrite?: number }
     }
+    // `input` is the *uncached* portion (full-rate billing), with
+    // `cacheRead` / `cacheWrite` as separate billing tiers. Total
+    // prompt = input + cacheRead + cacheWrite. Anthropic reports
+    // this shape natively.
     expect(finish.usage).toEqual({ cacheRead: 200, cacheWrite: 80, input: 12, output: 3 })
   })
 

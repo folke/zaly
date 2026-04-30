@@ -145,20 +145,30 @@ export type FinishReason =
 /** Token accounting returned at end-of-stream (`finish.usage`).
  *  Provider is the source of truth — we don't count locally.
  *
- *  Cache fields are split because Anthropic's pricing differs by
- *  direction (writes ~25% premium, reads ~10% of input price).
- *  OpenAI only reports reads (`prompt_tokens_details.cached_tokens`);
- *  writes are free and never appear.
+ *  Each field is a distinct billing tier with its own price:
+ *    - `input`     — uncached prompt tokens (full-rate)
+ *    - `cacheRead` — prompt tokens served from cache (~10% of input price)
+ *    - `cacheWrite`— prompt tokens that wrote new cache entries (~125% of input price)
+ *    - `output`    — completion tokens
  *
- *  `input` is the full prompt size (cached + uncached) — what counts
- *  toward the context window. */
+ *  Total prompt size against the context window is
+ *  `input + cacheRead + cacheWrite`. Cache fields are split because
+ *  Anthropic prices each direction differently. OpenAI only reports
+ *  reads (`prompt_tokens_details.cached_tokens`); writes are free and
+ *  never appear.
+ *
+ *  Both adapters normalise to this shape — Anthropic reports it
+ *  natively (its `input_tokens` is uncached-only); OpenAI subtracts
+ *  `cached_tokens` from the inclusive `prompt_tokens` it sends. */
 export interface TokenCount {
+  /** Uncached prompt tokens — billed at full input rate. */
   input: number
+  /** Completion tokens. */
   output: number
-  /** Portion of `input` served from cache. Anthropic
+  /** Prompt tokens served from cache. Anthropic
    *  `cache_read_input_tokens`, OpenAI `prompt_tokens_details.cached_tokens`. */
   cacheRead?: number
-  /** Portion of `input` that wrote new cache entries. Anthropic
+  /** Prompt tokens that wrote new cache entries. Anthropic
    *  `cache_creation_input_tokens`. Absent on OpenAI. */
   cacheWrite?: number
   reasoning?: number

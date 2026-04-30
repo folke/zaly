@@ -171,16 +171,15 @@ export async function loadModel(
  *  fall back to the input price when the catalog doesn't break them
  *  out (rare — most providers publish all three).
  *
- *  `input` here is the *uncached* portion, since the cached portion is
- *  billed at `cacheRead` rate. We derive uncached as
- *  `usage.input − cacheRead − cacheWrite` to avoid double-counting. */
+ *  `usage.input` is already the uncached portion (see `TokenCount`
+ *  docs), so each tier multiplies by its own price directly — no
+ *  subtraction needed. */
 function computeCost(usage: Usage, prices: Cost): TokenCount {
   const cacheRead = usage.cacheRead ?? 0
   const cacheWrite = usage.cacheWrite ?? 0
-  const uncachedInput = Math.max(0, usage.input - cacheRead - cacheWrite)
   const M = 1_000_000
   const cost: TokenCount = {
-    input: (uncachedInput * prices.input) / M,
+    input: (usage.input * prices.input) / M,
     output: (usage.output * prices.output) / M,
   }
   if (cacheRead > 0) cost.cacheRead = (cacheRead * (prices.cache_read ?? prices.input)) / M

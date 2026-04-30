@@ -633,17 +633,20 @@ function* handleEvent(
     case "message_start": {
       // Capture initial usage — input + cache fields land here. Output
       // ticks up via message_delta as tokens stream.
+      //
+      // `usage.input` is the *uncached* portion (full-rate billing).
+      // Cache reads / writes are reported separately as their own
+      // billing tiers. Anthropic reports this shape natively; nothing
+      // to translate.
       const u = evt.message.usage
       // Mutate in place so the running tally is visible to later events
       // without a separate channel.
       usageSoFar.input = u.input_tokens
       usageSoFar.output = u.output_tokens
-      if (u.cache_read_input_tokens !== undefined) {
+      if (u.cache_read_input_tokens !== undefined)
         usageSoFar.cacheRead = u.cache_read_input_tokens
-      }
-      if (u.cache_creation_input_tokens !== undefined) {
+      if (u.cache_creation_input_tokens !== undefined)
         usageSoFar.cacheWrite = u.cache_creation_input_tokens
-      }
       return
     }
     case "content_block_start": {

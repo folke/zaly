@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Attachment, ContentPart, ImagePart, PdfPart, TextPart } from "@zaly/ai"
+import type { Attachment, ContentPart, ImagePart, PdfPart, TextPart, Usage } from "@zaly/ai"
 import type { Input, LogCallable } from "@zaly/tui"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
@@ -34,6 +34,7 @@ export class App {
   readonly #busy = signal(false)
   readonly #status = signal("ready")
   readonly #model = signal("")
+  readonly #usage = signal<Usage>({ input: 0, output: 0 })
 
   /** Attachments pasted since the last submit, keyed by the
    *  `[Image #n]` / `[PDF #n]` index inserted into the input text.
@@ -63,6 +64,7 @@ export class App {
       busy: this.#busy.get,
       model: this.#model.get,
       status: this.#status.get,
+      usage: this.#usage.get,
     })
 
     this.#log = this.#render.renderer.log
@@ -72,6 +74,12 @@ export class App {
       renderer: this.#render.renderer,
       reset: () => this.#reset(),
       toggleHelp: this.#render.toggleHelp,
+    })
+
+    // Refresh usage after every step's terminal point — `agent.usage`
+    // reflects the last response by the time `step-end` fires.
+    this.#agent.on("step-end", () => {
+      this.#usage.set(this.#agent.usage)
     })
 
     this.#agent.on("stop", ({ reason }) => {

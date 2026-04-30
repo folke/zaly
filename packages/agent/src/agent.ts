@@ -392,16 +392,14 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #collect() {
     this.#abortController = new AbortController()
+    const caching = this.#opts.caching !== false
     const stream = this.#opts.model.stream(
       {
-        messages: [...this.session.messages],
+        messages: this.#withCacheMarker([...this.session.messages], caching),
         prompt: this.#prompt,
         tools: this.#stepTools(),
       },
-      {
-        ...this.#opts.request,
-        signal: this.#abortController.signal,
-      }
+      this.#streamOpts(caching)
     )
     return await collect(stream, {
       onEvent: (event) => {
@@ -410,6 +408,36 @@ export class Agent extends Emitter<AgentEvents> {
       },
       onUpdate: this.#opts.onUpdate,
     })
+  }
+
+  /** Mark the trailing message as a cache breakpoint. Anthropic's
+   *  adapter places `cache_control` on that message's last content
+   *  block, caching the prefix up through it. The marker rolls forward
+   *  each turn — every request hits the previous turn's cache. */
+  #withCacheMarker(messages: Message[], caching: boolean): Message[] {
+    if (!caching || messages.length === 0) return messages
+    const last = messages[messages.length - 1]
+    // Respect an explicit hint from the caller — don't override.
+    if (last.cache !== undefined) return messages
+    messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
+    return messages
+  }
+
+  /** Build the per-stream `StreamOptions`. Adds `cacheTools: true` for
+   *  Anthropic when caching is on so the trailing tool definition gets
+   *  marked, caching the `system + tools` prefix across the session. */
+  #streamOpts(caching: boolean) {
+    const base = this.#opts.request ?? {}
+    const signal = this.#abortController?.signal
+    if (!caching) return { ...base, signal }
+    return {
+      ...base,
+      providerOptions: {
+        ...base.providerOptions,
+        anthropic: { cacheTools: true, ...base.providerOptions?.anthropic },
+      },
+      signal,
+    }
   }
 
   /** Run exactly one step. Useful for tests and custom drivers
@@ -447,7 +475,13 @@ export class Agent extends Emitter<AgentEvents> {
       this.#opts.contextLimit !== undefined &&
       isContextOverflow({
         contextLimit: this.#opts.contextLimit,
-        usageInput: collected.usage.input + (collected.usage.cacheRead ?? 0),
+        // Total prompt size = uncached input + cached reads + cached
+        // writes. `usage.input` is uncached-only; the cache fields are
+        // separate billing tiers that still occupy the context window.
+        usageInput:
+          collected.usage.input +
+          (collected.usage.cacheRead ?? 0) +
+          (collected.usage.cacheWrite ?? 0),
       })
     )
       return { kind: "context-overflow", ...result }
