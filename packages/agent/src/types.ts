@@ -9,6 +9,7 @@ import type {
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
+import type { NotifyOptions } from "./notify.ts"
 import type {
   PermissionManager,
   PermissionOptions,
@@ -16,6 +17,7 @@ import type {
   PermissionScopes,
   Suggestion,
 } from "./permissions/index.ts"
+import type { AnyPrompt } from "./prompt/index.ts"
 import type { Session, SessionOptions } from "./session/index.ts"
 import type { Skills } from "./skills.ts"
 import type { StopOptions } from "./stop.ts"
@@ -79,11 +81,15 @@ export interface PermissionRequest {
  *  Identical to `AgentOptions` except `session` is the *built* `Session`
  *  instance (constructed for you by `Agent.load`). Subclasses that call
  *  `super(init)` directly need to provide their own pre-built session. */
-export interface AgentInit extends Omit<AgentOptions, "session" | "skills" | "cwd" | "tools"> {
+export interface AgentInit extends Omit<
+  AgentOptions,
+  "session" | "skills" | "cwd" | "tools" | "prompt"
+> {
   cwd: string
   session: Session
   skills?: Skills
   tools?: Tool[]
+  prompt?: string[]
 }
 
 /** Outcome of a single step (one provider round-trip + tool batch).
@@ -142,7 +148,7 @@ export interface AgentOptions extends CollectOptions {
    *  this for "behave like X" instructions that don't change across
    *  the session. For mid-conversation steering, `send()` a
    *  `role: "system"` message instead. Mutable via `agent.prompt = …`. */
-  prompt?: string[]
+  prompt?: (string | { use: AnyPrompt })[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number
   /** Nesting depth of this agent. `0` = top-level (user-facing).
@@ -193,6 +199,16 @@ export interface AgentOptions extends CollectOptions {
    *  workload — interactive sessions often want 30s; batch / autonomous
    *  runs may want 5m. */
   heartbeatMs?: number
+
+  /** Runtime notifications: `session-started` / `session-resumed`,
+   *  `time` / `new-day` / `user-returned`, `model-changed`,
+   *  `context-pressure`. Defaults to enabled with sensible thresholds.
+   *
+   *  Pass `false` to disable entirely (tests usually want this — the
+   *  injected messages would otherwise show up in conversation
+   *  expectations); pass a `NotifyOptions` object to tune thresholds
+   *  while keeping the notifier active. */
+  notify?: boolean | NotifyOptions
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Resolver for `ask` permission verdicts. The agent invokes this

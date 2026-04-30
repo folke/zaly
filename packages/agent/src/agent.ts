@@ -1,12 +1,13 @@
 // oxlint-disable no-await-in-loop
-import type { Content, Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
+import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
-import { AiError, collect, isContextOverflow, toContentParts } from "@zaly/ai"
+import { AiError, collect, isContextOverflow } from "@zaly/ai"
 import { Emitter, normPath, toError } from "@zaly/shared"
 import { Notifier } from "./notify.ts"
 import { PermissionManager } from "./permissions/index.ts"
+import { promptRegistry } from "./prompt/index.ts"
 import { Session } from "./session/index.ts"
 import { Skills } from "./skills.ts"
 import { StopPolicy } from "./stop.ts"
@@ -35,7 +36,7 @@ import { uuidv7 } from "./utils/uuid.ts"
  */
 export class Agent extends Emitter<AgentEvents> {
   readonly #opts: AgentInit
-  readonly #notifier = new Notifier()
+  readonly #notifier?: Notifier
   readonly #permissions: PermissionManager
   readonly #skills?: Skills
   readonly #stopPolicy: StopPolicy
@@ -82,7 +83,7 @@ export class Agent extends Emitter<AgentEvents> {
     super()
     this.#opts = opts
     this.#cwd = opts.cwd
-    this.#prompt = opts.prompt
+    this.#prompt = (opts.prompt ?? []).map((p) => p.trim())
     this.depth = opts.depth ?? 0
     this.maxDepth = opts.maxDepth ?? 2
     this.session = opts.session
@@ -121,6 +122,13 @@ export class Agent extends Emitter<AgentEvents> {
         : new PermissionManager({ ...opts.permissions, cwd: this.#cwd })
     this.#skills = opts.skills
     this.#swarm = opts.swarm ?? new Swarm()
+    // Notifier defaults to enabled with sensible thresholds. `false`
+    // turns it off (tests usually pass this so injected notifications
+    // don't show up in conversation expectations); a `NotifyOptions`
+    // object tunes thresholds while keeping it active.
+    if (opts.notify !== false) {
+      this.#notifier = new Notifier(typeof opts.notify === "object" ? opts.notify : {})
+    }
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -149,8 +157,14 @@ export class Agent extends Emitter<AgentEvents> {
         Promise.resolve(typeof t === "string" ? toolRegistry.load(t, toolInit) : t)
       )
     )
-    const init: AgentInit = { ...opts, cwd, session, skills, tools }
-    return new Agent(init)
+    const promptCtx = { cwd, model: opts.model }
+    const prompts = opts.prompt ?? [{ use: "agent" }, { use: "env" }, { use: "model" }]
+    const prompt = await Promise.all(
+      prompts.map(async (p) => (typeof p === "string" ? p : promptRegistry.load(p.use, promptCtx)))
+    )
+    const init: AgentInit = { ...opts, cwd, prompt, session, skills, tools }
+    const agent = new Agent(init)
+    return agent
   }
 
   /** Spawn a child agent that inherits this agent's runtime defaults —
@@ -177,10 +191,17 @@ export class Agent extends Emitter<AgentEvents> {
     const tools =
       childDepth >= this.maxDepth ? inherited.filter((t) => t.name !== "subagent") : inherited
     const ret = await Agent.load({
+      caching: this.#opts.caching,
       cwd: this.#cwd,
       depth: childDepth,
       maxDepth: this.maxDepth,
       model: this.model,
+      // Inherit the parent's `notify` setting so test roots that
+      // disable the notifier (`notify: false`) propagate that to
+      // children — otherwise spawning a child would silently re-enable
+      // session-started / time / etc. injections that the harness
+      // explicitly opted out of.
+      notify: this.#opts.notify,
       permissions: this.#permissions,
       skills: false,
       // Propagate the swarm so the child + every grandchild address
@@ -302,12 +323,6 @@ export class Agent extends Emitter<AgentEvents> {
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
   send(message: Message<"user" | "system">): void {
-    if (message.role === "user" && this.#notifyQueue.length > 0) {
-      const notifs = this.#notifyQueue.splice(0)
-      const notif: MetaPart = { content: notifs, tag: "system-notification", type: "meta" }
-      const content = toContentParts(message.content)
-      message = { ...message, content: [notif, ...content] }
-    }
     if (this.#status === "idle" || this.#status === "paused") {
       this.session.add(message)
       void this.run()
@@ -470,7 +485,7 @@ export class Agent extends Emitter<AgentEvents> {
   /** Run exactly one step. Useful for tests and custom drivers
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
-    this.#notifier.check({ agent: this })
+    this.#notifier?.check({ agent: this })
     // Drain the notify queue into the inject queue as a single system message
     if (this.#notifyQueue.length > 0) {
       this.#injectQueue.push({

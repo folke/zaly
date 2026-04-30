@@ -20,11 +20,6 @@ export async function buildAgent(config: Config): Promise<Agent> {
     messages,
     model,
     permissions: { preset: "yolo" },
-    prompt: [
-      "You are zaly, a concise coding assistant.",
-      "Use the available tools to answer questions about the project.",
-      "Prefer batching multiple tool calls where it makes sense.",
-    ],
     session: { path: config.sessionPath },
     tools: [
       "bash",
