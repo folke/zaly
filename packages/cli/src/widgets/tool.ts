@@ -1,6 +1,7 @@
 import type { ToolCallPart, ToolResult } from "@zaly/ai"
 
-import { box, signal, text } from "@zaly/tui"
+import { stringifyContent } from "@zaly/ai"
+import { box, inspect, signal, text } from "@zaly/tui"
 
 /**
  * Tool-call block: name + intent on top, params preview, then a status
@@ -17,7 +18,7 @@ export function toolCall(call: ToolCallPart): {
   const description = typeof params.description === "string" ? params.description : undefined
   const rest: Record<string, unknown> = { ...params }
   if (description) delete rest.description
-  const json = JSON.stringify(rest)
+  const json = inspect([rest])
   let preview = ""
   if (json !== "{}") preview = json.length > 200 ? `${json.slice(0, 197)}...` : json
 
@@ -41,14 +42,8 @@ export function toolCall(call: ToolCallPart): {
     node,
     resolve(result) {
       setStatus(result.isError ? "error" : "ok")
-      const content = result.content
-      let preview2: string
-      if (typeof content === "string") {
-        preview2 = content.length > 200 ? `${content.slice(0, 197)}...` : content
-      } else {
-        const totalLen = content.reduce((n, p) => n + (p.type === "text" ? p.text.length : 0), 0)
-        preview2 = `[${content.length} parts, ${totalLen} chars]`
-      }
+      const content = stringifyContent(result.content)
+      const preview2 = content.length > 500 ? `${content.slice(0, 497)}...` : content
       setResultPreview(preview2)
     },
   }
