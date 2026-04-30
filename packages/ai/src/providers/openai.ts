@@ -8,9 +8,59 @@ import type {
   TokenCount,
   ToolChoice,
 } from "../provider.ts"
-import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
+import type { Inlined } from "../content/part.ts"
+import type {
+  AudioPart,
+  Content,
+  ImagePart,
+  Message,
+  ProviderOptions,
+  Quirks,
+  Tool,
+} from "../types.ts"
 
-import { hasAttachments, stringifyContent, transformMeta } from "../content/format.ts"
+import {
+  attachmentToMeta,
+  errorToMeta,
+  inlineFileSources,
+  metaToText,
+} from "../content/compose.ts"
+import { stringifyContent } from "../content/format.ts"
+import { ContentTransform } from "../content/transform.ts"
+
+// ── Content transform ───────────────────────────────────────────────────
+//
+// Maps `Content` (the wide internal shape) to what OpenAI Chat
+// Completions can consume. Composed via `.pipe(...)` so each step's
+// narrowing flows into the next:
+//
+//   1. pdf / video → `<pdf>` / `<video>` MetaPart. Chat Completions
+//      doesn't accept either modality; demote to a reference so the
+//      model still sees the attachment existed. (PDFs land natively
+//      on OpenAI Responses; video isn't supported anywhere here.)
+//   2. image / audio file-source → base64 via `inlineFileSources`.
+//      Image accepts base64 (`data:` URL) or url; audio accepts
+//      base64 only. URL audio still falls through and is rejected at
+//      the wire mapping with a clear error.
+//   3. ErrorPart → `<error>` MetaPart.
+//   4. MetaPart → `<tag>JSON</tag>` TextPart so the wire layer only
+//      deals with text + image + audio.
+//
+// `OpenAIContent` infers to `TextPart | Inlined<ImagePart> | Inlined<AudioPart>`.
+
+const openaiTransform = ContentTransform.create()
+  .pipe(attachmentToMeta("pdf", "video"))
+  .pipe(inlineFileSources())
+  .pipe(errorToMeta())
+  .pipe(metaToText())
+
+async function transformOpenAI(content: Content) {
+  const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content
+  return openaiTransform.run(parts)
+}
+
+/** Post-transform content shape OpenAI's wire layer consumes. */
+export type OpenAIContent = Awaited<ReturnType<typeof transformOpenAI>>
 
 /**
  * OpenAI Chat Completions adapter.
@@ -41,7 +91,7 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
   return {
     id: "openai",
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
-      const body = buildRequest(req)
+      const body = await buildRequest(req)
       const response = await doFetch(`${baseUrl}/chat/completions`, {
         body: JSON.stringify(body),
         headers: {
@@ -141,15 +191,19 @@ type OpenAIContentPart =
   | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
   | { type: "input_audio"; input_audio: { data: string; format: "wav" | "mp3" } }
 
-function buildRequest(req: ProviderRequest): OpenAIChatRequest {
+async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   const quirks = req.quirks ?? {}
   const { ctx, opts } = req
   const specific = (opts.providerOptions?.openai ?? {}) as OpenAIRequestOptions
-  // flatMap because a single source message can produce multiple wire
-  // messages — specifically, tool results with image/audio attachments
-  // emit a tool message + a synthetic user message carrying the
-  // attachments (Chat Completions tool messages are string-only).
-  const messages = ctx.messages.flatMap(toOpenAIMessages)
+  // Sequential await — a single source message can produce multiple
+  // wire messages (tool results with image/audio attachments emit a
+  // tool message + a synthetic user message carrying the attachments,
+  // since Chat Completions tool messages are string-only).
+  const messages: OpenAIMessage[] = []
+  for (const msg of ctx.messages) {
+    // eslint-disable-next-line no-await-in-loop
+    messages.push(...(await toOpenAIMessages(msg)))
+  }
   // Durable system prompt → first `role: "system"` message. Joined with
   // blank lines so multiple snippets read as separate paragraphs without
   // bleeding into each other.
@@ -300,10 +354,10 @@ function toOpenAITool(tool: Tool, strict: boolean): OpenAITool {
   }
 }
 
-/** Translate one `ImagePart` to OpenAI's `image_url` content part.
- *  base64 sources pack into a `data:` URL; url sources pass through. */
-function toOpenAIImagePart(part: ImagePart): OpenAIContentPart {
-  if (part.source.type === "file") throw new Error("Unexpected file source")
+/** Translate one transformed (file-source-free) `ImagePart` to
+ *  OpenAI's `image_url` content part. base64 sources pack into a
+ *  `data:` URL; url sources pass through. */
+function toOpenAIImagePart(part: Inlined<ImagePart>): OpenAIContentPart {
   const url =
     part.source.type === "url" ? part.source.url : `data:${part.mime};base64,${part.source.data}`
   return {
@@ -312,10 +366,11 @@ function toOpenAIImagePart(part: ImagePart): OpenAIContentPart {
   }
 }
 
-/** Translate one `AudioPart` to OpenAI's `input_audio` content part.
- *  Only available on the gpt-4o-audio-preview family of models. URL
- *  sources aren't accepted for audio — must be inline base64. */
-function toOpenAIAudioPart(part: AudioPart): OpenAIContentPart {
+/** Translate one transformed (file-source-free) `AudioPart` to
+ *  OpenAI's `input_audio` content part. Only available on the
+ *  gpt-4o-audio-preview family of models. URL sources aren't accepted
+ *  for audio — must be inline base64. */
+function toOpenAIAudioPart(part: Inlined<AudioPart>): OpenAIContentPart {
   if (part.source.type !== "base64") {
     throw new Error(
       "OpenAI input_audio requires a base64 source — URL audio sources aren't accepted."
@@ -325,95 +380,63 @@ function toOpenAIAudioPart(part: AudioPart): OpenAIContentPart {
   return { input_audio: { data: part.source.data, format }, type: "input_audio" }
 }
 
-function toOpenAIMessages(msg: Message): OpenAIMessage[] {
+async function toOpenAIMessages(msg: Message): Promise<OpenAIMessage[]> {
   // `role: "tool"` is special — Chat Completions requires one wire
   // message per `tool_call_id`, but the kernel's `Message<"tool">` packs
   // all the results from one parallel-tool batch into a single message
-  // (one entry per result). Expand 1:N here. Other roles are 1:1 plus
-  // optional attachment spillover.
+  // (one entry per result). Expand 1:N here, and emit a synthetic user
+  // message right after each result that carries non-text parts — Chat
+  // Completions tool messages are string-only.
   if (msg.role === "tool") {
-    return [...msg.content.map(toolPartToWireMessage), ...attachmentSpilloverFor(msg)]
-  }
-  return [toOpenAIMessage(msg)]
-}
-
-function toolPartToWireMessage(part: Message<"tool">["content"][number]): OpenAIMessage {
-  const body = stringifyContent(part.content)
-  const marker = hasAttachments(part.content)
-    ? "\n[attachments delivered as the next user message]"
-    : ""
-  return {
-    content: (part.isError === true ? `ERROR: ${body}` : body) + marker,
-    role: "tool",
-    tool_call_id: part.id,
-  }
-}
-
-/** When a `role: "tool"` message has rich content with non-text parts,
- *  Chat Completions can't carry them in the tool message itself. Emit
- *  a synthetic `role: "user"` message right after, holding just the
- *  attachments, so the model still sees them in conversation order. */
-function attachmentSpilloverFor(msg: Message): OpenAIMessage[] {
-  if (msg.role !== "tool") return []
-  const out: OpenAIMessage[] = []
-  for (const part of msg.content) {
-    if (typeof part.content === "string") continue
-    const attachments = part.content.filter((p) => p.type !== "text")
-    if (attachments.length === 0) continue
-    const userParts: OpenAIContentPart[] = []
-    for (const att of attachments) {
-      if (att.type === "image") userParts.push(toOpenAIImagePart(att))
-      else if (att.type === "audio") userParts.push(toOpenAIAudioPart(att))
-      // PDF / video aren't accepted on Chat Completions even via user
-      // messages — drop with a text marker.
-      else
-        userParts.push({
-          text: `[${att.type} attachment dropped; not accepted by this endpoint]`,
-          type: "text",
-        })
+    const out: OpenAIMessage[] = []
+    for (const part of msg.content) {
+      // eslint-disable-next-line no-await-in-loop
+      const transformed = await transformOpenAI(part.content)
+      const textChunks: string[] = []
+      const attachments: OpenAIContentPart[] = []
+      for (const p of transformed) {
+        if (p.type === "text") textChunks.push(p.text)
+        else if (p.type === "image") attachments.push(toOpenAIImagePart(p))
+        else attachments.push(toOpenAIAudioPart(p))
+        // Exhaustive: `transformed` is `(TextPart | Inlined<ImagePart>
+        // | Inlined<AudioPart>)[]`.
+      }
+      const body = textChunks.join("\n")
+      const marker =
+        attachments.length > 0 ? "\n[attachments delivered as the next user message]" : ""
+      out.push({
+        content: (part.isError === true ? `ERROR: ${body}` : body) + marker,
+        role: "tool",
+        tool_call_id: part.id,
+      })
+      if (attachments.length > 0) out.push({ content: attachments, role: "user" })
     }
-    if (userParts.length > 0) out.push({ content: userParts, role: "user" })
+    return out
   }
-  return out
+  return [await toOpenAIMessage(msg)]
 }
 
-function toOpenAIMessage(msg: Message): OpenAIMessage {
+async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
   switch (msg.role) {
     case "system": {
       // OpenAI accepts mid-conversation `role: "system"` natively, so we
-      // pass it straight through. (Anthropic doesn't, hence the
-      // `systemToUser` reframe over there.)
+      // pass it straight through. `stringifyContent` flattens any
+      // ErrorPart / MetaPart through its internal pipeline.
       return { content: stringifyContent(msg.content), role: "system" }
     }
     case "user": {
+      // String shorthand stays a string; arrays stay arrays through
+      // the transform — matches the wire-shape callers already use.
       if (typeof msg.content === "string") return { content: msg.content, role: "user" }
-      // Flatten MetaPart → TextPart at the boundary so the loop below
-      // only sees text + attachments.
-      const flat = transformMeta(msg.content)
-      if (typeof flat === "string") return { content: flat, role: "user" }
-      // (Text | Attachment)[] → content parts. Image attachments serialize
-      // to `image_url`, with base64 sources packed as a `data:` URL. PDF /
-      // audio / video attachments aren't supported on Chat Completions —
-      // throw a clear error rather than silently dropping them.
+      const transformed = await transformOpenAI(msg.content)
       const parts: OpenAIContentPart[] = []
-      for (const p of flat) {
+      for (const p of transformed) {
         if (p.type === "text") parts.push({ text: p.text, type: "text" })
         else if (p.type === "image") parts.push(toOpenAIImagePart(p))
-        else if (p.type === "audio") parts.push(toOpenAIAudioPart(p))
-        else if (p.type === "error") {
-          // ErrorPart must be transformed before hitting the wire.
-          throw new Error(
-            "OpenAI adapter received an ErrorPart; run `errorToMeta()` " +
-              "transform before serialization."
-          )
-        } else {
-          // PDF/video aren't accepted by Chat Completions. (PDF lands on
-          // OpenAI Responses; video isn't supported anywhere here.)
-          throw new Error(
-            `OpenAI Chat Completions does not accept ${p.type} attachments. ` +
-              `Convert upstream or use a different provider/endpoint.`
-          )
-        }
+        else parts.push(toOpenAIAudioPart(p))
+        // Exhaustive: `transformed` is `(TextPart | Inlined<ImagePart>
+        // | Inlined<AudioPart>)[]`. pdf/video/error/meta were folded
+        // into text by the transform.
       }
       return { content: parts, role: "user" }
     }
