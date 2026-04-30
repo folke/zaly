@@ -3,7 +3,7 @@ import type { Reactive } from "../core/reactive.ts"
 import type { Color } from "../style/color.ts"
 
 import { Node } from "../core/node.ts"
-import { unwrap } from "../core/reactive.ts"
+import { untrack, unwrap } from "../core/reactive.ts"
 import { stringWidth } from "../style/ansi.ts"
 
 /**
@@ -83,7 +83,12 @@ export class Spinner extends Node<SpinnerState> {
   #startTimer(): void {
     if (this.#timer !== undefined) return
     const speed = this.state.speed ?? 80
-    this.#timer = setInterval(() => this.invalidate(), speed)
+    // `untracked` so the interval callback doesn't inherit the render's
+    // tracking ctx. `#startTimer` is reachable from `_render` via
+    // `#reconcile`; without escaping, every timer tick would run as if
+    // it were "inside" this spinner's own render — and `invalidate`
+    // would be silently suppressed by `inRenderContextOf` self-check.
+    this.#timer = untrack(() => setInterval(() => this.invalidate(), speed))
     // Don't pin the event loop — a forgotten spinner should never
     // prevent the process from exiting.
     this.#timer.unref()
