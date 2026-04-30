@@ -12,6 +12,7 @@ import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from
 
 import {
   attachmentToMeta,
+  compressImages,
   errorToMeta,
   inlineFileSources,
   metaToText,
@@ -44,6 +45,7 @@ import { ContentTransform } from "../content/transform.ts"
 const anthropicTransform = ContentTransform.create()
   .pipe(attachmentToMeta("audio", "video"))
   .pipe(inlineFileSources())
+  .pipe(compressImages())
   .pipe(errorToMeta())
   .pipe(metaToText())
 

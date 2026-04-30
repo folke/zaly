@@ -1,7 +1,9 @@
-import type { Attachment, ContentPart, MetaPart } from "../types.ts"
+import type { CompressOpts } from "@zaly/shared"
+import type { Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
 import type { ContentTransform } from "./transform.ts"
 
+import { imageCompress } from "@zaly/shared"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
 import { inlineFile } from "./part.ts"
 
@@ -70,6 +72,57 @@ export function errorToMeta() {
  *  boundary so the model sees flat text + attachments only. */
 export function metaToText() {
   return <T extends ContentPart>(ct: ContentTransform<T>) => ct.map("meta", metaToTextPart)
+}
+
+/** Compress every base64-source `ImagePart` to fit a size budget.
+ *  Resizes to `maxDimension` on the longest edge and re-encodes
+ *  (JPEG with quality step-down, or PNG when the source has alpha).
+ *  Url-source images pass through — those are delivered by reference
+ *  and the size cap is the provider's problem.
+ *
+ *  Place after `inlineFileSources()` (so file sources have already
+ *  become base64) and before `metaToText()`. Default budget is 5 MB,
+ *  matching Anthropic's hard cap; OpenAI's 512 MB is a soft "yes you
+ *  could" so we cap there too — busy prompts at full resolution waste
+ *  tokens and bandwidth. */
+export function compressImages(opts: CompressOpts = {}) {
+  return <T extends ContentPart>(ct: ContentTransform<T>) => {
+    // Cast wider for the .mapAsync call so a chain that already
+    // narrowed `image` to `Inlined<ImagePart>` (post-`inlineFileSources`)
+    // doesn't lose that narrowing — we only emit base64-source images,
+    // so the result is structurally still `Inlined<ImagePart>`.
+    const wide = ct as unknown as ContentTransform
+    const out = wide.mapAsync("image", compressImagePart(opts))
+    return out as unknown as ContentTransform<
+      Exclude<T, ImagePart> | (T extends ImagePart ? Inlined<T> : never)
+    >
+  }
+}
+
+function compressImagePart(opts: CompressOpts) {
+  return async (img: ImagePart): Promise<ImagePart> => {
+    // URL-source images aren't ours to re-encode — provider fetches.
+    if (img.source.type !== "base64") return img
+    const format = formatFromMime(img.mime)
+    if (format === undefined) return img
+    const data = Buffer.from(img.source.data, "base64")
+    const compressed = await imageCompress({ data, format, type: "image" }, opts)
+    return {
+      ...img,
+      mime: compressed.format === "png" ? "image/png" : "image/jpeg",
+      source: {
+        data: Buffer.from(compressed.data).toString("base64"),
+        type: "base64",
+      },
+    }
+  }
+}
+
+function formatFromMime(mime: string): "jpeg" | "png" | "webp" | undefined {
+  if (mime === "image/png") return "png"
+  if (mime === "image/jpeg") return "jpeg"
+  if (mime === "image/webp") return "webp"
+  return undefined
 }
 
 /** For every attachment whose `source.type === "file"`, read the file

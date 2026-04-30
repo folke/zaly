@@ -21,6 +21,7 @@ import type {
 
 import {
   attachmentToMeta,
+  compressImages,
   errorToMeta,
   inlineFileSources,
   metaToText,
@@ -51,6 +52,7 @@ import { ContentTransform } from "../content/transform.ts"
 const openaiTransform = ContentTransform.create()
   .pipe(attachmentToMeta("pdf", "video"))
   .pipe(inlineFileSources())
+  .pipe(compressImages())
   .pipe(errorToMeta())
   .pipe(metaToText())
 
