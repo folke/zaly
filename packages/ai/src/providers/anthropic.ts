@@ -737,7 +737,7 @@ function* handleEvent(
 export function systemToUser(msg: Message<"system">): Message<"user"> {
   return {
     cache: msg.cache,
-    content: [{ content: msg.content, tag: "system", type: "meta" }],
+    content: [{ content: msg.content, tag: "system-reminder", type: "meta" }],
     providerOptions: msg.providerOptions,
     role: "user",
   }
