@@ -100,10 +100,17 @@ export class Model<T extends AnyProvider = string> {
       const messages = ctx.messages.map((m) => transformMessage(m, this.#transform!))
       ctx = { ...ctx, messages }
     }
+    // Auto-apply the catalog's max-output budget when the caller didn't
+    // override it. Matters for OpenAI: without this the adapter omits
+    // `max_tokens` / `max_completion_tokens` and reasoning models burn
+    // their implicit cap on thinking, leaving little for the visible
+    // reply. Anthropic's adapter has its own internal `?? 4096` fallback
+    // — we set the catalog value here so it wins over that default.
+    const maxTokens = opts.maxTokens ?? this.spec.maxTokens ?? this.spec.limit.output
     const inner = this.provider.stream({
       ctx,
       model: this.spec.id,
-      opts,
+      opts: { ...opts, maxTokens },
       quirks: this.spec.quirks,
     })
     return this.spec.cost ? this.#augment(inner) : inner
