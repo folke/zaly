@@ -1,4 +1,5 @@
 import type { AuthProvider } from "./auth.ts"
+import type { ContentTransform } from "./content/transform.ts"
 import type {
   Context,
   Provider,
@@ -8,11 +9,46 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/index.ts"
-import type { Cost, Modality, ModelSpec, ProviderOptions } from "./types.ts"
+import type { Attachment, Cost, Message, Modality, ModelSpec, ProviderOptions } from "./types.ts"
 
 import { envAuth } from "./auth.ts"
+import { attachmentToMeta } from "./content/compose.ts"
+import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
 import { providerRegistry } from "./providers/index.ts"
+
+const ATTACHMENT_KINDS: readonly Attachment["type"][] = ["image", "pdf", "audio", "video"]
+
+/** Apply the model-level transform to one message. Free function
+ *  rather than a method so each role's branch can return its own
+ *  narrowed `Message<...>` shape — switching on `msg.role` inside a
+ *  method that returns `Message` confuses the union assignment. */
+function transformMessage(msg: Message, transform: ContentTransform): Message {
+  switch (msg.role) {
+    // Assistant carries text/reasoning/tool-call only — no attachments.
+    case "assistant": {
+      return msg
+    }
+    case "tool": {
+      const content = msg.content.map((part) => ({
+        ...part,
+        content:
+          typeof part.content === "string"
+            ? part.content
+            : (transform.runSync(part.content) as typeof part.content),
+      }))
+      return { ...msg, content }
+    }
+    case "system": {
+      if (typeof msg.content === "string") return msg
+      return { ...msg, content: transform.runSync(msg.content) as typeof msg.content }
+    }
+    case "user": {
+      if (typeof msg.content === "string") return msg
+      return { ...msg, content: transform.runSync(msg.content) as typeof msg.content }
+    }
+  }
+}
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -27,16 +63,43 @@ export class Model<T extends AnyProvider = string> {
   readonly spec: ModelSpec
   readonly provider: Provider<T>
 
+  // Model-level content transform applied before the provider's
+  // pipeline. Currently demotes attachments the model rejects
+  // (`canAttach(kind) === false`); future catalog-driven steps land
+  // here too. `undefined` when the model accepts everything — common
+  // case, short-circuits in `#transform`.
+  readonly #transform: ContentTransform | undefined
+
   constructor(opts: { id: string; spec: ModelSpec; provider: Provider<T> }) {
     this.id = opts.id
     this.spec = opts.spec
     this.provider = opts.provider
+    const unsupported = ATTACHMENT_KINDS.filter((k) => !this.canAttach(k))
+    if (unsupported.length > 0)
+      this.#transform = createTransform().pipe(attachmentToMeta(...unsupported))
   }
 
-  /** Stream a turn against this model. Returns the underlying
-   *  provider stream; if the model has catalog cost data, `finish`
-   *  events get a populated `usage.cost` breakdown. */
+  /** Stream a turn against this model. Demotes any attachments the
+   *  model doesn't accept (`canAttach(kind) === false`) to `<kind>`
+   *  MetaParts before handing the context to the provider — the
+   *  provider's wire pipeline then folds those metas into text. Done
+   *  at this layer (not in the provider) because attachment support
+   *  is catalog metadata, not a wire-format concern, and the model
+   *  pre-demote runs *before* the provider pipeline so we don't waste
+   *  work inlining bytes for an attachment that's about to be folded
+   *  to text anyway.
+   *
+   *  If the model has catalog cost data, `finish` events get a
+   *  populated `usage.cost` breakdown. */
   stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
+    /** Apply the model-level transform to every message's content. No-op
+     *  when the model accepts everything (`#transform === undefined`).
+     *  Synchronous because the underlying steps are sync and we want
+     *  `stream()` to stay sync at the call site. */
+    if (this.#transform !== undefined) {
+      const messages = ctx.messages.map((m) => transformMessage(m, this.#transform!))
+      ctx = { ...ctx, messages }
+    }
     const inner = this.provider.stream({
       ctx,
       model: this.spec.id,

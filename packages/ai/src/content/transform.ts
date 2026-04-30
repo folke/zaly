@@ -194,4 +194,8 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
   }
 }
 
+export function createTransform<T extends ContentPart = ContentPart>(): ContentTransform<T> {
+  return ContentTransform.create() as ContentTransform<T>
+}
+
 type Stage = (parts: ContentPart[]) => ContentPart[] | Promise<ContentPart[]>
