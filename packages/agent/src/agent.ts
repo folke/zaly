@@ -1,10 +1,11 @@
 // oxlint-disable no-await-in-loop
-import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
+import type { Content, Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
-import { collect, isContextOverflow, AiError } from "@zaly/ai"
-import { toError, normPath, Emitter } from "@zaly/shared"
+import { AiError, collect, isContextOverflow, toContentParts } from "@zaly/ai"
+import { Emitter, normPath, toError } from "@zaly/shared"
+import { Notifier } from "./notify.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { Session } from "./session/index.ts"
 import { Skills } from "./skills.ts"
@@ -34,11 +35,12 @@ import { uuidv7 } from "./utils/uuid.ts"
  */
 export class Agent extends Emitter<AgentEvents> {
   readonly #opts: AgentInit
-  readonly #stopPolicy: StopPolicy
+  readonly #notifier = new Notifier()
   readonly #permissions: PermissionManager
-  readonly #tasks: Tasks
   readonly #skills?: Skills
+  readonly #stopPolicy: StopPolicy
   readonly #swarm: Swarm
+  readonly #tasks: Tasks
   readonly session: Session
   /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
    *  `parent.depth + 1` when constructing their child. */
@@ -84,6 +86,7 @@ export class Agent extends Emitter<AgentEvents> {
     this.depth = opts.depth ?? 0
     this.maxDepth = opts.maxDepth ?? 2
     this.session = opts.session
+
     // Idempotent — no-op on a loaded / pre-seeded session, so historical
     // metadata wins over whatever this Agent would record now.
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
@@ -299,6 +302,12 @@ export class Agent extends Emitter<AgentEvents> {
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
   send(message: Message<"user" | "system">): void {
+    if (message.role === "user" && this.#notifyQueue.length > 0) {
+      const notifs = this.#notifyQueue.splice(0)
+      const notif: MetaPart = { content: notifs, tag: "system-notification", type: "meta" }
+      const content = toContentParts(message.content)
+      message = { ...message, content: [notif, ...content] }
+    }
     if (this.#status === "idle" || this.#status === "paused") {
       this.session.add(message)
       void this.run()
