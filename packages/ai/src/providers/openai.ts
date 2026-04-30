@@ -10,7 +10,7 @@ import type {
 } from "../provider.ts"
 import type { AudioPart, ImagePart, Message, ProviderOptions, Quirks, Tool } from "../types.ts"
 
-import { hasAttachments, stringifyContent, transformMeta } from "../format.ts"
+import { hasAttachments, stringifyContent, transformMeta } from "../content/format.ts"
 
 /**
  * OpenAI Chat Completions adapter.
@@ -303,6 +303,7 @@ function toOpenAITool(tool: Tool, strict: boolean): OpenAITool {
 /** Translate one `ImagePart` to OpenAI's `image_url` content part.
  *  base64 sources pack into a `data:` URL; url sources pass through. */
 function toOpenAIImagePart(part: ImagePart): OpenAIContentPart {
+  if (part.source.type === "file") throw new Error("Unexpected file source")
   const url =
     part.source.type === "url" ? part.source.url : `data:${part.mime};base64,${part.source.data}`
   return {
@@ -399,7 +400,13 @@ function toOpenAIMessage(msg: Message): OpenAIMessage {
         if (p.type === "text") parts.push({ text: p.text, type: "text" })
         else if (p.type === "image") parts.push(toOpenAIImagePart(p))
         else if (p.type === "audio") parts.push(toOpenAIAudioPart(p))
-        else {
+        else if (p.type === "error") {
+          // ErrorPart must be transformed before hitting the wire.
+          throw new Error(
+            "OpenAI adapter received an ErrorPart; run `errorToMeta()` " +
+              "transform before serialization."
+          )
+        } else {
           // PDF/video aren't accepted by Chat Completions. (PDF lands on
           // OpenAI Responses; video isn't supported anywhere here.)
           throw new Error(

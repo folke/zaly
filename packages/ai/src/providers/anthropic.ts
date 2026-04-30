@@ -7,18 +7,55 @@ import type {
   TokenCount,
   ToolChoice,
 } from "../provider.ts"
-import type {
-  Attachment,
-  ImagePart,
-  Message,
-  MetaPart,
-  PdfPart,
-  ProviderOptions,
-  TextPart,
-  Tool,
-} from "../types.ts"
+import type { Inlined } from "../content/part.ts"
+import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
 
-import { transformMeta } from "../format.ts"
+import {
+  attachmentToMeta,
+  errorToMeta,
+  inlineFileSources,
+  metaToText,
+} from "../content/compose.ts"
+import { ContentTransform } from "../content/transform.ts"
+
+// ── Content transform ───────────────────────────────────────────────────
+//
+// Maps `Content` (the wide internal shape) to what Anthropic's wire
+// API can actually consume. Composed via `.pipe(...)` against the
+// step-function helpers so each step's narrowing flows into the next:
+//
+//   1. audio / video → `<audio>` / `<video>` MetaPart (Anthropic
+//      doesn't accept those modalities; demote so the model still
+//      sees a reference).
+//   2. image / pdf file-source → base64 via `inlineFileSources`.
+//      Anthropic's image and document blocks accept base64 or url;
+//      file sources are eliminated here.
+//   3. ErrorPart → `<error>` MetaPart. Placed after inlining so any
+//      ErrorParts emitted by failed inlining steps are also captured.
+//   4. MetaPart → `<tag>JSON</tag>` TextPart so the wire layer only
+//      deals with text + image + pdf.
+//
+// `.pipe(stepFn)` carries the chain's narrowed `T` through each step
+// — unlike `.extend(other)`, whose appended chain was built from a
+// fresh `ContentTransform.create()` and can't see prior narrowing.
+// `AnthropicPart` below infers to
+// `TextPart | Inlined<ImagePart> | Inlined<PdfPart>` exactly.
+
+const anthropicTransform = ContentTransform.create()
+  .pipe(attachmentToMeta("audio", "video"))
+  .pipe(inlineFileSources())
+  .pipe(errorToMeta())
+  .pipe(metaToText())
+
+async function transformAnthropic(content: Content) {
+  const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content
+  return anthropicTransform.run(parts)
+}
+
+/** Post-transform content shape Anthropic's wire layer consumes. The
+ *  type is inferred from the chain — the wire layer below switches on
+ *  the resulting `type` discriminator and TS verifies exhaustiveness. */
+export type AnthropicContent = Awaited<ReturnType<typeof transformAnthropic>>
 
 /**
  * Anthropic Messages API adapter.
@@ -48,7 +85,7 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
   return {
     id: "anthropic",
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
-      const body = buildRequest(req, caching)
+      const body = await buildRequest(req, caching)
       const response = await doFetch(`${baseUrl}/messages`, {
         body: JSON.stringify(body),
         headers: {
@@ -157,7 +194,7 @@ interface AnthropicRequestOptions {
   cacheTools?: boolean
 }
 
-function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest {
+async function buildRequest(req: ProviderRequest, caching: boolean): Promise<AnthropicRequest> {
   const { ctx, opts } = req
   const specific = (opts.providerOptions?.anthropic ?? {}) as AnthropicRequestOptions
   // Anthropic requires max_tokens. Fall back to a generous default if
@@ -182,7 +219,7 @@ function buildRequest(req: ProviderRequest, caching: boolean): AnthropicRequest 
 
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
-    messages: toAnthropicMessages(conversational, caching),
+    messages: await toAnthropicMessages(conversational, caching),
     model: req.model,
     stream: true,
   }
@@ -276,14 +313,20 @@ function thinkingBudget(
   return { budget_tokens: clamped, type: "enabled" }
 }
 
-function toAnthropicMessages(messages: Message[], caching: boolean): AnthropicMessage[] {
+async function toAnthropicMessages(
+  messages: Message[],
+  caching: boolean
+): Promise<AnthropicMessage[]> {
   const out: AnthropicMessage[] = []
   for (const msg of messages) {
     if (msg.role === "system") {
       // Filtered upstream — keep the guard so future refactors fail fast.
       throw new Error("system messages must be hoisted to top-level system field")
     }
-    const block = toAnthropicMessage(msg)
+    // Sequential — coalescing logic below depends on `out.at(-1)` so
+    // we can't parallelise per-message.
+    // eslint-disable-next-line no-await-in-loop
+    const block = await toAnthropicMessage(msg)
     // Coalesce consecutive same-role messages. Anthropic enforces strict
     // user/assistant alternation; back-to-back tool-result user messages
     // (which our `tool` role becomes) get merged.
@@ -319,9 +362,11 @@ function supportsCacheControl(
   )
 }
 
-/** Translate one `ImagePart` to Anthropic's `image` content block.
- *  Anthropic accepts both base64 (with `media_type`) and URL sources. */
-function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
+/** Translate one (transformed, file-source-free) `ImagePart` to
+ *  Anthropic's `image` content block. Accepts base64 (with
+ *  `media_type`) and URL sources only — file sources were inlined by
+ *  the transform chain. */
+function toAnthropicImageBlock(part: Inlined<ImagePart>): AnthropicImageBlock {
   if (part.source.type === "base64") {
     return {
       source: { data: part.source.data, media_type: part.mime, type: "base64" },
@@ -333,29 +378,39 @@ function toAnthropicImageBlock(part: ImagePart): AnthropicImageBlock {
 
 /** Map a tool result's `content` to the shape Anthropic's
  *  `tool_result.content` accepts: a string (passes through) or an
- *  array of text + image blocks. `MetaPart`s flatten to `<tag>JSON</tag>`
- *  text via `transformMeta`. PDFs and audio/video aren't allowed inside
- *  tool_result on Anthropic's wire — degrade to text placeholders so
- *  the model still has *some* signal. */
-function toAnthropicToolResultContent(
-  content: string | (TextPart | MetaPart | Attachment)[]
-): AnthropicToolResultBlock["content"] {
-  const flattened = transformMeta(content)
-  if (typeof flattened === "string") return flattened
+ *  array of text + image blocks. PDFs aren't allowed inside
+ *  tool_result on Anthropic's wire — degrade to a text placeholder
+ *  so the model still has *some* signal. (The full transform chain
+ *  has already eliminated audio/video/error/meta upstream.) */
+async function toAnthropicToolResultContent(
+  content: Content
+): Promise<AnthropicToolResultBlock["content"]> {
+  // Anthropic accepts a bare string for tool_result content too —
+  // pass it through unchanged. Only structured arrays go through the
+  // transform + wire-loop below.
+  if (typeof content === "string") return content
+  const transformed = await transformAnthropic(content)
   const out: (AnthropicTextBlock | AnthropicImageBlock)[] = []
-  for (const p of flattened) {
-    if (p.type === "text") out.push({ text: p.text, type: "text" })
-    else if (p.type === "image") out.push(toAnthropicImageBlock(p))
-    else
-      out.push({ text: `[${p.type} attachment omitted; not allowed in tool_result]`, type: "text" })
+  for (const p of transformed) {
+    if (p.type === "text") {
+      if (p.text !== "") out.push({ text: p.text, type: "text" })
+    } else if (p.type === "image") out.push(toAnthropicImageBlock(p))
+    else {
+      // Exhaustive: `transformed` is `(TextPart | Inlined<ImagePart> |
+      // Inlined<PdfPart>)[]`. Anything that isn't text or image is
+      // pdf; tool_result on Anthropic doesn't allow pdf, so degrade
+      // to a text placeholder.
+      out.push({ text: "[pdf attachment omitted; not allowed in tool_result]", type: "text" })
+    }
   }
   return out
 }
 
-/** Translate one `PdfPart` to Anthropic's `document` content block.
- *  Anthropic does both vision (renders pages) and text extraction in
- *  one call — no need to pre-extract on the consumer side. */
-function toAnthropicDocumentBlock(part: PdfPart): AnthropicDocumentBlock {
+/** Translate one (transformed, file-source-free) `PdfPart` to
+ *  Anthropic's `document` content block. Anthropic does both vision
+ *  (renders pages) and text extraction in one call — no need to
+ *  pre-extract on the consumer side. */
+function toAnthropicDocumentBlock(part: Inlined<PdfPart>): AnthropicDocumentBlock {
   if (part.source.type === "base64") {
     return {
       source: { data: part.source.data, media_type: "application/pdf", type: "base64" },
@@ -365,41 +420,34 @@ function toAnthropicDocumentBlock(part: PdfPart): AnthropicDocumentBlock {
   return { source: { type: "url", url: part.source.url }, type: "document" }
 }
 
-function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): AnthropicMessage {
+async function toAnthropicMessage(
+  msg: Message<"user" | "assistant" | "tool">
+): Promise<AnthropicMessage> {
   switch (msg.role) {
     case "user": {
-      let content: AnthropicContentBlock[]
-      if (typeof msg.content === "string") {
-        content = [{ text: msg.content, type: "text" }]
-      } else {
-        content = []
-        // Flatten MetaPart → TextPart at the boundary so the loop below
-        // only deals with text + attachments.
-        const flat = transformMeta(msg.content)
-        const parts = typeof flat === "string" ? [{ text: flat, type: "text" as const }] : flat
-        for (const p of parts) {
-          if (p.type === "text") content.push({ text: p.text, type: "text" })
-          else if (p.type === "image") content.push(toAnthropicImageBlock(p))
-          else if (p.type === "pdf") content.push(toAnthropicDocumentBlock(p))
-          else {
-            // Audio and video aren't supported by Anthropic.
-            throw new Error(
-              `Anthropic does not accept ${p.type} attachments. ` +
-                `Use a different provider (Gemini supports audio/video).`
-            )
-          }
-        }
+      const content: AnthropicContentBlock[] = []
+      const transformed = await transformAnthropic(msg.content)
+      for (const p of transformed) {
+        if (p.type === "text") {
+          if (p.text !== "") content.push({ text: p.text, type: "text" })
+        } else if (p.type === "image") content.push(toAnthropicImageBlock(p))
+        else content.push(toAnthropicDocumentBlock(p))
+        // Exhaustive: `transformed` is `(TextPart | Inlined<ImagePart>
+        // | Inlined<PdfPart>)[]`. The else branch is the pdf variant.
       }
       return { content, role: "user" }
     }
     case "assistant": {
       const content: AnthropicContentBlock[] = []
       if (typeof msg.content === "string") {
-        content.push({ text: msg.content, type: "text" })
+        if (msg.content !== "") content.push({ text: msg.content, type: "text" })
       } else {
         for (const part of msg.content) {
           if (part.type === "text") {
-            content.push({ text: part.text, type: "text" })
+            // Anthropic 400s on empty text blocks. They show up when the
+            // assistant emits only tool calls / reasoning and the streamer
+            // commits a zero-length text part.
+            if (part.text !== "") content.push({ text: part.text, type: "text" })
           } else if (part.type === "reasoning") {
             // Anthropic round-trips thinking blocks during tool-use cycles.
             // `signature` is opaque and must be preserved verbatim.
@@ -427,12 +475,14 @@ function toAnthropicMessage(msg: Message<"user" | "assistant" | "tool">): Anthro
       // Rich content (text + images) maps to tool_result.content[]
       // blocks natively; PDFs aren't allowed inside tool_result so
       // degrade to a text placeholder.
-      const content: AnthropicContentBlock[] = msg.content.map((part) => ({
-        content: toAnthropicToolResultContent(part.content),
-        is_error: part.isError === true ? true : undefined,
-        tool_use_id: part.id,
-        type: "tool_result",
-      }))
+      const content: AnthropicContentBlock[] = await Promise.all(
+        msg.content.map(async (part) => ({
+          content: await toAnthropicToolResultContent(part.content),
+          is_error: part.isError === true ? true : undefined,
+          tool_use_id: part.id,
+          type: "tool_result" as const,
+        }))
+      )
       return { content, role: "user" }
     }
     default: {

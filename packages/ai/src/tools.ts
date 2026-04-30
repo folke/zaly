@@ -2,7 +2,7 @@ import type { Static, TObject, TSchema } from "typebox"
 import type { Streamable, Tool, ToolContext, ToolErrorInfo, ToolResult } from "./types.ts"
 
 import Schema from "typebox/schema"
-import { toContent } from "./format.ts"
+import { toContent } from "./content/format.ts"
 import { coerce } from "./json/coerce.ts"
 import { parseJson } from "./json/parse.ts"
 import { stringifyErrors } from "./json/stringify.ts"

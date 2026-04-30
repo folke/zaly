@@ -1,4 +1,4 @@
-import type { ContentPart, MetaPart, TextPart } from "../src/types.ts"
+import type { ContentPart, MetaPart, TextPart } from "../../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import {
@@ -7,7 +7,7 @@ import {
   toContent,
   toXml,
   transformMeta,
-} from "../src/format.ts"
+} from "../../src/content/format.ts"
 
 const text = (t: string): TextPart => ({ text: t, type: "text" })
 const meta = (data: unknown, tag?: string): MetaPart => ({ data, tag, type: "meta" })

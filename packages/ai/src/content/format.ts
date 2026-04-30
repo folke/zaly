@@ -1,12 +1,15 @@
-import type { Content, ContentPart, MetaPart } from "./types.ts"
+import type { Content, ContentPart, MetaPart } from "../types.ts"
 
 import { safeStringify } from "@zaly/shared"
 
-type WithoutMeta<T extends Content> = T extends readonly ContentPart[]
-  ? Exclude<T[number], MetaPart>[]
-  : T // string falls through unchanged
+export type WithoutPart<
+  P extends ContentPart,
+  T extends Content = Content,
+> = T extends readonly ContentPart[] ? Exclude<T[number], P>[] : T // string falls through unchanged
 
-const PART_TYPES = new Set(["text", "meta", "image", "pdf", "audio", "video"])
+export type WithPart<K extends ContentPart["type"]> = Extract<ContentPart, { type: K }>
+
+const PART_TYPES = new Set(["text", "meta", "image", "pdf", "audio", "video", "error"])
 
 function isContentPart(v: unknown): v is ContentPart {
   return (
@@ -57,11 +60,11 @@ export function toXml(data: unknown, tag?: string): string {
  *  Note this is *transformation*, not filtering — every input element
  *  produces an output element (length and order preserved). The name is
  *  deliberately distinct from `Array.flat` to avoid that mental model. */
-export function transformMeta<T extends Content>(content: T): WithoutMeta<T> {
-  if (typeof content === "string") return content as WithoutMeta<T>
+export function transformMeta<T extends Content>(content: T): WithoutPart<MetaPart, T> {
+  if (typeof content === "string") return content as WithoutPart<MetaPart, T>
   return content.map((part) =>
     part.type === "meta" ? { text: toXml(part.data, part.tag), type: "text" } : part
-  ) as WithoutMeta<T>
+  ) as WithoutPart<MetaPart, T>
 }
 
 /** Returns true if any non-text, non-meta part is present in a content

@@ -93,7 +93,30 @@ export interface ToolErrorInfo {
   retryable?: boolean
 }
 
-export type ContentPart = TextPart | MetaPart | Attachment
+/** Structured error embedded inline in content. Producers (tools,
+ *  fetch helpers, format pipelines) emit these when something
+ *  recoverable went wrong; consumers (TUI, persistence, agent recovery
+ *  logic) can pattern-match on `code`. Provider adapters never see
+ *  ErrorPart on the wire — `errorToMeta()` (or equivalent) folds them
+ *  into a `<error>` `MetaPart` before serialization, so the model gets
+ *  a clear signal it can react to. */
+export interface ErrorPart {
+  type: "error"
+  /** Stable machine-readable identifier (UPPER_SNAKE). Lets recovery
+   *  logic and tests pattern-match without parsing prose. */
+  code: string
+  /** Human-readable explanation. What the model and the user read. */
+  message: string
+  /** Free-form structured data — typed via declaration merging the
+   *  same way `ToolMeta` does, so each error producer can attach its
+   *  own shape without a central registry. */
+  data?: unknown
+  /** When true, the same operation might succeed if retried (transient
+   *  network error, rate limit, etc.). */
+  retryable?: boolean
+}
+
+export type ContentPart = TextPart | MetaPart | Attachment | ErrorPart
 export type Content = string | ContentPart[]
 
 /** Tool response carried on a `tool`-role message. `content` mirrors
@@ -187,19 +210,19 @@ export interface CacheHint {
 type M =
   | {
       role: "system"
-      /** String for the common case; `(TextPart | MetaPart)[]` when the
-       *  message wants to ride structured metadata to downstream consumers
-       *  (e.g. the TUI rendering carry-over wakeup hints, task completion
-       *  details, or heartbeat pulses). Provider adapters flatten meta to
-       *  XML-tagged text on the wire — the model sees identical content
-       *  either way. */
-      content: string | (TextPart | MetaPart)[]
+      /** String for the common case; structured array when the
+       *  message wants to ride metadata or recovery signals to
+       *  downstream consumers. `MetaPart` flattens to XML-tagged text;
+       *  `ErrorPart` flows the same way once the format pipeline
+       *  transforms it (see `errorToMeta()`) — until that's wired up
+       *  end-to-end, provider adapters throw on a raw `ErrorPart`. */
+      content: string | (TextPart | MetaPart | ErrorPart)[]
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }
   | {
       role: "user"
-      content: string | (TextPart | MetaPart | Attachment)[]
+      content: string | (TextPart | MetaPart | Attachment | ErrorPart)[]
       cache?: CacheHint
       providerOptions?: ProviderOptions
     }

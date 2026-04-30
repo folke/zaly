@@ -1,6 +1,6 @@
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { stringifyContent } from "../src/format.ts"
+import { stringifyContent } from "../src/content/format.ts"
 import { defineTool, runTool, ToolError } from "../src/tools.ts"
 
 const Adder = defineTool({

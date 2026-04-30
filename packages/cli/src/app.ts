@@ -1,10 +1,10 @@
 import type { Agent } from "@zaly/agent"
 import type { Attachment, ContentPart, ImagePart, PdfPart, TextPart } from "@zaly/ai"
-import type { ImageInfo } from "@zaly/shared"
 import type { Input, LogCallable } from "@zaly/tui"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
 
+import { toImagePart, toPdfPart } from "@zaly/ai"
 import { fileDetect, imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
@@ -201,25 +201,6 @@ export class App {
     // Quick + dirty: rebuild everything except the renderer itself.
     // (Future: Renderer should expose `clear()` so we don't accumulate
     // history nodes across resets.)
-  }
-}
-
-/** Wrap a converted image as an `ImagePart` for an agent message. */
-function toImagePart(img: ImageInfo<"jpeg" | "webp" | "png">): ImagePart {
-  const mime = ({ jpeg: "image/jpeg", png: "image/png", webp: "image/webp" } as const)[img.format]
-  return {
-    mime,
-    source: { data: Buffer.from(img.data).toString("base64"), type: "base64" },
-    type: "image",
-  }
-}
-
-/** Wrap PDF bytes as a `PdfPart` for an agent message. */
-function toPdfPart(data: Uint8Array): PdfPart {
-  return {
-    mime: "application/pdf",
-    source: { data: Buffer.from(data).toString("base64"), type: "base64" },
-    type: "pdf",
   }
 }
 
