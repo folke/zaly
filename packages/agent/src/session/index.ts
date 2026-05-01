@@ -151,6 +151,13 @@ export class Session extends Emitter<SessionEvents> {
             { cause: error }
           )
         }
+        // Patch id/ts onto loaded messages for older session files
+        // that were written before Message.id/ts existed. Idempotent
+        // for newer files (the fields already match the node).
+        if (record.type === "message") {
+          record.message.id ??= record.uuid
+          record.message.ts ??= record.ts
+        }
         this.#nodes.set(record.uuid, record)
       }
       // Choose the head: explicit > last-on-file > none.
@@ -160,7 +167,7 @@ export class Session extends Emitter<SessionEvents> {
         throw new Error(`Session.load: head "${head}" not in file "${path}"`)
       }
       this.#head = target
-      this.#messages = this.#chain(target, { active: true })
+      this.#messages = this.#chain(target, { active: true }).map((c) => c.message)
     }
     // Open writer in append mode — creates the file on first write if
     // it didn't exist.
@@ -196,6 +203,17 @@ export class Session extends Emitter<SessionEvents> {
     return this.#messages
   }
 
+  /** Look up the full session node for a `Message.id`. Returns the
+   *  message-typed node, or `undefined` if the id doesn't refer to a
+   *  message in this session (unknown id, or id refers to a non-message
+   *  node like `compact` / `session-start`). Useful when you have a
+   *  Message in hand (e.g. inside the masker or a tool) and need the
+   *  surrounding metadata — parent uuid, model id, usage, etc. */
+  node(id: string): Extract<SessionNode, { type: "message" }> | undefined {
+    const n = this.#nodes.get(id)
+    return n?.type === "message" ? n : undefined
+  }
+
   /** Current head uuid — the parent of the next added node. */
   get head(): string | undefined {
     return this.#head
@@ -225,14 +243,23 @@ export class Session extends Emitter<SessionEvents> {
   /** Append a message. The new node is parented to the current head,
    *  head advances, and a `node` event fires. Optional `meta` carries
    *  usage / model / finish info — populate it for assistant turns
-   *  the agent commits after a step. Returns the assigned uuid. */
+   *  the agent commits after a step. Returns the assigned uuid.
+   *
+   *  If `message.id` / `message.ts` are set (e.g. round-tripped from a
+   *  prior load), they're used as the node's uuid / timestamp; otherwise
+   *  fresh values are generated. The committed message always carries
+   *  both — `m.id === node.uuid` and `m.ts === node.ts`. */
   add(message: Message, meta?: MessageMeta): string {
+    const uuid = message.id ?? uuidv7()
+    const ts = message.ts ?? Date.now()
+    const m =
+      message.id !== undefined && message.ts !== undefined ? message : { ...message, id: uuid, ts }
     return this.#commit({
-      message,
+      message: m,
       parentUuid: this.#head,
-      ts: Date.now(),
+      ts,
       type: "message",
-      uuid: uuidv7(),
+      uuid,
       ...meta,
     })
   }
@@ -263,7 +290,7 @@ export class Session extends Emitter<SessionEvents> {
       throw new Error(`Session.navigate: unknown uuid "${uuid}"`)
     }
     this.#head = uuid
-    this.#messages = this.#chain(uuid, { active: true })
+    this.#messages = this.#chain(uuid, { active: true }).map((c) => c.message)
     this.emit("navigate", { head: uuid, messages: this.#messages })
   }
 
@@ -275,7 +302,7 @@ export class Session extends Emitter<SessionEvents> {
    *  `limit` truncates from the front (oldest), so the most recent
    *  history messages always make it through. */
   history(limit?: number): Message[] {
-    return this.#chain(this.#head, { active: false, limit })
+    return this.#chain(this.#head, { active: false, limit }).map((c) => c.message)
   }
 
   /** Flush + close the JSONL writer if one is open. Subsequent writes
@@ -316,8 +343,11 @@ export class Session extends Emitter<SessionEvents> {
    *                    for tools that want a full ancestral chain
    *                    regardless of compaction.
    *  Returns chronological order. */
-  #chain(uuid: string | undefined, opts: { active?: boolean; limit?: number } = {}): Message[] {
-    const out: Message[] = []
+  #chain(
+    uuid: string | undefined,
+    opts: { active?: boolean; limit?: number } = {}
+  ): { uuid: string; ts: number; message: Message }[] {
+    const out: { uuid: string; ts: number; message: Message }[] = []
     let cursor = uuid
     let pastBoundary = false
     while (cursor) {
@@ -330,7 +360,9 @@ export class Session extends Emitter<SessionEvents> {
         continue
       }
       // node.type === "message"
-      if (opts.active !== false || pastBoundary) out.push(node.message)
+      if (opts.active !== false || pastBoundary) {
+        out.push({ message: node.message, ts: node.ts, uuid: node.uuid })
+      }
       if (opts.limit !== undefined && out.length >= opts.limit) break
       cursor = node.parentUuid
     }

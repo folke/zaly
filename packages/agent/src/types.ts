@@ -9,6 +9,7 @@ import type {
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { StepKind } from "./events.ts"
+import type { MaskOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
 import type {
   PermissionManager,
@@ -209,6 +210,16 @@ export interface AgentOptions extends CollectOptions {
    *  expectations); pass a `NotifyOptions` object to tune thresholds
    *  while keeping the notifier active. */
   notify?: boolean | NotifyOptions
+
+  /** Tool-result masking. When enabled, the agent rewrites older
+   *  re-callable tool results (`read`, `fetch`, …) to compact stubs on
+   *  the way to the provider, freeing context without touching the
+   *  session DAG. Once a message is stamped, the stamp is durable for
+   *  the agent's lifetime — see `Masker` for the cache-stability rules.
+   *
+   *  Default on. Pass `false` to disable, or a `MaskOptions` object to
+   *  tune `tools` / `keepRecent`. */
+  masking?: boolean | MaskOptions
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Resolver for `ask` permission verdicts. The agent invokes this

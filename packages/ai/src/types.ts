@@ -200,14 +200,14 @@ export interface CacheHint {
   type: "ephemeral"
 }
 
-/** A message in the conversation. Role layout follows OpenAI Chat
- *  Completions (system / user / assistant / tool as separate messages);
- *  assistant content is an ordered array of parts so text + tool calls
- *  can interleave on providers that support it.
- *
- *  String shorthands on `user` and `assistant` expand to a single
- *  `TextPart` — they're there for ergonomics, not a different shape. */
-type M =
+type MessageBase = {
+  /** Stable session-scoped identifier. Set by `Session.add`. */
+  id?: string
+  /** Wall-clock commit time (ms). Set by `Session.add`. */
+  ts?: number
+  cache?: CacheHint
+  providerOptions?: ProviderOptions
+} & (
   | {
       role: "system"
       /** String for the common case; structured array when the
@@ -217,29 +217,32 @@ type M =
        *  transforms it (see `errorToMeta()`) — until that's wired up
        *  end-to-end, provider adapters throw on a raw `ErrorPart`. */
       content: string | (TextPart | MetaPart | ErrorPart)[]
-      cache?: CacheHint
-      providerOptions?: ProviderOptions
     }
   | {
       role: "user"
       content: string | (TextPart | MetaPart | Attachment | ErrorPart)[]
-      cache?: CacheHint
-      providerOptions?: ProviderOptions
     }
   | {
       role: "assistant"
       content: string | (TextPart | ReasoningPart | ToolCallPart)[]
-      cache?: CacheHint
-      providerOptions?: ProviderOptions
     }
   | {
       role: "tool"
       content: ToolResultPart[]
-      cache?: CacheHint
-      providerOptions?: ProviderOptions
     }
+)
 
-export type Message<T extends M["role"] = M["role"]> = Extract<M, { role: T }>
+/** A message in the conversation. Role layout follows OpenAI Chat
+ *  Completions (system / user / assistant / tool as separate messages);
+ *  assistant content is an ordered array of parts so text + tool calls
+ *  can interleave on providers that support it.
+ *
+ *  String shorthands on `user` and `assistant` expand to a single
+ *  `TextPart` — they're there for ergonomics, not a different shape. */
+export type Message<T extends MessageBase["role"] = MessageBase["role"]> = Extract<
+  MessageBase,
+  { role: T }
+>
 
 /** A callable tool exposed to the model.
  *
