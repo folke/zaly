@@ -18,12 +18,7 @@ export class Notifier {
    *  notified for in this session. Reset to 0 when pressure drops back
    *  below the lowest threshold (e.g. after compaction), so a later
    *  refill can fire the same level again. */
-  #lastPressureLevel = 0
-  /** Discrete pressure levels at which to fire `context-pressure`. The
-   *  notification fires once per crossing — at most this many times per
-   *  session — instead of on every step. Order matters; iteration looks
-   *  for the highest level the current ratio meets. */
-  readonly #pressureLevels = [0.75, 0.85, 0.95] as const
+  #pressureLevel = 0
 
   constructor(opts: NotifyOptions = {}) {
     this.#opts = { idle: 30 * 60, periodic: 60 * 60, ...opts }
@@ -74,19 +69,14 @@ export class Notifier {
     // model gets at most a few escalating signals per session, not one
     // per step. Resets if pressure drops below the lowest level (e.g.
     // after compaction) so the cycle can fire again later.
-    const used = agent.contextSize
-    const limit = agent.model.spec.limit.context
-    const ratio = used / limit
-    const level = this.#pressureLevels.findLast((t) => ratio >= t) ?? 0
-    if (level > this.#lastPressureLevel) {
+    const pressure = agent.pressure
+    if (pressure.level > this.#pressureLevel) {
       agent.notify({
-        data: { limit, pct: Math.round(ratio * 100), used },
+        data: { limit: pressure.limit, pct: Math.round(pressure.ratio * 100), used: pressure.used },
         tag: "context-pressure",
       })
-      this.#lastPressureLevel = level
-    } else if (ratio < this.#pressureLevels[0]) {
-      this.#lastPressureLevel = 0
-    }
+      this.#pressureLevel = pressure.level
+    } else if (pressure.level === 0) this.#pressureLevel = 0
   }
 }
 

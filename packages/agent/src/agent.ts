@@ -16,6 +16,8 @@ import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { toolRegistry } from "./tools/index.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
+const PRESSURE_LEVELS = [0.75, 0.85, 0.95] as const
+
 /**
  * Long-lived agent — drives the multi-turn loop, owns the run-time
  * status / queues, and delegates conversation state to a `Session`.
@@ -249,6 +251,18 @@ export class Agent extends Emitter<AgentEvents> {
       (this.usage.cacheRead ?? 0) +
       (this.usage.cacheWrite ?? 0)
     )
+  }
+  get pressure(): ContextPressure {
+    const used = this.contextSize
+    // Defensive: test mocks sometimes lack `spec` even when the type
+    // declares it required. Bare `this.model.spec.limit.context` would
+    // throw on those mocks; treat missing fields as "no known limit"
+    // (level 0, no pressure-driven masking).
+    const spec = (this.model as { spec?: { limit?: { context?: number } } }).spec
+    const limit = spec?.limit?.context ?? 0
+    const ratio = limit > 0 ? used / limit : 0
+    const level = PRESSURE_LEVELS.findLast((t) => ratio >= t) ?? 0
+    return { level, limit, ratio, used }
   }
   get lastError(): Error | undefined {
     return this.#lastError

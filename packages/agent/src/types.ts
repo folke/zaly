@@ -93,6 +93,25 @@ export interface AgentInit extends Omit<
   prompt?: string[]
 }
 
+/** Snapshot of context-window pressure. Computed by `agent.pressure`
+ *  from the most recent step's usage and the model's declared context
+ *  limit. Consumers (notifier, masker) escalate behavior on `level`
+ *  rises and reset on `level === 0` (e.g. after compaction). */
+export interface ContextPressure {
+  /** Cumulative tokens occupying the context window — uncached input
+   *  + cached reads + cached writes + output. */
+  used: number
+  /** Model's declared context limit (`model.spec.limit.context`). */
+  limit: number
+  /** `used / limit`. Useful for fine-grained displays; downstream
+   *  triggers should typically branch on `level` instead. */
+  ratio: number
+  /** Discrete escalation level: `0` below the lowest threshold, `1`
+   *  past 75%, `2` past 85%, `3` past 95%. Hysteresis-friendly —
+   *  consumers track the highest level reached and only reset on `0`. */
+  level: number
+}
+
 /** Outcome of a single step (one provider round-trip + tool batch).
  *  Returned from `step()` so custom drivers can interleave their own
  *  logic between steps. */
