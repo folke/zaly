@@ -1,11 +1,11 @@
 import type { MetaPart, TextPart, Tool } from "@zaly/ai"
 
-import { defineTool, AiError } from "@zaly/ai"
+import { AiError, defineTool } from "@zaly/ai"
 import { readFile } from "node:fs/promises"
-import { homedir } from "node:os"
 import { dirname, join } from "pathe"
 import { Type } from "typebox"
 import { glob } from "./utils/glob.ts"
+import { findResource } from "./utils/resource.ts"
 
 /**
  * Agent Skills support — discovery, catalog, and the activation tool.
@@ -31,8 +31,6 @@ import { glob } from "./utils/glob.ts"
  *   - `skills.tool` returns the current activation tool, or undefined
  *     when the catalog is empty. Lazily built; invalidated on reload.
  */
-
-const SKILLS_DIR = ".agents/skills"
 
 export interface SkillEntry {
   name: string
@@ -75,11 +73,19 @@ export class Skills {
   async reload(): Promise<void> {
     this.catalog.clear()
     this.#tool = undefined
-    // User first so project entries override on collision.
-    for (const skill of await scanScope(join(userHome(), SKILLS_DIR), "user")) {
-      this.catalog.set(skill.name, skill)
-    }
-    for (const skill of await scanScope(join(this.cwd, SKILLS_DIR), "project")) {
+
+    const dirs = findResource({
+      cwd: this.cwd,
+      rel: "skills",
+      scopes: ["user", "agent"],
+      type: "dir",
+    })
+
+    const skills = await Promise.all(
+      dirs.map((d) => scanScope(d.path, d.scope === "agent" ? "project" : "user"))
+    )
+
+    for (const skill of skills.flat()) {
       this.catalog.set(skill.name, skill)
     }
   }
@@ -209,13 +215,6 @@ async function listReferences(dir: string): Promise<string[]> {
     if (out.length >= 200) break
   }
   return out.toSorted()
-}
-
-/** Resolve the user home directory. Reads `$HOME` first so tests can
- *  override; falls back to `os.homedir()` (which Bun caches at startup,
- *  so it's not directly mutable mid-run). */
-function userHome(): string {
-  return process.env.HOME ?? homedir()
 }
 
 // ── Frontmatter ────────────────────────────────────────────────────────
