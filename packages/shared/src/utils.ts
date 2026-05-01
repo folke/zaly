@@ -36,7 +36,7 @@ export function toError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err))
 }
 
-export const safeReadFile = safeAsyncFn(readFile)
+export const safeReadFile = safeAsyncFn((p: string) => readFile(p, "utf8"))
 export const safeReadFileSync = safeFn((path: string) => readFileSync(path, "utf8"))
 export const safeStat = safeFn(statSync)
 
@@ -67,7 +67,8 @@ export function normPath(...paths: string[]) {
 }
 
 export function gitRoot(path: string) {
-  return findUp(path, ".git")
+  const git = findUp(path, ".git")
+  return git ? dirname(git) : undefined
 }
 
 export function prettyPath(path: string) {

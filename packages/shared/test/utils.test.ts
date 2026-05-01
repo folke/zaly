@@ -118,6 +118,7 @@ describe("findUp / gitRoot", () => {
   })
 
   test("walks up to find a file", () => {
+    // Returns the path to the matched file/dir.
     expect(findUp(nested, "marker.txt")).toBe(join(dir, "marker.txt"))
   })
   test("returns undefined when not found before filesystem root", () => {
@@ -134,24 +135,26 @@ describe("findUp / gitRoot", () => {
 })
 
 describe("gitRoot", () => {
-  test("finds the .git directory of a regular repo", () => {
+  test("finds the project root via a `.git` directory", () => {
     const dir = mkdtempSync(join(tmpdir(), "zaly-gitroot-"))
     try {
       const nested = join(dir, "a", "b")
       mkdirSync(nested, { recursive: true })
       mkdirSync(join(dir, ".git"))
-      expect(gitRoot(nested)).toBe(join(dir, ".git"))
+      // gitRoot returns the project directory (parent of `.git`),
+      // not the `.git` path itself.
+      expect(gitRoot(nested)).toBe(dir)
     } finally {
       rmSync(dir, { force: true, recursive: true })
     }
   })
-  test("finds the .git file of a worktree-style repo", () => {
+  test("finds the project root via a `.git` file (worktree-style)", () => {
     const dir = mkdtempSync(join(tmpdir(), "zaly-gitroot-"))
     try {
       const nested = join(dir, "a")
       mkdirSync(nested, { recursive: true })
       writeFileSync(join(dir, ".git"), "gitdir: /elsewhere\n")
-      expect(gitRoot(nested)).toBe(join(dir, ".git"))
+      expect(gitRoot(nested)).toBe(dir)
     } finally {
       rmSync(dir, { force: true, recursive: true })
     }
