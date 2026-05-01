@@ -171,7 +171,13 @@ export class Agent extends Emitter<AgentEvents> {
       )
     )
     const promptCtx = { cwd, model: opts.model }
-    const prompts = opts.prompt ?? [{ use: "agent" }, { use: "env" }, { use: "model" }]
+    const prompts = opts.prompt ?? [
+      { use: "agent" },
+      { use: "env" },
+      { use: "model" },
+      { use: "AGENTS.md" },
+      { use: "MEMORY.md" },
+    ]
     const prompt = await Promise.all(
       prompts.map(async (p) => (typeof p === "string" ? p : promptRegistry.load(p.use, promptCtx)))
     )

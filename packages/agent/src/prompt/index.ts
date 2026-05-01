@@ -11,6 +11,8 @@ const builtin = {
   agent: () => import("./agent.ts").then((m) => m.agentPrompt),
   env: (ctx) => import("./env.ts").then((m) => m.prompt(ctx)),
   model: (ctx) => import("./model.ts").then((m) => m.prompt(ctx)),
+  "AGENTS.md": (ctx) => import("./markdown.ts").then((m) => m.agentsMdPrompt(ctx)),
+  "MEMORY.md": (ctx) => import("./markdown.ts").then((m) => m.memoryMdPrompt(ctx)),
 } as const satisfies Record<string, (ctx: PromptCtx) => Promise<string>>
 
 export type BuiltinPrompt = keyof typeof builtin
