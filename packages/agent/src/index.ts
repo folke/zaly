@@ -1,6 +1,7 @@
 export type * from "./types.ts"
 export type * from "./events.ts"
 export * from "./agent.ts"
+export * from "./masker.ts"
 export * from "./permissions/index.ts"
 export * from "./stop.ts"
 export * from "./session/index.ts"

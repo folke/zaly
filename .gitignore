@@ -39,3 +39,4 @@ foo*.*
 docs/.vitepress/dist
 docs/.vitepress/cache
 /packages/cli/agent-session.jsonl
+/packages/agent/test/fixtures/masker-session.jsonl

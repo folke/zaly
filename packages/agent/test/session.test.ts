@@ -7,6 +7,16 @@ import { Session } from "../src/session/index.ts"
 const u = (text: string): Message => ({ content: text, role: "user" })
 const a = (text: string): Message => ({ content: text, role: "assistant" })
 
+/** Strip session-assigned `id` / `ts` so deep-equal comparisons against
+ *  hand-built `u()` / `a()` messages work — those fields are populated
+ *  by `Session.add()` but tests want to assert only on role/content. */
+function bare(msgs: readonly Message[]): Message[] {
+  return msgs.map((m) => {
+    const { id: _id, ts: _ts, ...rest } = m
+    return rest as Message
+  })
+}
+
 /** Sync sibling of `Session.load()` for the in-memory test path. The
  *  base constructor is `protected`, so test files build instances via a
  *  one-line subclass expression — same result, no async ceremony. */
@@ -30,7 +40,7 @@ function startedSession(init?: Message[]): Session {
 describe("Session — basics", () => {
   test("constructor leaves the session unstarted (no nodes, undefined head)", () => {
     const s = newSession()
-    expect(s.messages).toEqual([])
+    expect(bare(s.messages)).toEqual([])
     expect(s.head).toBeUndefined()
     expect(s.nodes.size).toBe(0)
   })
@@ -60,7 +70,7 @@ describe("Session — basics", () => {
     s.start()
     s.add(u("hi"))
     s.add(a("hello"))
-    expect(s.messages).toEqual([u("hi"), a("hello")])
+    expect(bare(s.messages)).toEqual([u("hi"), a("hello")])
     expect(s.nodes.size).toBe(3) // session-start + 2 messages
   })
 })
@@ -94,9 +104,9 @@ describe("Session — compact", () => {
     const s = startedSession([u("old"), a("older")])
     expect(s.messages).toHaveLength(2)
     s.compact({ preTokens: 12_000, trigger: "auto" })
-    expect(s.messages).toEqual([])
+    expect(bare(s.messages)).toEqual([])
     s.add(u("fresh"))
-    expect(s.messages).toEqual([u("fresh")])
+    expect(bare(s.messages)).toEqual([u("fresh")])
     // pre-compact nodes still in the DAG (history)
     expect(s.nodes.size).toBe(5) // start + 2 old + compact + 1 new
   })
@@ -122,7 +132,7 @@ describe("Session — navigate", () => {
     s.add(u("third"))
     s.navigate(u1)
     expect(s.head).toBe(u1)
-    expect(s.messages).toEqual([u("first")])
+    expect(bare(s.messages)).toEqual([u("first")])
   })
 
   test("navigating then adding creates a new branch — pre-navigate messages stay in nodes", () => {
@@ -133,7 +143,7 @@ describe("Session — navigate", () => {
     expect(s.nodes.size).toBe(4)
     s.navigate(u1)
     s.add(u("branched"))
-    expect(s.messages).toEqual([u("first"), u("branched")])
+    expect(bare(s.messages)).toEqual([u("first"), u("branched")])
     // u3 still in nodes — it's the head of the abandoned branch
     expect(s.nodes.get(u3)).toBeDefined()
     expect(s.nodes.size).toBe(5)
@@ -143,7 +153,7 @@ describe("Session — navigate", () => {
     const s = startedSession([u("hi"), u("there")])
     s.navigate(undefined)
     expect(s.head).toBeUndefined()
-    expect(s.messages).toEqual([])
+    expect(bare(s.messages)).toEqual([])
   })
 
   test("navigate emits a navigate event with the new messages snapshot", () => {
@@ -171,7 +181,7 @@ describe("Session — navigate", () => {
 describe("Session — history", () => {
   test("returns empty when there's nothing past the active chain", () => {
     const s = startedSession([u("hi"), a("hello")])
-    expect(s.history()).toEqual([])
+    expect(bare(s.history())).toEqual([])
   })
 
   test("returns pre-compact messages, chronological", () => {
@@ -180,8 +190,8 @@ describe("Session — history", () => {
     s.add(a("old2"))
     s.compact()
     s.add(u("fresh"))
-    expect(s.messages).toEqual([u("fresh")])
-    expect(s.history()).toEqual([u("old1"), a("old2")])
+    expect(bare(s.messages)).toEqual([u("fresh")])
+    expect(bare(s.history())).toEqual([u("old1"), a("old2")])
   })
 
   test("walks past multiple compacts and returns everything before active", () => {
@@ -191,8 +201,8 @@ describe("Session — history", () => {
     s.add(u("a2"))
     s.compact()
     s.add(u("a3"))
-    expect(s.messages).toEqual([u("a3")])
-    expect(s.history()).toEqual([u("a1"), u("a2")])
+    expect(bare(s.messages)).toEqual([u("a3")])
+    expect(bare(s.history())).toEqual([u("a1"), u("a2")])
   })
 
   test("limit truncates from the front (oldest), keeps the most recent history", () => {
@@ -202,8 +212,8 @@ describe("Session — history", () => {
     s.add(u("newest"))
     s.compact()
     s.add(u("active"))
-    expect(s.history(2)).toEqual([u("middle"), u("newest")])
-    expect(s.history(1)).toEqual([u("newest")])
+    expect(bare(s.history(2))).toEqual([u("middle"), u("newest")])
+    expect(bare(s.history(1))).toEqual([u("newest")])
   })
 
   test("when active is empty, history walks back from head (the compact)", () => {
@@ -211,8 +221,8 @@ describe("Session — history", () => {
     s.add(u("a"))
     s.add(u("b"))
     s.compact()
-    expect(s.messages).toEqual([])
-    expect(s.history()).toEqual([u("a"), u("b")])
+    expect(bare(s.messages)).toEqual([])
+    expect(bare(s.history())).toEqual([u("a"), u("b")])
   })
 })
 
@@ -256,7 +266,7 @@ describe("Session — JSONL persistence", () => {
 
     const loaded = await Session.load({ path: file })
     // Active chain stops at the compact, so only "fresh" is visible.
-    expect(loaded.messages).toEqual([u("fresh")])
+    expect(bare(loaded.messages)).toEqual([u("fresh")])
     // Pre-compact records still in the DAG (history).
     expect(loaded.nodes.size).toBe(5) // start + 2 old + compact + 1 fresh
   })
@@ -285,7 +295,7 @@ describe("Session — JSONL persistence", () => {
 
     const loaded = await Session.load({ path: file, head: branchPoint })
     expect(loaded.head).toBe(branchPoint)
-    expect(loaded.messages).toEqual([u("first")])
+    expect(bare(loaded.messages)).toEqual([u("first")])
   })
 
   test("load tolerates a truncated last line (crash mid-write)", async () => {
@@ -300,7 +310,7 @@ describe("Session — JSONL persistence", () => {
     await fs.appendFile(file, '{"type":"message","message"', "utf8")
 
     const loaded = await Session.load({ path: file })
-    expect(loaded.messages).toEqual([u("ok")])
+    expect(bare(loaded.messages)).toEqual([u("ok")])
   })
 
   test("load throws on an unknown fromUuid", async () => {

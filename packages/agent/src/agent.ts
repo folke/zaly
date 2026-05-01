@@ -1,10 +1,11 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
-import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
+import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
 import { AiError, collect, isContextOverflow, validateToolParams } from "@zaly/ai"
 import { Emitter, normPath, toError } from "@zaly/shared"
+import { Masker } from "./masker.ts"
 import { Notifier } from "./notify.ts"
 import { PermissionManager } from "./permissions/index.ts"
 import { promptRegistry } from "./prompt/index.ts"
@@ -37,6 +38,7 @@ const PRESSURE_LEVELS = [0.75, 0.85, 0.95] as const
  */
 export class Agent extends Emitter<AgentEvents> {
   readonly #opts: AgentInit
+  readonly #masker?: Masker
   readonly #notifier?: Notifier
   readonly #permissions: PermissionManager
   readonly #skills?: Skills
@@ -132,6 +134,11 @@ export class Agent extends Emitter<AgentEvents> {
     if (opts.notify !== false) {
       this.#notifier = new Notifier(typeof opts.notify === "object" ? opts.notify : {})
     }
+    // Masking is on by default — `false` disables; `MaskOptions` tunes;
+    // `true` / undefined → default policy.
+    if (opts.masking !== false) {
+      this.#masker = new Masker(typeof opts.masking === "object" ? opts.masking : {})
+    }
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
@@ -199,6 +206,7 @@ export class Agent extends Emitter<AgentEvents> {
       caching: this.#opts.caching,
       cwd: this.#cwd,
       depth: childDepth,
+      masking: this.#opts.masking,
       maxDepth: this.maxDepth,
       model: this.model,
       // Inherit the parent's `notify` setting so test roots that
@@ -443,9 +451,12 @@ export class Agent extends Emitter<AgentEvents> {
   async #collect() {
     this.#abortController = new AbortController()
     const caching = this.#opts.caching !== false
+    const masked = this.#masker
+      ? this.#masker.apply(this.session.messages, this.pressure)
+      : [...this.session.messages]
     const stream = this.#opts.model.stream(
       {
-        messages: this.#withCacheMarker([...this.session.messages], caching),
+        messages: this.#withCacheMarker(masked, caching),
         prompt: this.#prompt,
         tools: [...this.tools],
       },
