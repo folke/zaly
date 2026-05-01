@@ -50,7 +50,43 @@ import { readFile } from "node:fs/promises"
  * `Agent.load` alongside them if you want to start persisting the
  * imported chain in zaly format.
  */
-export async function loadClaudeSession(path: string): Promise<{ messages: Message[] }> {
+export interface ClaudeSessionOptions {
+  /** Hook to convert a Claude tool call into a zaly equivalent. Returns
+   *  the converted `{ name, params }` (e.g. `Read` → `read`, `file_path`
+   *  → `path`) or `undefined` to leave it unchanged. The id is preserved
+   *  so the matching `tool_result` correlates correctly.
+   *
+   *  Defaults to `defaultConvertTool`, which maps Claude Code's
+   *  `Read`/`Write`/`Edit`/`MultiEdit`/`Bash` to zaly equivalents and
+   *  lowercases anything else. Pass a custom function to extend or
+   *  override; call `defaultConvertTool` from inside it to fall through
+   *  for unhandled cases. */
+  convertTool?: ConvertTool
+  /** Which messages to import:
+   *    - `"active"` (default) — walks `parentUuid` back from the most
+   *      recent on-chain message. Returns the conversation as the model
+   *      currently sees it: branches not on the active head are skipped,
+   *      pre-compact history (parented to a summary record) is dropped.
+   *    - `"all"` — every user/assistant message in the file, in
+   *      chronological order, regardless of branch or compaction. Useful
+   *      for analytics, fixtures, or recovering pre-compact context. */
+  walk?: "active" | "all"
+}
+
+export type ConvertTool = (call: ClaudeToolCall) => ZalyToolCall | undefined
+export interface ClaudeToolCall {
+  name: string
+  input: unknown
+}
+export interface ZalyToolCall {
+  name: string
+  params: unknown
+}
+
+export async function loadClaudeSession(
+  path: string,
+  opts: ClaudeSessionOptions = {}
+): Promise<{ messages: Message[] }> {
   const text = await readFile(path, "utf8").catch((error: unknown) => {
     throw new Error(
       `loadClaudeSession: cannot read "${path}": ${(error as Error).message}`,
@@ -58,13 +94,14 @@ export async function loadClaudeSession(path: string): Promise<{ messages: Messa
     )
   })
 
+  const convert = opts.convertTool ?? defaultConvertTool
   const records = parseRecords(text, path)
-  const chain = walkChain(records)
-  const toolNames = collectToolNames(chain)
+  const chain = opts.walk === "all" ? collectAll(records) : walkChain(records)
+  const toolCalls = collectToolCalls(chain, convert)
 
   const messages: Message[] = []
   for (const rec of chain) {
-    const msg = toZalyMessage(rec, toolNames)
+    const msg = toZalyMessage(rec, toolCalls)
     if (msg) messages.push(msg)
   }
   // Mark the last message as a cache prefix endpoint. Anthropic's
@@ -173,36 +210,114 @@ function isMessageRecord(rec: ClaudeRecord): boolean {
   return rec.type === "user" || rec.type === "assistant"
 }
 
-/** Build a `tool_use_id → tool_name` map from the assistant tool_use
- *  blocks in the chain. Used to fill in the missing `name` on
- *  `tool_result` blocks (Claude only stores the id on results). */
-function collectToolNames(chain: readonly ClaudeRecord[]): Map<string, string> {
-  const out = new Map<string, string>()
+/** Every user/assistant message in file order, ignoring branches and
+ *  compaction boundaries. Sidechain messages are still skipped — those
+ *  belong to subagent loops and would scramble the main chain. */
+function collectAll(records: readonly ClaudeRecord[]): ClaudeRecord[] {
+  return records.filter((rec) => isMessageRecord(rec) && rec.isSidechain !== true)
+}
+
+/** Build a `tool_use_id → { name, params }` map from the assistant
+ *  tool_use blocks in the chain, applying `convert` to remap names and
+ *  params into zaly's tool shapes. Used both to render the converted
+ *  `tool-call` parts on the assistant side and to fill in the (missing)
+ *  `name` on Claude `tool_result` blocks at result-conversion time. */
+function collectToolCalls(
+  chain: readonly ClaudeRecord[],
+  convert: ConvertTool
+): Map<string, ZalyToolCall> {
+  const out = new Map<string, ZalyToolCall>()
   for (const rec of chain) {
     if (rec.type !== "assistant") continue
     const content = rec.message?.content
     if (!Array.isArray(content)) continue
     for (const block of content) {
-      if (block.type === "tool_use" && typeof block.id === "string" && typeof block.name === "string") {
-        out.set(block.id, block.name)
+      if (
+        block.type === "tool_use" &&
+        typeof block.id === "string" &&
+        typeof block.name === "string"
+      ) {
+        const claude = { input: block.input, name: block.name }
+        const zaly = convert(claude) ?? { name: block.name, params: block.input }
+        out.set(block.id, zaly)
       }
     }
   }
   return out
 }
 
+/** Default `convertTool` mapping. Handles the standard Claude Code
+ *  toolbox; everything else falls through to a lowercased name with
+ *  params untouched. Composable: custom converters can call this for
+ *  unhandled cases. */
+export function defaultConvertTool(call: ClaudeToolCall): ZalyToolCall {
+  const input = (call.input ?? {}) as Record<string, unknown>
+  switch (call.name) {
+    case "Read": {
+      return { name: "read", params: renameKey(input, "file_path", "path") }
+    }
+    case "Write": {
+      return { name: "write", params: renameKey(input, "file_path", "path") }
+    }
+    case "Edit": {
+      const { file_path, old_string, new_string, replace_all, ...rest } = input
+      return {
+        name: "edit",
+        params: {
+          edits: [{ newText: new_string, oldText: old_string, replaceAll: replace_all }],
+          path: file_path,
+          ...rest,
+        },
+      }
+    }
+    case "MultiEdit": {
+      const { file_path, edits, ...rest } = input
+      const mapped = Array.isArray(edits)
+        ? edits.map((e: Record<string, unknown>) => ({
+            newText: e.new_string,
+            oldText: e.old_string,
+            replaceAll: e.replace_all,
+          }))
+        : []
+      return { name: "edit", params: { edits: mapped, path: file_path, ...rest } }
+    }
+    case "Bash": {
+      return { name: "bash", params: input }
+    }
+    default: {
+      return { name: call.name.toLowerCase(), params: input }
+    }
+  }
+}
+
+function renameKey(
+  obj: Record<string, unknown>,
+  from: string,
+  to: string
+): Record<string, unknown> {
+  if (!(from in obj)) return obj
+  const { [from]: value, ...rest } = obj
+  return { [to]: value, ...rest }
+}
+
 // ── Conversion ───────────────────────────────────────────────────────────
 
-function toZalyMessage(rec: ClaudeRecord, toolNames: Map<string, string>): Message | undefined {
+function toZalyMessage(
+  rec: ClaudeRecord,
+  toolCalls: Map<string, ZalyToolCall>
+): Message | undefined {
   const inner = rec.message
   if (!inner) return undefined
 
-  if (rec.type === "user") return toUserMessage(inner, toolNames)
-  if (rec.type === "assistant") return toAssistantMessage(inner)
+  if (rec.type === "user") return toUserMessage(inner, toolCalls)
+  if (rec.type === "assistant") return toAssistantMessage(inner, toolCalls)
   return undefined
 }
 
-function toUserMessage(inner: ClaudeMessage, toolNames: Map<string, string>): Message | undefined {
+function toUserMessage(
+  inner: ClaudeMessage,
+  toolCalls: Map<string, ZalyToolCall>
+): Message | undefined {
   const content = inner.content
   if (typeof content === "string") {
     return { content, role: "user" }
@@ -212,7 +327,7 @@ function toUserMessage(inner: ClaudeMessage, toolNames: Map<string, string>): Me
   // If every block is a tool_result, this is a zaly tool message.
   if (content.every((b) => b.type === "tool_result")) {
     const parts = content
-      .map((b) => toToolResultPart(b as Extract<ClaudeBlock, { type: "tool_result" }>, toolNames))
+      .map((b) => toToolResultPart(b as Extract<ClaudeBlock, { type: "tool_result" }>, toolCalls))
       .filter((p): p is ToolResultPart => p !== undefined)
     if (parts.length === 0) return undefined
     return { content: parts, role: "tool" }
@@ -231,14 +346,14 @@ function toUserMessage(inner: ClaudeMessage, toolNames: Map<string, string>): Me
 
 function toToolResultPart(
   block: Extract<ClaudeBlock, { type: "tool_result" }>,
-  toolNames: Map<string, string>
+  toolCalls: Map<string, ZalyToolCall>
 ): ToolResultPart | undefined {
   if (typeof block.tool_use_id !== "string") return undefined
   return {
     content: toToolResultContent(block.content),
     id: block.tool_use_id,
     isError: block.is_error === true,
-    name: toolNames.get(block.tool_use_id) ?? "",
+    name: toolCalls.get(block.tool_use_id)?.name ?? "",
     type: "tool-result",
   }
 }
@@ -280,7 +395,10 @@ function toImagePart(block: Extract<ClaudeBlock, { type: "image" }>): ImagePart 
   return undefined
 }
 
-function toAssistantMessage(inner: ClaudeMessage): Message | undefined {
+function toAssistantMessage(
+  inner: ClaudeMessage,
+  toolCalls: Map<string, ZalyToolCall>
+): Message | undefined {
   const content = inner.content
   if (typeof content === "string") {
     return { content, role: "assistant" }
@@ -289,7 +407,7 @@ function toAssistantMessage(inner: ClaudeMessage): Message | undefined {
 
   const parts: (TextPart | ReasoningPart | ToolCallPart)[] = []
   for (const block of content) {
-    const part = toAssistantPart(block)
+    const part = toAssistantPart(block, toolCalls)
     if (part) parts.push(part)
   }
   if (parts.length === 0) return undefined
@@ -297,7 +415,8 @@ function toAssistantMessage(inner: ClaudeMessage): Message | undefined {
 }
 
 function toAssistantPart(
-  block: ClaudeBlock
+  block: ClaudeBlock,
+  toolCalls: Map<string, ZalyToolCall>
 ): TextPart | ReasoningPart | ToolCallPart | undefined {
   if (block.type === "text" && typeof block.text === "string") {
     return { text: block.text, type: "text" }
@@ -309,8 +428,13 @@ function toAssistantPart(
   // The visible text and tool calls carry the conversation's effective
   // state; thinking is recoverable from re-running, so dropping it is
   // strictly safer than risking signature mismatch errors.
-  if (block.type === "tool_use" && typeof block.id === "string" && typeof block.name === "string") {
-    return { id: block.id, name: block.name, params: block.input, type: "tool-call" }
+  if (
+    block.type === "tool_use" &&
+    typeof block.id === "string" &&
+    typeof block.name === "string"
+  ) {
+    const call = toolCalls.get(block.id) ?? { name: block.name, params: block.input }
+    return { id: block.id, name: call.name, params: call.params, type: "tool-call" }
   }
   return undefined
 }
