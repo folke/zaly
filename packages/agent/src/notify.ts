@@ -31,9 +31,13 @@ export class Notifier {
 
   check(ctx: NotifyContext) {
     const { agent } = ctx
+    const { messages, session } = agent
+
     const now = Date.now()
     const nowInfo = timeInfo(now)
     const lastInfo = this.#lastStep ? timeInfo(this.#lastStep) : undefined
+
+    const prevModelId = session.node(messages.findLast((m) => session.node(m)?.modelId))?.modelId
 
     let notified = true
     if (!this.#lastStep) {
@@ -54,7 +58,7 @@ export class Notifier {
 
     this.#lastStep = now
 
-    this.#modelId ??= agent.session.modelId ?? agent.model.id
+    this.#modelId ??= prevModelId ?? agent.model.id
     const [current, previous] = [agent.model.id, this.#modelId]
     if (current !== previous) {
       this.#modelId = current

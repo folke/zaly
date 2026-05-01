@@ -209,8 +209,9 @@ export class Session extends Emitter<SessionEvents> {
    *  node like `compact` / `session-start`). Useful when you have a
    *  Message in hand (e.g. inside the masker or a tool) and need the
    *  surrounding metadata — parent uuid, model id, usage, etc. */
-  node(id: string): Extract<SessionNode, { type: "message" }> | undefined {
-    const n = this.#nodes.get(id)
+  node(id?: string | Message): Extract<SessionNode, { type: "message" }> | undefined {
+    const m = typeof id === "string" ? { id } : id
+    const n = m?.id ? this.#nodes.get(m.id) : undefined
     return n?.type === "message" ? n : undefined
   }
 
@@ -226,16 +227,6 @@ export class Session extends Emitter<SessionEvents> {
 
   get root(): SessionNode | undefined {
     return this.#nodes.get(this.#head ?? "")
-  }
-
-  get modelId(): string | undefined {
-    let node = this.root
-    while (node) {
-      if ((node.type === "message" || node.type === "session-start") && node.modelId)
-        return node.modelId
-      if (!node.parentUuid) break
-      node = this.#nodes.get(node.parentUuid)
-    }
   }
 
   // ── Mutate ────────────────────────────────────────────────────────────
