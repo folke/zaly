@@ -132,6 +132,11 @@ interface ClaudeRecord {
   parentUuid?: string
   isSidechain?: boolean
   message?: ClaudeMessage
+  /** Wall-clock time the original Claude session recorded the message,
+   *  ISO 8601 string. Preserved onto `Message.ts` so age-based logic
+   *  (masker `maxAge`, freshness, replay) sees realistic timestamps
+   *  rather than the import time. */
+  timestamp?: string
 }
 
 interface ClaudeMessage {
@@ -350,9 +355,19 @@ function toZalyMessage(
   const inner = rec.message
   if (!inner) return undefined
 
-  if (rec.type === "user") return toUserMessage(inner, toolCalls)
-  if (rec.type === "assistant") return toAssistantMessage(inner, toolCalls)
-  return undefined
+  let m: Message | undefined
+  if (rec.type === "user") m = toUserMessage(inner, toolCalls)
+  else if (rec.type === "assistant") m = toAssistantMessage(inner, toolCalls)
+  if (!m) return undefined
+
+  // Preserve the original Claude timestamp so age-based logic (masker
+  // `maxAge`, freshness checks, replay) sees realistic times instead
+  // of when the import ran.
+  if (rec.timestamp) {
+    const ts = Date.parse(rec.timestamp)
+    if (!Number.isNaN(ts)) m = { ...m, ts }
+  }
+  return m
 }
 
 function toUserMessage(
