@@ -56,7 +56,7 @@ export const writeTool = defineTool({
     // Record post-write so the model can re-edit without an immediate
     // re-read. Captures the new mtime.
     const fstat = await stat(path)
-    trackFile({ kind: "write", mtime: fstat.mtimeMs, path }, ctx)
+    trackFile({ full: true, kind: "write", mtime: fstat.mtimeMs, path }, ctx)
 
     const bytes = Buffer.byteLength(args.content, "utf8")
     const lines = countLines(args.content)

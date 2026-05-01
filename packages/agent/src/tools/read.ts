@@ -110,23 +110,36 @@ export function createReadTool(init: ToolInit): Tool {
       }
 
       const text = new TextDecoder().decode(file.data)
-
-      // Record the read so the freshness tracker knows we've seen this
-      // file's current bytes. write/edit consult this before mutating.
-      trackFile({ kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
-
-      return formatTextSlice(text, {
+      const slice = formatTextSlice(text, {
         limit: args.limit,
         offset: args.offset,
         path,
       })
+
+      // Record the read so the freshness tracker knows we've seen this
+      // file's current bytes. write/edit consult this before mutating;
+      // the masker uses `full` to know whether this read subsumes
+      // earlier reads of the same path.
+      trackFile({ full: !slice.truncated, kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
+
+      return slice.content
     },
   })
 }
 
 declare module "@zaly/ai" {
   interface ToolMeta {
-    file?: { path: string; mtime: number; kind: "read" | "write" | "edit" }
+    file?: {
+      path: string
+      mtime: number
+      kind: "read" | "write" | "edit"
+      /** True when the result reflects the whole-file content — set by
+       *  un-sliced `read` and by `write` (which always replaces the
+       *  full file). Used by the masker to know whether this result
+       *  subsumes earlier reads of the same path. `edit` never sets it
+       *  because the result is patch-relative. */
+      full?: boolean
+    }
   }
 }
 
@@ -181,7 +194,7 @@ interface FormatOpts {
 function formatTextSlice(
   content: string,
   { path, offset, limit }: FormatOpts
-): string | (TextPart | MetaPart)[] {
+): { content: string | (TextPart | MetaPart)[]; truncated: boolean } {
   const lines = content.split("\n")
   // `split` on a final newline produces a trailing empty string — drop
   // it so a 3-line file with trailing LF reads as 3 lines, not 4.
@@ -193,7 +206,10 @@ function formatTextSlice(
   const start = offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
   const end = Math.min(lines.length, start + limit)
   if (start >= lines.length) {
-    return `(file has ${lines.length} lines; offset ${offset} is past end)`
+    return {
+      content: `(file has ${lines.length} lines; offset ${offset} is past end)`,
+      truncated: true,
+    }
   }
 
   const out: string[] = []
@@ -209,7 +225,7 @@ function formatTextSlice(
   const text = out.join("\n")
   const truncated = end < lines.length || start > 0
 
-  if (!truncated) return text
+  if (!truncated) return { content: text, truncated: false }
 
   const meta: MetaPart = {
     data: {
@@ -221,5 +237,5 @@ function formatTextSlice(
     tag: "truncation",
     type: "meta",
   }
-  return [meta, { text, type: "text" }]
+  return { content: [meta, { text, type: "text" }], truncated: true }
 }
