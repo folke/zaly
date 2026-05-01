@@ -78,7 +78,7 @@ export function defineTool<Params extends TObject, Result extends TSchema = TSch
  *  LLM quirks before strict schema check). Throws `AiError` on parse
  *  or validation failure — callers wrap with `toErrorResult` to land
  *  back on a `ToolResult`. */
-function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
+export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   let args = rawArgs
   if (typeof args === "string") {
     const parsed = parseJson(args)

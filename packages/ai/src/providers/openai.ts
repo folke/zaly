@@ -1,3 +1,4 @@
+import type { Inlined } from "../content/part.ts"
 import type {
   FinishReason,
   Provider,
@@ -8,7 +9,6 @@ import type {
   TokenCount,
   ToolChoice,
 } from "../provider.ts"
-import type { Inlined } from "../content/part.ts"
 import type {
   AudioPart,
   Content,
@@ -19,6 +19,7 @@ import type {
   Tool,
 } from "../types.ts"
 
+import { safeStringify } from "@zaly/shared"
 import {
   attachmentToMeta,
   compressImages,
@@ -455,8 +456,10 @@ async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
       for (const part of msg.content) {
         if (part.type === "text") textChunks.push(part.text)
         else if (part.type === "tool-call") {
+          const args = part.params ?? {}
+          const argStr = typeof args === "string" ? args : safeStringify(args)
           toolCalls.push({
-            function: { arguments: JSON.stringify(part.params ?? {}), name: part.name },
+            function: { arguments: argStr, name: part.name },
             id: part.id,
             type: "function",
           })
@@ -546,7 +549,7 @@ async function* parseStream(
     yield {
       id: pending.id,
       name: pending.name,
-      params: safeParseJson(pending.argsBuffer),
+      params: pending.argsBuffer,
       type: "tool-call",
     }
   }
@@ -643,7 +646,7 @@ function* handleChunk(
         yield {
           id: pending.id,
           name: pending.name,
-          params: safeParseJson(pending.argsBuffer),
+          params: pending.argsBuffer,
           type: "tool-call",
         }
         pendingToolCalls.delete(index)
@@ -731,15 +734,4 @@ function abortError(): Error {
   const e = new Error("aborted")
   e.name = "AbortError"
   return e
-}
-
-function safeParseJson(s: string): unknown {
-  if (s === "") return {}
-  try {
-    return JSON.parse(s)
-  } catch {
-    // Hand the raw string back — the harness will fail validation and
-    // surface a readable error to the model for self-correction.
-    return s
-  }
 }

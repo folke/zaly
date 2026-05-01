@@ -171,7 +171,7 @@ export interface AgentOptions extends CollectOptions {
    *  `${cwd}/.agent/skills/` and `~/.agent/skills/` on `skills.load()`,
    *  and exposes the activation tool to the model. Set `false` to skip
    *  skills entirely (no `skills` getter, no scanning, no tool). */
-  skills?: boolean
+  skills?: boolean | Skills
   /** Optional `Swarm` registry. When set, this agent participates in a
    *  multi-agent swarm — children spawned via `agent.child()` inherit
    *  the same swarm, and tools like `agent_spawn` / `agent_send`

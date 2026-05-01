@@ -17,6 +17,12 @@ export function safeFn<T extends AnyFn>(fn: T) {
   }
 }
 
+export function safeParseJson(v: unknown): unknown {
+  try {
+    return JSON.parse(String(v))
+  } catch {}
+}
+
 export function safeAsyncFn<T extends AnyFn<any[], Promise<any>>>(fn: T) {
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | undefined> =>
     fn(...args).catch(() => undefined)

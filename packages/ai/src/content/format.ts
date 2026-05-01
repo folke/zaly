@@ -1,4 +1,12 @@
-import type { Content, ContentPart, ErrorPart, FilePart, MetaPart, TextPart } from "../types.ts"
+import type {
+  Attachment,
+  Content,
+  ContentPart,
+  ErrorPart,
+  FilePart,
+  MetaPart,
+  TextPart,
+} from "../types.ts"
 
 import { safeStringify } from "@zaly/shared"
 import { ContentTransform } from "./transform.ts"
@@ -10,9 +18,10 @@ export type WithoutPart<
 
 export type WithPart<K extends ContentPart["type"]> = Extract<ContentPart, { type: K }>
 
-const PART_TYPES = new Set(["text", "meta", "image", "pdf", "audio", "video", "error"])
+const ATT_TYPES = new Set(["image", "pdf", "audio", "video"])
+const PART_TYPES = new Set(["text", "meta", "error", ...ATT_TYPES])
 
-function isContentPart(v: unknown): v is ContentPart {
+export function isContentPart(v: unknown): v is ContentPart {
   return (
     typeof v === "object" &&
     v !== null &&
@@ -20,6 +29,19 @@ function isContentPart(v: unknown): v is ContentPart {
     typeof (v as { type: unknown }).type === "string" &&
     PART_TYPES.has((v as { type: string }).type)
   )
+}
+
+export function isAttachment(p: { type: string }): p is Attachment {
+  return isContentPart(p) && ATT_TYPES.has(p.type)
+}
+
+/** Returns true if any non-text, non-meta part is present in a content
+ *  value — signal to provider adapters that an attachment-fallback emit
+ *  may be needed (e.g. OpenAI tool messages can't carry images, so the
+ *  adapter splits them into a synthetic user message). */
+export function hasAttachments(content: Content): boolean {
+  if (typeof content === "string") return false
+  return content.some((p) => isAttachment(p))
 }
 
 export function toContent(value: unknown): Content {
@@ -61,15 +83,6 @@ function getFlatten(): ContentTransform<TextPart> {
     .map("error", errorToMetaPart)
     .map("meta", metaToTextPart)
   return flattenCache
-}
-
-/** Returns true if any non-text, non-meta part is present in a content
- *  value — signal to provider adapters that an attachment-fallback emit
- *  may be needed (e.g. OpenAI tool messages can't carry images, so the
- *  adapter splits them into a synthetic user message). */
-export function hasAttachments(content: Content): boolean {
-  if (typeof content === "string") return false
-  return content.some((p) => p.type !== "text" && p.type !== "meta")
 }
 
 // ── Part-to-part converters (used by `stringifyContent` and step helpers in compose.ts) ──

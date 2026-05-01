@@ -46,6 +46,8 @@ export type TaskInfo = {
   | { status: "done"; durationMs: number; result: ToolResult }
 )
 
+export type TaskTool = Tool | (() => Tool | undefined)
+
 /** A `TaskInfo` known to be in the `done` state. `task-done` event
  *  payloads use this so listeners get `result` and `durationMs` typed
  *  without manual narrowing. */
@@ -136,7 +138,7 @@ interface InternalTask {
  */
 export class Tasks extends Emitter<TasksEvents> {
   readonly #map = new Map<string, InternalTask>()
-  #tools: Tool[] = []
+  #tools: TaskTool[] = []
   graceMs = DEFAULT_GRACE_MS
 
   /** Heartbeat interval in ms. When set, fires `heartbeat` events while
@@ -157,9 +159,10 @@ export class Tasks extends Emitter<TasksEvents> {
   // ── Tool registry ───────────────────────────────────────────────────
 
   get tools(): readonly Tool[] {
-    return this.#tools
+    return this.#tools.map((t) => (typeof t === "function" ? t() : t)).filter((t): t is Tool => !!t)
   }
-  set tools(next: Tool[]) {
+
+  set tools(next: TaskTool[]) {
     this.#tools = next
   }
 
@@ -344,7 +347,7 @@ export class Tasks extends Emitter<TasksEvents> {
       // extras (skill tool, future system tools). Keeps Tasks's own
       // tool registry decoupled from agent-level extras.
       const tool =
-        this.#tools.find((t) => t.name === call.name) ?? extra.find((t) => t.name === call.name)
+        this.tools.find((t) => t.name === call.name) ?? extra.find((t) => t.name === call.name)
       if (!tool) {
         tasks.push(this.#startSyncResult(call, unknownToolResult(call.name), round))
         continue
@@ -498,9 +501,9 @@ export class Tasks extends Emitter<TasksEvents> {
     // params. Tools may layer richer per-input checks (`bash(command)`,
     // `read(path)`, …) inside their own `call`. No-op when ctx.need is
     // unset (eval / direct runTool harnesses).
-    const dispatchPromise = ctx.need
-      ? ctx.need("tool", tool.name).then(() => runTool(tool, call.params, ctx, { streaming: true }))
-      : runTool(tool, call.params, ctx, { streaming: true })
+    const dispatchPromise = (ctx.need ? ctx.need("tool", tool.name) : Promise.resolve()).then(() =>
+      runTool(tool, call.params, ctx, { streaming: true })
+    )
 
     void dispatchPromise.then(
       (settled) => {

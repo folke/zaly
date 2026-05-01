@@ -1,7 +1,5 @@
-import type { Message } from "@zaly/ai"
-
 import { describe, expect, test } from "vitest"
-import { addUsage, extractToolCalls, summarizeOutput } from "../src/utils/index.ts"
+import { addUsage, summarizeOutput } from "../src/utils/index.ts"
 
 describe("summarizeOutput", () => {
   test("empty input → empty result", () => {
@@ -48,34 +46,6 @@ describe("summarizeOutput", () => {
   test("string and Buffer with identical content produce identical results", () => {
     const text = "one\ntwo\nthree"
     expect(summarizeOutput(text)).toEqual(summarizeOutput(Buffer.from(text)))
-  })
-})
-
-describe("extractToolCalls", () => {
-  test("string content shorthand → empty array", () => {
-    const m: Message<"assistant"> = { content: "hi", role: "assistant" }
-    expect(extractToolCalls(m)).toEqual([])
-  })
-
-  test("filters tool-call parts out of the assistant content", () => {
-    const m: Message<"assistant"> = {
-      content: [
-        { text: "ok", type: "text" },
-        { id: "1", name: "bash", params: {}, type: "tool-call" },
-        { id: "2", name: "read", params: { path: "x" }, type: "tool-call" },
-      ],
-      role: "assistant",
-    }
-    const calls = extractToolCalls(m)
-    expect(calls.map((c) => c.name)).toEqual(["bash", "read"])
-  })
-
-  test("content array with no tool-calls → empty array", () => {
-    const m: Message<"assistant"> = {
-      content: [{ text: "just text", type: "text" }],
-      role: "assistant",
-    }
-    expect(extractToolCalls(m)).toEqual([])
   })
 })
 

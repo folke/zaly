@@ -330,8 +330,10 @@ export interface Tool<Params = unknown, Result = unknown> {
   validateParams(params: unknown): Params
   validateResult?(result: unknown): Awaited<Result>
   call(params: Params, ctx: ToolContext): Promise<Result>
-  _types?: { input: Params; output: Result }
+  _types?: { params: Params; result: Result }
 }
+
+export type ToolParams<T extends Tool> = Parameters<T["call"]>[0]
 
 /** A long-running tool result. Tools that may take longer than the
  *  harness's grace window return one of these instead of a `ToolResult`,

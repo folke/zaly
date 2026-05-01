@@ -683,7 +683,6 @@ function* handleEvent(
           return
         }
       }
-      return
     }
     case "content_block_stop": {
       const pending = pendingToolUses.get(evt.index)
@@ -692,7 +691,7 @@ function* handleEvent(
         yield {
           id: pending.id,
           name: pending.name,
-          params: safeParseJson(pending.argsBuffer),
+          params: pending.argsBuffer,
           type: "tool-call",
         }
       }
@@ -768,13 +767,4 @@ function abortError(): Error {
   const e = new Error("aborted")
   e.name = "AbortError"
   return e
-}
-
-function safeParseJson(s: string): unknown {
-  if (s === "") return {}
-  try {
-    return JSON.parse(s)
-  } catch {
-    return s
-  }
 }

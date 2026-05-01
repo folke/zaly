@@ -676,7 +676,7 @@ describe("openai: stream parsing", () => {
     const calls = events.filter((e) => e.type === "tool-call")
     expect(calls).toHaveLength(1)
     expect(calls[0]).toEqual({
-      params: { city: "Tokyo" },
+      params: '{"city":"Tokyo"}',
       id: "call_1",
       name: "get_weather",
       type: "tool-call",
@@ -786,7 +786,7 @@ describe("openai: collect integration", () => {
     expect(message.content).toEqual([
       { text: "Let me check.", type: "text" },
       {
-        params: { city: "Tokyo" },
+        params: '{"city":"Tokyo"}',
         id: "c1",
         name: "get_weather",
         type: "tool-call",

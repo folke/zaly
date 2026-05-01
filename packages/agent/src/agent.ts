@@ -3,7 +3,7 @@ import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/a
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, StepResult } from "./types.ts"
 
-import { AiError, collect, isContextOverflow } from "@zaly/ai"
+import { AiError, collect, isContextOverflow, validateToolParams } from "@zaly/ai"
 import { Emitter, normPath, toError } from "@zaly/shared"
 import { Notifier } from "./notify.ts"
 import { PermissionManager } from "./permissions/index.ts"
@@ -14,7 +14,6 @@ import { StopPolicy } from "./stop.ts"
 import { Swarm } from "./swarm.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { toolRegistry } from "./tools/index.ts"
-import { extractToolCalls } from "./utils/index.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
 /**
@@ -92,8 +91,9 @@ export class Agent extends Emitter<AgentEvents> {
     // metadata wins over whatever this Agent would record now.
     this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
     for (const m of opts.messages ?? []) this.session.add(m)
+
     this.#tasks = new Tasks()
-    this.#tasks.tools = opts.tools ?? []
+    this.#tasks.tools = [...(opts.tools ?? []), () => this.#skills?.tool]
     this.#tasks.heartbeatMs = opts.heartbeatMs
     // Post-round task completions inject a system message into the next
     // step, surfacing the result to the model. Round-internal completions
@@ -111,6 +111,7 @@ export class Agent extends Emitter<AgentEvents> {
         role: "system",
       })
     })
+
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
     // `permissions` accepts either a `PermissionManager` instance (for
@@ -150,7 +151,10 @@ export class Agent extends Emitter<AgentEvents> {
     const session =
       opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
     const cwd = normPath(opts.cwd ?? process.cwd())
-    const skills = opts.skills === false ? undefined : await Skills.load({ cwd })
+    let skills: Skills | undefined
+    if (opts.skills === false) skills = undefined
+    else if (opts.skills instanceof Skills) skills = opts.skills
+    else skills = await Skills.load({ cwd })
     const toolInit = { cwd, model: opts.model }
     const tools: Tool[] = await Promise.all(
       (opts.tools ?? []).map((t) =>
@@ -187,9 +191,8 @@ export class Agent extends Emitter<AgentEvents> {
     // Inherit the *effective* step tool list (includes the loaded
     // `skill` tool). The child opts out of its own skill scan since
     // the catalog is shared.
-    const inherited = this.#stepTools()
-    const tools =
-      childDepth >= this.maxDepth ? inherited.filter((t) => t.name !== "subagent") : inherited
+    let tools = [...this.tools].filter((t) => t.name !== "skill")
+    if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
     const ret = await Agent.load({
       caching: this.#opts.caching,
       cwd: this.#cwd,
@@ -203,7 +206,7 @@ export class Agent extends Emitter<AgentEvents> {
       // explicitly opted out of.
       notify: this.#opts.notify,
       permissions: this.#permissions,
-      skills: false,
+      skills: this.#skills ?? false, // shared catalog; child doesn't reload
       // Propagate the swarm so the child + every grandchild address
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
@@ -423,15 +426,6 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#running
   }
 
-  /** Tools sent to the model on every request: user-managed tools from
-   *  `Tasks` plus the auto-managed `skill` tool (when the catalog is
-   *  non-empty). Same list also feeds dispatch via `#runTools`'s
-   *  `extraTools` so the skill call resolves to the same instance. */
-  #stepTools(): Tool[] {
-    const skill = this.#skills?.tool
-    return skill ? [...this.#tasks.tools, skill] : [...this.#tasks.tools]
-  }
-
   async #collect() {
     this.#abortController = new AbortController()
     const caching = this.#opts.caching !== false
@@ -439,7 +433,7 @@ export class Agent extends Emitter<AgentEvents> {
       {
         messages: this.#withCacheMarker([...this.session.messages], caching),
         prompt: this.#prompt,
-        tools: this.#stepTools(),
+        tools: [...this.tools],
       },
       this.#streamOpts(caching)
     )
@@ -538,13 +532,13 @@ export class Agent extends Emitter<AgentEvents> {
     )
       return { kind: "context-overflow", ...result }
 
+    const calls = this.#parseToolCalls(collected.message)
     this.session.add(collected.message, {
       finishReason: collected.finishReason,
       modelId: this.#opts.model.id,
       usage: collected.usage,
     })
 
-    const calls = extractToolCalls(collected.message)
     if (calls.length === 0) return { kind: "natural", ...result }
 
     return {
@@ -552,6 +546,19 @@ export class Agent extends Emitter<AgentEvents> {
       toolMessage: await this.#runTools(calls),
       ...result,
     }
+  }
+
+  #parseToolCalls(message: Message): ToolCallPart[] {
+    if (typeof message.content === "string") return []
+    const calls = message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
+    for (const call of calls) {
+      const tool = this.tools.find((t) => t.name === call.name)
+      if (!tool) continue
+      try {
+        call.params = validateToolParams(tool, call.params) ?? call.params
+      } catch {}
+    }
+    return calls
   }
 
   async #runTools(calls: ToolCallPart[]) {
