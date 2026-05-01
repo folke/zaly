@@ -1,7 +1,7 @@
-import type { Attachment, MetaPart, TextPart, Tool, ToolContext, ToolMeta } from "@zaly/ai"
+import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
 import type { ToolInit } from "./index.ts"
 
-import { defineTool, toAttachment, AiError } from "@zaly/ai"
+import { AiError, defineTool, toAttachment } from "@zaly/ai"
 import { fileDetect, safeStat } from "@zaly/shared"
 import { stat } from "node:fs/promises"
 import { resolve } from "pathe"
@@ -26,19 +26,19 @@ import { Type } from "typebox"
 const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
+export type ReadTool = ReturnType<typeof createReadTool>
+
 /** Build the `read` tool with model-aware schema description. The
  *  attachment-shape blurb is included only when the loaded model
  *  actually accepts the relevant modality — text-only models see a
  *  description that promises only text output, so they don't reach
  *  for the tool expecting images they can't process. */
-export function createReadTool(init: ToolInit): Tool {
+export function createReadTool(init: ToolInit) {
   const attachmentKinds: string[] = []
   if (init.model.canAttach("image")) attachmentKinds.push("image")
   if (init.model.canAttach("pdf")) attachmentKinds.push("pdf")
   const attachmentBlurb =
-    attachmentKinds.length > 0
-      ? ` ${attachmentKinds.join("/")} files return as attachments.`
-      : ""
+    attachmentKinds.length > 0 ? ` ${attachmentKinds.join("/")} files return as attachments.` : ""
 
   // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
   return defineTool({

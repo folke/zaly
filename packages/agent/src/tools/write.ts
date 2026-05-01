@@ -5,6 +5,8 @@ import { dirname, resolve } from "pathe"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
 
+export type WriteTool = typeof writeTool
+
 /**
  * Write a file to disk. Overwrites if the file exists; creates parent
  * directories as needed.

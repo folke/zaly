@@ -4,6 +4,8 @@ import { resolve } from "pathe"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
 
+export type EditTool = typeof editTool
+
 /**
  * Apply one or more exact-text replacements to a file.
  *
