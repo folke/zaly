@@ -132,10 +132,10 @@ export type Content = string | ContentPart[]
  *      Adapter joins text parts as the tool message body and emits a
  *      synthetic user message immediately after carrying any non-text
  *      parts (images / pdf / audio / video). */
-export interface ToolResultPart {
+export type ToolResultPart<T extends string = string> = {
   type: "tool-result"
   id: string
-  name: string
+  name: T
   content: Content
   isError?: boolean
   /** Set when `isError: true` and a structured `AiError` was caught.
