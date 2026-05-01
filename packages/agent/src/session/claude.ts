@@ -104,6 +104,11 @@ export async function loadClaudeSession(
     const msg = toZalyMessage(rec, toolCalls)
     if (msg) messages.push(msg)
   }
+  // De-duplicate tool_use ids. Claude Code branching / sidechain replay
+  // can emit the same tool_use_id across multiple assistant messages
+  // (especially with `walk: "all"`); downstream consumers like the
+  // masker or any (id → call) lookup expect uniqueness.
+  dedupCallIds(messages)
   // Mark the last message as a cache prefix endpoint. Anthropic's
   // adapter emits `cache_control: { type: "ephemeral" }` on the last
   // content block of the tagged message; all preceding history rides as
@@ -298,6 +303,42 @@ function renameKey(
   if (!(from in obj)) return obj
   const { [from]: value, ...rest } = obj
   return { [to]: value, ...rest }
+}
+
+/** Walk messages in chronological order; when a tool-call id reappears,
+ *  rename the duplicate (and the corresponding tool-result) to a fresh
+ *  id. Pairs are matched FIFO per-id: each duplicate call's pending
+ *  rename gets consumed by the next tool-result with that original id.
+ *  Mutates the message parts in place. */
+function dedupCallIds(messages: readonly Message[]): void {
+  const seen = new Set<string>()
+  // Per-id queue of renames awaiting their tool-result.
+  const pending = new Map<string, string[]>()
+  let counter = 0
+  for (const m of messages) {
+    if (m.role === "assistant" && Array.isArray(m.content)) {
+      for (const p of m.content) {
+        if (p.type !== "tool-call") continue
+        if (!seen.has(p.id)) {
+          seen.add(p.id)
+          continue
+        }
+        const newId = `${p.id}-${++counter}`
+        const list = pending.get(p.id) ?? []
+        list.push(newId)
+        pending.set(p.id, list)
+        p.id = newId
+      }
+    } else if (m.role === "tool") {
+      for (const p of m.content) {
+        const origId = p.id
+        const list = pending.get(origId)
+        if (!list || list.length === 0) continue
+        p.id = list.shift()!
+        if (list.length === 0) pending.delete(origId)
+      }
+    }
+  }
 }
 
 // ── Conversion ───────────────────────────────────────────────────────────
