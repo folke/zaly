@@ -1,7 +1,7 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool, toErrorResult, AiError } from "@zaly/ai"
-import { normPath, Spawn } from "@zaly/shared"
+import { normPath, Spawn, randomHash } from "@zaly/shared"
 import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { appendFile } from "node:fs/promises"
@@ -188,10 +188,10 @@ function formatBinaryError(bytes: number, logPath: string): ToolResult {
 let sessionDir: string | undefined
 function allocateLogPath(): string {
   if (sessionDir === undefined) {
-    sessionDir = join(tmpdir(), `zaly-bash-${shortId(8)}`)
+    sessionDir = join(tmpdir(), `zaly-bash-${randomHash()}`)
     mkdirSync(sessionDir, { recursive: true })
   }
-  const path = join(sessionDir, `bash-${shortId(6)}.log`)
+  const path = join(sessionDir, `bash-${randomHash()}.log`)
   // Touch the file so a concurrent reader can stat it before output lands.
   writeFileSync(path, "")
   return path
@@ -207,8 +207,4 @@ async function tailToFile(proc: Spawn, logPath: string): Promise<void> {
   } catch {
     /* stream rejected (spawn ENOENT etc.) — log just stops growing */
   }
-}
-
-function shortId(len: number): string {
-  return createHash("sha256").update(`${Date.now()}-${Math.random()}`).digest("hex").slice(0, len)
 }

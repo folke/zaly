@@ -32,6 +32,10 @@ export function hash(content: string | Uint8Array, len = 16): string {
   return createHash("sha256").update(content).digest("hex").slice(0, len)
 }
 
+export function randomHash(len?: number): string {
+  return hash(`${Date.now()}-${Math.random()}`, len)
+}
+
 export function toError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err))
 }
