@@ -1,7 +1,7 @@
 import { defineTool, AiError } from "@zaly/ai"
-import { safeStat } from "@zaly/shared"
+import { normPath, safeStat } from "@zaly/shared"
 import { mkdir, writeFile, stat } from "node:fs/promises"
-import { dirname, resolve } from "pathe"
+import { dirname } from "pathe"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
 
@@ -38,7 +38,7 @@ export const writeTool = defineTool({
   }),
 
   async call(args, ctx): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
-    const path = resolve(args.path)
+    const path = normPath(ctx.cwd, args.path)
     await ctx.need?.("write", path)
 
     // Existing file → freshness required. New file → no requirement.

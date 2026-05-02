@@ -2,9 +2,8 @@ import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zal
 import type { ToolInit } from "./index.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
-import { fileDetect, safeStat } from "@zaly/shared"
+import { fileDetect, normPath, safeStat } from "@zaly/shared"
 import { stat } from "node:fs/promises"
-import { resolve } from "pathe"
 import { Type } from "typebox"
 
 /**
@@ -65,7 +64,7 @@ export function createReadTool(init: ToolInit) {
     }),
 
     async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
-      const path = resolve(args.path)
+      const path = normPath(ctx.cwd, args.path)
       await ctx.need?.("read", path)
 
       const fileStat = await stat(path).catch((error: unknown) => {
@@ -149,7 +148,7 @@ export function trackFile(track: ToolMeta["file"], ctx: ToolContext): void {
 }
 
 export function assertFresh(path: string, ctx: ToolContext) {
-  path = resolve(path)
+  path = normPath(ctx.cwd, path)
   const mtime = safeStat(path)?.mtimeMs
   if (mtime === undefined)
     throw new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })

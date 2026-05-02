@@ -1,6 +1,6 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
-import { join } from "pathe"
+import { join, resolve } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import {
   findUp,
@@ -174,11 +174,28 @@ describe("normPath", () => {
   test("expands leading ~", () => {
     expect(normPath("~/foo")).toBe(join(homedir(), "foo"))
   })
+  test("expands bare ~", () => {
+    expect(normPath("~")).toBe(homedir())
+  })
   test("does not expand mid-string ~", () => {
     expect(normPath("/a/~/b")).toBe("/a/~/b")
   })
   test("resolves relative segments", () => {
     expect(normPath("/a/b", "../c")).toBe("/a/c")
+  })
+  test("undefined entries are filtered", () => {
+    // Caller can pass an optional `cwd` without an `?? process.cwd()`
+    // dance — undefined drops out, leaving `resolve()` to fall back to
+    // `process.cwd()` for relative paths.
+    expect(normPath(undefined, "/abs/path")).toBe("/abs/path")
+    expect(normPath(undefined, "rel")).toBe(resolve("rel"))
+    expect(normPath(undefined, undefined, "/x")).toBe("/x")
+  })
+  test("empty-string entries are filtered", () => {
+    // Same rationale as undefined — empty strings would otherwise
+    // collapse to the current directory mid-chain.
+    expect(normPath("", "/abs")).toBe("/abs")
+    expect(normPath("/base", "")).toBe("/base")
   })
 })
 

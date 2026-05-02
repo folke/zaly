@@ -61,9 +61,15 @@ export function findUp(root: string, name: string, stop?: string) {
   }
 }
 
-// Similar to path.resolve but also expands ~ to the user home directory
-export function normPath(...paths: string[]) {
-  return resolve(...paths.map((p) => p.replace(/^~(?=\/|\\|$)/, homedir())))
+// Similar to path.resolve but also expands ~ to the user home
+// directory. Accepts undefined / empty entries (filtered out) so
+// callers can pass an optional base without a `?? process.cwd()`
+// dance — `resolve()` defaults to `process.cwd()` when nothing
+// absolute remains.
+export function normPath(...paths: (string | undefined)[]) {
+  return resolve(
+    ...paths.filter((p): p is string => !!p).map((p) => p.replace(/^~(?=\/|\\|$)/, homedir()))
+  )
 }
 
 export function gitRoot(path: string) {

@@ -1,6 +1,6 @@
 import { defineTool, AiError } from "@zaly/ai"
+import { normPath } from "@zaly/shared"
 import { readFile, writeFile, stat } from "node:fs/promises"
-import { resolve } from "pathe"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
 
@@ -52,7 +52,7 @@ export const editTool = defineTool({
     args,
     ctx
   ): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
-    const path = resolve(args.path)
+    const path = normPath(ctx.cwd, args.path)
     // Edits ride the `write` scope — they're mutations.
     await ctx.need?.("write", path)
 
