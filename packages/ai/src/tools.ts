@@ -107,7 +107,7 @@ export function* extractToolCalls<T extends string = string>(
     if (m.role !== "assistant" || typeof m.content === "string") continue
     for (const p of m.content) {
       if (p.type === "tool-call" && (tools === undefined || (tools as string[]).includes(p.name)))
-        yield p as ToolCallPart<T>
+        yield { call: p as ToolCallPart<T>, message: m }
     }
   }
 }
