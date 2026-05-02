@@ -159,7 +159,7 @@ export class Agent extends Emitter<AgentEvents> {
     // sharing); options get hydrated from disk + writer-attached.
     const session =
       opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
-    const cwd = normPath(opts.cwd ?? process.cwd())
+    const cwd = normPath(opts.cwd)
     let skills: Skills | undefined
     if (opts.skills === false) skills = undefined
     else if (opts.skills instanceof Skills) skills = opts.skills

@@ -38,7 +38,7 @@ export class PermissionManager {
   #workspaces: string[]
 
   constructor(opts?: PermissionOptions) {
-    this.cwd = normPath(opts?.cwd ?? process.cwd())
+    this.cwd = normPath(opts?.cwd)
     if (opts?.rules) {
       const more = Array.isArray(opts.rules) ? opts.rules : parseRules(opts.rules)
       this.#rules.push(...more)

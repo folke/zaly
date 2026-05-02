@@ -8,6 +8,7 @@ import type {
   ToolResultPart,
 } from "@zaly/ai"
 
+import { normPath } from "@zaly/shared"
 import { readFile } from "node:fs/promises"
 
 /**
@@ -87,6 +88,9 @@ export async function loadClaudeSession(
   path: string,
   opts: ClaudeSessionOptions = {}
 ): Promise<{ messages: Message[] }> {
+  // Honor `~` and relative shorthands — config-file / env paths often
+  // include them and Node's fs APIs don't expand `~` natively.
+  path = normPath(path)
   const text = await readFile(path, "utf8").catch((error: unknown) => {
     throw new Error(
       `loadClaudeSession: cannot read "${path}": ${(error as Error).message}`,

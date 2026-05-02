@@ -64,6 +64,42 @@ describe("parseBash — basics", () => {
     if (!r.ok) throw new Error("expected ok")
     expect(r.segments[0].reads).toEqual(["input.txt"])
   })
+
+  test("fd-prefixed redirect (`2>&1`) doesn't leak the fd into args", () => {
+    const r = parseBash("echo hi 2>&1")
+    if (!r.ok) throw new Error("expected ok")
+    expect(r.segments[0].cmd).toBe("echo")
+    // The leading `2` of `2>&1` is shell-quote's separately-tokenized
+    // source fd; it must not show up as a command argument.
+    expect(r.segments[0].args).toEqual(["hi"])
+    expect(r.segments[0].writes).toEqual([])
+    expect(r.segments[0].reads).toEqual([])
+  })
+
+  test("fd-prefixed file redirect (`2>err.log`) writes the file, drops the fd", () => {
+    const r = parseBash("cmd 2>err.log")
+    if (!r.ok) throw new Error("expected ok")
+    expect(r.segments[0].cmd).toBe("cmd")
+    expect(r.segments[0].args).toEqual([])
+    expect(r.segments[0].writes).toEqual([{ mode: "trunc", path: "err.log" }])
+  })
+
+  test("combined `>file 2>&1` keeps both pieces clean", () => {
+    const r = parseBash("cmd > out.log 2>&1")
+    if (!r.ok) throw new Error("expected ok")
+    expect(r.segments[0].cmd).toBe("cmd")
+    expect(r.segments[0].args).toEqual([])
+    expect(r.segments[0].writes).toEqual([{ mode: "trunc", path: "out.log" }])
+  })
+
+  test("digit args that are NOT followed by a redirect stay as args", () => {
+    // `head -n 5` — the `5` must remain an arg even though it's purely
+    // numeric, because the next token is not a redirect op.
+    const r = parseBash("head -n 5 file.txt")
+    if (!r.ok) throw new Error("expected ok")
+    expect(r.segments[0].cmd).toBe("head")
+    expect(r.segments[0].args).toEqual(["-n", "5", "file.txt"])
+  })
 })
 
 describe("parseBash — wrapper commands stripped", () => {

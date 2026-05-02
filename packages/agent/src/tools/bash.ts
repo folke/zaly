@@ -1,7 +1,7 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool, toErrorResult, AiError } from "@zaly/ai"
-import { Spawn } from "@zaly/shared"
+import { normPath, Spawn } from "@zaly/shared"
 import { createHash } from "node:crypto"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { appendFile } from "node:fs/promises"
@@ -75,7 +75,7 @@ export const bashTool = defineTool({
     // (segments, redirects, sensitive paths) and composes file-scope
     // checks for any redirect targets via `ctx.validate`.
     await ctx.need?.("bash", args.command)
-    const cwd = ctx.cwd ?? process.cwd()
+    const cwd = normPath(ctx.cwd)
     const timeout = args.timeout
     const startedAt = Date.now()
     const logPath = allocateLogPath()

@@ -1,6 +1,7 @@
 import type { MetaPart, TextPart, Tool } from "@zaly/ai"
 
 import { AiError, defineTool } from "@zaly/ai"
+import { normPath } from "@zaly/shared"
 import { readFile } from "node:fs/promises"
 import { dirname, join } from "pathe"
 import { Type } from "typebox"
@@ -57,7 +58,7 @@ export class Skills {
   #tool?: Tool
 
   protected constructor(opts: SkillsOptions = {}) {
-    this.cwd = opts.cwd ?? process.cwd()
+    this.cwd = normPath(opts.cwd)
   }
 
   static async load(opts?: SkillsOptions): Promise<Skills> {

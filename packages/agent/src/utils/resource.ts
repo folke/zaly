@@ -1,6 +1,6 @@
-import { gitRoot, safeStat } from "@zaly/shared"
+import { gitRoot, normPath, safeStat } from "@zaly/shared"
 import { homedir } from "node:os"
-import { resolve, join, dirname } from "pathe"
+import { join, dirname } from "pathe"
 
 export type ResourceScope = "user" | "project" | "agent"
 
@@ -21,7 +21,7 @@ const AGENTS_DIR = ".agents"
 export function findResource<T extends ResourceScope = ResourceScope>(
   opts: ResourceOptions<T>
 ): Resource<T>[] {
-  const cwd = resolve(opts.cwd ?? process.cwd())
+  const cwd = normPath(opts.cwd)
   const ret: Resource<T>[] = []
 
   const user = opts.scopes.includes("user" as T)

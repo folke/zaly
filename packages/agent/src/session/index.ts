@@ -1,7 +1,7 @@
 import type { FinishReason, Message, Usage } from "@zaly/ai"
 import type { WriteStream } from "node:fs"
 
-import { Emitter } from "@zaly/shared"
+import { Emitter, normPath } from "@zaly/shared"
 import { createWriteStream, existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { uuidv7 } from "../utils/uuid.ts"
@@ -133,6 +133,8 @@ export class Session extends Emitter<SessionEvents> {
    *  the writer in append mode. New session-start / message / compact
    *  nodes will land on disk as they're committed. */
   async #hydrate(path: string, head?: string): Promise<void> {
+    // Honor `~` and any relative-to-cwd shorthand the caller passed.
+    path = normPath(path)
     if (existsSync(path)) {
       const text = await readFile(path, "utf8")
       const lines = text.split("\n")
