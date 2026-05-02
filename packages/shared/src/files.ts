@@ -47,7 +47,7 @@ export async function fileData(source: string | FileSource): Promise<FileData | 
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function fileHash<T extends { data: Uint8Array; hash?: string }>(file: T): string {
-  return (file.hash ??= hash(file.data).slice(0, 16))
+  return (file.hash ??= hash(file.data))
 }
 
 /**
