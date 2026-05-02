@@ -79,10 +79,10 @@ export type Attachment = ImagePart | PdfPart | AudioPart | VideoPart
 
 /** Assistant-emitted tool invocation. `args` is the decoded argument
  *  object — adapters JSON-encode when a provider expects a string. */
-export interface ToolCallPart {
+export interface ToolCallPart<T extends string = string> {
   type: "tool-call"
   id: string
-  name: string
+  name: T
   params: unknown
 }
 

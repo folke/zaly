@@ -1,5 +1,13 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type { Streamable, Tool, ToolContext, ParamsOf, ToolResult } from "./types.ts"
+import type {
+  Streamable,
+  Tool,
+  ToolContext,
+  ParamsOf,
+  ToolResult,
+  Message,
+  ToolCallPart,
+} from "./types.ts"
 
 import { safeParseJson } from "@zaly/shared"
 import Schema from "typebox/schema"
@@ -89,6 +97,19 @@ export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
     args = parsed.data
   }
   return tool.validateParams(args)
+}
+
+export function* extractToolCalls<T extends string = string>(
+  messages: readonly Message[],
+  tools?: T[]
+) {
+  for (const m of messages) {
+    if (m.role !== "assistant" || typeof m.content === "string") continue
+    for (const p of m.content) {
+      if (p.type === "tool-call" && (tools === undefined || (tools as string[]).includes(p.name)))
+        yield p as ToolCallPart<T>
+    }
+  }
 }
 
 /** Lightweight reader for a `ToolCallPart.params` value.
