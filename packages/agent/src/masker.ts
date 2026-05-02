@@ -1,19 +1,12 @@
-import type {
-  Attachment,
-  Message,
-  TextPart,
-  ToolCallPart,
-  ToolParams,
-  ToolResultPart,
-} from "@zaly/ai"
+import type { Attachment, Message, TextPart, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
 import type { EditTool } from "./tools/edit.ts"
 import type { AnyTool } from "./tools/index.ts"
 import type { ReadTool } from "./tools/read.ts"
 import type { WriteTool } from "./tools/write.ts"
 import type { ContextPressure } from "./types.ts"
 
-import { hasAttachments, isAttachment } from "@zaly/ai"
-import { safeParseJson, safeStringify } from "@zaly/shared"
+import { hasAttachments, isAttachment, safeParseToolParams } from "@zaly/ai"
+import { safeStringify } from "@zaly/shared"
 
 /** Unified mask rule. The bucket key *is* the uniqueness criterion —
  *  every item past the first in a bucket is a duplicate by definition,
@@ -388,7 +381,8 @@ interface BucketState {
 function toolBucketKey(call: ToolCallPart, rule: ToolRule): string | undefined {
   const key = rule.key
   if (key === "name") return call.name
-  const params = parseParams(call.params)
+
+  const params = safeParseToolParams(call.params)
   if (!params) return undefined
   if (key === "params") return `${call.name}:${safeStringify(params)}`
   // function case
@@ -413,13 +407,13 @@ function classifyFileCall(
 ): { path: string; full: boolean } | undefined {
   if (!params) return undefined
   if (kind === "write") {
-    const p = parseParams<ToolParams<WriteTool>>(params)
+    const p = safeParseToolParams<WriteTool>(params)
     return p?.path ? { full: true, path: p.path } : undefined
   } else if (kind === "edit") {
-    const p = parseParams<ToolParams<EditTool>>(params)
+    const p = safeParseToolParams<EditTool>(params)
     return p?.path ? { full: false, path: p.path } : undefined
   }
-  const p = parseParams<ToolParams<ReadTool>>(params)
+  const p = safeParseToolParams<ReadTool>(params)
   if (!p?.path) return undefined
   const offset = typeof p.offset === "number" ? p.offset : 1
   const limit = typeof p.limit === "number" ? p.limit : FULL_READ_LIMIT_THRESHOLD
@@ -450,17 +444,11 @@ function propagateWriteEditCalls(
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function parseParams<T>(params: unknown): Partial<T> | undefined {
-  params = typeof params === "string" ? safeParseJson(params) : params
-  return typeof params === "object" && params !== null ? (params as Partial<T>) : undefined
-}
-
 function markPart(out: Map<string, Set<number>>, msgId: string, partIdx: number): void {
   const set = out.get(msgId) ?? new Set<number>()
   set.add(partIdx)
   out.set(msgId, set)
 }
-
 
 // ── Render (mask helpers) ──────────────────────────────────────────────
 
@@ -527,6 +515,6 @@ function stubText(name: string, params: unknown): string {
 }
 
 function callPath(params: unknown): string | undefined {
-  const obj = parseParams<{ path?: string }>(params)
+  const obj = safeParseToolParams<Tool<{ path?: string }>>(params)
   return obj && typeof obj.path === "string" ? obj.path : undefined
 }

@@ -1,6 +1,7 @@
 import type { Static, TObject, TSchema } from "typebox"
-import type { Streamable, Tool, ToolContext, ToolResult } from "./types.ts"
+import type { Streamable, Tool, ToolContext, ParamsOf, ToolResult } from "./types.ts"
 
+import { safeParseJson } from "@zaly/shared"
 import Schema from "typebox/schema"
 import { toContent } from "./content/format.ts"
 import { toErrorPart } from "./content/part.ts"
@@ -88,6 +89,36 @@ export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
     args = parsed.data
   }
   return tool.validateParams(args)
+}
+
+/** Lightweight reader for a `ToolCallPart.params` value.
+ *
+ *  In the normal agent flow, the kernel pre-validates each tool call:
+ *    `part.params = validateToolParams(tool, params) ?? params`
+ *  So `params` is either:
+ *    - the canonical, schema-coerced object (validation succeeded), or
+ *    - the raw model output (validation failed) — usually a JSON string
+ *      that may or may not parse, occasionally an object that didn't
+ *      match the schema.
+ *
+ *  This helper accepts both. It JSON-parses if `params` is a string
+ *  (no JSON repair) and returns the object as-is if it's already one.
+ *  Anything else (parse error, null, primitives) yields `undefined`.
+ *
+ *  It does NOT validate against the tool's schema and does NOT coerce
+ *  types — for that, use `validateToolParams`. Use this when you need
+ *  a best-effort read of params for inspection (e.g. the masker
+ *  pulling `path` for file ops), not when correctness depends on the
+ *  shape being exactly `Params`. The return type is `Partial<...>` to
+ *  remind callers that any field could legitimately be missing or
+ *  off-shape on the failure path. */
+export function safeParseToolParams<T extends Tool = Tool>(
+  params: unknown
+): Partial<ParamsOf<T>> | undefined {
+  params = typeof params === "string" ? safeParseJson(params) : params
+  return typeof params === "object" && params !== null
+    ? (params as Partial<ParamsOf<T>>)
+    : undefined
 }
 
 /** Wrap any thrown value as a `ToolResult` with `isError: true`. The

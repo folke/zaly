@@ -333,7 +333,9 @@ export interface Tool<Params = unknown, Result = unknown> {
   _types?: { params: Params; result: Result }
 }
 
-export type ToolParams<T extends Tool> = Parameters<T["call"]>[0]
+export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call"]>[0]
+  ? Record<string, unknown>
+  : Parameters<T["call"]>[0]
 
 /** A long-running tool result. Tools that may take longer than the
  *  harness's grace window return one of these instead of a `ToolResult`,
