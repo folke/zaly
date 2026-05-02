@@ -103,11 +103,12 @@ export function* extractToolCalls<T extends string = string>(
   messages: readonly Message[],
   tools?: T[]
 ) {
-  for (const m of messages) {
+  for (let idx = messages.length - 1; idx >= 0; idx--) {
+    const m = messages[idx]
     if (m.role !== "assistant" || typeof m.content === "string") continue
     for (const p of m.content) {
       if (p.type === "tool-call" && (tools === undefined || (tools as string[]).includes(p.name)))
-        yield { call: p as ToolCallPart<T>, message: m }
+        yield { call: p as ToolCallPart<T>, idx, message: m }
     }
   }
 }
