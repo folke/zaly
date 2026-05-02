@@ -26,13 +26,13 @@ export class Notifier {
 
   check(ctx: NotifyContext) {
     const { agent } = ctx
-    const { messages, session } = agent
+    const { session } = agent
 
     const now = Date.now()
     const nowInfo = timeInfo(now)
     const lastInfo = this.#lastStep ? timeInfo(this.#lastStep) : undefined
 
-    const prevModelId = session.node(messages.findLast((m) => session.node(m)?.modelId))?.modelId
+    const prevModelId = session.meta.modelId
 
     let notified = true
     if (!this.#lastStep) {

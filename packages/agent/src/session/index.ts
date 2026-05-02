@@ -16,8 +16,11 @@ export type SessionNode = {
   parentUuid?: string
   /** Wall-clock millisecond timestamp when the node was created. */
   ts: number
+  meta: SessionMeta
 } & (
-  | { type: "session-start"; modelId?: string; prompt?: string[] }
+  | { type: "session-start" }
+  | { type: "session-resume" }
+  | { type: "session-meta" }
   | ({ type: "message"; message: Message } & MessageMeta)
   | {
       type: "compact"
@@ -30,13 +33,24 @@ export type SessionNode = {
     }
 )
 
+type PersistedMeta = SessionMeta & { version?: number }
+
+type PersistedNode = Omit<SessionNode, "meta"> & {
+  meta?: PersistedMeta
+}
+
+const VERSION = 1
+
+export type SessionMeta = {
+  cwd?: string
+  modelId?: string
+  prompt?: string[]
+}
+
 /** Optional per-message metadata. Populated for assistant nodes the
  *  agent commits after a step (carrying model + usage + finish info);
  *  unset for user / tool messages or anything added directly. */
 export interface MessageMeta {
-  /** Model id that produced this message, when known. Lets readers
-   *  attribute cost / detect model swaps without separate records. */
-  modelId?: string
   /** Token usage from the step that produced this message. */
   usage?: Usage
   /** Provider-side finish reason for the step. */
@@ -67,14 +81,24 @@ export interface SessionOptions {
   head?: string
 }
 
-/** Metadata recorded on the `session-start` node by `start()`. Captures
- *  the model and durable prompt that originally produced the
- *  conversation, so loaders / replay tools can attribute downstream
- *  records correctly even when a different Agent picks the session up
- *  later (e.g. for model swaps). */
-export interface SessionStart {
-  modelId?: string
-  prompt?: string[]
+function migrate(node: SessionNode, meta: PersistedMeta): SessionNode {
+  const version = meta.version
+  if (version === VERSION) return node
+
+  if (version === 0) {
+    if (node.type === "message" || node.type === "session-start") {
+      const modelId = (node as unknown as { modelId?: string }).modelId
+      meta.modelId = modelId ?? meta.modelId
+    }
+    if (node.type === "message") {
+      // Patch id/ts onto loaded messages for older session files that
+      // were written before Message.id/ts existed. Idempotent for newer
+      // files (the fields already match the node).
+      node.message.id ??= node.uuid
+      node.message.ts ??= node.ts
+    }
+  }
+  return node
 }
 
 /**
@@ -109,6 +133,7 @@ export class Session extends Emitter<SessionEvents> {
   #head?: string
   #messages: Message[] = []
   #writer?: WriteStream
+  #meta: PersistedMeta = {}
 
   /** Synchronous, low-level constructor. Prefer `Session.load(opts)` —
    *  it runs the same construction *plus* file I/O (reading existing
@@ -138,12 +163,14 @@ export class Session extends Emitter<SessionEvents> {
     if (existsSync(path)) {
       const text = await readFile(path, "utf8")
       const lines = text.split("\n")
+      // oxlint-disable-next-line oxc/no-accumulating-spread
+      let meta: PersistedMeta = { version: 0 }
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
         if (line.length === 0) continue
-        let record: SessionNode
+        let record: PersistedNode
         try {
-          record = JSON.parse(line) as SessionNode
+          record = JSON.parse(line) as PersistedNode
         } catch (error) {
           // Tolerate a truncated last line (crash mid-write); anything
           // else is real corruption.
@@ -153,15 +180,16 @@ export class Session extends Emitter<SessionEvents> {
             { cause: error }
           )
         }
-        // Patch id/ts onto loaded messages for older session files
-        // that were written before Message.id/ts existed. Idempotent
-        // for newer files (the fields already match the node).
-        if (record.type === "message") {
-          record.message.id ??= record.uuid
-          record.message.ts ??= record.ts
-        }
-        this.#nodes.set(record.uuid, record)
+        // update meta with changes
+        if (record.meta) meta = { ...meta, ...record.meta }
+        const { version: _, ...nodeMeta } = meta
+        const node = migrate({ ...record, meta: nodeMeta } as SessionNode, meta)
+        this.#nodes.set(record.uuid, node)
       }
+      // Adopt the accumulated cumulative meta as the session's running
+      // state — subsequent `update()` calls diff against this so we
+      // don't re-persist fields the file already established.
+      this.#meta = meta
       // Choose the head: explicit > last-on-file > none.
       const last = [...this.#nodes.keys()].at(-1)
       const target = head ?? last
@@ -176,22 +204,19 @@ export class Session extends Emitter<SessionEvents> {
     this.#writer = createWriteStream(path, { flags: "a" })
   }
 
-  /** Initialize the session by writing a `session-start` node. Called
-   *  by `Agent`'s constructor in the common path; safe to call directly
-   *  if you're using `Session` standalone.
-   *
-   *  Idempotent: if the session already has a `session-start` (because
-   *  it was loaded from disk, pre-seeded, or a prior `start()` ran),
-   *  this is a no-op. The original metadata stays intact — historical
-   *  truth wins over later context. To make a model swap visible in the
-   *  DAG, append a record yourself rather than overwriting the start. */
-  start(meta: SessionStart = {}): void {
-    if (this.#nodes.size > 0) return
-    this.#commit({
-      modelId: meta.modelId,
-      prompt: meta.prompt,
+  /** Initialize the session. On the first call (empty DAG) writes a
+   *  `session-start` node; subsequent calls — including after
+   *  `Session.load` rehydrates an existing file — write a
+   *  `session-resume` node, so the DAG records every Agent that picks
+   *  the session up. `meta` is merged into the cumulative session meta
+   *  via the same diff-and-persist path as `update()`; only changed
+   *  fields land on disk. */
+  start(meta: SessionMeta = {}) {
+    return this.#commit({
+      meta,
+      parentUuid: this.#head,
       ts: Date.now(),
-      type: "session-start",
+      type: this.#nodes.size > 0 ? "session-resume" : "session-start",
       uuid: uuidv7(),
     })
   }
@@ -203,6 +228,21 @@ export class Session extends Emitter<SessionEvents> {
    *  the agent sees on the next request. */
   get messages(): readonly Message[] {
     return this.#messages
+  }
+
+  get meta(): SessionMeta {
+    const { version: _, ...meta } = this.#meta
+    return meta
+  }
+
+  update(meta: SessionMeta) {
+    return this.#commit({
+      meta,
+      parentUuid: this.#head,
+      ts: Date.now(),
+      type: "session-meta",
+      uuid: uuidv7(),
+    })
   }
 
   /** Look up the full session node for a `Message.id`. Returns the
@@ -249,6 +289,7 @@ export class Session extends Emitter<SessionEvents> {
       message.id !== undefined && message.ts !== undefined ? message : { ...message, id: uuid, ts }
     return this.#commit({
       message: m,
+      meta: {},
       parentUuid: this.#head,
       ts,
       type: "message",
@@ -266,6 +307,7 @@ export class Session extends Emitter<SessionEvents> {
   ): string {
     return this.#commit({
       durationMs: opts.durationMs,
+      meta: {},
       parentUuid: this.#head,
       preTokens: opts.preTokens,
       trigger: opts.trigger ?? "manual",
@@ -315,11 +357,31 @@ export class Session extends Emitter<SessionEvents> {
    *  head, update active messages, persist to disk if a writer is
    *  attached, and emit. Single chokepoint for all mutations. */
   #commit(node: SessionNode): string {
+    const metaChanges = Object.entries({ ...node.meta, version: VERSION }).filter(
+      ([k, v]) => v !== this.#meta[k as keyof SessionMeta]
+    )
+
+    // No-op session-meta — don't add a node, don't advance head, don't emit.
+    // Returns the *current* head so callers don't see a fabricated uuid.
+    if (node.type === "session-meta" && metaChanges.length === 0) {
+      return this.#head ?? node.uuid
+    }
+
     this.#nodes.set(node.uuid, node)
     this.#head = node.uuid
     if (node.type === "message") this.#messages.push(node.message)
     else if (node.type === "compact") this.#messages = []
-    this.#writer?.write(`${JSON.stringify(node)}\n`)
+
+    const persistNode = { ...node } as PersistedNode
+
+    if (metaChanges.length > 0) {
+      const meta = Object.fromEntries(metaChanges) as PersistedMeta
+      persistNode.meta = meta
+      this.#meta = { ...this.#meta, ...meta }
+    } else persistNode.meta = undefined
+
+    node.meta = this.meta // ensure the in-memory node has the full meta
+    this.#writer?.write(`${JSON.stringify(persistNode)}\n`)
     this.emit("node", { node })
     return node.uuid
   }
@@ -346,14 +408,17 @@ export class Session extends Emitter<SessionEvents> {
     while (cursor) {
       const node = this.#nodes.get(cursor)
       if (!node) break
-      if (node.type === "compact" || node.type === "session-start") {
+      if (
+        node.type === "compact" ||
+        node.type === "session-start" ||
+        node.type === "session-resume"
+      ) {
         if (opts.active === true) break
         pastBoundary = true
         cursor = node.parentUuid
         continue
       }
-      // node.type === "message"
-      if (opts.active !== false || pastBoundary) {
+      if (node.type === "message" && (opts.active !== false || pastBoundary)) {
         out.push({ message: node.message, ts: node.ts, uuid: node.uuid })
       }
       if (opts.limit !== undefined && out.length >= opts.limit) break

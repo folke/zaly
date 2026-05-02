@@ -51,18 +51,25 @@ describe("Session — basics", () => {
     const start = s.nodes.get(s.head!) as Extract<SessionNode, { type: "session-start" }>
     expect(start.type).toBe("session-start")
     expect(start.parentUuid).toBeUndefined()
-    expect(start.prompt).toEqual(["be brief"])
-    expect(start.modelId).toBe("openai/gpt-4o")
+    expect(start.meta.prompt).toEqual(["be brief"])
+    expect(start.meta.modelId).toBe("openai/gpt-4o")
   })
 
-  test("start() is idempotent — second call is a no-op", () => {
+  test("start() on an already-started session writes a session-resume that updates meta", () => {
     const s = newSession()
-    s.start({ modelId: "first" })
-    const firstHead = s.head
-    s.start({ modelId: "second" })
-    expect(s.head).toBe(firstHead)
-    const start = s.nodes.get(s.head!) as Extract<SessionNode, { type: "session-start" }>
-    expect(start.modelId).toBe("first")
+    const firstHead = s.start({ modelId: "first" })
+    const resumeHead = s.start({ modelId: "second" })
+    expect(resumeHead).not.toBe(firstHead)
+    expect(s.head).toBe(resumeHead)
+    expect(s.nodes.size).toBe(2)
+    const resume = s.nodes.get(resumeHead)!
+    expect(resume.type).toBe("session-resume")
+    expect(resume.parentUuid).toBe(firstHead)
+    // Cumulative session meta reflects the updated modelId.
+    expect(s.meta.modelId).toBe("second")
+    // The original session-start is untouched.
+    const start = s.nodes.get(firstHead) as Extract<SessionNode, { type: "session-start" }>
+    expect(start.meta.modelId).toBe("first")
   })
 
   test("messages can be added in order after start()", () => {
@@ -238,7 +245,8 @@ describe("Session — JSONL persistence", () => {
     const s = await Session.load({ path: file })
     s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
     s.add(u("hi"))
-    const aId = s.add(a("hello"), { modelId: "openai/gpt-4o", usage: { input: 5, output: 2 } })
+    s.update({ modelId: "openai/gpt-4o", prompt: ["be more detailed"] })
+    const aId = s.add(a("hello"), { usage: { input: 5, output: 2 } })
     s.add(u("again"))
     await s.close()
 
@@ -250,7 +258,7 @@ describe("Session — JSONL persistence", () => {
     const aNode = loaded.nodes.get(aId)!
     if (aNode.type !== "message") throw new Error("expected message node")
     expect(aNode.usage).toEqual({ input: 5, output: 2 })
-    expect(aNode.modelId).toBe("openai/gpt-4o")
+    expect(aNode.meta.modelId).toBe("openai/gpt-4o")
     await loaded.close()
   })
 
@@ -320,5 +328,100 @@ describe("Session — JSONL persistence", () => {
     s.add(u("x"))
     await s.close()
     await expect(Session.load({ path: file, head: "no-such-uuid" })).rejects.toThrow(/not in file/)
+  })
+})
+
+describe("Session — meta accumulation", () => {
+  test("session.meta accumulates across start + updates without redundant writes", async () => {
+    const file = tmpPath("meta-accumulate")
+    const s = await Session.load({ path: file })
+    s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    expect(s.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o" })
+
+    // Same modelId (no-op for that key) + new prompt — only prompt is new.
+    s.update({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
+    expect(s.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o", prompt: ["be brief"] })
+
+    // Empty update — no node should be committed.
+    const before = s.nodes.size
+    s.update({})
+    expect(s.nodes.size).toBe(before)
+
+    // Only modelId changes — cwd and prompt stay.
+    s.update({ modelId: "anthropic/claude" })
+    expect(s.meta).toEqual({ cwd: "/foo", modelId: "anthropic/claude", prompt: ["be brief"] })
+
+    await s.close()
+  })
+
+  test("partial meta deltas reconstitute correctly on round-trip", async () => {
+    const file = tmpPath("meta-roundtrip")
+    const s = await Session.load({ path: file })
+    s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    s.add(u("hi"))
+    s.update({ prompt: ["be brief"] })
+    s.add(a("hello"))
+    s.update({ modelId: "anthropic/claude" })
+    s.add(u("again"))
+    await s.close()
+
+    const loaded = await Session.load({ path: file })
+    // Cumulative meta is the merge of every prior delta.
+    expect(loaded.meta).toEqual({
+      cwd: "/foo",
+      modelId: "anthropic/claude",
+      prompt: ["be brief"],
+    })
+    // Active chain isn't broken by interleaved session-meta nodes.
+    expect(bare(loaded.messages)).toEqual([u("hi"), a("hello"), u("again")])
+    await loaded.close()
+  })
+
+  test("on-disk records are delta-encoded — only changed keys appear per record", async () => {
+    const file = tmpPath("meta-delta")
+    const s = await Session.load({ path: file })
+    s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    s.add(u("hi")) // no meta change → no `meta` field on disk
+    s.update({ modelId: "anthropic/claude" }) // only modelId
+    await s.close()
+
+    const fs = await import("node:fs/promises")
+    const text = await fs.readFile(file, "utf8")
+    const lines = text.split("\n").filter((l) => l.length > 0)
+    const records = lines.map((l) => JSON.parse(l) as { type: string; meta?: unknown })
+
+    // session-start: full initial meta + version
+    expect(records[0].type).toBe("session-start")
+    expect(records[0].meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o", version: 1 })
+
+    // message with no meta change: no `meta` field at all
+    expect(records[1].type).toBe("message")
+    expect(records[1].meta).toBeUndefined()
+
+    // session-meta: only the changed key
+    expect(records[2].type).toBe("session-meta")
+    expect(records[2].meta).toEqual({ modelId: "anthropic/claude" })
+  })
+
+  test("each in-memory node carries the cumulative meta snapshot at its time", async () => {
+    const file = tmpPath("meta-snapshot")
+    const s = await Session.load({ path: file })
+    const startId = s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    const u1 = s.add(u("hi"))
+    s.update({ modelId: "anthropic/claude" })
+    const u2 = s.add(u("after-swap"))
+    await s.close()
+
+    // Live in-memory: each node sees the meta as of its commit.
+    expect(s.nodes.get(startId)?.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    expect(s.nodes.get(u1)?.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    expect(s.nodes.get(u2)?.meta).toEqual({ cwd: "/foo", modelId: "anthropic/claude" })
+
+    // Loaded from disk: same per-node snapshot shape.
+    const loaded = await Session.load({ path: file })
+    expect(loaded.nodes.get(startId)?.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    expect(loaded.nodes.get(u1)?.meta).toEqual({ cwd: "/foo", modelId: "openai/gpt-4o" })
+    expect(loaded.nodes.get(u2)?.meta).toEqual({ cwd: "/foo", modelId: "anthropic/claude" })
+    await loaded.close()
   })
 })

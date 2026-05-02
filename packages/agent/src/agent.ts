@@ -93,7 +93,11 @@ export class Agent extends Emitter<AgentEvents> {
 
     // Idempotent — no-op on a loaded / pre-seeded session, so historical
     // metadata wins over whatever this Agent would record now.
-    this.session.start({ modelId: opts.model.id, prompt: this.#prompt })
+    this.session.start({
+      cwd: this.#cwd,
+      modelId: opts.model.id,
+      prompt: this.#prompt,
+    })
     for (const m of opts.messages ?? []) this.session.add(m)
 
     this.#tasks = new Tasks()
@@ -566,7 +570,6 @@ export class Agent extends Emitter<AgentEvents> {
     const calls = this.#parseToolCalls(collected.message)
     this.session.add(collected.message, {
       finishReason: collected.finishReason,
-      modelId: this.#opts.model.id,
       usage: collected.usage,
     })
 
