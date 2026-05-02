@@ -84,41 +84,6 @@ describe("Spawn — basics", () => {
   })
 })
 
-describe("Spawn — streaming", () => {
-  test("stream() yields chunks then a single exit event", async () => {
-    const p = new Spawn("sh", ["-c", "printf a; printf b 1>&2; exit 0"])
-    const events: string[] = []
-    for await (const ev of p.stream()) {
-      if (ev.type === "stdout") events.push(`out:${ev.data.toString()}`)
-      else if (ev.type === "stderr") events.push(`err:${ev.data.toString()}`)
-      else events.push(`exit:${ev.code}`)
-    }
-    expect(events.filter((e) => e.startsWith("out:")).join("")).toBe("out:a")
-    expect(events.filter((e) => e.startsWith("err:")).join("")).toBe("err:b")
-    expect(events.at(-1)).toBe("exit:0")
-  })
-
-  test("late subscribers still receive the exit event", async () => {
-    const p = new Spawn("printf", ["done"])
-    await p.result
-    const events = []
-    for await (const ev of p.stream()) events.push(ev.type)
-    expect(events).toEqual(["exit"])
-  })
-
-  test("multiple concurrent subscribers each see the exit event", async () => {
-    const p = new Spawn("sh", ["-c", "printf x"])
-    const collect = async () => {
-      const evs = []
-      for await (const ev of p.stream()) evs.push(ev.type)
-      return evs
-    }
-    const [a, b] = await Promise.all([collect(), collect()])
-    expect(a.at(-1)).toBe("exit")
-    expect(b.at(-1)).toBe("exit")
-  })
-})
-
 describe("Spawn — write/closeStdin", () => {
   test("write appends to stdin while keepStdinOpen", async () => {
     const p = new Spawn("cat", [], { keepStdinOpen: true })

@@ -1,22 +1,21 @@
 /**
  * Process-spawning primitive: a `Spawn` class that holds a child process
- * handle and exposes both buffered (`result`) and streaming (`stream()`)
- * consumption, plus direct control (`kill`, `write`).
+ * handle and exposes its buffered output via `result`, plus direct
+ * control (`kill`, `abort`, `write`).
  *
  * Used by tools that shell out (bash, lightpanda, formatter integrations)
  * and by the TUI's clipboard layer.
  *
  * Design:
  *   - Eager start: `new Spawn(cmd, args, opts)` spawns immediately.
- *   - **Buffered + streaming coexist.** stdout/stderr are accumulated
- *     internally regardless of whether anyone is streaming, so `result`
- *     always returns a complete summary even for streamed processes.
- *   - **`stream()` is broadcast.** Multiple iterators can subscribe; each
- *     gets its own copy of every event from the moment it subscribed.
- *     Late subscribers don't replay earlier chunks but always see at
- *     least the `exit` event.
+ *   - **Caller owns output buffering** via `opts.stdout` / `opts.stderr`
+ *     (any `Stream<T>` impl). Defaults to `BufferStream` for raw bytes;
+ *     pass `TextStream` for decoded text, or wrap with `TailedStream` /
+ *     `MuxStream` to fan out (e.g. tee to a log file).
+ *   - `proc.stdout` / `proc.stderr` expose the running stream result;
+ *     `proc.result` resolves to the final state when the child exits.
  *   - Non-zero exit is **not** an error; callers branch on `code`. Spawn
- *     errors (ENOENT etc.) reject `result` and abort `stream()` iterators.
+ *     errors (ENOENT etc.) reject `result`.
  *   - `signal` (AbortSignal), `timeout`, and `maxBuffer` overflow all
  *     terminate via SIGTERM and set `killed: true`.
  *
@@ -25,12 +24,16 @@
  * helpers kept here for the same "things that talk to the OS" theme.
  */
 import type { ChildProcess, SpawnOptions } from "node:child_process"
+import type { Stream } from "./stream.ts"
 
 import { spawn as nodeSpawn } from "node:child_process"
+import { BufferStream, TextStream } from "./stream.ts"
 
-export interface SpawnOpts {
+export interface SpawnOpts<O = Buffer, E = Buffer> {
   cwd?: string
   env?: NodeJS.ProcessEnv
+  stdout?: Stream<O>
+  stderr?: Stream<E>
   /** Piped to the child's stdin and closed. To keep stdin open for
    *  `proc.write(...)` calls, omit this and instead opt-in via
    *  `keepStdinOpen: true`. */
@@ -59,12 +62,12 @@ export interface SpawnOpts {
  * `"timeout"`. */
 export type KillReason = "timeout" | "abort" | "maxBuffer" | "manual"
 
-export interface SpawnResult {
+export interface SpawnResult<O = Buffer, E = Buffer> {
   code: number
   /** Termination signal name, when the process was killed by one. */
   signal?: NodeJS.Signals
-  stdout: Buffer
-  stderr: Buffer
+  stdout: O
+  stderr: E
   /** True when terminated by timeout, abort, maxBuffer overflow, or
    *  explicit `proc.kill()` / `proc.abort()`. */
   killed: boolean
@@ -72,76 +75,28 @@ export interface SpawnResult {
   killReason?: KillReason
 }
 
-export type SpawnEvent =
-  | { type: "stdout"; data: Buffer }
-  | { type: "stderr"; data: Buffer }
-  | {
-      type: "exit"
-      code: number
-      signal?: NodeJS.Signals
-      killed: boolean
-      killReason?: KillReason
-    }
-
-interface Subscriber {
-  push: (event: SpawnEvent) => void
-  finish: () => void
-}
-
-class Stream {
-  #chunks: Buffer[] = []
-  #text: string[] = []
-  #decoder = new TextDecoder()
-  #result?: { buffer: Buffer; text: string }
-
-  push(chunk: Buffer): void {
-    this.#chunks.push(chunk)
-    this.#text.push(this.#decoder.decode(chunk, { stream: true }))
-  }
-
-  finish(): void {
-    this.#text.push(this.#decoder.decode())
-    this.#result = { buffer: Buffer.concat(this.#chunks), text: this.#text.join("") }
-  }
-
-  get buffer(): Buffer {
-    return this.#result?.buffer ?? Buffer.concat(this.#chunks)
-  }
-
-  get text(): string {
-    return this.#result?.text ?? this.#text.join("")
-  }
-}
-
 /**
  * A live child-process handle. Construct it; consume via `await
- * proc.result` (buffered) or `for await (const ev of proc.stream())`
- * (live chunks); control via `proc.kill()` / `proc.write()`.
- *
- * Both consumption modes are available simultaneously — the bash tool
- * uses this to stream output to the TUI while the agent awaits the
- * final buffered result for the model.
+ * proc.result`; control via `proc.kill()` / `proc.abort()` /
+ * `proc.write()`. For incremental output, read `proc.stdout` /
+ * `proc.stderr` (the running result of the underlying `Stream<T>`).
  */
-export class Spawn {
+export class Spawn<O = Buffer, E = Buffer> {
   readonly child: ChildProcess
-  readonly #stdout = new Stream()
-  readonly #stderr = new Stream()
-  /** stdout + stderr chunks in arrival order — for terminal-shaped
-   *  output where the consumer wants the experience of running the
-   *  command at a shell prompt rather than the streams split. */
-  readonly #combined = new Stream()
-  readonly #subscribers = new Set<Subscriber>()
+  readonly #stdout: Stream<O>
+  readonly #stderr: Stream<E>
 
   #buffered = 0
   #killed = false
   #killReason?: KillReason
   #exited = false
-  #exitEvent?: SpawnEvent & { type: "exit" }
+  #exitInfo?: { code: number; signal?: NodeJS.Signals }
   #spawnError?: Error
   #timer?: NodeJS.Timeout
   #escalationTimer?: NodeJS.Timeout
   #onAbort?: () => void
-  #resultPromise?: Promise<SpawnResult>
+  #resultPromise?: Promise<SpawnResult<O, E>>
+  #resolveResult?: () => void
 
   /** Default delay between SIGTERM and SIGKILL when escalating via
    *  `abort()`. Tunable per-call via `abort({ delay })`. */
@@ -150,7 +105,7 @@ export class Spawn {
   constructor(
     readonly cmd: string,
     readonly args: readonly string[] = [],
-    readonly opts: SpawnOpts = {}
+    readonly opts: SpawnOpts<O, E> = {}
   ) {
     if (opts.signal?.aborted) throw abortError()
 
@@ -166,6 +121,9 @@ export class Spawn {
       stdio,
     })
 
+    this.#stdout = opts.stdout ?? (new BufferStream() as unknown as Stream<O>)
+    this.#stderr = opts.stderr ?? (new BufferStream() as unknown as Stream<E>)
+
     if (opts.signal) {
       this.#onAbort = (): void => this.#escalateKill("abort")
       opts.signal.addEventListener("abort", this.#onAbort, { once: true })
@@ -175,18 +133,14 @@ export class Spawn {
     }
 
     this.child.stdout?.on("data", (data: Buffer) => {
-      this.#stdout.push(data)
-      this.#combined.push(data)
-      this.#emit({ data, type: "stdout" })
+      this.#stdout.add(data)
       if (opts.maxBuffer !== undefined) {
         this.#buffered += data.length
         if (this.#buffered > opts.maxBuffer) this.#escalateKill("maxBuffer")
       }
     })
     this.child.stderr?.on("data", (data: Buffer) => {
-      this.#stderr.push(data)
-      this.#combined.push(data)
-      this.#emit({ data, type: "stderr" })
+      this.#stderr.add(data)
       if (opts.maxBuffer !== undefined) {
         this.#buffered += data.length
         if (this.#buffered > opts.maxBuffer) this.#escalateKill("maxBuffer")
@@ -196,23 +150,12 @@ export class Spawn {
     this.child.once("error", (error) => {
       this.#spawnError = error
       this.#cleanup()
-      this.#emitExit({
-        code: -1,
-        killReason: this.#killReason,
-        killed: this.#killed,
-        type: "exit",
-      })
+      this.#finalize({ code: -1 })
     })
 
     this.child.once("close", (code, signal) => {
       this.#cleanup()
-      this.#emitExit({
-        code: code ?? -1,
-        killReason: this.#killReason,
-        killed: this.#killed,
-        signal: signal ?? undefined,
-        type: "exit",
-      })
+      this.#finalize({ code: code ?? -1, signal: signal ?? undefined })
     })
 
     if (opts.stdin !== undefined && this.child.stdin) {
@@ -226,10 +169,10 @@ export class Spawn {
     return this.child.pid
   }
   get exitCode(): number | undefined {
-    return this.#exitEvent?.code
+    return this.#exitInfo?.code
   }
   get signal(): NodeJS.Signals | undefined {
-    return this.#exitEvent?.signal
+    return this.#exitInfo?.signal
   }
   get killed(): boolean {
     return this.#killed
@@ -244,123 +187,39 @@ export class Spawn {
   /** Snapshot of stdout accumulated so far. Always returns the full
    *  buffer (cumulative since spawn) — for incremental "since last
    *  call" semantics, callers track their own offset and slice. */
-  get stdout(): Buffer {
-    return this.#stdout.buffer
+  get stdout(): O {
+    return this.#stdout.result
   }
   /** Snapshot of stderr accumulated so far. See `stdout`. */
-  get stderr(): Buffer {
-    return this.#stderr.buffer
-  }
-  /** Snapshot of stdout+stderr in arrival order — what the user would
-   *  see running the command at a shell prompt. Loses stream-of-origin
-   *  info; for that, use `stdout`/`stderr` separately. */
-  get combined(): Buffer {
-    return this.#combined.buffer
+  get stderr(): E {
+    return this.#stderr.result
   }
 
   // ── Result (buffered) ──────────────────────────────────────────────
 
   /** Promise resolving to the final `SpawnResult` once the child exits.
    *  Memoized — multiple `await proc.result` reads share one promise. */
-  get result(): Promise<SpawnResult> {
+  get result(): Promise<SpawnResult<O, E>> {
     return (this.#resultPromise ??= this.#buildResultPromise())
   }
 
-  #buildResultPromise(): Promise<SpawnResult> {
+  #buildResultPromise(): Promise<SpawnResult<O, E>> {
     return new Promise((resolve, reject) => {
-      const finish = (): void => {
-        if (this.#spawnError) {
-          reject(this.#spawnError)
-          return
-        }
-        const exit = this.#exitEvent
-        resolve({
-          code: exit?.code ?? -1,
-          killReason: this.#killReason,
-          killed: this.#killed,
-          signal: exit?.signal,
-          stderr: this.#stderr.buffer,
-          stdout: this.#stdout.buffer,
-        })
+      const settle = (): void => {
+        if (this.#spawnError) reject(this.#spawnError)
+        else
+          resolve({
+            code: this.#exitInfo?.code ?? -1,
+            killReason: this.#killReason,
+            killed: this.#killed,
+            signal: this.#exitInfo?.signal,
+            stderr: this.#stderr.result,
+            stdout: this.#stdout.result,
+          })
       }
-      if (this.#exited) {
-        finish()
-        return
-      }
-      // Subscribe a one-shot for the exit event. Don't add to the public
-      // subscriber set — this is internal bookkeeping, not a stream.
-      const sub: Subscriber = {
-        finish,
-        push: (event) => {
-          if (event.type === "exit") {
-            this.#subscribers.delete(sub)
-            finish()
-          }
-        },
-      }
-      this.#subscribers.add(sub)
+      if (this.#exited) settle()
+      else this.#resolveResult = settle
     })
-  }
-
-  // ── Stream (live) ──────────────────────────────────────────────────
-
-  /** Async iterator of stdout/stderr chunks + a final `exit` event.
-   *  Multiple concurrent `stream()` consumers each get an independent
-   *  iterator — events broadcast to all of them. Late subscribers join
-   *  mid-flight and will at least receive the `exit` event. */
-  async *stream(): AsyncGenerator<SpawnEvent> {
-    const queue: SpawnEvent[] = []
-    let resolveNext: ((e: SpawnEvent | undefined) => void) | undefined
-    let done = false
-
-    const sub: Subscriber = {
-      finish: () => {
-        done = true
-        if (resolveNext) {
-          const r = resolveNext
-          resolveNext = undefined
-          r(undefined)
-        }
-      },
-      push: (event) => {
-        if (resolveNext) {
-          const r = resolveNext
-          resolveNext = undefined
-          r(event)
-        } else {
-          queue.push(event)
-        }
-      },
-    }
-
-    // Late subscriber: process already exited. Replay just the exit
-    // event so the iterator terminates cleanly without a hang.
-    if (this.#exited) {
-      if (this.#exitEvent) yield this.#exitEvent
-      if (this.#spawnError) throw this.#spawnError
-      return
-    }
-
-    this.#subscribers.add(sub)
-    try {
-      for (;;) {
-        if (queue.length > 0) {
-          yield queue.shift() as SpawnEvent
-          continue
-        }
-        // oxlint-disable-next-line typescript/no-unnecessary-condition -- mutated by closure
-        if (done) break
-        // oxlint-disable-next-line no-await-in-loop -- intentional: serial chunk delivery
-        const next = await new Promise<SpawnEvent | undefined>((r) => {
-          resolveNext = r
-        })
-        if (next === undefined) break
-        yield next
-      }
-      if (this.#spawnError) throw this.#spawnError
-    } finally {
-      this.#subscribers.delete(sub)
-    }
   }
 
   // ── Control ────────────────────────────────────────────────────────
@@ -440,19 +299,13 @@ export class Spawn {
 
   // ── Internals ──────────────────────────────────────────────────────
 
-  #emit(event: SpawnEvent): void {
-    for (const sub of this.#subscribers) sub.push(event)
-  }
-
-  #emitExit(event: SpawnEvent & { type: "exit" }): void {
+  #finalize(info: { code: number; signal?: NodeJS.Signals }): void {
     if (this.#exited) return
     this.#stdout.finish()
     this.#stderr.finish()
-    this.#combined.finish()
     this.#exited = true
-    this.#exitEvent = event
-    this.#emit(event)
-    for (const sub of this.#subscribers) sub.finish()
+    this.#exitInfo = info
+    this.#resolveResult?.()
   }
 
   #cleanup(): void {
@@ -477,10 +330,8 @@ export async function spawnText(
   opts: SpawnOpts = {}
 ): Promise<string | undefined> {
   try {
-    const r = await new Spawn(cmd, args, opts).result
-    if (r.code !== 0) return undefined
-    const text = r.stdout.toString("utf8")
-    return text === "" ? undefined : text
+    const r = await new Spawn(cmd, args, { ...opts, stdout: new TextStream() }).result
+    return r.code === 0 && r.stdout !== "" ? r.stdout : undefined
   } catch {
     return undefined
   }

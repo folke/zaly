@@ -1,9 +1,8 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { AiError, defineTool, toErrorResult } from "@zaly/ai"
-import { normPath, randomHash, Spawn } from "@zaly/shared"
-import { mkdirSync, writeFileSync } from "node:fs"
-import { appendFile } from "node:fs/promises"
+import { bufferedTailStream, normPath, randomHash, Spawn, TextStream } from "@zaly/shared"
+import { mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
@@ -29,9 +28,11 @@ export type BashTool = typeof bashTool
  *    installs); pass shorter for tighter deadlines.
  *
  * Output truncation — large outputs are summarised inline as head + tail
- * (~100 lines each) and the full bytes are written to a per-spawn log
- * file under `tmpdir()/zaly-bash/`. The response surfaces
- * `truncated.fullOutputPath`; the model can `read({ path })` to dig deeper.
+ * (split from `max_lines`). Only when truncation actually fires does
+ * the tool flush the captured bytes to a per-spawn log file under
+ * `tmpdir()/zaly-bash/` and surface `truncated.fullOutputPath`; small
+ * outputs that fit inline never touch disk. The model can `read({ path })`
+ * the surfaced log to inspect the full bytes.
  *
  * Binary output — refused. Bash isn't an image-extraction tool;
  * pointing it at `cat image.png` returns a `BINARY_OUTPUT` error
@@ -61,6 +62,17 @@ export const bashTool = defineTool({
         "~10 words. Don't restate the command itself — describe the intent " +
         '(e.g. "check the test suite passes", not "run bun test").',
     }),
+    max_lines: Type.Integer({
+      default: 200,
+      description:
+        "Cap on lines kept inline in the result. Split as head + tail " +
+        "(half each). Lower for commands you only need pass/fail on " +
+        "(`max_lines: 20`); raise when middle output matters. Output " +
+        "above the cap is elided in the inline result, but the full " +
+        "log is always written to disk and surfaced as " +
+        "`truncated.fullOutputPath` — `read` it if you need to dig deeper.",
+      minimum: 10,
+    }),
     timeout: Type.Integer({
       default: DEFAULT_TIMEOUT_MS,
       description:
@@ -77,18 +89,28 @@ export const bashTool = defineTool({
     const cwd = normPath(ctx.cwd)
     const timeout = args.timeout
     const startedAt = Date.now()
-    const logPath = allocateLogPath()
+    const half = Math.floor(args.max_lines / 2)
+
+    // Buffer in memory; only flip to disk if a snapshot reports the
+    // output exceeded the inline cap.
+    const { stream, startTailing } = bufferedTailStream(new TextStream())
+    const logState: { path?: string } = {}
+    const ensureLog = (): string => {
+      if (!logState.path) {
+        logState.path = allocateLogPath()
+        startTailing(logState.path)
+      }
+      return logState.path
+    }
 
     const proc = new Spawn("bash", ["-c", args.command], {
       cwd,
       maxBuffer: DEFAULT_MAX_BUFFER,
       signal: ctx.signal,
+      stderr: stream,
+      stdout: stream,
       timeout,
     })
-
-    // Tail to the log file in arrival order. Best-effort — disk pressure
-    // shouldn't kill the spawn, just stop growing the log.
-    void tailToFile(proc, logPath)
 
     const cursor = { combined: 0 }
 
@@ -104,8 +126,8 @@ export const bashTool = defineTool({
       // output the model hasn't seen since the last `poll()`? Lets the
       // heartbeat flag this task with `*new*` without advancing the
       // cursor (which would consume the bytes for any later poll).
-      hasNew: () => proc.combined.length > cursor.combined,
-      poll: () => snapshot({ cursor, logPath, proc, startedAt }),
+      hasNew: () => proc.stdout.length > cursor.combined,
+      poll: () => snapshot({ cursor, ensureLog, head: half, proc, startedAt, tail: half }),
     }
   },
 })
@@ -113,27 +135,40 @@ export const bashTool = defineTool({
 // ── Internals ─────────────────────────────────────────────────────────
 
 interface SnapshotOpts {
-  proc: Spawn
+  proc: Spawn<string, string>
   startedAt: number
-  logPath: string
+  /** Lazily allocate the log path on first call — flips
+   *  bufferedTailStream into tailing mode so subsequent chunks land on
+   *  disk too. Idempotent. */
+  ensureLog: () => string
+  head: number
+  tail: number
   cursor: { combined: number }
 }
 
 /** Build the current `ToolResult` snapshot for a running or exited bash
  *  command. Slices incremental output since the last poll, summarises
  *  it head+tail, and stamps a `<bash>` MetaPart with status info. */
-function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResult & {
-  running: boolean
-} {
+function snapshot({
+  proc,
+  startedAt,
+  ensureLog,
+  head,
+  tail,
+  cursor,
+}: SnapshotOpts): ToolResult & { running: boolean } {
   // Slice incremental combined output since the cursor and advance.
-  const buf = proc.combined.subarray(cursor.combined)
+  const buf = proc.stdout.slice(cursor.combined)
   cursor.combined += buf.length
 
-  const summary = summarizeOutput(buf, { logPath })
+  // Pass `logPath` to summarizeOutput only when truncation actually
+  // happens — at which point ensureLog() materializes the file and
+  // bufferedTailStream replays the buffered bytes to disk.
+  const summary = summarizeOutput(buf, { head, tail })
 
   if ("binary" in summary) {
     return {
-      ...formatBinaryError(summary.bytes, logPath),
+      ...formatBinaryError(summary.bytes, ensureLog()),
       running: false,
     }
   }
@@ -148,7 +183,11 @@ function snapshot({ proc, startedAt, logPath, cursor }: SnapshotOpts): ToolResul
     if (proc.killReason) meta.killReason = proc.killReason
   }
   if (summary.truncated) {
-    meta.truncated = { fullOutputPath: logPath, totalLines: summary.totalLines }
+    const path = ensureLog()
+    meta.truncated = { fullOutputPath: path, totalLines: summary.totalLines }
+    // Re-summarize with the path so the elision marker can point at it.
+    const withPath = summarizeOutput(buf, { head, logPath: path, tail })
+    if (!("binary" in withPath)) summary.text = withPath.text
   }
 
   const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "bash", type: "meta" }]
@@ -183,27 +222,13 @@ function formatBinaryError(bytes: number, logPath: string): ToolResult {
 /** Allocate a log path under a session-scoped tmp dir. The dir is shared
  *  across bash calls in the same process (cheap mkdir is idempotent), so
  *  cleanup is the agent harness's concern at the OS level — we don't
- *  delete files ourselves. */
+ *  delete files ourselves. The file itself is created lazily by the
+ *  writer when bufferedTailStream flushes; no need to touch it here. */
 let sessionDir: string | undefined
 function allocateLogPath(): string {
   if (sessionDir === undefined) {
     sessionDir = join(tmpdir(), `zaly-bash-${randomHash()}`)
     mkdirSync(sessionDir, { recursive: true })
   }
-  const path = join(sessionDir, `bash-${randomHash()}.log`)
-  // Touch the file so a concurrent reader can stat it before output lands.
-  writeFileSync(path, "")
-  return path
-}
-
-async function tailToFile(proc: Spawn, logPath: string): Promise<void> {
-  try {
-    for await (const event of proc.stream()) {
-      if (event.type === "stdout" || event.type === "stderr") {
-        await appendFile(logPath, event.data).catch(() => undefined)
-      }
-    }
-  } catch {
-    /* stream rejected (spawn ENOENT etc.) — log just stops growing */
-  }
+  return join(sessionDir, `bash-${randomHash()}.log`)
 }
