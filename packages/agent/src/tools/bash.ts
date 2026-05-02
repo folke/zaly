@@ -10,6 +10,8 @@ import { join } from "pathe"
 import { Type } from "typebox"
 import { summarizeOutput } from "../utils/output.ts"
 
+export type BashTool = typeof bashTool
+
 /**
  * Run a bash command and capture its output.
  *
@@ -208,8 +210,5 @@ async function tailToFile(proc: Spawn, logPath: string): Promise<void> {
 }
 
 function shortId(len: number): string {
-  return createHash("sha256")
-    .update(`${Date.now()}-${Math.random()}`)
-    .digest("hex")
-    .slice(0, len)
+  return createHash("sha256").update(`${Date.now()}-${Math.random()}`).digest("hex").slice(0, len)
 }

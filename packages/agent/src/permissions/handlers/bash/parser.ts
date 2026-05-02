@@ -113,6 +113,15 @@ function parseSegment(
     const t = tokens[i]
 
     if (typeof t === "string") {
+      // FD prefix on a redirect (`2>&1`, `2>file`, `1<&-`) — shell-quote
+      // splits the leading digit off as its own token. Don't treat it
+      // as a regular arg; the redirect handler below picks up the op.
+      if (/^\d+$/.test(t)) {
+        const next = tokens[i + 1]
+        if (typeof next === "object" && "op" in next && REDIRECT_OPS.has(next.op)) {
+          continue
+        }
+      }
       args.push(t)
       continue
     }

@@ -198,6 +198,7 @@ export const TOOLS: Partial<Record<string, ToolSpec>> = {
   more: { reads: positionals },
   od: { reads: positionals },
   printf: {},
+  pwd: {},
   readlink: { reads: positionals },
   realpath: { reads: positionals },
   rg: { reads: positionalsAfterFirst },
