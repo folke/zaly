@@ -12,7 +12,7 @@ import type {
 } from "@zaly/ai"
 
 import { toErrorResult, isStreamable, runTool, stringifyContent, AiError } from "@zaly/ai"
-import { Emitter } from "@zaly/shared"
+import { Emitter, safeStringify } from "@zaly/shared"
 import { uuidv7 } from "./utils/uuid.ts"
 
 const DEFAULT_GRACE_MS = 10_000
@@ -709,7 +709,7 @@ function sleep(ms: number): Promise<void> {
  *  on every heartbeat / list call would be a token bomb). */
 export function taskInfoPart(info: readonly TaskInfo[]): MetaPart {
   if (info.length === 0) return { data: "no active tasks", tag: "tasks", type: "meta" }
-  const data = info.map((t) => JSON.stringify(t, omitResult)).join("\n")
+  const data = info.map((t) => safeStringify(t, omitResult)).join("\n")
   return { data, tag: "tasks", type: "meta" }
 }
 

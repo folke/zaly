@@ -321,7 +321,7 @@ export class Masker {
         if (prior?.has(pi)) continue
         const p = m.content[pi]
         if (hasAttachments(p.content)) continue
-        if (JSON.stringify(p.content).length < this.#opts.minChars) partIdxSet.delete(pi)
+        if (safeStringify(p.content).length < this.#opts.minChars) partIdxSet.delete(pi)
       }
       if (partIdxSet.size === 0) this.#decisions.delete(i)
     }

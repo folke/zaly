@@ -1,7 +1,7 @@
 import type { FinishReason, Message, Usage } from "@zaly/ai"
 import type { WriteStream } from "node:fs"
 
-import { Emitter, normPath } from "@zaly/shared"
+import { Emitter, normPath, safeStringify } from "@zaly/shared"
 import { createWriteStream, existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { uuidv7 } from "../utils/uuid.ts"
@@ -381,7 +381,7 @@ export class Session extends Emitter<SessionEvents> {
     } else persistNode.meta = undefined
 
     node.meta = this.meta // ensure the in-memory node has the full meta
-    this.#writer?.write(`${JSON.stringify(persistNode)}\n`)
+    this.#writer?.write(`${safeStringify(persistNode)}\n`)
     this.emit("node", { node })
     return node.uuid
   }

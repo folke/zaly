@@ -44,9 +44,22 @@ export const safeReadFile = safeAsyncFn((p: string) => readFile(p, "utf8"))
 export const safeReadFileSync = safeFn((path: string) => readFileSync(path, "utf8"))
 export const safeStat = safeFn(statSync)
 
-export function safeStringify(value: unknown): string {
+/** JSON.stringify with two safety guarantees:
+ *    1. BigInt values are coerced to their decimal string (default
+ *       JSON.stringify throws on BigInt).
+ *    2. Any throw — circular refs, non-coercible exotic values — is
+ *       caught and falls back to `String(value)` instead of propagating.
+ *  An optional `replacer` is applied *after* BigInt coercion so callers
+ *  can layer additional transformations (omit fields, redact, etc.). */
+export function safeStringify(
+  value: unknown,
+  replacer?: (key: string, value: unknown) => unknown
+): string {
   try {
-    return JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? v.toString() : v))
+    return JSON.stringify(value, (k, v) => {
+      const coerced = typeof v === "bigint" ? v.toString() : v
+      return replacer ? replacer(k, coerced) : coerced
+    })
   } catch {
     return String(value)
   }

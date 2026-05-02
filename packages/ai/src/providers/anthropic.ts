@@ -10,6 +10,7 @@ import type {
 } from "../provider.ts"
 import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
 
+import { safeStringify } from "@zaly/shared"
 import {
   attachmentToMeta,
   compressImages,
@@ -89,7 +90,7 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = await buildRequest(req, caching)
       const response = await doFetch(`${baseUrl}/messages`, {
-        body: JSON.stringify(body),
+        body: safeStringify(body),
         headers: {
           "Content-Type": "application/json",
           "anthropic-version": "2023-06-01",

@@ -96,7 +96,7 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = await buildRequest(req)
       const response = await doFetch(`${baseUrl}/chat/completions`, {
-        body: JSON.stringify(body),
+        body: safeStringify(body),
         headers: {
           "Content-Type": "application/json",
           ...auth(),

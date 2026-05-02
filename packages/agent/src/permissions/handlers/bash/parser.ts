@@ -1,3 +1,4 @@
+import { safeStringify } from "@zaly/shared"
 import { parse as shellParse } from "shell-quote"
 
 /** A shell command broken down into its structural parts. One bash
@@ -135,7 +136,7 @@ function parseSegment(
     }
 
     if (!("op" in t)) {
-      return { ok: false, reason: `unsupported token: ${JSON.stringify(t)}` }
+      return { ok: false, reason: `unsupported token: ${safeStringify(t)}` }
     }
 
     if (REDIRECT_OPS.has(t.op)) {
