@@ -37,12 +37,6 @@ describe("summarizeOutput", () => {
     expect(r.text).toContain("/tmp/log.txt")
   })
 
-  test("binary content (NUL byte) is detected and short-circuits", () => {
-    const buf = Buffer.from("hello\x00world")
-    const r = summarizeOutput(buf)
-    expect(r).toEqual({ binary: true, bytes: buf.length })
-  })
-
   test("string and Buffer with identical content produce identical results", () => {
     const text = "one\ntwo\nthree"
     expect(summarizeOutput(text)).toEqual(summarizeOutput(Buffer.from(text)))

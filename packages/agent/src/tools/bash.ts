@@ -1,6 +1,6 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
-import { AiError, defineTool, toErrorResult } from "@zaly/ai"
+import { defineTool } from "@zaly/ai"
 import { bufferedTailStream, normPath, randomHash, Spawn, TextStream } from "@zaly/shared"
 import { mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -33,10 +33,6 @@ export type BashTool = typeof bashTool
  * `tmpdir()/zaly-bash/` and surface `truncated.fullOutputPath`; small
  * outputs that fit inline never touch disk. The model can `read({ path })`
  * the surfaced log to inspect the full bytes.
- *
- * Binary output — refused. Bash isn't an image-extraction tool;
- * pointing it at `cat image.png` returns a `BINARY_OUTPUT` error
- * advising the read tool instead.
  *
  * Cancellation — `ctx.signal` (agent abort) propagates to the spawn.
  * `task_stop(id)` calls the streamable's `abort()`, which aborts the spawn.
@@ -166,13 +162,6 @@ function snapshot({
   // bufferedTailStream replays the buffered bytes to disk.
   const summary = summarizeOutput(buf, { head, tail })
 
-  if ("binary" in summary) {
-    return {
-      ...formatBinaryError(summary.bytes, ensureLog()),
-      running: false,
-    }
-  }
-
   const status: "exited" | "running" = proc.done ? "exited" : "running"
   const meta: Record<string, unknown> = {
     durationMs: Date.now() - startedAt,
@@ -186,8 +175,7 @@ function snapshot({
     const path = ensureLog()
     meta.truncated = { fullOutputPath: path, totalLines: summary.totalLines }
     // Re-summarize with the path so the elision marker can point at it.
-    const withPath = summarizeOutput(buf, { head, logPath: path, tail })
-    if (!("binary" in withPath)) summary.text = withPath.text
+    summary.text = summarizeOutput(buf, { head, logPath: path, tail }).text
   }
 
   const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "bash", type: "meta" }]
@@ -198,25 +186,6 @@ function snapshot({
     isError: false,
     running: !proc.done,
   }
-}
-
-/** Build a ToolResult for the binary-output error case. Routes through
- *  `toErrorResult` so the result picks up the standard `<error>` MetaPart
- *  + formatted text body — same shape as any other tool error. The `read`
- *  hint in the message points at the on-disk log so the model can pipe
- *  it through a text-converting command if it actually needs the bytes. */
-function formatBinaryError(bytes: number, logPath: string): ToolResult {
-  return toErrorResult(
-    new AiError({
-      code: "BINARY_OUTPUT",
-      data: { bytes, logPath },
-      message:
-        `bash command produced binary output (${bytes} bytes). ` +
-        `bash is not an image-extraction tool — use \`read\` on ${logPath} ` +
-        `if you need to inspect the bytes, or pipe through a text-converting ` +
-        `command (xxd, base64, file, etc.) and re-run.`,
-    })
-  )
 }
 
 /** Allocate a log path under a session-scoped tmp dir. The dir is shared

@@ -1,8 +1,3 @@
-/** Null byte + control chars excluding tab (9), LF (10), CR (13).
- *  Same heuristic the read tool uses — flags binary streams that
- *  shouldn't be displayed inline. */
-const BINARY_BYTE_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F]/
-
 const HEAD_LINES = 100
 const TAIL_LINES = 100
 
@@ -14,11 +9,6 @@ export interface SummarizedOutput {
   /** True when `text` is a head+tail summary; false when it's the full
    *  content untouched. */
   truncated: boolean
-}
-
-export interface BinaryDetected {
-  binary: true
-  bytes: number
 }
 
 /**
@@ -37,19 +27,12 @@ export interface BinaryDetected {
 export function summarizeOutput(
   data: Buffer | string,
   opts: { logPath?: string; head?: number; tail?: number } = {}
-): SummarizedOutput | BinaryDetected {
+): SummarizedOutput {
   const head = opts.head ?? HEAD_LINES
   const tail = opts.tail ?? TAIL_LINES
 
   const text = typeof data === "string" ? data : data.toString("utf8")
   if (text === "") return { text: "", totalLines: 0, truncated: false }
-
-  // Binary sniff — sample the first 8KB so multi-megabyte buffers don't
-  // pay a full scan.
-  const sample = text.length > 8192 ? text.slice(0, 8192) : text
-  if (BINARY_BYTE_RE.test(sample)) {
-    return { binary: true, bytes: typeof data === "string" ? Buffer.byteLength(data) : data.length }
-  }
 
   const lines = text.split("\n")
   // Drop the trailing empty line a final \n produces, so "3 lines\n" reads as 3.
