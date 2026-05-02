@@ -1,8 +1,7 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
-import { defineTool, toErrorResult, AiError } from "@zaly/ai"
-import { normPath, Spawn, randomHash } from "@zaly/shared"
-import { createHash } from "node:crypto"
+import { AiError, defineTool, toErrorResult } from "@zaly/ai"
+import { normPath, randomHash, Spawn } from "@zaly/shared"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { appendFile } from "node:fs/promises"
 import { tmpdir } from "node:os"

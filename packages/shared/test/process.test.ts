@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { isSSH, Spawn, spawnText, spawnWithInput, which } from "../src/process.ts"
+import { isSSH, which } from "../src/index.ts"
+import { Spawn, spawnText, spawnWithInput } from "../src/process/spawn.ts"
 
 describe("Spawn — basics", () => {
   test("buffers stdout and resolves with exit code 0", async () => {
