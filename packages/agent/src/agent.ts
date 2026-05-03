@@ -86,7 +86,7 @@ export class Agent extends Emitter<AgentEvents> {
     super()
     this.#opts = opts
     this.#cwd = opts.cwd
-    this.#prompt = (opts.prompt ?? []).map((p) => p.trim())
+    this.#prompt = (opts.prompt ?? []).map((p) => p.trim()).filter((p) => p !== "")
     this.depth = opts.depth ?? 0
     this.maxDepth = opts.maxDepth ?? 2
     this.session = opts.session
