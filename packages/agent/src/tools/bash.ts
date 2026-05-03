@@ -1,7 +1,14 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool } from "@zaly/ai"
-import { bufferedTailStream, normPath, randomHash, Spawn, TextStream } from "@zaly/shared"
+import {
+  bufferedTailStream,
+  cleanTextTui,
+  normPath,
+  randomHash,
+  Spawn,
+  TextStream,
+} from "@zaly/shared"
 import { mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
@@ -91,7 +98,7 @@ export const bashTool = defineTool({
     // output exceeded the inline cap.
     const { stream, startTailing } = bufferedTailStream(new TextStream())
     const logState: { path?: string } = {}
-    const ensureLog = (): string => {
+    const logPath = (): string => {
       if (!logState.path) {
         logState.path = allocateLogPath()
         startTailing(logState.path)
@@ -123,7 +130,7 @@ export const bashTool = defineTool({
       // heartbeat flag this task with `*new*` without advancing the
       // cursor (which would consume the bytes for any later poll).
       hasNew: () => proc.stdout.length > cursor.combined,
-      poll: () => snapshot({ cursor, ensureLog, head: half, proc, startedAt, tail: half }),
+      poll: () => snapshot({ cursor, head: half, logPath, proc, startedAt, tail: half }),
     }
   },
 })
@@ -136,7 +143,7 @@ interface SnapshotOpts {
   /** Lazily allocate the log path on first call — flips
    *  bufferedTailStream into tailing mode so subsequent chunks land on
    *  disk too. Idempotent. */
-  ensureLog: () => string
+  logPath: () => string
   head: number
   tail: number
   cursor: { combined: number }
@@ -148,19 +155,23 @@ interface SnapshotOpts {
 function snapshot({
   proc,
   startedAt,
-  ensureLog,
+  logPath,
   head,
   tail,
   cursor,
 }: SnapshotOpts): ToolResult & { running: boolean } {
   // Slice incremental combined output since the cursor and advance.
-  const buf = proc.stdout.slice(cursor.combined)
-  cursor.combined += buf.length
+  let text = proc.stdout.slice(cursor.combined)
+  cursor.combined += text.length // cursor is over bytes, not cleaned text
+
+  // clean text, but keep styles. Styles are stripped in the provider
+  // content transform pipelines
+  text = cleanTextTui(text)
 
   // Pass `logPath` to summarizeOutput only when truncation actually
   // happens — at which point ensureLog() materializes the file and
   // bufferedTailStream replays the buffered bytes to disk.
-  const summary = summarizeOutput(buf, { head, tail })
+  const summary = summarizeOutput(text, { head, logPath, tail })
 
   const status: "exited" | "running" = proc.done ? "exited" : "running"
   const meta: Record<string, unknown> = {
@@ -171,12 +182,8 @@ function snapshot({
     meta.code = proc.exitCode ?? -1
     if (proc.killReason) meta.killReason = proc.killReason
   }
-  if (summary.truncated) {
-    const path = ensureLog()
-    meta.truncated = { fullOutputPath: path, totalLines: summary.totalLines }
-    // Re-summarize with the path so the elision marker can point at it.
-    summary.text = summarizeOutput(buf, { head, logPath: path, tail }).text
-  }
+  if (summary.truncated)
+    meta.truncated = { fullOutputPath: summary.logPath, totalLines: summary.totalLines }
 
   const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "bash", type: "meta" }]
   if (summary.text !== "") parts.push({ text: summary.text, type: "text" })

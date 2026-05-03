@@ -24,6 +24,7 @@ const BINARY_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g
 /** Same as `BINARY_RE` but excludes ESC (`0x1B`) — keeps the trigger
  *  byte for SGR sequences alive when they were preserved upstream. */
 const BINARY_KEEP_ESC_RE = /[\x00-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F\x7F-\x9F]/g
+const NUL_RE = /\x00/g
 
 /** Zero-widths, BOM, bidi explicit-overrides, bidi isolates, and tag
  *  characters — all invisible or rendering-altering codepoints used as
@@ -81,7 +82,8 @@ export function stripAdversarial(s: string): string {
  *  sequences left intact by `stripAnsi(_, { keepStyles: true })`. A
  *  follow-up pass also strips *stray* ESCs (those not followed by
  *  `[ ] _`) so the TUI renderer can't be confused by them. */
-export function stripBinary(s: string, opts: { keepStyles?: boolean } = {}): string {
+export function stripBinary(s: string, opts: { keepStyles?: boolean; nul?: string } = {}): string {
+  s = s.replace(NUL_RE, opts.nul ?? String.raw`\0`)
   s = s.replace(opts.keepStyles ? BINARY_KEEP_ESC_RE : BINARY_RE, "")
   return opts.keepStyles ? s.replace(STRAY_ESC_RE, "") : s
 }
@@ -160,6 +162,7 @@ export type CleanTextOpts = {
   eol?: boolean
   /** Apply `String.prototype.normalize("NFC")`. Default `true`. */
   unicode?: boolean
+  nul?: string // defaults to "\\0"
 }
 
 const cleanDefaults: Required<CleanTextOpts> = {
@@ -168,6 +171,7 @@ const cleanDefaults: Required<CleanTextOpts> = {
   binary: true,
   eol: true,
   keepStyles: false,
+  nul: "\\0",
   unicode: true,
 }
 
@@ -193,7 +197,7 @@ export function cleanText(s: string, opts: CleanTextOpts = {}): string {
   opts = { ...cleanDefaults, ...opts }
   if (opts.ansi) s = stripAnsi(s, { keepStyles: opts.keepStyles })
   if (opts.eol) s = normalizeEol(s, { loneCr: "\n" })
-  if (opts.binary) s = stripBinary(s, { keepStyles: opts.keepStyles })
+  if (opts.binary) s = stripBinary(s, { keepStyles: opts.keepStyles, nul: opts.nul })
   if (opts.unicode) s = s.normalize("NFC")
   if (opts.adversarial) s = stripAdversarial(s)
   return s
@@ -203,8 +207,10 @@ export function cleanText(s: string, opts: CleanTextOpts = {}): string {
  *  cursor moves, OSC, APC, binary control bytes, etc. Use when the
  *  bytes are about to be displayed by a terminal that should render
  *  colors but mustn't be controlled by the source. */
-export const cleanTextTui = (s: string) => cleanText(s, { keepStyles: true })
+export const cleanTextTui = (s: string, opts?: CleanTextOpts) =>
+  cleanText(s, { keepStyles: true, ...opts })
 
 /** Agent (LLM) preset: full strip including adversarial Unicode (zero-
  *  widths, bidi controls, tag chars). Use on the way to a provider API. */
-export const cleanTextAgent = (s: string) => cleanText(s, { adversarial: true, keepStyles: false })
+export const cleanTextAgent = (s: string, opts?: CleanTextOpts) =>
+  cleanText(s, { adversarial: true, keepStyles: false, ...opts })

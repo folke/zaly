@@ -3,7 +3,7 @@ import type { Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
 import type { ContentTransform } from "./transform.ts"
 
-import { imageCompress } from "@zaly/shared"
+import { cleanTextAgent, imageCompress } from "@zaly/shared"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
 import { inlineFile } from "./part.ts"
 
@@ -72,6 +72,20 @@ export function errorToMeta() {
  *  boundary so the model sees flat text + attachments only. */
 export function metaToText() {
   return <T extends ContentPart>(ct: ContentTransform<T>) => ct.map("meta", metaToTextPart)
+}
+
+/** Run every `TextPart` through `cleanTextAgent` — strip ANSI control
+ *  sequences, strip C0/C1 control bytes (NUL → literal `\0`), normalize
+ *  line endings + Unicode (NFC), and strip adversarial Unicode (zero-
+ *  widths, bidi controls, tag chars).
+ *
+ *  Place at the *end* of the pipeline (after `metaToText`) so meta
+ *  parts that became text are also cleaned. Idempotent on already-clean
+ *  input — bash output that pre-ran `cleanTextTui` only pays for the
+ *  agent-specific bits (SGR strip + adversarial). */
+export function sanitizeText() {
+  return <T extends ContentPart>(ct: ContentTransform<T>) =>
+    ct.map("text", (part) => ({ ...part, text: cleanTextAgent(part.text) }))
 }
 
 /** Compress every base64-source `ImagePart` to fit a size budget.

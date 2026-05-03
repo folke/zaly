@@ -9,6 +9,7 @@ export interface SummarizedOutput {
   /** True when `text` is a head+tail summary; false when it's the full
    *  content untouched. */
   truncated: boolean
+  logPath?: string
 }
 
 /**
@@ -26,7 +27,7 @@ export interface SummarizedOutput {
  */
 export function summarizeOutput(
   data: Buffer | string,
-  opts: { logPath?: string; head?: number; tail?: number } = {}
+  opts: { logPath?: string | (() => string | undefined); head?: number; tail?: number } = {}
 ): SummarizedOutput {
   const head = opts.head ?? HEAD_LINES
   const tail = opts.tail ?? TAIL_LINES
@@ -45,11 +46,13 @@ export function summarizeOutput(
   const headSlice = lines.slice(0, head)
   const tailSlice = lines.slice(lines.length - tail)
   const elided = lines.length - head - tail
-  const marker = opts.logPath
-    ? `[ … ${elided} lines elided — full output: ${opts.logPath} ]`
+  const logPath = typeof opts.logPath === "function" ? opts.logPath() : opts.logPath
+  const marker = logPath
+    ? `[ … ${elided} lines elided — full output: ${logPath} ]`
     : `[ … ${elided} lines elided ]`
 
   return {
+    logPath,
     text: [...headSlice, marker, ...tailSlice].join("\n"),
     totalLines: lines.length,
     truncated: true,

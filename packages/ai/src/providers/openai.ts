@@ -26,6 +26,7 @@ import {
   errorToMeta,
   inlineFileSources,
   metaToText,
+  sanitizeText,
 } from "../content/compose.ts"
 import { stringifyContent } from "../content/format.ts"
 import { ContentTransform } from "../content/transform.ts"
@@ -56,6 +57,7 @@ const openaiTransform = ContentTransform.create()
   .pipe(compressImages())
   .pipe(errorToMeta())
   .pipe(metaToText())
+  .pipe(sanitizeText())
 
 async function transformOpenAI(content: Content) {
   const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content

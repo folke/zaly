@@ -58,8 +58,17 @@ describe("stripAnsi", () => {
 })
 
 describe("stripBinary", () => {
-  test("strips NUL", () => {
-    expect(stripBinary("a\x00b")).toBe("ab")
+  test(String.raw`escapes NUL as literal \0 (preserves field separators)`, () => {
+    expect(stripBinary("a\x00b")).toBe(String.raw`a\0b`)
+  })
+
+  test("preserves field separation for find -print0 style output", () => {
+    expect(stripBinary("path1\x00path2\x00path3")).toBe(String.raw`path1\0path2\0path3`)
+  })
+
+  test(String.raw`nul opt overrides default (custom replacement)`, () => {
+    expect(stripBinary("a\x00b", { nul: "" })).toBe("ab")
+    expect(stripBinary("a\x00b", { nul: "\n" })).toBe("a\nb")
   })
 
   test("strips C0 controls except tab/lf/cr", () => {
@@ -222,9 +231,9 @@ describe("detectEol", () => {
 })
 
 describe("cleanText", () => {
-  test("default strips ANSI, binary, normalizes newlines + Unicode", () => {
+  test("default strips ANSI, normalizes newlines, escapes NUL as literal", () => {
     const input = `${SGR_RED}hello${SGR_RESET}\r\nworld\x00`
-    expect(cleanText(input)).toBe("hello\nworld")
+    expect(cleanText(input)).toBe("hello\nworld\\0")
   })
 
   test("default does NOT strip SGR styles when keepStyles: true", () => {
@@ -287,8 +296,8 @@ describe("cleanTextTui (preset)", () => {
     expect(cleanTextTui(`before${APC_KGP}after`)).toBe("beforeafter")
   })
 
-  test("strips NUL and other binary control bytes", () => {
-    expect(cleanTextTui(`a\x00b\x07c`)).toBe("abc")
+  test("escapes NUL as literal, strips other binary control bytes", () => {
+    expect(cleanTextTui(`a\x00b\x07c`)).toBe(String.raw`a\0bc`)
   })
 
   test("preserves emoji with ZWJ (no adversarial strip)", () => {
@@ -315,7 +324,7 @@ describe("cleanTextAgent (preset)", () => {
     expect(cleanTextAgent("👨‍👩‍👧")).toBe("👨👩👧")
   })
 
-  test("normalizes newlines and binary", () => {
-    expect(cleanTextAgent("a\r\nb\x00c")).toBe("a\nbc")
+  test("normalizes newlines and escapes NUL", () => {
+    expect(cleanTextAgent("a\r\nb\x00c")).toBe("a\nb\\0c")
   })
 })

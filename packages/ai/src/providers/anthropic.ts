@@ -17,6 +17,7 @@ import {
   errorToMeta,
   inlineFileSources,
   metaToText,
+  sanitizeText,
 } from "../content/compose.ts"
 import { ContentTransform } from "../content/transform.ts"
 
@@ -36,6 +37,10 @@ import { ContentTransform } from "../content/transform.ts"
 //      ErrorParts emitted by failed inlining steps are also captured.
 //   4. MetaPart → `<tag>JSON</tag>` TextPart so the wire layer only
 //      deals with text + image + pdf.
+//   5. `sanitizeText` runs `cleanTextAgent` on every TextPart — strips
+//      remaining ANSI / control bytes / adversarial Unicode that
+//      survived upstream cleaning (e.g. read-tool content, fetch
+//      bodies, anything that didn't go through `cleanTextTui`).
 //
 // `.pipe(stepFn)` carries the chain's narrowed `T` through each step
 // — unlike `.extend(other)`, whose appended chain was built from a
@@ -49,6 +54,7 @@ const anthropicTransform = ContentTransform.create()
   .pipe(compressImages())
   .pipe(errorToMeta())
   .pipe(metaToText())
+  .pipe(sanitizeText())
 
 async function transformAnthropic(content: Content) {
   const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content
