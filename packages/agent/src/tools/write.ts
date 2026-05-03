@@ -1,6 +1,6 @@
-import { defineTool, AiError } from "@zaly/ai"
-import { normPath, safeStat } from "@zaly/shared"
-import { mkdir, writeFile, stat } from "node:fs/promises"
+import { AiError, defineTool } from "@zaly/ai"
+import { detectEol, normalizeEol, normPath, safeReadFile, safeStat } from "@zaly/shared"
+import { mkdir, stat, writeFile } from "node:fs/promises"
 import { dirname } from "pathe"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
@@ -11,9 +11,12 @@ export type WriteTool = typeof writeTool
  * Write a file to disk. Overwrites if the file exists; creates parent
  * directories as needed.
  *
- * Content is written verbatim — no trailing-newline injection, no
- * line-ending normalisation, no whitespace stripping. The model
- * supplies the bytes it wants on disk.
+ * Content is written *verbatim* in everything but line endings. The
+ * model always emits LF; this tool detects the existing file's
+ * line-ending style (or the platform default for new files via
+ * `detectEol`) and re-applies it on write so a CRLF file stays CRLF
+ * after an LF-from-the-model overwrite. No trailing-newline injection,
+ * no whitespace stripping.
  *
  * Freshness: when the target file already exists, the model must have
  * read it in this session and the on-disk mtime must be unchanged
@@ -22,7 +25,8 @@ export type WriteTool = typeof writeTool
  * exist) bypass this check; nothing to be fresh against.
  *
  * Returns a small acknowledgement (`{ ok, bytes, lines }`) rather than
- * echoing the content back — the model already has it.
+ * echoing the content back — the model already has it. `bytes` reflects
+ * the on-disk byte count, including any extra bytes from CRLF expansion.
  */
 // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
 export const writeTool = defineTool({
@@ -44,9 +48,13 @@ export const writeTool = defineTool({
     // Existing file → freshness required. New file → no requirement.
     if (safeStat(path)?.isFile()) assertFresh(path, ctx)
 
+    let text: string
     try {
+      const original = await safeReadFile(path)
+      const eol = detectEol({ path, text: original })
+      text = normalizeEol(args.content, { eol })
       await mkdir(dirname(path), { recursive: true })
-      await writeFile(path, args.content, "utf8")
+      await writeFile(path, text, "utf8")
     } catch (error) {
       throw new AiError({
         cause: error,
@@ -60,8 +68,8 @@ export const writeTool = defineTool({
     const fstat = await stat(path)
     trackFile({ full: true, kind: "write", mtime: fstat.mtimeMs, path }, ctx)
 
-    const bytes = Buffer.byteLength(args.content, "utf8")
-    const lines = countLines(args.content)
+    const bytes = Buffer.byteLength(text, "utf8")
+    const lines = countLines(text)
     return { bytes, lines, ok: true, path }
   },
 })

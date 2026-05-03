@@ -3,7 +3,8 @@ import {
   cleanText,
   cleanTextAgent,
   cleanTextTui,
-  normalizeNewlines,
+  detectEol,
+  normalizeEol,
   stripAdversarial,
   stripAnsi,
   stripBinary,
@@ -126,32 +127,97 @@ describe("stripAdversarial", () => {
   })
 })
 
-describe("normalizeNewlines", () => {
-  test("converts CRLF to LF", () => {
-    expect(normalizeNewlines("a\r\nb")).toBe("a\nb")
-  })
-
-  test("converts lone CR to LF", () => {
-    expect(normalizeNewlines("a\rb")).toBe("a\nb")
+describe("normalizeEol", () => {
+  test("converts CRLF to LF by default", () => {
+    expect(normalizeEol("a\r\nb")).toBe("a\nb")
   })
 
   test("leaves LF untouched", () => {
-    expect(normalizeNewlines("a\nb")).toBe("a\nb")
+    expect(normalizeEol("a\nb")).toBe("a\nb")
   })
 
-  test("handles mixed line endings", () => {
-    expect(normalizeNewlines("a\r\nb\nc\rd")).toBe("a\nb\nc\nd")
+  test("preserves lone CR by default", () => {
+    expect(normalizeEol("a\rb")).toBe("a\rb")
   })
 
-  test(String.raw`progress-bar style \r updates become separate lines`, () => {
-    expect(normalizeNewlines("Downloading: 45%\rDownloading: 50%")).toBe(
+  test(String.raw`loneCr: "\n" treats lone CR as line ending`, () => {
+    expect(normalizeEol("a\rb", { loneCr: "\n" })).toBe("a\nb")
+  })
+
+  test(String.raw`loneCr: "" drops lone CR entirely`, () => {
+    expect(normalizeEol("a\rb", { loneCr: "" })).toBe("ab")
+  })
+
+  test("custom eol target re-emits CRLF", () => {
+    expect(normalizeEol("a\nb\r\nc", { eol: "\r\n" })).toBe("a\r\nb\r\nc")
+  })
+
+  test("loneCr handling is independent of eol target", () => {
+    expect(normalizeEol("a\rb\r\nc", { eol: "\r\n", loneCr: "\r\n" })).toBe("a\r\nb\r\nc")
+  })
+
+  test(String.raw`progress-bar style \r becomes separate lines when loneCr opted in`, () => {
+    expect(normalizeEol("Downloading: 45%\rDownloading: 50%", { loneCr: "\n" })).toBe(
       "Downloading: 45%\nDownloading: 50%",
     )
   })
+})
 
-  test(String.raw`output contains no \r after normalization`, () => {
-    const result = normalizeNewlines("a\rb\r\nc\nd\r")
-    expect(result.includes("\r")).toBe(false)
+describe("detectEol", () => {
+  test("defaults to LF for new file with text extension", () => {
+    expect(detectEol({ path: "/tmp/foo.ts" })).toBe("\n")
+    expect(detectEol({ path: "/tmp/script.sh" })).toBe("\n")
+    expect(detectEol({ path: "/tmp/Makefile" })).toBe("\n")
+  })
+
+  test("defaults to CRLF for Windows script extensions", () => {
+    expect(detectEol({ path: "/tmp/build.bat" })).toBe("\r\n")
+    expect(detectEol({ path: "/tmp/run.cmd" })).toBe("\r\n")
+    expect(detectEol({ path: "/tmp/keys.reg" })).toBe("\r\n")
+  })
+
+  test("extension match is case-insensitive", () => {
+    expect(detectEol({ path: "/tmp/build.BAT" })).toBe("\r\n")
+  })
+
+  test("detects CRLF from existing content", () => {
+    expect(detectEol("a\r\nb\r\nc")).toBe("\r\n")
+  })
+
+  test("detects LF from existing content", () => {
+    expect(detectEol("a\nb\nc")).toBe("\n")
+  })
+
+  test("majority wins on mixed line endings", () => {
+    expect(detectEol("a\r\nb\r\nc\nd")).toBe("\r\n")
+    expect(detectEol("a\r\nb\nc\nd")).toBe("\n")
+  })
+
+  test("ignores standalone CR when counting LFs (lookbehind)", () => {
+    expect(detectEol("a\nb\nc\nd\re")).toBe("\n")
+  })
+
+  test("empty / no-newline content with no path defaults to LF", () => {
+    expect(detectEol("")).toBe("\n")
+    expect(detectEol("no newlines here")).toBe("\n")
+  })
+
+  test("falls back to extension when text has no line endings", () => {
+    expect(detectEol({ path: "/tmp/build.bat", text: "no newlines" })).toBe("\r\n")
+  })
+
+  test("text wins over default-CRLF extension when content has line endings", () => {
+    expect(detectEol({ path: "/tmp/build.bat", text: "a\nb\nc\n" })).toBe("\n")
+  })
+
+  test("force-CRLF extension (.reg) overrides existing LF content", () => {
+    // .reg parsers (regedit) reject mixed/LF input — force CRLF regardless.
+    expect(detectEol({ path: "/tmp/keys.reg", text: "a\nb\nc\n" })).toBe("\r\n")
+    expect(detectEol({ path: "/tmp/keys.reg" })).toBe("\r\n")
+  })
+
+  test("force-CRLF check is case-insensitive", () => {
+    expect(detectEol({ path: "/tmp/keys.REG", text: "a\nb\n" })).toBe("\r\n")
   })
 })
 
@@ -190,7 +256,7 @@ describe("cleanText", () => {
         adversarial: false,
         ansi: false,
         binary: false,
-        newlines: false,
+        eol: false,
         unicode: false,
       }),
     ).toBe(input)

@@ -1,3 +1,5 @@
+import { extname } from "pathe"
+
 // ---- ANSI escape categories -------------------------------------------
 //
 // CSI / OSC / APC are the three categories of multi-byte terminal escape
@@ -33,6 +35,11 @@ const ADVERSARIAL_RE = /[​-‍⁠﻿‪-‮⁦-⁩\u{E0000}-\u{E007F}]/gu
  *  any recognized CSI / OSC / APC sequence. Used to clean up stray
  *  ESCs that survive `stripAnsi(_, { keepStyles: true })`. */
 const STRAY_ESC_RE = /\x1B(?![[\]_])/g
+
+const CRLF_EXT_FORCE = new Set([".reg"]) // override content
+const CRLF_EXT_DEFAULT = new Set([".bat", ".cmd"]) // new-file default only
+
+export type EOL = "\n" | "\r\n"
 
 /** Strip terminal control sequences from `s`.
  *
@@ -79,12 +86,61 @@ export function stripBinary(s: string, opts: { keepStyles?: boolean } = {}): str
   return opts.keepStyles ? s.replace(STRAY_ESC_RE, "") : s
 }
 
-/** Normalize CR/LF/CRLF to LF. Lone `\r` becomes `\n` (treated as a
- *  newline rather than dropped, so progress-bar updates render as
- *  separate lines instead of running together). After this runs, the
- *  string contains no `\r` characters. */
-export function normalizeNewlines(s: string): string {
-  return s.replace(/\r\n?/g, "\n")
+/** Normalize line endings.
+ *
+ *  Always rewrites `\r\n` and lone `\n` to `opts.eol` (default `"\n"`),
+ *  giving the string a single, consistent line-ending style.
+ *
+ *  Lone `\r` (CR not followed by LF — Mac-classic line endings, terminal
+ *  progress-bar redraws) is **preserved** by default. Pass `opts.loneCr`
+ *  to handle them: set to the eol target to treat them as line endings,
+ *  or `""` to drop them entirely.
+ *
+ *  Examples:
+ *    normalizeEol("a\r\nb")                       → "a\nb"
+ *    normalizeEol("a\r\nb", { eol: "\r\n" })      → "a\r\nb"
+ *    normalizeEol("45%\r50%")                     → "45%\r50%"  (lone CR kept)
+ *    normalizeEol("45%\r50%", { loneCr: "\n" })   → "45%\n50%"  (lone CR → LF)
+ *    normalizeEol("foo\rbar", { loneCr: "" })     → "foobar"    (lone CR dropped) */
+export function normalizeEol(s: string, opts: { loneCr?: string; eol?: EOL } = {}): string {
+  const eol = opts.eol ?? "\n"
+  s = s.replace(/\r?\n/g, eol)
+  return opts.loneCr === undefined ? s : s.replace(/\r(?!\n)/g, opts.loneCr)
+}
+
+/** Detect the dominant line-ending style of a file.
+ *
+ *  Pass a string to detect from existing content. Pass `{ path, text? }`
+ *  to combine path-based and content-based signals.
+ *
+ *  Resolution order, when `path` is provided:
+ *    1. **Format-strict extensions** (`.reg`) → always CRLF, even if the
+ *       on-disk content is LF-only. Forced because parsers like
+ *       `regedit.exe` reject mixed-or-LF input.
+ *    2. **Content sniff** — sample first ~8KB; whichever style appears
+ *       more often wins. Lookbehind on the LF count excludes LFs that
+ *       are part of CRLF pairs.
+ *    3. **Default-CRLF extensions** (`.bat`, `.cmd`) → CRLF for new /
+ *       empty files. Existing content from step 2 takes precedence.
+ *    4. Fall back to LF.
+ *
+ *  Use this for the read→edit→write round-trip so the on-disk file's
+ *  line-ending style survives a model edit (model always emits LF;
+ *  the tool re-applies the original style on write). */
+export function detectEol(input: string | { path: string; text?: string }): EOL {
+  const text = typeof input === "string" ? input : input.text
+  const path = typeof input === "string" ? undefined : input.path
+  const ext = path ? extname(path).toLowerCase() : ""
+  if (path && CRLF_EXT_FORCE.has(ext)) return "\r\n"
+  if (text) {
+    // Sample first ~8KB; whichever style is more common wins.
+    const sample = text.slice(0, 8192)
+    const crlf = (sample.match(/\r\n/g) ?? []).length
+    const lf = (sample.match(/(?<!\r)\n/g) ?? []).length
+    if (lf + crlf > 0) return crlf > lf ? "\r\n" : "\n"
+  }
+  if (path) return CRLF_EXT_DEFAULT.has(ext) ? "\r\n" : "\n"
+  return "\n"
 }
 
 export type CleanTextOpts = {
@@ -100,8 +156,8 @@ export type CleanTextOpts = {
   /** Run `stripAdversarial`. Default `false` — opt in for LLM-bound
    *  text; leaving it off preserves emoji ZWJ. */
   adversarial?: boolean
-  /** Run `normalizeNewlines`. Default `true`. */
-  newlines?: boolean
+  /** Run `normalizeEol`. Default `true`. */
+  eol?: boolean
   /** Apply `String.prototype.normalize("NFC")`. Default `true`. */
   unicode?: boolean
 }
@@ -110,8 +166,8 @@ const cleanDefaults: Required<CleanTextOpts> = {
   adversarial: false,
   ansi: true,
   binary: true,
+  eol: true,
   keepStyles: false,
-  newlines: true,
   unicode: true,
 }
 
@@ -123,11 +179,12 @@ const cleanDefaults: Required<CleanTextOpts> = {
  *  (preserves emoji ZWJ).
  *
  *  Order is fixed and load-bearing:
- *   1. `stripAnsi`         — consumes ESC bytes before binary strip would
- *   2. `normalizeNewlines` — so binary regex doesn't have to handle CR
- *   3. `stripBinary`       — remaining control bytes
- *   4. `normalize("NFC")`  — canonical form before adversarial match
- *   5. `stripAdversarial`  — match codepoints in canonical shape
+ *   1. `stripAnsi`        — consumes ESC bytes before binary strip would
+ *   2. `normalizeEol`     — collapse CRLF + lone CR + LF to plain LF so
+ *                           binary regex doesn't have to handle CR
+ *   3. `stripBinary`      — remaining control bytes
+ *   4. `normalize("NFC")` — canonical form before adversarial match
+ *   5. `stripAdversarial` — match codepoints in canonical shape
  *
  *  For audience-specific behavior, prefer the presets:
  *    - `cleanTextTui(s)`   — preserves color/style sequences
@@ -135,7 +192,7 @@ const cleanDefaults: Required<CleanTextOpts> = {
 export function cleanText(s: string, opts: CleanTextOpts = {}): string {
   opts = { ...cleanDefaults, ...opts }
   if (opts.ansi) s = stripAnsi(s, { keepStyles: opts.keepStyles })
-  if (opts.newlines) s = normalizeNewlines(s)
+  if (opts.eol) s = normalizeEol(s, { loneCr: "\n" })
   if (opts.binary) s = stripBinary(s, { keepStyles: opts.keepStyles })
   if (opts.unicode) s = s.normalize("NFC")
   if (opts.adversarial) s = stripAdversarial(s)

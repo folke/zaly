@@ -1,5 +1,5 @@
 import { defineTool, AiError } from "@zaly/ai"
-import { normPath } from "@zaly/shared"
+import { detectEol, normPath, normalizeEol } from "@zaly/shared"
 import { readFile, writeFile, stat } from "node:fs/promises"
 import { Type } from "typebox"
 import { assertFresh, trackFile } from "./read.ts"
@@ -85,41 +85,49 @@ interface EditSpec {
 }
 
 /** Resolve all edit positions against `original`, validate uniqueness +
- *  non-overlap, then splice the replacements in. */
+ *  non-overlap, then splice the replacements in.
+ *
+ *  Line-ending fidelity: the model always emits LF, but the file may be
+ *  CRLF. We detect the file's eol once, then normalize each `oldText` /
+ *  `newText` to that eol before matching/splicing. The result has the
+ *  same line-ending style as the original file. */
 function applyEdits(original: string, edits: readonly EditSpec[], path: string): string {
+  const eol = detectEol({ path, text: original })
   // 1. Locate every oldText. Reject not-found and non-unique up-front so
   //    the model gets a precise error per failing edit rather than a
   //    "patch failed at line N" mystery.
   const matches: { start: number; end: number; newText: string; spec: EditSpec }[] = []
   for (const [i, edit] of edits.entries()) {
-    if (edit.oldText === "") {
+    const oldText = normalizeEol(edit.oldText, { eol })
+    const newText = normalizeEol(edit.newText, { eol })
+    if (oldText === "") {
       throw new AiError({
         code: "EMPTY_OLD_TEXT",
         data: { editIndex: i },
         message: `edit #${i}: oldText is empty (use \`write\` to create or fully replace a file)`,
       })
     }
-    const first = original.indexOf(edit.oldText)
+    const first = original.indexOf(oldText)
     if (first === -1) {
       throw new AiError({
         code: "NOT_FOUND",
-        data: { editIndex: i, path, snippet: preview(edit.oldText) },
+        data: { editIndex: i, path, snippet: preview(oldText) },
         message: `edit #${i}: oldText not found in ${path}`,
       })
     }
-    const next = original.indexOf(edit.oldText, first + 1)
+    const next = original.indexOf(oldText, first + 1)
     if (next !== -1) {
       throw new AiError({
         code: "NOT_UNIQUE",
-        data: { editIndex: i, occurrences: countOccurrences(original, edit.oldText), path },
+        data: { editIndex: i, occurrences: countOccurrences(original, oldText), path },
         message:
           `edit #${i}: oldText matches multiple locations in ${path}. ` +
           `Add surrounding context to make it unique.`,
       })
     }
     matches.push({
-      end: first + edit.oldText.length,
-      newText: edit.newText,
+      end: first + oldText.length,
+      newText,
       spec: edit,
       start: first,
     })

@@ -2,7 +2,7 @@ import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zal
 import type { ToolInit } from "./index.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
-import { fileDetect, normPath, safeStat } from "@zaly/shared"
+import { fileDetect, normalizeEol, normPath, safeStat } from "@zaly/shared"
 import { stat } from "node:fs/promises"
 import { Type } from "typebox"
 
@@ -194,6 +194,9 @@ function formatTextSlice(
   content: string,
   { path, offset, limit }: FormatOpts
 ): { content: string | (TextPart | MetaPart)[]; truncated: boolean } {
+  // Normalize line endings to LF for display. The model always sees LF;
+  // edit/write detect the file's actual style and re-apply it on disk.
+  content = normalizeEol(content)
   const lines = content.split("\n")
   // `split` on a final newline produces a trailing empty string — drop
   // it so a 3-line file with trailing LF reads as 3 lines, not 4.
