@@ -38,5 +38,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 foo*.*
 docs/.vitepress/dist
 docs/.vitepress/cache
-/packages/cli/agent-session.jsonl
-/packages/agent/test/fixtures/masker-session.jsonl

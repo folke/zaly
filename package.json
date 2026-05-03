@@ -13,6 +13,7 @@
   "type": "module",
   "scripts": {
     "check": "oxlint",
+    "lint": "oxlint -f stylish",
     "pkg": "bun --workspaces install",
     "fix": "oxlint --fix",
     "rules": "bun ./scripts/oxlint-rules.ts",
@@ -25,7 +26,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
-    "@typescript/native-preview": "^7.0.0-dev.20260430.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260503.1",
     "@vitest/coverage-v8": "4.1.5",
     "mitata": "^1.0.34",
     "oxfmt": "^0.47.0",
