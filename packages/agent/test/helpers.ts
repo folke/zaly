@@ -130,12 +130,12 @@ export async function runAgent(
  *  files (path contains `.claude`) and converts on the fly into an
  *  in-memory zaly Session; otherwise loads the path as a native zaly
  *  session JSONL. Used by `test/compaction.ts` and `test/masker.ts`. */
-export async function loadSession(path: string): Promise<Session> {
+export async function loadSession(path: string, opts?: { limit?: number }): Promise<Session> {
   if (path.includes(".claude")) {
-    const { messages } = await loadClaudeSession(path)
+    const { messages } = await loadClaudeSession(path, { walk: "all" })
     const s = await Session.load() // in-memory, no path
     s.start()
-    for (const m of messages) s.add(m)
+    for (const m of messages.slice(-(opts?.limit ?? 2000))) s.add(m)
     return s
   }
   return Session.load({ path })
