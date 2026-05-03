@@ -1,6 +1,6 @@
 import type { Config } from "./config.ts"
 
-import { Agent, loadClaudeSession } from "@zaly/agent"
+import { Agent, loadClaudeSession, sessionCreate, sessionResume } from "@zaly/agent"
 import { loadModel } from "@zaly/ai"
 
 /**
@@ -16,11 +16,15 @@ export async function buildAgent(config: Config): Promise<Agent> {
     messages = loaded.messages
   }
 
+  const scope = { cwd: process.cwd() }
+  let session = await sessionResume(scope)
+  session ??= await sessionCreate(scope)
+
   return Agent.load({
     messages,
     model,
     permissions: { preset: "yolo" },
-    session: { path: config.sessionPath },
+    session,
     tools: [
       "bash",
       "edit",

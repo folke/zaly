@@ -3,6 +3,8 @@ import type { AgentStopReason } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Agent } from "../src/agent.ts"
+import { loadClaudeSession } from "../src/session/claude.ts"
+import { Session } from "../src/session/index.ts"
 
 /** Build a minimal `Model` from a list of scripted stream-event arrays
  *  (one per turn). Only the fields `Agent` reads are populated. */
@@ -122,4 +124,19 @@ export async function runAgent(
     totalUsage: agent.totalUsage,
     usage: agent.usage,
   }
+}
+
+/** Load a session for harness scripts. Detects Claude Code session
+ *  files (path contains `.claude`) and converts on the fly into an
+ *  in-memory zaly Session; otherwise loads the path as a native zaly
+ *  session JSONL. Used by `test/compaction.ts` and `test/masker.ts`. */
+export async function loadSession(path: string): Promise<Session> {
+  if (path.includes(".claude")) {
+    const { messages } = await loadClaudeSession(path)
+    const s = await Session.load() // in-memory, no path
+    s.start()
+    for (const m of messages) s.add(m)
+    return s
+  }
+  return Session.load({ path })
 }

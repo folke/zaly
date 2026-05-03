@@ -158,7 +158,7 @@ export interface AgentOptions extends CollectOptions {
    *
    *  When omitted, a fresh in-memory Session is created. Either way,
    *  `messages` (if any) are appended to it. */
-  session?: SessionOptions | Session
+  session?: Omit<SessionOptions, "cwd"> | Session
   /** Initial messages appended to the session at construction. Useful
    *  for seeding a fresh conversation or for prepending fixed context
    *  to an existing session. */

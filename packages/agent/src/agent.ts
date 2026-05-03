@@ -161,9 +161,9 @@ export class Agent extends Emitter<AgentEvents> {
     // Resolve `session: SessionOptions | Session` → a built `Session`.
     // Pre-built instances pass through (Claude loader, multi-agent
     // sharing); options get hydrated from disk + writer-attached.
-    const session =
-      opts.session instanceof Session ? opts.session : await Session.load(opts.session ?? {})
     const cwd = normPath(opts.cwd)
+    const session =
+      opts.session instanceof Session ? opts.session : await Session.load({ ...opts.session, cwd })
     let skills: Skills | undefined
     if (opts.skills === false) skills = undefined
     else if (opts.skills instanceof Skills) skills = opts.skills
@@ -247,6 +247,9 @@ export class Agent extends Emitter<AgentEvents> {
   }
   get status(): AgentStatus {
     return this.#status
+  }
+  get cwd(): string {
+    return this.#cwd
   }
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */

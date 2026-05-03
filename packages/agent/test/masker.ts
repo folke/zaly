@@ -1,6 +1,6 @@
 /* Manual masker harness — not a test.
  *
- *   bun packages/agent/test/masker.ts                      # uses fixture
+ *   bun packages/agent/test/masker.ts                      # uses default Claude session
  *   SESSION=/abs/path/to/session.jsonl bun packages/agent/test/masker.ts
  *
  * Loads a real persisted session, prints an estimated-token breakdown,
@@ -26,9 +26,8 @@ import {
   metaToText,
 } from "@zaly/ai"
 import { fileDetect, imageInfo } from "@zaly/shared"
-import { resolve } from "node:path"
 import { Masker } from "../src/masker.ts"
-import { Session } from "../src/session/index.ts"
+import { loadSession } from "./helpers.ts"
 
 // ── token estimation ───────────────────────────────────────────────────
 
@@ -37,7 +36,10 @@ const ANTHROPIC_IMAGE_DIVISOR = 750
 const PDF_PAGE_BYTES = 50_000 // rough average — text PDFs can be ~10–50 KB/page, image-heavy much more
 const PDF_TOKENS_PER_PAGE = 2000
 
-const path = process.env.SESSION ?? resolve(import.meta.dirname, "fixtures/masker-session.jsonl")
+const DEFAULT_SESSION =
+  "~/.claude/projects/-home-folke-projects-zaly/01e44572-4bc9-43c6-863b-92e31190f95f.jsonl"
+
+const path = process.env.SESSION ?? DEFAULT_SESSION
 const anthropicTransform = ContentTransform.create()
   .pipe(attachmentToMeta("audio", "video"))
   .pipe(inlineFileSources())
@@ -45,7 +47,7 @@ const anthropicTransform = ContentTransform.create()
   .pipe(errorToMeta())
   .pipe(metaToText())
 
-const session = await Session.load({ path })
+const session = await loadSession(path)
 const messages = [...session.messages]
 console.log(`loaded ${messages.length} messages from ${path}`)
 
