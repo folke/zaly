@@ -1,6 +1,6 @@
 import { gitRoot, normPath, safeStat } from "@zaly/shared"
 import { homedir } from "node:os"
-import { join, dirname } from "pathe"
+import { dirname, join } from "pathe"
 
 export type ResourceScope = "user" | "project" | "agent"
 
