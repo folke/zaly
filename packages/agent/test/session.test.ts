@@ -1,3 +1,4 @@
+// oxlint-disable unicorn/no-await-expression-member
 import type { Message } from "@zaly/ai"
 import type { SessionEvents, SessionNode } from "../src/session/index.ts"
 
@@ -16,10 +17,11 @@ function bare(msgs: readonly Message[]): Message[] {
   })
 }
 
-const newSession = (): Session => new Session({ store: new MemoryStore() })
+const newSession = async (): Promise<Session<MemoryStore>> =>
+  await Session.load({ store: new MemoryStore() })
 
-async function startedSession(init?: Message[]): Promise<Session> {
-  const s = newSession()
+async function startedSession(init?: Message[]): Promise<Session<MemoryStore>> {
+  const s = await newSession()
   await s.start()
   for (const m of init ?? []) await s.add(m)
   return s
@@ -43,14 +45,14 @@ async function allNodes(s: Session): Promise<SessionNode[]> {
 }
 
 describe("Session — basics", () => {
-  test("constructor leaves the session unstarted (empty store, no head)", () => {
-    const s = newSession()
+  test("constructor leaves the session unstarted (empty store, no head)", async () => {
+    const s = await newSession()
     expect(s.messages).toEqual([])
     expect(s.head).toBeUndefined()
   })
 
   test("start() commits a session-start node on a fresh session", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start()
     expect(s.head).toBeDefined()
     expect(s.root?.type).toBe("session-start")
@@ -58,7 +60,7 @@ describe("Session — basics", () => {
   })
 
   test("start({ modelId, prompt }) records the meta on the snapshot", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
     expect(s.meta.modelId).toBe("openai/gpt-4o")
     expect(s.meta.prompt).toEqual(["be brief"])
@@ -78,7 +80,7 @@ describe("Session — basics", () => {
     // sessions get session-resume on their first commit; explicit
     // resume markers only appear when a new Session instance is
     // constructed against a non-empty store.
-    const s = newSession()
+    const s = await newSession()
     await s.start({ modelId: "first" })
     const before = (await allNodes(s)).length
     await s.start({ modelId: "second" })
@@ -150,7 +152,7 @@ describe("Session — meta snapshots", () => {
   })
 
   test("session.cwd updates when an incoming meta carries a new cwd", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start({ modelId: "x" })
     const initialCwd = s.cwd
     await s.update({ cwd: "/new/path" })
@@ -326,7 +328,7 @@ describe("Session — history", () => {
 
 describe("Session — session-resume markers", () => {
   test("session-resume is not a chain boundary — messages flow through", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start()
     await s.add(u("first"))
     await s.start() // simulate first reopen
@@ -337,7 +339,7 @@ describe("Session — session-resume markers", () => {
   })
 
   test("messages still works when head sits on a session-resume", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start()
     await s.add(u("before-reopen"))
     await s.start() // head now on the resume marker
@@ -345,7 +347,7 @@ describe("Session — session-resume markers", () => {
   })
 
   test("compact still acts as a boundary after a resume", async () => {
-    const s = newSession()
+    const s = await newSession()
     await s.start()
     await s.add(u("pre-compact"))
     await compactStub(s)

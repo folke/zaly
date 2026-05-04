@@ -13,7 +13,7 @@ const a = (text: string): Message => ({ content: text, role: "assistant" })
 async function build(
   script: readonly (readonly [Message, Usage?])[]
 ): Promise<{ session: Session; messages: Message[] }> {
-  const session = new Session({ store: new MemoryStore() })
+  const session = await Session.load({ store: new MemoryStore() })
   await session.start()
   for (const [m, usage] of script) await session.add(m, usage ? { usage } : undefined)
   return { messages: [...session.messages], session }
@@ -28,12 +28,16 @@ const usage = (input: number, output = 0, extra: Partial<Usage> = {}): Usage => 
 describe("messageTail", () => {
   test("empty session returns empty tail", async () => {
     const { session } = await build([])
-    expect(await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })).toEqual([])
+    expect(
+      await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
+    ).toEqual([])
   })
 
   test("messages with no usage are queued and never flushed", async () => {
     const { session } = await build([[u("hi")], [u("again")]])
-    expect(await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })).toEqual([])
+    expect(
+      await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
+    ).toEqual([])
   })
 
   test("newest assistant always admitted (delta = 0 by definition)", async () => {
@@ -150,6 +154,8 @@ describe("messageTail", () => {
       [u("q2")],
       [a("a2"), usage(200, 50)],
     ])
-    expect(await messageTail({ messages: session.messages, session }, {})).toEqual(messages.slice(1))
+    expect(await messageTail({ messages: session.messages, session }, {})).toEqual(
+      messages.slice(1)
+    )
   })
 })
