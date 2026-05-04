@@ -14,6 +14,7 @@ import type {
 
 import { Emitter, normPath, safeReadFile, safeStringify } from "@zaly/shared"
 import { createWriteStream } from "node:fs"
+import { isDeepStrictEqual } from "node:util"
 import { join } from "pathe"
 import { zalyPaths } from "../utils/paths.ts"
 import { uuidv7 } from "../utils/uuid.ts"
@@ -44,6 +45,16 @@ function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: Sess
   const { version, sessionId, ...session } = meta
   const internal: InternalMeta = { sessionId, version }
   return { internal, session }
+}
+
+function diffMeta(oldMeta: PersistedMeta, newMeta: PersistedMeta) {
+  const diff = Object.entries(newMeta).filter(
+    ([k, v]) => !isDeepStrictEqual(v, oldMeta[k as keyof SessionMeta])
+  )
+  return {
+    changes: diff.length,
+    meta: Object.fromEntries(diff),
+  }
 }
 
 /**
@@ -84,6 +95,7 @@ export class Session extends Emitter<SessionEvents> {
   #writer?: WriteStream
   #closed = false
   #meta: PersistedMeta = {} // Persisted meta data
+  #started = false
 
   /** Synchronous, low-level constructor. Prefer `Session.load(opts)` —
    *  it runs the same construction *plus* file I/O (reading existing
@@ -177,20 +189,14 @@ export class Session extends Emitter<SessionEvents> {
    *  the session up. `meta` is merged into the cumulative session meta
    *  via the same diff-and-persist path as `update()`; only changed
    *  fields land on disk. */
-  start(meta: SessionMeta = {}) {
-    // If the head is already a session-resume with no intervening
-    // activity and no new meta to record, skip writing another marker.
-    // This prevents N-open-and-close cycles from accumulating N resume
-    // nodes in a row, which is just clutter.
-    if (this.#nodes.size > 0 && Object.keys(meta).length === 0) {
-      const head = this.#head ? this.#nodes.get(this.#head) : undefined
-      if (head?.type === "session-resume") return this.#head!
-    }
+  #autostart() {
+    if (this.#started) return
+    this.#started = true
     return this.#commit({
-      meta,
+      meta: {},
       parentUuid: this.#head,
       ts: Date.now(),
-      type: this.#nodes.size > 0 ? "session-resume" : "session-start",
+      type: this.#messages.length > 0 ? "session-resume" : "session-start",
       uuid: uuidv7(),
     })
   }
@@ -362,6 +368,8 @@ export class Session extends Emitter<SessionEvents> {
    *  head, update active messages, persist to disk if a writer is
    *  attached, and emit. Single chokepoint for all mutations. */
   #commit(node: SessionNode): string {
+    if (!this.#started && node.type !== "session-start" && node.type !== "session-resume")
+      this.#autostart()
     if (this.#closed) throw new Error("Session is closed")
     // Sync `#cwd` only when the incoming node carries an explicit cwd
     // (i.e. `start({ cwd })` or `update({ cwd })`). `add()` and
@@ -371,14 +379,11 @@ export class Session extends Emitter<SessionEvents> {
       this.#cwd = normPath(node.meta.cwd)
       this.emit("cwd", { cwd: this.#cwd })
     }
-    const metaChanges = Object.entries({
-      ...node.meta,
-      ...this.#internalMeta(),
-    }).filter(([k, v]) => v !== this.#meta[k as keyof SessionMeta])
+    const { meta, changes } = diffMeta(this.#meta, { ...node.meta, ...this.#internalMeta() })
 
     // No-op session-meta — don't add a node, don't advance head, don't emit.
     // Returns the *current* head so callers don't see a fabricated uuid.
-    if (node.type === "session-meta" && metaChanges.length === 0) {
+    if (node.type === "session-meta" && changes === 0) {
       return this.#head ?? node.uuid
     }
 
@@ -389,13 +394,12 @@ export class Session extends Emitter<SessionEvents> {
 
     const persistNode = { ...node } as PersistedNode
 
-    if (metaChanges.length > 0) {
-      const meta = Object.fromEntries(metaChanges) as PersistedMeta
+    if (changes > 0) {
       persistNode.meta = meta
       this.#meta = { ...this.#meta, ...meta }
-      const changes = splitMeta(meta).session
-      delete changes.cwd // cwd is emitted separately via the "cwd" event, so omit it from the "meta" event's changes
-      if (Object.keys(changes).length > 0) this.emit("meta", { changes, meta: this.meta })
+      const updates = splitMeta(meta).session
+      delete updates.cwd // cwd is emitted separately via the "cwd" event, so omit it from the "meta" event's changes
+      if (Object.keys(updates).length > 0) this.emit("meta", { changes: updates, meta: this.meta })
     } else persistNode.meta = undefined
 
     node.meta = this.meta // ensure the in-memory node has the full meta

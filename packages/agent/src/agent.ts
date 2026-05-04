@@ -94,7 +94,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     // Idempotent — no-op on a loaded / pre-seeded session, so historical
     // metadata wins over whatever this Agent would record now.
-    this.session.start({
+    this.session.update({
       cwd: this.#cwd,
       modelId: opts.model.id,
       prompt: this.#prompt,
