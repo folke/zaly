@@ -6,7 +6,9 @@ import type {
   TextPart,
   ToolCallPart,
   ToolResultPart,
+  Usage,
 } from "@zaly/ai"
+import type { MessageMeta } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
 import { readFile } from "node:fs/promises"
@@ -87,7 +89,7 @@ export interface ZalyToolCall {
 export async function loadClaudeSession(
   path: string,
   opts: ClaudeSessionOptions = {}
-): Promise<{ messages: Message[] }> {
+): Promise<{ messages: Message[]; metas: Map<string, MessageMeta> }> {
   // Honor `~` and relative shorthands — config-file / env paths often
   // include them and Node's fs APIs don't expand `~` natively.
   path = normPath(path)
@@ -104,9 +106,13 @@ export async function loadClaudeSession(
   const toolCalls = collectToolCalls(chain, convert)
 
   const messages: Message[] = []
+  const metas = new Map<string, MessageMeta>()
   for (const rec of chain) {
     const msg = toZalyMessage(rec, toolCalls)
-    if (msg) messages.push(msg)
+    if (!msg) continue
+    messages.push(msg)
+    const meta = recordMeta(rec)
+    if (meta && msg.id) metas.set(msg.id, meta)
   }
   // De-duplicate tool_use ids. Claude Code branching / sidechain replay
   // can emit the same tool_use_id across multiple assistant messages
@@ -125,7 +131,22 @@ export async function loadClaudeSession(
     const last = messages.at(-1)!
     messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
   }
-  return { messages }
+  return { messages, metas }
+}
+
+/** Build a `MessageMeta` from a Claude record's `message.usage` block.
+ *  Returns undefined when no usage info is present (user messages, tool
+ *  results) — `MessageMeta` itself is optional on `Session.add`. */
+function recordMeta(rec: ClaudeRecord): MessageMeta | undefined {
+  const u = rec.message?.usage
+  if (!u) return undefined
+  const usage: Usage = {
+    input: u.input_tokens ?? 0,
+    output: u.output_tokens ?? 0,
+  }
+  if (u.cache_read_input_tokens !== undefined) usage.cacheRead = u.cache_read_input_tokens
+  if (u.cache_creation_input_tokens !== undefined) usage.cacheWrite = u.cache_creation_input_tokens
+  return { usage }
 }
 
 // ── Parsing ──────────────────────────────────────────────────────────────
@@ -147,6 +168,15 @@ interface ClaudeMessage {
   role?: "user" | "assistant"
   content?: string | ClaudeBlock[]
   model?: string
+  usage?: ClaudeUsage
+  stop_reason?: string
+}
+
+interface ClaudeUsage {
+  input_tokens?: number
+  output_tokens?: number
+  cache_read_input_tokens?: number
+  cache_creation_input_tokens?: number
 }
 
 type ClaudeBlock =
@@ -371,6 +401,10 @@ function toZalyMessage(
     const ts = Date.parse(rec.timestamp)
     if (!Number.isNaN(ts)) m = { ...m, ts }
   }
+  // Carry the record's uuid as the message id so the imported message
+  // can be referenced by the session DAG (and so per-message meta lifted
+  // off the same record can be looked up back here).
+  if (rec.uuid) m = { ...m, id: rec.uuid }
   return m
 }
 
