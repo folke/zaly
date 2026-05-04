@@ -162,12 +162,12 @@ function stringifyData(data: unknown): string {
  *  verbatim) — no Content recursion. To wrap nested `Content`, build a
  *  `MetaPart` with the `content` arm and render via `renderMetaPart` /
  *  `stringifyContent`. */
-export function toXml(data: unknown, tag?: string): string {
+export function toXml(data: unknown, tag?: string, opts: { indent?: boolean } = {}): string {
   const safeTag = sanitizeTag(tag)
   const body = stringifyData(data).trim()
   const lines = body.split("\n")
   if (lines.length === 1) return `<${safeTag}>${body}</${safeTag}>`
-  const text = lines.map((l) => `  ${l}`).join("\n")
+  const text = lines.map((l) => ((opts.indent ?? true) ? `  ${l}` : l)).join("\n")
   return `<${safeTag}>\n${text}\n</${safeTag}>`
 }
 
