@@ -1,4 +1,4 @@
-import type { Attachment, MetaPart, TextPart, ToolContext, ToolMeta } from "@zaly/ai"
+import type { Content, ToolContext, ToolMeta } from "@zaly/ai"
 import type { ToolInit } from "./index.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
@@ -63,7 +63,7 @@ export function createReadTool(init: ToolInit) {
       }),
     }),
 
-    async call(args, ctx): Promise<string | (TextPart | MetaPart | Attachment)[]> {
+    async call(args, ctx): Promise<Content> {
       const path = normPath(ctx.cwd, args.path)
       await ctx.need?.("read", path)
 
@@ -109,17 +109,13 @@ export function createReadTool(init: ToolInit) {
       }
 
       const text = new TextDecoder().decode(file.data)
-      const slice = formatTextSlice(text, {
-        limit: args.limit,
-        offset: args.offset,
-        path,
-      })
+      const slice = formatTextSlice(text, { limit: args.limit, offset: args.offset })
 
       // Record the read so the freshness tracker knows we've seen this
       // file's current bytes. write/edit consult this before mutating;
       // the masker uses `full` to know whether this read subsumes
       // earlier reads of the same path.
-      trackFile({ full: !slice.truncated, kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
+      trackFile({ full: slice.full, kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
 
       return slice.content
     },
@@ -180,20 +176,14 @@ export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiEr
   })
 }
 
-interface FormatOpts {
-  path: string
-  offset: number
-  limit: number
-}
-
 /** Format a slice of file content as numbered lines plus, when the
- *  slice doesn't cover the whole file, a `<truncation>` MetaPart with
- *  structured info. Untruncated reads return a plain string for the
- *  cleanest model surface. */
+ *  slice doesn't cover the whole file, a `<slice>` MetaPart with
+ *  "showing X-Y of Z" info is included, Full reads return a plain
+ *  string for the cleanest model surface. */
 function formatTextSlice(
   content: string,
-  { path, offset, limit }: FormatOpts
-): { content: string | (TextPart | MetaPart)[]; truncated: boolean } {
+  { offset, limit }: { offset: number; limit: number }
+): { content: Content; full?: boolean } {
   // Normalize line endings to LF for display. The model always sees LF;
   // edit/write detect the file's actual style and re-apply it on disk.
   content = normalizeEol(content)
@@ -210,7 +200,6 @@ function formatTextSlice(
   if (start >= lines.length) {
     return {
       content: `(file has ${lines.length} lines; offset ${offset} is past end)`,
-      truncated: true,
     }
   }
 
@@ -225,19 +214,18 @@ function formatTextSlice(
   }
 
   const text = out.join("\n")
-  const truncated = end < lines.length || start > 0
+  const full = start === 0 && end === lines.length
+  if (full) return { content: text, full }
 
-  if (!truncated) return { content: text, truncated: false }
-
-  const meta: MetaPart = {
-    data: {
-      hint: "pass offset and limit to read more",
-      path,
-      showing: [start + 1, end],
-      total: lines.length,
-    },
-    tag: "truncation",
-    type: "meta",
+  return {
+    content: [
+      {
+        content: `showing ${start + 1}-${end} of ${lines.length}`,
+        tag: "slice",
+        type: "meta",
+      },
+      { text, type: "text" },
+    ],
+    full,
   }
-  return { content: [meta, { text, type: "text" }], truncated: true }
 }
