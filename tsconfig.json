@@ -22,8 +22,8 @@
 
     "noUnusedLocals": true,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  },
-  //"include": ["src/**/*"], // ✅ Only source files
-  "exclude": ["dist"]
+    "noPropertyAccessFromIndexSignature": false,
+    //"declaration": true,
+    "isolatedDeclarations": false
+  }
 }

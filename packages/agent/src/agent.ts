@@ -1,5 +1,13 @@
 // oxlint-disable no-await-in-loop
-import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
+import type {
+  Message,
+  MetaPart,
+  Model,
+  TokenCount,
+  Tool,
+  ToolCallPart,
+  ToolContext,
+} from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
@@ -257,12 +265,12 @@ export class Agent extends Emitter<AgentEvents> {
   }
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
-  get usage() {
+  get usage(): TokenCount {
     return this.#stopPolicy.usage
   }
   /** Cumulative token usage across every step in the current run.
    *  Useful for billing-style displays. */
-  get totalUsage() {
+  get totalUsage(): TokenCount {
     return this.#stopPolicy.totalUsage
   }
   /** Logical size of the current conversation in tokens — what the
@@ -326,7 +334,7 @@ export class Agent extends Emitter<AgentEvents> {
   /** The model this agent is running on. Read-only — swap by constructing
    *  a new agent (or wiring a custom dispatch into the underlying
    *  `Provider`). Subagents pull this off the parent at spawn time. */
-  get model() {
+  get model(): Model {
     return this.#opts.model
   }
 
@@ -615,7 +623,7 @@ export class Agent extends Emitter<AgentEvents> {
     return calls
   }
 
-  async compact() {
+  async compact(): Promise<void> {
     const prev = this.#status
     this.#setStatus("compacting")
     try {
