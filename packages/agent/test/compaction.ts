@@ -94,6 +94,6 @@ console.log()
 console.log(formatFileTouches(await extractFileUsage(ctx)))
 console.log()
 
-console.log(formatTranscript(extractConversation({ session, messages }), tail.length))
-
-console.log(formatTranscript(extractUserMessages({ session, messages }), tail.length))
+// console.log(formatTranscript(extractConversation({ session, messages }), tail.length))
+//
+// console.log(formatTranscript(extractUserMessages({ session, messages }), tail.length))

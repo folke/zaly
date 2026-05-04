@@ -1,3 +1,5 @@
+import type { Session } from "@zaly/agent"
+import type { Message } from "@zaly/ai"
 import type { Config } from "./config.ts"
 
 import { Agent, loadClaudeSession, sessionCreate, sessionResume } from "@zaly/agent"
@@ -10,15 +12,18 @@ import { loadModel } from "@zaly/ai"
 export async function buildAgent(config: Config): Promise<Agent> {
   const model = await loadModel(config.modelId)
 
-  let messages
+  let messages: Message[] = []
+
+  let session: Session | undefined
+
   if (config.claudeSession) {
     const loaded = await loadClaudeSession(config.claudeSession)
     messages = loaded.messages
+  } else {
+    const scope = { cwd: process.cwd() }
+    session = await sessionResume(scope)
+    session ??= await sessionCreate(scope)
   }
-
-  const scope = { cwd: process.cwd() }
-  let session = await sessionResume(scope)
-  session ??= await sessionCreate(scope)
 
   return Agent.load({
     messages,

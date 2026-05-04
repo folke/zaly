@@ -21,10 +21,23 @@ export function registerActions(ctx: ActionContext): void {
     "app.clear": {
       desc: "clear the composer",
       fn: () => {
-        const node = renderer.getNode("composer") as { setState: (p: { cursor: number; value: string }) => void } | undefined
+        const node = renderer.getNode("composer") as
+          | { setState: (p: { cursor: number; value: string }) => void }
+          | undefined
         node?.setState({ cursor: 0, value: "" })
       },
       name: "clear",
+    },
+    "app.compact": {
+      desc: "summarize older history to free context space",
+      fn: () => {
+        console.log("Compacting history...")
+        void ctx.agent
+          .compact()
+          .catch((error) => console.error("Compaction failed:", error))
+          .finally(() => console.log("Compaction complete."))
+      },
+      name: "compact",
     },
     "app.help": {
       desc: "toggle help overlay",

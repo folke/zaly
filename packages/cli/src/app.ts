@@ -12,6 +12,7 @@ import { basename } from "pathe"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
 import { buildRenderer } from "./render/index.ts"
+import { compactionMarker } from "./widgets/index.ts"
 
 /** A staged attachment waiting to be sent. The `part` is what goes to
  *  the agent, `path` is the on-disk source for stream-side markdown. */
@@ -82,9 +83,19 @@ export class App {
       this.#usage.set(this.#agent.usage)
     })
 
+    // Drive busy + status from the agent's authoritative state machine.
+    // Covers all status transitions — submit (`streaming`), tool runs
+    // (`running-tools`), `/compact` (`compacting`), abort (`paused`) —
+    // not just the submit/stop pair. The `stop` handler still owns
+    // post-stop concerns (error reporting); status itself flows here.
+    this.#agent.on("status", ({ status }) => {
+      const busy = status !== "idle" && status !== "paused"
+      this.#busy.set(busy)
+      this.#status.set(status === "idle" ? "ready" : status)
+    })
+
     this.#agent.on("stop", ({ reason }) => {
-      this.#busy.set(false)
-      this.#status.set(reason === "error" ? "error" : "ready")
+      if (reason === "error") this.#status.set("error")
       if (reason === "error" && this.#agent.lastError) {
         const err = this.#agent.lastError
         console.error(`${err.name}: ${err.message}`)
@@ -97,6 +108,14 @@ export class App {
     // exchanges; older history stays in the session and is sent to the
     // model on the next request — just not painted here.
     this.#render.stream.replay(this.#agent.messages.slice(-50))
+
+    // Compaction: the agent's active chain is now `[summary, ...kept_tail]`.
+    // The terminal is append-only, so we don't try to "re-render" — just
+    // drop a visual marker after the existing scrollback. Future messages
+    // append below it.
+    this.#agent.session.on("compact", () => {
+      this.#render.renderer.stream.append(compactionMarker())
+    })
 
     this.#render.input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
@@ -200,8 +219,9 @@ export class App {
 
     this.#attachments.clear()
     this.#attachCounter = 0
-    this.#busy.set(true)
-    this.#status.set("thinking")
+    // No manual busy/status flip — `agent.on("status")` (in #boot) drives
+    // both signals from the agent's state machine, covering submit, tool
+    // runs, /compact, and abort uniformly.
     this.#agent.inject(message)
     await this.#agent.waitIdle()
   }

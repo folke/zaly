@@ -1,3 +1,6 @@
 {
-  "extends": ["../../.oxlintrc.json"]
+  "extends": ["../../.oxlintrc.json"],
+  "rules": {
+    "eslint/no-console": "off"
+  }
 }
