@@ -18,6 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
     "noImplicitOverride": true,
+    "noImplicitAny": true,
 
     "noUnusedLocals": true,
     "noUnusedParameters": false,

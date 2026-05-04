@@ -37,6 +37,19 @@ function startedSession(init?: Message[]): Session {
   return s
 }
 
+/** Stub summary message for tests that exercise the compact boundary
+ *  but don't care about the summary's content. */
+const stubSummary: Message<"system"> = { content: "(test summary)", role: "system" }
+
+/** Convenience wrapper — defaults `tail: 0` and a stub summary so tests
+ *  that just want a compact boundary don't have to spell those out. */
+function compactStub(
+  s: Session,
+  opts: Partial<Parameters<Session["compact"]>[0]> = {}
+): string {
+  return s.compact({ summary: stubSummary, tail: 0, ...opts })
+}
+
 describe("Session — basics", () => {
   test("constructor leaves the session unstarted (no nodes, undefined head)", () => {
     const s = newSession()
@@ -107,27 +120,93 @@ describe("Session — add", () => {
 })
 
 describe("Session — compact", () => {
-  test("compaction marks a boundary; subsequent adds form the new active chain", () => {
+  test("compaction with tail:0 reduces active chain to just the summary", () => {
     const s = startedSession([u("old"), a("older")])
     expect(s.messages).toHaveLength(2)
-    s.compact({ preTokens: 12_000, trigger: "auto" })
-    expect(bare(s.messages)).toEqual([])
+    compactStub(s, { preTokens: 12_000, trigger: "auto" })
+    expect(bare(s.messages)).toEqual([stubSummary])
     s.add(u("fresh"))
-    expect(bare(s.messages)).toEqual([u("fresh")])
+    expect(bare(s.messages)).toEqual([stubSummary, u("fresh")])
     // pre-compact nodes still in the DAG (history)
     expect(s.nodes.size).toBe(5) // start + 2 old + compact + 1 new
   })
 
-  test("compact node carries the metadata", () => {
+  test("compact with tail:N keeps the last N messages verbatim before the summary", () => {
+    const s = startedSession()
+    s.add(u("u1"))
+    s.add(a("a1"))
+    s.add(u("u2"))
+    s.add(a("a2"))
+    s.add(u("u3"))
+    compactStub(s, { tail: 3 })
+    // Active chain: [summary, last 3 pre-compact messages]
+    expect(bare(s.messages)).toEqual([stubSummary, u("u2"), a("a2"), u("u3")])
+  })
+
+  test("compact with tail larger than available messages keeps everything available", () => {
+    const s = startedSession([u("u1"), a("a1")])
+    compactStub(s, { tail: 100 })
+    // Only 2 pre-compact messages; tail walk runs out, summary still emitted.
+    expect(bare(s.messages)).toEqual([stubSummary, u("u1"), a("a1")])
+  })
+
+  test("compact node carries the metadata + summary + tail", () => {
     const s = startedSession()
     s.add(u("hi"))
-    const compactId = s.compact({ durationMs: 87, preTokens: 9000, trigger: "manual" })
+    const compactId = compactStub(s, {
+      durationMs: 87,
+      preTokens: 9000,
+      tail: 1,
+      trigger: "manual",
+    })
     const node = s.nodes.get(compactId)!
     expect(node.type).toBe("compact")
     if (node.type !== "compact") throw new Error("expected compact node")
     expect(node.preTokens).toBe(9000)
     expect(node.durationMs).toBe(87)
     expect(node.trigger).toBe("manual")
+    expect(node.tail).toBe(1)
+    expect(node.summary).toEqual(stubSummary)
+  })
+
+  test("a second compact's tail walk stops at the earlier compact node", () => {
+    // Two compactions with tail:5 each. Walking back from the second's tail
+    // must NOT cross into the first compact's pre-compact history — those
+    // messages were already summarized away.
+    const s = startedSession()
+    s.add(u("ancient1")) // pre-first-compact, summarized into compact A
+    s.add(u("ancient2"))
+    compactStub(s, { tail: 0 }) // compact A
+    s.add(u("middle1")) // post-A, pre-B
+    s.add(u("middle2"))
+    compactStub(s, { tail: 5 }) // compact B with generous tail budget
+
+    // Active chain after B: summary B + middle1 + middle2 (NOT ancient1/2).
+    // Even though tail:5 would normally walk back further, the inner
+    // walker stops at compact A.
+    expect(bare(s.messages)).toEqual([stubSummary, u("middle1"), u("middle2")])
+  })
+
+  test("post-compact messages are appended after summary + kept tail", () => {
+    const s = startedSession()
+    s.add(u("u1"))
+    s.add(a("a1"))
+    compactStub(s, { tail: 2 })
+    s.add(u("post1"))
+    s.add(a("post2"))
+    expect(bare(s.messages)).toEqual([stubSummary, u("u1"), a("a1"), u("post1"), a("post2")])
+  })
+
+  test("commit fires a compact event with the full compact node", () => {
+    const s = startedSession([u("hi")])
+    let captured: SessionEvents["compact"] | undefined
+    s.on("compact", (e) => {
+      captured = e
+    })
+    compactStub(s, { tail: 1 })
+    expect(captured?.node.type).toBe("compact")
+    expect(captured?.node.summary).toEqual(stubSummary)
+    expect(captured?.node.tail).toBe(1)
   })
 })
 
@@ -195,20 +274,20 @@ describe("Session — history", () => {
     const s = startedSession()
     s.add(u("old1"))
     s.add(a("old2"))
-    s.compact()
+    compactStub(s)
     s.add(u("fresh"))
-    expect(bare(s.messages)).toEqual([u("fresh")])
+    expect(bare(s.messages)).toEqual([stubSummary, u("fresh")])
     expect(bare(s.history())).toEqual([u("old1"), a("old2")])
   })
 
   test("walks past multiple compacts and returns everything before active", () => {
     const s = startedSession()
     s.add(u("a1"))
-    s.compact()
+    compactStub(s)
     s.add(u("a2"))
-    s.compact()
+    compactStub(s)
     s.add(u("a3"))
-    expect(bare(s.messages)).toEqual([u("a3")])
+    expect(bare(s.messages)).toEqual([stubSummary, u("a3")])
     expect(bare(s.history())).toEqual([u("a1"), u("a2")])
   })
 
@@ -217,18 +296,18 @@ describe("Session — history", () => {
     s.add(u("oldest"))
     s.add(u("middle"))
     s.add(u("newest"))
-    s.compact()
+    compactStub(s)
     s.add(u("active"))
     expect(bare(s.history(2))).toEqual([u("middle"), u("newest")])
     expect(bare(s.history(1))).toEqual([u("newest")])
   })
 
-  test("when active is empty, history walks back from head (the compact)", () => {
+  test("when active is just the summary (tail:0), history walks back past compact", () => {
     const s = startedSession()
     s.add(u("a"))
     s.add(u("b"))
-    s.compact()
-    expect(bare(s.messages)).toEqual([])
+    compactStub(s)
+    expect(bare(s.messages)).toEqual([stubSummary])
     expect(bare(s.history())).toEqual([u("a"), u("b")])
   })
 })
@@ -291,10 +370,10 @@ describe("Session — session-resume markers", () => {
     const s = newSession()
     s.start()
     s.add(u("pre-compact"))
-    s.compact()
+    compactStub(s)
     s.start() // resume after compact
     s.add(u("post-compact"))
-    expect(bare(s.messages)).toEqual([u("post-compact")])
+    expect(bare(s.messages)).toEqual([stubSummary, u("post-compact")])
     expect(bare(s.history())).toEqual([u("pre-compact")])
   })
 })
@@ -328,20 +407,21 @@ describe("Session — JSONL persistence", () => {
     await loaded.close()
   })
 
-  test("compact + post-compact messages survive a round-trip", async () => {
+  test("compact + post-compact messages survive a round-trip with summary + tail", async () => {
     const file = path("compact")
     const s = await Session.load({ path: file })
     s.start()
     s.add(u("old1"))
     s.add(a("old2"))
-    s.compact({ preTokens: 50, trigger: "auto" })
+    s.compact({ preTokens: 50, summary: stubSummary, tail: 1, trigger: "auto" })
     s.add(u("fresh"))
     await s.close()
 
     const loaded = await Session.load({ path: file })
-    // Active chain stops at the compact, so only "fresh" is visible.
-    expect(bare(loaded.messages)).toEqual([u("fresh")])
-    // Pre-compact records still in the DAG (history).
+    // Active chain: summary + last 1 pre-compact (a("old2")) + post-compact ("fresh")
+    expect(bare(loaded.messages)).toEqual([stubSummary, a("old2"), u("fresh")])
+    // Pre-compact records still in the DAG (history) — tail messages are
+    // ALSO in active, but not duplicated in the underlying node store.
     expect(loaded.nodes.size).toBe(5) // start + 2 old + compact + 1 fresh
   })
 

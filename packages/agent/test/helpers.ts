@@ -132,10 +132,12 @@ export async function runAgent(
  *  session JSONL. Used by `test/compaction.ts` and `test/masker.ts`. */
 export async function loadSession(path: string, opts?: { limit?: number }): Promise<Session> {
   if (path.includes(".claude")) {
-    const { messages } = await loadClaudeSession(path, { walk: "all" })
+    const { messages, metas } = await loadClaudeSession(path, { walk: "all" })
     const s = await Session.load() // in-memory, no path
     s.start()
-    for (const m of messages.slice(-(opts?.limit ?? 2000))) s.add(m)
+    for (const m of messages.slice(-(opts?.limit ?? 2000))) {
+      s.add(m, m.id ? metas.get(m.id) : undefined)
+    }
     return s
   }
   return Session.load({ path })
