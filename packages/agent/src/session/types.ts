@@ -93,14 +93,17 @@ export type SessionEvents = {
   navigate: { head: string | undefined; messages: readonly Message[] }
   compact: { node: SessionNode<"compact"> }
   cwd: { cwd: string }
-  meta: { meta: SessionMeta; changes: Partial<Omit<SessionMeta, "cwd">> }
+  meta: { meta: SessionMeta; prev: SessionMeta; changes: Partial<Omit<SessionMeta, "cwd">> }
+  "session-start": {}
+  "session-resume": {}
 }
 
 // ── Session ──────────────────────────────────────────────────────────────
 
-export type SessionOptions = {
+export type SessionOptions<T extends SessionStore = SessionStore> = {
   id?: string
   cwd?: string
+  store?: T
   /** JSONL file to persist the session to. If the file exists, its
    *  records are read into the DAG before any `add()` calls; either way
    *  the session opens it in append mode so subsequent commits land on
@@ -118,9 +121,9 @@ export type SessionOptions = {
   dir?: string
 }
 
-export type SessionInit = SessionOptions & {
+export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions & {
   /** Storage backend. Required — `Session.load()` picks the right
    *  store based on options; direct construction passes one explicitly. */
-  store: SessionStore
+  store: T
   meta?: PersistedMeta
 }

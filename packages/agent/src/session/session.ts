@@ -58,8 +58,8 @@ function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: Sess
  *   - For tests / direct embedding, `new Session({ store })` works with
  *     any pre-built store.
  */
-export class Session extends Emitter<SessionEvents> {
-  readonly #store: SessionStore
+export class Session<T extends SessionStore = SessionStore> extends Emitter<SessionEvents> {
+  readonly #store: T
   #id: string
   #cwd: string
   #dir: string
@@ -68,7 +68,7 @@ export class Session extends Emitter<SessionEvents> {
   #closed = false
   #started = false
 
-  constructor(opts: SessionInit) {
+  protected constructor(opts: SessionInit<T>) {
     super()
     this.#store = opts.store
     this.#id = opts.id ?? uuidv7()
@@ -83,14 +83,20 @@ export class Session extends Emitter<SessionEvents> {
    *  - `path` provided → `JsonlStore` (file-backed, hydrates from disk
    *    if the file exists, opens for append either way).
    *  - No `path` → `MemoryStore` (ephemeral, no persistence). */
+  static async load<T extends SessionStore = SessionStore>(
+    opts: SessionOptions<T> & { store: T }
+  ): Promise<Session<T>>
+  static async load(opts: SessionOptions & { path: string }): Promise<Session<JsonlStore>>
+  static async load(opts?: SessionOptions & {}): Promise<Session<MemoryStore>>
   static async load(opts: SessionOptions = {}): Promise<Session> {
     const cwd = opts.cwd ?? process.cwd()
     const path = opts.path ? normPath(opts.path) : undefined
-    const store: SessionStore = path ? await JsonlStore.load(path) : new MemoryStore()
+    const store: SessionStore =
+      opts.store ?? (path ? await JsonlStore.load(path) : new MemoryStore())
     const init: SessionInit = { ...opts, cwd, path, store }
-    const session = new Session(init)
-    await session.#rebuild()
-    return session
+    const ret = new Session(init)
+    await ret.#rebuild()
+    return ret
   }
 
   async #rebuild(): Promise<void> {
@@ -108,12 +114,14 @@ export class Session extends Emitter<SessionEvents> {
   async #autostart(): Promise<void> {
     if (this.#started) return
     this.#started = true
+    const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
     await this.#commit({
       parentUuid: this.#store.root?.uuid,
       ts: Date.now(),
-      type: this.messages.length > 0 ? "session-resume" : "session-start",
+      type,
       uuid: uuidv7(),
     })
+    this.emit(type, {})
   }
 
   // ── Read ──────────────────────────────────────────────────────────────
@@ -336,7 +344,7 @@ export class Session extends Emitter<SessionEvents> {
         ;(changes as Record<string, unknown>)[k] = next[k]
       }
     }
-    if (Object.keys(changes).length > 0) this.emit("meta", { changes, meta: next })
+    if (Object.keys(changes).length > 0) this.emit("meta", { changes, meta: next, prev })
   }
 
   /** Walk `parentUuid` from the given node back toward the root,
