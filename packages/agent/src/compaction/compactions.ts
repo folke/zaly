@@ -58,7 +58,7 @@ export class Compaction {
 
     const now = performance.now()
 
-    const tail = messageTail({ messages, session }, { keepTokens: this.#opts.keepTokens })
+    const tail = await messageTail({ messages, session }, { keepTokens: this.#opts.keepTokens })
     const older = tail.length > 0 ? messages.slice(0, -tail.length) : messages
 
     if (older.length === 0) return
@@ -70,7 +70,9 @@ export class Compaction {
     )
 
     const bashUsage = formatBashUsage(extractBashUsage({ messages, session }, this.#opts.bash))
-    const fileUsage = formatFileUsage(extractFileUsage({ messages, session }, this.#opts.files))
+    const fileUsage = formatFileUsage(
+      await extractFileUsage({ messages, session }, this.#opts.files)
+    )
 
     const request: Message<"user"> = {
       content: [
@@ -96,7 +98,7 @@ export class Compaction {
       ],
       role: "system",
     }
-    session.compact({
+    await session.compact({
       durationMs: Math.round(performance.now() - now),
       preTokens: this.#agent.contextSize,
       summary: summaryMessage,

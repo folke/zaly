@@ -1,6 +1,6 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
-import type { Compaction, CompactionOptions } from "./compaction/compactions.ts"
+import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
@@ -92,14 +92,11 @@ export class Agent extends Emitter<AgentEvents> {
     this.maxDepth = opts.maxDepth ?? 2
     this.session = opts.session
 
-    // Idempotent — no-op on a loaded / pre-seeded session, so historical
-    // metadata wins over whatever this Agent would record now.
-    this.session.update({
-      cwd: this.#cwd,
-      modelId: opts.model.id,
-      prompt: this.#prompt,
-    })
-    for (const m of opts.messages ?? []) this.session.add(m)
+    // Note: session.update() + initial messages are committed
+    // asynchronously from `Agent.load`, NOT here. Constructors can't
+    // be async; deferring those writes until after construction also
+    // gives consumers a window to subscribe to session events before
+    // the first node fires.
 
     this.#tasks = new Tasks()
     this.#tasks.tools = [...(opts.tools ?? []), () => this.#skills?.tool]
@@ -188,6 +185,11 @@ export class Agent extends Emitter<AgentEvents> {
     )
     const init: AgentInit = { ...opts, cwd, prompt, session, skills, tools }
     const agent = new Agent(init)
+    // Defer session writes until after construction so subscribers
+    // attaching after `Agent.load()` returns catch the start/resume +
+    // initial-message events.
+    await session.update({ cwd, modelId: opts.model.id, prompt: agent.#prompt })
+    for (const m of opts.messages ?? []) await session.add(m)
     return agent
   }
 
@@ -362,20 +364,21 @@ export class Agent extends Emitter<AgentEvents> {
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
   send(message: Message<"user" | "system">): void {
-    if (this.#status === "idle" || this.#status === "paused") {
-      this.session.add(message)
-      void this.run()
-    } else {
-      this.#sendQueue.push(message)
-    }
+    // Always queue — keeps `send()` synchronous (session.add is async
+    // now). The loop drains the queue at the top of each step() before
+    // reading session.messages, so message ordering is preserved.
+    this.#sendQueue.push(message)
+    if (this.#status === "idle" || this.#status === "paused") void this.run()
   }
 
   /** Inject a message into the *current* turn — flushed into the
-   *  conversation right before the next step's stream. If the
-   *  agent is idle/paused, behaves like `send`. */
+   *  conversation right before the next step's stream. If the agent
+   *  is idle/paused, the message commits to the session immediately
+   *  (fire-and-forget against the async session.add). Doesn't trigger
+   *  a run — `send()` does that for "user wants a response" semantics. */
   inject(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
-      this.send(message)
+      void this.session.add(message)
     } else {
       this.#injectQueue.push(message)
     }
@@ -537,10 +540,11 @@ export class Agent extends Emitter<AgentEvents> {
       })
     }
 
-    // Add any injected messages
-    if (this.#injectQueue.length > 0) {
-      for (const m of this.#injectQueue.splice(0)) this.session.add(m)
-    }
+    // Drain the send queue (user-submitted via `send()`) and the inject
+    // queue (notifier / wakeup / hooks). Sequential await preserves
+    // chronological order on the session.
+    for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
+    for (const m of this.#injectQueue.splice(0)) await this.session.add(m)
 
     this.#setStatus("streaming")
 
@@ -582,7 +586,7 @@ export class Agent extends Emitter<AgentEvents> {
       return { kind: "context-overflow", ...result }
 
     const calls = this.#parseToolCalls(collected.message)
-    this.session.add(collected.message, {
+    await this.session.add(collected.message, {
       finishReason: collected.finishReason,
       usage: collected.usage,
     })
@@ -652,7 +656,7 @@ export class Agent extends Emitter<AgentEvents> {
       })
     }
     const message: Message<"tool"> = { content: resultParts, role: "tool" }
-    this.session.add(message)
+    await this.session.add(message)
     return message
   }
 
@@ -711,7 +715,7 @@ export class Agent extends Emitter<AgentEvents> {
       if (outcome.kind === "natural") {
         // Drain follow-up queue if anything arrived during the turn.
         if (this.#sendQueue.length > 0) {
-          for (const m of this.#sendQueue.splice(0)) this.session.add(m)
+          for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
           continue
         }
         // Wakeups (or any other inject) that fired while the agent was

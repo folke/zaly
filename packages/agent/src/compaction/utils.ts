@@ -113,7 +113,10 @@ function toolStats<T extends ToolStat = ToolStat>(
  *  node — relative paths are resolved against the cwd that was active
  *  when the call ran, and `~` is expanded. Calls under different cwds
  *  that target the same file thus collapse into one bucket. */
-export function extractFileUsage(ctx: CompactionContext, opts: ToolStatOptions = {}): FileUsage[] {
+export async function extractFileUsage(
+  ctx: CompactionContext,
+  opts: ToolStatOptions = {}
+): Promise<FileUsage[]> {
   const { messages, session } = ctx
   opts = { minScore: 0.5, ...opts }
   const map = new Map<string, FileUsage>()
@@ -125,7 +128,9 @@ export function extractFileUsage(ctx: CompactionContext, opts: ToolStatOptions =
   ])) {
     const raw = safeParseToolParams<Tool<{ path: string }>>(p.params)?.path
     if (!raw) continue
-    const cwd = session.node(m.id)?.meta.cwd
+    // eslint-disable-next-line no-await-in-loop
+    const node = await session.node(m.id)
+    const cwd = node?.meta.cwd
     const path = normPath(cwd, raw)
     const entry = map.get(path) ?? {
       count: 0,
@@ -263,7 +268,10 @@ export function extractUserMessages(ctx: CompactionContext): string {
 
 // ── Tail selection ────────────────────────────────────────────────────
 
-export function messageTail(ctx: CompactionContext, opts: { keepTokens?: number }): Message[] {
+export async function messageTail(
+  ctx: CompactionContext,
+  opts: { keepTokens?: number }
+): Promise<Message[]> {
   const maxTokens = opts.keepTokens ?? 20_000
   const messages = ctx.messages.toReversed()
   const tail: Message[] = []
@@ -274,7 +282,9 @@ export function messageTail(ctx: CompactionContext, opts: { keepTokens?: number 
 
   for (const m of messages) {
     queue.unshift(m)
-    const usage = ctx.session.node(m.id)?.usage
+    // eslint-disable-next-line no-await-in-loop
+    const node = await ctx.session.node(m.id)
+    const usage = node?.usage
     if (!usage) continue
     const current = usage.input + usage.output + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0)
     // clamp for masker and similar events that might shrink the context size
