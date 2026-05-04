@@ -106,11 +106,13 @@ export class Model<T extends AnyProvider = string> {
     // their implicit cap on thinking, leaving little for the visible
     // reply. Anthropic's adapter has its own internal `?? 4096` fallback
     // — we set the catalog value here so it wins over that default.
-    const maxTokens = opts.maxTokens ?? this.spec.maxTokens ?? this.spec.limit.output
+    const limit = this.spec.maxTokens ?? this.spec.limit.output
+    const maxTokens = Math.min(opts.maxTokens ?? limit, limit)
+    const reasoning = this.spec.reasoning ? opts.reasoning : undefined
     const inner = this.provider.stream({
       ctx,
       model: this.spec.id,
-      opts: { ...opts, maxTokens },
+      opts: { ...opts, maxTokens, reasoning },
       quirks: this.spec.quirks,
     })
     return this.spec.cost ? this.#augment(inner) : inner
