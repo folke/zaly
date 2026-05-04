@@ -1,7 +1,7 @@
 import type { ModelSpec, ProviderInfo } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
-import { chainAuth, envAuth, hasAuth } from "../src/auth.ts"
+import { chainAuth, envAuth, hasAuth } from "../src/auth/index.ts"
 
 const baseSpec: ModelSpec = {
   attachment: false,

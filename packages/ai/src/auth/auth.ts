@@ -1,4 +1,4 @@
-import type { ModelSpec } from "./types.ts"
+import type { ModelSpec } from "../types.ts"
 
 /**
  * Auth-related primitives. Centralises credential resolution so

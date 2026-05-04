@@ -1,4 +1,4 @@
-import type { AuthProvider } from "./auth.ts"
+import type { AuthProvider } from "./auth/index.ts"
 import type { ContentTransform } from "./content/transform.ts"
 import type {
   Context,
@@ -11,7 +11,7 @@ import type {
 import type { AnyProvider } from "./providers/index.ts"
 import type { Attachment, Cost, Message, Modality, ModelSpec, ProviderOptions } from "./types.ts"
 
-import { envAuth } from "./auth.ts"
+import { envAuth } from "./auth/index.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"

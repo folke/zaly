@@ -1,5 +1,5 @@
 export type * from "./types.ts"
-export * from "./auth.ts"
+export * from "./auth/index.ts"
 export * from "./json/index.ts"
 export * from "./model.ts"
 export * from "./models.ts"

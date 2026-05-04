@@ -1,7 +1,7 @@
-import type { AuthProvider } from "./auth.ts"
+import type { AuthProvider } from "./auth/index.ts"
 import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
 
-import { hasAuth } from "./auth.ts"
+import { hasAuth } from "./auth/index.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than
