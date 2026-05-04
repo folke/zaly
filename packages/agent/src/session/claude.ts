@@ -11,7 +11,7 @@ import type {
 import type { MessageMeta } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
-import { readFile } from "node:fs/promises"
+import { JsonlReader } from "./jsonl.ts"
 
 /**
  * Read a Claude Code session file (`.jsonl` from `~/.claude/projects/...`)
@@ -93,16 +93,8 @@ export async function loadClaudeSession(
   // Honor `~` and relative shorthands — config-file / env paths often
   // include them and Node's fs APIs don't expand `~` natively.
   path = normPath(path)
-  const text = await readFile(path, "utf8").catch((error: unknown) => {
-    throw new Error(
-      `loadClaudeSession: cannot read "${path}": ${(error as Error).message}`,
-      { cause: error }
-    )
-  })
-
   const convert = opts.convertTool ?? defaultConvertTool
-  const records = parseRecords(text, path)
-  const chain = opts.walk === "all" ? collectAll(records) : walkChain(records)
+  const chain = opts.walk === "all" ? await collectAll(path) : await walkChainLazy(path)
   const toolCalls = collectToolCalls(chain, convert)
 
   const messages: Message[] = []
@@ -156,6 +148,13 @@ interface ClaudeRecord {
   uuid?: string
   parentUuid?: string
   isSidechain?: boolean
+  /** Set on the synthetic user-role record Claude Code writes for a
+   *  `/compact`. The record's content is the summary text; chronologically
+   *  it sits where the compaction happened, with its `parentUuid` still
+   *  pointing into pre-compaction history. The active conversation is
+   *  this summary plus everything after — pre-compaction messages are
+   *  unreachable from the live agent. */
+  isCompactSummary?: boolean
   message?: ClaudeMessage
   /** Wall-clock time the original Claude session recorded the message,
    *  ISO 8601 string. Preserved onto `Message.ts` so age-based logic
@@ -195,59 +194,80 @@ type ClaudeBlock =
     }
   | { type: string; [key: string]: unknown } // unknown block — falls through to a placeholder
 
-function parseRecords(text: string, path: string): ClaudeRecord[] {
-  const lines = text.split("\n")
-  const out: ClaudeRecord[] = []
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.length === 0) continue
-    try {
-      out.push(JSON.parse(line) as ClaudeRecord)
-    } catch (error) {
-      // Tolerate a truncated last line (Claude may write while we read).
-      // Anything else is real corruption.
-      if (i === lines.length - 1) continue
-      throw new Error(
-        `loadClaudeSession: malformed JSON at line ${i + 1} of "${path}": ${(error as Error).message}`,
-        { cause: error }
-      )
-    }
-  }
-  return out
-}
-
 // ── Chain walk ───────────────────────────────────────────────────────────
 
 /** Walk the parentUuid chain backward from the most recent on-chain
  *  user/assistant message and return the chronologically-ordered
- *  conversation.
+ *  conversation. Reads the file lazily (backward in chunks) — only the
+ *  chunks containing the active chain get pulled from disk.
  *
  *  Subtlety: Claude Code interleaves non-message records (`attachment`,
  *  `system`, `file-history-snapshot`, ...) into the parent chain — an
  *  assistant message's `parentUuid` may point at an `attachment`, whose
  *  `parentUuid` then points at the prior user message. We step *through*
  *  those records (using a uuid → ANY record map), collecting only the
- *  user/assistant messages we encounter. Sidechain messages are skipped
- *  during collection. */
-function walkChain(records: readonly ClaudeRecord[]): ClaudeRecord[] {
+ *  user/assistant messages we encounter. Sidechain messages are skipped.
+ *
+ *  For long-running sessions with multiple compactions, the active chain
+ *  typically lives in the file's most recent chunks — so a 300MB session
+ *  loads from a few hundred KB rather than reading the whole file. */
+async function walkChainLazy(path: string): Promise<ClaudeRecord[]> {
+  const reader = new JsonlReader<ClaudeRecord>(path)
   const byUuid = new Map<string, ClaudeRecord>()
-  let lastOnChain: string | undefined
-  for (const rec of records) {
-    if (rec.uuid === undefined) continue
-    byUuid.set(rec.uuid, rec)
-    if (isMessageRecord(rec) && rec.isSidechain !== true) lastOnChain = rec.uuid
-  }
-  if (lastOnChain === undefined) return []
+  try {
+    // Phase 1: read backward until we find the most recent on-chain
+    // (non-sidechain) user/assistant message.
+    let lastOnChain: string | undefined
+    let value: ClaudeRecord | undefined
+    // eslint-disable-next-line no-await-in-loop
+    while ((value = await reader.next()) !== undefined) {
+      if (value.uuid !== undefined) byUuid.set(value.uuid, value)
+      if (isMessageRecord(value) && value.isSidechain !== true) {
+        lastOnChain = value.uuid
+        break
+      }
+    }
+    if (lastOnChain === undefined) return []
 
-  const chain: ClaudeRecord[] = []
-  let cursor: string | undefined = lastOnChain
-  while (cursor !== undefined) {
-    const rec = byUuid.get(cursor)
-    if (!rec) break
-    if (isMessageRecord(rec) && rec.isSidechain !== true) chain.push(rec)
-    cursor = rec.parentUuid
+    // Phase 2: walk parentUuid backward, fetching more records lazily
+    // as needed to resolve each cursor. A `summary` record is a HARD
+    // boundary — Claude Code compactions create a summary node and
+    // anything before it is unreachable in the live conversation, so
+    // we must not walk past it (would otherwise pull pre-compaction
+    // history that the model can no longer see).
+    const chain: ClaudeRecord[] = []
+    let cursor: string | undefined = lastOnChain
+    while (cursor !== undefined) {
+      let rec = byUuid.get(cursor)
+      if (!rec) {
+        // Pull more records from the reader until we find this uuid
+        // (or run out). Records pulled along the way get cached for
+        // later cursor lookups.
+        // eslint-disable-next-line no-await-in-loop
+        while ((value = await reader.next()) !== undefined) {
+          if (value.uuid !== undefined) byUuid.set(value.uuid, value)
+          if (value.uuid === cursor) {
+            rec = value
+            break
+          }
+        }
+      }
+      if (!rec) break
+      // Compaction boundary — Claude writes the synthetic summary as a
+      // user-role record flagged `isCompactSummary`. Include it (it IS
+      // the visible context for the resumed conversation) and stop —
+      // anything older than this is unreachable from the live agent.
+      if (rec.isCompactSummary === true) {
+        chain.push(rec)
+        break
+      }
+      if (isMessageRecord(rec) && rec.isSidechain !== true) chain.push(rec)
+      cursor = rec.parentUuid
+    }
+    return chain.toReversed()
+  } finally {
+    await reader.close()
   }
-  return chain.toReversed()
 }
 
 function isMessageRecord(rec: ClaudeRecord): boolean {
@@ -256,9 +276,25 @@ function isMessageRecord(rec: ClaudeRecord): boolean {
 
 /** Every user/assistant message in file order, ignoring branches and
  *  compaction boundaries. Sidechain messages are still skipped — those
- *  belong to subagent loops and would scramble the main chain. */
-function collectAll(records: readonly ClaudeRecord[]): ClaudeRecord[] {
-  return records.filter((rec) => isMessageRecord(rec) && rec.isSidechain !== true)
+ *  belong to subagent loops and would scramble the main chain.
+ *
+ *  This mode reads the entire file (necessary to find every record),
+ *  but uses chunked I/O via `JsonlReader` instead of slurping the
+ *  whole string at once. */
+async function collectAll(path: string): Promise<ClaudeRecord[]> {
+  const reader = new JsonlReader<ClaudeRecord>(path)
+  const records: ClaudeRecord[] = []
+  try {
+    let value: ClaudeRecord | undefined
+    // eslint-disable-next-line no-await-in-loop
+    while ((value = await reader.next()) !== undefined) {
+      if (isMessageRecord(value) && value.isSidechain !== true) records.push(value)
+    }
+  } finally {
+    await reader.close()
+  }
+  // Reader yields newest-first; flip to chronological.
+  return records.toReversed()
 }
 
 /** Build a `tool_use_id → { name, params }` map from the assistant
@@ -522,11 +558,7 @@ function toAssistantPart(
   // The visible text and tool calls carry the conversation's effective
   // state; thinking is recoverable from re-running, so dropping it is
   // strictly safer than risking signature mismatch errors.
-  if (
-    block.type === "tool_use" &&
-    typeof block.id === "string" &&
-    typeof block.name === "string"
-  ) {
+  if (block.type === "tool_use" && typeof block.id === "string" && typeof block.name === "string") {
     const call = toolCalls.get(block.id) ?? { name: block.name, params: block.input }
     return { id: block.id, name: call.name, params: call.params, type: "tool-call" }
   }
