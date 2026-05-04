@@ -26,6 +26,26 @@ export interface ProviderOverride {
   quirks?: Quirks
   modelQuirks?: Record<string, Quirks>
   transform?: (info: ModelInfo, provider: ProviderInfo) => ModelInfo | undefined
+  /** Synthesize a provider entry by cloning models from existing
+   *  providers. Each rule is `<source-provider>/<model-id-regex>` —
+   *  every model in the source provider whose id matches the regex
+   *  is copied under this provider's id with `adapter` / `baseUrl` /
+   *  `headers` / `quirks` from this override applied on top.
+   *
+   *  Cloning never overwrites: if a model with the resulting id
+   *  already exists (e.g. from a prior clone rule, or a future
+   *  models.dev catalog entry), it's left alone. */
+  clone?: (string | RegExp)[]
+  /** Human-readable name for a synthetic (cloned) provider — only
+   *  used when this override has `clone` set. Falls through to the
+   *  override key if absent. */
+  name?: string
+  /** Docs URL for a synthetic provider's `ProviderInfo.doc`. */
+  doc?: string
+  /** Env-var fallbacks for a synthetic provider. Default `[]` —
+   *  cloned providers usually authenticate via OAuth (`codexAuth`,
+   *  …), not env. */
+  env?: string[]
 }
 
 export const overrides: Record<string, ProviderOverride> = {
@@ -34,6 +54,39 @@ export const overrides: Record<string, ProviderOverride> = {
     quirks: {
       maxTokensField: "max_completion_tokens",
       thinkingFormat: "openai",
+    },
+  },
+
+  // ── OpenAI Codex (ChatGPT subscription backend) ─────────────────────
+  // Synthetic provider that clones the codex-family models from the
+  // openai catalog and routes them at the chatgpt.com backend used by
+  // codex CLI. Auth comes from `codexAuth` (PKCE, see `loginCodex`),
+  // not env. Clone rules are intentionally pattern-based so newly
+  // released codex variants get picked up automatically.
+  "openai-codex": {
+    adapter: "openai-responses",
+    baseUrl: "https://chatgpt.com/backend-api/codex",
+    // The codex backend serves the codex-family models plus a curated
+    // set of mainline gpt-5.x reasoning models. Pattern catches future
+    // codex variants automatically; the explicit entries cover the
+    // dual-routed mainline models. New mainline GPT-5.x reasoning
+    // models would need to be added here as they release.
+    clone: [
+      /^openai\/.*codex.*/,
+      "openai/gpt-5.1",
+      "openai/gpt-5.2",
+      "openai/gpt-5.4",
+      "openai/gpt-5.4-mini",
+      "openai/gpt-5.5",
+    ],
+    doc: "https://platform.openai.com/docs/models",
+    name: "OpenAI Codex (ChatGPT)",
+    quirks: {
+      friendlyErrors: "codex",
+      maxTokensField: "none",
+      responsesInclude: ["reasoning.encrypted_content"],
+      responsesStore: false,
+      responsesSystemAs: "instructions",
     },
   },
 

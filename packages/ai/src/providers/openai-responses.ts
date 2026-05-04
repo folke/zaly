@@ -232,7 +232,14 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
   if (opts.temperature !== undefined && quirks.temperatureSupported !== false) {
     out.temperature = opts.temperature
   }
-  if (opts.maxTokens !== undefined) out.max_output_tokens = opts.maxTokens
+  if (opts.maxTokens !== undefined) {
+    const field = quirks.maxTokensField ?? "max_output_tokens"
+    // Responses uses `max_output_tokens`; codex backend rejects any
+    // max-tokens field, so the override sets `"none"` to suppress.
+    // The other chat-completions values (`max_tokens` /
+    // `max_completion_tokens`) belong to the openai adapter.
+    if (field === "max_output_tokens") out.max_output_tokens = opts.maxTokens
+  }
 
   if (ctx.tools !== undefined && ctx.tools.length > 0) {
     const strict = (opts.strictTools ?? quirks.strictTools) === true

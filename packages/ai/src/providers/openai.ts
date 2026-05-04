@@ -228,7 +228,12 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   }
   if (opts.maxTokens !== undefined) {
     const field = quirks.maxTokensField ?? "max_tokens"
-    out[field] = opts.maxTokens
+    // Chat Completions only knows `max_tokens` / `max_completion_tokens`.
+    // Other values from the cross-adapter union (`max_output_tokens`,
+    // `none`) are ignored — those belong to the Responses adapter.
+    if (field === "max_tokens" || field === "max_completion_tokens") {
+      out[field] = opts.maxTokens
+    }
   }
   if (opts.stopSequences !== undefined) out.stop = opts.stopSequences
 

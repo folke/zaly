@@ -91481,6 +91481,609 @@
       "maxTokens": 64000,
       "provider": "openai",
       "baseUrl": "https://api.nova.amazon.com/v1"
+    },
+    "openai-codex/gpt-5.1-codex-max": {
+      "id": "gpt-5.1-codex-max",
+      "name": "GPT-5.1 Codex Max",
+      "family": "gpt-codex",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
+      "release_date": "2025-11-13",
+      "last_updated": "2025-11-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.5": {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 12.5,
+              "output": 75,
+              "cache_read": 1.25
+            },
+            "provider": {
+              "body": {
+                "service_tier": "priority"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.3-codex": {
+      "id": "gpt-5.3-codex",
+      "name": "GPT-5.3 Codex",
+      "family": "gpt-codex",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-02-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.2": {
+      "id": "gpt-5.2",
+      "name": "GPT-5.2",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2025-12-11",
+      "last_updated": "2025-12-11",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.4-mini": {
+      "id": "gpt-5.4-mini",
+      "name": "GPT-5.4 mini",
+      "family": "gpt-mini",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-17",
+      "last_updated": "2026-03-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.75,
+        "output": 4.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 1.5,
+              "output": 9,
+              "cache_read": 0.15
+            },
+            "provider": {
+              "body": {
+                "service_tier": "priority"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.2-codex": {
+      "id": "gpt-5.2-codex",
+      "name": "GPT-5.2 Codex",
+      "family": "gpt-codex",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2025-12-11",
+      "last_updated": "2025-12-11",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.1-codex-mini": {
+      "id": "gpt-5.1-codex-mini",
+      "name": "GPT-5.1 Codex mini",
+      "family": "gpt-codex",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
+      "release_date": "2025-11-13",
+      "last_updated": "2025-11-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.25,
+        "output": 2,
+        "cache_read": 0.025
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.1": {
+      "id": "gpt-5.1",
+      "name": "GPT-5.1",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
+      "release_date": "2025-11-13",
+      "last_updated": "2025-11-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.13
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5-codex": {
+      "id": "gpt-5-codex",
+      "name": "GPT-5-Codex",
+      "family": "gpt-codex",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
+      "release_date": "2025-09-15",
+      "last_updated": "2025-09-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.4": {
+      "id": "gpt-5.4",
+      "name": "GPT-5.4",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-05",
+      "last_updated": "2026-03-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2.5,
+        "output": 15,
+        "cache_read": 0.25,
+        "context_over_200k": {
+          "input": 5,
+          "output": 22.5,
+          "cache_read": 0.5
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 5,
+              "output": 30,
+              "cache_read": 0.5
+            },
+            "provider": {
+              "body": {
+                "service_tier": "priority"
+              }
+            }
+          }
+        }
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.3-codex-spark": {
+      "id": "gpt-5.3-codex-spark",
+      "name": "GPT-5.3 Codex Spark",
+      "family": "gpt-codex-spark",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-02-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "limit": {
+        "context": 128000,
+        "input": 100000,
+        "output": 32000
+      },
+      "maxTokens": 32000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
+    },
+    "openai-codex/gpt-5.1-codex": {
+      "id": "gpt-5.1-codex",
+      "name": "GPT-5.1 Codex",
+      "family": "gpt-codex",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-09-30",
+      "release_date": "2025-11-13",
+      "last_updated": "2025-11-13",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.125
+      },
+      "limit": {
+        "context": 400000,
+        "input": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://chatgpt.com/backend-api/codex",
+      "quirks": {
+        "friendlyErrors": "codex",
+        "maxTokensField": "none",
+        "responsesInclude": [
+          "reasoning.encrypted_content"
+        ],
+        "responsesStore": false,
+        "responsesSystemAs": "instructions"
+      }
     }
   },
   "providers": {
@@ -92484,6 +93087,14 @@
       "api": "https://api.nova.amazon.com/v1",
       "name": "Nova",
       "doc": "https://nova.amazon.com/dev/documentation"
+    },
+    "openai-codex": {
+      "doc": "https://platform.openai.com/docs/models",
+      "env": [],
+      "id": "openai-codex",
+      "name": "OpenAI Codex (ChatGPT)",
+      "npm": "synthetic",
+      "api": "https://chatgpt.com/backend-api/codex"
     }
   }
 }

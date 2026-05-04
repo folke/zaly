@@ -569,11 +569,20 @@ export interface ProviderOptions {
  *
  *  Add new axes here as they surface; start minimal. */
 export interface Quirks {
-  /** Which wire field carries the max-output-tokens cap. OpenAI
-   *  deprecated `max_tokens` in favour of `max_completion_tokens`
-   *  (required for reasoning models); most third-parties still only
-   *  accept `max_tokens`. */
-  maxTokensField?: "max_tokens" | "max_completion_tokens"
+  /** Which wire field carries the max-output-tokens cap, per adapter
+   *  family.
+   *
+   *  Chat Completions:
+   *    - `"max_tokens"`            — legacy, most third-parties
+   *    - `"max_completion_tokens"` — newer OpenAI + reasoning models
+   *
+   *  Responses:
+   *    - `"max_output_tokens"`     — public Responses API default
+   *
+   *  All families:
+   *    - `"none"` — suppress entirely. Codex backend rejects any
+   *      max-tokens field with `Unsupported parameter`. */
+  maxTokensField?: "max_tokens" | "max_completion_tokens" | "max_output_tokens" | "none"
 
   /** How the provider expects reasoning / thinking requests shaped.
    *  - `"openai"`              → `reasoning_effort: "minimal|low|medium|high"`

@@ -404,10 +404,12 @@ export async function getCodexCredentials(): Promise<CodexCredentials | undefine
 
 /** Build the headers codex backend requires alongside the bearer
  *  token. `originator` identifies the client to OpenAI; `OpenAI-Beta`
- *  selects the experimental responses surface. */
+ *  selects the experimental responses surface; `User-Agent` is
+ *  validated server-side — Bun's default UA is rejected with 401. */
 function buildCodexHeaders(creds: CodexCredentials): Record<string, string> {
   return {
     "OpenAI-Beta": "responses=experimental",
+    "User-Agent": `zaly (${process.platform} ${process.release.name}; ${process.arch})`,
     "chatgpt-account-id": creds.accountId,
     originator: "zaly",
   }

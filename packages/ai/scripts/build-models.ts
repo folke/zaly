@@ -75,6 +75,11 @@ function adapterForNpm(npm: string): BuiltinProvider | undefined {
 
 const raw = snapshot as unknown as Record<string, ProviderInfo>
 
+// Synthesise raw provider entries from `overrides.<id>.clone` rules
+// BEFORE the main loop runs, so cloned providers go through the same
+// adapter / baseUrl / headers / quirks pipeline as catalog-shipped ones.
+synthesiseClones(raw, overrides)
+
 const out: Output = { models: {}, providers: {} }
 const allIds: string[] = []
 const skipped: { id: string; reason: string }[] = []
@@ -192,4 +197,56 @@ function mergeQuirks(
 ): Quirks | undefined {
   if (defaults === undefined && override === undefined) return undefined
   return { ...defaults, ...override }
+}
+
+/** Materialise `overrides.<id>.clone` rules into synthetic raw
+ *  provider entries, mutating `raw` in place. Each rule is a string
+ *  (exact match) or RegExp tested against `<source-provider>/<id>`;
+ *  matching `ModelInfo`s are copied under the synthetic provider id.
+ *
+ *  Run BEFORE the main loop so synthetic providers go through the
+ *  same `adapter` / `baseUrl` / `headers` / `quirks` pipeline as
+ *  catalog providers — no separate clone-application logic.
+ *
+ *  Skips synthesis when a provider with the same id already exists
+ *  in the snapshot (lets a future real catalog entry take precedence). */
+function synthesiseClones(
+  catalog: Record<string, ProviderInfo>,
+  all: Record<string, ProviderOverride>
+): void {
+  for (const [pid, override] of Object.entries(all)) {
+    const rules = override.clone
+    if (rules === undefined || rules.length === 0) continue
+    // Real catalog entry wins — `pid in catalog` covers the case where
+    // the snapshot grew its own entry for this provider since the
+    // override was authored.
+    if (pid in catalog) continue
+
+    const matches = (fullId: string): boolean => {
+      for (const rule of rules) {
+        if (typeof rule === "string" ? rule === fullId : rule.test(fullId)) return true
+      }
+      return false
+    }
+
+    const models: Record<string, ModelInfo> = {}
+    for (const [srcPid, srcProvider] of Object.entries(catalog)) {
+      for (const [mid, m] of Object.entries(srcProvider.models)) {
+        if (!matches(`${srcPid}/${mid}`)) continue
+        if (mid in models) continue
+        models[mid] = m
+      }
+    }
+
+    catalog[pid] = {
+      doc: override.doc ?? "",
+      env: override.env ?? [],
+      id: pid,
+      models,
+      name: override.name ?? pid,
+      // No npm — `override.adapter` always wins for clones, so
+      // `adapterForNpm` is never consulted.
+      npm: "synthetic",
+    }
+  }
 }
