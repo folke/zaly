@@ -101,6 +101,10 @@ export class Session extends Emitter<SessionEvents> {
     this.#head = opts.head ?? [...this.#nodes.keys()].at(-1)
     if (this.#head !== undefined && !this.#nodes.has(this.#head))
       throw new Error(`Session: head "${this.#head}" not in file "${this.#path}"`)
+    this.#rebuild()
+  }
+
+  #rebuild() {
     this.#messages = this.#chain(this.#head, { active: true }).map((c) => c.message)
   }
 
@@ -287,14 +291,20 @@ export class Session extends Emitter<SessionEvents> {
    *  this node; their messages form the new active conversation. The
    *  pre-compact chain stays in `nodes` but is no longer part of
    *  `messages`. Returns the compact node's uuid. */
-  compact(
-    opts: { trigger?: "manual" | "auto"; preTokens?: number; durationMs?: number } = {}
-  ): string {
+  compact(opts: {
+    trigger?: "manual" | "auto"
+    preTokens?: number
+    durationMs?: number
+    tail: number
+    summary: Message<"system">
+  }): string {
     return this.#commit({
       durationMs: opts.durationMs,
       meta: {},
       parentUuid: this.#head,
       preTokens: opts.preTokens,
+      summary: opts.summary,
+      tail: opts.tail,
       trigger: opts.trigger ?? "manual",
       ts: Date.now(),
       type: "compact",
@@ -375,7 +385,7 @@ export class Session extends Emitter<SessionEvents> {
     this.#nodes.set(node.uuid, node)
     this.#head = node.uuid
     if (node.type === "message") this.#messages.push(node.message)
-    else if (node.type === "compact") this.#messages = []
+    else if (node.type === "compact") this.#rebuild()
 
     const persistNode = { ...node } as PersistedNode
 
@@ -419,7 +429,31 @@ export class Session extends Emitter<SessionEvents> {
       if (!node) break
       // True chain boundaries — these clear the active conversation
       // context. `compact` is explicit; `session-start` is the root.
-      if (node.type === "compact" || node.type === "session-start") {
+      if (node.type === "compact") {
+        if (opts.active === true) {
+          // Cross into pre-compact history, but only for `tailLength` messages
+          let cursor2 = node.parentUuid
+          let collected = 0
+          while (cursor2 && collected < node.tail) {
+            const n = this.#nodes.get(cursor2)
+            if (!n) break
+            if (n.type === "compact" || n.type === "session-start") break
+            if (n.type === "message") {
+              out.push({ message: n.message, ts: n.ts, uuid: n.uuid })
+              collected++
+            }
+            cursor2 = n.parentUuid
+          }
+          // Emit the summary at the oldest position (will be FIRST after toReversed)
+          out.push({ message: node.summary, ts: node.ts, uuid: node.uuid })
+          break
+        }
+        // active=false / undefined: existing behavior unchanged
+        pastBoundary = true
+        cursor = node.parentUuid
+        continue
+      }
+      if (node.type === "session-start") {
         if (opts.active === true) break
         pastBoundary = true
         cursor = node.parentUuid

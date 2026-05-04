@@ -25,6 +25,13 @@ export type SessionNode = {
       preTokens?: number
       /** How long the compactor took, ms. */
       durationMs?: number
+      /** Number of message from before compaction that will be preserved */
+      tail: number
+      /** Frozen summary message that becomes the head of the active
+       *  chain reconstruction. The full Message (not just text) so the
+       *  walker stays generic and future format changes don't require
+       *  migrating old compact nodes. */
+      summary: Message<"system">
     }
 )
 
