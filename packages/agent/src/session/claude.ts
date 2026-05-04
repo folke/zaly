@@ -106,6 +106,7 @@ export async function loadClaudeSession(
     const meta = recordMeta(rec)
     if (meta && msg.id) metas.set(msg.id, meta)
   }
+  messages.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
   // De-duplicate tool_use ids. Claude Code branching / sidechain replay
   // can emit the same tool_use_id across multiple assistant messages
   // (especially with `walk: "all"`); downstream consumers like the
