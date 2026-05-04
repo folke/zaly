@@ -373,12 +373,13 @@ export class Agent extends Emitter<AgentEvents> {
 
   /** Inject a message into the *current* turn — flushed into the
    *  conversation right before the next step's stream. If the agent
-   *  is idle/paused, the message commits to the session immediately
-   *  (fire-and-forget against the async session.add). Doesn't trigger
-   *  a run — `send()` does that for "user wants a response" semantics. */
+   *  is idle/paused, behaves like `send`: queues and triggers a run.
+   *  Wakeups, notifier messages, swarm-delivered messages, and the
+   *  CLI's user submit all flow through here — the model should pick
+   *  them up on the next step regardless of agent state. */
   inject(message: Message<"user" | "system">): void {
     if (this.#status === "idle" || this.#status === "paused") {
-      void this.session.add(message)
+      this.send(message)
     } else {
       this.#injectQueue.push(message)
     }
