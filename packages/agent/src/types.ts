@@ -7,7 +7,7 @@ import type {
   TokenCount,
   Tool,
 } from "@zaly/ai"
-import type { Agent } from "./agent.ts"
+import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { StepKind } from "./events.ts"
 import type { MaskOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
@@ -249,10 +249,5 @@ export interface AgentOptions extends CollectOptions {
    *  unattended runs that should treat ask as allow (yolo-but-richer). */
   allow?: (req: PermissionRequest) => Promise<boolean>
 
-  /** Called when a step returns `context-overflow`. Should mutate the
-   *  session (via `agent.session.compact()` after producing a summary)
-   *  to fit within the context window. After it resolves the loop
-   *  retries from the compacted state. If absent, overflow stops the
-   *  loop. */
-  compact?: (agent: Agent) => void | Promise<void>
+  compaction?: Partial<CompactionOptions>
 }

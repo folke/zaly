@@ -1,5 +1,6 @@
 // oxlint-disable no-await-in-loop
 import type { Message, MetaPart, Tool, ToolCallPart, ToolContext } from "@zaly/ai"
+import type { Compaction, CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
@@ -461,15 +462,17 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#running
   }
 
+  get #masked(): readonly Message[] {
+    if (!this.#masker) return this.session.messages
+    return this.#masker.apply(this.session.messages, this.pressure)
+  }
+
   async #collect() {
     this.#abortController = new AbortController()
     const caching = this.#opts.caching !== false
-    const masked = this.#masker
-      ? this.#masker.apply(this.session.messages, this.pressure)
-      : [...this.session.messages]
     const stream = this.#opts.model.stream(
       {
-        messages: this.#withCacheMarker(masked, caching),
+        messages: this.#withCacheMarker([...this.#masked], caching),
         prompt: this.#prompt,
         tools: [...this.tools],
       },
@@ -482,6 +485,13 @@ export class Agent extends Emitter<AgentEvents> {
       },
       onUpdate: this.#opts.onUpdate,
     })
+  }
+
+  #shouldAutoCompact(): boolean {
+    const auto = this.#opts.compaction?.auto ?? true
+    if (!auto) return false
+    const threshold = this.#opts.compaction?.treshold ?? 0.85
+    return this.pressure.ratio >= threshold
   }
 
   /** Mark the trailing message as a cache breakpoint. Anthropic's
@@ -517,6 +527,7 @@ export class Agent extends Emitter<AgentEvents> {
   /** Run exactly one step. Useful for tests and custom drivers
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
+    if (this.#shouldAutoCompact()) await this.compact()
     this.#notifier?.check({ agent: this })
     // Drain the notify queue into the inject queue as a single system message
     if (this.#notifyQueue.length > 0) {
@@ -596,6 +607,22 @@ export class Agent extends Emitter<AgentEvents> {
       } catch {}
     }
     return calls
+  }
+
+  async compact() {
+    const prev = this.#status
+    this.#setStatus("compacting")
+    try {
+      const Compaction = await import("./compaction/compactions.ts").then((m) => m.Compaction)
+      const opts: Partial<CompactionOptions> = {
+        ...this.#opts.compaction,
+        signal: this.#abortController?.signal,
+      }
+      const compactor = new Compaction(this, opts)
+      await compactor.compact()
+    } finally {
+      this.#setStatus(prev)
+    }
   }
 
   async #runTools(calls: ToolCallPart[]) {
@@ -699,10 +726,13 @@ export class Agent extends Emitter<AgentEvents> {
       }
 
       if (outcome.kind === "context-overflow") {
-        if (!this.#opts.compact) return this.#stop("context-overflow")
+        // Auto-compaction also gates the overflow recovery path. With
+        // `auto: false`, overflow stops cleanly instead of attempting
+        // a recovery the user explicitly opted out of.
+        if (this.#opts.compaction?.auto === false) return this.#stop("context-overflow")
         // Compactor mutates the conversation; the rejected message is
         // not committed — next step retries on the compacted state.
-        await this.#opts.compact(this)
+        await this.compact()
         continue
       }
 

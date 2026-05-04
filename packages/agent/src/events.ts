@@ -5,7 +5,7 @@ import type { StreamEvent, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai
 /** Status of an agent session — at most one transition per moment.
  *  `paused` covers both explicit pause and post-error states; the
  *  `lastError` field on the session disambiguates. */
-export type AgentStatus = "idle" | "streaming" | "running-tools" | "paused"
+export type AgentStatus = "idle" | "streaming" | "running-tools" | "compacting" | "paused"
 
 /** Reason the loop stopped this turn. Distinct from the provider's
  *  `finishReason` (which describes why one round-trip ended). */
