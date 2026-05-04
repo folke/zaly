@@ -10,7 +10,7 @@ import type { SessionStore } from "./store.ts"
  *  consumers reading "the meta as of node X" use `SessionNodeView`,
  *  which decorates raw nodes with cumulative meta computed by `Session`'s
  *  chain-walk forward pass. */
-export type SessionNode = {
+type SessionN = {
   uuid: string
   /** Absent only on the very first node (`session-start`). */
   parentUuid?: string
@@ -38,6 +38,12 @@ export type SessionNode = {
       summary: Message<"system">
     }
 )
+type SessionNodeType = SessionN["type"]
+
+export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<
+  SessionN,
+  { type: T }
+>
 
 /** A `SessionNode` decorated with the cumulative meta as of that
  *  node's position in the chain. Returned by `Session.node()` and
@@ -48,6 +54,7 @@ export type SessionView = {
   messages: Message[]
   nodes: Map<string, SessionNodeView>
   meta: PersistedMeta
+  compact?: SessionNode<"compact">
 }
 
 export type InternalMeta = {
@@ -84,7 +91,7 @@ export interface MessageMeta {
 export type SessionEvents = {
   node: { node: SessionNode }
   navigate: { head: string | undefined; messages: readonly Message[] }
-  compact: { node: Extract<SessionNode, { type: "compact" }> }
+  compact: { node: SessionNode<"compact"> }
   cwd: { cwd: string }
   meta: { meta: SessionMeta; changes: Partial<Omit<SessionMeta, "cwd">> }
 }

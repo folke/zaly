@@ -134,9 +134,9 @@ export async function loadSession(path: string, opts?: { limit?: number }): Prom
   if (path.includes(".claude")) {
     const { messages, metas } = await loadClaudeSession(path, { walk: "all" })
     const s = await Session.load() // in-memory, no path
-    s.start()
+    await s.start()
     for (const m of messages.slice(-(opts?.limit ?? 2000))) {
-      s.add(m, m.id ? metas.get(m.id) : undefined)
+      await s.add(m, m.id ? metas.get(m.id) : undefined)
     }
     return s
   }

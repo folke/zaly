@@ -11,6 +11,10 @@ const buildRoot = async (): Promise<Agent> =>
 // `#injectQueue` while the agent is non-idle; for an idle agent it
 // falls through to `send()` which commits to the session immediately.
 // Our mock agents are idle, so injected messages land in `agent.messages`.
+// Inject paths commit to the session asynchronously (fire-and-forget
+// against `session.add`). Tests calling `swarm.send` synchronously and
+// then reading `agent.messages` must drain microtasks first.
+const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))
 const lastInjectedMsg = (a: Agent) => a.messages.at(-1)
 
 /** Pull the structured `<agent>` message + its sender meta + body text
@@ -164,6 +168,7 @@ describe("Swarm — send", () => {
     const child = await swarm.spawn(root, { desc: "x", name: "reviewer", prompt: "p" })
 
     swarm.send(root, child.agent, "focus on auth.ts")
+    await flush()
 
     // Receiver's only upstream sender is its parent — no disambiguation
     // needed, the `<agent>` wrapper is dropped and content is a plain
@@ -179,6 +184,7 @@ describe("Swarm — send", () => {
     swarm.attach(root, { desc: "x", name: "root" })
 
     swarm.send("user", root, "go run the tests")
+    await flush()
 
     const msg = lastInjectedMsg(root)
     expect(msg?.role).toBe("user")
@@ -192,6 +198,7 @@ describe("Swarm — send", () => {
     const child = await swarm.spawn(root, { desc: "x", name: "reviewer", prompt: "p" })
 
     swarm.send(child.agent, root, "found 3 issues")
+    await flush()
     const inject = readAgentInject(root)
     expect(inject.role).toBe("system")
     expect(inject.from).toBe("reviewer")
@@ -204,6 +211,7 @@ describe("Swarm — send", () => {
     swarm.attach(root, { desc: "x", name: "root" })
 
     swarm.send(orphan, root, "hi")
+    await flush()
     const inject = readAgentInject(root)
     expect(inject.from).toBe("agent")
     expect(inject.id).toBeUndefined()

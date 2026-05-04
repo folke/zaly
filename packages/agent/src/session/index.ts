@@ -1,3 +1,6 @@
 export type * from "./types.ts"
+export type * from "./store.ts"
 export * from "./manager.ts"
+export * from "./memory.ts"
+export * from "./jsonl.ts"
 export * from "./session.ts"

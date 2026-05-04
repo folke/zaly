@@ -78,7 +78,7 @@ const DEFAULT_SESSION =
 const path = process.env.SESSION ?? DEFAULT_SESSION
 const session = await loadSession(path)
 
-const tail = messageTail({ session, messages: session.messages }, { keepTokens: 20_000 })
+const tail = await messageTail({ session, messages: session.messages }, { keepTokens: 20_000 })
 // let older = session.messages.slice(0, -tail.length)
 // the above is what should be used, but for testing, just take last 100
 const messages = session.messages //.slice(-500)
@@ -91,7 +91,7 @@ console.log(`loaded ${messages.length} messages from ${path}\n`)
 
 console.log(formatBashCommands(extractBashUsage(ctx)))
 console.log()
-console.log(formatFileTouches(extractFileUsage(ctx)))
+console.log(formatFileTouches(await extractFileUsage(ctx)))
 console.log()
 
 console.log(formatTranscript(extractConversation({ session, messages }), tail.length))

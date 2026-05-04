@@ -102,8 +102,8 @@ describe("sessionList", () => {
     const scope = testScope("list")
     const a = await sessionCreate({ scope })
     const b = await sessionCreate({ scope })
-    a.start()
-    b.start()
+    await a.start()
+    await b.start()
     await a.close()
     await b.close()
 
@@ -121,8 +121,8 @@ describe("sessionList", () => {
     const scope = testScope("list-by-id")
     const a = await sessionCreate({ scope })
     const b = await sessionCreate({ scope })
-    a.start()
-    b.start()
+    await a.start()
+    await b.start()
     await a.close()
     await b.close()
 
@@ -134,7 +134,7 @@ describe("sessionList", () => {
   test("derives scope from cwd when given", async () => {
     const cwd = `/tmp/zaly-test-${randomHash(6)}-${Date.now()}`
     const session = await sessionCreate({ cwd })
-    session.start()
+    await session.start()
     await session.close()
 
     const list = await sessionList({ cwd })
@@ -145,10 +145,10 @@ describe("sessionList", () => {
   test("sort: true orders by mtime, newest first", async () => {
     const scope = testScope("sort")
     const a = await sessionCreate({ scope })
-    a.start()
+    await a.start()
     await a.close()
     const b = await sessionCreate({ scope })
-    b.start()
+    await b.start()
     await b.close()
 
     // Force `b` to be older than `a` so the sort actually reorders.
@@ -165,7 +165,7 @@ describe("sessionList", () => {
   test("sort: true filters out sessions whose stat fails", async () => {
     const scope = testScope("sort-missing")
     const a = await sessionCreate({ scope })
-    a.start()
+    await a.start()
     await a.close()
     // Delete the .jsonl but keep the dir so sessionList still finds it
     // via the glob; the stat will then fail and the entry should be filtered.
@@ -187,10 +187,10 @@ describe("sessionResume", () => {
   test("returns the latest session by mtime", async () => {
     const scope = testScope("resume")
     const oldSession = await sessionCreate({ scope })
-    oldSession.start()
+    await oldSession.start()
     await oldSession.close()
     const newSession = await sessionCreate({ scope })
-    newSession.start()
+    await newSession.start()
     await newSession.close()
 
     // Force oldSession to be older.
@@ -206,7 +206,7 @@ describe("sessionResume", () => {
   test("returns single session without sorting overhead", async () => {
     const scope = testScope("resume-single")
     const only = await sessionCreate({ scope })
-    only.start()
+    await only.start()
     await only.close()
 
     const resumed = await sessionResume({ scope })
@@ -218,9 +218,9 @@ describe("sessionResume", () => {
   test("hydrates the session's prior state", async () => {
     const scope = testScope("resume-hydrate")
     const original = await sessionCreate({ scope })
-    original.start({ modelId: "openai/gpt-4o" })
-    original.add({ content: "hi", role: "user" })
-    original.add({ content: "hello", role: "assistant" })
+    await original.start({ modelId: "openai/gpt-4o" })
+    await original.add({ content: "hi", role: "user" })
+    await original.add({ content: "hello", role: "assistant" })
     await original.close()
 
     const resumed = await sessionResume({ scope })
@@ -236,8 +236,8 @@ describe("create + list + resume round-trip", () => {
   test("created sessions show up in list and can be resumed", async () => {
     const scope = testScope("roundtrip")
     const created = await sessionCreate({ scope })
-    created.start({ modelId: "anthropic/claude" })
-    created.add({ content: "test message", role: "user" })
+    await created.start({ modelId: "anthropic/claude" })
+    await created.add({ content: "test message", role: "user" })
     await created.close()
 
     // Visible in list

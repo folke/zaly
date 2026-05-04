@@ -116,9 +116,10 @@ describe("read tool — negative offset (tail-style)", () => {
     if (typeof result === "string") throw new Error("expected truncated parts array")
     const meta = result.find((p): p is MetaPart => p.type === "meta")
     if (meta === undefined) throw new Error("no meta part")
-    const data = meta.data as { showing: [number, number]; total: number }
-    expect(data.total).toBe(200)
-    expect(data.showing).toEqual([151, 170])
+    // The slice meta carries a human-readable "showing X-Y of Z" string
+    // in `content`, not structured `data`.
+    const text = typeof meta.content === "string" ? meta.content : ""
+    expect(text).toBe("showing 151-170 of 200")
   })
 })
 

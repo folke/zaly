@@ -96,6 +96,10 @@ export class Session extends Emitter<SessionEvents> {
   async #rebuild(): Promise<void> {
     this.#view = await this.#chain()
     this.#id = this.#view.meta.sessionId ?? this.#id
+    // Sync `#cwd` from the hydrated/active meta so a loaded session
+    // reflects the cwd it was originally operating under, not the
+    // process.cwd() of the loader.
+    if (this.#view.meta.cwd) this.#cwd = normPath(this.#view.meta.cwd)
   }
 
   /** Lazily emits `session-start` on a fresh session or `session-resume`
@@ -340,11 +344,9 @@ export class Session extends Emitter<SessionEvents> {
    *  The `active` flag controls what counts:
    *    - `true`      — only the active chain (stops at first compact /
    *                    session-start, with the kept tail spliced in via
-   *                    the compact's `tail` field).
-   *    - `false`     — only the *historical* portion (skips messages
-   *                    before crossing a compact / session-start, then
-   *                    collects everything older).
-   *    - `undefined` — collect everything across boundaries.
+   *                    the compact's `tail` field, summary substituted
+   *                    in place of the compact node).
+   *    - `false`     — includes everything back to the root
    *  Returns chronological order. */
   async #chain(
     opts: { active?: boolean; limit?: number; uuid?: string } = {}
@@ -353,58 +355,51 @@ export class Session extends Emitter<SessionEvents> {
     const reverse: SessionNode[] = []
     let cursor = opts.uuid ?? this.#store.root?.uuid
     let limit = opts.limit ?? Infinity
+    let compact: SessionNode<"compact"> | undefined
+    const messages: Message[] = []
+
     while (cursor) {
       // eslint-disable-next-line no-await-in-loop
       const node = await this.#store.get(cursor)
-      if (!node) break
+      if (!node || (node.type === "message" && messages.length + 1 > limit)) break
       cursor = node.parentUuid
       reverse.push(node)
-      if (reverse.length >= limit) break
-      if (node.type === "compact") {
-        if (opts.active ?? true) {
-          // update limit to the compact's tail
-          limit = Math.min(node.tail + reverse.length, limit)
-        }
+      if (node.type === "message") messages.push(node.message)
+      if (node.type === "compact" && (opts.active ?? true)) {
+        if (compact) break // stop at the first compact
+        compact = node
+        // update limit to the compact's tail
+        limit = Math.min(limit, messages.length + node.tail)
       }
     }
 
-    // reconstruct meta
-    const view: SessionNodeView[] = []
+    // Forward pass: decorate with cumulative meta. session-meta nodes
+    // redefine the meta; everything else inherits the running snapshot.
+    const nodes = new Map<string, SessionNodeView>()
     let meta: PersistedMeta = {}
     for (const n of reverse.toReversed()) {
       if (n.type === "session-meta") meta = n.meta
-      view.push({ ...n, meta })
+      nodes.set(n.uuid, { ...n, meta })
     }
 
-    const drain = (len = Infinity) => {
-      // old to new
-      const drained: SessionNodeView[] = []
-      while (view.length && drained.length < len) {
-        const n = view.pop()!
-        if (n.type === "compact") {
-          drained.unshift(...drain(n.tail))
-          drained.unshift({
-            message: n.summary,
-            meta: n.meta,
-            parentUuid: n.parentUuid,
-            ts: n.ts,
-            type: "message",
-            uuid: n.uuid,
-          })
-        } else drained.unshift(n)
-      }
-      return drained
+    // Add compaction summary as the first message
+    if (compact) {
+      messages.push({ ...compact.summary, id: compact.uuid, ts: compact.ts })
+      nodes.set(compact.uuid, {
+        message: compact.summary,
+        meta: nodes.get(compact.uuid)?.meta ?? {},
+        parentUuid: compact.parentUuid,
+        ts: compact.ts,
+        type: "message",
+        uuid: compact.uuid,
+      })
     }
-
-    const nodes = drain()
-    const messages = nodes
-      .map((n) => (n.type === "message" ? n.message : undefined))
-      .filter((m): m is Message => m !== undefined)
 
     return {
-      messages,
+      compact,
+      messages: messages.toReversed(),
       meta,
-      nodes: new Map(nodes.map((n) => [n.uuid, n])),
+      nodes,
     }
   }
 }
