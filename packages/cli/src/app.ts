@@ -59,7 +59,7 @@ export class App {
 
   async #boot(): Promise<void> {
     this.#agent = await buildAgent(this.#config)
-    this.#model.set(this.#agent.model.id)
+    this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
 
     this.#render = buildRenderer(this.#agent, {
       busy: this.#busy.get,

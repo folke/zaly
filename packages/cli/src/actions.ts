@@ -1,6 +1,8 @@
 import type { Agent } from "@zaly/agent"
 import type { Renderer } from "@zaly/tui"
 
+import { loginCodex } from "@zaly/ai"
+
 export interface ActionContext {
   agent: Agent
   renderer: Renderer
@@ -45,6 +47,15 @@ export function registerActions(ctx: ActionContext): void {
       keys: ["ctrl-h"],
       name: "help",
     },
+    "app.login": {
+      desc: "authorize zaly with your ChatGPT (codex) account",
+      fn: () => {
+        void runCodexLogin().catch((error) => {
+          console.error("[login] failed:", error instanceof Error ? error.message : error)
+        })
+      },
+      name: "login",
+    },
     "app.quit": {
       desc: "exit zaly",
       fn: () => {
@@ -65,4 +76,37 @@ export function registerActions(ctx: ActionContext): void {
       name: "stop",
     },
   })
+}
+
+/** Drive the codex PKCE login flow with progress messages streamed to
+ *  stdout. The TUI surfaces them in the conversation area, same as
+ *  `app.compact`. Browser is opened via the platform `open` /
+ *  `xdg-open` / `start` helper; on bind failure the URL is printed for
+ *  the user to copy manually. */
+async function runCodexLogin(): Promise<void> {
+  console.log("[login] starting OpenAI Codex (ChatGPT) authorization…")
+  const creds = await loginCodex({
+    onAuthUrl: ({ url }) => {
+      console.log(`[login] open this URL in your browser if it doesn't open automatically:\n  ${url}`)
+      openBrowser(url)
+    },
+    onProgress: (message) => {
+      console.log(`[login] ${message}`)
+    },
+  })
+  console.log(`[login] linked ChatGPT account ${creds.accountId}.`)
+}
+
+/** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures
+ *  are silent — the URL has already been printed for the user. */
+function openBrowser(url: string): void {
+  let cmd: string[]
+  if (process.platform === "darwin") cmd = ["open", url]
+  else if (process.platform === "win32") cmd = ["cmd", "/c", "start", "", url]
+  else cmd = ["xdg-open", url]
+  try {
+    Bun.spawn(cmd, { stderr: "ignore", stdin: "ignore", stdout: "ignore" })
+  } catch {
+    // No `open` available — user can copy from the printed URL.
+  }
 }
