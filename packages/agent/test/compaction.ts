@@ -19,13 +19,7 @@ import type { CompactionContext } from "../src/compaction/compactions.ts"
 import type { BashUsage, FileUsage } from "../src/compaction/utils.ts"
 
 import { since } from "@zaly/shared"
-import {
-  extractBashUsage,
-  extractConversation,
-  extractFileUsage,
-  extractUserMessages,
-  messageTail,
-} from "../src/compaction/utils.ts"
+import { extractBashUsage, extractFileUsage } from "../src/compaction/utils.ts"
 import { loadSession } from "./helpers.ts"
 
 const lastCol = (lastTurn: number, lastTs: number): string => {
@@ -63,14 +57,14 @@ function formatFileTouches(files: FileUsage[]): string {
   return lines.join("\n")
 }
 
-function formatTranscript(transcript: string, tailLength: number): string {
-  const header = [
-    "=== Chat transcript (tail, maxTokens=20k) ===",
-    `tail length: ${tailLength} messages`,
-    `transcript length: ${transcript.length.toLocaleString()} chars (~${Math.ceil(transcript.length / 4).toLocaleString()} tokens)`,
-  ].join("\n")
-  return `${header}\n\n${transcript}`
-}
+// function formatTranscript(transcript: string, tailLength: number): string {
+//   const header = [
+//     "=== Chat transcript (tail, maxTokens=20k) ===",
+//     `tail length: ${tailLength} messages`,
+//     `transcript length: ${transcript.length.toLocaleString()} chars (~${Math.ceil(transcript.length / 4).toLocaleString()} tokens)`,
+//   ].join("\n")
+//   return `${header}\n\n${transcript}`
+// }
 
 const DEFAULT_SESSION =
   "~/.claude/projects/-home-folke-projects-zaly/01e44572-4bc9-43c6-863b-92e31190f95f.jsonl"
@@ -78,7 +72,7 @@ const DEFAULT_SESSION =
 const path = process.env.SESSION ?? DEFAULT_SESSION
 const session = await loadSession(path)
 
-const tail = await messageTail({ session, messages: session.messages }, { keepTokens: 20_000 })
+// const tail = await messageTail({ session, messages: session.messages }, { keepTokens: 20_000 })
 // let older = session.messages.slice(0, -tail.length)
 // the above is what should be used, but for testing, just take last 100
 const messages = session.messages //.slice(-500)

@@ -190,7 +190,6 @@ interface ResponsesRequestOptions {
   serviceTier?: "auto" | "default" | "flex" | "priority"
   promptCacheKey?: string
   metadata?: Record<string, string>
-  user?: string
 }
 
 async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
@@ -633,18 +632,9 @@ function* handleEvent(
       // Reasoning item closing — emit its `signature` (encrypted_content)
       // via a zero-delta reasoning event so collect() attaches it to
       // the open reasoning part.
-      const item = evt.item as
-        | { type?: string; encrypted_content?: string; call_id?: string; arguments?: string; name?: string }
-        | undefined
+      const item = evt.item as { type?: string; encrypted_content?: string } | undefined
       if (item?.type === "reasoning" && typeof item.encrypted_content === "string") {
         yield { delta: "", signature: item.encrypted_content, type: "reasoning-delta" }
-      }
-      // Flush a function_call item that closed without a matching
-      // `function_call_arguments.done` (defensive — public API always
-      // emits the .done first).
-      if (item?.type === "function_call") {
-        // The Map is keyed by item.id, which we don't have here without
-        // reconstructing — fall through to end-of-stream flush.
       }
       return
     }
