@@ -13,7 +13,6 @@ export type NotifyOptions = {
 
 export class Notifier {
   #opts: Required<NotifyOptions>
-  #modelId?: string
   #lastStep?: number
   #lastTime?: number
   /** Highest pressure threshold (from `#pressureLevels`) we've already
@@ -26,44 +25,57 @@ export class Notifier {
     this.#opts = { idle: 30 * 60, periodic: 60 * 60, ...opts }
   }
 
+  attach(agent: Agent) {
+    agent.session
+      .on("compact", ({ node }) => {
+        this.#pressureLevel = 0
+        agent.notify({
+          data: { ...this.time(), messages_preserved: node.tail, trigger: node.trigger },
+          tag: "compacted",
+        })
+      })
+      .on("session-resume", () => {
+        agent.notify({ data: this.time(), tag: "session-resume" })
+      })
+      .on("session-start", () => {
+        agent.notify({ data: this.time(), tag: "session-start" })
+      })
+      .on("cwd", ({ cwd }) => {
+        agent.notify({ data: { cwd }, tag: "cwd-changed" })
+      })
+      .on("dddd", () => {})
+      .on("meta", ({ changes, prev }) => {
+        if (changes.modelId === undefined) return
+        agent.notify({
+          data: { current: changes.modelId, previous: prev.modelId },
+          tag: "model-changed",
+        })
+      })
+  }
+
+  time(now = Date.now()) {
+    this.#lastStep = now
+    return timeInfo(now)
+  }
+
   check(ctx: NotifyContext) {
     const { agent } = ctx
-    const { session } = agent
 
     const now = Date.now()
-    const nowInfo = timeInfo(now)
     const lastInfo = this.#lastStep ? timeInfo(this.#lastStep) : undefined
 
-    const prevModelId = session.meta.modelId
-
-    let notified = true
-    if (!this.#lastStep) {
-      agent.notify({
-        data: nowInfo,
-        tag: agent.messages.length > 0 ? "session-resumed" : "session-started",
-      })
-    } else if (lastInfo && nowInfo.date !== lastInfo.date) {
-      agent.notify({ data: nowInfo, tag: "new-day" })
+    this.#lastStep ??= now
+    if (lastInfo && timeInfo(now).date !== lastInfo.date) {
+      agent.notify({ data: this.time(now), tag: "new-day" })
     } else if (now - this.#lastStep > this.#opts.idle * 1000) {
-      agent.notify({ data: { idle: since(this.#lastStep, now), ...nowInfo }, tag: "user-returned" })
-    } else if (now - (this.#lastTime ?? now) > this.#opts.periodic * 1000) {
-      agent.notify({ data: nowInfo, tag: "time" })
-    } else {
-      notified = false
-    }
-    if (notified) this.#lastTime = now
-
-    this.#lastStep = now
-
-    this.#modelId ??= prevModelId ?? agent.model.id
-    const [current, previous] = [agent.model.id, this.#modelId]
-    if (current !== previous) {
-      this.#modelId = current
       agent.notify({
-        data: { current, previous },
-        tag: "model-changed",
+        data: { idle: since(this.#lastStep, now), ...this.time(now) },
+        tag: "user-returned",
       })
+    } else if (now - (this.#lastTime ?? now) > this.#opts.periodic * 1000) {
+      agent.notify({ data: this.time(now), tag: "time" })
     }
+    this.#lastTime = now
 
     // Context-window pressure — denominator is `limit.context` (full
     // window), NOT `maxTokens` (per-request output cap). Notification
@@ -101,4 +113,3 @@ export function timeInfo(t = Date.now()): {
     tz,
   }
 }
-

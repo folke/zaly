@@ -135,6 +135,7 @@ export class Agent extends Emitter<AgentEvents> {
     // object tunes thresholds while keeping it active.
     if (opts.notify !== false) {
       this.#notifier = new Notifier(typeof opts.notify === "object" ? opts.notify : {})
+      this.#notifier.attach(this)
     }
     // Masking is on by default — `false` disables; `MaskOptions` tunes;
     // `true` / undefined → default policy.
