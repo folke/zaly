@@ -14,6 +14,8 @@ export type ProviderLoader<T extends string = string> = (
 export const providers = {
   anthropic: (opts) => import("./anthropic.ts").then((m) => m.createAnthropic(opts)),
   openai: (opts) => import("./openai.ts").then((m) => m.createOpenAI(opts)),
+  "openai-responses": (opts) =>
+    import("./openai-responses.ts").then((m) => m.createOpenAIResponses(opts)),
 } as const satisfies Record<string, ProviderLoader>
 
 export type BuiltinProvider = keyof typeof providers

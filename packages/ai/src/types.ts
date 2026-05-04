@@ -602,6 +602,32 @@ export interface Quirks {
 
   /** Model supports `strict: true` on tool definitions. Default false. */
   strictTools?: boolean
+
+  // ── OpenAI Responses adapter ─────────────────────────────────────────
+  // The Responses API has a few wire knobs the codex variant flips:
+  // store=false (no server-side persistence), include reasoning encrypted
+  // content for round-trip, and route the system prompt to the
+  // top-level `instructions` field instead of an `input` message.
+  // Generic adapter, codex behavior driven entirely by these.
+
+  /** Whether the Responses API persists the response server-side
+   *  (`store`). Default `true`. Codex backend requires `false`. */
+  responsesStore?: boolean
+  /** Extra fields to request on the response payload. Codex backend
+   *  needs `["reasoning.encrypted_content"]` so the model can round-trip
+   *  reasoning across turns. */
+  responsesInclude?: string[]
+  /** Where the durable system prompt lands.
+   *  - `"input"` (default) — first item, `role: "system"` message.
+   *  - `"instructions"` — top-level `instructions` field. Codex backend
+   *    rejects system messages in `input` and requires this. */
+  responsesSystemAs?: "input" | "instructions"
+  /** Reasoning summary verbosity for the Responses API. Default
+   *  `"auto"`. `"off"` disables the summary stream. */
+  responsesReasoningSummary?: "auto" | "concise" | "detailed" | "off"
+  /** Friendly-error formatting for known endpoint shapes. `"codex"`
+   *  parses ChatGPT usage-limit responses into a human message. */
+  friendlyErrors?: "codex"
 }
 
 /** Everything needed to construct a `Model`. For catalog ids this is

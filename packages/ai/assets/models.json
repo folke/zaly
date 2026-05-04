@@ -10476,7 +10476,7 @@
         "output": 8192
       },
       "maxTokens": 8192,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/xai/grok-4-1-fast-non-reasoning": {
@@ -10510,7 +10510,7 @@
         "output": 30000
       },
       "maxTokens": 30000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/nvidia/nemotron-3-super-120b-a12b": {
@@ -10542,7 +10542,7 @@
         "output": 32000
       },
       "maxTokens": 32000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/openai/gpt-5-mini": {
@@ -10577,7 +10577,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/openai/gpt-5.2": {
@@ -10612,7 +10612,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/openai/gpt-5.1": {
@@ -10647,7 +10647,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/openai/gpt-5.4": {
@@ -10682,7 +10682,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/google/gemini-3.1-pro-preview": {
@@ -10724,7 +10724,7 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/google/gemini-3-flash-preview": {
@@ -10766,7 +10766,7 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/google/gemini-2.5-pro": {
@@ -10808,7 +10808,7 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/google/gemini-2.5-flash": {
@@ -10845,7 +10845,7 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/anthropic/claude-haiku-4-5": {
@@ -10880,7 +10880,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/anthropic/claude-sonnet-4-6": {
@@ -10915,7 +10915,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/anthropic/claude-opus-4-5": {
@@ -10950,7 +10950,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/anthropic/claude-opus-4-6": {
@@ -10985,7 +10985,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "perplexity-agent/anthropic/claude-sonnet-4-5": {
@@ -11020,7 +11020,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
     "siliconflow-cn/Kwaipilot/KAT-Dev": {
@@ -29357,7 +29357,7 @@
         "output": 16380
       },
       "maxTokens": 16380,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29394,7 +29394,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29429,7 +29429,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29467,7 +29467,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29502,7 +29502,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29540,7 +29540,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29575,7 +29575,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29613,7 +29613,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29650,7 +29650,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29688,7 +29688,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29724,7 +29724,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29761,7 +29761,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29797,7 +29797,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29835,7 +29835,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -29872,7 +29872,7 @@
         "output": 64000
       },
       "maxTokens": 64000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai",
         "api": "https://zenmux.ai/api/v1"
@@ -37135,7 +37135,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.vivgrid.com/v1"
     },
     "vivgrid/gemini-3.1-flash-lite-preview": {
@@ -37334,7 +37334,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.vivgrid.com/v1"
     },
     "vivgrid/gpt-5.4-mini": {
@@ -37448,7 +37448,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.vivgrid.com/v1"
     },
     "vivgrid/gpt-5.4": {
@@ -37558,7 +37558,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "baseUrl": "https://api.vivgrid.com/v1"
     },
     "qiniu-ai/qwen3-235b-a22b": {
@@ -49376,7 +49376,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49607,7 +49607,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49647,7 +49647,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49722,7 +49722,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49877,7 +49877,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49953,7 +49953,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -49993,7 +49993,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50032,7 +50032,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50116,7 +50116,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50156,7 +50156,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50272,7 +50272,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50310,7 +50310,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50464,7 +50464,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50579,7 +50579,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50618,7 +50618,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50663,7 +50663,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -50708,7 +50708,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "providerOverride": {
         "npm": "@ai-sdk/openai"
       },
@@ -67397,7 +67397,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67434,7 +67434,7 @@
         "output": 4096
       },
       "maxTokens": 4096,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67472,7 +67472,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67510,7 +67510,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67571,7 +67571,7 @@
         }
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67610,7 +67610,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67649,7 +67649,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67689,7 +67689,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67726,7 +67726,7 @@
         "output": 4096
       },
       "maxTokens": 4096,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67765,7 +67765,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67802,7 +67802,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67841,7 +67841,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67878,7 +67878,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67933,7 +67933,7 @@
         }
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -67971,7 +67971,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68010,7 +68010,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68050,7 +68050,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68088,7 +68088,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68127,7 +68127,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68165,7 +68165,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68204,7 +68204,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68243,7 +68243,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68285,7 +68285,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68322,7 +68322,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68359,7 +68359,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68396,7 +68396,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68432,7 +68432,7 @@
         "output": 8192
       },
       "maxTokens": 8192,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68471,7 +68471,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68532,7 +68532,7 @@
         }
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68570,7 +68570,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68610,7 +68610,7 @@
         "output": 32000
       },
       "maxTokens": 32000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68648,7 +68648,7 @@
         "output": 32768
       },
       "maxTokens": 32768,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68687,7 +68687,7 @@
         "output": 100000
       },
       "maxTokens": 100000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68725,7 +68725,7 @@
         "output": 272000
       },
       "maxTokens": 272000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68764,7 +68764,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68803,7 +68803,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68846,7 +68846,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68885,7 +68885,7 @@
         "output": 32768
       },
       "maxTokens": 32768,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68924,7 +68924,7 @@
         "output": 32768
       },
       "maxTokens": 32768,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -68963,7 +68963,7 @@
         "output": 128000
       },
       "maxTokens": 128000,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"
@@ -69001,7 +69001,7 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
+      "provider": "openai-responses",
       "quirks": {
         "maxTokensField": "max_completion_tokens",
         "thinkingFormat": "openai"

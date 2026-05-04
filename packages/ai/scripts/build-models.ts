@@ -52,7 +52,12 @@ interface Output {
 
 function adapterForNpm(npm: string): BuiltinProvider | undefined {
   switch (npm) {
-    case "@ai-sdk/openai":
+    // The official OpenAI SDK speaks Responses; the OpenAI-compatible
+    // family (and OpenRouter) only speak Chat Completions. Matches pi's
+    // routing — see pi-mono/packages/ai/scripts/generate-models.ts.
+    case "@ai-sdk/openai": {
+      return "openai-responses"
+    }
     case "@ai-sdk/openai-compatible":
     case "@openrouter/ai-sdk-provider": {
       return "openai"
