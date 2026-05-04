@@ -1,4 +1,10 @@
-import type { ContentPart } from "../types.ts"
+import type { ContentPart, ReasoningPart, ToolCallPart, ToolResultPart } from "../types.ts"
+
+/** Anything with a discriminator — broad enough to carry the full
+ *  message-level part union (`ContentPart` plus `ReasoningPart`,
+ *  `ToolCallPart`, `ToolResultPart`) so transcript / summarizer
+ *  pipelines can route those kinds through `drop` / `map` too. */
+export type AnyPart = ContentPart | ToolCallPart | ToolResultPart | ReasoningPart
 
 /**
  * Composable content-transform pipeline.
@@ -30,16 +36,16 @@ import type { ContentPart } from "../types.ts"
  * around, compose it with other pipelines (see `extend`), and apply
  * it to any number of content arrays.
  */
-export class ContentTransform<T extends ContentPart = ContentPart> {
-  readonly #stages: readonly Stage[]
+export class ContentTransform<T extends AnyPart = ContentPart> {
+  readonly #stages: readonly Stage<AnyPart>[]
 
-  private constructor(stages: readonly Stage[] = []) {
+  private constructor(stages: readonly Stage<AnyPart>[] = []) {
     this.#stages = stages
   }
 
   /** Empty pipeline — start chaining from here. */
-  static create(): ContentTransform {
-    return new ContentTransform()
+  static create<T extends AnyPart = ContentPart>(): ContentTransform<T> {
+    return new ContentTransform<T>()
   }
 
   /** Drop every part of `kind`. The output type narrows to exclude
@@ -65,7 +71,7 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *    img.source.type === "url" ? img : compressed(img)
    *  )
    *  ``` */
-  map<K extends T["type"], R extends ContentPart>(
+  map<K extends T["type"], R extends AnyPart>(
     kind: K,
     fn: (part: Extract<T, { type: K }>) => R | readonly R[] | undefined
   ): ContentTransform<Exclude<T, { type: K }> | R> {
@@ -83,12 +89,12 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  network fetch, format conversion). Stages run sequentially via
    *  the runner's `await` — earlier stages fully complete before
    *  later stages start. */
-  mapAsync<K extends T["type"], R extends ContentPart>(
+  mapAsync<K extends T["type"], R extends AnyPart>(
     kind: K,
     fn: (part: Extract<T, { type: K }>) => Promise<R | readonly R[] | undefined>
   ): ContentTransform<Exclude<T, { type: K }> | R> {
     return this.#stage(async (parts) => {
-      const out: ContentPart[] = []
+      const out: AnyPart[] = []
       for (const p of parts) {
         if (p.type !== kind) {
           out.push(p)
@@ -114,7 +120,7 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  output type is unchanged — declare any narrowing/widening
    *  through `drop`/`mapPart` instead. */
   rewrite(fn: (parts: T[]) => T[] | Promise<T[]>): ContentTransform<T> {
-    return this.#stage((parts) => fn(parts as T[]) as ContentPart[] | Promise<ContentPart[]>)
+    return this.#stage((parts) => fn(parts as T[]) as AnyPart[] | Promise<AnyPart[]>)
   }
 
   /** Append every stage from `other` to this pipeline. The combined
@@ -125,7 +131,7 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  was built starting from `ContentPart` (the typical helper shape),
    *  so its `U` doesn't reflect what *this* chain narrowed. For
    *  composition that tracks narrowing through helpers, use `pipe`. */
-  extend<U extends ContentPart>(other: ContentTransform<U>): ContentTransform<U> {
+  extend<U extends AnyPart>(other: ContentTransform<U>): ContentTransform<U> {
     return new ContentTransform<U>([...this.#stages, ...other.#stages])
   }
 
@@ -139,7 +145,7 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  ct.pipe(errorToMeta())          // helper returning a step fn
    *    .pipe(attachmentToMeta("audio"))
    *  ``` */
-  pipe<U extends ContentPart>(
+  pipe<U extends AnyPart>(
     step: (ct: ContentTransform<T>) => ContentTransform<U>
   ): ContentTransform<U> {
     return step(this)
@@ -153,8 +159,8 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  content. The chain's narrowing applies to the *output* (`T`),
    *  not the input: dropping `image` doesn't mean callers can't feed
    *  images, just that images won't appear in the result. */
-  async run(content: readonly ContentPart[]): Promise<T[]> {
-    let parts: ContentPart[] = [...content]
+  async run(content: readonly AnyPart[]): Promise<T[]> {
+    let parts: AnyPart[] = [...content]
     for (const stage of this.#stages) {
       // Sequential — each stage feeds the next.
       // eslint-disable-next-line no-await-in-loop
@@ -171,8 +177,8 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
    *  afford to be async. The runtime guard keeps the contract honest:
    *  swapping in an async stage will fail loudly instead of returning
    *  a `Promise` that callers silently stringify as `[object Promise]`. */
-  runSync(content: readonly ContentPart[]): T[] {
-    let parts: ContentPart[] = [...content]
+  runSync(content: readonly AnyPart[]): T[] {
+    let parts: AnyPart[] = [...content]
     for (const stage of this.#stages) {
       const result = stage(parts)
       if (result instanceof Promise) {
@@ -189,13 +195,13 @@ export class ContentTransform<T extends ContentPart = ContentPart> {
   // type parameter. The cast is safe because the runtime stage shape
   // doesn't depend on `T` — only the static signatures of the public
   // chain methods enforce the correct union.
-  #stage<U extends ContentPart>(fn: Stage): ContentTransform<U> {
+  #stage<U extends AnyPart>(fn: Stage<AnyPart>): ContentTransform<U> {
     return new ContentTransform<U>([...this.#stages, fn])
   }
 }
 
-export function createTransform<T extends ContentPart = ContentPart>(): ContentTransform<T> {
-  return ContentTransform.create() as ContentTransform<T>
+export function createTransform<T extends AnyPart = ContentPart>(): ContentTransform<T> {
+  return ContentTransform.create() as unknown as ContentTransform<T>
 }
 
-type Stage = (parts: ContentPart[]) => ContentPart[] | Promise<ContentPart[]>
+type Stage<P extends AnyPart> = (parts: P[]) => P[] | Promise<P[]>
