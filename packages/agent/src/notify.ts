@@ -43,7 +43,6 @@ export class Notifier {
       .on("cwd", ({ cwd }) => {
         agent.notify({ data: { cwd }, tag: "cwd-changed" })
       })
-      .on("dddd", () => {})
       .on("meta", ({ changes, prev }) => {
         if (changes.modelId === undefined) return
         agent.notify({

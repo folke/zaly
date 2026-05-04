@@ -121,7 +121,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       type,
       uuid: uuidv7(),
     })
-    this.emit(type, {})
+    this.emit(type)
   }
 
   // ── Read ──────────────────────────────────────────────────────────────

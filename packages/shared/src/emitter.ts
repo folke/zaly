@@ -160,16 +160,16 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
  * to get the full set of event types. The `Emitter` constructor is then
  * typed to produce the intersection. */
 export const Emitter = BaseEmitter as new <
-  A extends EventMap = EventMap,
-  B extends EventMap = EventMap,
-  C extends EventMap = EventMap,
-  D extends EventMap = EventMap,
+  A extends EventMap = never,
+  B extends EventMap = never,
+  C extends EventMap = never,
+  D extends EventMap = never,
 >() => Emitter<A, B, C, D>
 export type Emitter<
-  A extends EventMap = EventMap,
-  B extends EventMap = EventMap,
-  C extends EventMap = EventMap,
-  D extends EventMap = EventMap,
+  A extends EventMap = never,
+  B extends EventMap = never,
+  C extends EventMap = never,
+  D extends EventMap = never,
 > = InstanceType<typeof BaseEmitter<A>> &
   InstanceType<typeof BaseEmitter<B>> &
   InstanceType<typeof BaseEmitter<C>> &
@@ -180,16 +180,16 @@ export type Emitter<
  * to get the full set of event types. The `Emitter` constructor is then
  * typed to produce the intersection. */
 export const AsyncEmitter = BaseEmitter as new <
-  A extends EventMap = EventMap,
-  B extends EventMap = EventMap,
-  C extends EventMap = EventMap,
-  D extends EventMap = EventMap,
+  A extends EventMap = never,
+  B extends EventMap = never,
+  C extends EventMap = never,
+  D extends EventMap = never,
 >() => AsyncEmitter<A, B, C, D>
 export type AsyncEmitter<
-  A extends EventMap = EventMap,
-  B extends EventMap = EventMap,
-  C extends EventMap = EventMap,
-  D extends EventMap = EventMap,
+  A extends EventMap = never,
+  B extends EventMap = never,
+  C extends EventMap = never,
+  D extends EventMap = never,
 > = InstanceType<typeof BaseEmitter<A, Promise<void>>> &
   InstanceType<typeof BaseEmitter<B, Promise<void>>> &
   InstanceType<typeof BaseEmitter<C, Promise<void>>> &
