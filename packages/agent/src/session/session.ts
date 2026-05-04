@@ -1,45 +1,27 @@
 import type { Message } from "@zaly/ai"
-import type { WriteStream } from "node:fs"
+import type { SessionStore } from "./store.ts"
 import type {
   InternalMeta,
   MessageMeta,
   PersistedMeta,
-  PersistedNode,
   SessionEvents,
   SessionInit,
   SessionMeta,
   SessionNode,
+  SessionNodeView,
   SessionOptions,
+  SessionView,
 } from "./types.ts"
 
-import { Emitter, normPath, safeReadFile, safeStringify } from "@zaly/shared"
-import { createWriteStream } from "node:fs"
+import { Emitter, normPath } from "@zaly/shared"
 import { isDeepStrictEqual } from "node:util"
 import { join } from "pathe"
 import { zalyPaths } from "../utils/paths.ts"
 import { uuidv7 } from "../utils/uuid.ts"
+import { JsonlStore } from "./jsonl.ts"
+import { MemoryStore } from "./memory.ts"
 
 const VERSION = 1
-
-function migrate(node: SessionNode, meta: PersistedMeta): SessionNode {
-  const version = meta.version
-  if (version === VERSION) return node
-
-  if (version === 0) {
-    if (node.type === "message" || node.type === "session-start") {
-      const modelId = (node as unknown as { modelId?: string }).modelId
-      meta.modelId = modelId ?? meta.modelId
-    }
-    if (node.type === "message") {
-      // Patch id/ts onto loaded messages for older session files that
-      // were written before Message.id/ts existed. Idempotent for newer
-      // files (the fields already match the node).
-      node.message.id ??= node.uuid
-      node.message.ts ??= node.ts
-    }
-  }
-  return node
-}
 
 function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: SessionMeta } {
   const { version, sessionId, ...session } = meta
@@ -47,21 +29,18 @@ function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: Sess
   return { internal, session }
 }
 
-function diffMeta(oldMeta: PersistedMeta, newMeta: PersistedMeta) {
-  const diff = Object.entries(newMeta).filter(
-    ([k, v]) => !isDeepStrictEqual(v, oldMeta[k as keyof SessionMeta])
-  )
-  return {
-    changes: diff.length,
-    meta: Object.fromEntries(diff),
-  }
-}
-
 /**
- * Conversation primitive. Owns a DAG of message + compaction nodes and
- * a head pointer; the *active* message list is whatever you get by
- * walking `parentUuid` backwards from the head until you hit a
- * `compact` node (or the start).
+ * Conversation primitive. Owns a DAG of message + compaction + meta
+ * nodes via a `SessionStore` backend; the *active* message list is
+ * whatever you get by walking `parentUuid` backwards from the store's
+ * root until you hit a `compact` node (or the start).
+ *
+ * **Meta is snapshot-based.** `session-meta` nodes carry the full
+ * cumulative meta as of their commit time. Other node types (start,
+ * resume, message, compact) don't carry meta — `Session` reconstructs
+ * the cumulative meta at any point by finding the most recent
+ * `session-meta` ancestor in a forward pass over the chain. Public
+ * APIs return `SessionNodeView` (raw node + decorated `meta`).
  *
  * Designed so the loop, the persistor, the TUI, and any replay tool
  * all read from one source of truth and never mutate the DAG behind
@@ -69,134 +48,66 @@ function diffMeta(oldMeta: PersistedMeta, newMeta: PersistedMeta) {
  *
  * - **Run loop** (`Agent`) calls `add()` on each new message and
  *   `compact()` on overflow.
- * - **TUI** subscribes to the `node` event for streaming render and to
- *   `navigate` for tree-checkout style refresh.
- * - **Persistor** writes every `node` to the JSONL `path` if supplied.
- * - **`/tree` UI** reads `nodes` for the full DAG and calls
- *   `navigate(uuid)` to switch heads.
- *
- * Branching, rewind, and replay all collapse to "set head." Nothing in
- * the format is destructive — old messages stay as orphan branches.
+ * - **TUI** subscribes to the `node` event for streaming render.
+ * - **Persistor** is the `SessionStore` — `MemoryStore` for ephemeral
+ *   sessions, `JsonlStore` for file-backed.
  *
  * Construction:
- *   - Use `await Session.load(opts)` for the recommended path — handles
- *     reading existing records + opening the writer in append mode.
- *   - The constructor is `protected` so subclasses (test doubles) can
- *     still extend `Session`, but production code goes through `load`.
+ *   - Use `await Session.load(opts)` for the recommended path — picks
+ *     the right store (Memory if no path, JSONL if path).
+ *   - For tests / direct embedding, `new Session({ store })` works with
+ *     any pre-built store.
  */
 export class Session extends Emitter<SessionEvents> {
-  readonly #nodes: Map<string, SessionNode>
+  readonly #store: SessionStore
   #id: string
   #cwd: string
   #dir: string
   #path?: string
-  #head?: string
-  #messages: Message[] = []
-  #writer?: WriteStream
+  #view: SessionView = { messages: [], meta: {}, nodes: new Map() }
   #closed = false
-  #meta: PersistedMeta = {} // Persisted meta data
   #started = false
 
-  /** Synchronous, low-level constructor. Prefer `Session.load(opts)` —
-   *  it runs the same construction *plus* file I/O (reading existing
-   *  records and opening the writer in append mode). The constructor
-   *  is `protected` so subclasses can still call `super()` directly. */
-  protected constructor(opts: SessionInit = {}) {
+  constructor(opts: SessionInit) {
     super()
-    this.#nodes = opts.nodes ?? new Map<string, SessionNode>()
-    this.#meta = opts.meta ?? {}
-    this.#writer = opts.writer
+    this.#store = opts.store
     this.#id = opts.id ?? uuidv7()
     this.#cwd = normPath(opts.cwd ?? process.cwd())
     this.#dir = normPath(opts.dir ?? join(zalyPaths.tmp, "sessions"))
     this.#path = opts.path ? normPath(opts.path) : undefined
-    this.#head = opts.head ?? [...this.#nodes.keys()].at(-1)
-    if (this.#head !== undefined && !this.#nodes.has(this.#head))
-      throw new Error(`Session: head "${this.#head}" not in file "${this.#path}"`)
-    this.#rebuild()
   }
 
-  #rebuild() {
-    this.#messages = this.#chain(this.#head, { active: true }).map((c) => c.message)
-  }
-
-  /** Recommended one-step path: construct, optionally hydrate from
-   *  `opts.path`, and open the writer for future appends. The returned
-   *  session is fully operational. */
+  /** Recommended one-step path: pick the right store backend, hydrate
+   *  if applicable, return a ready-to-use session.
+   *
+   *  - `path` provided → `JsonlStore` (file-backed, hydrates from disk
+   *    if the file exists, opens for append either way).
+   *  - No `path` → `MemoryStore` (ephemeral, no persistence). */
   static async load(opts: SessionOptions = {}): Promise<Session> {
-    let init: Partial<SessionInit> = { ...opts, path: undefined }
-    if (opts.path && typeof opts.path === "string") {
-      const hydrated = await Session.#hydrate(opts.path)
-      init = { ...hydrated, ...init, path: normPath(opts.path) }
-    }
-    const cwd = init.cwd ?? process.cwd()
-    const id = init.id ?? uuidv7()
-    let path = opts.path ?? init.path
-    path = path ? normPath(path) : undefined
-    const writer = path ? createWriteStream(path, { flags: "a" }) : undefined
-    return new Session({ ...init, cwd, id, path, writer })
+    const cwd = opts.cwd ?? process.cwd()
+    const path = opts.path ? normPath(opts.path) : undefined
+    const store: SessionStore = path ? await JsonlStore.load(path) : new MemoryStore()
+    const init: SessionInit = { ...opts, cwd, path, store }
+    const session = new Session(init)
+    await session.#rebuild()
+    return session
   }
 
-  /** Load existing records from `path` (when the file exists) and open
-   *  the writer in append mode. New session-start / message / compact
-   *  nodes will land on disk as they're committed. */
-  static async #hydrate(path: string): Promise<Partial<SessionInit> | undefined> {
-    // Honor `~` and any relative-to-cwd shorthand the caller passed.
-    path = normPath(path)
-    const text = await safeReadFile(path)
-    if (text === undefined) return
-
-    const nodes = new Map<string, SessionNode>()
-    const lines = text.split("\n")
-    // oxlint-disable-next-line oxc/no-accumulating-spread
-    let meta: PersistedMeta = {}
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      if (line.length === 0) continue
-      let record: PersistedNode
-      try {
-        record = JSON.parse(line) as PersistedNode
-      } catch (error) {
-        // Tolerate a truncated last line (crash mid-write); anything
-        // else is real corruption.
-        if (i === lines.length - 1) continue
-        throw new Error(
-          `Session.load: malformed JSON at line ${i + 1} of "${path}": ${(error as Error).message}`,
-          { cause: error }
-        )
-      }
-      // update meta with changes
-      if (record.meta) meta = { ...meta, ...record.meta }
-      const nodeMeta = splitMeta(meta).session
-      const node = migrate({ ...record, meta: nodeMeta } as SessionNode, meta)
-      nodes.set(record.uuid, node)
-    }
-
-    return {
-      cwd: meta.cwd,
-      id: meta.sessionId,
-      meta,
-      nodes,
-      path,
-    }
+  async #rebuild(): Promise<void> {
+    this.#view = await this.#chain()
+    this.#id = this.#view.meta.sessionId ?? this.#id
   }
 
-  /** Initialize the session. On the first call (empty DAG) writes a
-   *  `session-start` node; subsequent calls — including after
-   *  `Session.load` rehydrates an existing file — write a
-   *  `session-resume` node, so the DAG records every Agent that picks
-   *  the session up. `meta` is merged into the cumulative session meta
-   *  via the same diff-and-persist path as `update()`; only changed
-   *  fields land on disk. */
-  #autostart() {
+  /** Lazily emits `session-start` on a fresh session or `session-resume`
+   *  on a hydrated one. Called from `#commit` before the first non-marker
+   *  node lands so the start/resume marker always heads the chain. */
+  async #autostart(): Promise<void> {
     if (this.#started) return
     this.#started = true
-    return this.#commit({
-      meta: {},
-      parentUuid: this.#head,
+    await this.#commit({
+      parentUuid: this.#store.root?.uuid,
       ts: Date.now(),
-      type: this.#messages.length > 0 ? "session-resume" : "session-start",
+      type: this.messages.length > 0 ? "session-resume" : "session-start",
       uuid: uuidv7(),
     })
   }
@@ -207,7 +118,7 @@ export class Session extends Emitter<SessionEvents> {
    *  recent compact (exclusive), in chronological order. This is what
    *  the agent sees on the next request. */
   get messages(): readonly Message[] {
-    return this.#messages
+    return this.#view.messages
   }
 
   get id(): string {
@@ -226,44 +137,60 @@ export class Session extends Emitter<SessionEvents> {
     return this.#cwd
   }
 
+  /** Cumulative session meta as of the current head — derived from the
+   *  most recent `session-meta` snapshot in the active chain. */
   get meta(): SessionMeta {
-    return splitMeta(this.#meta).session
+    return splitMeta(this.#view.meta).session
   }
 
-  update(meta: SessionMeta) {
-    return this.#commit({
-      meta,
-      parentUuid: this.#head,
-      ts: Date.now(),
-      type: "session-meta",
-      uuid: uuidv7(),
-    })
+  async update(meta: SessionMeta, opts?: { force?: boolean }): Promise<string> {
+    return this.#commit(
+      {
+        meta,
+        parentUuid: this.#store.root?.uuid,
+        ts: Date.now(),
+        type: "session-meta",
+        uuid: uuidv7(),
+      },
+      opts
+    )
   }
 
-  /** Look up the full session node for a `Message.id`. Returns the
-   *  message-typed node, or `undefined` if the id doesn't refer to a
-   *  message in this session (unknown id, or id refers to a non-message
-   *  node like `compact` / `session-start`). Useful when you have a
-   *  Message in hand (e.g. inside the masker or a tool) and need the
-   *  surrounding metadata — parent uuid, model id, usage, etc. */
-  node(id?: string | Message): Extract<SessionNode, { type: "message" }> | undefined {
+  /** Explicitly mark the session as started — writes a `session-start`
+   *  marker on a fresh session, `session-resume` on a hydrated one.
+   *  Idempotent; subsequent calls are no-ops. Optional `meta` is
+   *  applied via `update()` after the marker lands. */
+  async start(meta?: SessionMeta): Promise<string | undefined> {
+    await this.#autostart()
+    if (meta) await this.update(meta)
+    return this.#store.root?.uuid
+  }
+
+  /** Look up the decorated view for a node id — raw node plus the
+   *  cumulative meta as of that node's position. Returns the
+   *  message-typed view, or `undefined` if the id doesn't refer to a
+   *  message in this session. */
+  async node(id?: string | Message): Promise<(SessionNodeView & { type: "message" }) | undefined> {
     const m = typeof id === "string" ? { id } : id
-    const n = m?.id ? this.#nodes.get(m.id) : undefined
-    return n?.type === "message" ? n : undefined
+    if (!m?.id) return undefined
+    const ret = this.#view.nodes.get(m.id)
+    return ret?.type === "message" ? ret : undefined
   }
 
-  /** Current head uuid — the parent of the next added node. */
+  /** Current head uuid — the root of the store, which is the most
+   *  recently appended node. */
   get head(): string | undefined {
-    return this.#head
+    return this.#store.root?.uuid
   }
 
-  /** Full DAG of nodes the session knows about. Read-only. */
-  get nodes(): ReadonlyMap<string, SessionNode> {
-    return this.#nodes
+  /** Full DAG iterator — backed by `store.all()`. Yields raw nodes
+   *  (no meta decoration). */
+  nodes(): Iterable<SessionNode> | AsyncIterable<SessionNode> {
+    return this.#store.all?.() ?? []
   }
 
   get root(): SessionNode | undefined {
-    return this.#nodes.get(this.#head ?? "")
+    return this.#store.root
   }
 
   // ── Mutate ────────────────────────────────────────────────────────────
@@ -277,15 +204,14 @@ export class Session extends Emitter<SessionEvents> {
    *  prior load), they're used as the node's uuid / timestamp; otherwise
    *  fresh values are generated. The committed message always carries
    *  both — `m.id === node.uuid` and `m.ts === node.ts`. */
-  add(message: Message, meta?: MessageMeta): string {
+  async add(message: Message, meta?: MessageMeta): Promise<string> {
     const uuid = message.id ?? uuidv7()
     const ts = message.ts ?? Date.now()
     const m =
       message.id !== undefined && message.ts !== undefined ? message : { ...message, id: uuid, ts }
     return this.#commit({
       message: m,
-      meta: {},
-      parentUuid: this.#head,
+      parentUuid: this.#store.root?.uuid,
       ts,
       type: "message",
       uuid,
@@ -295,19 +221,20 @@ export class Session extends Emitter<SessionEvents> {
 
   /** Mark a compaction boundary. Subsequent `add()` calls land after
    *  this node; their messages form the new active conversation. The
-   *  pre-compact chain stays in `nodes` but is no longer part of
-   *  `messages`. Returns the compact node's uuid. */
-  compact(opts: {
+   *  pre-compact chain stays in the store but is no longer part of
+   *  `messages`. Also commits a fresh `session-meta` snapshot right
+   *  after the compact so post-compact lazy walks always have a nearby
+   *  meta anchor. */
+  async compact(opts: {
     trigger?: "manual" | "auto"
     preTokens?: number
     durationMs?: number
     tail: number
     summary: Message<"system">
-  }): string {
-    return this.#commit({
+  }): Promise<string> {
+    const node: SessionNode = {
       durationMs: opts.durationMs,
-      meta: {},
-      parentUuid: this.#head,
+      parentUuid: this.#store.root?.uuid,
       preTokens: opts.preTokens,
       summary: opts.summary,
       tail: opts.tail,
@@ -315,19 +242,12 @@ export class Session extends Emitter<SessionEvents> {
       ts: Date.now(),
       type: "compact",
       uuid: uuidv7(),
-    })
-  }
-
-  /** Move the head to a known node and rebuild `messages` from its
-   *  chain. Throws if the uuid isn't in `nodes`. Use `undefined` to
-   *  return to the root (`session-start`). */
-  navigate(uuid: string | undefined): void {
-    if (uuid !== undefined && !this.#nodes.has(uuid)) {
-      throw new Error(`Session.navigate: unknown uuid "${uuid}"`)
     }
-    this.#head = uuid
-    this.#messages = this.#chain(uuid, { active: true }).map((c) => c.message)
-    this.emit("navigate", { head: uuid, messages: this.#messages })
+    const compactUuid = await this.#commit(node)
+    await this.update({}, { force: true })
+    await this.#rebuild()
+    this.emit("compact", { node })
+    return compactUuid
   }
 
   /** Pre-active history of the current chain — messages from before
@@ -337,145 +257,154 @@ export class Session extends Emitter<SessionEvents> {
    *
    *  `limit` truncates from the front (oldest), so the most recent
    *  history messages always make it through. */
-  history(limit?: number): Message[] {
-    return this.#chain(this.#head, { active: false, limit }).map((c) => c.message)
+  async history(limit?: number): Promise<readonly Message[]> {
+    const chain = await this.#chain({ active: false, limit })
+    return chain.messages
   }
 
-  /** Flush + close the JSONL writer if one is open. Subsequent writes
-   *  throw. No-op for in-memory sessions. */
+  /** Flush + close the underlying store. Subsequent writes throw. */
   async close(): Promise<void> {
     if (this.#closed) return
     this.#closed = true
-    const writer = this.#writer
-    if (!writer) return
-    this.#writer = undefined
-    await new Promise<void>((resolve, reject) => {
-      writer.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
-    })
-  }
-
-  #internalMeta(): Required<InternalMeta> & { cwd: string } {
-    return {
-      cwd: this.#cwd,
-      sessionId: this.#id,
-      version: VERSION,
-    }
+    await this.#store.close?.()
   }
 
   // ── Internals ────────────────────────────────────────────────────────
 
-  /** Atomically commit a node: register it in the DAG, advance the
-   *  head, update active messages, persist to disk if a writer is
-   *  attached, and emit. Single chokepoint for all mutations. */
-  #commit(node: SessionNode): string {
-    if (!this.#started && node.type !== "session-start" && node.type !== "session-resume")
-      this.#autostart()
+  /** Atomically commit a node: register it in the store, update active
+   *  messages, persist, and emit. Single chokepoint for all mutations. */
+  async #commit(node: SessionNode, opts: { force?: boolean } = {}): Promise<string> {
+    if (!this.#started && node.type !== "session-start" && node.type !== "session-resume") {
+      await this.#autostart()
+    }
     if (this.#closed) throw new Error("Session is closed")
-    // Sync `#cwd` only when the incoming node carries an explicit cwd
-    // (i.e. `start({ cwd })` or `update({ cwd })`). `add()` and
-    // `compact()` pass `meta: {}`, so `node.meta.cwd` is undefined for
-    // those — skip rather than clobbering `#cwd` to `process.cwd()`.
-    if (node.meta.cwd !== undefined && node.meta.cwd !== this.#cwd) {
-      this.#cwd = normPath(node.meta.cwd)
-      this.emit("cwd", { cwd: this.#cwd })
-    }
-    const { meta, changes } = diffMeta(this.#meta, { ...node.meta, ...this.#internalMeta() })
 
-    // No-op session-meta — don't add a node, don't advance head, don't emit.
-    // Returns the *current* head so callers don't see a fabricated uuid.
-    if (node.type === "session-meta" && changes === 0) {
-      return this.#head ?? node.uuid
+    // update cwd if needed
+    this.#cwd = node.type === "session-meta" && node.meta.cwd ? normPath(node.meta.cwd) : this.#cwd
+
+    const next: PersistedMeta = {
+      ...this.#view.meta,
+      ...(node.type === "session-meta" ? node.meta : {}),
+      cwd: this.#cwd,
+      sessionId: this.#id,
+      version: VERSION,
     }
 
-    this.#nodes.set(node.uuid, node)
-    this.#head = node.uuid
-    if (node.type === "message") this.#messages.push(node.message)
-    else if (node.type === "compact") this.#rebuild()
+    if (node.type === "session-meta") {
+      if (!opts.force && isDeepStrictEqual(this.#view.meta, next)) return this.#store.root!.uuid
+      node = { ...node, meta: next }
+    } else if (
+      node.type !== "session-start" &&
+      node.type !== "session-resume" &&
+      !isDeepStrictEqual(this.#view.meta, next)
+    ) {
+      await this.update({})
+    }
 
-    const persistNode = { ...node } as PersistedNode
+    node = { ...node, parentUuid: this.#store.root?.uuid }
+    await this.#store.write(node)
 
-    if (changes > 0) {
-      persistNode.meta = meta
-      this.#meta = { ...this.#meta, ...meta }
-      const updates = splitMeta(meta).session
-      delete updates.cwd // cwd is emitted separately via the "cwd" event, so omit it from the "meta" event's changes
-      if (Object.keys(updates).length > 0) this.emit("meta", { changes: updates, meta: this.meta })
-    } else persistNode.meta = undefined
+    // Decorate the new node with cumulative meta and append to the
+    // active chain view
+    this.#view.nodes.set(node.uuid, { ...node, meta: next })
+    if (node.type === "message") this.#view.messages.push(node.message)
 
-    node.meta = this.meta // ensure the in-memory node has the full meta
-    this.#writer?.write(`${safeStringify(persistNode)}\n`)
-    if (node.type === "compact") this.emit("compact", { node })
+    // cwd / meta event signaling
+    if (node.type === "session-meta") {
+      const prev = this.#view.meta
+      this.#cwd = normPath(next.cwd)
+      this.#view.meta = next
+      this.#emitChanges(prev)
+    }
+
     this.emit("node", { node })
     return node.uuid
   }
 
+  #emitChanges(meta: PersistedMeta): void {
+    const prev = splitMeta(meta).session
+    const next = splitMeta(this.#view.meta).session
+    if (next.cwd !== undefined && next.cwd !== prev.cwd) this.emit("cwd", { cwd: next.cwd })
+    const changes: Partial<Omit<SessionMeta, "cwd">> = {}
+    for (const k of Object.keys(next) as (keyof SessionMeta)[]) {
+      if (k === "cwd") continue
+      if (!isDeepStrictEqual(next[k], prev[k])) {
+        ;(changes as Record<string, unknown>)[k] = next[k]
+      }
+    }
+    if (Object.keys(changes).length > 0) this.emit("meta", { changes, meta: next })
+  }
+
   /** Walk `parentUuid` from the given node back toward the root,
-   *  collecting message-node messages. The `active` flag controls
-   *  what counts:
+   *  returning the chain as decorated views (each with cumulative meta).
+   *  The `active` flag controls what counts:
    *    - `true`      — only the active chain (stops at first compact /
-   *                    session-start). Drives the `messages` getter.
+   *                    session-start, with the kept tail spliced in via
+   *                    the compact's `tail` field).
    *    - `false`     — only the *historical* portion (skips messages
    *                    before crossing a compact / session-start, then
-   *                    collects everything older). Drives `history()`.
-   *    - `undefined` — collect everything across boundaries. Useful
-   *                    for tools that want a full ancestral chain
-   *                    regardless of compaction.
+   *                    collects everything older).
+   *    - `undefined` — collect everything across boundaries.
    *  Returns chronological order. */
-  #chain(
-    uuid: string | undefined,
-    opts: { active?: boolean; limit?: number } = {}
-  ): { uuid: string; ts: number; message: Message }[] {
-    const out: { uuid: string; ts: number; message: Message }[] = []
-    let cursor = uuid
-    let pastBoundary = false
+  async #chain(
+    opts: { active?: boolean; limit?: number; uuid?: string } = {}
+  ): Promise<SessionView> {
+    // Backward pass: collect raw nodes (new to old)
+    const reverse: SessionNode[] = []
+    let cursor = opts.uuid ?? this.#store.root?.uuid
+    let limit = opts.limit ?? Infinity
     while (cursor) {
-      const node = this.#nodes.get(cursor)
+      // eslint-disable-next-line no-await-in-loop
+      const node = await this.#store.get(cursor)
       if (!node) break
-      // True chain boundaries — these clear the active conversation
-      // context. `compact` is explicit; `session-start` is the root.
-      if (node.type === "compact") {
-        if (opts.active === true) {
-          // Cross into pre-compact history, but only for `tailLength` messages
-          let cursor2 = node.parentUuid
-          let collected = 0
-          while (cursor2 && collected < node.tail) {
-            const n = this.#nodes.get(cursor2)
-            if (!n) break
-            if (n.type === "compact" || n.type === "session-start") break
-            if (n.type === "message") {
-              out.push({ message: n.message, ts: n.ts, uuid: n.uuid })
-              collected++
-            }
-            cursor2 = n.parentUuid
-          }
-          // Emit the summary at the oldest position (will be FIRST after toReversed)
-          out.push({ message: node.summary, ts: node.ts, uuid: node.uuid })
-          break
-        }
-        // active=false / undefined: existing behavior unchanged
-        pastBoundary = true
-        cursor = node.parentUuid
-        continue
-      }
-      if (node.type === "session-start") {
-        if (opts.active === true) break
-        pastBoundary = true
-        cursor = node.parentUuid
-        continue
-      }
-      // Non-message node types (`session-resume`, `session-meta`) are
-      // markers, not boundaries — the active conversation flows through
-      // them. Walk past without affecting the chain.
-      if (node.type !== "message") {
-        cursor = node.parentUuid
-        continue
-      }
-      if (opts.active !== false || pastBoundary) {
-        out.push({ message: node.message, ts: node.ts, uuid: node.uuid })
-      }
-      if (opts.limit !== undefined && out.length >= opts.limit) break
       cursor = node.parentUuid
+      reverse.push(node)
+      if (reverse.length >= limit) break
+      if (node.type === "compact") {
+        if (opts.active ?? true) {
+          // update limit to the compact's tail
+          limit = Math.min(node.tail + reverse.length, limit)
+        }
+      }
     }
-    return out.toReversed()
+
+    // reconstruct meta
+    const view: SessionNodeView[] = []
+    let meta: PersistedMeta = {}
+    for (const n of reverse.toReversed()) {
+      if (n.type === "session-meta") meta = n.meta
+      view.push({ ...n, meta })
+    }
+
+    const drain = (len = Infinity) => {
+      // old to new
+      const drained: SessionNodeView[] = []
+      while (view.length && drained.length < len) {
+        const n = view.pop()!
+        if (n.type === "compact") {
+          drained.unshift(...drain(n.tail))
+          drained.unshift({
+            message: n.summary,
+            meta: n.meta,
+            parentUuid: n.parentUuid,
+            ts: n.ts,
+            type: "message",
+            uuid: n.uuid,
+          })
+        } else drained.unshift(n)
+      }
+      return drained
+    }
+
+    const nodes = drain()
+    const messages = nodes
+      .map((n) => (n.type === "message" ? n.message : undefined))
+      .filter((m): m is Message => m !== undefined)
+
+    return {
+      messages,
+      meta,
+      nodes: new Map(nodes.map((n) => [n.uuid, n])),
+    }
   }
 }

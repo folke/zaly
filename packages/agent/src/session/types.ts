@@ -1,21 +1,25 @@
 import type { FinishReason, Message, Usage } from "@zaly/ai"
-import type { WriteStream } from "node:fs"
+import type { SessionStore } from "./store.ts"
 
 // ── Records ──────────────────────────────────────────────────────────────
 
 /** A single node in the session DAG. Same shape on disk (JSONL) as in
- *  memory — what we persist *is* what we navigate. */
+ *  memory — what we persist *is* what we navigate. Meta lives ONLY on
+ *  `session-meta` nodes as a full snapshot of the cumulative session
+ *  meta at that point. Other node types are pure markers / payload —
+ *  consumers reading "the meta as of node X" use `SessionNodeView`,
+ *  which decorates raw nodes with cumulative meta computed by `Session`'s
+ *  chain-walk forward pass. */
 export type SessionNode = {
   uuid: string
   /** Absent only on the very first node (`session-start`). */
   parentUuid?: string
   /** Wall-clock millisecond timestamp when the node was created. */
   ts: number
-  meta: SessionMeta
 } & (
   | { type: "session-start" }
   | { type: "session-resume" }
-  | { type: "session-meta" }
+  | { type: "session-meta"; meta: PersistedMeta }
   | ({ type: "message"; message: Message } & MessageMeta)
   | {
       type: "compact"
@@ -35,15 +39,27 @@ export type SessionNode = {
     }
 )
 
+/** A `SessionNode` decorated with the cumulative meta as of that
+ *  node's position in the chain. Returned by `Session.node()` and
+ *  `Session#chain` — consumers always see a defined `meta`. */
+export type SessionNodeView = SessionNode & { meta: PersistedMeta }
+
+export type SessionView = {
+  messages: Message[]
+  nodes: Map<string, SessionNodeView>
+  meta: PersistedMeta
+}
+
 export type InternalMeta = {
   version?: number
   sessionId?: string
 }
 export type PersistedMeta = InternalMeta & SessionMeta
 
-export type PersistedNode = Omit<SessionNode, "meta"> & {
-  meta?: PersistedMeta
-}
+/** Wire format == the in-memory shape. Storage backends round-trip
+ *  `SessionNode` directly. Kept as an alias for legacy clarity / future
+ *  divergence room. */
+export type PersistedNode = SessionNode
 
 export type SessionMeta = {
   cwd?: string
@@ -83,11 +99,6 @@ export type SessionOptions = {
    *  the session opens it in append mode so subsequent commits land on
    *  disk in real time. Omit for in-memory sessions. */
   path?: string
-  /** Initial head uuid — typically the latest record from disk. Set
-   *  this to navigate to a specific branch on load. Defaults to the
-   *  last record in the file (file order). Ignored when `path` is
-   *  unset or empty. */
-  head?: string
   /** Per-session directory for artifacts produced during this session —
    *  bash command logs (when output exceeds the inline cap), subagent
    *  traces, cached attachments, and any other side-channel data tools
@@ -101,7 +112,8 @@ export type SessionOptions = {
 }
 
 export type SessionInit = SessionOptions & {
-  nodes?: Map<string, SessionNode>
+  /** Storage backend. Required — `Session.load()` picks the right
+   *  store based on options; direct construction passes one explicitly. */
+  store: SessionStore
   meta?: PersistedMeta
-  writer?: WriteStream
 }
