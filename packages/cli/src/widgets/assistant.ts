@@ -1,16 +1,11 @@
-import { box, markdown } from "@zaly/tui"
+import type { Reactive } from "@zaly/tui"
 
-/**
- * A streaming-capable assistant bubble. Returns the outer box (for the
- * stream surface) and the inner markdown node so callers can mutate
- * `inner.state.content` token-by-token — the canonical streaming
- * pattern from tui/demo/stream.ts.
- */
-export function assistantMessage(initial = ""): {
-  node: ReturnType<typeof box>
-  inner: ReturnType<typeof markdown>
-} {
-  const inner = markdown(initial, { wrap: "word" })
-  const node = box({ padding: [1, 1, 0, 1] }, inner)
-  return { inner, node }
-}
+import { box, markdown, widget } from "@zaly/tui"
+
+/** A streaming-capable assistant bubble. Pass a `Reactive<string>`
+ *  (typically a signal accessor) for `content` so the markdown re-parses
+ *  on each render as deltas arrive. Plain string also works for static
+ *  resumed-message rendering. */
+export const assistantMessage = widget((props: { content: Reactive<string> }) =>
+  box({ padding: [1, 1, 0, 1] }, markdown(props.content, { wrap: "word" }))
+)

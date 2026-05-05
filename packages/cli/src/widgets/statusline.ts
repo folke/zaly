@@ -1,7 +1,7 @@
 import type { Usage } from "@zaly/ai"
 import type { Reactive } from "@zaly/tui"
 
-import { spinner, box, text, unwrap } from "@zaly/tui"
+import { spinner, box, text, unwrap, widget } from "@zaly/tui"
 
 export interface StatuslineProps {
   busy: Reactive<boolean>
@@ -18,8 +18,8 @@ export interface StatuslineProps {
  * auto-subscribe at render time — change a signal, only this line
  * re-renders. Usage section is suppressed before the first step.
  */
-export function statusline(props: StatuslineProps): ReturnType<typeof box> {
-  return box(
+export const statusline = widget((props: StatuslineProps) =>
+  box(
     { flexDirection: "row", gap: 1 },
     spinner({ color: "accent", running: props.busy }),
     text(({ style }) => {
@@ -39,7 +39,7 @@ export function statusline(props: StatuslineProps): ReturnType<typeof box> {
       return `${lhs} ${dot} ${style.dim("ctx")} ${fmt(total)} ${dot} ${style.dim("↑")}${fmt(u.input)} ${style.dim("↓")}${fmt(u.output)}${read}${write}`
     })
   )
-}
+)
 
 /** Compact token formatter — `812`, `4.2k`, `123k`, `1.4M`. */
 function fmt(n: number): string {

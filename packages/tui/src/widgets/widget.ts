@@ -29,10 +29,18 @@ export type Widget<S, N extends Node = Node> = (props: S) => N
  * status({ level: "ok", msg: "all systems nominal" })
  * ```
  */
+/** When every field of `P` is optional (so `{}` satisfies it), the
+ *  props arg can be omitted at the call site — `status()` instead of
+ *  `status({})`. Otherwise it's required. */
+type WidgetArgs<P> = {} extends P ? [props?: P] : [props: P]
+
 export function widget<S extends {}, N extends Node = Node>(
   fn: (props: S & BaseState) => N
-): (props: S & BaseState) => WidgetNode<S, N> {
-  return (props) => new WidgetNode(fn, props)
+): (...args: WidgetArgs<S & BaseState>) => WidgetNode<S, N> {
+  return ((props?: S & BaseState) =>
+    new WidgetNode(fn, (props ?? {}) as S & BaseState)) as (
+    ...args: WidgetArgs<S & BaseState>
+  ) => WidgetNode<S, N>
 }
 
 class WidgetNode<S extends {}, N extends Node = Node> extends Node<S & BaseState> {

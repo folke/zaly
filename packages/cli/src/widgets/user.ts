@@ -1,5 +1,7 @@
-import { box, markdown } from "@zaly/tui"
+import { box, markdown, widget } from "@zaly/tui"
 
-export function userMessage(content: string): ReturnType<typeof box> {
-  return box({ padding: [1, 1, 0, 1] }, markdown(`**you:** ${content}`))
-}
+/** Single user-turn bubble. Static once committed — plain string content
+ *  is enough; the closure-reactivity hooks aren't needed here. */
+export const userMessage = widget((props: { content: string }) =>
+  box({ padding: [1, 1, 0, 1] }, markdown(`**you:** ${props.content}`))
+)

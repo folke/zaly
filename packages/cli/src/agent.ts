@@ -10,7 +10,7 @@ import { chainAuth, codexAuth, envAuth, loadModel } from "@zaly/ai"
  * but without the readline plumbing — the TUI owns input.
  */
 export async function buildAgent(config: Config): Promise<Agent> {
-  const model = await loadModel(config.modelId, undefined, chainAuth(codexAuth, envAuth))
+  const model = await loadModel(config.modelId, {}, chainAuth(codexAuth, envAuth))
 
   let messages: Message[] = []
 
@@ -29,6 +29,7 @@ export async function buildAgent(config: Config): Promise<Agent> {
     messages,
     model,
     permissions: { preset: "yolo" },
+    request: { reasoning: { effort: "medium" } },
     session,
     tools: [
       "bash",

@@ -3,6 +3,7 @@ import type { Message, StreamEvent, ToolCallPart, ToolResult, ToolResultPart } f
 import type { Renderer } from "@zaly/tui"
 
 import { stringifyContent } from "@zaly/ai"
+import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
 import { toolCall } from "../widgets/tool.ts"
@@ -20,30 +21,46 @@ export interface StreamHandle {
   dispose: () => void
 }
 
+/** Local handle on the in-flight assistant text bubble. The bubble's
+ *  content is a signal; deltas append via the setter. */
+interface ActiveText {
+  setContent: (next: string | ((prev: string) => string)) => void
+}
+
+interface ActiveReasoning {
+  setContent: (next: string | ((prev: string) => string)) => void
+}
+
+interface ActiveTool {
+  setResult: (next: ToolResult | undefined) => void
+}
+
 /**
  * Bridge: agent events → renderer.stream surface. Owns the in-flight
- * assistant bubble and the map of pending tool-call nodes so results
- * can flip them to ✓/✗.
+ * assistant bubble's signal and a map of pending tool-call setters so
+ * results can flip them to ✓/✗.
  */
 export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
-  let active: ReturnType<typeof assistantMessage> | undefined
-  let activeReasoning: ReturnType<typeof reasoningMessage> | undefined
-  const tools = new Map<string, ReturnType<typeof toolCall>>()
+  let active: ActiveText | undefined
+  let activeReasoning: ActiveReasoning | undefined
+  const tools = new Map<string, ActiveTool>()
 
-  const ensureBubble = (): ReturnType<typeof assistantMessage> => {
-    if (!active) {
-      active = assistantMessage("")
-      renderer.stream.append(active.node)
-    }
-    return active
+  const ensureBubble = (): ActiveText => {
+    if (active) return active
+    const [content, setContent] = signal("")
+    renderer.stream.append(assistantMessage({ content }))
+    const handle: ActiveText = { setContent }
+    active = handle
+    return handle
   }
 
-  const ensureReasoning = (): ReturnType<typeof reasoningMessage> => {
-    if (!activeReasoning) {
-      activeReasoning = reasoningMessage()
-      renderer.stream.append(activeReasoning.node)
-    }
-    return activeReasoning
+  const ensureReasoning = (): ActiveReasoning => {
+    if (activeReasoning) return activeReasoning
+    const [content, setContent] = signal("")
+    renderer.stream.append(reasoningMessage({ content }))
+    const handle: ActiveReasoning = { setContent }
+    activeReasoning = handle
+    return handle
   }
 
   const onStream = (e: { event: StreamEvent }): void => {
@@ -56,7 +73,8 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       // models that emit it. Close the active text bubble so a
       // later text-delta opens a fresh one below the reasoning.
       active = undefined
-      ensureReasoning().append(e.event.delta)
+      const delta = e.event.delta
+      ensureReasoning().setContent((prev) => prev + delta)
       return
     }
     if (
@@ -69,19 +87,19 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       // turn (rare but possible). The next reasoning event would
       // start a fresh bubble below the text.
       activeReasoning = undefined
-      const { inner } = ensureBubble()
-      inner.state.content += e.event.delta
+      const delta = e.event.delta
+      ensureBubble().setContent((prev) => prev + delta)
     }
   }
   const onCall = (e: { call: ToolCallPart }): void => {
     active = undefined
     activeReasoning = undefined
-    const t = toolCall(e.call)
-    tools.set(e.call.id, t)
-    renderer.stream.append(t.node)
+    const [result, setResult] = signal<ToolResult | undefined>(undefined)
+    renderer.stream.append(toolCall({ call: e.call, result }))
+    tools.set(e.call.id, { setResult })
   }
   const onResult = (e: { call: ToolCallPart; result: ToolResult }): void => {
-    tools.get(e.call.id)?.resolve(e.result)
+    tools.get(e.call.id)?.setResult(e.result)
     tools.delete(e.call.id)
   }
   const onStep = (): void => {
@@ -104,7 +122,7 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
     pushUser(content) {
       active = undefined
       activeReasoning = undefined
-      renderer.stream.append(userMessage(content))
+      renderer.stream.append(userMessage({ content }))
     },
     replay(messages) {
       // Pre-index tool results by call id so each assistant tool-call
@@ -119,7 +137,7 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       for (const m of messages) {
         if (m.role === "user") {
           const text = stringifyContent(m.content)
-          if (text !== "") renderer.stream.append(userMessage(text))
+          if (text !== "") renderer.stream.append(userMessage({ content: text }))
         } else if (m.role === "assistant") {
           renderAssistant(renderer, m, results)
         }
@@ -142,8 +160,7 @@ function renderAssistant(
 ): void {
   if (typeof msg.content === "string") {
     if (msg.content !== "") {
-      const { node } = assistantMessage(msg.content)
-      renderer.stream.append(node)
+      renderer.stream.append(assistantMessage({ content: msg.content }))
     }
     return
   }
@@ -154,14 +171,12 @@ function renderAssistant(
   let reasoningBuffer = ""
   const flushText = (): void => {
     if (textBuffer === "") return
-    const { node } = assistantMessage(textBuffer)
-    renderer.stream.append(node)
+    renderer.stream.append(assistantMessage({ content: textBuffer }))
     textBuffer = ""
   }
   const flushReasoning = (): void => {
     if (reasoningBuffer === "") return
-    const r = reasoningMessage(reasoningBuffer)
-    renderer.stream.append(r.node)
+    renderer.stream.append(reasoningMessage({ content: reasoningBuffer }))
     reasoningBuffer = ""
   }
   for (const part of msg.content) {
@@ -175,17 +190,17 @@ function renderAssistant(
       // tool-call — exhaustive against assistant content's part union.
       flushReasoning()
       flushText()
-      const t = toolCall(part)
-      renderer.stream.append(t.node)
       const result = results.get(part.id)
-      if (result !== undefined) {
-        t.resolve({
-          content: result.content,
-          error: result.error,
-          isError: result.isError ?? false,
-          meta: result.meta,
-        })
-      }
+      const resolved: ToolResult | undefined =
+        result === undefined
+          ? undefined
+          : {
+              content: result.content,
+              error: result.error,
+              isError: result.isError ?? false,
+              meta: result.meta,
+            }
+      renderer.stream.append(toolCall({ call: part, result: resolved }))
     }
   }
   flushReasoning()
