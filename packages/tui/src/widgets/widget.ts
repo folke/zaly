@@ -42,16 +42,16 @@ export function widget<S extends {}, N extends Node = Node>(
   ) => WidgetNode<S, N>
 }
 
-class WidgetNode<S extends {}, N extends Node = Node> extends Node<S & BaseState> {
-  readonly #create: (props: S) => N
-  #child?: N
+class WidgetNode<S extends {}, C extends Node = Node> extends Node<S> {
+  readonly #create: (props: S) => C
+  #child?: C
 
-  constructor(fn: (props: S) => N, props: S) {
+  constructor(fn: (props: S) => C, props: S) {
     super(props)
     this.#create = fn
   }
 
-  get child(): N {
+  get child(): C {
     if (this.#child === undefined) {
       throw new Error(
         "WidgetNode.child accessed before first render — body runs lazily in `_render`. " +

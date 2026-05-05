@@ -1,120 +1,97 @@
-import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
-import type { AnsiHighlighter } from "../style/shiki.ts"
+import type { Theme } from "../themes/types.ts"
 import type { TextStyle } from "./text.ts"
 
-import { Node } from "../core/node.ts"
-import { unwrap } from "../core/reactive.ts"
-import { splitAnsi, stringWidth } from "../style/ansi.ts"
-import { createAnsiHighlighter } from "../style/shiki.ts"
-import { Text } from "./text.ts"
+import { extname } from "pathe"
+import { RenderContext } from "../core/ctx.ts"
+import { createAsync, unwrap, useContext } from "../core/reactive.ts"
+import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
+import { box } from "./box.ts"
+import { text } from "./text.ts"
+import { widget } from "./widget.ts"
 
 export interface CodeState extends Omit<TextStyle, "content"> {
   /** Source to render. Plain string or reactive accessor — pass a
    *  signal for streaming bash output / tool results. */
   code: Reactive<string>
-  /** Language for syntax highlighting (any shiki-bundled name). Omit or
-   *  set to an unknown lang to render plain. */
+  /** Optional file path. Drives the default `lang` (extension) and
+   *  `title` (path) when those aren't set explicitly. */
+  path?: Reactive<string>
+  /** Language for syntax highlighting (any shiki-bundled name or
+   *  alias). Defaults to `extname(path).slice(1)` when `path` is set.
+   *  Unknown langs fall through to plain rendering. */
   lang?: string
-  /** Title line shown above the block. May contain ANSI. */
+  /** Title line shown above the block. May contain ANSI. Defaults to
+   *  `path` when set. */
   title?: Reactive<string>
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
 }
 
 /**
- * Standalone code block: shiki-highlighted body with an optional ANSI title.
+ * Standalone code block: shiki-highlighted body inside a `code`-styled
+ * shrink-to-content backdrop, optionally titled.
  *
- * Uses the same padding/backdrop mechanics as markdown fenced blocks
- * (`mdCodeBlock`/`mdCodeBlockTitle`), but via the theme-level `code` and
- * `codeTitle` slots when available, and independently from any markdown
- * surround.
- */
-export class Code extends Node<CodeState> {
-  #text: Text
-
-  constructor(state: CodeState) {
-    super(state)
-    this.#text = new Text({ ...state, content: "" })
-    this.add(this.#text)
-  }
-
-  protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const content = await buildCodeContent(ctx, this.state)
-    this.#text.setState({
-      ...this.omitFromState("code", "lang", "title", "syntax"),
-      content,
-    })
-    return this.#text.render(ctx)
-  }
-}
-
-/**
- * Factory for `Code`.
+ * Composition over custom layout — the backdrop is `box({ bg: "code",
+ * width: "fit" })`, the body is plain `text(...)`. The active render
+ * context (theme, style, width) is read via `useContext(RenderContext)`.
  *
- * ```ts
- * code({ code: "const x = 1", lang: "ts" })
- * code({ code: "SELECT 1", lang: "sql", title: style.dim("query.sql") })
- * ```
+ * Async highlighting flows through `createAsync`: signal reads inside
+ * the async closure auto-track, so `props.code` (or any other reactive
+ * source) drives a re-fire. The accessor returns `initialValue` (the
+ * plain source) until shiki resolves, then swaps to the highlighted
+ * version. On surfaces rendered with `ctx.async === false` (e.g. the
+ * stream surface), the outermost `Node.render` drains pending
+ * `createAsync` work before returning, so committed-to-scrollback rows
+ * always reflect the resolved highlight.
  */
-export function code(state: CodeState): Code {
-  return new Code(state)
-}
+export const code = widget((props: CodeState) => {
+  const initialPath = props.path === undefined ? undefined : unwrap(props.path)
+  const langCandidate =
+    props.lang ??
+    (initialPath !== undefined ? extname(initialPath).slice(1).toLowerCase() : undefined)
+  const syntax = props.syntax ?? true
 
-/**
- * Build the rendered content string for a code block. Extracted so the
- * `Diff` widget can reuse it — `Diff` pre-assembles rows with `-`/`+`
- * prefixes + per-row bg and hands the resulting pre-highlighted string
- * to us with `syntax: false` to skip re-highlighting.
- *
- * @internal
- */
-export async function buildCodeContent(
-  ctx: RenderCtx,
-  state: Pick<CodeState, "code" | "lang" | "title" | "syntax">
-): Promise<string> {
-  const syntax = state.syntax ?? true
-  const source = unwrap(state.code)
-  const title = state.title === undefined ? undefined : unwrap(state.title)
+  const body = createAsync(
+    async () => {
+      const source = unwrap(props.code) // tracks
+      if (!syntax || langCandidate === undefined || langCandidate === "") return source
+      const ctx = useContext(RenderContext)
+      if (ctx === undefined) return source // pre-first-render
+      return await highlightSource(source, langCandidate, ctx.theme)
+    },
+    { initialValue: unwrap(props.code) }
+  )
 
-  let highlighter: AnsiHighlighter | undefined
-  if (syntax && state.lang !== undefined && state.lang !== "") {
-    highlighter = await createAnsiHighlighter({
-      langs: [state.lang],
-      theme: ctx.theme.shiki,
-    })
-  }
+  // Title is conditionally rendered — an always-present thunk that
+  // returns "" still produces an empty row in the backdrop.
+  const hasTitle = props.title !== undefined || initialPath !== undefined
 
-  const highlighted = tryHighlight(highlighter, source, state.lang)
-  const body = highlighted ?? source.replace(/\n+$/, "")
-  const lines = splitAnsi(body)
-  const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth), 0) + 1)
-  const padded = lines.map((line) => {
-    const pad = Math.max(0, width - stringWidth(line))
-    const row = line + " ".repeat(pad)
-    return ctx.style.code(row)
-  })
+  return box(
+    { bg: "code", flexDirection: "column", padding: [0, 1], width: "fit" },
+    hasTitle
+      ? text(
+          (ctx) => {
+            const t = props.title !== undefined ? unwrap(props.title) : initialPath
+            return t === undefined ? "" : ctx.style.codeTitle(t)
+          },
+          { wrap: "none" }
+        )
+      : undefined,
+    text(body, { wrap: "none" })
+  )
+})
 
-  const titleLine = renderTitle(ctx, title)
-  return titleLine + padded.join("\n")
-}
-
-function renderTitle(ctx: RenderCtx, title: string | undefined): string {
-  return title === undefined ? "" : `${ctx.style.codeTitle(title)}\n`
-}
-
-function tryHighlight(
-  highlighter: AnsiHighlighter | undefined,
-  text: string,
-  lang: string | undefined
-): string | undefined {
-  if (highlighter === undefined || lang === undefined || lang === "") return undefined
+async function highlightSource(source: string, lang: string, theme: Theme): Promise<string> {
+  if (!(await isLang(lang))) return source
   try {
-    const input = text.replace(/\n+$/, "")
-    const out = highlighter(input, lang)
-    if (out === input || out.trim() === input.trim()) return undefined
+    const highlighter = await createAnsiHighlighter({
+      langs: [lang],
+      theme: theme.shiki,
+    })
+    const out = highlighter(source.replace(/\n+$/, ""), lang)
     return out.replace(/\n+$/, "")
   } catch {
-    return undefined
+    return source
   }
 }

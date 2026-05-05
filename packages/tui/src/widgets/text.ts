@@ -1,10 +1,10 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
-import type { Flexible } from "../layout/flex.ts"
 import type { Reactive } from "../core/reactive.ts"
+import type { Flexible } from "../layout/flex.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
-import { isAccessor } from "../core/reactive.ts"
 import { padOrClip, splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
 
 /**
@@ -34,20 +34,27 @@ export interface TextStyle extends StyleState, Flexible {
 
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
-    const raw = this.state.content
-    let content: string
-    if (isAccessor<string>(raw)) content = raw()
-    else if (typeof raw === "function") content = raw(ctx)
-    else content = raw
+    const raw = unwrap(this.state.content)
+    const content = typeof raw === "string" ? raw : raw(ctx)
     const mode = this.state.wrap ?? "word"
-    const widthSpec = this.state.width ?? "fill"
-    const w = resolveSize(widthSpec, ctx.width) ?? naturalWidth(content, mode)
+    const widthSpec = this.state.width
 
-    // wrapAnsi may leave SGR state open across its inserted newlines
-    // (Bun.wrapAnsi does this; wrap-ansi closes + re-opens). splitAnsi
-    // normalizes either way, uniformly with the explicit-newline case.
-    const rows = splitAnsi(mode === "none" ? content : wrapAnsi(content, w, { mode }))
-    const padded = rows.map((row) => padOrClip(row, w))
+    // Wrap budget — full ctx width by default, so wrapping breaks at
+    // sensible column counts. Explicit numeric / `"fill"` widths use
+    // that as the wrap target *and* pad/clip emitted rows to it.
+    // `"fit"` (or unset) uses ctx.width to wrap but emits rows at
+    // their natural widths so a parent box's `width: "fit"` can
+    // measure content correctly.
+    const wrapBudget = resolveSize(widthSpec ?? "fill", ctx.width) ?? naturalWidth(content, mode)
+    const rows = splitAnsi(mode === "none" ? content : wrapAnsi(content, wrapBudget, { mode }))
+
+    // Pad/clip only when the caller asked for a specific layout width.
+    // The default (unset) path returns natural-width rows — text is a
+    // content node, the parent box is responsible for filling the slot
+    // (via `padRow(row, inner)` in `box._render`) and applying any
+    // backdrop bg.
+    const explicit = widthSpec !== undefined && widthSpec !== "fit"
+    const out = explicit ? rows.map((row) => padOrClip(row, wrapBudget)) : rows
 
     // Pre-bind the wrapper once — creating a fresh builder per row would
     // allocate a Proxy per iteration. Inner SGR resets (from content or
@@ -55,7 +62,7 @@ export class Text extends Node<TextStyle> {
     // re-applied after them; shiki-style per-token fgs still win on
     // subsequent text because terminal SGR is cumulative until RESET.
     const wrap = ctx.style.add(this.state)
-    return padded.map((row) => wrap(row))
+    return out.map((row) => wrap(row))
   }
 }
 
@@ -102,4 +109,3 @@ function naturalWidth(content: string, mode: "word" | "char" | "none"): number {
   for (const word of content.split(/\s+/)) max = Math.max(max, stringWidth(word))
   return max
 }
-

@@ -112,9 +112,7 @@ async function load(opts: Required<CodeToAnsiOptions>): Promise<HighlighterCore>
   const langs = bundledLangs!
 
   const loadedLangs = new Set(highlighter.getLoadedLanguages())
-  const toLoad = opts.langs
-    .filter((l) => !loadedLangs.has(l) && l in langs)
-    .map((l) => langs[l]())
+  const toLoad = opts.langs.filter((l) => !loadedLangs.has(l) && l in langs).map((l) => langs[l]())
 
   const loadedThemes = new Set(highlighter.getLoadedThemes())
   const theme = loadedThemes.has(opts.theme) ? undefined : import(`shiki/themes/${opts.theme}.mjs`)

@@ -4,11 +4,14 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { TextStyle } from "./text.ts"
 
+import { extname } from "pathe"
+
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { stringWidth } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
-import { Code } from "./code.ts"
+import { box } from "./box.ts"
+import { text } from "./text.ts"
 
 /**
  * One edit, line-range based (matching the shape tools like `Edit` /
@@ -33,9 +36,14 @@ export interface DiffState extends Omit<TextStyle, "content"> {
   /** Line-range edits, referencing indices in `original`. Reactive so
    *  the displayed hunks update as the agent's edit set evolves. */
   edits: Reactive<DiffEdit[]>
-  /** Language for syntax highlighting (any shiki-bundled name). */
+  /** Optional file path. Drives the default `lang` (extension) and
+   *  `title` (path) when those aren't set explicitly. */
+  path?: Reactive<string>
+  /** Language for syntax highlighting (any shiki-bundled name or
+   *  alias). Defaults to `extname(path).slice(1)` when `path` is set. */
   lang?: string
-  /** File path or other title shown at the top. May contain ANSI. */
+  /** File path or other title shown at the top. May contain ANSI.
+   *  Defaults to `path` when set. */
   title?: Reactive<string>
   /** Lines of surrounding context per hunk. Default: 3. */
   context?: number
@@ -53,29 +61,31 @@ export interface DiffState extends Omit<TextStyle, "content"> {
  * so on don't get truncated by the hunk window.
  */
 export class Diff extends Node<DiffState> {
-  #code: Code
-
-  constructor(state: DiffState) {
-    super(state)
-    this.#code = new Code({ code: "" })
-    this.add(this.#code)
-  }
-
   protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const rows = await buildDiffRows(ctx, this.state)
+    // Resolve `path`-driven defaults for `lang` (highlightPair) and
+    // `title` (inner chrome). Explicit fields still win.
+    const path = this.state.path === undefined ? undefined : unwrap(this.state.path)
+    const lang =
+      this.state.lang ?? (path !== undefined ? extname(path).slice(1).toLowerCase() : undefined)
+    const title = this.state.title ?? path
 
-    // Compose the rendered diff as a pre-styled string (each row already
-    // has full-width bg + prefix + highlighted content). Hand it off to
-    // Code with `syntax: false` so Code only applies its own backdrop +
-    // padding + optional title.
+    const rows = await buildDiffRows(ctx, this.state, lang)
+
+    // Each row already carries its own backdrop + prefix + highlighted
+    // content. Wrap in a `code`-styled box so the title row, gutter,
+    // and surrounding padding pick up the same backdrop as a plain
+    // code block — visual continuity with `code()`.
     const body = rows.join("\n")
-    this.#code.setState({
-      ...this.omitFromState("original", "edits", "context", "lang", "title"),
-      code: body,
-      syntax: false,
-      title: this.state.title,
-    })
-    return this.#code.render(ctx)
+    const titleNode =
+      title === undefined
+        ? undefined
+        : text((tctx) => tctx.style.codeTitle(unwrap(title)), { wrap: "none" })
+    const wrapper = box(
+      { bg: "code", flexDirection: "column", width: "fit" },
+      titleNode,
+      text(body, { wrap: "none" })
+    )
+    return wrapper.render(ctx)
   }
 }
 
@@ -102,7 +112,11 @@ type DiffRow =
   | { type: "remove"; origNum: number; content: string }
   | { type: "add"; newNum: number; content: string }
 
-async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]> {
+async function buildDiffRows(
+  ctx: RenderCtx,
+  state: DiffState,
+  lang: string | undefined
+): Promise<string[]> {
   const context = state.context ?? 3
   const original = unwrap(state.original)
   const edits = unwrap(state.edits)
@@ -125,7 +139,7 @@ async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]
 
   // Highlight both sides as complete files so context tokens the way it
   // would in the real source. Unknown / missing lang → plain lines.
-  const { origHi, editedHi } = await highlightPair(ctx, state, origLines, editedLines)
+  const { origHi, editedHi } = await highlightPair(ctx, lang, origLines, editedLines)
 
   // Build the structured row list.
   const rows: DiffRow[] = []
@@ -178,20 +192,20 @@ async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]
 
 async function highlightPair(
   ctx: RenderCtx,
-  state: DiffState,
+  lang: string | undefined,
   origLines: string[],
   editedLines: string[]
 ): Promise<{ origHi: string[]; editedHi: string[] }> {
-  if (state.lang === undefined || state.lang === "") {
+  if (lang === undefined || lang === "") {
     return { editedHi: editedLines, origHi: origLines }
   }
   try {
     const highlight = await createAnsiHighlighter({
-      langs: [state.lang],
+      langs: [lang],
       theme: ctx.theme.shiki,
     })
     const splitHi = (src: string[]): string[] => {
-      const out = highlight(src.join("\n"), state.lang!)
+      const out = highlight(src.join("\n"), lang)
       // Shiki appends a trailing "\n"; drop it so split yields the same
       // number of lines as the input.
       return out.replace(/\n$/, "").split("\n")

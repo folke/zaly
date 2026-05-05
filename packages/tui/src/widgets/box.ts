@@ -133,7 +133,12 @@ export class Box extends Node<BoxStyle> {
     const childRows = await Promise.all(
       children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
     )
-    return zipRow(childRows, { gap, widths })
+    // `zipRow` expects each child's rows to be exactly `widths[i]` cells
+    // wide. Children that emit natural-width rows (the default for
+    // `text` after the layout-vs-content split) get padded here so the
+    // contract holds. Rows wider than the slot get clipped.
+    const padded = childRows.map((rows, i) => rows.map((row) => padRow(row, widths[i])))
+    return zipRow(padded, { gap, widths })
   }
 }
 
