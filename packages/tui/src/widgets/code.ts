@@ -1,4 +1,5 @@
 import type { Reactive } from "../core/reactive.ts"
+import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/ansi.ts"
 import type { Theme } from "../themes/types.ts"
 
@@ -26,7 +27,7 @@ export interface CodeState {
   title?: Reactive<string>
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
-  style?: AnyStyle
+  style?: AnyStyle | false
 }
 
 /**
@@ -46,7 +47,7 @@ export interface CodeState {
  * `createAsync` work before returning, so committed-to-scrollback rows
  * always reflect the resolved highlight.
  */
-export const code = widget((props: CodeState) => {
+export const code = widget((props: State<CodeState>) => {
   const initialPath = props.path === undefined ? undefined : unwrap(props.path)
   const langCandidate =
     props.lang ??
@@ -69,7 +70,12 @@ export const code = widget((props: CodeState) => {
   const hasTitle = props.title !== undefined || initialPath !== undefined
 
   return box(
-    { flexDirection: "column", padding: [0, 1], style: props.style ?? "code", width: "fit" },
+    {
+      flexDirection: "column",
+      padding: props.style === false ? undefined : [0, 1],
+      style: props.style === false ? undefined : (props.style ?? "code"),
+      width: "fit",
+    },
     hasTitle
       ? text(
           (ctx) => {
