@@ -275,3 +275,9 @@ export function splitAnsi(s: string): string[] {
 export function hasAnsi(text: string): boolean {
   return /\x1b\[[0-9;]*m/.test(text)
 }
+
+export const truncateAnsi = (s: string, maxLength: number): string => {
+  const len = stringWidth(s)
+  if (len <= maxLength) return s
+  return `${sliceAnsi(s, 0, maxLength - 2)} …`
+}
