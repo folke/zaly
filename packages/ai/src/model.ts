@@ -9,7 +9,7 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/index.ts"
-import type { Attachment, Cost, Message, Modality, ModelSpec, ProviderOptions } from "./types.ts"
+import type { Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
 
 import { envAuth } from "./auth/index.ts"
 import { attachmentToMeta } from "./content/compose.ts"
@@ -149,7 +149,7 @@ export class Model<T extends AnyProvider = string> {
  */
 export async function loadModel(
   source: string | ModelSpec,
-  overrides?: Partial<ProviderOptions>,
+  overrides?: Partial<ModelSpec>,
   auth: AuthProvider = envAuth
 ): Promise<Model> {
   // Full model URI. Get from the catalog if it's a string; if it's already a spec, construct
