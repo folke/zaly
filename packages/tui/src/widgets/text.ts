@@ -1,20 +1,31 @@
 import type { RenderCtx, StyleState } from "../core/ctx.ts"
 import type { Flexible } from "../layout/flex.ts"
+import type { Reactive } from "../core/reactive.ts"
 
 import { Node } from "../core/node.ts"
 import { resolveSize } from "../layout/size.ts"
+import { isAccessor } from "../core/reactive.ts"
 import { padOrClip, splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
 
 /**
- * Text content — a plain string, or a function that produces one from the
- * render context. Use the function form when you want inline-styled spans
- * via `ctx.style`:
+ * Text content — three forms, resolved at render time:
+ *
+ *   1. Plain string — static content.
+ *   2. Reactive accessor (`signal()` / `memo()`) — re-reads on each
+ *      render and subscribes the node so signal writes invalidate.
+ *   3. `(ctx) => string` — computed from the render context. Use this
+ *      for inline-styled spans via `ctx.style`.
+ *
+ * Branded accessors are picked up via `isAccessor`; any other function
+ * is treated as the ctx-aware form. Plain strings pass through.
  *
  * ```ts
- * text(({ style }) => `  lines: ${style.ok("+12")} ${style.err("-4")}`)
+ * text("hello")
+ * text(name)                                  // signal accessor
+ * text(({ style }) => style.ok(`✓ ${count}`)) // ctx-aware
  * ```
  */
-export type TextContent = string | ((ctx: RenderCtx) => string)
+export type TextContent = Reactive<string> | ((ctx: RenderCtx) => string)
 
 export interface TextStyle extends StyleState, Flexible {
   content: TextContent
@@ -23,8 +34,11 @@ export interface TextStyle extends StyleState, Flexible {
 
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
-    const content =
-      typeof this.state.content === "function" ? this.state.content(ctx) : this.state.content
+    const raw = this.state.content
+    let content: string
+    if (isAccessor<string>(raw)) content = raw()
+    else if (typeof raw === "function") content = raw(ctx)
+    else content = raw
     const mode = this.state.wrap ?? "word"
     const widthSpec = this.state.width ?? "fill"
     const w = resolveSize(widthSpec, ctx.width) ?? naturalWidth(content, mode)
@@ -60,6 +74,10 @@ export class Text extends Node<TextStyle> {
 export function text(content: TextContent, style?: Omit<TextStyle, "content">): Text
 export function text(style: TextStyle): Text
 export function text(first: TextContent | TextStyle, style?: Omit<TextStyle, "content">): Text {
+  // TextContent: string | function (incl. reactive accessor) | …
+  // TextStyle:   plain object with a `content` field.
+  // The TextStyle branch is picked only when `first` is a non-function
+  // object — accessors are functions, so they go through the content path.
   if (typeof first === "string" || typeof first === "function") {
     return new Text({ content: first, ...style })
   }

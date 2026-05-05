@@ -1,16 +1,21 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { MdOptions } from "../markdown/index.ts"
 import type { Image } from "./image.ts"
 import type { TextStyle } from "./text.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { createCallbacks } from "../markdown/callbacks.ts"
 import { createCodeHighlighter } from "../markdown/code.ts"
 import { createImageCallback } from "../markdown/image.ts"
 import { Text } from "./text.ts"
 
-export interface MarkdownState extends TextStyle {
-  content: string
+export interface MarkdownState extends Omit<TextStyle, "content"> {
+  /** Markdown source. Accepts a plain string or a reactive accessor —
+   *  pass `signal()` / `memo()` for streaming content that re-parses on
+   *  each render and subscribes the node to the signal. */
+  content: Reactive<string>
   /** Options forwarded to `renderMarkdown`. */
   options?: MdOptions
   /**
@@ -40,10 +45,11 @@ export class Markdown extends Node<MarkdownState> {
     const { renderMarkdown } = await import("#md")
     const fn = this.state.options?.render ?? renderMarkdown
 
+    const source = unwrap(this.state.content)
+
     const callbacks = createCallbacks({
       ...ctx,
-      highlighter:
-        (this.state.syntax ?? true) ? await createCodeHighlighter(this.state.content) : undefined,
+      highlighter: (this.state.syntax ?? true) ? await createCodeHighlighter(source) : undefined,
     })
 
     // Image handling: the callback emits `<img id=N>` markers during
@@ -54,7 +60,7 @@ export class Markdown extends Node<MarkdownState> {
     const image = createImageCallback(this)
     callbacks.image = image.cb
 
-    const rendered = fn(this.state.content, callbacks, this.state.options)
+    const rendered = fn(source, callbacks, this.state.options)
     const final = await image.resolve(ctx, rendered)
 
     // Mirror the source's trailing newlines: the renderer adds its own
@@ -62,7 +68,7 @@ export class Markdown extends Node<MarkdownState> {
     // leave stray blank rows. Normalizing to what the caller typed keeps
     // single-line inputs compact and preserves explicit spacing when
     // they asked for it.
-    const trailing = /\n*$/.exec(this.state.content)?.[0] ?? ""
+    const trailing = /\n*$/.exec(source)?.[0] ?? ""
     this.#text.setState({
       ...this.omitFromState("options", "syntax"),
       content: final.replace(/\n+$/, trailing),
@@ -81,12 +87,19 @@ export class Markdown extends Node<MarkdownState> {
  * markdown({ content, wrap: "word", fg: "fg" })
  * ```
  */
-export function markdown(content: string, style?: Omit<MarkdownState, "content">): Markdown
+export function markdown(
+  content: Reactive<string>,
+  style?: Omit<MarkdownState, "content">
+): Markdown
 export function markdown(state: MarkdownState): Markdown
 export function markdown(
-  first: string | MarkdownState,
+  first: Reactive<string> | MarkdownState,
   style?: Omit<MarkdownState, "content">
 ): Markdown {
-  if (typeof first === "string") return new Markdown({ content: first, ...style })
+  // Plain strings and accessor functions go through the content path;
+  // a non-function object is the full state form.
+  if (typeof first === "string" || typeof first === "function") {
+    return new Markdown({ content: first, ...style })
+  }
   return new Markdown(first)
 }

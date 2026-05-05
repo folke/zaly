@@ -1,20 +1,23 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { TextStyle } from "./text.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { splitAnsi, stringWidth } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
 import { Text } from "./text.ts"
 
 export interface CodeState extends Omit<TextStyle, "content"> {
-  /** Source to render. */
-  code: string
+  /** Source to render. Plain string or reactive accessor — pass a
+   *  signal for streaming bash output / tool results. */
+  code: Reactive<string>
   /** Language for syntax highlighting (any shiki-bundled name). Omit or
    *  set to an unknown lang to render plain. */
   lang?: string
   /** Title line shown above the block. May contain ANSI. */
-  title?: string
+  title?: Reactive<string>
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
 }
@@ -71,6 +74,8 @@ export async function buildCodeContent(
   state: Pick<CodeState, "code" | "lang" | "title" | "syntax">
 ): Promise<string> {
   const syntax = state.syntax ?? true
+  const source = unwrap(state.code)
+  const title = state.title === undefined ? undefined : unwrap(state.title)
 
   let highlighter: AnsiHighlighter | undefined
   if (syntax && state.lang !== undefined && state.lang !== "") {
@@ -80,8 +85,8 @@ export async function buildCodeContent(
     })
   }
 
-  const highlighted = tryHighlight(highlighter, state.code, state.lang)
-  const body = highlighted ?? state.code.replace(/\n+$/, "")
+  const highlighted = tryHighlight(highlighter, source, state.lang)
+  const body = highlighted ?? source.replace(/\n+$/, "")
   const lines = splitAnsi(body)
   const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth), 0) + 1)
   const padded = lines.map((line) => {
@@ -90,7 +95,7 @@ export async function buildCodeContent(
     return ctx.style.code(row)
   })
 
-  const titleLine = renderTitle(ctx, state.title)
+  const titleLine = renderTitle(ctx, title)
   return titleLine + padded.join("\n")
 }
 

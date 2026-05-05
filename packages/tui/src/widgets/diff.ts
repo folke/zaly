@@ -1,9 +1,11 @@
 // oxlint-disable no-nested-ternary
 // oxlint-disable typescript/no-unnecessary-condition
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { TextStyle } from "./text.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { stringWidth } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
 import { Code } from "./code.ts"
@@ -24,14 +26,17 @@ export interface DiffEdit {
 }
 
 export interface DiffState extends Omit<TextStyle, "content"> {
-  /** The complete original file content. Widget splits it by `\n`. */
-  original: string
-  /** Line-range edits, referencing indices in `original`. */
-  edits: DiffEdit[]
+  /** The complete original file content. Plain string or reactive
+   *  accessor — pass a signal to live-update the diff as the original
+   *  or in-flight edits change. Widget splits it by `\n` at render. */
+  original: Reactive<string>
+  /** Line-range edits, referencing indices in `original`. Reactive so
+   *  the displayed hunks update as the agent's edit set evolves. */
+  edits: Reactive<DiffEdit[]>
   /** Language for syntax highlighting (any shiki-bundled name). */
   lang?: string
   /** File path or other title shown at the top. May contain ANSI. */
-  title?: string
+  title?: Reactive<string>
   /** Lines of surrounding context per hunk. Default: 3. */
   context?: number
 }
@@ -99,12 +104,14 @@ type DiffRow =
 
 async function buildDiffRows(ctx: RenderCtx, state: DiffState): Promise<string[]> {
   const context = state.context ?? 3
-  const origLines = state.original.split("\n")
+  const original = unwrap(state.original)
+  const edits = unwrap(state.edits)
+  const origLines = original.split("\n")
 
   // Apply edits in order to compute the edited file. Track, for each
   // edit (sorted by `from`), where its replacement starts in the edited
   // line array — used to compute `newNum` values.
-  const sorted = state.edits.toSorted((a, b) => a.from - b.from)
+  const sorted = edits.toSorted((a, b) => a.from - b.from)
   const editedLines: string[] = []
   const replacementStart: number[] = [] // per-edit index → editedLines offset
   let cursor = 0

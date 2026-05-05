@@ -58,17 +58,23 @@ describe("box()", () => {
 })
 
 describe("widget()", () => {
-  test("returns the factory function unchanged", () => {
-    const fn = (props: { label: string }) => text(props.label)
-    const w = widget(fn)
-    expect(w).toBe(fn)
-  })
-
-  test("calling the widget produces a Node from props", async () => {
+  test("calling the widget produces a WidgetNode wrapping the inner Node", async () => {
     const greeting = widget((props: { name: string }) => text(`hi ${props.name}`, { width: 8 }))
     const node = greeting({ name: "ada" })
-    expect(node).toBeInstanceOf(Text)
+    expect(node.child).toBeInstanceOf(Text)
+    expect(node.state).toEqual({ name: "ada" })
     expect(await node.render(ctx(10))).toEqual(["hi ada  "])
+  })
+
+  test("body runs exactly once at construction", () => {
+    let calls = 0
+    const counter = widget((props: { id: number }) => {
+      calls++
+      return text(`#${props.id}`)
+    })
+    counter({ id: 1 })
+    counter({ id: 2 })
+    expect(calls).toBe(2)
   })
 
   test("composes inside a parent like any other Node factory", async () => {
