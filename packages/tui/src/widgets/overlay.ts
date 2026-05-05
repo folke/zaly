@@ -1,5 +1,5 @@
-import type { State } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { State } from "../core/state.ts"
 import type { BoxStyle } from "./box.ts"
 
 import { Box } from "./box.ts"
@@ -55,7 +55,7 @@ export class Overlay extends Box {
 
 type Child = Node | false | null | undefined
 
-export function overlay(state: OverlayState, ...children: Child[]): Overlay {
+export function overlay(state: State<OverlayState>, ...children: Child[]): Overlay {
   const o = new Overlay(state)
   for (const c of children) if (c) o.add(c)
   return o

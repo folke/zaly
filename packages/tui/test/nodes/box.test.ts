@@ -191,10 +191,20 @@ describe("Box — border", () => {
 })
 
 describe("Box — row layout", () => {
-  test("two text children share width equally", async () => {
+  test("two text children sit at natural widths; slack pads to box inner", async () => {
+    // CSS `flex: 0 1 auto` default — without `flexGrow`/`width: "fill"`,
+    // text children stay at natural content width and the row's
+    // leftover slack pads the end.
     const b = new Box({ flexDirection: "row" })
     b.add(new Text({ content: "aaaa" }))
     b.add(new Text({ content: "bbbb" }))
+    expect(await b.render(ctx(10))).toEqual(["aaaabbbb  "])
+  })
+
+  test("flexGrow children share remaining slack equally", async () => {
+    const b = new Box({ flexDirection: "row" })
+    b.add(new Text({ content: "aaaa", flexGrow: 1 }))
+    b.add(new Text({ content: "bbbb", flexGrow: 1 }))
     expect(await b.render(ctx(10))).toEqual(["aaaa bbbb "])
   })
 

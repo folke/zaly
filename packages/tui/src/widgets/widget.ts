@@ -1,4 +1,5 @@
-import type { State, RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
+import type { State } from "../core/state.ts"
 
 import { Node } from "../core/node.ts"
 

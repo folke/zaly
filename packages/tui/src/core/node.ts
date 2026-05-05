@@ -1,8 +1,9 @@
 import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
-import type { MountCtx, RenderCtx, State } from "./ctx.ts"
+import type { MountCtx, RenderCtx } from "./ctx.ts"
 import type { AsyncTracker } from "./reactive.ts"
+import type { State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
 import { RenderContext } from "./ctx.ts"

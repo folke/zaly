@@ -1,5 +1,4 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Flexible } from "../layout/flex.ts"
 import type { LogLevel } from "../logger/levels.ts"
 import type { Color } from "../style/color.ts"
 import type { TextContent } from "./text.ts"
@@ -10,7 +9,7 @@ import { text as textFactory } from "./text.ts"
 
 export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text"
 
-export interface LogState extends Flexible {
+export interface LogState {
   level: LogLevel
   content: Node | TextContent
   /** Rendering of the per-level prefix chunk. Defaults by level. */

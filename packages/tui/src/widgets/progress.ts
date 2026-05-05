@@ -1,5 +1,6 @@
-import type { RenderCtx, State } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
+import type { State } from "../core/state.ts"
 import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 

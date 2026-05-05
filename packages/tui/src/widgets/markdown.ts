@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
-import type { Size } from "../layout/size.ts"
+import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 import type { MdOptions } from "../markdown/index.ts"
 import type { Image } from "./image.ts"
@@ -26,7 +26,6 @@ export interface MarkdownState {
    * as plain text.
    */
   syntax?: boolean
-  width?: Size
   wrap?: WrapMode
 }
 
@@ -84,12 +83,12 @@ export class Markdown extends Node<MarkdownState> {
  */
 export function markdown(
   content: Reactive<string>,
-  style?: Omit<MarkdownState, "content">
+  style?: Omit<State<MarkdownState>, "content">
 ): Markdown
-export function markdown(state: MarkdownState): Markdown
+export function markdown(state: State<MarkdownState>): Markdown
 export function markdown(
   first: Reactive<string> | MarkdownState,
-  style?: Omit<MarkdownState, "content">
+  style?: Omit<State<MarkdownState>, "content">
 ): Markdown {
   // Plain strings and accessor functions go through the content path;
   // a non-function object is the full state form.

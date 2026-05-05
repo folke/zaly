@@ -1,5 +1,6 @@
-import type { RenderCtx, StyleState } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
+import type { StyleState } from "../core/state.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"

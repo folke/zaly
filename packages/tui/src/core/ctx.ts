@@ -1,12 +1,10 @@
 import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
-import type { Style } from "../style/ansi.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../themes/index.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Node } from "./node.ts"
-import type { Reactive } from "./reactive.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../themes/index.ts"
@@ -26,29 +24,6 @@ export type { StyleBuilder, Theme }
  *  the widget's body owns, or recompute inside a leaf thunk that
  *  re-evaluates per render). */
 export const RenderContext = createContext<RenderCtx | undefined>(undefined)
-
-/**
- * Fields every Node reads off its state. Widget state types should
- * extend this (directly or transitively via `Style`, which extends
- * `BaseState`) so the base behaviour wires up automatically.
- *
- *   - `visible: false` suppresses rendering with zero layout footprint.
- *     Accepts a `Reactive<boolean>` — pass a signal accessor to toggle
- *     visibility from shared state. `Node.render` unwraps it at render
- *     time so the subscription goes through the usual tracking ctx.
- */
-type BaseState = {
-  visible?: Reactive<boolean>
-}
-
-export type State<T extends object = object> = T & BaseState
-
-/** Widget state mixin: `Style` (fg/bg/attrs) plus `BaseState`
- *  (visibility + any future framework-level state fields). Widget state
- *  interfaces extend this so base-state concerns and pure styling stay
- *  cleanly separated at the type level without each widget having to
- *  compose the two manually. */
-export type StyleState = Style
 
 /**
  * Passed to every `render(ctx)` call. Width flows in; height emerges from

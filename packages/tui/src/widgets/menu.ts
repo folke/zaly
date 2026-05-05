@@ -1,8 +1,9 @@
-import type { RenderCtx, StyleState } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
+import type { Style } from "../style/ansi.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
@@ -29,7 +30,7 @@ export interface MenuItem {
  *  aware ANSI without capturing it from elsewhere. */
 export type MenuRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string
 
-export interface MenuState<T = MenuItem> extends StyleState {
+export interface MenuState<T = MenuItem> extends Style {
   /** Items to show. Accepts a signal accessor so the list can be
    *  driven from reactive state (filtered results, search, etc.). */
   items: Reactive<T[]>

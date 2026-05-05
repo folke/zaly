@@ -1,6 +1,7 @@
-import type { RenderCtx, StyleState } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
-import type { Flexible } from "../layout/flex.ts"
+import type { State } from "../core/state.ts"
+import type { Style } from "../style/ansi.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
@@ -26,7 +27,7 @@ import { formatText } from "../layout/text.ts"
  */
 export type TextContent = Reactive<string> | ((ctx: RenderCtx) => string)
 
-export interface TextStyle extends StyleState, Flexible {
+export interface TextStyle extends Style {
   content: TextContent
   wrap?: "word" | "char" | "none"
 }
@@ -58,9 +59,12 @@ export class Text extends Node<TextStyle> {
  * text(({ style }) => `ok: ${style.ok("yes")}`)
  * ```
  */
-export function text(content: TextContent, style?: Omit<TextStyle, "content">): Text
-export function text(style: TextStyle): Text
-export function text(first: TextContent | TextStyle, style?: Omit<TextStyle, "content">): Text {
+export function text(content: TextContent, style?: Omit<State<TextStyle>, "content">): Text
+export function text(style: State<TextStyle>): Text
+export function text(
+  first: TextContent | State<TextStyle>,
+  style?: Omit<State<TextStyle>, "content">
+): Text {
   // TextContent: string | function (incl. reactive accessor) | …
   // TextStyle:   plain object with a `content` field.
   // The TextStyle branch is picked only when `first` is a non-function

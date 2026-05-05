@@ -36,8 +36,22 @@ describe("allocateRow", () => {
     ])
   })
 
-  test("items without width or flexGrow default to flex weight 1", () => {
-    expect(allocateRow([{}, {}, {}], { contentWidth: 12, gap: 0 })).toEqual([4, 4, 4])
+  test("items without width or flexGrow stay at natural basis (CSS flex: 0 1 auto)", () => {
+    // No grow weight → no slack distribution. Bare items collapse to
+    // 0 (their default basis); siblings don't claim the leftover.
+    expect(allocateRow([{}, {}, {}], { contentWidth: 12, gap: 0 })).toEqual([0, 0, 0])
+  })
+
+  test("natural basis is used when no fixed width is given", () => {
+    expect(
+      allocateRow([{ natural: 3 }, { natural: 5 }], { contentWidth: 20, gap: 0 })
+    ).toEqual([3, 5])
+  })
+
+  test("flexGrow absorbs slack on top of natural basis", () => {
+    expect(
+      allocateRow([{ natural: 2 }, { flexGrow: 1, natural: 4 }], { contentWidth: 10, gap: 0 })
+    ).toEqual([2, 8])
   })
 
   test("'fill' width acts as flex weight 1", () => {
