@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { allocateRow, zipRow } from "../../src/layout/row.ts"
+import { allocateRow, stackColumn, zipRow } from "../../src/layout/flex.ts"
 
 describe("allocateRow", () => {
   test("empty items yields empty widths", () => {
@@ -128,5 +128,60 @@ describe("zipRow", () => {
       "a2   ",
       "a3   ",
     ])
+  })
+})
+
+describe("stackColumn", () => {
+  test("empty children returns empty rows", () => {
+    expect(stackColumn([], { gap: 0, width: 10 })).toEqual([])
+  })
+
+  test("single child returns its rows", () => {
+    expect(stackColumn([["hello     "]], { gap: 0, width: 10 })).toEqual(["hello     "])
+  })
+
+  test("two children with no gap: flattened", () => {
+    expect(
+      stackColumn([["aaaa      "], ["bbbb      ", "cccc      "]], { gap: 0, width: 10 })
+    ).toEqual(["aaaa      ", "bbbb      ", "cccc      "])
+  })
+
+  test("two children with gap=1 inserts a blank row between", () => {
+    expect(stackColumn([["aaaa      "], ["bbbb      "]], { gap: 1, width: 10 })).toEqual([
+      "aaaa      ",
+      "          ",
+      "bbbb      ",
+    ])
+  })
+
+  test("three children with gap=2 inserts 2 blank rows between each pair", () => {
+    expect(stackColumn([["a    "], ["b    "], ["c    "]], { gap: 2, width: 5 })).toEqual([
+      "a    ",
+      "     ",
+      "     ",
+      "b    ",
+      "     ",
+      "     ",
+      "c    ",
+    ])
+  })
+
+  test("no trailing gap after last child", () => {
+    const out = stackColumn([["x   "], ["y   "]], { gap: 1, width: 4 })
+    expect(out[out.length - 1]).toBe("y   ")
+  })
+
+  test("empty children are skipped, including their surrounding gap", () => {
+    // Middle child is empty (e.g. a hidden `show()` branch). The gap
+    // collapses too — no stray blank band between the visible siblings.
+    expect(stackColumn([["a   "], [], ["b   "]], { gap: 1, width: 4 })).toEqual([
+      "a   ",
+      "    ",
+      "b   ",
+    ])
+  })
+
+  test("leading/trailing empty children don't emit gaps either", () => {
+    expect(stackColumn([[], ["x   "], []], { gap: 2, width: 4 })).toEqual(["x   "])
   })
 })

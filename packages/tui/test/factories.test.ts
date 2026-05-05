@@ -59,12 +59,12 @@ describe("box()", () => {
 
 describe("widget()", () => {
   test("calling the widget produces a WidgetNode wrapping the inner Node", async () => {
-    const greeting = widget((props: { name: string }) => text(`hi ${props.name}`, { width: 8 }))
+    const greeting = widget((props: { name: string }) => text(`hi ${props.name}`))
     const node = greeting({ name: "ada" })
     await node._render(ctx(10)) // forces the inner node to be created so we can inspect it
     expect(node.child).toBeInstanceOf(Text)
     expect(node.state).toEqual({ name: "ada" })
-    expect(await node.render(ctx(10))).toEqual(["hi ada  "])
+    expect(await node.render(ctx(10))).toEqual(["hi ada"])
   })
 
   test("body runs exactly once at construction", async () => {
