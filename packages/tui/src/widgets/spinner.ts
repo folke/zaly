@@ -1,4 +1,4 @@
-import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { Color } from "../style/color.ts"
 
@@ -20,7 +20,7 @@ export const spinnerFrames = {
 
 export type SpinnerStyle = keyof typeof spinnerFrames
 
-export interface SpinnerState extends BaseState {
+export interface SpinnerState {
   /** Frame glyphs, cycled in order. Defaults to `dots`. */
   frames?: SpinnerStyle | readonly string[]
   /** Milliseconds per frame. Defaults to 80. */

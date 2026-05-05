@@ -37,9 +37,11 @@ export const RenderContext = createContext<RenderCtx | undefined>(undefined)
  *     visibility from shared state. `Node.render` unwraps it at render
  *     time so the subscription goes through the usual tracking ctx.
  */
-export interface BaseState {
+type BaseState = {
   visible?: Reactive<boolean>
 }
+
+export type State<T extends object = object> = T & BaseState
 
 /** Widget state mixin: `Style` (fg/bg/attrs) plus `BaseState`
  *  (visibility + any future framework-level state fields). Widget state

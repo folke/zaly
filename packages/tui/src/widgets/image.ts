@@ -1,5 +1,6 @@
-import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
 
+import { fileDetect, imageInfo } from "@zaly/shared"
 import { Node } from "../core/node.ts"
 import { imageCapabilities } from "../image/capabilities.ts"
 import { encode as encodeIterm2 } from "../image/iterm.ts"
@@ -10,9 +11,8 @@ import {
   resetTransmitCache,
   transmitOnce,
 } from "../image/kitty.ts"
-import { fileDetect, imageInfo } from "@zaly/shared"
 
-export interface ImageState extends BaseState {
+export interface ImageState {
   /**
    * Path to an image file. PNG passes through with zero decoding; other
    * formats (JPEG/WebP/GIF/AVIF/SVG) are read via image-meta for

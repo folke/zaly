@@ -1,4 +1,4 @@
-import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { State, RenderCtx } from "../core/ctx.ts"
 
 import { Node } from "../core/node.ts"
 
@@ -34,15 +34,15 @@ export type Widget<S, N extends Node = Node> = (props: S) => N
  *  `status({})`. Otherwise it's required. */
 type WidgetArgs<P> = {} extends P ? [props?: P] : [props: P]
 
-export function widget<S extends {}, N extends Node = Node>(
-  fn: (props: S & BaseState) => N
-): (...args: WidgetArgs<S & BaseState>) => WidgetNode<S, N> {
-  return ((props?: S & BaseState) => new WidgetNode(fn, (props ?? {}) as S & BaseState)) as (
-    ...args: WidgetArgs<S & BaseState>
+export function widget<S extends object, N extends Node = Node>(
+  fn: (props: State<S>) => N
+): (...args: WidgetArgs<State<S>>) => WidgetNode<S, N> {
+  return ((props?: State<S>) => new WidgetNode(fn, (props ?? {}) as State<S>)) as (
+    ...args: WidgetArgs<State<S>>
   ) => WidgetNode<S, N>
 }
 
-class WidgetNode<S extends {}, C extends Node = Node> extends Node<S> {
+class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {
   readonly #create: (props: S) => C
   #child?: C
 

@@ -1,7 +1,7 @@
 import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
-import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
+import type { MountCtx, RenderCtx, State } from "./ctx.ts"
 import type { AsyncTracker } from "./reactive.ts"
 
 import { Emitter } from "@zaly/shared"
@@ -14,10 +14,6 @@ import {
   withActiveNode,
   withContext,
 } from "./reactive.ts"
-
-export type { BaseState }
-
-type State<T extends object> = T & BaseState
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */

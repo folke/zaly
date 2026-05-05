@@ -1,14 +1,14 @@
-import type { BaseState, RenderCtx } from "../core/ctx.ts"
+import type { RenderCtx, State } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { Size } from "../layout/size.ts"
 import type { Color } from "../style/color.ts"
 
-import { stringWidth } from "../style/ansi.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
+import { stringWidth } from "../style/ansi.ts"
 
-export interface ProgressState extends BaseState {
+export interface ProgressState {
   /** Current value. Clamped to `[0, total]`. Accepts a signal accessor
    *  so callers can drive the bar from reactive state without manual
    *  `setState` plumbing. */
@@ -77,7 +77,7 @@ export class Progress extends Node<ProgressState> {
  * progress({ value: 0.7, label: (ctx, f) => ctx.style.dim(`${f*100|0}%`) })
  * ```
  */
-export function progress(state: ProgressState): Progress {
+export function progress(state: State<ProgressState>): Progress {
   return new Progress(state)
 }
 

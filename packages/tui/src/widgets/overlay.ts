@@ -1,4 +1,5 @@
-import type { BaseState, Node } from "../core/node.ts"
+import type { State } from "../core/ctx.ts"
+import type { Node } from "../core/node.ts"
 import type { BoxStyle } from "./box.ts"
 
 import { Box } from "./box.ts"
@@ -32,7 +33,7 @@ export class Overlay extends Box {
   static readonly type = "overlay"
   override readonly type = Overlay.type
   /** Narrow `state` to the Overlay shape without re-initialising the field. */
-  declare readonly state: OverlayState & BaseState
+  declare readonly state: State<OverlayState>
 
   /**
    * Close this overlay via the MountCtx. Symmetric counterpart to
