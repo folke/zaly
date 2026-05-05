@@ -1,17 +1,18 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
+import type { Size } from "../layout/size.ts"
+import type { WrapMode } from "../layout/text.ts"
 import type { MdOptions } from "../markdown/index.ts"
 import type { Image } from "./image.ts"
-import type { TextStyle } from "./text.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
+import { formatText } from "../layout/text.ts"
 import { createCallbacks } from "../markdown/callbacks.ts"
 import { createCodeHighlighter } from "../markdown/code.ts"
 import { createImageCallback } from "../markdown/image.ts"
-import { Text } from "./text.ts"
 
-export interface MarkdownState extends Omit<TextStyle, "content"> {
+export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
    *  pass `signal()` / `memo()` for streaming content that re-parses on
    *  each render and subscribes the node to the signal. */
@@ -25,6 +26,8 @@ export interface MarkdownState extends Omit<TextStyle, "content"> {
    * as plain text.
    */
   syntax?: boolean
+  width?: Size
+  wrap?: WrapMode
 }
 
 export class Markdown extends Node<MarkdownState> {
@@ -33,13 +36,6 @@ export class Markdown extends Node<MarkdownState> {
   // `placementId`, which the KGP spec guarantees is a flicker-free
   // move/resize of the existing placement.
   readonly images = new Map<string, Image>()
-  #text: Text
-
-  constructor(state: MarkdownState) {
-    super(state)
-    this.#text = new Text({ ...state, content: "" })
-    this.add(this.#text)
-  }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const { renderMarkdown } = await import("#md")
@@ -69,11 +65,11 @@ export class Markdown extends Node<MarkdownState> {
     // single-line inputs compact and preserves explicit spacing when
     // they asked for it.
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
-    this.#text.setState({
-      ...this.omitFromState("options", "syntax"),
-      content: final.replace(/\n+$/, trailing),
+    return formatText(final.replace(/\n+$/, trailing), {
+      available: ctx.width,
+      width: this.state.width,
+      wrap: this.state.wrap,
     })
-    return this.#text.render(ctx)
   }
 }
 
