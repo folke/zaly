@@ -66,8 +66,7 @@ export class Markdown extends Node<MarkdownState> {
     // they asked for it.
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
     return formatText(final.replace(/\n+$/, trailing), {
-      available: ctx.width,
-      width: this.state.width,
+      width: ctx.width,
       wrap: this.state.wrap,
     })
   }

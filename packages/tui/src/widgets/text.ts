@@ -37,8 +37,7 @@ export class Text extends Node<TextStyle> {
     const content = typeof raw === "string" ? raw : raw(ctx)
 
     const rows = formatText(content, {
-      available: ctx.width,
-      width: this.state.width,
+      width: ctx.width,
       wrap: this.state.wrap,
     })
 
