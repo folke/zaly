@@ -1,7 +1,7 @@
+import type { Theme } from "../themes/index.ts"
 import type { Style } from "./ansi.ts"
 import type { AnsiColorName, BrightAnsiColorName, Color, ColorStep } from "./color.ts"
 import type { Step } from "./oklch.ts"
-import type { Theme } from "../themes/index.ts"
 
 import { defaultTheme } from "../themes/index.ts"
 import { openStyle, reapplyStyle, RESET } from "./ansi.ts"
@@ -20,6 +20,7 @@ type BgChainKey = `bg${Capitalize<FgChainKey>}`
 type FgExtractKey = `fg${Capitalize<FgChainKey>}`
 
 export type StyleBuilder = {
+  theme: Theme
   (text: string): string
   fg(color: Color): StyleBuilder
   bg(color: Color): StyleBuilder
@@ -81,7 +82,7 @@ type PendingOp = "fg" | "bg" | "alpha" | "add"
 interface BuilderState {
   current: Style
   last: "fg" | "bg" | undefined
-  theme: Theme | undefined
+  theme: Theme
   pending?: PendingOp
 }
 
@@ -89,6 +90,7 @@ interface BuilderState {
  *  so module-level handlers can read it without closure gymnastics. */
 type BuilderFn = {
   state: BuilderState
+  theme: Theme
 } & (((text: string) => string) | ((arg: Color | number | Style | undefined) => StyleBuilder))
 
 // --- module-level handlers (shared across every chain) -----------------
@@ -222,5 +224,6 @@ function build(state: BuilderState): StyleBuilder {
         }
   ) as BuilderFn
   fn.state = state
+  fn.theme = state.theme
   return new Proxy(fn, proxyHandler) as unknown as StyleBuilder
 }
