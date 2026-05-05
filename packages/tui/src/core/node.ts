@@ -2,10 +2,18 @@ import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
+import type { AsyncTracker } from "./reactive.ts"
 
 import { Emitter } from "@zaly/shared"
 import { RenderContext } from "./ctx.ts"
-import { inRenderContextOf, unwrap, withActiveNode, withContext } from "./reactive.ts"
+import {
+  AsyncTrackerContext,
+  inRenderContextOf,
+  unwrap,
+  useContext,
+  withActiveNode,
+  withContext,
+} from "./reactive.ts"
 
 export type { BaseState }
 
@@ -170,39 +178,72 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     // Resolve inside the tracking ctx so a signal accessor read
     // subscribes this node.
     this.#rendering ??= withActiveNode(this, () =>
-      // Publish the current `ctx` to `RenderCtxContext` so widget
-      // bodies and effects (anywhere in the subtree) can read it via
-      // `useContext(RenderCtxContext)` without prop-drilling. ALS
+      // Publish the current `ctx` to `RenderContext` so widget bodies
+      // and effects (anywhere in the subtree) can read it via
+      // `useContext(RenderContext)` without prop-drilling. ALS
       // preserves the value across awaits.
-      withContext(RenderContext, ctx, async () => {
-        // Cache the hidden result too, so a later `invalidate()` sees
-        // `hadCache === true` and cascades up — otherwise a toggleable
-        // panel (autocomplete, modal) whose first paint happened while
-        // hidden would swallow the flip-to-visible invalidate.
-        if (!unwrap(this.state.visible ?? true)) {
-          this.#cache = { rows: [], version: ctx.version }
-          return this.#cache.rows
-        }
-        if (this.#cache?.version === ctx.version) return this.#cache.rows
-        // Capture the invalidation count *before* awaiting `_render`.
-        // If it bumps mid-render, the rows we get back are based on
-        // stale state — the external mutation that bumped it has
-        // already emitted and re-scheduled the surface, so skip
-        // caching. The re-paint will run a fresh `_render` against the
-        // latest state.
-        const stamp = this.#invalidations
-        const rows = await this._render(ctx)
-        if (this.#invalidations === stamp) {
-          this.#cache = { rows, version: ctx.version }
-        }
-        return rows
-      })
+      withContext(RenderContext, ctx, () => this.#renderWithAsync(ctx))
     )
     try {
       return await this.#rendering
     } finally {
       this.#rendering = undefined
     }
+  }
+
+  /** Outermost render installs an `AsyncTracker` so descendants'
+   *  `createAsync` calls always have a registration target. Inner
+   *  renders inherit it via ALS and pass through to `#renderCore`.
+   *
+   *  The `ctx.async` flag governs only whether the outermost awaits
+   *  the tracker before returning:
+   *    - `false` (drain): render, await pending, repeat until stable.
+   *    - `true`  (fire-and-forget): return immediately; signal updates
+   *      from the resolving promises invalidate subscribers later. */
+  async #renderWithAsync(ctx: RenderCtx): Promise<string[]> {
+    // Inner renders just delegate — their createAsyncs land in the
+    // outermost's tracker.
+    if (useContext(AsyncTrackerContext) !== undefined) {
+      return this.#render(ctx)
+    }
+    const tracker: AsyncTracker = new Set()
+    return withContext(AsyncTrackerContext, tracker, async () => {
+      if (ctx.async === true) return this.#render(ctx)
+      // Drain: render, await pending, repeat until stable. The tracker
+      // can be re-populated during the await (chained async, or fresh
+      // `createAsync` registrations from a newly-rendered subtree), so
+      // loop until empty.
+      for (;;) {
+        // oxlint-disable-next-line no-await-in-loop
+        const rows = await this.#render(ctx)
+        if (tracker.size === 0) return rows
+        // oxlint-disable-next-line no-await-in-loop
+        await Promise.all(tracker)
+      }
+    })
+  }
+
+  async #render(ctx: RenderCtx): Promise<string[]> {
+    // Cache the hidden result too, so a later `invalidate()` sees
+    // `hadCache === true` and cascades up — otherwise a toggleable
+    // panel (autocomplete, modal) whose first paint happened while
+    // hidden would swallow the flip-to-visible invalidate.
+    if (!unwrap(this.state.visible ?? true)) {
+      this.#cache = { rows: [], version: ctx.version }
+      return this.#cache.rows
+    }
+    if (this.#cache?.version === ctx.version) return this.#cache.rows
+    // Capture the invalidation count *before* awaiting `_render`. If
+    // it bumps mid-render, the rows we get back are based on stale
+    // state — the external mutation that bumped it has already emitted
+    // and re-scheduled the surface, so skip caching. The re-paint will
+    // run a fresh `_render` against the latest state.
+    const stamp = this.#invalidations
+    const rows = await this._render(ctx)
+    if (this.#invalidations === stamp) {
+      this.#cache = { rows, version: ctx.version }
+    }
+    return rows
   }
 
   protected abstract _render(ctx: RenderCtx): Promise<string[]> | string[]

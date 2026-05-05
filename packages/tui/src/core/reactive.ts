@@ -316,3 +316,106 @@ export function memo<T>(fn: () => T): Accessor<T> {
   })
   return get
 }
+
+// ---- async -----------------------------------------------------------
+
+/**
+ * A drain-able set of in-flight promises. Producers (`createAsync`,
+ * Node classes that await directly) `add` their promise, `delete` it
+ * on settle. Consumers (stream surface, `Suspense`) await everything
+ * in the set and re-render until the set is stable.
+ *
+ * Threaded through the render tree via `AsyncTrackerContext`.
+ */
+export type AsyncTracker = Set<Promise<unknown>>
+
+/**
+ * Render-scope handle to the active drain target. Surfaces / Suspense
+ * boundaries install one via `withContext`; producers register their
+ * pending work with whatever's innermost.
+ *
+ * Consumer pattern (Node class):
+ * ```ts
+ * const tracker = useContext(AsyncTrackerContext)
+ * const p = doAsyncWork()
+ * tracker?.add(p)
+ * try { return await p } finally { tracker?.delete(p) }
+ * ```
+ *
+ * Producer pattern (widget): use `createAsync` — handles registration,
+ * stale-write protection, and signal-driven re-fire.
+ */
+export const AsyncTrackerContext = createContext<AsyncTracker | undefined>(undefined)
+
+/**
+ * Solid-style async accessor. Runs `fn` inside an `effect` so signal
+ * reads inside it auto-track and re-fire the work when sources change.
+ * Each run registers its promise with the active `AsyncTrackerContext`,
+ * so stream surfaces can drain pending work before commit and Suspense
+ * boundaries can decide on a fallback.
+ *
+ * Returns an `Accessor<T | undefined>`. Reads inside a render / effect
+ * subscribe normally — the value updates from `initialValue` to the
+ * resolved value once the promise settles.
+ *
+ * ```ts
+ * const highlighted = createAsync(
+ *   async () => highlight(unwrap(props.code)),
+ *   { initialValue: unwrap(props.code) },
+ * )
+ * text(highlighted)
+ * ```
+ *
+ * **Stale-write protection**: each effect run bumps a generation
+ * counter; late `.then` callbacks check it and skip the `setValue`
+ * if a newer run has already fired. Without this, fast-changing
+ * sources would race their highlight results.
+ *
+ * **Tracker registration**: `useContext(AsyncTrackerContext)` is read
+ * inside the effect, so the active tracker at the time the effect
+ * runs is the one registered with. For widget bodies that defer to
+ * `_render` (the standard `widget()` factory), this picks up the
+ * surface's or Suspense boundary's tracker correctly.
+ */
+export function createAsync<T>(
+  fn: () => Promise<T>,
+  opts: { initialValue: T }
+): Accessor<T>
+export function createAsync<T>(
+  fn: () => Promise<T>,
+  opts?: { initialValue?: T }
+): Accessor<T | undefined>
+export function createAsync<T>(
+  fn: () => Promise<T>,
+  opts?: { initialValue?: T }
+): Accessor<T | undefined> {
+  const [value, setValue] = signal<T | undefined>(opts?.initialValue)
+  let gen = 0
+  effect(() => {
+    const my = ++gen
+    const tracker = useContext(AsyncTrackerContext)
+    let p: Promise<T>
+    try {
+      p = fn()
+    } catch (error) {
+      // Sync throw inside `fn` — surface as a rejected promise so the
+      // tracker registration / cleanup path stays uniform with async
+      // failures, and so callers can still observe the failure.
+      p = Promise.reject(error as Error)
+    }
+    tracker?.add(p)
+    p.then(
+      (v) => {
+        if (my === gen) setValue(v)
+      },
+      () => {
+        // Swallow — async failures leave the previous (or initial)
+        // value in place. Producers that want richer error UX should
+        // model errors in `T` (e.g. `T = Result<Highlighted, Error>`).
+      }
+    ).finally(() => {
+      tracker?.delete(p)
+    })
+  })
+  return value
+}

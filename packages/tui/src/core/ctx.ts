@@ -46,7 +46,7 @@ export interface BaseState {
  *  interfaces extend this so base-state concerns and pure styling stay
  *  cleanly separated at the type level without each widget having to
  *  compose the two manually. */
-export type StyleState = Style & BaseState
+export type StyleState = Style
 
 /**
  * Passed to every `render(ctx)` call. Width flows in; height emerges from
@@ -64,6 +64,20 @@ export interface RenderCtx {
   theme: Theme
   style: StyleBuilder
   version: number
+  /** Whether async work registered during render is allowed to settle
+   *  *after* `render()` returns.
+   *
+   *  - `true` (default) — fire-and-forget: descendants' `createAsync`
+   *    starts work, the render returns whatever's available now, and
+   *    signal updates from the resolving promises invalidate
+   *    subscribers later. Right for the UI surface, which re-renders
+   *    cheaply.
+   *  - `false` — drain mode: the outermost `Node.render` installs an
+   *    `AsyncTracker`, awaits any pending work registered by
+   *    descendants, and re-renders until the tracker is stable before
+   *    returning. Right for the stream surface — once rows commit to
+   *    scrollback, signal updates can't repaint them. */
+  async?: boolean
 }
 
 /**
