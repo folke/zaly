@@ -5,10 +5,12 @@ export type Pct = `${number}%`
  * Size along one axis.
  *  - `number` — absolute cells
  *  - `Pct` — percentage of the parent's content axis
- *  - `'auto'` — natural size of the content
- *  - `'fill'` — fill the remaining space in the flex allocation
+ *  - `'fill'` — take all of the remaining space in the flex allocation
+ *  - `'fit'`  — shrink to the content's natural size, capped at the
+ *               available axis. Mirrors CSS `fit-content`. Pairs nicely
+ *               with `'fill'` — `fill` grows, `fit` shrinks.
  */
-export type Size = number | Pct | "auto" | "fill"
+export type Size = number | Pct | "fill" | "fit"
 
 /**
  * Resolve a Size to cells, given the axis size available from the parent.
@@ -16,12 +18,12 @@ export type Size = number | Pct | "auto" | "fill"
  *  - `number` — passes through
  *  - `Pct` — percentage of `available`, rounded down
  *  - `'fill'` — full `available`
- *  - `'auto'` / `undefined` — returns undefined; caller measures content
+ *  - `'fit'` / `undefined` — returns undefined; caller measures content
  *
  * @internal
  */
 export function resolveSize(size: Size | undefined, available: number): number | undefined {
-  if (size === undefined || size === "auto") return undefined
+  if (size === undefined || size === "fit") return undefined
   if (size === "fill") return available
   if (typeof size === "number") return size
   return Math.floor((Number.parseFloat(size) / 100) * available)

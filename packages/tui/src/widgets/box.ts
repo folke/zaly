@@ -45,22 +45,43 @@ export class Box extends Node<BoxStyle> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state
 
-    const requested = resolveSize(style.width ?? "fill", ctx.width) ?? ctx.width
-    const outer = clamp(requested, {
-      available: ctx.width,
-      max: style.maxWidth,
-      min: style.minWidth,
-    })
-
     const [padT, padR, padB, padL] = resolvePadding(style.padding)
     const bchars = resolveBorder(style.border)
     const hasBorder = bchars !== undefined
+    const chrome = padL + padR + (hasBorder ? 2 : 0)
+
+    let outer: number
+    let contentRows: string[]
+    let inner: number
+
+    if (style.width === "fit") {
+      // `fit`: render children at the parent's max inner width, measure
+      // the natural max-row width, then clamp the box to that. Two-pass
+      // — the first pass uses the upper bound as a measuring window,
+      // the second re-pads each row to the chosen inner width.
+      const upper = Math.max(0, ctx.width - chrome)
+      const tentative = await this.#layoutChildren(upper, ctx)
+      const natural = tentative.reduce((m, r) => Math.max(m, stringWidth(r)), 0)
+      const fit = Math.min(ctx.width, natural + chrome)
+      outer = clamp(fit, {
+        available: ctx.width,
+        max: style.maxWidth,
+        min: style.minWidth,
+      })
+      inner = Math.max(0, outer - chrome)
+      contentRows = tentative
+    } else {
+      const requested = resolveSize(style.width ?? "fill", ctx.width) ?? ctx.width
+      outer = clamp(requested, {
+        available: ctx.width,
+        max: style.maxWidth,
+        min: style.minWidth,
+      })
+      inner = Math.max(0, outer - chrome)
+      contentRows = await this.#layoutChildren(inner, ctx)
+    }
 
     const paddedWidth = Math.max(0, outer - (hasBorder ? 2 : 0))
-    const inner = Math.max(0, paddedWidth - padL - padR)
-
-    // Layout children into rows at inner width.
-    let contentRows = await this.#layoutChildren(inner, ctx)
 
     // Ensure each content row is exactly `inner` cells wide (absorbs slack).
     contentRows = contentRows.map((row) => padRow(row, inner))
