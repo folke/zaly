@@ -68,6 +68,58 @@ export function untrack<T>(fn: () => T): T {
   return activeCtx.run(undefined, fn)
 }
 
+// ---- context ---------------------------------------------------------
+
+/**
+ * Solid-style context for sharing values down the render tree without
+ * prop-drilling. The renderer publishes `RenderCtxContext` for every
+ * `_render`; widgets can publish their own (theming overrides, focus
+ * scope, drag state, plugin services) via `withContext`.
+ *
+ * ```ts
+ * const ThemeOverride = createContext<Theme | undefined>(undefined)
+ *
+ * // provider:
+ * withContext(ThemeOverride, customTheme, () => child.render(ctx))
+ *
+ * // consumer:
+ * const theme = useContext(ThemeOverride) ?? defaultTheme
+ * ```
+ *
+ * Implementation: a single ALS holds an immutable Map keyed by context
+ * id; `withContext` creates a layered Map for its scope. Reads walk
+ * the current Map; misses fall back to the context's default. Survives
+ * `await` boundaries via the same ALS that powers tracking.
+ */
+export interface Context<T> {
+  readonly id: symbol
+  readonly defaultValue: T
+}
+
+const contextStore = new AsyncLocalStorage<Map<symbol, unknown>>()
+
+export function createContext<T>(defaultValue: T): Context<T> {
+  return { defaultValue, id: Symbol("@zaly/tui/context") }
+}
+
+/** Run `fn` with `ctx` set to `value`. Nested calls layer; the
+ *  innermost wins for that id. */
+export function withContext<T, R>(ctx: Context<T>, value: T, fn: () => R): R {
+  const parent = contextStore.getStore()
+  const next = new Map(parent)
+  next.set(ctx.id, value)
+  return contextStore.run(next, fn)
+}
+
+/** Read the current value of `ctx`. Returns the default when no
+ *  ancestor `withContext` is in scope. */
+export function useContext<T>(ctx: Context<T>): T {
+  const map = contextStore.getStore()
+  if (map === undefined) return ctx.defaultValue
+  const v = map.get(ctx.id)
+  return v === undefined ? ctx.defaultValue : (v as T)
+}
+
 // ---- public types ----------------------------------------------------
 
 /** Brand tag: every accessor / setter returned by `signal` / `memo`
