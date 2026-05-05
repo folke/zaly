@@ -9,6 +9,8 @@ import { inRenderContextOf, unwrap, withActiveNode, withContext } from "./reacti
 
 export type { BaseState }
 
+type State<T extends object> = T & BaseState
+
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */
 export type BaseEvents = {
@@ -34,10 +36,7 @@ export type BaseEvents = {
  * through nested objects/arrays (`n.state.padding[0] = 1`) do NOT — reassign
  * the whole field instead.
  */
-export abstract class Node<
-  S extends BaseState = BaseState,
-  E extends BaseEvents = BaseEvents,
-> extends Emitter<BaseEvents, E> {
+export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter<BaseEvents, E> {
   #cache?: { rows: string[]; version: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
@@ -49,14 +48,14 @@ export abstract class Node<
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
   readonly #children: Node[] = []
-  readonly #state: S
-  readonly state: S
+  readonly #state: State<T>
+  readonly state: State<T>
   #ctx?: MountCtx
   #id?: string
   actions?: ActionMap
   type?: string
 
-  constructor(state: S, ...children: Node[]) {
+  constructor(state: State<T>, ...children: Node[]) {
     super()
     this.#state = state
     this.state = new Proxy(state, {
@@ -116,12 +115,13 @@ export abstract class Node<
     return this
   }
 
-  setState(patch: Partial<S>): this {
+  setState(patch: Partial<State<T>>): this {
     let changed = false
-    for (const key of Object.keys(patch) as (keyof S)[]) {
-      const next = patch[key]
-      if (this.#state[key] !== next) {
-        this.#state[key] = next as S[keyof S]
+    const target = this.#state as Record<string, unknown>
+    for (const key of Object.keys(patch)) {
+      const next = (patch as Record<string, unknown>)[key]
+      if (target[key] !== next) {
+        target[key] = next
         changed = true
       }
     }
@@ -267,9 +267,9 @@ export abstract class Node<
     return this
   }
 
-  omitFromState<K extends keyof S>(...keys: K[]): Omit<S, K> {
-    const result = { ...this.#state } as Omit<S, K>
-    for (const k of keys) delete (result as S)[k]
+  omitFromState<K extends keyof State<T>>(...keys: K[]): Omit<State<T>, K> {
+    const result = { ...this.#state } as Omit<State<T>, K>
+    for (const k of keys) delete (result as State<T>)[k]
     return result
   }
 
