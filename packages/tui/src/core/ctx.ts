@@ -10,8 +10,22 @@ import type { Reactive } from "./reactive.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../themes/index.ts"
+import { createContext } from "./reactive.ts"
 
 export type { StyleBuilder, Theme }
+
+/** Context published by `Node.render` for every `_render` call. Widget
+ *  bodies and effects can read it via `useContext(RenderCtxContext)`
+ *  to access width/theme/style without re-plumbing or signal-mutation
+ *  workarounds. Returns `undefined` outside a render — e.g. when the
+ *  widget body runs in the WidgetNode constructor before any render.
+ *
+ *  Reactive note: this is a context, not a signal. Reads inside
+ *  effects don't subscribe to ctx changes; effects that depend on
+ *  width/theme should re-fire from a different source (e.g. a signal
+ *  the widget's body owns, or recompute inside a leaf thunk that
+ *  re-evaluates per render). */
+export const RenderContext = createContext<RenderCtx | undefined>(undefined)
 
 /**
  * Fields every Node reads off its state. Widget state types should

@@ -4,7 +4,8 @@ import type { Surface } from "../renderer/index.ts"
 import type { BaseState, MountCtx, RenderCtx } from "./ctx.ts"
 
 import { Emitter } from "@zaly/shared"
-import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
+import { RenderContext } from "./ctx.ts"
+import { inRenderContextOf, unwrap, withActiveNode, withContext } from "./reactive.ts"
 
 export type { BaseState }
 
@@ -168,28 +169,35 @@ export abstract class Node<
     // stick around in the tree so we don't re-create them each time.
     // Resolve inside the tracking ctx so a signal accessor read
     // subscribes this node.
-    this.#rendering ??= withActiveNode(this, async () => {
-      // Cache the hidden result too, so a later `invalidate()` sees
-      // `hadCache === true` and cascades up — otherwise a toggleable
-      // panel (autocomplete, modal) whose first paint happened while
-      // hidden would swallow the flip-to-visible invalidate.
-      if (!unwrap(this.state.visible ?? true)) {
-        this.#cache = { rows: [], version: ctx.version }
-        return this.#cache.rows
-      }
-      if (this.#cache?.version === ctx.version) return this.#cache.rows
-      // Capture the invalidation count *before* awaiting `_render`. If
-      // it bumps mid-render, the rows we get back are based on stale
-      // state — the external mutation that bumped it has already
-      // emitted and re-scheduled the surface, so skip caching. The
-      // re-paint will run a fresh `_render` against the latest state.
-      const stamp = this.#invalidations
-      const rows = await this._render(ctx)
-      if (this.#invalidations === stamp) {
-        this.#cache = { rows, version: ctx.version }
-      }
-      return rows
-    })
+    this.#rendering ??= withActiveNode(this, () =>
+      // Publish the current `ctx` to `RenderCtxContext` so widget
+      // bodies and effects (anywhere in the subtree) can read it via
+      // `useContext(RenderCtxContext)` without prop-drilling. ALS
+      // preserves the value across awaits.
+      withContext(RenderContext, ctx, async () => {
+        // Cache the hidden result too, so a later `invalidate()` sees
+        // `hadCache === true` and cascades up — otherwise a toggleable
+        // panel (autocomplete, modal) whose first paint happened while
+        // hidden would swallow the flip-to-visible invalidate.
+        if (!unwrap(this.state.visible ?? true)) {
+          this.#cache = { rows: [], version: ctx.version }
+          return this.#cache.rows
+        }
+        if (this.#cache?.version === ctx.version) return this.#cache.rows
+        // Capture the invalidation count *before* awaiting `_render`.
+        // If it bumps mid-render, the rows we get back are based on
+        // stale state — the external mutation that bumped it has
+        // already emitted and re-scheduled the surface, so skip
+        // caching. The re-paint will run a fresh `_render` against the
+        // latest state.
+        const stamp = this.#invalidations
+        const rows = await this._render(ctx)
+        if (this.#invalidations === stamp) {
+          this.#cache = { rows, version: ctx.version }
+        }
+        return rows
+      })
+    )
     try {
       return await this.#rendering
     } finally {
