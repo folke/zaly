@@ -63,7 +63,6 @@ export type StyleState = Style
  */
 export interface RenderCtx {
   width: number
-  theme: Theme
   style: StyleBuilder
   version: number
   /** Whether async work registered during render is allowed to settle
@@ -167,12 +166,11 @@ export function termWidth(): number | undefined {
  * — resolve the name first, then pass the `Theme` object here.
  * @internal
  */
-export function createCtx(opts?: Partial<RenderCtx>): RenderCtx {
+export function createCtx(opts?: Partial<RenderCtx> & { theme?: Theme }): RenderCtx {
   const theme = opts?.theme ?? defaultTheme
   const tw = termWidth() ?? 80
   return {
     style: style(theme),
-    theme,
     version: opts?.version ?? 0,
     width: Math.min(opts?.width ?? tw, tw),
   }

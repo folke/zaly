@@ -5,7 +5,6 @@ import type { Reactive } from "../core/reactive.ts"
 import type { TextStyle } from "./text.ts"
 
 import { extname } from "pathe"
-
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { stringWidth } from "../style/ansi.ts"
@@ -202,7 +201,7 @@ async function highlightPair(
   try {
     const highlight = await createAnsiHighlighter({
       langs: [lang],
-      theme: ctx.theme.shiki,
+      theme: ctx.style.theme.shiki,
     })
     const splitHi = (src: string[]): string[] => {
       const out = highlight(src.join("\n"), lang)

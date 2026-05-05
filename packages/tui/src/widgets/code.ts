@@ -59,7 +59,7 @@ export const code = widget((props: CodeState) => {
       if (!syntax || langCandidate === undefined || langCandidate === "") return source
       const ctx = useContext(RenderContext)
       if (ctx === undefined) return source // pre-first-render
-      return await highlightSource(source, langCandidate, ctx.theme)
+      return await highlightSource(source, langCandidate, ctx.style.theme)
     },
     { initialValue: unwrap(props.code) }
   )
