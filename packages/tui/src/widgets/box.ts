@@ -1,23 +1,22 @@
-import type { RenderCtx, StyleState } from "../core/ctx.ts"
+import type { RenderCtx } from "../core/ctx.ts"
+import type { State } from "../core/state.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
-import type { Flexible } from "../layout/flex.ts"
-import type { RowItem } from "../layout/row.ts"
+import type { RowItem } from "../layout/flex.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
 import { Node } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
-import { stackColumn } from "../layout/column.ts"
-import { allocateRow, zipRow } from "../layout/row.ts"
+import { allocateRow, isFixedWidth, padRow, stackColumn, zipRow } from "../layout/flex.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
-import { sliceAnsi, stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "../style/ansi.ts"
 
 export type Padding =
   | number
   | readonly [v: number, h: number]
   | readonly [t: number, r: number, b: number, l: number]
 
-export interface BoxStyle extends StyleState, Flexible {
+export interface BoxStyle extends Style {
   flexDirection?: "row" | "column"
   gap?: number
   height?: Size
@@ -116,29 +115,97 @@ export class Box extends Node<BoxStyle> {
     const children = this.children
     if (children.length === 0) return []
     const gap = this.state.gap ?? 0
-    const dir = this.state.flexDirection ?? "column"
+    return (this.state.flexDirection ?? "column") === "row"
+      ? this.#layoutRow(innerWidth, ctx, gap)
+      : this.#layoutColumn(innerWidth, ctx, gap)
+  }
 
-    if (dir === "column") {
-      const childRows = await Promise.all(
-        children.map((c) => c.render({ ...ctx, width: innerWidth }))
-      )
-      return stackColumn(childRows, { gap, width: innerWidth })
-    }
+  /**
+   * Row direction — main axis is horizontal. CSS `flex: 0 1 auto`:
+   * each child sizes to its natural max-row width unless it claims
+   * slack via `flexGrow > 0` or `width: "fill"`. Two passes — measure
+   * naturals at the upper bound (or fixed spec), allocate slot widths,
+   * re-render any child whose final slot differs from its measure
+   * width. In fit-mode the parent has no slack to give, so the
+   * allocator's available is capped at the natural sum.
+   */
+  async #layoutRow(innerWidth: number, ctx: RenderCtx, gap: number): Promise<string[]> {
+    const children = this.children
 
-    const items: RowItem[] = children.map((c) => {
-      const s = c.state as Flexible
-      return { flexGrow: s.flexGrow, maxWidth: s.maxWidth, minWidth: s.minWidth, width: s.width }
+    const measureWidths = children.map((c) =>
+      isFixedWidth(c.state.width) ? (resolveSize(c.state.width, innerWidth) ?? innerWidth) : innerWidth
+    )
+    const measureRows = await Promise.all(
+      children.map((c, i) => c.render({ ...ctx, width: measureWidths[i] }))
+    )
+    const naturals = measureRows.map((rows) =>
+      rows.reduce((m, r) => Math.max(m, stringWidth(r)), 0)
+    )
+    const items: RowItem[] = children.map((c, i) => {
+      const s = c.state
+      return {
+        flexGrow: s.flexGrow,
+        maxWidth: s.maxWidth,
+        minWidth: s.minWidth,
+        natural: naturals[i],
+        width: s.width,
+      }
     })
-    const widths = allocateRow(items, { contentWidth: innerWidth, gap })
+    const allocAvailable =
+      this.state.width === "fit"
+        ? naturals.reduce((a, b) => a + b, 0) + gap * Math.max(0, children.length - 1)
+        : innerWidth
+    const widths = allocateRow(items, { contentWidth: allocAvailable, gap })
+    const childRows = await Promise.all(
+      children.map((c, i) =>
+        widths[i] === measureWidths[i]
+          ? Promise.resolve(measureRows[i])
+          : c.render({ ...ctx, width: widths[i] })
+      )
+    )
+    // `zipRow` expects rows to be exactly `widths[i]` wide. Children
+    // that emit natural-width rows (text default, code default) get
+    // padded here so the contract holds; over-wide rows get clipped.
+    const padded = childRows.map((rows, i) => rows.map((row) => padRow(row, widths[i])))
+    return zipRow(padded, { gap, widths })
+  }
+
+  /**
+   * Column direction — main axis is vertical, cross axis horizontal.
+   * Per CSS `align-items: stretch` (default), children with no
+   * explicit `width` fill the cross axis. A child with a fixed `width`
+   * (number / `Pct`) takes that width as its cross-axis size, with the
+   * leftover padded as right slack (default `flex-start`). `min`/`max`
+   * clamp the resolved width.
+   *
+   * In fit-mode (`width: "fit"`), the cross-axis target shrinks to the
+   * widest child row instead of stretching to `innerWidth` — symmetric
+   * to how row-direction caps allocator-available at the natural sum.
+   */
+  async #layoutColumn(innerWidth: number, ctx: RenderCtx, gap: number): Promise<string[]> {
+    const children = this.children
+    const widths = children.map((c) => {
+      const s = c.state
+      const fixed = isFixedWidth(s.width) ? resolveSize(s.width, innerWidth) : undefined
+      const w = fixed ?? innerWidth
+      return clamp(w, { available: innerWidth, max: s.maxWidth, min: s.minWidth })
+    })
     const childRows = await Promise.all(
       children.map((c, i) => c.render({ ...ctx, width: widths[i] }))
     )
-    // `zipRow` expects each child's rows to be exactly `widths[i]` cells
-    // wide. Children that emit natural-width rows (the default for
-    // `text` after the layout-vs-content split) get padded here so the
-    // contract holds. Rows wider than the slot get clipped.
-    const padded = childRows.map((rows, i) => rows.map((row) => padRow(row, widths[i])))
-    return zipRow(padded, { gap, widths })
+    const target =
+      this.state.width === "fit"
+        ? childRows.reduce(
+            (m, rows) => rows.reduce((mm, r) => Math.max(mm, stringWidth(r)), m),
+            0
+          )
+        : innerWidth
+    // Pad each child's rows to the cross-axis target. For full-stretch
+    // children this absorbs natural-row slack; for fixed-width
+    // children it adds right-side slack (default `flex-start`
+    // alignment). `stackColumn`'s contract requires uniform width.
+    const padded = childRows.map((rows) => rows.map((row) => padRow(row, target)))
+    return stackColumn(padded, { gap, width: target })
   }
 }
 
@@ -153,7 +220,7 @@ type Child = Node | false | null | undefined
  * Falsy children (`false`, `null`, `undefined`) are filtered out, enabling
  * conditional JSX-like composition: `box({}, cond && child)`.
  */
-export function box(style: BoxStyle, ...children: Child[]): Box {
+export function box(style: State<BoxStyle>, ...children: Child[]): Box {
   const b = new Box(style)
   for (const c of children) if (c) b.add(c)
   return b
@@ -164,17 +231,4 @@ function resolvePadding(p: Padding | undefined): [t: number, r: number, b: numbe
   if (typeof p === "number") return [p, p, p, p]
   if (p.length === 2) return [p[0], p[1], p[0], p[1]]
   return [p[0], p[1], p[2], p[3]]
-}
-
-/** Pad/clip a child row without injecting a RESET. The Box's outer
- *  `reapplyStyle` wrap inserts its own `RESET + reopen` at each inner
- *  `[0m`, so padding produced here stays inside the ambient style the
- *  box is closing over. Text's `padOrClip` in `style/ansi.ts` behaves
- *  differently — it inserts `RESET` before the pad — because Text has
- *  no outer reapply chain to carry the style forward. */
-function padRow(row: string, width: number): string {
-  const w = stringWidth(row)
-  if (w === width) return row
-  if (w < width) return row + " ".repeat(width - w)
-  return sliceAnsi(row, 0, width)
 }

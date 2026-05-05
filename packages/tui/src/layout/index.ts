@@ -1,4 +1,3 @@
 export * from "./border.ts"
-export * from "./column.ts"
-export * from "./row.ts"
+export * from "./flex.ts"
 export * from "./size.ts"
