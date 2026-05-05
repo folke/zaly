@@ -37,22 +37,35 @@ type WidgetArgs<P> = {} extends P ? [props?: P] : [props: P]
 export function widget<S extends {}, N extends Node = Node>(
   fn: (props: S & BaseState) => N
 ): (...args: WidgetArgs<S & BaseState>) => WidgetNode<S, N> {
-  return ((props?: S & BaseState) =>
-    new WidgetNode(fn, (props ?? {}) as S & BaseState)) as (
+  return ((props?: S & BaseState) => new WidgetNode(fn, (props ?? {}) as S & BaseState)) as (
     ...args: WidgetArgs<S & BaseState>
   ) => WidgetNode<S, N>
 }
 
 class WidgetNode<S extends {}, N extends Node = Node> extends Node<S & BaseState> {
-  readonly child: N
+  readonly #create: (props: S) => N
+  #child?: N
 
   constructor(fn: (props: S) => N, props: S) {
     super(props)
-    this.child = fn(props) // runs ONCE; props is captured by closure
-    this.add(this.child) // adopt as real child so layout/parent ops work
+    this.#create = fn
+  }
+
+  get child(): N {
+    if (this.#child === undefined) {
+      throw new Error(
+        "WidgetNode.child accessed before first render — body runs lazily in `_render`. " +
+          "Call `await widget.render(ctx)` first if you need to inspect the inner tree."
+      )
+    }
+    return this.#child
   }
 
   async _render(ctx: RenderCtx): Promise<string[]> {
-    return this.child.render(ctx)
+    if (this.#child === undefined) {
+      this.#child = this.#create(this.state) // runs ONCE; props is captured by closure
+      this.add(this.#child) // adopt as real child so layout/parent ops work
+    }
+    return this.#child.render(ctx)
   }
 }
