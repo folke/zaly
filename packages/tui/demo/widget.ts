@@ -4,27 +4,31 @@ async function demo(label: string, name: string): Promise<void> {
   const theme = await loadTheme(name)
   const ctx = createCtx({ theme })
 
+  const status = widget((props: { level: "success" | "warn" | "error"; msg: string }) =>
+    text(({ style }) => `${style.bold[props.level](" ● ")}${style.dim(props.msg)}`)
+  )
+
   const app = box(
     { gap: 1 },
     box(
       { bg: "primary", padding: [0, 1] },
       text(({ style }) => style.brightWhite.bold("@zaly/tui")),
-      text(({ style }) => style.brightWhite("  agent harness · dev build")),
+      text(({ style }) => style.brightWhite("  agent harness · dev build"))
     ),
     box(
       { flexDirection: "row", gap: 1 },
       box(
         { border: "rounded", borderTitle: "passing", flexGrow: 1, padding: [0, 1] },
-        text("168 / 168", { bold: true, fg: "success" }),
+        text("168 / 168", { bold: true, fg: "success" })
       ),
       box(
         { border: "rounded", borderTitle: "pending", flexGrow: 1, padding: [0, 1] },
-        text("3 queued", { fg: "warn" }),
+        text("3 queued", { fg: "warn" })
       ),
       box(
         { border: "rounded", borderTitle: "failed", flexGrow: 1, padding: [0, 1] },
-        text("0", { fg: "error" }),
-      ),
+        text("0", { fg: "error" })
+      )
     ),
     box(
       { border: "rounded", borderTitle: "activity", borderTitleAlign: "center", padding: 1 },
@@ -40,16 +44,12 @@ async function demo(label: string, name: string): Promise<void> {
       text(""),
       text("tool: bash", { fg: "primary" }),
       text("  cmd: bun test", { fg: "muted" }),
-      text("  exit: 0", { fg: "success" }),
+      text("  exit: 0", { fg: "success" })
     ),
     // Custom widget — state-driven status line. Uses `ctx.style` so the fg
     // color is picked dynamically at render time: `.bold[state.level]` maps
     // to theme slots via `keyof Theme`.
-    widget(
-      { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
-      ({ ctx: { style }, state }) =>
-        text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`),
-    ),
+    status({ level: "success" as "success" | "warn" | "error", msg: "all systems nominal" })
   )
 
   console.log(`── ${label} ──`)

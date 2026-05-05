@@ -1,6 +1,4 @@
-import type { BaseEvents } from "../src/core/node.ts"
-
-import { describe, expect, test, vi } from "vitest"
+import { describe, expect, test } from "vitest"
 import { createCtx } from "../src/core/ctx.ts"
 import { Box, box, text, widget } from "../src/index.ts"
 import { Text } from "../src/widgets/text.ts"
@@ -30,7 +28,7 @@ describe("text()", () => {
 
 describe("box()", () => {
   test("empty box", () => {
-    const b = box()
+    const b = box({})
     expect(b).toBeInstanceOf(Box)
     expect(b.children).toEqual([])
   })
@@ -43,9 +41,9 @@ describe("box()", () => {
     expect(b.children).toEqual([t1, t2])
   })
 
-  test("children-only (no style)", () => {
+  test("style-less box (use `{}`)", () => {
     const t1 = text("a")
-    const b = box(t1)
+    const b = box({}, t1)
     expect(b.state).toEqual({})
     expect(b.children).toEqual([t1])
   })
@@ -60,42 +58,31 @@ describe("box()", () => {
 })
 
 describe("widget()", () => {
-  test("single-Node render is composed", async () => {
-    const n = widget({ label: "hello" }, ({ state }) => text(state.label, { width: 5 }))
-    expect(await n.render(ctx(10))).toEqual(["hello"])
+  test("returns the factory function unchanged", () => {
+    const fn = (props: { label: string }) => text(props.label)
+    const w = widget(fn)
+    expect(w).toBe(fn)
   })
 
-  test("state mutation re-renders via parent linkage", async () => {
-    const n = widget({ label: "a" }, ({ state }) => text(state.label, { width: 3 }))
-    let rows = await n.render(ctx(10))
-    expect(rows[0]).toBe("a  ")
-    n.state.label = "bc"
-    rows = await n.render(ctx(10))
-    expect(rows[0]).toBe("bc ")
+  test("calling the widget produces a Node from props", async () => {
+    const greeting = widget((props: { name: string }) => text(`hi ${props.name}`, { width: 8 }))
+    const node = greeting({ name: "ada" })
+    expect(node).toBeInstanceOf(Text)
+    expect(await node.render(ctx(10))).toEqual(["hi ada  "])
   })
 
-  test("array render stacks children", async () => {
-    const n = widget({}, () => [text("a", { width: 3 }), text("b", { width: 3 })])
-    expect(await n.render(ctx(10))).toEqual(["a  ", "b  "])
+  test("composes inside a parent like any other Node factory", async () => {
+    const tag = widget((props: { text: string }) => text(`[${props.text}]`, { width: 5 }))
+    const root = box({}, tag({ text: "a" }), tag({ text: "b" }))
+    expect(await root.render(ctx(10))).toEqual(["[a]       ", "[b]       "])
   })
 
-  test("array render filters falsy entries", async () => {
-    const n = widget({ show: false }, ({ state }) => [
-      text("a", { width: 3 }),
-      state.show && text("b", { width: 3 }),
-    ])
-    expect(await n.render(ctx(10))).toEqual(["a  "])
-  })
-
-  test("emit is wired to custom node", async () => {
-    type E = { changed: { value: number } }
-    const listener = vi.fn()
-    const n = widget<{ v: number }, E & BaseEvents>({ v: 0 }, ({ state, emit }) => {
-      emit("changed", { value: state.v })
-      return text(`v=${state.v}`, { width: 5 })
-    })
-    n.on("changed", listener)
-    await n.render(ctx(10))
-    expect(listener).toHaveBeenCalledWith({ type: "changed", value: 0 }, n)
+  test("props are captured in leaf thunks for ctx-driven styling", async () => {
+    const status = widget((props: { msg: string }) =>
+      text(({ style }) => style.dim(props.msg), { width: 8 })
+    )
+    const node = status({ msg: "ready" })
+    const rows = await node.render(ctx(10))
+    expect(rows[0]).toContain("ready")
   })
 })

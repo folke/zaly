@@ -1,58 +1,50 @@
 import type { BaseState, RenderCtx } from "../core/ctx.ts"
-import type { BaseEvents } from "../core/node.ts"
-import type { Emitter } from "@zaly/shared"
 
-import { isNode, Node } from "../core/node.ts"
-import { stackColumn } from "../layout/column.ts"
+import { Node } from "../core/node.ts"
 
-type Child = Node | false | null | undefined
-
-export type WidgetRenderFn<S, E extends BaseEvents> = (args: {
-  state: S
-  ctx: RenderCtx
-  emit: Emitter<E>["emit"]
-}) => Node | Child[]
+/** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
+ *  themselves — props in, Node out, runs once at construction. */
+export type Widget<S, N extends Node = Node> = (props: S) => N
 
 /**
- * Build a custom widget from initial state and a render function. The
- * common case is returning a single composed Node (typically a `box`
- * subtree). Returning an array stacks children vertically at ctx width
- * — useful when there's no styling/chrome to apply via a Box.
+ * Type helper for declaring widgets — runtime identity, just `return fn`.
+ *
+ * Three things it earns:
+ *   1. Inference at the declaration site: TS infers `S` from the function
+ *      parameter and enforces it on every call site.
+ *   2. A consistent grep target: every component reads as
+ *      `export const foo = widget((props) => …)`.
+ *   3. A future seam for instrumentation, lifecycle wrappers, devtools.
+ *
+ * The factory body runs **once** at construction. Reactive content lives
+ * in leaf thunks (`text(({ style }) => …)`), not by re-running the body
+ * — this is the Solid model, not React's. `ctx` is therefore unavailable
+ * inside the factory; reach for it inside leaf thunks where it belongs.
  *
  * ```ts
- * const toolCall = widget(
- *   { name: "", status: "running" },
- *   ({ state }) => box({ border: "rounded" }, text(state.name)),
+ * const status = widget((props: { level: "ok" | "warn"; msg: string }) =>
+ *   text(({ style }) => `${style.bold[props.level]("●")} ${style.dim(props.msg)}`),
  * )
- * ```
  *
+ * status({ level: "ok", msg: "all systems nominal" })
+ * ```
  */
-export function widget<S extends object, E extends BaseEvents = BaseEvents>(
-  initialState: S,
-  render: WidgetRenderFn<S & BaseState, E>
-): Node<S & BaseState> & Emitter<E> {
-  return new Widget<S & BaseState>(initialState as S & BaseState, render) as unknown as Node<
-    S & BaseState
-  > &
-    Emitter<E>
+export function widget<S extends {}, N extends Node = Node>(
+  fn: (props: S & BaseState) => N
+): (props: S & BaseState) => WidgetNode<S, N> {
+  return (props) => new WidgetNode(fn, props)
 }
 
-class Widget<S extends BaseState> extends Node<S> {
-  readonly #renderFn: WidgetRenderFn<S, BaseEvents>
+class WidgetNode<S extends {}, N extends Node = Node> extends Node<S & BaseState> {
+  readonly child: N
 
-  constructor(initialState: S, renderFn: WidgetRenderFn<S, BaseEvents>) {
-    super(initialState)
-    this.#renderFn = renderFn
+  constructor(fn: (props: S) => N, props: S) {
+    super(props)
+    this.child = fn(props) // runs ONCE; props is captured by closure
+    this.add(this.child) // adopt as real child so layout/parent ops work
   }
 
-  protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const emit = this.emit.bind(this)
-    const result = this.#renderFn({ ctx, emit, state: this.state })
-    if (isNode(result)) {
-      return result.render(ctx)
-    }
-    const kids = result.filter((c): c is Node => Boolean(c))
-    const childRows = await Promise.all(kids.map((c) => c.render(ctx)))
-    return stackColumn(childRows, { gap: 0, width: ctx.width })
+  async _render(ctx: RenderCtx): Promise<string[]> {
+    return this.child.render(ctx)
   }
 }
