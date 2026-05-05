@@ -1,3 +1,4 @@
+import { renderMarkdown } from "#md"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
@@ -5,7 +6,6 @@ import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { markdown } from "../../src/index.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
-import { renderMarkdown } from "#md"
 import { openStyle, RESET } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/color.ts"
 import { defaultTheme } from "../../src/themes/index.ts"
@@ -254,7 +254,7 @@ describe("markdown() factory", () => {
   })
 
   test("accepts state-object form", async () => {
-    const out = await markdown({ content: "hello", fg: "primary" }).render(ctx(20))
+    const out = await markdown({ content: "hello" }).render(ctx(20))
     expect(out.join("\n")).toContain("hello")
   })
 

@@ -5,14 +5,26 @@ import { Text } from "../../src/widgets/text.ts"
 const ctx = (width: number) => createCtx({ width })
 
 describe("Text", () => {
-  test("fits in one row padded to allocated width (default fill)", async () => {
+  test("fits in one row at natural width (no fill)", async () => {
+    // Default — no `width` prop — emits content at its natural width;
+    // padding to fill the parent's slot is the parent box's job.
     const t = new Text({ content: "hello" })
+    expect(await t.render(ctx(10))).toEqual(["hello"])
+  })
+
+  test("explicit `width: 'fill'` pads to ctx.width", async () => {
+    const t = new Text({ content: "hello", width: "fill" })
     expect(await t.render(ctx(10))).toEqual(["hello     "])
   })
 
-  test("word wraps by default", async () => {
+  test("word wraps by default at ctx.width but emits natural rows", async () => {
+    // `wrapBudget` defaults to ctx.width so wrapping breaks at sensible
+    // column counts. Rows are emitted at their natural widths — the
+    // parent box decides whether to pad them. wrapAnsi may keep a
+    // trailing space when the next word would tip over the budget;
+    // we propagate that through unchanged.
     const t = new Text({ content: "hello world and one more" })
-    expect(await t.render(ctx(10))).toEqual(["hello     ", "world and ", "one more  "])
+    expect(await t.render(ctx(10))).toEqual(["hello ", "world and ", "one more"])
   })
 
   test("explicit width narrower than ctx wraps at that width", async () => {
@@ -34,15 +46,9 @@ describe("Text", () => {
     expect(await t.render(ctx(20))).toEqual(["super", "calif", "ragil", "istic"])
   })
 
-  test("auto width = longest word in word mode", async () => {
-    const t = new Text({ content: "hi there friend", width: "auto" })
-    // longest word = "friend" (6 cells); rows pad to 6
-    expect(await t.render(ctx(100))).toEqual(["hi    ", "there ", "friend"])
-  })
-
   test("multi-line content preserves explicit newlines", async () => {
     const t = new Text({ content: "line one\nline two" })
-    expect(await t.render(ctx(10))).toEqual(["line one  ", "line two  "])
+    expect(await t.render(ctx(10))).toEqual(["line one", "line two"])
   })
 
   test("wrap: 'none' splits on newlines only", async () => {

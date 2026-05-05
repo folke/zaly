@@ -20,8 +20,8 @@ describe("resolveSize", () => {
     expect(resolveSize("fill", 42)).toBe(42)
   })
 
-  test("'auto' returns undefined (caller measures)", () => {
-    expect(resolveSize("auto", 100)).toBeUndefined()
+  test("'fit' returns undefined (caller measures)", () => {
+    expect(resolveSize("fit", 100)).toBeUndefined()
   })
 
   test("undefined input returns undefined", () => {

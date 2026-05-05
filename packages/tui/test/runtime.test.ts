@@ -1,5 +1,5 @@
-import { sliceAnsi, stringWidth, wrapAnsi } from "../src/style/ansi.ts"
 import { describe, expect, test } from "vitest"
+import { sliceAnsi, stringWidth, wrapAnsi } from "../src/style/ansi.ts"
 
 describe("stringWidth", () => {
   test("ascii width equals length", () => {
@@ -36,8 +36,8 @@ describe("wrapAnsi (word mode, default)", () => {
     expect(wrapAnsi("hello world and one more", 10)).toBe("hello \nworld and \none more")
   })
 
-  test("keeps long words intact in word mode", () => {
-    expect(wrapAnsi("supercalifragilistic", 5)).toBe("supercalifragilistic")
+  test("splits up long words in word mode", () => {
+    expect(wrapAnsi("supercalifragilistic", 5)).toBe("super\ncalif\nragil\nistic")
   })
 
   test("short input fits in one row", () => {
