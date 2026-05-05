@@ -170,7 +170,7 @@ interface ResponsesReasoningItem {
   type: "reasoning"
   id?: string
   encrypted_content?: string
-  summary?: { type: "summary_text"; text: string }[]
+  summary: { type: "summary_text"; text: string }[]
 }
 
 type ResponsesContentBlock =
@@ -454,14 +454,15 @@ async function toAssistantItems(msg: Message<"assistant">): Promise<ResponsesInp
       // — sending a reasoning item with only summary text isn't valid
       // input, and plaintext reasoning is provider-internal.
       if (part.signature !== undefined && part.signature !== "") {
-        const item: ResponsesReasoningItem = {
+        // `summary` is required on input reasoning items (empty array
+        // is fine when no summary text was streamed).
+        const summary: { type: "summary_text"; text: string }[] =
+          part.text !== "" ? [{ text: part.text, type: "summary_text" }] : []
+        out.push({
           encrypted_content: part.signature,
+          summary,
           type: "reasoning",
-        }
-        if (part.text !== "") {
-          item.summary = [{ text: part.text, type: "summary_text" }]
-        }
-        out.push(item)
+        })
       }
     } else if (part.type === "text") {
       if (part.text !== "") {
