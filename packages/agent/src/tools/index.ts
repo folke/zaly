@@ -33,3 +33,8 @@ export type BuiltinTool = keyof typeof builtin
 export type AnyTool = BuiltinTool | (string & {})
 
 export const toolRegistry = createRegistry<Promise<Tool>, ToolInit>("tool").from(builtin)
+
+export type { BashTool } from "./bash.ts"
+export type { EditTool } from "./edit.ts"
+export type { ReadTool } from "./read.ts"
+export type { WriteTool } from "./write.ts"
