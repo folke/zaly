@@ -4,8 +4,7 @@ import type { Flexible } from "../layout/flex.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
-import { resolveSize } from "../layout/size.ts"
-import { padOrClip, splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
+import { formatText } from "../layout/text.ts"
 
 /**
  * Text content — three forms, resolved at render time:
@@ -36,33 +35,15 @@ export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
     const raw = unwrap(this.state.content)
     const content = typeof raw === "string" ? raw : raw(ctx)
-    const mode = this.state.wrap ?? "word"
-    const widthSpec = this.state.width
 
-    // Wrap budget — full ctx width by default, so wrapping breaks at
-    // sensible column counts. Explicit numeric / `"fill"` widths use
-    // that as the wrap target *and* pad/clip emitted rows to it.
-    // `"fit"` (or unset) uses ctx.width to wrap but emits rows at
-    // their natural widths so a parent box's `width: "fit"` can
-    // measure content correctly.
-    const wrapBudget = resolveSize(widthSpec ?? "fill", ctx.width) ?? naturalWidth(content, mode)
-    const rows = splitAnsi(mode === "none" ? content : wrapAnsi(content, wrapBudget, { mode }))
+    const rows = formatText(content, {
+      available: ctx.width,
+      width: this.state.width,
+      wrap: this.state.wrap,
+    })
 
-    // Pad/clip only when the caller asked for a specific layout width.
-    // The default (unset) path returns natural-width rows — text is a
-    // content node, the parent box is responsible for filling the slot
-    // (via `padRow(row, inner)` in `box._render`) and applying any
-    // backdrop bg.
-    const explicit = widthSpec !== undefined && widthSpec !== "fit"
-    const out = explicit ? rows.map((row) => padOrClip(row, wrapBudget)) : rows
-
-    // Pre-bind the wrapper once — creating a fresh builder per row would
-    // allocate a Proxy per iteration. Inner SGR resets (from content or
-    // from padOrClip closing a wrap-open style) get the full style
-    // re-applied after them; shiki-style per-token fgs still win on
-    // subsequent text because terminal SGR is cumulative until RESET.
-    const wrap = ctx.style.add(this.state)
-    return out.map((row) => wrap(row))
+    const style = ctx.style.add(this.state)
+    return rows.map((row) => style(row))
   }
 }
 
@@ -89,23 +70,4 @@ export function text(first: TextContent | TextStyle, style?: Omit<TextStyle, "co
     return new Text({ content: first, ...style })
   }
   return new Text(first)
-}
-
-function naturalWidth(content: string, mode: "word" | "char" | "none"): number {
-  if (mode === "none") {
-    let max = 0
-    for (const line of content.split("\n")) max = Math.max(max, stringWidth(line))
-    return max
-  }
-  if (mode === "char") {
-    // Widest single grapheme — approximate as widest 1-cell unit. For plain
-    // ASCII that's 1; emoji etc. may be 2.
-    let max = 1
-    for (const ch of content) max = Math.max(max, stringWidth(ch))
-    return max
-  }
-  // word mode: widest single word (CSS min-content)
-  let max = 0
-  for (const word of content.split(/\s+/)) max = Math.max(max, stringWidth(word))
-  return max
 }
