@@ -115,7 +115,10 @@ export interface Style {
   underline?: boolean
   inverse?: boolean
   strikethrough?: boolean
+  style?: AnyStyle
 }
+
+export type AnyStyle = Style | Color
 
 // Attribute → SGR code. Order matters for stable output.
 const ATTRS = [

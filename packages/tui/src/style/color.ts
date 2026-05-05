@@ -1,7 +1,7 @@
+import type { Theme } from "../themes/index.ts"
 // oxlint-disable unicorn/consistent-function-scoping
 import type { Style } from "./ansi.ts"
 import type { Step } from "./oklch.ts"
-import type { Theme } from "../themes/index.ts"
 
 import { steps as COLOR_STEPS, variant } from "./oklch.ts"
 
@@ -223,7 +223,10 @@ function walkSlot(ref: string, theme: Theme | undefined): string | Style {
  */
 export function resolveStyle(ref: string | Style | undefined, theme?: Theme): Style {
   if (ref === undefined) return {}
-  if (typeof ref === "object") return ref
+  if (typeof ref === "object") {
+    if (ref.style) return { ...ref, ...resolveStyle(ref.style, theme) }
+    return ref
+  }
   const v = walkSlot(ref, theme)
   return typeof v === "string" ? { fg: v as Color } : v
 }

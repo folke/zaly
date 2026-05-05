@@ -1,6 +1,6 @@
 import type { Reactive } from "../core/reactive.ts"
+import type { AnyStyle } from "../style/ansi.ts"
 import type { Theme } from "../themes/types.ts"
-import type { TextStyle } from "./text.ts"
 
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
@@ -10,7 +10,7 @@ import { box } from "./box.ts"
 import { text } from "./text.ts"
 import { widget } from "./widget.ts"
 
-export interface CodeState extends Omit<TextStyle, "content"> {
+export interface CodeState {
   /** Source to render. Plain string or reactive accessor — pass a
    *  signal for streaming bash output / tool results. */
   code: Reactive<string>
@@ -26,6 +26,7 @@ export interface CodeState extends Omit<TextStyle, "content"> {
   title?: Reactive<string>
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
+  style?: AnyStyle
 }
 
 /**
@@ -68,7 +69,7 @@ export const code = widget((props: CodeState) => {
   const hasTitle = props.title !== undefined || initialPath !== undefined
 
   return box(
-    { bg: "code", flexDirection: "column", padding: [0, 1], width: "fit" },
+    { flexDirection: "column", padding: [0, 1], style: props.style ?? "code", width: "fit" },
     hasTitle
       ? text(
           (ctx) => {
