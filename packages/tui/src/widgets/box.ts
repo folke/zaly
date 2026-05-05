@@ -5,7 +5,7 @@ import type { RowItem } from "../layout/row.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/ansi.ts"
 
-import { Node, isNode } from "../core/node.ts"
+import { Node } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { stackColumn } from "../layout/column.ts"
 import { allocateRow, zipRow } from "../layout/row.ts"
@@ -119,31 +119,15 @@ export class Box extends Node<BoxStyle> {
 type Child = Node | false | null | undefined
 
 /**
- * Factory for `Box`. First-arg overloads:
- *  - `box(style, ...children)` — style object + children
- *  - `box(...children)` — style-less, children only
+ * Factory for `Box`. The style object is required (use `{}` if you don't
+ * need any styling) — the previous style-less overload caused TS to fail
+ * to discriminate between a Node child and an inferred-empty-state node
+ * like `WidgetNode`. Pass `box({}, child1, child2)` for un-styled boxes.
  *
  * Falsy children (`false`, `null`, `undefined`) are filtered out, enabling
- * conditional JSX-like composition: `box(cond && child)`.
+ * conditional JSX-like composition: `box({}, cond && child)`.
  */
-export function box(style: BoxStyle, ...children: Child[]): Box
-export function box(...children: Child[]): Box
-export function box(first?: BoxStyle | Child, ...rest: Child[]): Box {
-  let style: BoxStyle
-  let children: Child[]
-  if (
-    first !== undefined &&
-    first !== null &&
-    first !== false &&
-    typeof first === "object" &&
-    !isNode(first)
-  ) {
-    style = first
-    children = rest
-  } else {
-    style = {}
-    children = first === undefined ? rest : [first, ...rest]
-  }
+export function box(style: BoxStyle, ...children: Child[]): Box {
   const b = new Box(style)
   for (const c of children) if (c) b.add(c)
   return b
