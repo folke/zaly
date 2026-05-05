@@ -1,6 +1,7 @@
 import type { Reactive } from "@zaly/tui"
 
-import { box, text, unwrap, widget } from "@zaly/tui"
+import { markdown, widget } from "@zaly/tui"
+import { bubble } from "./bubble.ts"
 
 /**
  * A streaming-capable reasoning bubble. Distinct visual treatment from
@@ -14,15 +15,10 @@ import { box, text, unwrap, widget } from "@zaly/tui"
  * The `content` prop is `Reactive<string>` — pass a signal so each
  * delta-driven write re-renders only this bubble (not the whole stream).
  */
+
 export const reasoningMessage = widget((props: { content: Reactive<string> }) =>
-  box(
-    { padding: [1, 1, 0, 1] },
-    text(
-      ({ style }) => {
-        const c = unwrap(props.content)
-        return c === "" ? "" : style.dim(c)
-      },
-      { wrap: "word" }
-    )
+  bubble(
+    { style: { dim: true, italic: true, style: "dim" }, type: "reasoning" },
+    markdown(props.content)
   )
 )

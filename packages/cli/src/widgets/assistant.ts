@@ -1,11 +1,11 @@
 import type { Reactive } from "@zaly/tui"
 
-import { box, markdown, widget } from "@zaly/tui"
+import { markdown, widget } from "@zaly/tui"
+import { bubble } from "./bubble.ts"
 
-/** A streaming-capable assistant bubble. Pass a `Reactive<string>`
- *  (typically a signal accessor) for `content` so the markdown re-parses
- *  on each render as deltas arrive. Plain string also works for static
- *  resumed-message rendering. */
+/** Assistant bubble. Live-streaming usage passes a `Reactive<string>`
+ *  (signal accessor) so deltas re-render the markdown body in place;
+ *  resumed messages pass a plain string. Both flow through `markdown`. */
 export const assistantMessage = widget((props: { content: Reactive<string> }) =>
-  box({ padding: [1, 1, 0, 1] }, markdown(props.content, { wrap: "word" }))
+  bubble({ type: "assistant" }, markdown(props.content))
 )
