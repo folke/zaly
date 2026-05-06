@@ -267,6 +267,40 @@ const nodeCtx = new WeakMap<Node, TrackingCtx>()
 
 // ---- signal ----------------------------------------------------------
 
+/**
+ * Reactive value. Returns a `[get, set]` tuple that's also accessible
+ * as `.get` / `.set` for destructure-skipping callers. Reads inside a
+ * tracking context (node render, effect, memo) auto-subscribe; writes
+ * notify every subscriber synchronously.
+ *
+ * ```ts
+ * const [count, setCount] = signal(0)
+ * setCount(1)               // value form
+ * setCount((prev) => prev + 1)  // updater form
+ * ```
+ *
+ * **Storing a function as a value — gotcha**: `set` interprets any
+ * function argument as the *updater* form `(prev) => next`, calls it
+ * with the current value, and stores the result. To store a function
+ * value (e.g. a callable `StyleBuilder` or a handler ref), wrap with
+ * the updater form so the call resolves to the function you wanted:
+ *
+ * ```ts
+ * const [style, setStyle] = signal<StyleBuilder | undefined>(undefined)
+ * setStyle(ctx.style)         // ✗ stored as `ctx.style(undefined)` — a string
+ * setStyle(() => ctx.style)   // ✓ stored as the StyleBuilder itself
+ * ```
+ *
+ * Same trap exists in Solid and React's `useState`. If you find
+ * yourself reaching for it, also consider whether storing a *plain*
+ * value (the underlying data, not the chain/builder) and recomputing
+ * the function-y derivative inside a `memo` is cleaner — usually it
+ * is.
+ *
+ * Equality is reference-based: `set(v)` where `v === current` skips
+ * the notify. Wrap mutable values you want to "publish" in a fresh
+ * object/array, or use a counter signal to force fan-out.
+ */
 export function signal<T>(initial: T): Signal<T> {
   let value = initial
   const subs = new Set<() => void>()
@@ -290,6 +324,24 @@ export function signal<T>(initial: T): Signal<T> {
   }, "set") as Setter<T>
 
   return Object.assign([get, set] as const, { get, set }) as Signal<T>
+}
+
+/**
+ * Lift a plain value to an `Accessor<T>`. The returned function always
+ * returns `value`, never tracks, never notifies — useful at the boundary
+ * where a static value enters a tree that otherwise expects `Accessor<T>`.
+ *
+ * Branded so `isAccessor` reports `true` and downstream `unwrap` calls
+ * resolve to a stable function call rather than treating the value as
+ * a ctx-aware thunk.
+ *
+ * ```ts
+ * // Component expects `Accessor<Theme>` deep in the tree:
+ * <CodeBlock theme={toAccessor(myStaticTheme)} />
+ * ```
+ */
+export function toAccessor<T>(value: T): Accessor<T> {
+  return brand(() => value, "get") as Accessor<T>
 }
 
 // ---- effect ----------------------------------------------------------
