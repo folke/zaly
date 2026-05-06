@@ -42,7 +42,7 @@ export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["c
     const lines = splitAnsi(body)
     const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + 1)
     const padded = lines.map((line) => {
-      const padding = Math.max(0, width - stringWidth(line))
+      const padding = Math.max(0, width - stringWidth(line) - 1)
       return wrap(` ${line}${" ".repeat(padding)}`)
     })
     const titleLine = meta?.title === undefined ? "" : `${s.mdCodeBlockTitle(meta.title)}\n`

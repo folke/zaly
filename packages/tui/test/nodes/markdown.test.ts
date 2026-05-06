@@ -113,20 +113,21 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}${"─".repeat(10)}${RESET}`)
   })
 
-  test("code block: lines padded to widest-content + 1 trailing space", async () => {
+  test("code block: lines padded to widest-content with 1-cell leading band", async () => {
     // Block hugs its content rather than stretching to ctx.width; one cell
-    // of trailing padding gives the background a visible tail.
+    // of leading padding gives the background a visible band on the left.
     const open = expectedOpen("mdCodeBlock")
     const out = render("```\nabc\n```", 80)
-    expect(out).toContain(`${open}abc ${RESET}`)
+    expect(out).toContain(`${open} abc${RESET}`)
   })
 
-  test("code block: multi-line block pads every line to the widest + 1", async () => {
+  test("code block: multi-line block pads every line to the widest", async () => {
     const open = expectedOpen("mdCodeBlock")
-    // Widest line is "console" (7) → padded to 8.
+    // Widest line is "console" (7); each line gets one leading space and is
+    // right-padded to widest. Total band width = widest + 1.
     const out = render("```\nabc\nconsole\n```", 80)
-    expect(out).toContain(`${open}abc${" ".repeat(5)}${RESET}`)
-    expect(out).toContain(`${open}console ${RESET}`)
+    expect(out).toContain(`${open} abc${" ".repeat(4)}${RESET}`)
+    expect(out).toContain(`${open} console${RESET}`)
   })
 
   test("code block: highlighter output replaces plain mdCodeBlock fg when supplied", async () => {
@@ -147,14 +148,15 @@ describe("markdown — block callbacks", () => {
       "```mystery\nprint(1)\n```",
       createCallbacks({ ...ctx(40), highlighter: passthroughHighlighter })
     )
-    expect(out).toContain(`${bodyOpen}print(1)`)
+    expect(out).toContain(`${bodyOpen} print(1)`)
   })
 
   test("code block: width is capped at ctx.width", async () => {
     const open = expectedOpen("mdCodeBlock")
-    // Line is 12 cells; block is capped at ctx.width = 8 (no room for +1).
+    // Line is 12 cells; block's outer width is capped at ctx.width = 8.
+    // Leading-pad still emitted before the (over-long) content.
     const out = render("```\nabcdefghijkl\n```", 8)
-    expect(out).toContain(`${open}abcdefghijkl${RESET}`)
+    expect(out).toContain(`${open} abcdefghijkl${RESET}`)
   })
 
   test('code block: title="..." renders above block with mdCodeBlockTitle (marked)', () => {
@@ -163,9 +165,9 @@ describe("markdown — block callbacks", () => {
     // Direct marked path: md.ts already parses title, no component wrapper.
     const out = renderMarkdown('```ts title="foo.ts"\nx\n```', createCallbacks(ctx(10)))
     expect(out).toContain(`${titleOpen}foo.ts${RESET}`)
-    expect(out).toContain(`${bodyOpen}x`)
+    expect(out).toContain(`${bodyOpen} x`)
     const titleIdx = out.indexOf("foo.ts")
-    const bodyIdx = out.lastIndexOf(`${bodyOpen}x`)
+    const bodyIdx = out.lastIndexOf(`${bodyOpen} x`)
     expect(titleIdx).toBeLessThan(bodyIdx)
   })
 
