@@ -1,5 +1,3 @@
-import type { Static, TSchema } from "typebox"
-
 import { Value } from "typebox/value"
 
 /** Best-effort coercion of LLM-generated args into a schema's shape.
@@ -12,8 +10,8 @@ import { Value } from "typebox/value"
  *  Never throws and never validates. The caller should follow up with
  *  `validate()` to confirm the shape actually matches before use.
  */
-export function coerce<S extends TSchema>(schema: S, value: unknown): Static<S> {
+export function coerce(schema: {}, value: unknown) {
   const converted = Value.Convert(schema, value)
   const defaulted = Value.Default(schema, converted)
-  return Value.Clean(schema, defaulted) as Static<S>
+  return Value.Clean(schema, defaulted)
 }

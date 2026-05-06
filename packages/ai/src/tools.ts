@@ -1,4 +1,4 @@
-import type { Static, TObject, TSchema } from "typebox"
+import type { Static, TObject, TSchema } from "typebox/type"
 import type {
   Streamable,
   Tool,

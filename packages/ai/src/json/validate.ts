@@ -1,5 +1,6 @@
-import type { Static, TSchema } from "typebox"
 import type { TLocalizedValidationError } from "typebox/error"
+import type { Static, TSchema } from "typebox/type"
+
 import { Value } from "typebox/value"
 
 export type ValidateResult<T> =

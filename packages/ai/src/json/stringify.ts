@@ -1,5 +1,5 @@
-import type { TSchema } from "typebox"
 import type { TLocalizedValidationError } from "typebox/error"
+import type { TSchema } from "typebox/type"
 
 import { Value } from "typebox/value"
 
@@ -25,7 +25,7 @@ import { Value } from "typebox/value"
  *  Paths follow JSON Pointer (RFC 6901) — the same encoding TypeBox emits.
  */
 export function stringifyErrors(
-  schema: TSchema,
+  schema: {},
   value: unknown,
   errors: readonly TLocalizedValidationError[]
 ): string {
