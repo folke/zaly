@@ -61,7 +61,7 @@ export function widget<S extends object, N extends Node = Node>(
   }) as (...args: WidgetArgs<State<S>>) => WidgetNode<S, N>
 }
 
-class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {
+export class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {
   readonly #create: (props: S) => C
   #child?: C
 

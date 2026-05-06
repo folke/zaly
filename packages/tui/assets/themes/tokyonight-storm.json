@@ -87,6 +87,7 @@
   "mdTable": "#ff9e64",
   "muted": "#3b4261",
   "primary": "#7aa2f7",
+  "shiki": "tokyo-night",
   "success": "#1abc9c",
   "title": {
     "bold": true,

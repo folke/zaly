@@ -354,7 +354,7 @@
     },
     "302ai/glm-5v-turbo": {
       "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
+      "name": "GLM-5V-Turbo",
       "family": "glm",
       "attachment": true,
       "reasoning": true,
@@ -4246,6 +4246,40 @@
         "output": 16384
       },
       "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    },
+    "alibaba/qwen3.6-max-preview": {
+      "id": "qwen3.6-max-preview",
+      "name": "Qwen3.6 Max Preview",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.3,
+        "output": 7.8,
+        "cache_read": 0.13,
+        "cache_write": 1.625
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
     },
@@ -10545,6 +10579,42 @@
       "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
+    "perplexity-agent/openai/gpt-5.5": {
+      "id": "openai/gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai-responses",
+      "baseUrl": "https://api.perplexity.ai/v1"
+    },
     "perplexity-agent/openai/gpt-5-mini": {
       "id": "openai/gpt-5-mini",
       "name": "GPT-5 Mini",
@@ -10915,6 +10985,41 @@
         "output": 64000
       },
       "maxTokens": 64000,
+      "provider": "openai-responses",
+      "baseUrl": "https://api.perplexity.ai/v1"
+    },
+    "perplexity-agent/anthropic/claude-opus-4-7": {
+      "id": "anthropic/claude-opus-4-7",
+      "name": "Claude Opus 4.7",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai-responses",
       "baseUrl": "https://api.perplexity.ai/v1"
     },
@@ -14654,6 +14759,47 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/openrouter/owl-alpha": {
+      "id": "openrouter/owl-alpha",
+      "name": "Owl Alpha",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 1048756,
+        "output": 262144
+      },
+      "status": "alpha",
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/openrouter/pareto-code": {
       "id": "openrouter/pareto-code",
       "name": "Pareto Code Router",
@@ -15825,6 +15971,94 @@
         "output": 15,
         "cache_read": 0.75,
         "cache_write": 15
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/poolside/laguna-m.1:free": {
+      "id": "poolside/laguna-m.1:free",
+      "name": "Laguna M.1",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/poolside/laguna-xs.2:free": {
+      "id": "poolside/laguna-xs.2:free",
+      "name": "Laguna XS.2",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
       },
       "limit": {
         "context": 131072,
@@ -18474,6 +18708,50 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/qwen/qwen-3.6-27b": {
+      "id": "qwen/qwen-3.6-27b",
+      "name": "Qwen3.6 27B",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.195,
+        "output": 1.56
+      },
+      "limit": {
+        "context": 262144,
+        "output": 81920
+      },
+      "maxTokens": 81920,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/qwen/qwen3-235b-a22b-thinking-2507": {
       "id": "qwen/qwen3-235b-a22b-thinking-2507",
       "name": "Qwen3 235B A22B Thinking 2507",
@@ -20637,6 +20915,54 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/x-ai/grok-4.3": {
+      "id": "x-ai/grok-4.3",
+      "name": "Grok 4.3",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-05-01",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2.5,
+          "output": 5,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 1000000
+      },
+      "maxTokens": 1000000,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/openai/gpt-5.5": {
       "id": "openai/gpt-5.5",
       "name": "GPT-5.5",
@@ -20946,11 +21272,7 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
+          "text"
         ],
         "output": [
           "text"
@@ -21000,7 +21322,10 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image",
+          "audio",
+          "video"
         ],
         "output": [
           "text"
@@ -22074,7 +22399,7 @@
           "text",
           "image",
           "audio",
-          "pdf"
+          "video"
         ],
         "output": [
           "text"
@@ -22213,7 +22538,7 @@
     },
     "opencode-go/kimi-k2.6": {
       "id": "kimi-k2.6",
-      "name": "Kimi K2.6 (3x limits)",
+      "name": "Kimi K2.6",
       "family": "kimi-k2.6",
       "attachment": true,
       "reasoning": true,
@@ -22237,9 +22562,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.32,
-        "output": 1.34,
-        "cache_read": 0.054
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.16
       },
       "limit": {
         "context": 262144,
@@ -32129,11 +32454,7 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
+          "text"
         ],
         "output": [
           "text"
@@ -32174,7 +32495,10 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image",
+          "audio",
+          "video"
         ],
         "output": [
           "text"
@@ -37003,6 +37327,36 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
+    "dinference/gpt-oss-120b": {
+      "id": "gpt-oss-120b",
+      "name": "GPT OSS 120B",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-08",
+      "last_updated": "2025-08",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.0675,
+        "output": 0.27
+      },
+      "limit": {
+        "context": 131072,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.dinference.com/v1"
+    },
     "dinference/glm-4.7": {
       "id": "glm-4.7",
       "name": "GLM-4.7",
@@ -37015,8 +37369,8 @@
       },
       "temperature": true,
       "knowledge": "2025-04",
-      "release_date": "2025-12",
-      "last_updated": "2025-12",
+      "release_date": "2025-12-22",
+      "last_updated": "2025-12-22",
       "modalities": {
         "input": [
           "text"
@@ -37049,9 +37403,8 @@
         "field": "reasoning_content"
       },
       "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-02",
-      "last_updated": "2026-02",
+      "release_date": "2026-02-11",
+      "last_updated": "2026-02-11",
       "modalities": {
         "input": [
           "text"
@@ -37073,15 +37426,51 @@
       "provider": "openai",
       "baseUrl": "https://api.dinference.com/v1"
     },
-    "dinference/gpt-oss-120b": {
-      "id": "gpt-oss-120b",
-      "name": "GPT OSS 120B",
+    "dinference/glm-5.1": {
+      "id": "glm-5.1",
+      "name": "GLM-5.1",
+      "family": "glm",
       "attachment": false,
-      "reasoning": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-27",
+      "last_updated": "2026-03-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 3.89
+      },
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.dinference.com/v1"
+    },
+    "dinference/minimax-m2.5": {
+      "id": "minimax-m2.5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "release_date": "2025-08",
-      "last_updated": "2025-08",
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
       "modalities": {
         "input": [
           "text"
@@ -37092,14 +37481,14 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.0675,
-        "output": 0.27
+        "input": 0.22,
+        "output": 0.88
       },
       "limit": {
-        "context": 131072,
-        "output": 32768
+        "context": 200000,
+        "output": 32000
       },
-      "maxTokens": 32768,
+      "maxTokens": 32000,
       "provider": "openai",
       "baseUrl": "https://api.dinference.com/v1"
     },
@@ -37174,45 +37563,6 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
-      "providerOverride": {
-        "npm": "@ai-sdk/openai-compatible"
-      },
-      "baseUrl": "https://api.vivgrid.com/v1"
-    },
-    "vivgrid/glm-5": {
-      "id": "glm-5",
-      "name": "GLM-5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-02-12",
-      "last_updated": "2026-02-12",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 1,
-        "output": 3.2,
-        "cache_read": 0.2
-      },
-      "limit": {
-        "context": 202752,
-        "output": 131000
-      },
-      "maxTokens": 131000,
       "provider": "openai",
       "providerOverride": {
         "npm": "@ai-sdk/openai-compatible"
@@ -37559,6 +37909,91 @@
       },
       "maxTokens": 128000,
       "provider": "openai-responses",
+      "baseUrl": "https://api.vivgrid.com/v1"
+    },
+    "vivgrid/gpt-5.5": {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-12-01",
+      "release_date": "2026-04-23",
+      "last_updated": "2026-04-23",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5,
+        "context_over_200k": {
+          "input": 10,
+          "output": 45,
+          "cache_read": 1
+        }
+      },
+      "limit": {
+        "context": 1050000,
+        "input": 922000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "providerOverride": {
+        "npm": "@ai-sdk/openai-compatible"
+      },
+      "baseUrl": "https://api.vivgrid.com/v1"
+    },
+    "vivgrid/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "providerOverride": {
+        "npm": "@ai-sdk/openai-compatible"
+      },
       "baseUrl": "https://api.vivgrid.com/v1"
     },
     "qiniu-ai/qwen3-235b-a22b": {
@@ -39891,6 +40326,37 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
+    "kilo/ibm-granite/granite-4.1-8b": {
+      "id": "ibm-granite/granite-4.1-8b",
+      "name": "IBM: Granite 4.1 8B",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-30",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.05,
+        "output": 0.1,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
     "kilo/essentialai/rnj-1-instruct": {
       "id": "essentialai/rnj-1-instruct",
       "name": "EssentialAI: Rnj 1 Instruct",
@@ -40039,6 +40505,68 @@
         "output": 65536
       },
       "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/deepseek/deepseek-v4-flash": {
+      "id": "deepseek/deepseek-v4-flash",
+      "name": "DeepSeek: DeepSeek V4 Flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28,
+        "cache_read": 0.0028
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/deepseek/deepseek-v4-pro": {
+      "id": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek: DeepSeek V4 Pro",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.435,
+        "output": 0.87,
+        "cache_read": 0.003625
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -40201,16 +40729,16 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "kilo/openrouter/elephant-alpha": {
-      "id": "openrouter/elephant-alpha",
-      "name": "Elephant (new)",
+    "kilo/openrouter/owl-alpha": {
+      "id": "openrouter/owl-alpha",
+      "name": "Owl Alpha",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
-      "release_date": "2026-01-15",
-      "last_updated": "2026-04-13",
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-30",
       "modalities": {
         "input": [
           "text"
@@ -40225,11 +40753,11 @@
         "output": 0
       },
       "limit": {
-        "context": 262144,
-        "output": 32768
+        "context": 1048756,
+        "output": 262144
       },
       "status": "alpha",
-      "maxTokens": 32768,
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -40258,6 +40786,67 @@
       },
       "limit": {
         "context": 200000,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/inclusionai/ling-2.6-1t:free": {
+      "id": "inclusionai/ling-2.6-1t:free",
+      "name": "inclusionAI: Ling-2.6-1T (free)",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-23",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/inclusionai/ling-2.6-flash": {
+      "id": "inclusionai/ling-2.6-flash",
+      "name": "inclusionAI: Ling-2.6 Flash",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-21",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.08,
+        "output": 0.24,
+        "cache_read": 0.016
+      },
+      "limit": {
+        "context": 262144,
         "output": 32768
       },
       "maxTokens": 32768,
@@ -40354,15 +40943,15 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "kilo/arcee-ai/trinity-large-thinking:free": {
-      "id": "arcee-ai/trinity-large-thinking:free",
-      "name": "Arcee AI: Trinity Large Thinking (free)",
+    "kilo/arcee-ai/trinity-large-preview": {
+      "id": "arcee-ai/trinity-large-preview",
+      "name": "Arcee AI: Trinity Large Preview",
       "attachment": false,
-      "reasoning": true,
+      "reasoning": false,
       "tool_call": true,
       "temperature": true,
-      "release_date": "2025-08-26",
-      "last_updated": "2026-04-11",
+      "release_date": "2026-01-28",
+      "last_updated": "2026-05-01",
       "modalities": {
         "input": [
           "text"
@@ -40371,16 +40960,16 @@
           "text"
         ]
       },
-      "open_weights": true,
+      "open_weights": false,
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.15,
+        "output": 0.45
       },
       "limit": {
-        "context": 262144,
-        "output": 262144
+        "context": 131000,
+        "output": 32768
       },
-      "maxTokens": 262144,
+      "maxTokens": 32768,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -40441,37 +41030,6 @@
         "output": 163840
       },
       "maxTokens": 163840,
-      "provider": "openai",
-      "baseUrl": "https://api.kilo.ai/api/gateway"
-    },
-    "kilo/bytedance-seed/dola-seed-2.0-pro:free": {
-      "id": "bytedance-seed/dola-seed-2.0-pro:free",
-      "name": "ByteDance Seed: Dola Seed 2.0 Pro (free)",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "release_date": "2025-08-26",
-      "last_updated": "2026-04-11",
-      "modalities": {
-        "input": [
-          "image",
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 256000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -40600,6 +41158,78 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~google/gemini-pro-latest": {
+      "id": "~google/gemini-pro-latest",
+      "name": "Google: Gemini Pro Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2,
+        "cache_write": 0.375
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~google/gemini-flash-latest": {
+      "id": "~google/gemini-flash-latest",
+      "name": "Google: Gemini Flash Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05,
+        "cache_write": 0.08333333333333334
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -40752,6 +41382,36 @@
         "output": 32768
       },
       "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/stepfun/step-3.5-flash:free": {
+      "id": "stepfun/step-3.5-flash:free",
+      "name": "StepFun: Step 3.5 Flash (free)",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-08-26",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -41368,35 +42028,6 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "kilo/mistralai/mistral-small-creative": {
-      "id": "mistralai/mistral-small-creative",
-      "name": "Mistral: Mistral Small Creative",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "release_date": "2025-12-17",
-      "last_updated": "2026-03-15",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.1,
-        "output": 0.3
-      },
-      "limit": {
-        "context": 32768,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://api.kilo.ai/api/gateway"
-    },
     "kilo/mistralai/devstral-small": {
       "id": "mistralai/devstral-small",
       "name": "Mistral: Devstral Small 1.1",
@@ -41485,6 +42116,108 @@
         "output": 52429
       },
       "maxTokens": 52429,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~anthropic/claude-haiku-latest": {
+      "id": "~anthropic/claude-haiku-latest",
+      "name": "Anthropic: Claude Haiku Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~anthropic/claude-sonnet-latest": {
+      "id": "~anthropic/claude-sonnet-latest",
+      "name": "Anthropic: Claude Sonnet Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~anthropic/claude-opus-latest": {
+      "id": "~anthropic/claude-opus-latest",
+      "name": "Anthropic: Claude Opus Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-16",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -41730,6 +42463,39 @@
         "output": 10000
       },
       "maxTokens": 10000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/x-ai/grok-4.3": {
+      "id": "x-ai/grok-4.3",
+      "name": "xAI: Grok 4.3",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-05-01",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 4096
+      },
+      "maxTokens": 4096,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -41984,6 +42750,36 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
+    "kilo/tencent/hy3-preview:free": {
+      "id": "tencent/hy3-preview:free",
+      "name": "Tencent: Hy3 Preview (free)",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-22",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
     "kilo/sao10k/l3-euryale-70b": {
       "id": "sao10k/l3-euryale-70b",
       "name": "Sao10k: Llama 3 Euryale 70B v2.1",
@@ -42041,6 +42837,66 @@
         "output": 16384
       },
       "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/poolside/laguna-m.1:free": {
+      "id": "poolside/laguna-m.1:free",
+      "name": "Poolside: Laguna M.1 (free)",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/poolside/laguna-xs.2:free": {
+      "id": "poolside/laguna-xs.2:free",
+      "name": "Poolside: Laguna XS.2 (free)",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 8192
+      },
+      "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -42222,6 +43078,39 @@
         "output": 262144
       },
       "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "name": "NVIDIA: Nemotron 3 Nano Omni (free)",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "audio",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 256000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -42595,6 +43484,39 @@
         "output": 16384
       },
       "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/openai/gpt-5.5": {
+      "id": "openai/gpt-5.5",
+      "name": "OpenAI: GPT-5.5",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5
+      },
+      "limit": {
+        "context": 1050000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -43557,38 +44479,6 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "kilo/openai/gpt-4o:extended": {
-      "id": "openai/gpt-4o:extended",
-      "name": "OpenAI: GPT-4o (extended)",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "release_date": "2024-05-13",
-      "last_updated": "2026-03-15",
-      "modalities": {
-        "input": [
-          "image",
-          "pdf",
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 6,
-        "output": 18
-      },
-      "limit": {
-        "context": 128000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://api.kilo.ai/api/gateway"
-    },
     "kilo/openai/gpt-4.1-nano": {
       "id": "openai/gpt-4.1-nano",
       "name": "OpenAI: GPT-4.1 Nano",
@@ -43935,6 +44825,38 @@
         "output": 26215
       },
       "maxTokens": 26215,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/openai/gpt-5.5-pro": {
+      "id": "openai/gpt-5.5-pro",
+      "name": "OpenAI: GPT-5.5 Pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 30,
+        "output": 180
+      },
+      "limit": {
+        "context": 1050000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -44844,6 +45766,72 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
+    "kilo/~openai/gpt-latest": {
+      "id": "~openai/gpt-latest",
+      "name": "OpenAI: GPT Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 30,
+        "cache_read": 0.5
+      },
+      "limit": {
+        "context": 1050000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/~openai/gpt-mini-latest": {
+      "id": "~openai/gpt-mini-latest",
+      "name": "OpenAI: GPT Mini Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.75,
+        "output": 4.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
     "kilo/qwen/qwen3-235b-a22b": {
       "id": "qwen/qwen3-235b-a22b",
       "name": "Qwen: Qwen3 235B A22B",
@@ -44932,6 +45920,38 @@
       },
       "limit": {
         "context": 1000000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/qwen/qwen3.6-27b": {
+      "id": "qwen/qwen3.6-27b",
+      "name": "Qwen: Qwen3.6 27B",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.325,
+        "output": 3.25
+      },
+      "limit": {
+        "context": 256000,
         "output": 65536
       },
       "maxTokens": 65536,
@@ -45650,36 +46670,6 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "kilo/qwen/qwq-32b": {
-      "id": "qwen/qwq-32b",
-      "name": "Qwen: QwQ 32B",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "release_date": "2024-11-28",
-      "last_updated": "2025-04-11",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.15,
-        "output": 0.4
-      },
-      "limit": {
-        "context": 32768,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://api.kilo.ai/api/gateway"
-    },
     "kilo/qwen/qwen3-next-80b-a3b-instruct": {
       "id": "qwen/qwen3-next-80b-a3b-instruct",
       "name": "Qwen: Qwen3 Next 80B A3B Instruct",
@@ -45707,6 +46697,38 @@
         "output": 52429
       },
       "maxTokens": 52429,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/qwen/qwen3.5-plus-20260420": {
+      "id": "qwen/qwen3.5-plus-20260420",
+      "name": "Qwen: Qwen3.5 Plus 2026-04-20",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2.4
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -45989,6 +47011,37 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
+    "kilo/qwen/qwen3.6-max-preview": {
+      "id": "qwen/qwen3.6-max-preview",
+      "name": "Qwen: Qwen3.6 Max Preview",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.04,
+        "output": 6.24,
+        "cache_write": 1.3
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
     "kilo/qwen/qwen-plus-2025-07-28:thinking": {
       "id": "qwen/qwen-plus-2025-07-28:thinking",
       "name": "Qwen: Qwen Plus 0728 (thinking)",
@@ -46135,6 +47188,39 @@
       "cost": {
         "input": 0.26,
         "output": 1.56
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/qwen/qwen3.6-flash": {
+      "id": "qwen/qwen3.6-flash",
+      "name": "Qwen: Qwen3.6 Flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "cache_write": 0.3125
       },
       "limit": {
         "context": 1000000,
@@ -46863,6 +47949,38 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
+    "kilo/~moonshotai/kimi-latest": {
+      "id": "~moonshotai/kimi-latest",
+      "name": "MoonshotAI: Kimi Latest",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-27",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.74,
+        "output": 3.49,
+        "cache_read": 0.14
+      },
+      "limit": {
+        "context": 262142,
+        "output": 262142
+      },
+      "maxTokens": 262142,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
     "kilo/thedrummer/unslopnemo-12b": {
       "id": "thedrummer/unslopnemo-12b",
       "name": "TheDrummer: UnslopNemo 12B",
@@ -47073,6 +48191,40 @@
         "input": [
           "text",
           "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.kilo.ai/api/gateway"
+    },
+    "kilo/anthropic/claude-opus-4.7": {
+      "id": "anthropic/claude-opus-4.7",
+      "name": "Anthropic: Claude Opus 4.7",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "release_date": "2026-04-16",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -47564,37 +48716,6 @@
         "output": 163840
       },
       "maxTokens": 163840,
-      "provider": "openai",
-      "baseUrl": "https://api.kilo.ai/api/gateway"
-    },
-    "kilo/meituan/longcat-flash-chat": {
-      "id": "meituan/longcat-flash-chat",
-      "name": "Meituan: LongCat Flash Chat",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "release_date": "2025-08-30",
-      "last_updated": "2026-03-15",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.2,
-        "output": 0.8,
-        "cache_read": 0.2
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
@@ -48799,7 +49920,7 @@
     },
     "zai/glm-5v-turbo": {
       "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
+      "name": "GLM-5V-Turbo",
       "family": "glm",
       "attachment": true,
       "reasoning": true,
@@ -58430,10 +59551,10 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 204800,
-        "output": 131072
+        "context": 196608,
+        "output": 196608
       },
-      "maxTokens": 131072,
+      "maxTokens": 196608,
       "provider": "openai",
       "baseUrl": "https://ollama.com/v1"
     },
@@ -58594,9 +59715,9 @@
       "open_weights": true,
       "limit": {
         "context": 262144,
-        "output": 81920
+        "output": 65536
       },
-      "maxTokens": 81920,
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://ollama.com/v1"
     },
@@ -59520,7 +60641,7 @@
     },
     "zai-coding-plan/glm-5v-turbo": {
       "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
+      "name": "GLM-5V-Turbo",
       "family": "glm",
       "attachment": true,
       "reasoning": true,
@@ -60019,6 +61140,945 @@
       "provider": "openai",
       "baseUrl": "https://inference.baseten.co/v1"
     },
+    "frogbot/grok-4-1-fast-reasoning": {
+      "id": "grok-4-1-fast-reasoning",
+      "name": "Grok 4.1 Fast (Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-11",
+      "release_date": "2025-11-25",
+      "last_updated": "2025-11-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/claude-haiku-4-5": {
+      "id": "claude-haiku-4-5",
+      "name": "Claude Haiku 4.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-02-28",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 0.1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/kimi-k2.5": {
+      "id": "kimi-k2.5",
+      "name": "Kimi-K2.5",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "1970-01-01",
+      "last_updated": "1970-01-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.6,
+        "output": 3,
+        "cache_read": 0.1
+      },
+      "limit": {
+        "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/claude-sonnet-4-6": {
+      "id": "claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-17",
+      "last_updated": "2026-02-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3,
+        "cache_write": 3.75
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gemini-3-flash-preview": {
+      "id": "gemini-3-flash-preview",
+      "name": "Gemini 3 Flash Preview",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-12-17",
+      "last_updated": "2025-12-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/claude-opus-4-7": {
+      "id": "claude-opus-4-7",
+      "name": "Claude Opus 4.7",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/zai-glm-5-1": {
+      "id": "zai-glm-5-1",
+      "name": "Z.AI GLM-5.1",
+      "family": "glm",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2025-01-20",
+      "last_updated": "2025-02-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0.26
+      },
+      "limit": {
+        "context": 198000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gemini-2.5-pro": {
+      "id": "gemini-2.5-pro",
+      "name": "Gemini 2.5 Pro",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-03-20",
+      "last_updated": "2025-06-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 10,
+        "cache_read": 0.31
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/grok-4-1-fast-non-reasoning": {
+      "id": "grok-4-1-fast-non-reasoning",
+      "name": "Grok 4.1 Fast (Non-Reasoning)",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-11",
+      "release_date": "2025-11-25",
+      "last_updated": "2025-11-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 0.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 2000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-5-4-nano": {
+      "id": "gpt-5-4-nano",
+      "name": "GPT-5.4 Nano",
+      "family": "gpt-nano",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2024-05-30",
+      "release_date": "2025-08-07",
+      "last_updated": "2025-08-07",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 1.25,
+        "cache_read": 0.02
+      },
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gemini-2.5-flash": {
+      "id": "gemini-2.5-flash",
+      "name": "Gemini 2.5 Flash",
+      "family": "gemini-flash",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2025-07-17",
+      "last_updated": "2025-07-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 2.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/grok-code-fast-1": {
+      "id": "grok-code-fast-1",
+      "name": "Grok 4.1 Fast (Reasoning)",
+      "family": "grok",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-10",
+      "release_date": "2025-08-28",
+      "last_updated": "2025-08-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.2,
+        "output": 1.5,
+        "cache_read": 0.02
+      },
+      "limit": {
+        "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-5-5": {
+      "id": "gpt-5-5",
+      "name": "GPT-5.5",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-05",
+      "last_updated": "2026-03-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2.5,
+        "output": 15,
+        "cache_read": 0.25
+      },
+      "limit": {
+        "context": 272000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/grok-4-3": {
+      "id": "grok-4-3",
+      "name": "Grok 4.3",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-11",
+      "release_date": "2026-04-30",
+      "last_updated": "2026-04-30",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-5-4-mini": {
+      "id": "gpt-5-4-mini",
+      "name": "GPT-5.4 Mini",
+      "family": "gpt-mini",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-03-17",
+      "last_updated": "2026-03-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.75,
+        "output": 4.5,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/claude-opus-4-6": {
+      "id": "claude-opus-4-6",
+      "name": "Claude Opus 4.6",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-02-05",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5,
+        "cache_write": 6.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek v4 Pro",
+      "family": "deepseek",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2026-01",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48,
+        "cache_read": 0.14
+      },
+      "limit": {
+        "context": 128000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-oss-20b": {
+      "id": "gpt-oss-20b",
+      "name": "GPT OSS 20B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "1970-01-01",
+      "last_updated": "1970-01-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.07,
+        "output": 0.2
+      },
+      "limit": {
+        "context": 131072,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/qwen-3-6-plus": {
+      "id": "qwen-3-6-plus",
+      "name": "Qwen 3.6 Plus",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-03",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.5,
+        "output": 3,
+        "cache_read": 0.1
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/minimax-m2-7": {
+      "id": "minimax-m2-7",
+      "name": "MiniMax-M2.7",
+      "family": "minimax",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-09",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
+      },
+      "limit": {
+        "context": 192000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/minimax-m2-5": {
+      "id": "minimax-m2-5",
+      "name": "MiniMax-M2.5",
+      "family": "minimax",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-09",
+      "release_date": "2025-01-15",
+      "last_updated": "2025-02-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.03
+      },
+      "limit": {
+        "context": 192000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-4o": {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2023-09",
+      "release_date": "2024-05-13",
+      "last_updated": "2024-08-06",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2.5,
+        "output": 10,
+        "cache_read": 1.25
+      },
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-oss-120b": {
+      "id": "gpt-oss-120b",
+      "name": "GPT OSS 120B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "1970-01-01",
+      "last_updated": "1970-01-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "limit": {
+        "context": 131072,
+        "output": 32768
+      },
+      "maxTokens": 32768,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gemini-3-1-pro-preview": {
+      "id": "gemini-3-1-pro-preview",
+      "name": "Gemini 3.1 Pro Preview",
+      "family": "gemini-pro",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2026-01",
+      "release_date": "2026-02-18",
+      "last_updated": "2026-02-18",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 2,
+        "output": 12,
+        "cache_read": 0.2
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/kimi-k2-6": {
+      "id": "kimi-k2-6",
+      "name": "Kimi-K2.6",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "1970-01-01",
+      "last_updated": "1970-01-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.16
+      },
+      "limit": {
+        "context": 256000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "frogbot/gpt-5-3-codex": {
+      "id": "gpt-5-3-codex",
+      "name": "GPT-5.3 Codex",
+      "family": "gpt",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-02-15",
+      "last_updated": "2026-02-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.75,
+        "output": 14,
+        "cache_read": 0.175
+      },
+      "limit": {
+        "context": 400000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://app.frogbot.ai/api/v1"
+    },
+    "zhipuai-coding-plan/glm-5v-turbo": {
+      "id": "glm-5v-turbo",
+      "name": "GLM-5V-Turbo",
+      "family": "glm",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-01",
+      "last_updated": "2026-04-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "limit": {
+        "context": 200000,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
+    },
     "zhipuai-coding-plan/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -60486,875 +62546,6 @@
       "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://coding-intl.dashscope.aliyuncs.com/v1"
-    },
-    "firmware/grok-4-1-fast-reasoning": {
-      "id": "grok-4-1-fast-reasoning",
-      "name": "Grok 4.1 Fast (Reasoning)",
-      "family": "grok",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-11",
-      "release_date": "2025-11-25",
-      "last_updated": "2025-11-25",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.2,
-        "output": 0.5,
-        "cache_read": 0.05
-      },
-      "limit": {
-        "context": 2000000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/claude-haiku-4-5": {
-      "id": "claude-haiku-4-5",
-      "name": "Claude Haiku 4.5",
-      "family": "claude-haiku",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-02-28",
-      "release_date": "2025-10-15",
-      "last_updated": "2025-10-15",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 1,
-        "output": 5,
-        "cache_read": 0.1,
-        "cache_write": 1.25
-      },
-      "limit": {
-        "context": 200000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/kimi-k2.5": {
-      "id": "kimi-k2.5",
-      "name": "Kimi-K2.5",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "1970-01-01",
-      "last_updated": "1970-01-01",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.6,
-        "output": 3,
-        "cache_read": 0.1
-      },
-      "limit": {
-        "context": 256000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-5-4": {
-      "id": "gpt-5-4",
-      "name": "GPT-5.4",
-      "family": "gpt",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2025-08-31",
-      "release_date": "2026-03-05",
-      "last_updated": "2026-03-05",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 2.5,
-        "output": 15,
-        "cache_read": 0.25
-      },
-      "limit": {
-        "context": 272000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/deepseek-v3-2": {
-      "id": "deepseek-v3-2",
-      "name": "DeepSeek v3.2",
-      "family": "deepseek",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-07",
-      "release_date": "2024-12-26",
-      "last_updated": "2025-09-29",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.58,
-        "output": 1.68,
-        "cache_read": 0.28
-      },
-      "limit": {
-        "context": 128000,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/claude-sonnet-4-6": {
-      "id": "claude-sonnet-4-6",
-      "name": "Claude Sonnet 4.6",
-      "family": "claude-sonnet",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-08-31",
-      "release_date": "2026-02-17",
-      "last_updated": "2026-02-17",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 3,
-        "output": 15,
-        "cache_read": 0.3,
-        "cache_write": 3.75
-      },
-      "limit": {
-        "context": 200000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gemini-3-flash-preview": {
-      "id": "gemini-3-flash-preview",
-      "name": "Gemini 3 Flash Preview",
-      "family": "gemini-flash",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2025-01",
-      "release_date": "2025-12-17",
-      "last_updated": "2025-12-17",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.5,
-        "output": 3,
-        "cache_read": 0.05
-      },
-      "limit": {
-        "context": 1048576,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/claude-opus-4-7": {
-      "id": "claude-opus-4-7",
-      "name": "Claude Opus 4.7",
-      "family": "claude-opus",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2026-01-31",
-      "release_date": "2026-04-16",
-      "last_updated": "2026-04-16",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 5,
-        "output": 25,
-        "cache_read": 0.5,
-        "cache_write": 6.25
-      },
-      "limit": {
-        "context": 200000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-5-mini": {
-      "id": "gpt-5-mini",
-      "name": "GPT-5 Mini",
-      "family": "gpt-mini",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": false,
-      "knowledge": "2024-05-30",
-      "release_date": "2025-08-07",
-      "last_updated": "2025-08-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.25,
-        "output": 2,
-        "cache_read": 0.03
-      },
-      "limit": {
-        "context": 400000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-5-nano": {
-      "id": "gpt-5-nano",
-      "name": "GPT-5 Nano",
-      "family": "gpt-nano",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": false,
-      "knowledge": "2024-05-30",
-      "release_date": "2025-08-07",
-      "last_updated": "2025-08-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.05,
-        "output": 0.4,
-        "cache_read": 0.01
-      },
-      "limit": {
-        "context": 400000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gemini-3-pro-preview": {
-      "id": "gemini-3-pro-preview",
-      "name": "Gemini 3 Pro Preview",
-      "family": "gemini-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2025-01",
-      "release_date": "2025-11-18",
-      "last_updated": "2025-11-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 2,
-        "output": 12,
-        "cache_read": 0.2
-      },
-      "limit": {
-        "context": 1000000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/zai-glm-5-1": {
-      "id": "zai-glm-5-1",
-      "name": "Z.AI GLM-5.1",
-      "family": "glm",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
-      "release_date": "2025-01-20",
-      "last_updated": "2025-02-22",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 1.4,
-        "output": 4.4,
-        "cache_read": 0.26
-      },
-      "limit": {
-        "context": 198000,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gemini-2.5-pro": {
-      "id": "gemini-2.5-pro",
-      "name": "Gemini 2.5 Pro",
-      "family": "gemini-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-01",
-      "release_date": "2025-03-20",
-      "last_updated": "2025-06-05",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 1.25,
-        "output": 10,
-        "cache_read": 0.31
-      },
-      "limit": {
-        "context": 1048576,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/grok-4-1-fast-non-reasoning": {
-      "id": "grok-4-1-fast-non-reasoning",
-      "name": "Grok 4.1 Fast (Non-Reasoning)",
-      "family": "grok",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-11",
-      "release_date": "2025-11-25",
-      "last_updated": "2025-11-25",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.2,
-        "output": 0.5,
-        "cache_read": 0.05
-      },
-      "limit": {
-        "context": 2000000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gemini-2.5-flash": {
-      "id": "gemini-2.5-flash",
-      "name": "Gemini 2.5 Flash",
-      "family": "gemini-flash",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-01",
-      "release_date": "2025-07-17",
-      "last_updated": "2025-07-17",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.3,
-        "output": 2.5,
-        "cache_read": 0.075
-      },
-      "limit": {
-        "context": 1048576,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/grok-code-fast-1": {
-      "id": "grok-code-fast-1",
-      "name": "Grok 4.1 Fast (Reasoning)",
-      "family": "grok",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2023-10",
-      "release_date": "2025-08-28",
-      "last_updated": "2025-08-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.2,
-        "output": 1.5,
-        "cache_read": 0.02
-      },
-      "limit": {
-        "context": 256000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/claude-opus-4-6": {
-      "id": "claude-opus-4-6",
-      "name": "Claude Opus 4.6",
-      "family": "claude-opus",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-05-31",
-      "release_date": "2026-02-05",
-      "last_updated": "2026-02-05",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 5,
-        "output": 25,
-        "cache_read": 0.5,
-        "cache_write": 6.25
-      },
-      "limit": {
-        "context": 200000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-oss-20b": {
-      "id": "gpt-oss-20b",
-      "name": "GPT OSS 20B",
-      "family": "gpt-oss",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "1970-01-01",
-      "last_updated": "1970-01-01",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.07,
-        "output": 0.2
-      },
-      "limit": {
-        "context": 131072,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/qwen-3-6-plus": {
-      "id": "qwen-3-6-plus",
-      "name": "Qwen 3.6 Plus",
-      "family": "qwen",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "release_date": "2026-04-02",
-      "last_updated": "2026-04-03",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.5,
-        "output": 3,
-        "cache_read": 0.1
-      },
-      "limit": {
-        "context": 1000000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/minimax-m2-5": {
-      "id": "minimax-m2-5",
-      "name": "MiniMax-M2.5",
-      "family": "minimax",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-09",
-      "release_date": "2025-01-15",
-      "last_updated": "2025-02-22",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2,
-        "cache_read": 0.03
-      },
-      "limit": {
-        "context": 192000,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-4o": {
-      "id": "gpt-4o",
-      "name": "GPT-4o",
-      "family": "gpt",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2023-09",
-      "release_date": "2024-05-13",
-      "last_updated": "2024-08-06",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 2.5,
-        "output": 10,
-        "cache_read": 1.25
-      },
-      "limit": {
-        "context": 128000,
-        "output": 16384
-      },
-      "maxTokens": 16384,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-oss-120b": {
-      "id": "gpt-oss-120b",
-      "name": "GPT OSS 120B",
-      "family": "gpt-oss",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "1970-01-01",
-      "last_updated": "1970-01-01",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.15,
-        "output": 0.6
-      },
-      "limit": {
-        "context": 131072,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gemini-3-1-pro-preview": {
-      "id": "gemini-3-1-pro-preview",
-      "name": "Gemini 3.1 Pro Preview",
-      "family": "gemini-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2026-01",
-      "release_date": "2026-02-18",
-      "last_updated": "2026-02-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 2,
-        "output": 12,
-        "cache_read": 0.2
-      },
-      "limit": {
-        "context": 1000000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/kimi-k2-6": {
-      "id": "kimi-k2-6",
-      "name": "Kimi-K2.6",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "1970-01-01",
-      "last_updated": "1970-01-01",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.95,
-        "output": 4,
-        "cache_read": 0.16
-      },
-      "limit": {
-        "context": 256000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
-    },
-    "firmware/gpt-5-3-codex": {
-      "id": "gpt-5-3-codex",
-      "name": "GPT-5.3 Codex",
-      "family": "gpt",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2026-01-31",
-      "release_date": "2026-02-15",
-      "last_updated": "2026-02-15",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 1.75,
-        "output": 14,
-        "cache_read": 0.175
-      },
-      "limit": {
-        "context": 400000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://app.frogbot.ai/api/v1"
     },
     "lmstudio/openai/gpt-oss-20b": {
       "id": "openai/gpt-oss-20b",
@@ -62392,6 +63583,44 @@
         "output": 4096
       },
       "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "https://api.x.ai/v1"
+    },
+    "xai/grok-4.3": {
+      "id": "grok-4.3",
+      "name": "Grok 4.3",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-05-01",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2.5,
+          "output": 5,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
       "provider": "openai",
       "baseUrl": "https://api.x.ai/v1"
     },
@@ -64930,6 +66159,44 @@
       "provider": "openai",
       "baseUrl": "https://api.synthetic.new/openai/v1"
     },
+    "synthetic/hf:moonshotai/Kimi-K2.6": {
+      "id": "hf:moonshotai/Kimi-K2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.95
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.synthetic.new/openai/v1"
+    },
     "nvidia/stepfun-ai/step-3.5-flash": {
       "id": "stepfun-ai/step-3.5-flash",
       "name": "Step 3.5 Flash",
@@ -66893,6 +68160,44 @@
         "output": 8192
       },
       "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/moonshotai/kimi-k2.6": {
+      "id": "moonshotai/kimi-k2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -71425,6 +72730,43 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/kimi-k2.6": {
+      "id": "kimi-k2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.95,
+        "output": 4
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/anthropic-claude-4.6-sonnet": {
       "id": "anthropic-claude-4.6-sonnet",
       "name": "Claude Sonnet 4.6",
@@ -71535,6 +72877,42 @@
         "output": 64000
       },
       "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.74,
+        "output": 3.48
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 393216
+      },
+      "maxTokens": 393216,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -73867,6 +75245,38 @@
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
+    "cortecs/qwen3-235b-a22b-instruct-2507": {
+      "id": "qwen3-235b-a22b-instruct-2507",
+      "name": "Qwen3 235B A22B Instruct 2507",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2025-07-23",
+      "last_updated": "2025-07-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.062,
+        "output": 0.408
+      },
+      "limit": {
+        "context": 131000,
+        "output": 131000
+      },
+      "maxTokens": 131000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
     "cortecs/kimi-k2.5": {
       "id": "kimi-k2.5",
       "name": "Kimi K2.5",
@@ -74137,6 +75547,39 @@
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
+    "cortecs/codestral-2508": {
+      "id": "codestral-2508",
+      "name": "Codestral 2508",
+      "family": "mistral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-03",
+      "release_date": "2025-07-30",
+      "last_updated": "2025-07-30",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.3,
+        "output": 0.9,
+        "cache_read": 0.03
+      },
+      "limit": {
+        "context": 256000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
     "cortecs/claude-4-5-sonnet": {
       "id": "claude-4-5-sonnet",
       "name": "Claude 4.5 Sonnet",
@@ -74200,6 +75643,37 @@
         "output": 131000
       },
       "maxTokens": 131000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/nemotron-3-super-120b-a12b": {
+      "id": "nemotron-3-super-120b-a12b",
+      "name": "Nemotron 3 Super 120B A12B",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-12",
+      "release_date": "2026-03-11",
+      "last_updated": "2026-03-11",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.266,
+        "output": 0.799
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
@@ -74707,6 +76181,37 @@
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
+    "cortecs/hermes-4-70b": {
+      "id": "hermes-4-70b",
+      "name": "Hermes 4 70B",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2025-08-26",
+      "last_updated": "2025-08-26",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.116,
+        "output": 0.358
+      },
+      "limit": {
+        "context": 128000,
+        "output": 128000
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
     "cortecs/minimax-m2.5": {
       "id": "minimax-m2.5",
       "name": "MiniMax-M2.5",
@@ -74738,6 +76243,38 @@
         "output": 196608
       },
       "maxTokens": 196608,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/deepseek-v3.2": {
+      "id": "deepseek-v3.2",
+      "name": "DeepSeek V3.2",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07",
+      "release_date": "2025-12-01",
+      "last_updated": "2025-12-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.266,
+        "output": 0.444
+      },
+      "limit": {
+        "context": 163840,
+        "output": 163840
+      },
+      "maxTokens": 163840,
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
@@ -74839,6 +76376,70 @@
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
+    "cortecs/qwen-2.5-72b-instruct": {
+      "id": "qwen-2.5-72b-instruct",
+      "name": "Qwen2.5 72B Instruct",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-06",
+      "release_date": "2024-09-19",
+      "last_updated": "2024-09-19",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.062,
+        "output": 0.231
+      },
+      "limit": {
+        "context": 33000,
+        "output": 33000
+      },
+      "maxTokens": 33000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/deepseek-r1-0528": {
+      "id": "deepseek-r1-0528",
+      "name": "DeepSeek R1 0528",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07",
+      "release_date": "2025-05-28",
+      "last_updated": "2025-05-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.585,
+        "output": 2.307
+      },
+      "limit": {
+        "context": 164000,
+        "output": 164000
+      },
+      "maxTokens": 164000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
     "cortecs/gpt-4.1": {
       "id": "gpt-4.1",
       "name": "GPT 4.1",
@@ -74935,6 +76536,240 @@
         "output": 128000
       },
       "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/qwen3.5-122b-a10b": {
+      "id": "qwen3.5-122b-a10b",
+      "name": "Qwen3.5 122B A10B",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2026-01",
+      "release_date": "2026-02-24",
+      "last_updated": "2026-02-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.444,
+        "output": 3.106
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/llama-3.3-70b-instruct": {
+      "id": "llama-3.3-70b-instruct",
+      "name": "Llama 3.3 70B Instruct",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2024-12-06",
+      "last_updated": "2024-12-06",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.089,
+        "output": 0.275
+      },
+      "limit": {
+        "context": 131000,
+        "output": 131000
+      },
+      "maxTokens": 131000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/mistral-large-2512": {
+      "id": "mistral-large-2512",
+      "name": "Mistral Large 3 2512",
+      "family": "mistral-large",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-12",
+      "release_date": "2025-12-01",
+      "last_updated": "2025-12-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 256000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/qwen3.5-397b-a17b": {
+      "id": "qwen3.5-397b-a17b",
+      "name": "Qwen3.5 397B A17B",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2026-01",
+      "release_date": "2026-02-16",
+      "last_updated": "2026-02-16",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.6,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 250000,
+        "output": 250000
+      },
+      "maxTokens": 250000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.133,
+        "output": 0.266,
+        "cache_read": 0.028
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.553,
+        "output": 3.106,
+        "cache_read": 0.145
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.cortecs.ai/v1"
+    },
+    "cortecs/qwen3-coder-30b-a3b-instruct": {
+      "id": "qwen3-coder-30b-a3b-instruct",
+      "name": "Qwen3 Coder 30B A3B Instruct",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2025-07-31",
+      "last_updated": "2025-07-31",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.053,
+        "output": 0.222
+      },
+      "limit": {
+        "context": 262000,
+        "output": 262000
+      },
+      "maxTokens": 262000,
       "provider": "openai",
       "baseUrl": "https://api.cortecs.ai/v1"
     },
@@ -87781,6 +89616,465 @@
       "provider": "openai",
       "baseUrl": "https://models.github.ai/inference"
     },
+    "neuralwatt/glm-5-fast": {
+      "id": "glm-5-fast",
+      "name": "GLM 5 Fast",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-07",
+      "last_updated": "2026-04-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.1,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 200000,
+        "output": 200000
+      },
+      "maxTokens": 200000,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/kimi-k2.6-fast": {
+      "id": "kimi-k2.6-fast",
+      "name": "Kimi K2.6 Fast",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.69,
+        "output": 3.22
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/qwen3.5-397b-fast": {
+      "id": "qwen3.5-397b-fast",
+      "name": "Qwen3.5 397B Fast",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-02-01",
+      "last_updated": "2026-02-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.69,
+        "output": 4.14
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/glm-5.1-fast": {
+      "id": "glm-5.1-fast",
+      "name": "GLM 5.1 Fast",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-07",
+      "last_updated": "2026-04-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.1,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 200000,
+        "output": 200000
+      },
+      "maxTokens": 200000,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/qwen3.6-35b-fast": {
+      "id": "qwen3.6-35b-fast",
+      "name": "Qwen3.6 35B Fast",
+      "family": "qwen3.6",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-01",
+      "last_updated": "2026-04-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.05,
+        "output": 0.1
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/kimi-k2.5-fast": {
+      "id": "kimi-k2.5-fast",
+      "name": "Kimi K2.5 Fast",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-01-27",
+      "last_updated": "2026-01-27",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.52,
+        "output": 2.59
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/Qwen/Qwen3.5-397B-A17B-FP8": {
+      "id": "Qwen/Qwen3.5-397B-A17B-FP8",
+      "name": "Qwen3.5 397B A17B FP8",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-02-01",
+      "last_updated": "2026-02-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.69,
+        "output": 4.14
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/Qwen/Qwen3.6-35B-A3B": {
+      "id": "Qwen/Qwen3.6-35B-A3B",
+      "name": "Qwen3.6 35B A3B",
+      "family": "qwen3.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-01",
+      "last_updated": "2026-04-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.05,
+        "output": 0.1
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/zai-org/GLM-5.1-FP8": {
+      "id": "zai-org/GLM-5.1-FP8",
+      "name": "GLM 5.1 FP8",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-07",
+      "last_updated": "2026-04-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.1,
+        "output": 3.6
+      },
+      "limit": {
+        "context": 200000,
+        "output": 200000
+      },
+      "maxTokens": 200000,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/mistralai/Devstral-Small-2-24B-Instruct-2512": {
+      "id": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+      "name": "Devstral Small 2 24B Instruct 2512",
+      "family": "devstral",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-09",
+      "last_updated": "2025-12-09",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.12,
+        "output": 0.35
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/openai/gpt-oss-20b": {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT OSS 20B",
+      "family": "gpt-oss",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.03,
+        "output": 0.16
+      },
+      "limit": {
+        "context": 16384,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/moonshotai/Kimi-K2.6": {
+      "id": "moonshotai/Kimi-K2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.69,
+        "output": 3.22
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/moonshotai/Kimi-K2.5": {
+      "id": "moonshotai/Kimi-K2.5",
+      "name": "Kimi K2.5",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-01-27",
+      "last_updated": "2026-01-27",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.52,
+        "output": 2.59
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
+    "neuralwatt/MiniMaxAI/MiniMax-M2.5": {
+      "id": "MiniMaxAI/MiniMax-M2.5",
+      "name": "MiniMax M2.5",
+      "family": "minimax",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-02-12",
+      "last_updated": "2026-02-12",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.35,
+        "output": 1.38
+      },
+      "limit": {
+        "context": 196608,
+        "output": 196608
+      },
+      "maxTokens": 196608,
+      "provider": "openai",
+      "baseUrl": "https://api.neuralwatt.com/v1"
+    },
     "togetherai/essentialai/Rnj-1-Instruct": {
       "id": "essentialai/Rnj-1-Instruct",
       "name": "Rnj-1 Instruct",
@@ -89864,11 +92158,7 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
+          "text"
         ],
         "output": [
           "text"
@@ -89949,7 +92239,10 @@
       "last_updated": "2026-04-22",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image",
+          "audio",
+          "video"
         ],
         "output": [
           "text"
@@ -90323,6 +92616,43 @@
       "cost": {
         "input": 0.3,
         "output": 0.5
+      },
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.clarifai.com/v2/ext/openai/v1"
+    },
+    "clarifai/moonshotai/chat-completion/models/Kimi-K2_6": {
+      "id": "moonshotai/chat-completion/models/Kimi-K2_6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.95,
+        "output": 4
       },
       "limit": {
         "context": 262144,
@@ -90993,7 +93323,7 @@
     },
     "zhipuai/glm-5v-turbo": {
       "id": "glm-5v-turbo",
-      "name": "glm-5v-turbo",
+      "name": "GLM-5V-Turbo",
       "family": "glm",
       "attachment": true,
       "reasoning": true,
@@ -92547,6 +94877,16 @@
       "name": "Baseten",
       "doc": "https://docs.baseten.co/development/model-apis/overview"
     },
+    "frogbot": {
+      "id": "frogbot",
+      "env": [
+        "FROGBOT_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://app.frogbot.ai/api/v1",
+      "name": "FrogBot",
+      "doc": "https://docs.frogbot.ai"
+    },
     "zhipuai-coding-plan": {
       "id": "zhipuai-coding-plan",
       "env": [
@@ -92566,16 +94906,6 @@
       "api": "https://coding-intl.dashscope.aliyuncs.com/v1",
       "name": "Alibaba Coding Plan",
       "doc": "https://www.alibabacloud.com/help/en/model-studio/coding-plan"
-    },
-    "firmware": {
-      "id": "firmware",
-      "env": [
-        "FIRMWARE_API_KEY"
-      ],
-      "npm": "@ai-sdk/openai-compatible",
-      "api": "https://app.frogbot.ai/api/v1",
-      "name": "Firmware",
-      "doc": "https://docs.frogbot.ai"
     },
     "lmstudio": {
       "id": "lmstudio",
@@ -92958,6 +95288,16 @@
       "api": "https://models.github.ai/inference",
       "name": "GitHub Models",
       "doc": "https://docs.github.com/en/github-models"
+    },
+    "neuralwatt": {
+      "id": "neuralwatt",
+      "env": [
+        "NEURALWATT_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.neuralwatt.com/v1",
+      "name": "Neuralwatt",
+      "doc": "https://portal.neuralwatt.com/docs"
     },
     "togetherai": {
       "id": "togetherai",
