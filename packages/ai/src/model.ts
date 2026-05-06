@@ -16,6 +16,7 @@ import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
 import { providerRegistry } from "./providers/index.ts"
+import { pairToolCalls } from "./tools.ts"
 
 const ATTACHMENT_KINDS: readonly Attachment["type"][] = ["image", "pdf", "audio", "video"]
 
@@ -100,6 +101,11 @@ export class Model<T extends AnyProvider = string> {
       const messages = ctx.messages.map((m) => transformMessage(m, this.#transform!))
       ctx = { ...ctx, messages }
     }
+    // Defensive sanitisation: drop unpaired tool calls / results before
+    // they hit the provider. Typically left behind by a Ctrl+C during
+    // tool execution; provider APIs reject the payload outright when
+    // a function_call has no matching function_call_output.
+    ctx = { ...ctx, messages: pairToolCalls(ctx.messages) }
     // Auto-apply the catalog's max-output budget when the caller didn't
     // override it. Matters for OpenAI: without this the adapter omits
     // `max_tokens` / `max_completion_tokens` and reasoning models burn
