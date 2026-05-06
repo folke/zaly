@@ -22,6 +22,13 @@ export type BaseEvents = {
   invalidate: {}
   mount: {}
   unmount: {}
+  /** Fired synchronously at the top of every `_render` that actually
+   *  runs (skipped on cache hits and `visible:false`). Listeners run
+   *  inside the render's ALS chain — `useContext(RenderContext)` and
+   *  `useContext(AsyncTrackerContext)` resolve against the live ctx.
+   *  Used by `createRenderEffect` to capture render-time data
+   *  (theme, width, …) into signals. */
+  render: {}
   focus: {}
   blur: {}
   key: { key: RoutedKey }
@@ -230,6 +237,11 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
       return this.#cache.rows
     }
     if (this.#cache?.version === ctx.version) return this.#cache.rows
+    // Per-render hook. Fires before `_render` so listeners can update
+    // signals that the upcoming render (or its descendants) will read
+    // — typically capturing ctx-derived data (theme, width) into
+    // signals that async closures need.
+    this.emit("render")
     // Capture the invalidation count *before* awaiting `_render`. If
     // it bumps mid-render, the rows we get back are based on stale
     // state — the external mutation that bumped it has already emitted

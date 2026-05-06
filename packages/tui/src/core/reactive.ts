@@ -193,7 +193,52 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
     }
     nodeCtx.set(node, ctx)
   }
-  return withTracking(ctx, fn)
+  return activeNodeStore.run(node, () => withTracking(ctx, fn))
+}
+
+/** The `Node` whose render is currently active, or `undefined` outside
+ *  any render. Used by widget-body helpers (`createRenderEffect`,
+ *  `onMount`, …) to anchor lifecycle subscriptions to the owner.
+ *
+ *  @internal */
+export function useActiveNode(): Node | undefined {
+  return activeNodeStore.getStore()
+}
+
+const activeNodeStore = new AsyncLocalStorage<Node | undefined>()
+
+/**
+ * Register a per-render hook on the active owner node. The callback
+ * runs synchronously at the top of every `_render` (after the
+ * `visible:false` short-circuit and the cache check, before
+ * `_render`). Cache-hit renders skip it — `ctx.version` only bumps on
+ * theme / resize / explicit ctx changes, so a cache hit means ctx
+ * hasn't meaningfully changed.
+ *
+ * The callback runs inside the render's ALS chain — `useContext(...)`
+ * resolves against the active render's `RenderContext` and
+ * `AsyncTrackerContext`.
+ *
+ * Auto-disposes on the owner's `unmount`. Idempotent re-mount: the
+ * Node's emitter cleans up on unmount but the closure stays valid; if
+ * the owner mounts again, callers who want re-attachment do so
+ * explicitly.
+ *
+ * ```ts
+ * const [theme, setTheme] = signal<Theme | undefined>(undefined)
+ * createRenderEffect(() => {
+ *   const ctx = useContext(RenderContext)
+ *   if (ctx) setTheme(ctx.style.theme)
+ * })
+ * ```
+ */
+export function createRenderEffect(fn: () => void): void {
+  const owner = useActiveNode()
+  if (owner === undefined) {
+    throw new Error("createRenderEffect must be called inside a node render")
+  }
+  owner.on("render", fn)
+  owner.once("unmount", () => owner.off("render", fn))
 }
 
 /** Whether we're currently executing inside `node`'s own render call
