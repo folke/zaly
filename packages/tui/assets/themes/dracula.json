@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "dracula",
-  "fg": "#F8F8F2",
-  "bg": "#282A36",
+  "text": "#F8F8F2",
+  "blend": "#282A36",
+  "ui": {
+    "bg": "#282A36",
+    "fg": "#F8F8F2"
+  },
   "primary": "#BD93F9",
   "accent": "#FF79C6",
   "dim": "#F8F8F2",

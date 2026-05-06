@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "rose-pine",
-  "fg": "#e0def4",
-  "bg": "#191724",
+  "text": "#e0def4",
+  "blend": "#191724",
+  "ui": {
+    "bg": "#191724",
+    "fg": "#e0def4"
+  },
   "primary": "#c4a7e7",
   "accent": "#c4a7e7",
   "dim": "#e0def4",

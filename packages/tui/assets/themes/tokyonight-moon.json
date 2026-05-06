@@ -1,7 +1,7 @@
 {
   "$schema": "file:///home/folke/projects/zaly/packages/tui/assets/schemas/theme.schema.json",
   "accent": "#ff966c",
-  "bg": "#222436",
+  "blend": "#222436",
   "border": "#589ed7",
   "code": {
     "bg": "#1e2030"
@@ -17,7 +17,6 @@
   },
   "dim": "#828bb8",
   "error": "#c53b53",
-  "fg": "#c8d3f5",
   "info": "#0db9d7",
   "line": "#3b4261",
   "mdCode": {
@@ -89,9 +88,14 @@
   "primary": "#82aaff",
   "shiki": "tokyo-night",
   "success": "#4fd6be",
+  "text": "#c8d3f5",
   "title": {
     "bold": true,
     "fg": "#82aaff"
+  },
+  "ui": {
+    "bg": "#1e2030",
+    "fg": "#c8d3f5"
   },
   "warn": "#ffc777"
 }

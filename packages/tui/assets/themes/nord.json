@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "nord",
-  "fg": "#d8dee9",
-  "bg": "#2e3440",
+  "text": "#d8dee9",
+  "blend": "#2e3440",
+  "ui": {
+    "bg": "#2e3440",
+    "fg": "#d8dee9"
+  },
   "primary": "#88c0d0",
   "accent": "#b48ead",
   "dim": "#e5e9f0",

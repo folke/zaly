@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "catppuccin-mocha",
-  "fg": "#cdd6f4",
-  "bg": "#1e1e2e",
+  "text": "#cdd6f4",
+  "blend": "#1e1e2e",
+  "ui": {
+    "bg": "#1e1e2e",
+    "fg": "#cdd6f4"
+  },
   "primary": "#89b4fa",
   "accent": "#cba6f7",
   "dim": "#a6adc8",

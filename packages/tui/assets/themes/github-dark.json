@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "github-dark",
-  "fg": "#e1e4e8",
-  "bg": "#24292e",
+  "text": "#e1e4e8",
+  "blend": "#24292e",
+  "ui": {
+    "bg": "#24292e",
+    "fg": "#e1e4e8"
+  },
   "primary": "#79b8ff",
   "accent": "#b392f0",
   "dim": "#d1d5da",

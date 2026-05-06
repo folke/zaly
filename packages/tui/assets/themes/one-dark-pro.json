@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "one-dark-pro",
-  "fg": "#abb2bf",
-  "bg": "#282c34",
+  "text": "#abb2bf",
+  "blend": "#282c34",
+  "ui": {
+    "bg": "#282c34",
+    "fg": "#abb2bf"
+  },
   "primary": "#61afef",
   "accent": "#c162de",
   "dim": "#d7dae0",

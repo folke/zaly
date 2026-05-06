@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "catppuccin-latte",
-  "fg": "#4c4f69",
-  "bg": "#eff1f5",
+  "text": "#4c4f69",
+  "blend": "#eff1f5",
+  "ui": {
+    "bg": "#eff1f5",
+    "fg": "#4c4f69"
+  },
   "primary": "#1e66f5",
   "accent": "#8839ef",
   "dim": "#acb0be",

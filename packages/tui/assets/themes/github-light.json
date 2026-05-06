@@ -1,8 +1,12 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "github-light",
-  "fg": "#24292e",
-  "bg": "#fff",
+  "text": "#24292e",
+  "blend": "#fff",
+  "ui": {
+    "bg": "#fff",
+    "fg": "#24292e"
+  },
   "primary": "#0366d6",
   "accent": "#5a32a3",
   "dim": "#6a737d",
