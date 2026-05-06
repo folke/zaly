@@ -237,6 +237,12 @@ export function createRenderEffect(fn: () => void): void {
   if (owner === undefined) {
     throw new Error("createRenderEffect must be called inside a node render")
   }
+  // Fire once now — we're inside the owner's first render, so
+  // `useContext(RenderContext)` and friends are already live. Without
+  // this, single-render paths (replay → drain → commit) never see the
+  // hook fire, because the `render` event was emitted at the top of
+  // `#render` *before* the widget body ran and registered.
+  fn()
   owner.on("render", fn)
   owner.once("unmount", () => owner.off("render", fn))
 }
