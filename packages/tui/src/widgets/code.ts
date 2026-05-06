@@ -1,3 +1,4 @@
+import type { StyleBuilder } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/ansi.ts"
@@ -13,6 +14,7 @@ import {
   unwrap,
   useContext,
 } from "../core/reactive.ts"
+import { formatLines } from "../layout/text.ts"
 import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
 import { show } from "./show.ts"
@@ -36,6 +38,10 @@ export interface CodeState {
   /** Disable syntax highlighting even if `lang` is set. Default: `true`. */
   syntax?: boolean
   style?: AnyStyle | false
+  numbered?: boolean
+  numberOffset?: Reactive<number | undefined>
+  offset?: Reactive<number | undefined>
+  limit?: Reactive<number | undefined>
 }
 
 /**
@@ -62,21 +68,31 @@ export const code = widget((props: State<CodeState>) => {
 
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
-  const [theme, setTheme] = signal<Theme | undefined>(undefined)
+  const [style, setStyle] = signal<StyleBuilder | undefined>(undefined)
   createRenderEffect(() => {
     const ctx = useContext(RenderContext)
-    if (ctx?.style.theme) setTheme(ctx.style.theme)
+    if (ctx?.style) setStyle(() => ctx.style)
   })
 
   const title = memo(() => unwrap(props.title) ?? path)
   const body = createAsync(
     async () => {
       const source = unwrap(props.code) // tracked
-      const t = theme() // tracked
+      const t = style()?.theme
       if (!syntax || !lang || t === undefined) return source
       return highlightSource(source, lang, t)
     },
     { initialValue: unwrap(props.code) }
+  )
+
+  const formatted = memo(() =>
+    formatLines(body(), {
+      limit: unwrap(props.limit),
+      numberOffset: unwrap(props.numberOffset),
+      numbered: props.numbered,
+      offset: unwrap(props.offset),
+      style: style()?.line,
+    }).join("\n")
   )
 
   return box(
@@ -90,7 +106,7 @@ export const code = widget((props: State<CodeState>) => {
       { when: title },
       text((ctx) => ctx.style.codeTitle(title() ?? ""), { wrap: "none" })
     ),
-    text(body, { wrap: "none" })
+    text(formatted, { wrap: "none" })
   )
 })
 
