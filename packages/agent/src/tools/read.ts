@@ -115,7 +115,16 @@ export function createReadTool(init: ToolInit) {
       // file's current bytes. write/edit consult this before mutating;
       // the masker uses `full` to know whether this read subsumes
       // earlier reads of the same path.
-      trackFile({ full: slice.full, kind: "read", mtime: fileStat.mtimeMs, path }, ctx)
+      trackFile(
+        {
+          full: slice.full,
+          kind: "read",
+          mtime: fileStat.mtimeMs,
+          offset: slice.offset,
+          path,
+        },
+        ctx
+      )
 
       return slice.content
     },
@@ -134,6 +143,7 @@ declare module "@zaly/ai" {
        *  subsumes earlier reads of the same path. `edit` never sets it
        *  because the result is patch-relative. */
       full?: boolean
+      offset?: number
     }
   }
 }
@@ -183,7 +193,7 @@ export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiEr
 function formatTextSlice(
   content: string,
   { offset, limit }: { offset: number; limit: number }
-): { content: Content; full?: boolean } {
+): { content: Content; full?: boolean; offset?: number } {
   // Normalize line endings to LF for display. The model always sees LF;
   // edit/write detect the file's actual style and re-apply it on disk.
   content = normalizeEol(content)
@@ -215,7 +225,7 @@ function formatTextSlice(
 
   const text = out.join("\n")
   const full = start === 0 && end === lines.length
-  if (full) return { content: text, full }
+  if (full) return { content: text, full, offset: 1 }
 
   return {
     content: [
@@ -227,5 +237,6 @@ function formatTextSlice(
       { text, type: "text" },
     ],
     full,
+    offset: start + 1,
   }
 }
