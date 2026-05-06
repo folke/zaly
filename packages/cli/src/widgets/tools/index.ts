@@ -1,5 +1,5 @@
 import type { ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Reactive, Widget } from "@zaly/tui"
+import type { Accessor, Widget } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared"
 import { widget } from "@zaly/tui"
@@ -27,7 +27,7 @@ export interface ToolResultProps<T extends Tool = Tool> {
   call: ToolCallPart
   /** Reactive — `undefined` while in flight, then the resolved
    *  `ToolResult` when the tool returns. */
-  result: Reactive<ToolResult | undefined>
+  result: Accessor<ToolResult | undefined>
 }
 
 export type ToolResultRenderer<T extends Tool = Tool> = Widget<ToolResultProps<T>>
@@ -55,4 +55,4 @@ export const toolResult = widget((props: ToolResultProps) => {
   return renderer(props)
 })
 
-export { defaultResult, bashResult, readResult, writeResult }
+export { bashResult, defaultResult, readResult, writeResult }

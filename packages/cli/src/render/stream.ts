@@ -3,7 +3,7 @@ import type { Message, StreamEvent, ToolCallPart, ToolResult, ToolResultPart } f
 import type { Renderer } from "@zaly/tui"
 
 import { stringifyContent } from "@zaly/ai"
-import { signal } from "@zaly/tui"
+import { signal, toAccessor } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
 import { toolCall } from "../widgets/tool.ts"
@@ -200,7 +200,7 @@ function renderAssistant(
               isError: result.isError ?? false,
               meta: result.meta,
             }
-      renderer.stream.append(toolCall({ call: part, result: resolved }))
+      renderer.stream.append(toolCall({ call: part, result: toAccessor(resolved) }))
     }
   }
   flushReasoning()

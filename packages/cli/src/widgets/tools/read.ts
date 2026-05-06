@@ -1,8 +1,9 @@
 import type { ReadTool } from "@zaly/agent"
 import type { ToolResultProps } from "./index.ts"
 
-import { stringifyContent } from "@zaly/ai"
-import { box, code, memo, unwrap, widget } from "@zaly/tui"
+import { justText } from "@zaly/ai"
+import { prettyPath } from "@zaly/shared"
+import { box, code, memo, widget } from "@zaly/tui"
 
 /** Result renderer for the `read` tool. Once the file contents land,
  *  render them as a syntax-highlighted code block titled with the path.
@@ -12,19 +13,22 @@ import { box, code, memo, unwrap, widget } from "@zaly/tui"
  *  source. The numbering is regenerated visually by the terminal's
  *  natural row count anyway. */
 export const readResult = widget((props: ToolResultProps<ReadTool>) => {
-  const path = props.params?.path ?? "unknown path"
+  const path = memo(() => {
+    const p = props.result()?.meta?.file?.path
+    return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
+  })
+  const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
+  const text = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
+  const numberOffset = memo(() => props.result()?.meta?.file?.offset ?? props.params?.offset)
+
   return box(
     {},
     code({
-      code: memo(() => {
-        const r = unwrap(props.result)
-        return r === undefined ? "" : stripLineNumbers(stringifyContent(r.content))
-      }),
+      code: text,
+      numberOffset,
+      numbered: true,
       path,
-      title: memo(() => {
-        const r = unwrap(props.result)
-        return r?.isError === true ? `${path}  (error)` : path
-      }),
+      title,
     })
   )
 })
@@ -32,5 +36,5 @@ export const readResult = widget((props: ToolResultProps<ReadTool>) => {
 /** Drop the leading `   N→` / `   N  ` line-number prefix the read tool
  *  emits. Tolerant of slight format variations. */
 function stripLineNumbers(content: string): string {
-  return content.replaceAll(/^\s*\d+[→\s]/gm, "")
+  return content.replaceAll(/^\s*\d+\t/gm, "")
 }

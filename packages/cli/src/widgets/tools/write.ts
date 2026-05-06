@@ -1,21 +1,31 @@
+import type { WriteTool } from "@zaly/agent"
 import type { ToolResultProps } from "./index.ts"
 
-import { box, code, widget } from "@zaly/tui"
+import { prettyPath } from "@zaly/shared"
+import { box, code, memo, widget } from "@zaly/tui"
 
-interface WriteParams {
-  path: string
-  content: string
-}
+/** Result renderer for the `read` tool. Once the file contents land,
+ *  render them as a syntax-highlighted code block titled with the path.
+ *
+ *  The kernel's read tool prefixes lines with `cat -n`-style numbering;
+ *  we strip it before highlighting so shiki tokens line up with the
+ *  source. The numbering is regenerated visually by the terminal's
+ *  natural row count anyway. */
+export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
+  const path = memo(() => {
+    const p = props.result()?.meta?.file?.path
+    return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
+  })
+  const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
+  const text = memo(() => props.params?.content ?? "")
 
-/** Result renderer for the `write` tool. The interesting payload is
- *  in `params.content` (the new file body), not the result message —
- *  show the new content as a syntax-highlighted block titled with the
- *  path. The result.isError flag would be reflected by the tool-call
- *  chrome above; nothing extra to do here. */
-export const writeResult = widget((props: ToolResultProps) => {
-  const params = props.call.params as WriteParams
   return box(
-    { padding: [0, 0, 0, 2] },
-    code({ code: params.content, path: params.path })
+    {},
+    code({
+      code: text,
+      numbered: true,
+      path,
+      title,
+    })
   )
 })

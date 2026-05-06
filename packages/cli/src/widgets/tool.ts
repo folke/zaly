@@ -1,11 +1,11 @@
-import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Reactive } from "@zaly/tui"
-import type { BubbleType } from "./bubble.ts"
+import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai";
+import type { Accessor } from "@zaly/tui";
+import type { BubbleType } from "./bubble.ts";
 
-import { safeParseToolParams } from "@zaly/ai"
-import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui"
-import { bubble } from "./bubble.ts"
-import { toolResult } from "./tools/index.ts"
+import { safeParseToolParams } from "@zaly/ai";
+import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui";
+import { bubble } from "./bubble.ts";
+import { toolResult } from "./tools/index.ts";
 /**
  * Tool-call block: name + intent on top, params preview, then a status
  * line that flips from running to ✓/✗ once the result arrives. The
@@ -18,7 +18,7 @@ import { toolResult } from "./tools/index.ts"
  * The status icon and the result body update automatically.
  */
 export const toolCall = widget(
-  (props: { call: ToolCallPart; result: Reactive<ToolResult | undefined> }) => {
+  (props: { call: ToolCallPart; result: Accessor<ToolResult | undefined> }) => {
     const { call } = props
     const { description: desc, ...params } =
       safeParseToolParams<Tool<{ description: string } & Record<string, unknown>>>(call.params) ??

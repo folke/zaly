@@ -1,8 +1,8 @@
 import type { BashTool } from "@zaly/agent"
 import type { ToolResultProps } from "./index.ts"
 
-import { stringifyContent } from "@zaly/ai"
-import { box, code, memo, text, unwrap, widget } from "@zaly/tui"
+import { justText } from "@zaly/ai"
+import { box, code, memo, text, widget } from "@zaly/tui"
 
 /** Result renderer for the `bash` tool.
  *
@@ -29,11 +29,8 @@ export const bashResult = widget((props: ToolResultProps<BashTool>) => {
     ),
     text({
       content: memo(() => {
-        const r = unwrap(props.result)
-        if (r === undefined) return "…"
-        const content = r.content
-        if (typeof content === "string") return content
-        return stringifyContent(content.filter((p) => p.type === "text"))
+        const content = props.result()?.content
+        return content === undefined ? "…" : justText(content)
       }),
       style: "dim",
     })
