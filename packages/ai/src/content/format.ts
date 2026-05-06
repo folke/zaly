@@ -191,3 +191,11 @@ export function transformMeta<T extends Content>(content: T): WithoutPart<MetaPa
     part.type === "meta" ? { text: renderMetaPart(part), type: "text" } : part
   ) as WithoutPart<MetaPart, T>
 }
+
+export function justText(content: Content): string {
+  if (typeof content === "string") return content
+  return content
+    .filter((p): p is TextPart => p.type === "text")
+    .map((p) => p.text)
+    .join("\n")
+}
