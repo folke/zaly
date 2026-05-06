@@ -1,8 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test } from "vitest"
-import {
-  imageCapabilities,
-  resetCapabilitiesCache,
-} from "../../src/image/capabilities.ts"
+import { imageCapabilities, resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 
 // The test runner's stdout isn't a TTY, so detection would otherwise
 // short-circuit to `undefined`. Pretend it is for the duration of the
@@ -93,10 +90,13 @@ describe("imageCapabilities", () => {
   })
 
   test("iTerm2 via ITERM_SESSION_ID → protocol=iterm2", () => {
-    const caps = withEnv({ ...NULL_ENV, ITERM_SESSION_ID: "w0t0p0:1", TERM: "xterm-256color" }, () => {
-      resetCapabilitiesCache()
-      return imageCapabilities()
-    })
+    const caps = withEnv(
+      { ...NULL_ENV, ITERM_SESSION_ID: "w0t0p0:1", TERM: "xterm-256color" },
+      () => {
+        resetCapabilitiesCache()
+        return imageCapabilities()
+      }
+    )
     expect(caps.protocol).toBe("iterm2")
   })
 

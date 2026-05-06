@@ -27,7 +27,7 @@ if (this.#cache?.version !== ctx.version) {
 return this.#cache.rows
 ```
 
-- `ctx.version` is a monotonic counter on the shared `RenderCtx`. Bumped by the Renderer on events that invalidate *every* cache in the tree (resize, theme swap).
+- `ctx.version` is a monotonic counter on the shared `RenderCtx`. Bumped by the Renderer on events that invalidate _every_ cache in the tree (resize, theme swap).
 - Intra-tick invalidates clear `#cache` directly; next `render()` sees `undefined` and recomputes.
 - `state.visible: false` also caches — the empty rows are stored with the current version so subsequent cascades see `hadCache === true` and propagate correctly. See [Invalidation](./invalidation).
 
@@ -46,7 +46,7 @@ Stream growth uses a deliberate `\n\r<clearLine><content>` pattern at `terminal.
 - `clearLine()` wipes any trailing cells a shorter previous row might have left.
 - `content` paints the new row.
 
-When rows *change* in the tracked region (state mutation on a still-live node), the stream surface rewrites them in place at their absolute position. Rows scrolling into scrollback during growth do so *after* the in-place rewrites, so the new bytes land in history — not stale bytes.
+When rows _change_ in the tracked region (state mutation on a still-live node), the stream surface rewrites them in place at their absolute position. Rows scrolling into scrollback during growth do so _after_ the in-place rewrites, so the new bytes land in history — not stale bytes.
 
 ## Further reading
 

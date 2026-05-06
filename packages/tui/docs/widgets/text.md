@@ -17,12 +17,12 @@ The function form of `content` runs at render time and gets the live `RenderCtx`
 
 ## State
 
-| field      | type                                         | default | description |
-|------------|----------------------------------------------|---------|-------------|
-| `content`  | `string \| (ctx) => string`                  | —       | The text to render. Function form is re-evaluated per render. |
-| `wrap`     | `"word" \| "char" \| "none"`                 | `"word"`| Wrap strategy. `"none"` keeps explicit newlines only. |
-| `width`    | `Size`                                       | `"fill"`| Target width. See `Size` for numeric / `"fill"` / `"auto"` forms. |
-| `fg`, `bg`, attrs | see [Styling](../guide/styling)       | theme   | Ambient style; nested ANSI is re-applied around inner `RESET`s. |
+| field             | type                            | default  | description                                                       |
+| ----------------- | ------------------------------- | -------- | ----------------------------------------------------------------- |
+| `content`         | `string \| (ctx) => string`     | —        | The text to render. Function form is re-evaluated per render.     |
+| `wrap`            | `"word" \| "char" \| "none"`    | `"word"` | Wrap strategy. `"none"` keeps explicit newlines only.             |
+| `width`           | `Size`                          | `"fill"` | Target width. See `Size` for numeric / `"fill"` / `"auto"` forms. |
+| `fg`, `bg`, attrs | see [Styling](../guide/styling) | theme    | Ambient style; nested ANSI is re-applied around inner `RESET`s.   |
 
 ## Notes
 

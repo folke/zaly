@@ -23,22 +23,22 @@ diff({
 
 ## State
 
-| field      | type         | default | description |
-|------------|--------------|---------|-------------|
-| `original` | `string`     | —       | Complete original file content. Split internally by `\n`. |
-| `edits`    | `DiffEdit[]` | —       | Line-range edits referencing indices in `original`. |
-| `lang`     | `string`     | —       | Shiki language name for both sides. |
-| `title`    | `string`     | —       | File path / title at the top. May contain ANSI. |
-| `context`  | `number`     | `3`     | Lines of surrounding context per hunk. |
-| `width`, `fg`, `bg`, … | — | — | [`text`](./text) style fields flow through. |
+| field                  | type         | default | description                                               |
+| ---------------------- | ------------ | ------- | --------------------------------------------------------- |
+| `original`             | `string`     | —       | Complete original file content. Split internally by `\n`. |
+| `edits`                | `DiffEdit[]` | —       | Line-range edits referencing indices in `original`.       |
+| `lang`                 | `string`     | —       | Shiki language name for both sides.                       |
+| `title`                | `string`     | —       | File path / title at the top. May contain ANSI.           |
+| `context`              | `number`     | `3`     | Lines of surrounding context per hunk.                    |
+| `width`, `fg`, `bg`, … | —            | —       | [`text`](./text) style fields flow through.               |
 
 ## `DiffEdit`
 
 ```ts
 interface DiffEdit {
-  from: number        // inclusive
-  to: number          // exclusive
-  replacement: string[]  // new lines for [from, to)
+  from: number // inclusive
+  to: number // exclusive
+  replacement: string[] // new lines for [from, to)
 }
 ```
 

@@ -1,5 +1,6 @@
-import { describe, expect, test, vi } from "vitest"
 import type { FetchLike } from "../../src/utils/retry.ts"
+
+import { describe, expect, test, vi } from "vitest"
 import { withRetry } from "../../src/utils/retry.ts"
 
 // ── helpers ──────────────────────────────────────────────────────────────
@@ -81,10 +82,7 @@ describe("withRetry", () => {
   })
 
   test("retries on thrown network errors", async () => {
-    const stub = queuedFetch([
-      new Error("ECONNRESET"),
-      new Response("ok", { status: 200 }),
-    ])
+    const stub = queuedFetch([new Error("ECONNRESET"), new Response("ok", { status: 200 })])
     const fetch = withRetry(stub.fetch, { baseMs: 0, retries: 3 })
     const res = await fetch("http://x")
     expect(res.status).toBe(200)
@@ -116,10 +114,7 @@ describe("withRetry", () => {
 
   test("AbortSignal aborts pending backoff wait", async () => {
     const controller = new AbortController()
-    const stub = queuedFetch([
-      new Response("", { status: 500 }),
-      new Response("", { status: 500 }),
-    ])
+    const stub = queuedFetch([new Response("", { status: 500 }), new Response("", { status: 500 })])
     const fetch = withRetry(stub.fetch, { baseMs: 10_000, retries: 3 })
     const p = fetch("http://x", { signal: controller.signal })
     // Give fetch a microtask to queue, then abort during the backoff.

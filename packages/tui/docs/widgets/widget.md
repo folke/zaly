@@ -9,8 +9,7 @@ import { box, text, widget } from "@zaly/tui"
 
 const statusLine = widget(
   { level: "success" as "success" | "warn" | "error", msg: "all systems nominal" },
-  ({ ctx: { style }, state }) =>
-    text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`),
+  ({ ctx: { style }, state }) => text(`${style.bold[state.level](" ● ")} ${style.dim(state.msg)}`)
 )
 
 // Mutating state re-renders automatically.
@@ -21,10 +20,7 @@ statusLine.state.level = "error"
 Return a single composed `Node` (usually a `box`) or an array for vertical stacking:
 
 ```ts
-widget({}, () => [
-  text("line one"),
-  text("line two"),
-])
+widget({}, () => [text("line one"), text("line two")])
 ```
 
 ## Signature

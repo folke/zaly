@@ -49,5 +49,4 @@ export type BuiltinScope = keyof typeof builtin
 export type PermissionScope = keyof PermissionScopes
 export type AnyScope = PermissionScope | (string & {})
 
-export const handlerRegistry =
-  createRegistry<PermissionHandler<string>>("scope").from(builtin)
+export const handlerRegistry = createRegistry<PermissionHandler<string>>("scope").from(builtin)

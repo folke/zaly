@@ -1,4 +1,3 @@
-import { describe, expect, test } from "vitest"
 import type {
   Attachment,
   ContentPart,
@@ -8,6 +7,7 @@ import type {
   TextPart,
 } from "../../src/types.ts"
 
+import { describe, expect, test } from "vitest"
 import { ContentTransform } from "../../src/content/transform.ts"
 
 const text = (s: string): TextPart => ({ text: s, type: "text" })
@@ -52,7 +52,10 @@ describe("ContentTransform — primitives", () => {
   })
 
   test("map can return an array (1:N) to expand a part", async () => {
-    const ct = ContentTransform.create().map("text", (t) => [text(`<${t.text}>`), meta({ ref: t.text })])
+    const ct = ContentTransform.create().map("text", (t) => [
+      text(`<${t.text}>`),
+      meta({ ref: t.text }),
+    ])
     const out = await ct.run([text("hi")])
     expect(out.map((p) => p.type)).toEqual(["text", "meta"])
   })

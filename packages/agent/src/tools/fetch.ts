@@ -63,7 +63,11 @@ export function createFetchTool(init: ToolInit): Tool {
       // re-fetching from its own IP. Only attach kinds the model accepts;
       // unsupported kinds fall through to the text branch (rendered via
       // `<image>` / `<pdf>` placeholders by the wire pipeline).
-      const file = await fileDetect({ data: bytes, mime: contentType || undefined, url: url.toString() })
+      const file = await fileDetect({
+        data: bytes,
+        mime: contentType || undefined,
+        url: url.toString(),
+      })
       if (
         file &&
         ((file.type === "image" && init.model.canAttach("image")) ||

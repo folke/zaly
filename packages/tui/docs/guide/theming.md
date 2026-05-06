@@ -59,14 +59,14 @@ For CLIs that accept an explicit `--theme /path/to/foo.json` flag, skip the sear
 
 Slots are just names. The framework uses a well-known set; custom widgets can add their own, and apps can override any of them.
 
-| category | slots |
-|----------|-------|
-| palette | `fg`, `bg`, `primary`, `accent`, `dim`, `muted`, `success`, `info`, `warn`, `error` |
-| chrome  | `title`, `border`, `borderTitle`, `line` |
+| category | slots                                                                                                                                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| palette  | `fg`, `bg`, `primary`, `accent`, `dim`, `muted`, `success`, `info`, `warn`, `error`                                                                                                                                                        |
+| chrome   | `title`, `border`, `borderTitle`, `line`                                                                                                                                                                                                   |
 | markdown | `mdBold`, `mdItalic`, `mdStrikethrough`, `mdHeading`, `mdHeading1`..`mdHeading6`, `mdCode`, `mdCodeBlock`, `mdCodeBlockTitle`, `mdHr`, `mdLink`, `mdListBullet`, `mdListChecked`, `mdListUnchecked`, `mdQuote`, `mdTable`, `mdTableHeader` |
-| menu    | `menuLabel`, `menuHint`, `menuActive` |
-| code    | `code`, `codeTitle` |
-| diff    | `diffAdd`, `diffDel`, `diffContext`, `diffLine`, `diffTitle` |
+| menu     | `menuLabel`, `menuHint`, `menuActive`                                                                                                                                                                                                      |
+| code     | `code`, `codeTitle`                                                                                                                                                                                                                        |
+| diff     | `diffAdd`, `diffDel`, `diffContext`, `diffLine`, `diffTitle`                                                                                                                                                                               |
 
 See `src/style/theme.ts` for the canonical list plus defaults.
 

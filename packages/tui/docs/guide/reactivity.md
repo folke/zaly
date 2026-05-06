@@ -11,8 +11,8 @@ import { signal } from "@zaly/tui"
 
 const [count, setCount] = signal(0)
 
-setCount(1)              // direct write
-setCount((n) => n + 1)   // functional write
+setCount(1) // direct write
+setCount((n) => n + 1) // functional write
 ```
 
 ## memo
@@ -25,7 +25,7 @@ import { memo, signal } from "@zaly/tui"
 const [value, setValue] = signal(0)
 const pct = memo(() => Math.round(value() * 100))
 
-text(({ style }) => `${pct()}%`)   // subscribes to pct
+text(({ style }) => `${pct()}%`) // subscribes to pct
 ```
 
 ## effect
@@ -68,8 +68,8 @@ The Spinner widget uses this for its frame interval. Equivalent to Solid's `untr
 Most widget props accept either a literal or a signal accessor, typed `Reactive<T>`:
 
 ```ts
-progress({ value: pct, visible: busy })   // both accessors
-progress({ value: 0.5, visible: true })   // literals
+progress({ value: pct, visible: busy }) // both accessors
+progress({ value: 0.5, visible: true }) // literals
 ```
 
 Under the hood, widgets call `unwrap(state.value)` inside `_render`. The unwrap reads the accessor inside the tracking context, which registers the subscription.

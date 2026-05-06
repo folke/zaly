@@ -24,11 +24,11 @@ export class MemoryStore implements SessionStore {
     return this.#root
   }
 
-async get(id: string): Promise<SessionNode | undefined> {
+  async get(id: string): Promise<SessionNode | undefined> {
     return this.#nodes.get(id)
   }
 
-async write(node: SessionNode): Promise<void> {
+  async write(node: SessionNode): Promise<void> {
     this.#nodes.set(node.uuid, node)
     this.#root = node
   }

@@ -1,10 +1,10 @@
 import type { Message, MetaPart, Model, TextPart, ToolContext, ToolResultPart } from "@zaly/ai"
 
+import { AiError } from "@zaly/ai"
 import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { AiError } from "@zaly/ai"
 import { assertFresh, createReadTool, trackFile } from "../src/tools/read.ts"
 
 // Permissive model stub — the tests don't depend on the schema-desc

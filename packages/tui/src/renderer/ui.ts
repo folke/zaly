@@ -35,7 +35,7 @@ export class UI extends Surface {
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    opts: UIOptions = {},
+    opts: UIOptions = {}
   ) {
     super()
     this.#maxHeight = opts.maxHeight

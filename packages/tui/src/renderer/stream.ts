@@ -55,7 +55,7 @@ export class Stream extends Surface {
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    opts: Partial<StreamOptions> = {},
+    opts: Partial<StreamOptions> = {}
   ) {
     super()
     this.#opts = { maxLive: 3, ...opts }

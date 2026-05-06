@@ -105,16 +105,14 @@ describe("findResource", () => {
 
   test("type: 'dir' filters out file matches", () => {
     mkfile(join(root, "skills"))
-    expect(
-      findResource({ cwd: root, rel: "skills", scopes: ["project"], type: "dir" })
-    ).toEqual([])
+    expect(findResource({ cwd: root, rel: "skills", scopes: ["project"], type: "dir" })).toEqual([])
   })
 
   test("type: 'file' filters out dir matches", () => {
     mkdir(join(root, "skills"))
-    expect(
-      findResource({ cwd: root, rel: "skills", scopes: ["project"], type: "file" })
-    ).toEqual([])
+    expect(findResource({ cwd: root, rel: "skills", scopes: ["project"], type: "file" })).toEqual(
+      []
+    )
   })
 
   test("type: 'dir' accepts directories", () => {

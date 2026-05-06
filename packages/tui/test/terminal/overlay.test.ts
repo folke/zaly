@@ -1,5 +1,4 @@
 import { describe, expect, test } from "vitest"
-
 import { box } from "../../src/widgets/box.ts"
 import { overlay } from "../../src/widgets/overlay.ts"
 import { text } from "../../src/widgets/text.ts"

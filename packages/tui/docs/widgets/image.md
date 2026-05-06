@@ -13,13 +13,13 @@ image({ src: "./wallpaper.jpg", width: 40, alt: "wallpaper" })
 
 ## State
 
-| field         | type     | default | description |
-|---------------|----------|---------|-------------|
-| `src`         | `string` | —       | Path to an image file. PNG streams directly; JPEG/WebP/GIF/AVIF/SVG are converted once to a cached temp PNG via sharp on KGP terminals (iTerm2 accepts all formats natively). |
-| `width`       | `number` | `ctx.width` | Display width in terminal cells. |
-| `height`      | `number` | auto    | Display height in cells. Computed from source aspect + `cellAspect` when omitted. |
-| `alt`         | `string` | —       | Fallback text for terminals without an image protocol. |
-| `cellAspect`  | `number` | `2.0`   | Character cell height / width. Tweak if images look stretched on your font. |
+| field        | type     | default     | description                                                                                                                                                                   |
+| ------------ | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src`        | `string` | —           | Path to an image file. PNG streams directly; JPEG/WebP/GIF/AVIF/SVG are converted once to a cached temp PNG via sharp on KGP terminals (iTerm2 accepts all formats natively). |
+| `width`      | `number` | `ctx.width` | Display width in terminal cells.                                                                                                                                              |
+| `height`     | `number` | auto        | Display height in cells. Computed from source aspect + `cellAspect` when omitted.                                                                                             |
+| `alt`        | `string` | —           | Fallback text for terminals without an image protocol.                                                                                                                        |
+| `cellAspect` | `number` | `2.0`       | Character cell height / width. Tweak if images look stretched on your font.                                                                                                   |
 
 ## Notes
 

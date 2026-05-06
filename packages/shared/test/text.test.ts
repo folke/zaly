@@ -44,7 +44,7 @@ describe("stripAnsi", () => {
 
   test("strips non-SGR CSI even with keepStyles: true", () => {
     expect(stripAnsi(`${CURSOR_UP}${SGR_RED}hi${SGR_RESET}`, { keepStyles: true })).toBe(
-      `${SGR_RED}hi${SGR_RESET}`,
+      `${SGR_RED}hi${SGR_RESET}`
     )
   })
 
@@ -167,7 +167,7 @@ describe("normalizeEol", () => {
 
   test(String.raw`progress-bar style \r becomes separate lines when loneCr opted in`, () => {
     expect(normalizeEol("Downloading: 45%\rDownloading: 50%", { loneCr: "\n" })).toBe(
-      "Downloading: 45%\nDownloading: 50%",
+      "Downloading: 45%\nDownloading: 50%"
     )
   })
 })
@@ -267,7 +267,7 @@ describe("cleanText", () => {
         binary: false,
         eol: false,
         unicode: false,
-      }),
+      })
     ).toBe(input)
   })
 
@@ -284,7 +284,7 @@ describe("cleanTextTui (preset)", () => {
 
   test("strips cursor moves and erases", () => {
     expect(cleanTextTui(`${CURSOR_UP}${SGR_RED}hi${SGR_RESET}${ERASE_LINE}`)).toBe(
-      `${SGR_RED}hi${SGR_RESET}`,
+      `${SGR_RED}hi${SGR_RESET}`
     )
   })
 

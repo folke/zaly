@@ -18,19 +18,58 @@ import type { Theme } from "./types.ts"
  * can pass this map straight to `themeRegistry` with no cast.
  */
 export const builtin = {
-  "catppuccin-latte": () => import("../../assets/themes/catppuccin-latte.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "catppuccin-mocha": () => import("../../assets/themes/catppuccin-mocha.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "dracula": () => import("../../assets/themes/dracula.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "github-dark": () => import("../../assets/themes/github-dark.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "github-light": () => import("../../assets/themes/github-light.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "gruvbox-dark-medium": () => import("../../assets/themes/gruvbox-dark-medium.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "nord": () => import("../../assets/themes/nord.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "one-dark-pro": () => import("../../assets/themes/one-dark-pro.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "rose-pine": () => import("../../assets/themes/rose-pine.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "tokyonight-day": () => import("../../assets/themes/tokyonight-day.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "tokyonight-moon": () => import("../../assets/themes/tokyonight-moon.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "tokyonight-night": () => import("../../assets/themes/tokyonight-night.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
-  "tokyonight-storm": () => import("../../assets/themes/tokyonight-storm.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),
+  "catppuccin-latte": () =>
+    import("../../assets/themes/catppuccin-latte.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "catppuccin-mocha": () =>
+    import("../../assets/themes/catppuccin-mocha.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  dracula: () =>
+    import("../../assets/themes/dracula.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "github-dark": () =>
+    import("../../assets/themes/github-dark.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "github-light": () =>
+    import("../../assets/themes/github-light.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "gruvbox-dark-medium": () =>
+    import("../../assets/themes/gruvbox-dark-medium.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  nord: () =>
+    import("../../assets/themes/nord.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "one-dark-pro": () =>
+    import("../../assets/themes/one-dark-pro.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "rose-pine": () =>
+    import("../../assets/themes/rose-pine.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "tokyonight-day": () =>
+    import("../../assets/themes/tokyonight-day.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "tokyonight-moon": () =>
+    import("../../assets/themes/tokyonight-moon.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "tokyonight-night": () =>
+    import("../../assets/themes/tokyonight-night.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "tokyonight-storm": () =>
+    import("../../assets/themes/tokyonight-storm.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
 } as const satisfies LoaderMap<Promise<Partial<Theme>>>
 
 export type BuiltinThemeName = keyof typeof builtin

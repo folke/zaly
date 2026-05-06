@@ -51,9 +51,7 @@ describe("Agent — tool-calls loop", () => {
     const roles = result.messages.map((m) => m.role)
     expect(roles).toEqual(["user", "assistant", "tool", "assistant"])
     const toolMsg = result.messages[2] as Message<"tool">
-    expect(toolMsg.content[0].content).toEqual([
-      { format: "json", text: "5", type: "text" },
-    ])
+    expect(toolMsg.content[0].content).toEqual([{ format: "json", text: "5", type: "text" }])
     expect(toolMsg.content[0].isError).toBe(false)
   })
 

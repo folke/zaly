@@ -26,7 +26,7 @@ Pass it anywhere a style is accepted:
 
 ```ts
 text("hello", { fg: "primary", bold: true })
-box({ bg: "muted", padding: [0, 1] }, /* ... */)
+box({ bg: "muted", padding: [0, 1] } /* ... */)
 ```
 
 Widget state types that extend `StyleState` pick up these fields automatically.
@@ -44,7 +44,7 @@ Every chain access returns a fresh builder, so intermediates are reusable:
 
 ```ts
 const err = ctx.style.red.bold
-err("oops")           // "\x1b[1;31moops\x1b[0m"
+err("oops") // "\x1b[1;31moops\x1b[0m"
 err.underline("fatal") // with an added underline
 ```
 
@@ -83,7 +83,7 @@ style.mdCodeBlock("<pre>")
 Theme slots whose value is a `Style` object (not just a color) merge all of their fields onto the chain. So a slot like `title: { bold: true, fg: "primary" }` gives you the full attr + fg in one access:
 
 ```ts
-style.title("Hello")   // bold + theme primary fg
+style.title("Hello") // bold + theme primary fg
 ```
 
 ### Background variants — `bgFoo` / `fgFoo`
@@ -151,15 +151,15 @@ Useful when the caller hands you a `string | Style | undefined` from state — `
 
 A `Color` is any of:
 
-| Form                       | Example                                  |
-| -------------------------- | ---------------------------------------- |
-| Hex                        | `"#82aaff"`, `"#fa8"`, `"#82aaff88"`     |
-| ANSI name                  | `"red"`, `"gray"`                        |
-| Bright ANSI                | `"brightRed"`, `"brightBlue"`            |
-| Theme slot                 | `"primary"`, `"mdCode"`                  |
-| `"inherit"`                | leaves the channel untouched             |
-| `"<base>-<step>"`          | `"primary-300"`, `"#82aaff-900"`         |
-| `"<slot>/<alpha>"`         | `"primary/20"` (20% opacity over bg)     |
+| Form               | Example                              |
+| ------------------ | ------------------------------------ |
+| Hex                | `"#82aaff"`, `"#fa8"`, `"#82aaff88"` |
+| ANSI name          | `"red"`, `"gray"`                    |
+| Bright ANSI        | `"brightRed"`, `"brightBlue"`        |
+| Theme slot         | `"primary"`, `"mdCode"`              |
+| `"inherit"`        | leaves the channel untouched         |
+| `"<base>-<step>"`  | `"primary-300"`, `"#82aaff-900"`     |
+| `"<slot>/<alpha>"` | `"primary/20"` (20% opacity over bg) |
 
 The tonal (`-300`) and alpha (`/20`) suffixes stack cleanly — e.g. `"primary-300/50"` is valid.
 
@@ -168,7 +168,7 @@ The tonal (`-300`) and alpha (`/20`) suffixes stack cleanly — e.g. `"primary-3
 `#rrggbbaa` is supported natively; no separate `/<alpha>` suffix needed:
 
 ```ts
-style.fg("#82aaff88")(" · ")   // 53% alpha
+style.fg("#82aaff88")(" · ") // 53% alpha
 ```
 
 Alpha-tagged colors are always composited against `theme.bg` at resolve time, so they behave like a "tint" over the surface rather than a translucent overlay.

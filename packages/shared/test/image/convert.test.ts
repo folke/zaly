@@ -1,5 +1,6 @@
-import { describe, expect, test } from "vitest"
 import type { ImageInfo } from "../../src/image/info.ts"
+
+import { describe, expect, test } from "vitest"
 import { imageConvert } from "../../src/image/convert.ts"
 
 const fakeImage = (format: ImageInfo["format"]): ImageInfo => ({

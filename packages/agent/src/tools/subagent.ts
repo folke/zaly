@@ -81,7 +81,8 @@ export const subagentTool = defineTool({
     if (!parent) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
-        message: "subagent requires an Agent reference on the context (set up by the agent harness).",
+        message:
+          "subagent requires an Agent reference on the context (set up by the agent harness).",
       })
     }
 

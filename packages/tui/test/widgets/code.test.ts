@@ -13,8 +13,7 @@ describe("Code widget", () => {
   // Strip the box's `padding: [0, 1]` chrome around the body so
   // assertions focus on content. ANSI is also stripped so we don't
   // depend on the specific theme escapes.
-  const trim = (rows: string[]) =>
-    rows.map((r) => stripAnsi(r).replace(/^ +| +$/g, ""))
+  const trim = (rows: string[]) => rows.map((r) => stripAnsi(r).replace(/^ +| +$/g, ""))
 
   test("renders the code body with no title", async () => {
     const n = code({ code: "hello\nworld" })

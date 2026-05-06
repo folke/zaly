@@ -33,10 +33,21 @@ export interface RetryOptions {
   shouldRetry?: (result: { response?: Response; error?: unknown }) => boolean
   /** Hook fired before each retry wait — useful for telemetry /
    *  logging. Receives the 0-based attempt number that just failed. */
-  onRetry?: (info: { attempt: number; waitMs: number; response?: Response; error?: unknown }) => void
+  onRetry?: (info: {
+    attempt: number
+    waitMs: number
+    response?: Response
+    error?: unknown
+  }) => void
 }
 
-const defaultShouldRetry = ({ response, error }: { response?: Response; error?: unknown }): boolean => {
+const defaultShouldRetry = ({
+  response,
+  error,
+}: {
+  response?: Response
+  error?: unknown
+}): boolean => {
   if (error !== undefined) {
     // Don't retry user-initiated aborts or programmer errors.
     if (error instanceof Error && error.name === "AbortError") return false

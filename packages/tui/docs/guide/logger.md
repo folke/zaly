@@ -7,7 +7,7 @@
 ```ts
 const { log } = renderer
 
-log("hi")                    // level "log"
+log("hi") // level "log"
 log.info("resolved %d tasks in %dms", 4, 128)
 log.success("build complete")
 log.warn("deprecated — please update your config")
@@ -27,8 +27,8 @@ Opt-in, so existing `console.log` calls from third-party code route through the 
 
 ```ts
 log.install()
-console.log("from-patched-console")   // renders as a log() entry
-log.uninstall()                       // restores the originals
+console.log("from-patched-console") // renders as a log() entry
+log.uninstall() // restores the originals
 ```
 
 > [!WARNING]
@@ -41,26 +41,26 @@ Pass through `createRenderer({ logger: {...} })`:
 ```ts
 const renderer = createRenderer({
   logger: {
-    minLevel: "info",        // skip trace/debug
-    stacktrace: false,       // Error → .message only
-    markdown: true,          // render MD in string bodies (default)
+    minLevel: "info", // skip trace/debug
+    stacktrace: false, // Error → .message only
+    markdown: true, // render MD in string bodies (default)
     styles: {
-      error: { icon: "✗" },  // per-level overrides
+      error: { icon: "✗" }, // per-level overrides
     },
     factory: (level, msg) => log({ level, content: inspect(msg) }),
   },
 })
 ```
 
-| field         | type     | default | description |
-|---------------|----------|---------|-------------|
-| `minLevel`    | `LogLevel` | `"log"` | Below this is dropped. |
-| `markdown`    | `boolean` | `true`  | Render MD-looking strings as a `markdown()` node. |
-| `stacktrace`  | `boolean` | `false` | Keep `Error` stack traces instead of `.message`. |
-| `styles`      | `Partial<Record<LogLevel, LogStyleOverride>>` | — | Per-level overrides for the `log()` widget's prefix (icon / color / style). |
-| `factory`     | `(level, msg) => Node` | built-in | Replace the default `log()` builder — emit any Node you like (tool cards, images, etc.). |
-| `inspect`     | `util.InspectOptions` | `{ colors: true }` | Forwarded to `formatWithOptions` for non-string args. |
-| `write`       | `(text, "stdout" \| "stderr") => void` | — | Override the no-stream fallback writer. Mainly for tests. |
+| field        | type                                          | default            | description                                                                              |
+| ------------ | --------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------- |
+| `minLevel`   | `LogLevel`                                    | `"log"`            | Below this is dropped.                                                                   |
+| `markdown`   | `boolean`                                     | `true`             | Render MD-looking strings as a `markdown()` node.                                        |
+| `stacktrace` | `boolean`                                     | `false`            | Keep `Error` stack traces instead of `.message`.                                         |
+| `styles`     | `Partial<Record<LogLevel, LogStyleOverride>>` | —                  | Per-level overrides for the `log()` widget's prefix (icon / color / style).              |
+| `factory`    | `(level, msg) => Node`                        | built-in           | Replace the default `log()` builder — emit any Node you like (tool cards, images, etc.). |
+| `inspect`    | `util.InspectOptions`                         | `{ colors: true }` | Forwarded to `formatWithOptions` for non-string args.                                    |
+| `write`      | `(text, "stdout" \| "stderr") => void`        | —                  | Override the no-stream fallback writer. Mainly for tests.                                |
 
 ## Direct `Logger` use
 
@@ -70,10 +70,10 @@ Apps that want a standalone logger (no renderer) can construct one directly:
 import { Logger } from "@zaly/tui"
 
 const logger = new Logger({ minLevel: "info" })
-logger.error("boom")            // goes to stderr
-logger.attach(stream)           // now goes to the stream surface
-logger.detach()                 // back to stdout/stderr
-logger.install() / uninstall()  // console.* patching
+logger.error("boom") // goes to stderr
+logger.attach(stream) // now goes to the stream surface
+logger.detach() // back to stdout/stderr
+logger.install() / uninstall() // console.* patching
 ```
 
 The callable wrapper (`makeLog(logger)`) is what `renderer.log` is — it preserves the same `fn(msg)` + `fn.level(...)` surface.

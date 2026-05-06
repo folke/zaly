@@ -2,7 +2,7 @@
 
 The zaly agent kernel. Two primitives:
 
-- **`Session`** — owns the conversation as a DAG of message + compaction nodes, with a head pointer. Branching, rewind, and replay all reduce to *navigate to a uuid*. Optional JSONL persistence.
+- **`Session`** — owns the conversation as a DAG of message + compaction nodes, with a head pointer. Branching, rewind, and replay all reduce to _navigate to a uuid_. Optional JSONL persistence.
 - **`Agent`** — drives the multi-turn streaming + tool loop on top of a `Session`. Owns runtime status, the message queues (`send`/`inject`), and the stop policy.
 
 Built on [`@zaly/ai`](../ai). UI-agnostic — the same kernel runs CLI, server, desktop, and channel adapters.
@@ -37,9 +37,9 @@ const agent = new Agent({
 agent.send({ content: "What is 17 × 23?", role: "user" })
 const stopReason = await agent.run()
 
-console.log(stopReason)             // "natural"
-console.log(agent.messages.at(-1))  // assistant final message
-console.log(agent.totalUsage)       // summed token usage across the run
+console.log(stopReason) // "natural"
+console.log(agent.messages.at(-1)) // assistant final message
+console.log(agent.totalUsage) // summed token usage across the run
 ```
 
 ## Interactive use
@@ -72,7 +72,7 @@ await agent.run()       // resume from paused / errored (also auto-runs on send)
 
 `status` is one of `idle | streaming | running-tools | paused`. `paused` covers post-error too — `agent.lastError` carries the cause.
 
-`prompt` and `tools` are mutable post-construction; assignments take effect on the *next* step (the in-flight stream keeps its original values):
+`prompt` and `tools` are mutable post-construction; assignments take effect on the _next_ step (the in-flight stream keeps its original values):
 
 ```ts
 agent.prompt = ["you are now in safe mode"]
@@ -102,16 +102,16 @@ Policy knobs live under `policy` and are routed to the internal `StopPolicy`. De
 ```ts
 new Agent({
   // …
-  contextLimit: 128_000,    // model's context window — enables silent-overflow detection
+  contextLimit: 128_000, // model's context window — enables silent-overflow detection
   policy: {
-    maxSteps: 50,           // hard ceiling on provider round-trips per run()
-    maxToolErrors: 5,       // bail after N consecutive failing tool calls
-    tokenBudget: 100_000,   // cumulative usage cap across the run
+    maxSteps: 50, // hard ceiling on provider round-trips per run()
+    maxToolErrors: 5, // bail after N consecutive failing tool calls
+    tokenBudget: 100_000, // cumulative usage cap across the run
 
     // Loop detection (cheap heuristics over tool-call history)
-    loopConsecutive: 3,     // same call N times in a row → loop-detected
-    loopWindow: 10,         // window for the second arm
-    loopWindowRepeats: 4,   // duplicates within the window → loop-detected
+    loopConsecutive: 3, // same call N times in a row → loop-detected
+    loopWindow: 10, // window for the second arm
+    loopWindowRepeats: 4, // duplicates within the window → loop-detected
   },
 })
 ```
@@ -120,7 +120,7 @@ Set any loop-detection limit to `Infinity` to disable that arm. For fully custom
 
 ## Compaction on overflow
 
-When a step returns `context-overflow`, the assistant message from that round-trip is *not* committed (it was generated against truncated input, so its quality is suspect). Supply a `compact` callback and the loop will retry after compaction; otherwise it stops with `stopReason: "context-overflow"`.
+When a step returns `context-overflow`, the assistant message from that round-trip is _not_ committed (it was generated against truncated input, so its quality is suspect). Supply a `compact` callback and the loop will retry after compaction; otherwise it stops with `stopReason: "context-overflow"`.
 
 The callback owns the summarization strategy — call `agent.session.compact()` to mark the boundary, then `add()` the condensed history. The active chain resets to "post-compact only", and the pre-compact records stay in the DAG (visible via `session.history()` and `session.nodes`).
 
@@ -150,8 +150,8 @@ const session = new Session({ path: "./conversation.jsonl" })
 const agent = new Agent({
   model,
   session,
-  prompt: ["be concise"],         // recorded on the session-start node by start()
-  messages: [{ role: "user", content: "hi" }],   // appended to the session
+  prompt: ["be concise"], // recorded on the session-start node by start()
+  messages: [{ role: "user", content: "hi" }], // appended to the session
 })
 ```
 

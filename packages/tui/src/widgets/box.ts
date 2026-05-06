@@ -136,7 +136,9 @@ export class Box extends Node<BoxStyle> {
     gap: number
   ): Promise<string[]> {
     const measureWidths = children.map((c) =>
-      isFixedWidth(c.state.width) ? (resolveSize(c.state.width, innerWidth) ?? innerWidth) : innerWidth
+      isFixedWidth(c.state.width)
+        ? (resolveSize(c.state.width, innerWidth) ?? innerWidth)
+        : innerWidth
     )
     const measureRows = await Promise.all(
       children.map((c, i) => c.render({ ...ctx, width: measureWidths[i] }))
@@ -202,10 +204,7 @@ export class Box extends Node<BoxStyle> {
     )
     const target =
       this.state.width === "fit"
-        ? childRows.reduce(
-            (m, rows) => rows.reduce((mm, r) => Math.max(mm, stringWidth(r)), m),
-            0
-          )
+        ? childRows.reduce((m, rows) => rows.reduce((mm, r) => Math.max(mm, stringWidth(r)), m), 0)
         : innerWidth
     // Pad each child's rows to the cross-axis target. For full-stretch
     // children this absorbs natural-row slack; for fixed-width

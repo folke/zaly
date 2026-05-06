@@ -21,43 +21,45 @@ m.on("select", (item) => console.log("picked", item.value))
 `Menu<T>` defaults to `MenuItem` (`{ value?, label?, hint? }` — all optional) but accepts any shape. Pair with a custom `render` for non-standard items:
 
 ```ts
-interface Cmd { value: string; run: () => void }
+interface Cmd {
+  value: string
+  run: () => void
+}
 
 menu<Cmd>({
   items: [{ value: "/quit", run: () => process.exit() }],
-  render: (item, active, ctx) =>
-    ctx.style.add(active ? "menuActive" : "menuLabel")(item.value),
-}).on("select", (item) => item.run())   // fully typed, no cast
+  render: (item, active, ctx) => ctx.style.add(active ? "menuActive" : "menuLabel")(item.value),
+}).on("select", (item) => item.run()) // fully typed, no cast
 ```
 
 ## State
 
-| field         | type        | default | description |
-|---------------|-------------|---------|-------------|
-| `items`       | `Reactive<T[]>` | — | The list. Accepts a signal accessor so filtered results can drive the menu without manual `setState`. |
-| `active`      | `number`    | `0`     | Highlighted index. Clamped to `[0, items.length-1]` on render. |
-| `maxHeight`   | `number`    | items.length | Max item rows per paint. Counter (when shown) is extra. |
-| `counter`     | `boolean \| undefined` | auto | `undefined` auto-shows when items exceed `maxHeight`. `false` forces off, `true` forces on. |
-| `sticky`      | `boolean`   | `false` | When `true`, the rendered height can grow but never shrinks — prevents jitter in popups while the user types. |
-| `width`       | `Size`      | `"fill"`| Render width. |
-| `labelWidth`  | `number`    | widest label | Width of the label column (default layout only). |
-| `render`      | `(item, active, ctx) => string` | — | Per-row renderer. When set, items don't have to be `MenuItem`-shaped. Menu clips/pads to width and still applies `menuActive` on the selected row. |
+| field        | type                            | default      | description                                                                                                                                        |
+| ------------ | ------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`      | `Reactive<T[]>`                 | —            | The list. Accepts a signal accessor so filtered results can drive the menu without manual `setState`.                                              |
+| `active`     | `number`                        | `0`          | Highlighted index. Clamped to `[0, items.length-1]` on render.                                                                                     |
+| `maxHeight`  | `number`                        | items.length | Max item rows per paint. Counter (when shown) is extra.                                                                                            |
+| `counter`    | `boolean \| undefined`          | auto         | `undefined` auto-shows when items exceed `maxHeight`. `false` forces off, `true` forces on.                                                        |
+| `sticky`     | `boolean`                       | `false`      | When `true`, the rendered height can grow but never shrinks — prevents jitter in popups while the user types.                                      |
+| `width`      | `Size`                          | `"fill"`     | Render width.                                                                                                                                      |
+| `labelWidth` | `number`                        | widest label | Width of the label column (default layout only).                                                                                                   |
+| `render`     | `(item, active, ctx) => string` | —            | Per-row renderer. When set, items don't have to be `MenuItem`-shaped. Menu clips/pads to width and still applies `menuActive` on the selected row. |
 
 ## Events
 
-| event    | payload | when |
-|----------|---------|------|
-| `select` | `T`     | User picks the active item. |
+| event    | payload | when                                |
+| -------- | ------- | ----------------------------------- |
+| `select` | `T`     | User picks the active item.         |
 | `cancel` | —       | User presses `esc` (`menu.cancel`). |
 
 ## Actions
 
-| id | default keys | description |
-|----|--------------|-------------|
-| `menu.next` / `menu.prev` | `down` / `up`, `ctrl-n` / `ctrl-p` | Wrap at the ends. |
-| `menu.first` / `menu.last` | `home` / `end` | |
-| `menu.select` | `enter`, `tab` | Emit `select` with the active item. |
-| `menu.cancel` | `esc` | Emit `cancel`. |
+| id                         | default keys                       | description                         |
+| -------------------------- | ---------------------------------- | ----------------------------------- |
+| `menu.next` / `menu.prev`  | `down` / `up`, `ctrl-n` / `ctrl-p` | Wrap at the ends.                   |
+| `menu.first` / `menu.last` | `home` / `end`                     |                                     |
+| `menu.select`              | `enter`, `tab`                     | Emit `select` with the active item. |
+| `menu.cancel`              | `esc`                              | Emit `cancel`.                      |
 
 ## Theming
 

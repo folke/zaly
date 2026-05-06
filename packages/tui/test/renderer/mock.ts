@@ -11,10 +11,7 @@ import { InputRouter } from "../../src/input/router.ts"
  * + `InputRouter` are wired so `node.focus()` and `ctx.actions.*`
  * work as they would under a live Renderer.
  */
-export function mockMountCtx(
-  surface: Surface = "stream",
-  overrides?: Partial<MountCtx>,
-): MountCtx {
+export function mockMountCtx(surface: Surface = "stream", overrides?: Partial<MountCtx>): MountCtx {
   const router = new InputRouter()
   const actions = new Actions()
   actions.setTargetResolver(() => router.focused)

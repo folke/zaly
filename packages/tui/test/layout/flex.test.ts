@@ -43,9 +43,9 @@ describe("allocateRow", () => {
   })
 
   test("natural basis is used when no fixed width is given", () => {
-    expect(
-      allocateRow([{ natural: 3 }, { natural: 5 }], { contentWidth: 20, gap: 0 })
-    ).toEqual([3, 5])
+    expect(allocateRow([{ natural: 3 }, { natural: 5 }], { contentWidth: 20, gap: 0 })).toEqual([
+      3, 5,
+    ])
   })
 
   test("flexGrow absorbs slack on top of natural basis", () => {

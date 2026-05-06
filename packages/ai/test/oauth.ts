@@ -12,7 +12,6 @@
  */
 
 import { createServer } from "node:http"
-
 import { oauthErrorPage, oauthSuccessPage } from "../src/auth/oauth-page.ts"
 
 const PORT = 1455

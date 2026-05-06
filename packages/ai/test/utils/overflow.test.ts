@@ -15,7 +15,8 @@ describe("isContextOverflow — message patterns", () => {
   test("OpenAI / OpenRouter: exceeds the context window", () => {
     expect(
       isContextOverflow({
-        message: "This model's maximum context length is 128000 tokens. Your input exceeds the context window.",
+        message:
+          "This model's maximum context length is 128000 tokens. Your input exceeds the context window.",
       })
     ).toBe(true)
   })
@@ -37,7 +38,8 @@ describe("isContextOverflow — message patterns", () => {
   test("Mistral", () => {
     expect(
       isContextOverflow({
-        message: "Prompt contains 40000 tokens ... too large for model with 32000 maximum context length",
+        message:
+          "Prompt contains 40000 tokens ... too large for model with 32000 maximum context length",
       })
     ).toBe(true)
   })
@@ -56,16 +58,16 @@ describe("isContextOverflow — message patterns", () => {
     expect(isContextOverflow({ message: "exceeds the available context size" })).toBe(true)
     expect(isContextOverflow({ message: "greater than the context length" })).toBe(true)
     expect(
-      isContextOverflow({ message: "prompt too long: 200000 tokens exceeded max context length of 128000" })
+      isContextOverflow({
+        message: "prompt too long: 200000 tokens exceeded max context length of 128000",
+      })
     ).toBe(true)
   })
 
   test("rate-limit messages are excluded", () => {
     expect(isContextOverflow({ message: "rate limit exceeded, please retry" })).toBe(false)
     expect(isContextOverflow({ message: "429: Too Many Requests" })).toBe(false)
-    expect(
-      isContextOverflow({ message: "Throttling error: rate of calls exceeded" })
-    ).toBe(false)
+    expect(isContextOverflow({ message: "Throttling error: rate of calls exceeded" })).toBe(false)
   })
 
   test("unrelated errors are not flagged", () => {

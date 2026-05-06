@@ -1,6 +1,6 @@
 # overlay
 
-A [`box`](./box) that the overlay surface paints at an absolute position *after* stream and UI have drawn. Never part of either surface's layout — rows go straight to the terminal at `(y, x)`.
+A [`box`](./box) that the overlay surface paints at an absolute position _after_ stream and UI have drawn. Never part of either surface's layout — rows go straight to the terminal at `(y, x)`.
 
 ## Example
 
@@ -9,7 +9,7 @@ import { overlay, text } from "@zaly/tui"
 
 const modal = overlay(
   { x: 10, y: 4, border: "rounded", padding: 1, borderTitle: "Confirm" },
-  text("Continue? (y/n)"),
+  text("Continue? (y/n)")
 )
 
 renderer.overlay.open(modal)
@@ -23,11 +23,11 @@ modal.close()
 
 All [`box`](./box) fields plus:
 
-| field    | type     | default | description |
-|----------|----------|---------|-------------|
+| field    | type     | default | description                                 |
+| -------- | -------- | ------- | ------------------------------------------- |
 | `x`      | `number` | —       | Absolute column (1-based) of the left edge. |
-| `y`      | `number` | —       | Absolute row (1-based) of the top edge. |
-| `zIndex` | `number` | `0`     | Higher paints on top. |
+| `y`      | `number` | —       | Absolute row (1-based) of the top edge.     |
+| `zIndex` | `number` | `0`     | Higher paints on top.                       |
 
 ## Lifecycle
 

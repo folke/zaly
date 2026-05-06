@@ -25,11 +25,15 @@ Any phase can mark the event consumed via `ev.stop()`. Phase 1 is where widgets 
 ```ts
 class MyWidget extends Node {
   override actions = {
-    "my.do": (): void => { /* ... */ },
+    "my.do": (): void => {
+      /* ... */
+    },
     "my.undo": {
       desc: "undo last action",
       keys: ["ctrl-z"],
-      fn: (): void => { /* ... */ },
+      fn: (): void => {
+        /* ... */
+      },
     },
   }
 }
@@ -50,7 +54,9 @@ renderer.actions.register({
     name: "commit",
     desc: "commit changes",
     keys: ["ctrl-s"],
-    fn: (ctx) => { /* ... */ },
+    fn: (ctx) => {
+      /* ... */
+    },
   },
 })
 ```
@@ -75,7 +81,7 @@ For quick one-offs where a named action would be overkill:
 ```ts
 const unbind = renderer.bind("ctrl-s", () => {
   save()
-  return true   // consume
+  return true // consume
 })
 ```
 
@@ -103,7 +109,7 @@ import { clipboard } from "@zaly/tui"
 // Read the richest content the OS has. Returns undefined when the
 // clipboard isn't reachable.
 const content = await clipboard.read()
-if (content?.kind === "text")  console.log(content.text)
+if (content?.kind === "text") console.log(content.text)
 if (content?.kind === "image") console.log("image at", content.path)
 if (content?.kind === "files") console.log("files:", content.paths)
 
@@ -121,11 +127,11 @@ clipboard.reset()
 
 `clipboard.read()` returns a discriminated union so listeners can pattern-match without parsing MIME strings:
 
-| kind     | payload | notes |
-|----------|---------|-------|
-| `text`   | `{ text: string }` | The common case. |
-| `image`  | `{ path: string, type: "image/png" }` | Image bytes written to a temp PNG — the caller takes ownership. |
-| `files`  | `{ paths: string[] }` | Real filesystem paths, e.g. from a file manager copy. |
+| kind    | payload                               | notes                                                           |
+| ------- | ------------------------------------- | --------------------------------------------------------------- |
+| `text`  | `{ text: string }`                    | The common case.                                                |
+| `image` | `{ path: string, type: "image/png" }` | Image bytes written to a temp PNG — the caller takes ownership. |
+| `files` | `{ paths: string[] }`                 | Real filesystem paths, e.g. from a file manager copy.           |
 
 ### Provider detection
 
@@ -151,11 +157,10 @@ Under SSH, `clipboard.write(text)` uses **OSC 52** instead of a native tool so t
 When the clipboard holds an image or file references, the [`input`](../widgets/input) widget's `input.paste` action doesn't try to stuff binary data into the buffer. Instead it emits an `attach` event with a discriminated payload — listeners decide how to handle it (upload, embed, render inline, …):
 
 ```ts
-input({ placeholder: "…" })
-  .on("attach", (att) => {
-    if (att.kind === "image") stream.append(image(att.path))
-    if (att.kind === "file")  stream.append(markdown(`*attached:* \`${att.path}\``))
-  })
+input({ placeholder: "…" }).on("attach", (att) => {
+  if (att.kind === "image") stream.append(image(att.path))
+  if (att.kind === "file") stream.append(markdown(`*attached:* \`${att.path}\``))
+})
 ```
 
 Plain text pastes get inlined at the cursor as usual.

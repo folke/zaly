@@ -18,13 +18,13 @@ code({
 
 ## State
 
-| field     | type      | default | description |
-|-----------|-----------|---------|-------------|
-| `code`    | `string`  | —       | Source to render. |
-| `lang`    | `string`  | —       | Any shiki-bundled language name (`typescript`, `python`, `bash`, …). |
-| `title`   | `string`  | —       | Title line shown above the block. May contain ANSI. |
-| `syntax`  | `boolean` | `true`  | Set `false` to disable highlighting even when `lang` is set. |
-| `width`, `wrap`, `fg`, `bg`, … | — | — | All [`text`](./text) style fields flow through. |
+| field                          | type      | default | description                                                          |
+| ------------------------------ | --------- | ------- | -------------------------------------------------------------------- |
+| `code`                         | `string`  | —       | Source to render.                                                    |
+| `lang`                         | `string`  | —       | Any shiki-bundled language name (`typescript`, `python`, `bash`, …). |
+| `title`                        | `string`  | —       | Title line shown above the block. May contain ANSI.                  |
+| `syntax`                       | `boolean` | `true`  | Set `false` to disable highlighting even when `lang` is set.         |
+| `width`, `wrap`, `fg`, `bg`, … | —         | —       | All [`text`](./text) style fields flow through.                      |
 
 ## Notes
 

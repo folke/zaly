@@ -10,7 +10,13 @@ import type { FetchLike } from "../../src/utils/retry.ts"
 /** Build a `ProviderRequest` from a flat options shape — convenient for
  *  tests that don't care about the `ctx` / `opts` split. */
 export function streamReq(
-  flat: { model: string; messages: Message[]; prompt?: string[]; tools?: Tool[]; quirks?: Quirks } & StreamOptions
+  flat: {
+    model: string
+    messages: Message[]
+    prompt?: string[]
+    tools?: Tool[]
+    quirks?: Quirks
+  } & StreamOptions
 ): ProviderRequest {
   const { model, messages, prompt, tools, quirks, ...opts } = flat
   return { ctx: { messages, prompt, tools }, model, opts, quirks }

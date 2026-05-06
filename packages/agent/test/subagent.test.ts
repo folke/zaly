@@ -32,10 +32,10 @@ const ctxFor = (parent: Agent): ToolContext => ({ agent: parent })
 describe("subagent tool", () => {
   test("happy path: spawns child, returns final assistant text", async () => {
     const parent = await buildParent([okStop("the answer is 42")])
-    const s = await subagentTool.call(
+    const s = (await subagentTool.call(
       { description: "answer the question", prompt: "you are a helper", task: "what's 6*7?" },
       ctxFor(parent)
-    ) as Streamable
+    )) as Streamable
     const result = await runToCompletion(s)
 
     expect(result.isError).toBe(false)
@@ -57,10 +57,10 @@ describe("subagent tool", () => {
 
   test("session JSONL file is written and contains the child's messages", async () => {
     const parent = await buildParent([okStop("hello from child")])
-    const s = await subagentTool.call(
+    const s = (await subagentTool.call(
       { description: "test session persistence", prompt: "p", task: "hi" },
       ctxFor(parent)
-    ) as Streamable
+    )) as Streamable
     const result = await runToCompletion(s)
 
     if (typeof result.content === "string") throw new Error("expected parts")
@@ -94,10 +94,10 @@ describe("subagent tool", () => {
     // hook, so verify behaviorally: the child still completes and depth
     // lands correctly. Tool-filtering logic is exercised directly in the
     // depth-limit describe below.
-    const s = await subagentTool.call(
+    const s = (await subagentTool.call(
       { description: "x", prompt: "p", task: "go" },
       { agent: parent }
-    ) as Streamable
+    )) as Streamable
     const result = await runToCompletion(s)
     if (typeof result.content === "string") throw new Error("expected parts")
     const meta = result.content.find((p): p is MetaPart => p.type === "meta")
@@ -127,10 +127,10 @@ describe("subagent tool", () => {
 
   test("hasNew() reflects pending text delta cursor", async () => {
     const parent = await buildParent([okStop("incremental")])
-    const s = await subagentTool.call(
+    const s = (await subagentTool.call(
       { description: "x", prompt: "p", task: "t" },
       ctxFor(parent)
-    ) as Streamable
+    )) as Streamable
     await s.done
     // After done, the buffer is fully consumed. hasNew() should now be
     // false since `poll()` from runToCompletion would have advanced cursor
@@ -153,10 +153,10 @@ describe("subagent tool — depth limit", () => {
       model: mockModel([okStop("done")]),
       tools: [subagentTool],
     })
-    const s = await subagentTool.call(
+    const s = (await subagentTool.call(
       { description: "x", prompt: "p", task: "t" },
       { agent: parent }
-    ) as Streamable
+    )) as Streamable
     const result = await runToCompletion(s)
     if (typeof result.content === "string") throw new Error("expected parts")
     const meta = result.content.find((p): p is MetaPart => p.type === "meta")

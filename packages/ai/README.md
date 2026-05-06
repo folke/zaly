@@ -33,15 +33,21 @@ for (;;) {
   messages.push(message)
 
   const calls = (Array.isArray(message.content) ? message.content : []).filter(
-    (p): p is ToolCallPart => p.type === "tool-call",
+    (p): p is ToolCallPart => p.type === "tool-call"
   )
   if (calls.length === 0) break
 
   const results = await Promise.all(
     calls.map(async (c) => {
       const r = await runTool(multiply, c.params)
-      return { id: c.id, isError: r.isError, name: c.name, result: r.result, type: "tool-result" as const }
-    }),
+      return {
+        id: c.id,
+        isError: r.isError,
+        name: c.name,
+        result: r.result,
+        type: "tool-result" as const,
+      }
+    })
   )
   messages.push({ content: results, role: "tool" })
 }

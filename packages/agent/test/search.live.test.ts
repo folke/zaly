@@ -24,66 +24,50 @@ const callSearch = async (args: Record<string, unknown>): Promise<Parts> => {
 }
 
 describe.skipIf(!enabled)("search: live", () => {
-  test(
-    "returns a header MetaPart + per-source MetaPart/TextPart pairs",
-    async () => {
-      const parts = await callSearch({ query: "tallest mountains in the world", count: 3 })
-      expect(parts.length).toBeGreaterThan(0)
+  test("returns a header MetaPart + per-source MetaPart/TextPart pairs", async () => {
+    const parts = await callSearch({ query: "tallest mountains in the world", count: 3 })
+    expect(parts.length).toBeGreaterThan(0)
 
-      // First part is the search-level header.
-      const header = parts[0]
-      expect(header.type).toBe("meta")
-      if (header.type !== "meta") throw new Error("type narrow")
-      expect(header.tag).toBe("search")
-      const headerData = header.data as { count: number; query: string; durationMs: number }
-      expect(headerData.query).toBe("tallest mountains in the world")
-      expect(headerData.count).toBeGreaterThan(0)
-      expect(headerData.durationMs).toBeGreaterThan(0)
+    // First part is the search-level header.
+    const header = parts[0]
+    expect(header.type).toBe("meta")
+    if (header.type !== "meta") throw new Error("type narrow")
+    expect(header.tag).toBe("search")
+    const headerData = header.data as { count: number; query: string; durationMs: number }
+    expect(headerData.query).toBe("tallest mountains in the world")
+    expect(headerData.count).toBeGreaterThan(0)
+    expect(headerData.durationMs).toBeGreaterThan(0)
 
-      // Subsequent parts come in `<source>` meta + text pairs.
-      const sources = parts.filter((p): p is MetaPart => p.type === "meta" && p.tag === "source")
-      expect(sources.length).toBeGreaterThan(0)
-      for (const s of sources) {
-        const data = s.data as { url: string }
-        expect(typeof data.url).toBe("string")
-        expect(data.url).toMatch(/^https?:\/\//)
-      }
-
-      // At least one text part with snippet content.
-      const texts = parts.filter((p): p is TextPart => p.type === "text")
-      expect(texts.length).toBeGreaterThan(0)
-      expect(texts.some((t) => t.text.length > 0)).toBe(true)
-    },
-    30_000
-  )
-
-  test(
-    "respects the count parameter",
-    async () => {
-      const parts = await callSearch({ query: "typescript", count: 2 })
-      const sources = parts.filter((p) => p.type === "meta" && p.tag === "source")
-      // The API may return fewer than `count` if not enough relevant pages
-      // exist, but never more.
-      expect(sources.length).toBeLessThanOrEqual(2)
-    },
-    30_000
-  )
-
-  test(
-    "freshness filter rejected as schema-invalid when not in the enum",
-    () => {
-      expect(() => searchTool.validateParams({ query: "x", freshness: "yesterday" })).toThrow(
-        /❌/
-      )
+    // Subsequent parts come in `<source>` meta + text pairs.
+    const sources = parts.filter((p): p is MetaPart => p.type === "meta" && p.tag === "source")
+    expect(sources.length).toBeGreaterThan(0)
+    for (const s of sources) {
+      const data = s.data as { url: string }
+      expect(typeof data.url).toBe("string")
+      expect(data.url).toMatch(/^https?:\/\//)
     }
-  )
 
-  test(
-    "missing query rejected at validation",
-    () => {
-      expect(() => searchTool.validateParams({})).toThrow(/❌/)
-    }
-  )
+    // At least one text part with snippet content.
+    const texts = parts.filter((p): p is TextPart => p.type === "text")
+    expect(texts.length).toBeGreaterThan(0)
+    expect(texts.some((t) => t.text.length > 0)).toBe(true)
+  }, 30_000)
+
+  test("respects the count parameter", async () => {
+    const parts = await callSearch({ query: "typescript", count: 2 })
+    const sources = parts.filter((p) => p.type === "meta" && p.tag === "source")
+    // The API may return fewer than `count` if not enough relevant pages
+    // exist, but never more.
+    expect(sources.length).toBeLessThanOrEqual(2)
+  }, 30_000)
+
+  test("freshness filter rejected as schema-invalid when not in the enum", () => {
+    expect(() => searchTool.validateParams({ query: "x", freshness: "yesterday" })).toThrow(/❌/)
+  })
+
+  test("missing query rejected at validation", () => {
+    expect(() => searchTool.validateParams({})).toThrow(/❌/)
+  })
 })
 
 describe("search: offline (no API call)", () => {

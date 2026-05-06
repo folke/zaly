@@ -14,13 +14,15 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "be concise", role: "system" },
-          { content: "hi", role: "user" },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "be concise", role: "system" },
+            { content: "hi", role: "user" },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
 
     const body = recorded[0].body as Record<string, unknown>
@@ -36,11 +38,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "hi", role: "user" }],
-        model: "gpt-4o-mini",
-        prompt: ["You are a tutor.", "Always show your work."],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "hi", role: "user" }],
+          model: "gpt-4o-mini",
+          prompt: ["You are a tutor.", "Always show your work."],
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -55,14 +59,16 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "be concise", role: "system" },
-          { content: "hi", role: "user" },
-        ],
-        model: "gpt-4o-mini",
-        prompt: ["You are a tutor."],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "be concise", role: "system" },
+            { content: "hi", role: "user" },
+          ],
+          model: "gpt-4o-mini",
+          prompt: ["You are a tutor."],
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -78,11 +84,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "hi", role: "user" }],
-        model: "gpt-4o-mini",
-        prompt: [],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "hi", role: "user" }],
+          model: "gpt-4o-mini",
+          prompt: [],
+        })
+      )
     )
     const body = recorded[0].body as { messages: unknown[] }
     expect(body.messages).toEqual([{ content: "hi", role: "user" }])
@@ -92,23 +100,25 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { text: "what is this?", type: "text" },
-              {
-                detail: "high",
-                mime: "image/png",
-                source: { data: "iVBORw0K", type: "base64" },
-                type: "image",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { text: "what is this?", type: "text" },
+                {
+                  detail: "high",
+                  mime: "image/png",
+                  source: { data: "iVBORw0K", type: "base64" },
+                  type: "image",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -124,21 +134,23 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              {
-                mime: "image/jpeg",
-                source: { type: "url", url: "https://example.com/cat.jpg" },
-                type: "image",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                {
+                  mime: "image/jpeg",
+                  source: { type: "url", url: "https://example.com/cat.jpg" },
+                  type: "image",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -153,21 +165,23 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              {
-                mime: "audio/mpeg",
-                source: { data: "//uQxAA...", type: "base64" },
-                type: "audio",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "gpt-4o-audio-preview",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                {
+                  mime: "audio/mpeg",
+                  source: { data: "//uQxAA...", type: "base64" },
+                  type: "audio",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-audio-preview",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -179,17 +193,19 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { mime: "audio/wav", source: { data: "RIFF...", type: "base64" }, type: "audio" },
-            ],
-            role: "user",
-          },
-        ],
-        model: "gpt-4o-audio-preview",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { mime: "audio/wav", source: { data: "RIFF...", type: "base64" }, type: "audio" },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-audio-preview",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -202,21 +218,23 @@ describe("openai: request translation", () => {
     const provider = createOpenAI({ apiKey: "test", fetch })
     await expect(
       drain(
-        provider.stream(streamReq({
-          messages: [
-            {
-              content: [
-                {
-                  mime: "audio/mpeg",
-                  source: { type: "url", url: "https://example.com/x.mp3" },
-                  type: "audio",
-                },
-              ],
-              role: "user",
-            },
-          ],
-          model: "gpt-4o-audio-preview",
-        }))
+        provider.stream(
+          streamReq({
+            messages: [
+              {
+                content: [
+                  {
+                    mime: "audio/mpeg",
+                    source: { type: "url", url: "https://example.com/x.mp3" },
+                    type: "audio",
+                  },
+                ],
+                role: "user",
+              },
+            ],
+            model: "gpt-4o-audio-preview",
+          })
+        )
       )
     ).rejects.toThrow(/base64 source/)
   })
@@ -225,18 +243,20 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { text: "first ", type: "text" },
-              { text: "second", type: "text" },
-            ],
-            role: "user",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { text: "first ", type: "text" },
+                { text: "second", type: "text" },
+              ],
+              role: "user",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -262,10 +282,12 @@ describe("openai: request translation", () => {
       role: "assistant",
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }, asst, { content: "y", role: "user" }],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }, asst, { content: "y", role: "user" }],
+          model: "gpt-4o-mini",
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -291,19 +313,21 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [
-              { text: "thinking…", type: "reasoning" },
-              { text: "answer", type: "text" },
-            ],
-            role: "assistant",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [
+                { text: "thinking…", type: "reasoning" },
+                { text: "answer", type: "text" },
+              ],
+              role: "assistant",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -314,22 +338,24 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [{ params: {}, id: "c1", name: "get_weather", type: "tool-call" }],
-            role: "assistant",
-          },
-          {
-            content: [
-              { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
-            ],
-            role: "tool",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "get_weather", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [
+                { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
+              ],
+              role: "tool",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
 
     const body = recorded[0].body as { messages: unknown[] }
@@ -344,36 +370,38 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
-            role: "assistant",
-          },
-          {
-            content: [
-              {
-                content: [
-                  { text: "screenshot:", type: "text" },
-                  {
-                    mime: "image/png",
-                    source: { data: "iVBORw0K", type: "base64" },
-                    type: "image",
-                  },
-                ],
-                id: "c1",
-                name: "shot",
-                type: "tool-result",
-              },
-            ],
-            role: "tool",
-          },
-        ],
-        model: "gpt-4o-mini",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [
+                {
+                  content: [
+                    { text: "screenshot:", type: "text" },
+                    {
+                      mime: "image/png",
+                      source: { data: "iVBORw0K", type: "base64" },
+                      type: "image",
+                    },
+                  ],
+                  id: "c1",
+                  name: "shot",
+                  type: "tool-result",
+                },
+              ],
+              role: "tool",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
     )
-    const body = recorded[0].body as { messages: ({ role: string; content: unknown })[] }
+    const body = recorded[0].body as { messages: { role: string; content: unknown }[] }
     // Tool message: stringified text body + marker; attachments not embedded.
     expect(body.messages[2]).toMatchObject({
       role: "tool",
@@ -383,9 +411,7 @@ describe("openai: request translation", () => {
     expect(body.messages[2].content).toMatch(/attachments delivered/)
     // Synthetic user message right after, carrying the image part.
     expect(body.messages[3]).toEqual({
-      content: [
-        { image_url: { url: "data:image/png;base64,iVBORw0K" }, type: "image_url" },
-      ],
+      content: [{ image_url: { url: "data:image/png;base64,iVBORw0K" }, type: "image_url" }],
       role: "user",
     })
   })
@@ -401,11 +427,13 @@ describe("openai: request translation", () => {
       validateParams: (x) => x,
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "gpt-4o-mini",
-        tools: [tool],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "gpt-4o-mini",
+          tools: [tool],
+        })
+      )
     )
 
     const body = recorded[0].body as { tools?: unknown[] }
@@ -431,12 +459,14 @@ describe("openai: request translation", () => {
       validateParams: (x) => x,
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        toolChoice: "required",
-        tools: [tool],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          toolChoice: "required",
+          tools: [tool],
+        })
+      )
     )
     expect((recorded[0].body as { tool_choice?: unknown }).tool_choice).toBe("required")
   })
@@ -451,12 +481,14 @@ describe("openai: request translation", () => {
       validateParams: (x) => x,
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        toolChoice: { name: "t" },
-        tools: [tool],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          toolChoice: { name: "t" },
+          tools: [tool],
+        })
+      )
     )
     expect((recorded[0].body as { tool_choice?: unknown }).tool_choice).toEqual({
       function: { name: "t" },
@@ -474,12 +506,14 @@ describe("openai: request translation", () => {
       validateParams: (x) => x,
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        strictTools: true,
-        tools: [tool],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          strictTools: true,
+          tools: [tool],
+        })
+      )
     )
 
     const body = recorded[0].body as { tools: [{ function: { strict?: boolean } }] }
@@ -490,11 +524,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "gpt-5",
-        reasoning: { effort: "high" },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "gpt-5",
+          reasoning: { effort: "high" },
+        })
+      )
     )
     expect((recorded[0].body as { reasoning_effort?: unknown }).reasoning_effort).toBe("high")
   })
@@ -503,11 +539,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "gpt-5",
-        reasoning: { effort: "off" },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "gpt-5",
+          reasoning: { effort: "off" },
+        })
+      )
     )
     expect((recorded[0].body as { reasoning_effort?: unknown }).reasoning_effort).toBeUndefined()
   })
@@ -516,11 +554,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "gpt-5",
-        reasoning: { effort: "xhigh" },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "gpt-5",
+          reasoning: { effort: "xhigh" },
+        })
+      )
     )
     expect((recorded[0].body as { reasoning_effort?: unknown }).reasoning_effort).toBe("high")
   })
@@ -529,11 +569,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        responseFormat: { type: "json" },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          responseFormat: { type: "json" },
+        })
+      )
     )
     expect((recorded[0].body as { response_format?: unknown }).response_format).toEqual({
       type: "json_object",
@@ -544,16 +586,18 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        responseFormat: {
-          name: "Person",
-          schema: { properties: { name: { type: "string" } }, type: "object" },
-          strict: true,
-          type: "json_schema",
-        },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          responseFormat: {
+            name: "Person",
+            schema: { properties: { name: { type: "string" } }, type: "object" },
+            strict: true,
+            type: "json_schema",
+          },
+        })
+      )
     )
     expect((recorded[0].body as { response_format?: unknown }).response_format).toEqual({
       json_schema: {
@@ -569,18 +613,20 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        providerOptions: {
-          openai: {
-            parallelToolCalls: false,
-            seed: 42,
-            serviceTier: "priority",
-            user: "u-123",
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          providerOptions: {
+            openai: {
+              parallelToolCalls: false,
+              seed: 42,
+              serviceTier: "priority",
+              user: "u-123",
+            },
           },
-        },
-      }))
+        })
+      )
     )
     const body = recorded[0].body as Record<string, unknown>
     expect(body.parallel_tool_calls).toBe(false)
@@ -593,11 +639,13 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        maxTokens: 123,
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          maxTokens: 123,
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as Record<string, unknown>
     expect(body.max_tokens).toBe(123)
@@ -608,12 +656,14 @@ describe("openai: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        maxTokens: 123,
-        messages: [{ content: "x", role: "user" }],
-        model: "gpt-5",
-        quirks: { maxTokensField: "max_completion_tokens" },
-      }))
+      provider.stream(
+        streamReq({
+          maxTokens: 123,
+          messages: [{ content: "x", role: "user" }],
+          model: "gpt-5",
+          quirks: { maxTokensField: "max_completion_tokens" },
+        })
+      )
     )
     const body = recorded[0].body as Record<string, unknown>
     expect(body.max_completion_tokens).toBe(123)
@@ -627,7 +677,9 @@ describe("openai: request translation", () => {
       fetch,
       headers: { "X-Stainless": "zaly" },
     })
-    await drain(provider.stream(streamReq({ messages: [{ content: "x", role: "user" }], model: "m" })))
+    await drain(
+      provider.stream(streamReq({ messages: [{ content: "x", role: "user" }], model: "m" }))
+    )
 
     expect(recorded[0].headers.authorization).toBe("Bearer secret")
     expect(recorded[0].headers["x-stainless"]).toBe("zaly")

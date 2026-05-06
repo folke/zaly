@@ -12,17 +12,17 @@ spinner({ color: "accent" })
 // Toggleable via a signal — no manual timers.
 const [running, setRunning] = signal(true)
 spinner({ running, frames: "dots" })
-setRunning(false)   // stops without tearing down
+setRunning(false) // stops without tearing down
 ```
 
 ## State
 
-| field     | type     | default    | description |
-|-----------|----------|------------|-------------|
-| `frames`  | `"arrow" \| "bouncingBar" \| "circle" \| "dots" \| "line" \| readonly string[]` | `"dots"` | Built-in frame set name or a custom array. |
-| `speed`   | `number` | `80`       | Milliseconds per frame. |
-| `color`   | `Color`  | `"primary"`| Theme slot or explicit color. |
-| `running` | `Reactive<boolean>` | `true` | When `false`, the interval stops and the current frame stays on screen. |
+| field     | type                                                                            | default     | description                                                             |
+| --------- | ------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------- |
+| `frames`  | `"arrow" \| "bouncingBar" \| "circle" \| "dots" \| "line" \| readonly string[]` | `"dots"`    | Built-in frame set name or a custom array.                              |
+| `speed`   | `number`                                                                        | `80`        | Milliseconds per frame.                                                 |
+| `color`   | `Color`                                                                         | `"primary"` | Theme slot or explicit color.                                           |
+| `running` | `Reactive<boolean>`                                                             | `true`      | When `false`, the interval stops and the current frame stays on screen. |
 
 ## Notes
 

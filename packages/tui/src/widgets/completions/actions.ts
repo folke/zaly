@@ -26,16 +26,9 @@ const defaultRender: MenuRender<ActionCompletionItem> = (item, _active, ctx) => 
   const gap = 2
   // Label column: widest name wins; capped at half width so a long
   // name doesn't crowd out the hint. Hint fills the remainder.
-  const labelW = Math.min(
-    Math.max(stringWidth(name), 10),
-    Math.floor(ctx.width / 2),
-  )
+  const labelW = Math.min(Math.max(stringWidth(name), 10), Math.floor(ctx.width / 2))
   const pad = Math.max(0, labelW - stringWidth(name))
-  return (
-    ctx.style.add("menuLabel")(name) +
-    " ".repeat(pad + gap) +
-    ctx.style.add("menuHint")(desc)
-  )
+  return ctx.style.add("menuLabel")(name) + " ".repeat(pad + gap) + ctx.style.add("menuHint")(desc)
 }
 
 /**
@@ -54,9 +47,7 @@ const defaultRender: MenuRender<ActionCompletionItem> = (item, _active, ctx) => 
  * })
  * ```
  */
-export function actionsSource(
-  opts: ActionsSourceOptions,
-): CompletionSource<ActionCompletionItem> {
+export function actionsSource(opts: ActionsSourceOptions): CompletionSource<ActionCompletionItem> {
   const trigger = opts.trigger ?? /^\s*\//
   const filter = opts.filter ?? ((_id, info): boolean => !info.hidden)
 

@@ -35,7 +35,7 @@ renderer.overlay.open(panel)
 renderer.overlay.close(panel)
 ```
 
-Absolute-positioned floating panels. Painted *after* stream + UI, at `(y, x)` via direct cursor moves.
+Absolute-positioned floating panels. Painted _after_ stream + UI, at `(y, x)` via direct cursor moves.
 
 - **Not part of scroll geometry.** Overlays never ride in `DECSTBM`; they just paint over whatever the other surfaces drew.
 - **Scrollback safety.** Rows covered by an overlay are marked stale in the stream's mirror — when the stream next grows via `\n`-at-`scrollBottom`, it rewrites those rows first so overlay bytes don't leak into scrollback.

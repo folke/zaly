@@ -40,9 +40,9 @@ r.ui.add(
           if (value.trim() === "") return
           r.stream.append(markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
-        }),
-    ),
-  ),
+        })
+    )
+  )
 )
 
 r.start()
@@ -54,11 +54,11 @@ That's a full echo chat. The `stream` holds history (grows upward into scrollbac
 
 Every renderer gives you three surfaces for different rendering needs:
 
-| surface   | lives in            | scrolls | typical use              |
-| --------- | ------------------- | ------- | ------------------------ |
-| `stream`  | scroll region       | yes     | agent output, logs       |
+| surface   | lives in             | scrolls | typical use              |
+| --------- | -------------------- | ------- | ------------------------ |
+| `stream`  | scroll region        | yes     | agent output, logs       |
 | `ui`      | reserved bottom rows | no      | input, status, chrome    |
-| `overlay` | absolute position   | no      | modals, tooltips, toasts |
+| `overlay` | absolute position    | no      | modals, tooltips, toasts |
 
 See the [Surfaces](./surfaces) guide for the details.
 

@@ -41,9 +41,7 @@ describe("safeAsyncFn", () => {
 
 describe("hash", () => {
   test("known sha256 of empty string", () => {
-    expect(hash("", 64)).toBe(
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    )
+    expect(hash("", 64)).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
   })
   test("string and equivalent bytes hash identically", () => {
     expect(hash("abc")).toBe(hash(new TextEncoder().encode("abc")))

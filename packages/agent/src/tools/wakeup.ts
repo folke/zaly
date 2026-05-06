@@ -54,14 +54,13 @@ export const wakeupTool = defineTool({
     "without anything else waking the loop (task completion, heartbeat, " +
     "user message), you'll receive a system message with the optional " +
     "`hint`. If something else wakes the loop first, the wakeup is " +
-    "cancelled — its hint still surfaces (with `status=\"cancelled\"`) so " +
+    'cancelled — its hint still surfaces (with `status="cancelled"`) so ' +
     "your reminder doesn't evaporate. Useful for polling external state " +
     "or scheduling a return to a thought.",
   parallel: true,
   params: Type.Object({
     delayMs: Type.Integer({
-      description:
-        "How long to wait before waking up, in milliseconds. Minimum 1.",
+      description: "How long to wait before waking up, in milliseconds. Minimum 1.",
       minimum: 1,
     }),
     hint: Type.Optional(
@@ -79,8 +78,7 @@ export const wakeupTool = defineTool({
     if (!ctx.agent) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
-        message:
-          "wakeup requires an Agent reference on the context (set up by the agent harness).",
+        message: "wakeup requires an Agent reference on the context (set up by the agent harness).",
       })
     }
     const id = ctx.agent.scheduleWakeup({ delayMs: args.delayMs, hint: args.hint })

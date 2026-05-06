@@ -83,7 +83,17 @@ describe("LoggerBase", () => {
       "error",
       "fatal",
     ])
-    expect(calls.map((c) => c[1])).toEqual([["t"], ["d"], ["lg"], ["i"], ["s"], ["c"], ["w"], ["e"], ["f"]])
+    expect(calls.map((c) => c[1])).toEqual([
+      ["t"],
+      ["d"],
+      ["lg"],
+      ["i"],
+      ["s"],
+      ["c"],
+      ["w"],
+      ["e"],
+      ["f"],
+    ])
   })
 
   test("forwards all args", () => {

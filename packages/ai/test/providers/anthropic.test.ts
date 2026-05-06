@@ -17,13 +17,15 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "be concise", role: "system" },
-          { content: "hi", role: "user" },
-        ],
-        model: "claude-sonnet-4-5",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "be concise", role: "system" },
+            { content: "hi", role: "user" },
+          ],
+          model: "claude-sonnet-4-5",
+        })
+      )
     )
 
     const body = recorded[0].body as Record<string, unknown>
@@ -49,10 +51,12 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "hi", role: "user" }],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "hi", role: "user" }],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { max_tokens: number }).max_tokens).toBe(4096)
   })
@@ -61,11 +65,13 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        maxTokens: 256,
-        messages: [{ content: "hi", role: "user" }],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          maxTokens: 256,
+          messages: [{ content: "hi", role: "user" }],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { max_tokens: number }).max_tokens).toBe(256)
   })
@@ -74,14 +80,16 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "be concise", role: "system" },
-          { content: "hi", role: "user" },
-        ],
-        model: "m",
-        prompt: ["You are a tutor.", "Always show your work."],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "be concise", role: "system" },
+            { content: "hi", role: "user" },
+          ],
+          model: "m",
+          prompt: ["You are a tutor.", "Always show your work."],
+        })
+      )
     )
     const body = recorded[0].body as { system: unknown; messages: unknown }
     // Only the durable prompt rides in the system slot.
@@ -108,13 +116,15 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { cache: { type: "ephemeral" }, content: "long preamble", role: "system" },
-          { content: "hi", role: "user" },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { cache: { type: "ephemeral" }, content: "long preamble", role: "system" },
+            { content: "hi", role: "user" },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown }[]; system?: unknown }
     expect(body.system).toBeUndefined()
@@ -122,7 +132,11 @@ describe("anthropic: request translation", () => {
     // `role: "user"` block (Anthropic-coalesce). The cache_control marker
     // sits on the last block of the original system-converted message.
     expect(body.messages[0].content).toEqual([
-      { cache_control: { type: "ephemeral" }, text: "<system-reminder>long preamble</system-reminder>", type: "text" },
+      {
+        cache_control: { type: "ephemeral" },
+        text: "<system-reminder>long preamble</system-reminder>",
+        type: "text",
+      },
       { text: "hi", type: "text" },
     ])
   })
@@ -131,22 +145,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { text: "what is this?", type: "text" },
-              {
-                mime: "image/png",
-                source: { data: "iVBORw0K", type: "base64" },
-                type: "image",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { text: "what is this?", type: "text" },
+                {
+                  mime: "image/png",
+                  source: { data: "iVBORw0K", type: "base64" },
+                  type: "image",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -162,21 +178,23 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              {
-                mime: "image/jpeg",
-                source: { type: "url", url: "https://example.com/cat.jpg" },
-                type: "image",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                {
+                  mime: "image/jpeg",
+                  source: { type: "url", url: "https://example.com/cat.jpg" },
+                  type: "image",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -188,22 +206,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            cache: { type: "ephemeral" },
-            content: [
-              {
-                mime: "image/png",
-                source: { data: "iVBORw0K", type: "base64" },
-                type: "image",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              cache: { type: "ephemeral" },
+              content: [
+                {
+                  mime: "image/png",
+                  source: { data: "iVBORw0K", type: "base64" },
+                  type: "image",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: { cache_control?: unknown }[] }[] }
     expect(body.messages[0].content[0].cache_control).toEqual({ type: "ephemeral" })
@@ -213,34 +233,36 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
-            role: "assistant",
-          },
-          {
-            content: [
-              {
-                content: [
-                  { text: "screenshot:", type: "text" },
-                  {
-                    mime: "image/png",
-                    source: { data: "iVBORw0K", type: "base64" },
-                    type: "image",
-                  },
-                ],
-                id: "c1",
-                name: "shot",
-                type: "tool-result",
-              },
-            ],
-            role: "tool",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "shot", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [
+                {
+                  content: [
+                    { text: "screenshot:", type: "text" },
+                    {
+                      mime: "image/png",
+                      source: { data: "iVBORw0K", type: "base64" },
+                      type: "image",
+                    },
+                  ],
+                  id: "c1",
+                  name: "shot",
+                  type: "tool-result",
+                },
+              ],
+              role: "tool",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[2]).toEqual({
@@ -265,22 +287,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { text: "summarize this", type: "text" },
-              {
-                mime: "application/pdf",
-                source: { data: "JVBERi0...", type: "base64" },
-                type: "pdf",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { text: "summarize this", type: "text" },
+                {
+                  mime: "application/pdf",
+                  source: { data: "JVBERi0...", type: "base64" },
+                  type: "pdf",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -296,21 +320,23 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              {
-                mime: "application/pdf",
-                source: { type: "url", url: "https://example.com/paper.pdf" },
-                type: "pdf",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                {
+                  mime: "application/pdf",
+                  source: { type: "url", url: "https://example.com/paper.pdf" },
+                  type: "pdf",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: unknown[] }[] }
     expect(body.messages[0].content).toEqual([
@@ -322,22 +348,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            cache: { type: "ephemeral" },
-            content: [
-              {
-                mime: "application/pdf",
-                source: { data: "JVBERi0...", type: "base64" },
-                type: "pdf",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              cache: { type: "ephemeral" },
+              content: [
+                {
+                  mime: "application/pdf",
+                  source: { data: "JVBERi0...", type: "base64" },
+                  type: "pdf",
+                },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as { messages: { content: { cache_control?: unknown }[] }[] }
     expect(body.messages[0].content[0].cache_control).toEqual({ type: "ephemeral" })
@@ -347,18 +375,20 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            content: [
-              { text: "first ", type: "text" },
-              { text: "second", type: "text" },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              content: [
+                { text: "first ", type: "text" },
+                { text: "second", type: "text" },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { messages: unknown[] }).messages[0]).toEqual({
       content: [
@@ -381,10 +411,12 @@ describe("anthropic: request translation", () => {
       role: "assistant",
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }, asst, { content: "y", role: "user" }],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }, asst, { content: "y", role: "user" }],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { messages: unknown[] }).messages[1]).toEqual({
       content: [
@@ -400,19 +432,21 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [
-              { signature: "sig-abc", text: "hmm", type: "reasoning" },
-              { text: "answer", type: "text" },
-            ],
-            role: "assistant",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [
+                { signature: "sig-abc", text: "hmm", type: "reasoning" },
+                { text: "answer", type: "text" },
+              ],
+              role: "assistant",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { messages: unknown[] }).messages[1]).toEqual({
       content: [
@@ -427,22 +461,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [{ params: {}, id: "c1", name: "get_weather", type: "tool-call" }],
-            role: "assistant",
-          },
-          {
-            content: [
-              { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
-            ],
-            role: "tool",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "get_weather", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [
+                { content: '{"temp":18}', id: "c1", name: "get_weather", type: "tool-result" },
+              ],
+              role: "tool",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     expect((recorded[0].body as { messages: unknown[] }).messages[2]).toEqual({
       content: [{ content: '{"temp":18}', tool_use_id: "c1", type: "tool_result" }],
@@ -454,27 +490,29 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [
-              { params: {}, id: "c1", name: "a", type: "tool-call" },
-              { params: {}, id: "c2", name: "b", type: "tool-call" },
-            ],
-            role: "assistant",
-          },
-          {
-            content: [{ content: "1", id: "c1", name: "a", type: "tool-result" }],
-            role: "tool",
-          },
-          {
-            content: [{ content: "2", id: "c2", name: "b", type: "tool-result" }],
-            role: "tool",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [
+                { params: {}, id: "c1", name: "a", type: "tool-call" },
+                { params: {}, id: "c2", name: "b", type: "tool-call" },
+              ],
+              role: "assistant",
+            },
+            {
+              content: [{ content: "1", id: "c1", name: "a", type: "tool-result" }],
+              role: "tool",
+            },
+            {
+              content: [{ content: "2", id: "c2", name: "b", type: "tool-result" }],
+              role: "tool",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const messages = (recorded[0].body as { messages: { role: string; content: unknown[] }[] })
       .messages
@@ -492,20 +530,24 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { content: "x", role: "user" },
-          {
-            content: [{ params: {}, id: "c1", name: "t", type: "tool-call" }],
-            role: "assistant",
-          },
-          {
-            content: [{ content: "boom", id: "c1", isError: true, name: "t", type: "tool-result" }],
-            role: "tool",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "t", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [
+                { content: "boom", id: "c1", isError: true, name: "t", type: "tool-result" },
+              ],
+              role: "tool",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     const result = (recorded[0].body as { messages: { content: unknown[] }[] }).messages[2]
       .content[0] as { is_error?: boolean }
@@ -516,19 +558,21 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          {
-            cache: { type: "ephemeral" },
-            content: [
-              { text: "a", type: "text" },
-              { text: "b", type: "text" },
-            ],
-            role: "user",
-          },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            {
+              cache: { type: "ephemeral" },
+              content: [
+                { text: "a", type: "text" },
+                { text: "b", type: "text" },
+              ],
+              role: "user",
+            },
+          ],
+          model: "m",
+        })
+      )
     )
     expect(
       (recorded[0].body as { messages: { content: unknown[] }[] }).messages[0].content
@@ -542,13 +586,15 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", caching: false, fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [
-          { cache: { type: "ephemeral" }, content: "preamble", role: "system" },
-          { cache: { type: "ephemeral" }, content: "hi", role: "user" },
-        ],
-        model: "m",
-      }))
+      provider.stream(
+        streamReq({
+          messages: [
+            { cache: { type: "ephemeral" }, content: "preamble", role: "system" },
+            { cache: { type: "ephemeral" }, content: "hi", role: "user" },
+          ],
+          model: "m",
+        })
+      )
     )
     const body = recorded[0].body as Record<string, unknown>
     expect(JSON.stringify(body)).not.toContain("cache_control")
@@ -565,11 +611,13 @@ describe("anthropic: request translation", () => {
       validateParams: (x) => x,
     }
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        tools: [tool],
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          tools: [tool],
+        })
+      )
     )
     expect((recorded[0].body as { tools: unknown[] }).tools).toEqual([
       {
@@ -600,12 +648,14 @@ describe("anthropic: request translation", () => {
     }
     for (const c of cases) {
       await drain(
-        provider.stream(streamReq({
-          messages: [{ content: "x", role: "user" }],
-          model: "m",
-          toolChoice: c.input,
-          tools: [tool],
-        }))
+        provider.stream(
+          streamReq({
+            messages: [{ content: "x", role: "user" }],
+            model: "m",
+            toolChoice: c.input,
+            tools: [tool],
+          })
+        )
       )
     }
     for (const [i, c] of cases.entries()) {
@@ -617,12 +667,14 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        maxTokens: 100_000,
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        reasoning: { effort: "high" },
-      }))
+      provider.stream(
+        streamReq({
+          maxTokens: 100_000,
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          reasoning: { effort: "high" },
+        })
+      )
     )
     expect((recorded[0].body as { thinking: unknown }).thinking).toEqual({
       budget_tokens: 16_384,
@@ -634,12 +686,14 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        maxTokens: 100_000,
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        reasoning: { budget: 2048, effort: "low" },
-      }))
+      provider.stream(
+        streamReq({
+          maxTokens: 100_000,
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          reasoning: { budget: 2048, effort: "low" },
+        })
+      )
     )
     expect(
       (recorded[0].body as { thinking: { budget_tokens: number } }).thinking.budget_tokens
@@ -650,11 +704,13 @@ describe("anthropic: request translation", () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
-      provider.stream(streamReq({
-        messages: [{ content: "x", role: "user" }],
-        model: "m",
-        reasoning: { effort: "off" },
-      }))
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "m",
+          reasoning: { effort: "off" },
+        })
+      )
     )
     expect((recorded[0].body as { thinking?: unknown }).thinking).toBeUndefined()
   })
@@ -666,7 +722,9 @@ describe("anthropic: request translation", () => {
       fetch,
       headers: { "X-Stainless": "zaly" },
     })
-    await drain(provider.stream(streamReq({ messages: [{ content: "x", role: "user" }], model: "m" })))
+    await drain(
+      provider.stream(streamReq({ messages: [{ content: "x", role: "user" }], model: "m" }))
+    )
     expect(recorded[0].headers["x-api-key"]).toBe("secret")
     expect(recorded[0].headers["anthropic-version"]).toBe("2023-06-01")
     expect(recorded[0].headers["x-stainless"]).toBe("zaly")

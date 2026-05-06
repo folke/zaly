@@ -27,12 +27,12 @@ const ok = true
 
 ## State
 
-| field     | type        | default | description |
-|-----------|-------------|---------|-------------|
-| `content` | `string`    | —       | Markdown source. Mutating this field re-renders (useful for streamed tokens). |
-| `options` | `MdOptions` | —       | Parser flags passed through to `renderMarkdown`. Mirrors `Bun.markdown.Options`. |
-| `syntax`  | `boolean`   | `true`  | Enable shiki-backed syntax highlighting for fenced code blocks. |
-| `wrap`, `width`, `fg`, … | — | — | [`text`](./text) style fields flow through. |
+| field                    | type        | default | description                                                                      |
+| ------------------------ | ----------- | ------- | -------------------------------------------------------------------------------- |
+| `content`                | `string`    | —       | Markdown source. Mutating this field re-renders (useful for streamed tokens).    |
+| `options`                | `MdOptions` | —       | Parser flags passed through to `renderMarkdown`. Mirrors `Bun.markdown.Options`. |
+| `syntax`                 | `boolean`   | `true`  | Enable shiki-backed syntax highlighting for fenced code blocks.                  |
+| `wrap`, `width`, `fg`, … | —           | —       | [`text`](./text) style fields flow through.                                      |
 
 ## Themed elements
 

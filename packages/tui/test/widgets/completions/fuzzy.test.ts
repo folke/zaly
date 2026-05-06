@@ -16,9 +16,7 @@ describe("fuzzyScore", () => {
   })
 
   test("prefix match scores higher than mid-string", () => {
-    expect(fuzzyScore("wid", "widget.ts")).toBeGreaterThan(
-      fuzzyScore("wid", "some-widget.ts"),
-    )
+    expect(fuzzyScore("wid", "widget.ts")).toBeGreaterThan(fuzzyScore("wid", "some-widget.ts"))
   })
 
   test("contiguous runs score higher than scattered", () => {

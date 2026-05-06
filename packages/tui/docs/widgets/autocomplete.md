@@ -20,18 +20,18 @@ autocomplete({
 
 ## Options
 
-| field       | type                              | default | description |
-|-------------|-----------------------------------|---------|-------------|
-| `input`     | `Input \| string`                 | —       | The bound input. String form resolves through `ctx.getNode(id)` on mount. |
-| `sources`   | `Record<string, CompletionSource>`| —       | Keyed completion sources. First source whose trigger matches and query has no whitespace wins. |
-| `maxHeight` | `number`                          | `8`     | Popup row cap. |
+| field       | type                               | default | description                                                                                    |
+| ----------- | ---------------------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| `input`     | `Input \| string`                  | —       | The bound input. String form resolves through `ctx.getNode(id)` on mount.                      |
+| `sources`   | `Record<string, CompletionSource>` | —       | Keyed completion sources. First source whose trigger matches and query has no whitespace wins. |
+| `maxHeight` | `number`                           | `8`     | Popup row cap.                                                                                 |
 
 ## Events
 
-| event | payload | when |
-|-------|---------|------|
-| `open` / `close` | — | Popup visibility flipped. |
-| `complete` | `[source: string, item: unknown]` | User selected an item. Payload `item` is `unknown` because sources may use different `T` — discriminate by source name. |
+| event            | payload                           | when                                                                                                                    |
+| ---------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `open` / `close` | —                                 | Popup visibility flipped.                                                                                               |
+| `complete`       | `[source: string, item: unknown]` | User selected an item. Payload `item` is `unknown` because sources may use different `T` — discriminate by source name. |
 
 ## CompletionSource
 
@@ -43,17 +43,17 @@ interface CompletionSource<T = MenuItem> {
   render?: MenuRender<T>
 }
 
-type Matcher = (s: string) => number   // 0 = no match, >0 = score
+type Matcher = (s: string) => number // 0 = no match, >0 = score
 ```
 
-- **triggers** — regexes run against text *before the cursor*. Latest matching trigger wins. Use lookbehind (`(?<=^|\s)@`) when you don't want the trigger character itself to be replaced on accept.
+- **triggers** — regexes run against text _before the cursor_. Latest matching trigger wins. Use lookbehind (`(?<=^|\s)@`) when you don't want the trigger character itself to be replaced on accept.
 - **complete** — called when a trigger matches. Receives the raw `query` (text after trigger end, up to cursor) and a `match` helper bound to that query.
 - **accept** — run on selection. Return a string to insert (replacing trigger + query range); return `undefined` to clear the range without inserting (the source handled the action itself, e.g. dispatched a command).
 - **render** — optional per-row renderer, forwarded to the internal Menu. Lets the source carry its own layout when `T` isn't `MenuItem`-shaped.
 
 ### The `match` helper
 
-Sources choose *what* to match against — action id, file basename, contact email, issue title. The widget owns the *algorithm* (default: fuzzy subsequence). Sources call `match(str)` and either filter (`.filter(item => match(item.name))` — zero is falsy) or sort (score is a positive integer when it matches).
+Sources choose _what_ to match against — action id, file basename, contact email, issue title. The widget owns the _algorithm_ (default: fuzzy subsequence). Sources call `match(str)` and either filter (`.filter(item => match(item.name))` — zero is falsy) or sort (score is a positive integer when it matches).
 
 > [!NOTE]
 > Results preserve source order by default — no re-ranking on keystroke. That avoids the menu jumping around as users narrow the filter. Opt into ranking with the `rank()` helper.
@@ -71,7 +71,7 @@ Slash-command completion backed by the `Actions` registry.
 ```ts
 actionsSource({
   actions: renderer.actions,
-  filter: (_id, info) => !info.hidden,   // default
+  filter: (_id, info) => !info.hidden, // default
 })
 ```
 
@@ -86,7 +86,7 @@ File path completion against the filesystem.
 ```ts
 filesSource({
   cwd: process.cwd(),
-  filter: (ent) => !ent.name.startsWith("."),     // default: skip dotfiles
+  filter: (ent) => !ent.name.startsWith("."), // default: skip dotfiles
   limit: 50,
 })
 ```
@@ -100,7 +100,7 @@ Issue / PR completion via the `gh` CLI.
 - `accept` inserts `#123 ` — markdown-ready.
 
 ```ts
-githubSource({ state: "open" })   // default
+githubSource({ state: "open" }) // default
 ```
 
 > [!TIP]

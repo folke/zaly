@@ -130,10 +130,7 @@ export type DetectedBinary = FileData & { type: "binary"; format: "unknown" }
 
 /** All `format` strings reachable from a `DetectedFile` of the given
  *  `type`. Drives the narrow second arg of `isFileFormat`. */
-export type FormatOf<T extends DetectedFile["type"]> = Extract<
-  DetectedFile,
-  { type: T }
->["format"]
+export type FormatOf<T extends DetectedFile["type"]> = Extract<DetectedFile, { type: T }>["format"]
 
 /** Narrow a `DetectedFile` to the variant carrying `type`. Useful for
  *  walking over a heterogeneous list and switching by kind without

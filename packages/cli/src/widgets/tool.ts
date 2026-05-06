@@ -1,11 +1,11 @@
-import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai";
-import type { Accessor } from "@zaly/tui";
-import type { BubbleType } from "./bubble.ts";
+import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { Accessor } from "@zaly/tui"
+import type { BubbleType } from "./bubble.ts"
 
-import { safeParseToolParams } from "@zaly/ai";
-import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui";
-import { bubble } from "./bubble.ts";
-import { toolResult } from "./tools/index.ts";
+import { safeParseToolParams } from "@zaly/ai"
+import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui"
+import { bubble } from "./bubble.ts"
+import { toolResult } from "./tools/index.ts"
 /**
  * Tool-call block: name + intent on top, params preview, then a status
  * line that flips from running to ✓/✗ once the result arrives. The

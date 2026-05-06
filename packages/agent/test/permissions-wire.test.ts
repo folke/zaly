@@ -12,8 +12,8 @@ import type { Agent } from "../src/agent.ts"
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { PermissionManager } from "../src/permissions/index.ts"
 import { toolHandler } from "../src/permissions/handlers/tool.ts"
+import { PermissionManager } from "../src/permissions/index.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
 const noopTool: Tool = defineTool({

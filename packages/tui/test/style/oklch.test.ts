@@ -1,5 +1,4 @@
 import { describe, expect, test } from "vitest"
-
 import { hexToOklch, oklchToHex, STOPS, variant, variants } from "../../src/style/oklch.ts"
 
 // Parse "#rrggbb" into [r,g,b] 0-255 ints.
@@ -47,7 +46,7 @@ describe("variant stops", () => {
   test("L increases monotonically from 950 → 50", () => {
     const p = variants("#82aaff") // tokyonight primary
     const ls = [950, 900, 800, 700, 600, 500, 400, 300, 200, 100, 50].map(
-      (s) => hexToOklch(p[s as keyof typeof STOPS]).L,
+      (s) => hexToOklch(p[s as keyof typeof STOPS]).L
     )
     for (let i = 1; i < ls.length; i++) {
       expect(ls[i]).toBeGreaterThan(ls[i - 1])

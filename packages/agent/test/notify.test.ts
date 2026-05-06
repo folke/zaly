@@ -10,10 +10,12 @@ import { MemoryStore, Session } from "../src/session/index.ts"
 /** Build a minimal Agent stand-in carrying just what `Notifier` reads:
  *  `session`, `notify`, `pressure`, `model`. The notify queue is
  *  exposed for assertions. */
-async function mockAgent(opts: {
-  pressure?: ContextPressure
-  modelId?: string
-} = {}): Promise<{
+async function mockAgent(
+  opts: {
+    pressure?: ContextPressure
+    modelId?: string
+  } = {}
+): Promise<{
   agent: Agent
   notifications: Omit<MetaPart, "type">[]
   session: Session

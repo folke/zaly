@@ -1,10 +1,9 @@
 import type { MetaPart, ToolContext } from "@zaly/ai"
-
 import type { Agent } from "../src/agent.ts"
 
 import { describe, expect, test } from "vitest"
-import { agentSendTool, agentSpawnTool } from "../src/tools/swarm.ts"
 import { Swarm } from "../src/swarm.ts"
+import { agentSendTool, agentSpawnTool } from "../src/tools/swarm.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
 const buildRoot = async (swarm?: Swarm): Promise<Agent> =>
@@ -43,10 +42,7 @@ describe("agent_spawn tool", () => {
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "x", name: "root" })
     const ctx: ToolContext = { agent: root, swarm }
-    await agentSpawnTool.call(
-      { desc: "x", name: "w", prompt: "p", task: "do the thing" },
-      ctx
-    )
+    await agentSpawnTool.call({ desc: "x", name: "w", prompt: "p", task: "do the thing" }, ctx)
     const child = swarm.get("w")!.agent
     const userMsg = child.messages.find((m) => m.role === "user")
     expect(userMsg?.content).toBe("do the thing")
@@ -55,20 +51,14 @@ describe("agent_spawn tool", () => {
   test("MISSING_TOOL_CONTEXT when agent is absent", async () => {
     const swarm = new Swarm()
     await expect(
-      agentSpawnTool.call(
-        { desc: "x", name: "x", prompt: "p" },
-        { swarm } as ToolContext
-      )
+      agentSpawnTool.call({ desc: "x", name: "x", prompt: "p" }, { swarm } as ToolContext)
     ).rejects.toMatchObject({ code: "MISSING_TOOL_CONTEXT" })
   })
 
   test("MISSING_TOOL_CONTEXT when swarm is absent", async () => {
     const root = await buildRoot()
     await expect(
-      agentSpawnTool.call(
-        { desc: "x", name: "x", prompt: "p" },
-        { agent: root } as ToolContext
-      )
+      agentSpawnTool.call({ desc: "x", name: "x", prompt: "p" }, { agent: root } as ToolContext)
     ).rejects.toMatchObject({ code: "MISSING_TOOL_CONTEXT" })
   })
 })
@@ -96,9 +86,9 @@ describe("agent_send tool", () => {
     swarm.attach(root, { desc: "x", name: "root" })
     const ctx: ToolContext = { agent: root, swarm }
 
-    await expect(
-      agentSendTool.call({ content: "x", to: "ghost" }, ctx)
-    ).rejects.toMatchObject({ code: "UNKNOWN_AGENT" })
+    await expect(agentSendTool.call({ content: "x", to: "ghost" }, ctx)).rejects.toMatchObject({
+      code: "UNKNOWN_AGENT",
+    })
   })
 
   test("MISSING_TOOL_CONTEXT when swarm is absent", async () => {

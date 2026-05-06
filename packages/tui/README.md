@@ -21,15 +21,16 @@ import { box, createRenderer, input, markdown, text } from "@zaly/tui"
 const r = createRenderer()
 
 r.ui.add(
-  box({ padding: [0, 1] },
+  box(
+    { padding: [0, 1] },
     text(({ style }) => style.dim("enter to send · ctrl-c to quit")),
     input({ placeholder: "say something…" })
       .focus()
       .on("submit", (value, self) => {
         r.stream.append(markdown(`**you:** ${value}`))
         self.setState({ cursor: 0, value: "" })
-      }),
-  ),
+      })
+  )
 )
 
 r.start()

@@ -1,6 +1,3 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type {
   ContentPart,
   ErrorPart,
@@ -10,6 +7,9 @@ import type {
   TextPart,
 } from "../../src/types.ts"
 
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import {
   attachmentToMeta,
   dropAttachments,

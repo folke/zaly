@@ -34,15 +34,15 @@
     "pathe": "^2.0.3",
     "shell-quote": "^1.8.3"
   },
+  "devDependencies": {
+    "@types/shell-quote": "^1.7.5"
+  },
   "peerDependencies": {
     "typebox": "^1.1.37"
   },
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
-  },
-  "devDependencies": {
-    "@types/shell-quote": "^1.7.5"
   },
   "inlinedDependencies": {
     "pathe": "2.0.3"

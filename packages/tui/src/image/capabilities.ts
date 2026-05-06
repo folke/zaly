@@ -71,7 +71,9 @@ function konsoleVersion(env: Env): number {
 function isWezTerm(env: Env): boolean {
   const tp = env.TERM_PROGRAM?.toLowerCase()
   const lc = env.LC_TERMINAL?.toLowerCase()
-  return Boolean(env.WEZTERM_PANE ?? env.WEZTERM_UNIX_SOCKET) || tp === "wezterm" || lc === "wezterm"
+  return (
+    Boolean(env.WEZTERM_PANE ?? env.WEZTERM_UNIX_SOCKET) || tp === "wezterm" || lc === "wezterm"
+  )
 }
 
 function supportsKitty(env: Env): boolean {

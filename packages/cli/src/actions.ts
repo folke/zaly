@@ -87,7 +87,9 @@ async function runCodexLogin(): Promise<void> {
   console.log("[login] starting OpenAI Codex (ChatGPT) authorization…")
   const creds = await loginCodex({
     onAuthUrl: ({ url }) => {
-      console.log(`[login] open this URL in your browser if it doesn't open automatically:\n  ${url}`)
+      console.log(
+        `[login] open this URL in your browser if it doesn't open automatically:\n  ${url}`
+      )
       openBrowser(url)
     },
     onProgress: (message) => {

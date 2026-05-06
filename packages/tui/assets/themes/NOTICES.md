@@ -25,21 +25,21 @@ directly from the source project via `scripts/build-themes.ts`.
 > file, per Apache §4.a (copy of the License must accompany the
 > Work). Copyright © Folke Lemaitre.
 
-| Theme | Upstream | Author(s) | License | Via |
-|---|---|---|---|---|
-| `tokyonight-day` | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Folke Lemaitre | Apache-2.0 | `build-themes.ts` |
-| `tokyonight-moon` | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Folke Lemaitre | Apache-2.0 | `build-themes.ts` |
-| `tokyonight-night` | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Folke Lemaitre | Apache-2.0 | `build-themes.ts` |
-| `tokyonight-storm` | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Folke Lemaitre | Apache-2.0 | `build-themes.ts` |
-| `catppuccin-mocha` | [catppuccin/vscode](https://github.com/catppuccin/vscode) | Catppuccin Org | MIT | Shiki |
-| `catppuccin-latte` | [catppuccin/vscode](https://github.com/catppuccin/vscode) | Catppuccin Org | MIT | Shiki |
-| `dracula` | [dracula/visual-studio-code](https://github.com/dracula/visual-studio-code) | Zeno Rocha | MIT | Shiki |
-| `nord` | [arcticicestudio/nord-visual-studio-code](https://github.com/arcticicestudio/nord-visual-studio-code) | Arctic Ice Studio | MIT | Shiki |
-| `github-dark` | [primer/github-vscode-theme](https://github.com/primer/github-vscode-theme) | GitHub | MIT | Shiki |
-| `github-light` | [primer/github-vscode-theme](https://github.com/primer/github-vscode-theme) | GitHub | MIT | Shiki |
-| `gruvbox-dark-medium` | [jdinhify/vscode-theme-gruvbox](https://github.com/jdinhify/vscode-theme-gruvbox) | Joe Dinh | MIT | Shiki |
-| `one-dark-pro` | [Binaryify/OneDark-Pro](https://github.com/Binaryify/OneDark-Pro) | Binaryify | MIT | Shiki |
-| `rose-pine` | [rose-pine/vscode](https://github.com/rose-pine/vscode) | Rosé Pine | MIT | Shiki |
+| Theme                 | Upstream                                                                                              | Author(s)         | License    | Via               |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | ----------------- | ---------- | ----------------- |
+| `tokyonight-day`      | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim)                                     | Folke Lemaitre    | Apache-2.0 | `build-themes.ts` |
+| `tokyonight-moon`     | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim)                                     | Folke Lemaitre    | Apache-2.0 | `build-themes.ts` |
+| `tokyonight-night`    | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim)                                     | Folke Lemaitre    | Apache-2.0 | `build-themes.ts` |
+| `tokyonight-storm`    | [folke/tokyonight.nvim](https://github.com/folke/tokyonight.nvim)                                     | Folke Lemaitre    | Apache-2.0 | `build-themes.ts` |
+| `catppuccin-mocha`    | [catppuccin/vscode](https://github.com/catppuccin/vscode)                                             | Catppuccin Org    | MIT        | Shiki             |
+| `catppuccin-latte`    | [catppuccin/vscode](https://github.com/catppuccin/vscode)                                             | Catppuccin Org    | MIT        | Shiki             |
+| `dracula`             | [dracula/visual-studio-code](https://github.com/dracula/visual-studio-code)                           | Zeno Rocha        | MIT        | Shiki             |
+| `nord`                | [arcticicestudio/nord-visual-studio-code](https://github.com/arcticicestudio/nord-visual-studio-code) | Arctic Ice Studio | MIT        | Shiki             |
+| `github-dark`         | [primer/github-vscode-theme](https://github.com/primer/github-vscode-theme)                           | GitHub            | MIT        | Shiki             |
+| `github-light`        | [primer/github-vscode-theme](https://github.com/primer/github-vscode-theme)                           | GitHub            | MIT        | Shiki             |
+| `gruvbox-dark-medium` | [jdinhify/vscode-theme-gruvbox](https://github.com/jdinhify/vscode-theme-gruvbox)                     | Joe Dinh          | MIT        | Shiki             |
+| `one-dark-pro`        | [Binaryify/OneDark-Pro](https://github.com/Binaryify/OneDark-Pro)                                     | Binaryify         | MIT        | Shiki             |
+| `rose-pine`           | [rose-pine/vscode](https://github.com/rose-pine/vscode)                                               | Rosé Pine         | MIT        | Shiki             |
 
 ## MIT License (Shiki aggregator)
 

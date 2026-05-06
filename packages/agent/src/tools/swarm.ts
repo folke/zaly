@@ -38,8 +38,8 @@ export const agentSpawnTool = defineTool({
   params: Type.Object({
     name: Type.String({
       description:
-        "Short identifier for inter-agent addressing — e.g. `\"reviewer\"`, " +
-        "`\"researcher\"`. Other agents reference this subagent by name. " +
+        'Short identifier for inter-agent addressing — e.g. `"reviewer"`, ' +
+        '`"researcher"`. Other agents reference this subagent by name. ' +
         "The swarm auto-suffixes (`reviewer-2`, `reviewer-3`, ...) on " +
         "collision, so feel free to reuse role names.",
       minLength: 1,
@@ -69,7 +69,8 @@ export const agentSpawnTool = defineTool({
     if (!ctx.agent) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
-        message: "agent_spawn requires an Agent reference on the context (set up by the agent harness).",
+        message:
+          "agent_spawn requires an Agent reference on the context (set up by the agent harness).",
       })
     }
     if (!ctx.swarm) {

@@ -1,5 +1,6 @@
-import { autocomplete, actionsSource, filesSource, input } from "@zaly/tui"
 import type { Renderer } from "@zaly/tui"
+
+import { autocomplete, actionsSource, filesSource, input } from "@zaly/tui"
 
 /**
  * Composer = the input widget + its bound autocomplete popup. The

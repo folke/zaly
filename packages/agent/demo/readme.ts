@@ -1,6 +1,6 @@
-import { Type } from "typebox"
-import { defineTool, loadModel } from "@zaly/ai"
 import { Agent } from "@zaly/agent"
+import { defineTool, loadModel } from "@zaly/ai"
+import { Type } from "typebox"
 
 const multiply = defineTool({
   name: "multiply",

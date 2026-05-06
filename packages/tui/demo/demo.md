@@ -5,8 +5,8 @@ Paragraphs support **bold**, _italic_, ~~strikethrough~~, and `inline code`.
 ## Code
 
 ```ts title="greeting.ts"
-const greeting = "hello";
-console.log(greeting);
+const greeting = "hello"
+console.log(greeting)
 ```
 
 ## Blockquote

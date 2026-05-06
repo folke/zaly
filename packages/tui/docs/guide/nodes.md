@@ -8,28 +8,28 @@ State is a shallow Proxy. Any `state.field = value` write auto-invalidates the n
 
 ```ts
 const t = text({ content: "hello" })
-t.state.content = "bye"   // re-renders next tick
+t.state.content = "bye" // re-renders next tick
 ```
 
 Batched writes via `setState({...})`:
 
 ```ts
-input.setState({ cursor: 0, value: "" })   // one invalidate, not two
+input.setState({ cursor: 0, value: "" }) // one invalidate, not two
 ```
 
 > [!IMPORTANT]
-> The proxy is *shallow*. Mutating a nested object or array in place (e.g. `state.padding[0] = 1`) does **not** invalidate. Reassign the whole field, or call `this.invalidate()` manually after the mutation.
+> The proxy is _shallow_. Mutating a nested object or array in place (e.g. `state.padding[0] = 1`) does **not** invalidate. Reassign the whole field, or call `this.invalidate()` manually after the mutation.
 
 ## Lifecycle
 
 Nodes emit four lifecycle events:
 
-| event        | when |
-|--------------|------|
-| `mount`      | attached to a surface — `ctx` is now available. |
-| `unmount`    | detached. Clean up timers / subscriptions here. |
-| `focus`      | became the focused node (input router). |
-| `blur`       | lost focus. |
+| event     | when                                            |
+| --------- | ----------------------------------------------- |
+| `mount`   | attached to a surface — `ctx` is now available. |
+| `unmount` | detached. Clean up timers / subscriptions here. |
+| `focus`   | became the focused node (input router).         |
+| `blur`    | lost focus.                                     |
 
 ```ts
 input({ placeholder: "type…" })
@@ -44,9 +44,9 @@ When a node mounts, it receives a `MountCtx` via `this.ctx`:
 ```ts
 interface MountCtx {
   surface: "stream" | "ui" | "overlay"
-  overlay: { open, close }
-  input: { bind, focus, blur }
-  actions: Actions                              // registry
+  overlay: { open; close }
+  input: { bind; focus; blur }
+  actions: Actions // registry
   getNode(id): Node | undefined
   findNode(match): Node[]
 }

@@ -81,11 +81,59 @@ export type SpecialKeyName =
 // non-ASCII) are still parseable at runtime — bindings just have to be
 // widened via `as KeyPattern` or the caller can pass a bare string.
 type AlphaLower =
-  | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
-  | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+  | "a"
+  | "b"
+  | "c"
+  | "d"
+  | "e"
+  | "f"
+  | "g"
+  | "h"
+  | "i"
+  | "j"
+  | "k"
+  | "l"
+  | "m"
+  | "n"
+  | "o"
+  | "p"
+  | "q"
+  | "r"
+  | "s"
+  | "t"
+  | "u"
+  | "v"
+  | "w"
+  | "x"
+  | "y"
+  | "z"
 type AlphaUpper =
-  | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M"
-  | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+  | "A"
+  | "B"
+  | "C"
+  | "D"
+  | "E"
+  | "F"
+  | "G"
+  | "H"
+  | "I"
+  | "J"
+  | "K"
+  | "L"
+  | "M"
+  | "N"
+  | "O"
+  | "P"
+  | "Q"
+  | "R"
+  | "S"
+  | "T"
+  | "U"
+  | "V"
+  | "W"
+  | "X"
+  | "Y"
+  | "Z"
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
 /** The key part of a `KeyPattern` — everything after the modifiers. */
@@ -156,10 +204,7 @@ export function canonical(patternOrEvent: string | KeyEvent): string {
  * matching is strict, not inclusive, so `"a"` only matches a bare `a`
  * (no ctrl/alt/etc.).
  */
-export function keyMatches(
-  ev: KeyEvent,
-  pattern: KeyPattern | readonly KeyPattern[],
-): boolean {
+export function keyMatches(ev: KeyEvent, pattern: KeyPattern | readonly KeyPattern[]): boolean {
   if (Array.isArray(pattern)) {
     for (const p of pattern) if (keyMatches(ev, p)) return true
     return false

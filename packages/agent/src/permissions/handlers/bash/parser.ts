@@ -17,18 +17,12 @@ export interface Segment {
   hasCommandSubst: boolean
 }
 
-export type ParseResult =
-  | { ok: true; segments: Segment[] }
-  | { ok: false; reason: string }
+export type ParseResult = { ok: true; segments: Segment[] } | { ok: false; reason: string }
 
 /** Targets a redirect can write to without filesystem implications.
  *  Anything else is treated as a file write and goes through fileWrite
  *  policy. */
-const SAFE_REDIRECT_TARGETS = new Set([
-  "/dev/null",
-  "/dev/stderr",
-  "/dev/stdout",
-])
+const SAFE_REDIRECT_TARGETS = new Set(["/dev/null", "/dev/stderr", "/dev/stdout"])
 
 /** A redirect target like `&1`, `&2`, `&-` — duplicates an existing fd,
  *  no filesystem effect. */

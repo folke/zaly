@@ -72,9 +72,7 @@ export type OpenAIResponsesContent = Awaited<ReturnType<typeof transformResponse
  * for codex come from the model entry (`overrides.ts` overlay) and the
  * `codexAuth` provider, respectively.
  */
-export function createOpenAIResponses(
-  config: ProviderOptions = {}
-): Provider<"openai-responses"> {
+export function createOpenAIResponses(config: ProviderOptions = {}): Provider<"openai-responses"> {
   const baseUrl = (config.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "")
   const doFetch = config.fetch ?? fetch
 
@@ -731,10 +729,7 @@ function mapStatus(
 
 // ── Errors ───────────────────────────────────────────────────────────────
 
-async function formatError(
-  response: Response,
-  friendly: Quirks["friendlyErrors"]
-): Promise<Error> {
+async function formatError(response: Response, friendly: Quirks["friendlyErrors"]): Promise<Error> {
   const text = await response.text().catch(() => "")
   const generic = `OpenAI Responses ${response.status}: ${text || response.statusText}`
   if (friendly !== "codex") return new Error(generic)

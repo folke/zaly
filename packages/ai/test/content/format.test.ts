@@ -112,9 +112,7 @@ describe("renderMetaPart", () => {
   test("content arm: nested single-line MetaPart stays compact", () => {
     // Inner is single-line, so the outer body has no `\n` → no padding.
     const inner = meta("payload", "inner")
-    expect(renderMetaPart(metaWith([inner], "outer"))).toBe(
-      "<outer><inner>payload</inner></outer>"
-    )
+    expect(renderMetaPart(metaWith([inner], "outer"))).toBe("<outer><inner>payload</inner></outer>")
   })
 
   test("content arm: nested multi-line MetaPart indents at every level", () => {
