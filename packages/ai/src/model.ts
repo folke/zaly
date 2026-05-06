@@ -17,6 +17,7 @@ import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
 import { providerRegistry } from "./providers/index.ts"
 import { pairToolCalls } from "./tools.ts"
+import { withRetry } from "./utils/retry.ts"
 
 const ATTACHMENT_KINDS: readonly Attachment["type"][] = ["image", "pdf", "audio", "video"]
 
@@ -175,6 +176,12 @@ export async function loadModel(
   const provider = await providerRegistry.load(spec.provider, {
     ...spec,
     apiKey: spec.apiKey ?? creds?.apiKey,
+    // Default retry on the request side — pre-stream only (`withRetry`
+    // never restarts a body that's already started consuming, which
+    // would waste already-generated tokens). Covers connection
+    // resets, 5xx, 429s. Mid-stream SSE failures still propagate.
+    // Callers can pass their own `fetch` to opt out / customise.
+    fetch: withRetry(spec.fetch ?? fetch),
     headers: { ...creds?.headers, ...spec.headers },
   })
 
