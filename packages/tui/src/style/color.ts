@@ -134,7 +134,7 @@ export function resolveColor(c: string, theme: Theme | undefined, kind?: "fg" | 
   //    time. When bg can't be resolved to hex (ansi / inherit / missing),
   //    drop alpha silently — same no-op as `-<step>` on ANSI themes.
   if (alpha !== undefined && alpha < 1 && base.startsWith("#") && theme !== undefined) {
-    const bgHex = resolveThemeColor("bg", theme)
+    const bgHex = resolveThemeColor("blend", theme)
     if (bgHex.startsWith("#")) return blend(base, bgHex, alpha)
   }
   // When alpha is present but we can't blend, drop it silently if it was for bg

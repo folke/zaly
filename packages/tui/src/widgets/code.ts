@@ -93,7 +93,7 @@ export const code = widget((props: State<CodeState>) => {
       numberOffset: unwrap(props.numberOffset),
       numbered: props.numbered,
       offset: unwrap(props.offset),
-      style: style()?.line,
+      style: style()?.gutter,
     }).join("\n")
   )
 

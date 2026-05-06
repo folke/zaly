@@ -78,8 +78,9 @@ function toTui(id: string, c: Colors): Record<string, unknown> {
     /** Matching shiki theme name — used by the markdown/code renderers
      *  so syntax highlighting aligns with the TUI palette. */
     shiki: id,
-    fg,
-    bg,
+    text: fg,
+    blend: bg,
+    ui: { bg, fg },
     primary,
     accent,
     dim,

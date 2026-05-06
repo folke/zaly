@@ -8,58 +8,76 @@ import type { Theme } from "./types.ts"
  * Distinct from `defaultTheme` — that's the precomputed `tokyonight-moon`
  * Theme bundled as the default palette for `createCtx()` etc.
  */
+// oxlint-disable-next-line sort-keys
 export const defaults: Theme = {
+  // base colors
+  primary: "blue",
   accent: "brightMagenta",
-  bg: "inherit",
-  border: "muted",
+  blend: "inherit",
+
+  // text
+  text: "inherit",
+  muted: { fg: "brightBlack" },
+  quiet: { dim: true, fg: "muted", italic: true },
+  comment: { fg: "muted", italic: true },
+  title: { bold: true, fg: "primary" },
+
+  // surface & structure
+  subtle: "brightBlack",
+  ui: { bg: "subtle" },
+  overlay: { bg: "subtle" },
+  highlight: { bg: "subtle" },
+
+  // ui primitives
+  divider: "subtle",
+  selection: { bg: "brightBlue", fg: "black" },
+  gutter: "subtle",
+  prompt: "inherit",
+  border: "subtle",
   borderTitle: "title",
-  code: { bg: "muted" },
+
+  // code
+  code: { bg: "subtle" },
   codeTitle: "title",
 
-  diffAdd: { bg: "success/3", fg: "success" },
-  diffContext: "dim",
-  diffDel: { bg: "error/3", fg: "error" },
-  diffLine: "line",
-
-  diffTitle: "title",
-  dim: "brightBlack",
-  error: "red",
-  fg: "inherit",
-
+  // log levels
+  success: "green",
   info: "cyan",
-  line: "muted",
-  mdBold: { bold: true, fg: "fg" },
+  warn: "yellow",
+  error: "red",
 
-  mdCode: { bg: "primary/15", fg: "primary" },
-  mdCodeBlock: { bg: "muted", fg: "primary" },
+  // markdown
+  mdBold: { bold: true },
+  mdCode: { bg: "primary/15", fg: "black" },
+  mdCodeBlock: { bg: "highlight", fg: "primary" },
   mdCodeBlockTitle: "title",
-  mdHeading: "title",
   mdHeading1: "mdHeading",
   mdHeading2: { bold: true, fg: "accent" },
   mdHeading3: "mdHeading2",
-
   mdHeading4: "mdHeading2",
   mdHeading5: "mdHeading2",
   mdHeading6: "mdHeading2",
+  mdHeading: "title",
   mdHr: "accent",
-  mdItalic: { fg: "fg", italic: true },
+  mdItalic: { italic: true },
   mdLink: { fg: "primary", underline: true },
   mdListBullet: "accent",
   mdListChecked: "primary",
   mdListUnchecked: "primary",
-  mdQuote: "dim",
-  mdStrikethrough: { fg: "fg", strikethrough: true },
-
+  mdQuote: "muted",
+  mdStrikethrough: { strikethrough: true },
   mdTable: "accent",
   mdTableHeader: "title",
-  menuActive: { bg: "muted" },
 
+  // menu
+  menuActive: "selection",
   menuHint: "muted",
   menuLabel: "primary",
 
-  muted: "brightBlack",
-  primary: "blue",
-  success: "green",
-  title: { bold: true, fg: "primary" },
-  warn: "yellow",
+  // diff
+  diffAdd: { bg: "success/3", fg: "success" },
+  diffContext: "muted",
+  diffDel: { bg: "error/3", fg: "error" },
+  diffLine: "gutter",
+  diffTitle: "title",
 }

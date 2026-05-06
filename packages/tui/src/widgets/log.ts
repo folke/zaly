@@ -39,9 +39,9 @@ export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
   error: { color: "error", icon: "✖ ", style: "badge", textColor: "error" },
   fatal: { color: "error", icon: "☢ ", style: "badge" },
   info: { color: "info", icon: "ℹ ", style: "icon" },
-  log: { color: "dim", icon: "●", style: "icon" },
+  log: { color: "muted", icon: "●", style: "icon" },
   success: { color: "success", icon: "✔ ", style: "icon" },
-  trace: { color: "dim", icon: "⠿", style: "icon", textColor: "muted" },
+  trace: { color: "muted", icon: "⠿", style: "icon", textColor: "muted" },
   warn: { color: "warn", icon: "⚠", style: "badge", textColor: "warn" },
 }
 
@@ -52,7 +52,7 @@ export class Log extends Node<LogState> {
     const style: LogStyle = s.style ?? base.style
     let icon = s.icon ?? base.icon ?? ""
     icon = icon === "" ? "" : `${icon}${" ".repeat(2 - stringWidth(icon))}`
-    const color: Color = s.color ?? base.color ?? "fg"
+    const color: Color = s.color ?? base.color ?? "inherit"
     const textColor = s.textColor ?? base.textColor
 
     let styledPrefix = ""

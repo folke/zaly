@@ -27,7 +27,7 @@ export function buildUi(
     box(
       { padding: [1, 0, 0, 0] },
       box(
-        { bg: "bg", flexDirection: "column", padding: [0, 1] },
+        { flexDirection: "column", padding: [0, 1], style: "ui" },
         statusline(state),
         // text(({ style }) =>
         //   style.dim("/ commands · @ files · ctrl-h help · ctrl-x stop · ctrl-c quit")

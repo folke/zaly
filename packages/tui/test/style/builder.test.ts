@@ -96,9 +96,10 @@ describe("style() — composition", () => {
 })
 
 describe("style() — Style-valued theme slots", () => {
-  test("Style slot merges attrs + fg into the chain", () => {
-    // moon.mdBold = { bold: true, fg: "fg" } → fg = moon.fg = #c8d3f5
-    expect(style(defaultTheme).mdBold("hi")).toBe("\x1b[1;38;2;200;211;245mhi\x1b[0m")
+  test("Style slot applies attrs from the slot definition", () => {
+    // mdBold default = { bold: true } → just the bold attr, no themed fg.
+    // (Coverage for attrs + fg together is in the borderTitle test below.)
+    expect(style(defaultTheme).mdBold("hi")).toBe("\x1b[1mhi\x1b[0m")
   })
 
   test("Style slot with attrs + fg together", () => {
@@ -108,8 +109,9 @@ describe("style() — Style-valued theme slots", () => {
   })
 
   test("chained attrs before Style slot are preserved when slot doesn't conflict", () => {
-    // .underline then .mdBold → bold + underline + moon.fg.
-    expect(style(defaultTheme).underline.mdBold("x")).toBe("\x1b[1;4;38;2;200;211;245mx\x1b[0m")
+    // .underline then .mdBold → bold + underline (mdBold contributes only the
+    // bold attr; no fg in its slot definition).
+    expect(style(defaultTheme).underline.mdBold("x")).toBe("\x1b[1;4mx\x1b[0m")
   })
 
   test("later chain overrides slot values", () => {

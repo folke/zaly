@@ -32,7 +32,7 @@ export const bashResult = widget((props: ToolResultProps<BashTool>) => {
         const content = props.result()?.content
         return content === undefined ? "…" : justText(content)
       }),
-      style: "dim",
+      style: "muted",
     })
   )
 })

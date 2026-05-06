@@ -72,7 +72,7 @@ renderer.actions.register({
 
 renderer.ui.add(
   box(
-    { bg: "bg", flexDirection: "column", padding: [0, 1] },
+    { style: "ui", flexDirection: "column", padding: [0, 1] },
     text(
       ({ style }) =>
         `${style.primary("›")} ${style.dim("enter · / actions · @ files · # issues/prs · ctrl-c quit")}`

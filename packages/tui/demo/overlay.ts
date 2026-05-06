@@ -29,7 +29,7 @@ const [spinning, setSpinning] = signal(true)
 
 renderer.ui.add(
   box(
-    { bg: "bg", flexDirection: "column", padding: [0, 1] },
+    { style: "ui", flexDirection: "column", padding: [0, 1] },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent", running: spinning }),
@@ -69,7 +69,7 @@ function showToast(message: string): void {
   const t = overlay(
     {
       bg: "success-700",
-      fg: "fg",
+      fg: "overlay",
       padding: [0, 1],
       width: message.length + 4,
       x: 60,

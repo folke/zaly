@@ -21,7 +21,7 @@ const renderer = createRenderer({ logger: { minLevel: "trace" } })
 
 renderer.ui.add(
   box(
-    { bg: "bg", flexDirection: "column", padding: [0, 1] },
+    { style: "ui", flexDirection: "column", padding: [0, 1] },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent" }),

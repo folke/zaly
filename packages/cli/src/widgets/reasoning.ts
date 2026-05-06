@@ -18,7 +18,7 @@ import { bubble } from "./bubble.ts"
 
 export const reasoningMessage = widget((props: { content: Reactive<string> }) =>
   bubble(
-    { style: { dim: true, italic: true, style: "dim" }, type: "reasoning" },
+    { style: { dim: true, italic: true, style: "quiet" }, type: "reasoning" },
     markdown(props.content)
   )
 )

@@ -15,7 +15,7 @@ const renderer = createRenderer()
 
 renderer.ui.add(
   box(
-    { bg: "bg", flexDirection: "column", padding: [0, 1] },
+    { style: "ui", flexDirection: "column", padding: [0, 1] },
     text(
       ({ style }) =>
         `${style.primary("›")} ${style.dim("enter to send · ctrl-v to paste · ctrl-c to quit")}`

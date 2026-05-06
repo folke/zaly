@@ -28,7 +28,7 @@ for (let i = 0; i < names.length; i += CHUNK) {
   for (const name of names.slice(i, i + CHUNK)) {
     const theme = await loadTheme(name)
     const panel = box(
-      { bg: theme.bg, border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
+      { style: "ui", border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
       text(({ style }) =>
         Object.keys(theme)
           .filter((k) => k !== "bg" && k !== "shiki")

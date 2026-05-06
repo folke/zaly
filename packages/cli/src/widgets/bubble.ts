@@ -5,13 +5,14 @@ import { box, text, unwrap, widget } from "@zaly/tui"
 type Bubble = {
   icon: string
   style: AnyStyle
+  bg?: AnyStyle
 }
 
 const bubbles = {
   assistant: { icon: "●", style: "white" },
-  reasoning: { icon: "∴", style: "dim" },
+  reasoning: { icon: "∴", style: "quiet" },
   tool_error: { icon: "●", style: "error" },
-  tool_pending: { icon: "●", style: "dim" },
+  tool_pending: { icon: "●", style: "muted" },
   tool_success: { icon: "●", style: "success" },
   user: { icon: "●", style: "primary" },
 } as const satisfies Record<string, Bubble>
