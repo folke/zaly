@@ -4,6 +4,8 @@ import type { ToolResultProps } from "./index.ts"
 import { prettyPath } from "@zaly/shared"
 import { box, code, memo, widget } from "@zaly/tui"
 
+const PREVIEW_LINE_LIMIT = 10
+
 /** Result renderer for the `read` tool. Once the file contents land,
  *  render them as a syntax-highlighted code block titled with the path.
  *
@@ -23,6 +25,7 @@ export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
     {},
     code({
       code: text,
+      limit: PREVIEW_LINE_LIMIT,
       numbered: true,
       path,
       title,

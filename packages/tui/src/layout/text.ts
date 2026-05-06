@@ -18,6 +18,7 @@ export function formatLines(
     numberOffset?: number
     offset?: number
     limit?: number
+    more?: (more: number, msg: string) => string
     style?: StyleBuilder
   } = {}
 ): string[] {
@@ -30,9 +31,19 @@ export function formatLines(
   const numberOffset = opts.numberOffset ?? offset + 1
   const gutterWidth = String(numberOffset + slice.length - 1).length + 2
 
-  return slice.map((line, i) => {
+  const ret = slice.map((line, i) => {
     const n = numberOffset + i
     const lineo = `${String(n).padStart(gutterWidth - 2)} │`
     return `${opts.style?.(lineo) ?? lineo} ${line}`
   })
+
+  if (slice.length < lines.length) {
+    const moreGutter = `${"…".padStart(gutterWidth - 2)} │`
+    const moreN = lines.length - slice.length
+    let more = `+${moreN} more line${moreN > 1 ? "s" : ""}`
+    more = opts.more?.(moreN, more) ?? more
+    ret.push(`${opts.style?.(moreGutter) ?? moreGutter} ${opts.style?.(more) ?? more}`)
+  }
+
+  return ret
 }

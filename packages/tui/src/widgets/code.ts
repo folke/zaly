@@ -42,6 +42,7 @@ export interface CodeState {
   numberOffset?: Reactive<number | undefined>
   offset?: Reactive<number | undefined>
   limit?: Reactive<number | undefined>
+  more?: (more: number, msg: string) => string
 }
 
 /**
@@ -88,6 +89,7 @@ export const code = widget((props: State<CodeState>) => {
   const formatted = memo(() =>
     formatLines(body(), {
       limit: unwrap(props.limit),
+      more: props.more,
       numberOffset: unwrap(props.numberOffset),
       numbered: props.numbered,
       offset: unwrap(props.offset),

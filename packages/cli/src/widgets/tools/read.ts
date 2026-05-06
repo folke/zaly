@@ -5,6 +5,8 @@ import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
 import { box, code, memo, widget } from "@zaly/tui"
 
+const PREVIEW_LINE_LIMIT = 10
+
 /** Result renderer for the `read` tool. Once the file contents land,
  *  render them as a syntax-highlighted code block titled with the path.
  *
@@ -18,13 +20,15 @@ export const readResult = widget((props: ToolResultProps<ReadTool>) => {
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
   const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
-  const text = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
+  const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
   const numberOffset = memo(() => props.result()?.meta?.file?.offset ?? props.params?.offset)
 
   return box(
     {},
     code({
-      code: text,
+      code: content,
+      limit: PREVIEW_LINE_LIMIT,
+      more: (_more, msg) => `${msg} read`,
       numberOffset,
       numbered: true,
       path,
