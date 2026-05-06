@@ -667,9 +667,23 @@ function* handleEvent(
       throw new Error(msg)
     }
     case "error": {
-      const message = typeof evt.message === "string" ? evt.message : undefined
-      const code = typeof evt.code === "string" ? evt.code : undefined
-      throw new Error(message ?? code ?? "Responses stream error")
+      // SSE `error` events come in a few shapes across providers — top-level
+      // `message`/`code`, a nested `error: { message, code }`, or a free-form
+      // payload. Try each and fall back to a JSON dump so the actual cause
+      // isn't swallowed.
+      const e = evt as {
+        message?: unknown
+        code?: unknown
+        error?: { message?: unknown; code?: unknown; type?: unknown }
+      }
+      const message =
+        pickStr(e.message) ??
+        pickStr(e.error?.message) ??
+        pickStr(e.code) ??
+        pickStr(e.error?.code) ??
+        pickStr(e.error?.type)
+      if (message !== undefined) throw new Error(`Responses stream error: ${message}`)
+      throw new Error(`Responses stream error: ${JSON.stringify(evt)}`)
     }
     default: {
       return
@@ -759,6 +773,10 @@ async function formatError(
     // fall through to generic
   }
   return new Error(generic)
+}
+
+function pickStr(v: unknown): string | undefined {
+  return typeof v === "string" && v !== "" ? v : undefined
 }
 
 function abortError(): Error {
