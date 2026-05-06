@@ -4,11 +4,11 @@ import type { Reactive } from "../core/reactive.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 
-export interface ShowState {
+export interface ShowState<T = unknown> {
   /** Predicate. Truthy → render `children`; falsy → render `fallback`
    *  (or nothing). Defaults to `true`. Accepts a signal accessor — the
    *  Show node subscribes via `unwrap` and re-renders on flips. */
-  when?: Reactive<boolean>
+  when?: Reactive<T | undefined | false | null>
   /** Rendered when `when` is falsy. Optional. */
   fallback?: Node
 }
@@ -25,7 +25,7 @@ export interface ShowState {
  */
 export class Show extends Node<ShowState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const cond = unwrap(this.state.when ?? true)
+    const cond = !!unwrap(this.state.when ?? true)
     const fb = this.state.fallback
     let targets: readonly Node[]
     if (cond) targets = fb === undefined ? this.children : this.children.filter((c) => c !== fb)
