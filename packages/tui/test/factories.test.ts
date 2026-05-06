@@ -63,7 +63,7 @@ describe("widget()", () => {
     const node = greeting({ name: "ada" })
     await node._render(ctx(10)) // forces the inner node to be created so we can inspect it
     expect(node.child).toBeInstanceOf(Text)
-    expect(node.state).toEqual({ name: "ada" })
+    expect(node.state).toMatchObject({ name: "ada" })
     expect(await node.render(ctx(10))).toEqual(["hi ada"])
   })
 

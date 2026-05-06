@@ -5,9 +5,17 @@ import type { Theme } from "../themes/types.ts"
 
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
-import { createAsync, unwrap, useContext } from "../core/reactive.ts"
+import {
+  createAsync,
+  createRenderEffect,
+  memo,
+  signal,
+  unwrap,
+  useContext,
+} from "../core/reactive.ts"
 import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
+import { show } from "./show.ts"
 import { text } from "./text.ts"
 import { widget } from "./widget.ts"
 
@@ -48,26 +56,28 @@ export interface CodeState {
  * always reflect the resolved highlight.
  */
 export const code = widget((props: State<CodeState>) => {
-  const initialPath = props.path === undefined ? undefined : unwrap(props.path)
-  const langCandidate =
-    props.lang ??
-    (initialPath !== undefined ? extname(initialPath).slice(1).toLowerCase() : undefined)
+  const path = unwrap(props.path)
+  const lang = props.lang ?? (path !== undefined ? extname(path).slice(1).toLowerCase() : undefined)
   const syntax = props.syntax ?? true
 
+  // Theme is sourced from a render-time hook since the async closure
+  // runs outside the render phase.
+  const [theme, setTheme] = signal<Theme | undefined>(undefined)
+  createRenderEffect(() => {
+    const ctx = useContext(RenderContext)
+    if (ctx?.style.theme) setTheme(ctx.style.theme)
+  })
+
+  const title = memo(() => unwrap(props.title) ?? path)
   const body = createAsync(
     async () => {
-      const source = unwrap(props.code) // tracks
-      if (!syntax || langCandidate === undefined || langCandidate === "") return source
-      const ctx = useContext(RenderContext)
-      if (ctx === undefined) return source // pre-first-render
-      return await highlightSource(source, langCandidate, ctx.style.theme)
+      const source = unwrap(props.code) // tracked
+      const t = theme() // tracked
+      if (!syntax || !lang || t === undefined) return source
+      return highlightSource(source, lang, t)
     },
     { initialValue: unwrap(props.code) }
   )
-
-  // Title is conditionally rendered — an always-present thunk that
-  // returns "" still produces an empty row in the backdrop.
-  const hasTitle = props.title !== undefined || initialPath !== undefined
 
   return box(
     {
@@ -76,15 +86,10 @@ export const code = widget((props: State<CodeState>) => {
       style: props.style === false ? undefined : (props.style ?? "code"),
       width: "fit",
     },
-    hasTitle
-      ? text(
-          (ctx) => {
-            const t = props.title !== undefined ? unwrap(props.title) : initialPath
-            return t === undefined ? "" : ctx.style.codeTitle(t)
-          },
-          { wrap: "none" }
-        )
-      : undefined,
+    show(
+      { when: title },
+      text((ctx) => ctx.style.codeTitle(title() ?? ""), { wrap: "none" })
+    ),
     text(body, { wrap: "none" })
   )
 })
