@@ -1,7 +1,7 @@
 import type { StyleBuilder } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
-import type { AnyStyle } from "../style/ansi.ts"
+import type { AnyStyle } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 
 import { extname } from "pathe"

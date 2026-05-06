@@ -3,7 +3,7 @@ import type { State } from "../core/state.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { RowItem } from "../layout/flex.ts"
 import type { Size } from "../layout/size.ts"
-import type { Style } from "../style/ansi.ts"
+import type { Style } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"

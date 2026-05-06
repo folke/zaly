@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { hasAnsi, hyperlink, openStyle, RESET, splitAnsi } from "../../src/style/ansi.ts"
+import { hasAnsi, hyperlink, RESET, splitAnsi } from "../../src/style/ansi.ts"
+import { openStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/index.ts"
 
 describe("openStyle", () => {

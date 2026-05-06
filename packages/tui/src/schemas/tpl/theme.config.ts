@@ -1,13 +1,14 @@
-import type { Style } from "../../style/ansi.ts"
 import type {
   AnsiColorName,
   BrightAnsiColorName,
   Color,
   ColorStep,
   HexColor,
+  ShikiTheme,
+  Style,
   ThemeKey,
-} from "../../style/color.ts"
-import type { ShikiTheme, Theme } from "../../style/index.ts"
+} from "../../style/index.ts"
+import type { Theme } from "../../themes/types.ts"
 
 import { createAssert, createAssertEquals, createIs } from "typia"
 

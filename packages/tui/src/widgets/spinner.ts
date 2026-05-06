@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
-import type { Color } from "../style/color.ts"
+import type { Color } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { untrack, unwrap } from "../core/reactive.ts"

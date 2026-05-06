@@ -1,6 +1,5 @@
-import type { Style } from "../style/ansi.ts"
-import type { Color } from "../style/color.ts"
 import type { ShikiTheme } from "../style/shiki.ts"
+import type { Color, Style } from "../style/types.ts"
 
 /**
  * A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve

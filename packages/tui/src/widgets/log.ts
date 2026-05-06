@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { LogLevel } from "../logger/levels.ts"
-import type { Color } from "../style/color.ts"
+import type { Color } from "../style/types.ts"
 import type { TextContent } from "./text.ts"
 
 import { Node, isNode } from "../core/node.ts"

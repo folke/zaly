@@ -6,8 +6,8 @@ import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { markdown } from "../../src/index.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
-import { openStyle, RESET } from "../../src/style/ansi.ts"
-import { resolveStyle } from "../../src/style/color.ts"
+import { RESET } from "../../src/style/ansi.ts"
+import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/index.ts"
 
 const ctx = (width = 80) => createCtx({ theme: defaultTheme, width })

@@ -1,12 +1,11 @@
 import type { Theme } from "../themes/index.ts"
-import type { Style } from "./ansi.ts"
-import type { AnsiColorName, BrightAnsiColorName, Color, ColorStep } from "./color.ts"
 import type { Step } from "./oklch.ts"
+import type { AnsiColorName, BrightAnsiColorName, Color, ColorStep, Style } from "./types.ts"
 
 import { defaultTheme } from "../themes/index.ts"
-import { openStyle, reapplyStyle, RESET } from "./ansi.ts"
-import { resolveStyle } from "./color.ts"
+import { reapplyStyle, RESET } from "./ansi.ts"
 import { steps as COLOR_STEPS } from "./oklch.ts"
+import { openStyle, resolveStyle } from "./style.ts"
 
 type AttrName = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"
 

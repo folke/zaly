@@ -3,7 +3,7 @@ import type { BaseEvents } from "../core/node.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
-import type { Style } from "../style/ansi.ts"
+import type { Style } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"

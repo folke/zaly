@@ -4,7 +4,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/index.ts"
-import { resolveStyle } from "../../src/style/color.ts"
+import { resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme, loadTheme, themeRegistry } from "../../src/themes/index.ts"
 
 // ansi is no longer a static export; load it for the comparison tests below.

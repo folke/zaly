@@ -1,5 +1,5 @@
 import type { Size } from "../layout/size.ts"
-import type { Style } from "../style/ansi.ts"
+import type { Style } from "../style/types.ts"
 import type { Reactive } from "./reactive.ts"
 
 /**

@@ -1,8 +1,7 @@
-import type { Theme } from "../themes/index.ts"
-import type { Color } from "./color.ts"
+import type { AnsiColor, AnsiStyle } from "./types.ts"
 
 import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
-import { colorParams } from "./color.ts"
+import { isHexColor, parseHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;
  *  `"char"` hard-wraps mid-word. */
@@ -14,6 +13,37 @@ export interface WrapOpts {
 const OSC_RE = /\x1b\][\s\S]*?(?:\x1b\\|\x07)/g
 const CSI_RE = /\x1b\[[\d;?]*[a-zA-Z]/g
 const APC_RE = /\u001B_[\s\S]*?\u001B\\/g
+/** @internal */
+export const RESET = "\x1b[0m"
+// OSC 8 hyperlink sequence. ESC + backslash is the "string terminator" (ST)
+// that closes the OSC. Format: `ESC]8;;URL ST TEXT ESC]8;; ST`.
+const OSC8 = "\x1b]8;;"
+const ST = "\x1b\\"
+
+// Attribute → SGR code. Order matters for stable output.
+const ATTRS = [
+  ["bold", 1],
+  ["dim", 2],
+  ["italic", 3],
+  ["underline", 4],
+  ["inverse", 7],
+  ["strikethrough", 9],
+] as const satisfies readonly (readonly [keyof AnsiStyle, number])[]
+
+// Standard 8-color ANSI palette. Offsets from SGR 30 (fg) and 40 (bg).
+const ANSI_OFFSET: Record<string, number> = {
+  black: 0,
+  blue: 4,
+  cyan: 6,
+  green: 2,
+  magenta: 5,
+  red: 1,
+  white: 7,
+  yellow: 3,
+}
+
+const notFound = Symbol("not found")
+const colorCache = new Map<string, string | typeof notFound>()
 
 // ---- APC-aware text primitives ----------------------------------------
 //
@@ -76,14 +106,6 @@ export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
     .join("\n")
 }
 
-/** @internal */
-export const RESET = "\x1b[0m"
-
-// OSC 8 hyperlink sequence. ESC + backslash is the "string terminator" (ST)
-// that closes the OSC. Format: `ESC]8;;URL ST TEXT ESC]8;; ST`.
-const OSC8 = "\x1b]8;;"
-const ST = "\x1b\\"
-
 /**
  * Wrap `text` in an OSC 8 hyperlink pointing at `url`. Modern terminals
  * (iTerm2, kitty, WezTerm, VS Code, Ghostty, …) render the text as
@@ -102,101 +124,41 @@ export function hyperlink(url: string, text: string): string {
   return `${OSC8}${url}${ST}${text}${OSC8}${ST}`
 }
 
-/** Base style shared by every node type. Box/Text/etc. extend this.
- *  Pure styling — no layout or lifecycle fields. Widget state interfaces
- *  extend `StyleState` to pick up the `visible` base-state bits alongside
- *  these style fields. */
-export interface Style {
-  fg?: Color
-  bg?: Color
-  bold?: boolean
-  dim?: boolean
-  italic?: boolean
-  underline?: boolean
-  inverse?: boolean
-  strikethrough?: boolean
-  style?: AnyStyle
+export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {
+  const key = `${color}-${kind}`
+  let cached = colorCache.get(key)
+  if (cached === undefined) colorCache.set(key, (cached = _ansiColor(color, kind)) ?? notFound)
+  return cached === notFound ? undefined : cached
 }
 
-export type AnyStyle = Style | Color
+function _ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {
+  if (color === "inherit") return
+  // Gray aliases to brightBlack.
+  if (color === "gray" || color === "grey") return String(kind === "fg" ? 90 : 100)
 
-// Attribute → SGR code. Order matters for stable output.
-const ATTRS = [
-  ["bold", 1],
-  ["dim", 2],
-  ["italic", 3],
-  ["underline", 4],
-  ["inverse", 7],
-  ["strikethrough", 9],
-] as const satisfies readonly (readonly [keyof Style, number])[]
+  const base = color in ANSI_OFFSET ? color : undefined
+  if (base !== undefined) return String((kind === "fg" ? 30 : 40) + ANSI_OFFSET[base])
 
-/**
- * Build the opening SGR escape for a style descriptor. Returns '' if nothing
- * would be emitted. Unresolvable colors (invalid or 'inherit') are dropped.
- *
- * When `theme` is provided, `fg`/`bg` values matching a theme color slot
- * (e.g. `"primary"`, `"muted"`) are resolved against it first. The output
- * ordering is attrs → fg → bg, combined into a single `\x1b[...m` run.
- *
- * @internal
- */
-export function openStyle(style: Style, theme?: Theme): string {
-  if (theme !== undefined) {
-    // Per-theme memoization, keyed by the identity-relevant Style
-    // fields (attrs as a bitmask, plus fg/bg color strings). The
-    // builder's `apply` calls `openStyle` on every render of every
-    // node, often with equivalent Style shapes — caching collapses
-    // the attr loop + two `colorParams` calls + join to a Map hit.
-    let byTheme = openCache.get(theme)
-    if (byTheme === undefined) {
-      byTheme = new Map()
-      openCache.set(theme, byTheme)
-    }
-    const key = styleKey(style)
-    const hit = byTheme.get(key)
-    if (hit !== undefined) return hit
-    const computed = computeOpen(style, theme)
-    byTheme.set(key, computed)
-    return computed
+  if (color.startsWith("bright")) {
+    const rest = color.slice("bright".length).toLowerCase()
+    if (rest in ANSI_OFFSET) return String((kind === "fg" ? 90 : 100) + ANSI_OFFSET[rest])
   }
-  return computeOpen(style, undefined)
+
+  const rgb = isHexColor(color) ? parseHex(color) : undefined
+  if (rgb) {
+    const indicator = kind === "fg" ? 38 : 48
+    return `${indicator};2;${rgb.r};${rgb.g};${rgb.b}`
+  }
 }
 
-const openCache = new WeakMap<Theme, Map<string, string>>()
-
-/** Compact key capturing every input the output depends on. Attrs pack
- *  into a 6-bit bitmask (0..63); colors are inlined as `\0`-separated
- *  strings. Cheaper than JSON.stringify and stable enough for caching. */
-function styleKey(style: Style): string {
-  let attrs = 0
-  if (style.bold) attrs |= 1
-  if (style.dim) attrs |= 2
-  if (style.italic) attrs |= 4
-  if (style.underline) attrs |= 8
-  if (style.inverse) attrs |= 16
-  if (style.strikethrough) attrs |= 32
-  return `${attrs}\0${style.fg ?? ""}\0${style.bg ?? ""}`
-}
-
-function computeOpen(style: Style, theme?: Theme): string {
-  const params: (number | string)[] = []
-
-  for (const [key, code] of ATTRS) {
-    if (style[key]) params.push(code)
-  }
-
-  if (style.fg !== undefined) {
-    const p = colorParams(style.fg, "fg", theme)
-    if (p !== undefined) params.push(p)
-  }
-
-  if (style.bg !== undefined) {
-    const p = colorParams(style.bg, "bg", theme)
-    if (p !== undefined) params.push(p)
-  }
-
-  if (params.length === 0) return ""
-  return `\x1b[${params.join(";")}m`
+export function openAnsi(style: AnsiStyle) {
+  const params: (number | string | undefined)[] = []
+  for (const [key, code] of ATTRS) if (style[key]) params.push(code)
+  if (style.fg !== undefined) params.push(ansiColor(style.fg, "fg"))
+  if (style.bg !== undefined) params.push(ansiColor(style.bg, "bg"))
+  const attrs = params.filter((p) => p !== undefined)
+  if (attrs.length === 0) return ""
+  return `\x1b[${attrs.join(";")}m`
 }
 
 /**

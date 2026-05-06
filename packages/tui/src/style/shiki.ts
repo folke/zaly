@@ -1,7 +1,7 @@
 import type { BundledLanguage, BundledTheme, HighlighterCore, LanguageInput } from "shiki"
+import type { HexColor } from "./types.ts"
 
-import { RESET } from "./ansi.ts"
-import { colorParams } from "./color.ts"
+import { ansiColor, RESET } from "./ansi.ts"
 
 export type CodeToAnsiOptions = {
   theme?: T
@@ -47,7 +47,7 @@ const pc = {
 }
 
 function hexToAnsi(text: string, hex: string, _type: "dark" | "light"): string {
-  const params = colorParams(hex, "fg")
+  const params = ansiColor(hex as HexColor, "fg")
   if (params === undefined) return text
   return `\x1b[${params}m${text}${RESET}`
 }

@@ -13,6 +13,8 @@
  * https://bottosson.github.io/posts/oklab/
  */
 
+import type { HexColor } from "./types.ts"
+
 /**
  * Tailwind-v4-style tonal stops (approximate). Values chosen to land on
  * a perceptually-even spread in the OKLab L channel:
@@ -158,16 +160,16 @@ export function oklchToHex(oklch: OKLCH): string {
  * chroma-reduced via `oklchToHex`. Results are cached keyed on
  * `${hex}:${step}`.
  */
-export function variant(hex: string, step: Step): string {
+export function variant(hex: HexColor, step: Step): HexColor {
   const key = `${hex}:${step}`
   const cached = cache.get(key)
-  if (cached !== undefined) return cached
+  if (cached !== undefined) return cached as HexColor
   if (!(step in STOPS)) throw new Error(`unknown variant step: ${step}`)
   const base = hexToOklch(hex)
   const targetL = anchorL(base.L, step)
   const out = oklchToHex({ ...base, L: targetL })
   cache.set(key, out)
-  return out
+  return out as HexColor
 }
 
 /**
@@ -202,7 +204,7 @@ function anchorL(baseL: number, step: Step): number {
 /** Return the full 11-stop palette for a base color. */
 export function variants(hex: string): Record<Step, string> {
   const out = {} as Record<Step, string>
-  for (const s of steps) out[s] = variant(hex, s)
+  for (const s of steps) out[s] = variant(hex as HexColor, s)
   return out
 }
 
