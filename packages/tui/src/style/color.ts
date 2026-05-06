@@ -94,7 +94,7 @@ const ANSI_OFFSET: Record<string, number> = {
  *
  * @internal
  */
-export function resolveColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
+function resolveColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
   let input = c
   // 1. Strip `/<alpha>` suffix (theme-slot forms only; hex alpha is
   //    embedded in the hex byte string).
@@ -243,7 +243,7 @@ export function resolveStyle(ref: string | Style | undefined, theme?: Theme): St
  *
  * @internal
  */
-export function resolveThemeColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
+function resolveThemeColor(c: string, theme: Theme | undefined, kind?: "fg" | "bg"): string {
   const v = walkSlot(c, theme)
   if (typeof v === "string") return v
   if (kind !== undefined) {
