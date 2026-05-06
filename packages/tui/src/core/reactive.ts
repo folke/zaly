@@ -348,45 +348,44 @@ export type AsyncTracker = Set<Promise<unknown>>
 export const AsyncTrackerContext = createContext<AsyncTracker | undefined>(undefined)
 
 /**
- * Solid-style async accessor. Runs `fn` inside an `effect` so signal
- * reads inside it auto-track and re-fire the work when sources change.
- * Each run registers its promise with the active `AsyncTrackerContext`,
- * so stream surfaces can drain pending work before commit and Suspense
- * boundaries can decide on a fallback.
- *
- * Returns an `Accessor<T | undefined>`. Reads inside a render / effect
- * subscribe normally — the value updates from `initialValue` to the
- * resolved value once the promise settles.
+ * Solid-style async accessor. `fn` reads signals (tracked); the
+ * effect re-fires when any of them change. Each run registers its
+ * promise with the active `AsyncTrackerContext` so the surface's
+ * drain awaits it before commit.
  *
  * ```ts
  * const highlighted = createAsync(
- *   async () => highlight(unwrap(props.code)),
+ *   async (prev) => highlight(unwrap(props.code)),
  *   { initialValue: unwrap(props.code) },
  * )
  * text(highlighted)
  * ```
  *
- * **Stale-write protection**: each effect run bumps a generation
- * counter; late `.then` callbacks check it and skip the `setValue`
- * if a newer run has already fired. Without this, fast-changing
- * sources would race their highlight results.
+ * **`fn` should not reach for `RenderContext`** — per-render fields
+ * (width / version) don't apply at the time the async work runs, and
+ * effect re-fires happen in signal-write batches outside any render
+ * so `useContext(RenderContext)` returns `undefined` there. Owning
+ * widgets capture what they need (theme, etc.) into a signal during
+ * render and feed that into `fn`.
  *
- * **Tracker registration**: `useContext(AsyncTrackerContext)` is read
- * inside the effect, so the active tracker at the time the effect
- * runs is the one registered with. For widget bodies that defer to
- * `_render` (the standard `widget()` factory), this picks up the
- * surface's or Suspense boundary's tracker correctly.
+ * **Stale-write protection**: each run bumps a generation counter;
+ * late `.then` callbacks check it and skip `setValue` if a newer run
+ * has already fired.
+ *
+ * **`prev`** is the previously resolved value (or `initialValue`) —
+ * useful for diff-based fetches. Reading it does *not* track, so
+ * resolving the new value won't re-fire the effect.
  */
 export function createAsync<T>(
-  fn: () => Promise<T>,
+  fn: (prev: T | undefined) => Promise<T>,
   opts: { initialValue: T }
 ): Accessor<T>
 export function createAsync<T>(
-  fn: () => Promise<T>,
+  fn: (prev: T | undefined) => Promise<T>,
   opts?: { initialValue?: T }
 ): Accessor<T | undefined>
 export function createAsync<T>(
-  fn: () => Promise<T>,
+  fn: (prev: T | undefined) => Promise<T>,
   opts?: { initialValue?: T }
 ): Accessor<T | undefined> {
   const [value, setValue] = signal<T | undefined>(opts?.initialValue)
@@ -396,11 +395,10 @@ export function createAsync<T>(
     const tracker = useContext(AsyncTrackerContext)
     let p: Promise<T>
     try {
-      p = fn()
+      p = fn(untrack(value))
     } catch (error) {
       // Sync throw inside `fn` — surface as a rejected promise so the
-      // tracker registration / cleanup path stays uniform with async
-      // failures, and so callers can still observe the failure.
+      // tracker registration / cleanup path stays uniform.
       p = Promise.reject(error as Error)
     }
     tracker?.add(p)
@@ -410,8 +408,7 @@ export function createAsync<T>(
       },
       () => {
         // Swallow — async failures leave the previous (or initial)
-        // value in place. Producers that want richer error UX should
-        // model errors in `T` (e.g. `T = Result<Highlighted, Error>`).
+        // value in place.
       }
     ).finally(() => {
       tracker?.delete(p)
