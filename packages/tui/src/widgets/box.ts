@@ -112,12 +112,12 @@ export class Box extends Node<BoxStyle> {
   }
 
   async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {
-    const children = this.children
+    const children = flattenFragments(this.children)
     if (children.length === 0) return []
     const gap = this.state.gap ?? 0
     return (this.state.flexDirection ?? "column") === "row"
-      ? this.#layoutRow(innerWidth, ctx, gap)
-      : this.#layoutColumn(innerWidth, ctx, gap)
+      ? this.#layoutRow(children, innerWidth, ctx, gap)
+      : this.#layoutColumn(children, innerWidth, ctx, gap)
   }
 
   /**
@@ -129,9 +129,12 @@ export class Box extends Node<BoxStyle> {
    * width. In fit-mode the parent has no slack to give, so the
    * allocator's available is capped at the natural sum.
    */
-  async #layoutRow(innerWidth: number, ctx: RenderCtx, gap: number): Promise<string[]> {
-    const children = this.children
-
+  async #layoutRow(
+    children: readonly Node[],
+    innerWidth: number,
+    ctx: RenderCtx,
+    gap: number
+  ): Promise<string[]> {
     const measureWidths = children.map((c) =>
       isFixedWidth(c.state.width) ? (resolveSize(c.state.width, innerWidth) ?? innerWidth) : innerWidth
     )
@@ -182,8 +185,12 @@ export class Box extends Node<BoxStyle> {
    * widest child row instead of stretching to `innerWidth` — symmetric
    * to how row-direction caps allocator-available at the natural sum.
    */
-  async #layoutColumn(innerWidth: number, ctx: RenderCtx, gap: number): Promise<string[]> {
-    const children = this.children
+  async #layoutColumn(
+    children: readonly Node[],
+    innerWidth: number,
+    ctx: RenderCtx,
+    gap: number
+  ): Promise<string[]> {
     const widths = children.map((c) => {
       const s = c.state
       const fixed = isFixedWidth(s.width) ? resolveSize(s.width, innerWidth) : undefined
@@ -224,6 +231,34 @@ export function box(style: State<BoxStyle>, ...children: Child[]): Box {
   const b = new Box(style)
   for (const c of children) if (c) b.add(c)
   return b
+}
+
+/**
+ * Flatten fragment nodes (those that implement the `layoutChildren`
+ * protocol — `show`, `errorBoundary`, `suspense`) into their currently
+ * active leaves. Recursive: a fragment whose `layoutChildren()`
+ * itself contains fragments unfolds completely.
+ *
+ * The fragment Node still lives in the tree (mounted, propagating
+ * invalidates) — layout just sees through it so its children share
+ * the parent box's flex distribution, gap, and cross-axis sizing
+ * instead of collapsing into a single slot.
+ */
+function flattenFragments(children: readonly Node[]): readonly Node[] {
+  let needs = false
+  for (const c of children) {
+    if (c.layoutChildren !== undefined) {
+      needs = true
+      break
+    }
+  }
+  if (!needs) return children
+  const out: Node[] = []
+  for (const c of children) {
+    if (c.layoutChildren !== undefined) out.push(...flattenFragments(c.layoutChildren()))
+    else out.push(c)
+  }
+  return out
 }
 
 function resolvePadding(p: Padding | undefined): [t: number, r: number, b: number, l: number] {

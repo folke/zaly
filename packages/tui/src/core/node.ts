@@ -85,6 +85,19 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     return this.#children
   }
 
+  /** Fragment protocol — opt-in. When defined, layout containers
+   *  (Box's row/column allocator) treat this node as a transparent
+   *  fragment and substitute the returned children for `this` during
+   *  flex allocation and rendering. The fragment Node still exists in
+   *  the tree (it's mounted; it bubbles invalidates from its
+   *  descendants), but layout sees through it.
+   *
+   *  Used by `show`, `errorBoundary`, `suspense`: their children carry
+   *  their own flex props through to the parent box, can share its
+   *  `gap`, and a row containing a `show` with multiple flex children
+   *  allocates per-leaf-slot rather than collapsing into one. */
+  layoutChildren?(): readonly Node[]
+
   // Make parent readonly
   get parent(): Node | undefined {
     return this.#parent

@@ -24,12 +24,23 @@ export interface ShowState<T = unknown> {
  * branch contributes zero rows, same footprint as `visible: false`.
  */
 export class Show extends Node<ShowState> {
-  protected async _render(ctx: RenderCtx): Promise<string[]> {
+  /** Fragment protocol — Box's layout calls this to expand Show into
+   *  whichever subtree is currently active. Reading `when` here
+   *  subscribes the *layout-parent's* tracking ctx (Box) so flips
+   *  re-render the parent and flow updated children through layout
+   *  cleanly. */
+  override layoutChildren(): readonly Node[] {
     const cond = !!unwrap(this.state.when ?? true)
     const fb = this.state.fallback
-    let targets: readonly Node[]
-    if (cond) targets = fb === undefined ? this.children : this.children.filter((c) => c !== fb)
-    else targets = fb === undefined ? [] : [fb]
+    if (!cond) return fb === undefined ? [] : [fb]
+    return this.children.filter((c) => c !== fb)
+  }
+
+  /** Standalone-render fallback. Box parents go through
+   *  `layoutChildren` and bypass this; only fires when `Show` sits
+   *  outside a layout container (root, overlay, etc.). */
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
+    const targets = this.layoutChildren()
     const rows = await Promise.all(targets.map((c) => c.render(ctx)))
     return rows.flat()
   }
