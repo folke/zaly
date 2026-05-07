@@ -180,13 +180,13 @@ describe("Box — border", () => {
   })
 
   test("borderTitleStyle defaults to theme `borderTitle` slot", async () => {
-    // moon.borderTitle = { bold: true, fg: "primary" } → 1;38;2;130;170;255
+    // moon.borderTitle = { bold: true, fg: "#589ed7" } → 1;38;2;88;158;215
     const b = new Box({ border: true, borderStyle: {}, borderTitle: "hi" })
     b.add(new Text({ content: "body" }))
     const out = await b.render(ctx(10))
     // Top row: unstyled border-prefix + styled title + unstyled border-suffix.
     // inner = 8, budget = 4, shown = "hi", trailing = 2 → "┌─" + " hi " + "───┐"
-    expect(out[0]).toBe("┌─\x1b[1;38;2;130;170;255m hi \x1b[0m───┐")
+    expect(out[0]).toBe("┌─\x1b[1;38;2;88;158;215m hi \x1b[0m───┐")
   })
 })
 

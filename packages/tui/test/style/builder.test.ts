@@ -103,9 +103,8 @@ describe("style() — Style-valued theme slots", () => {
   })
 
   test("Style slot with attrs + fg together", () => {
-    // moon.borderTitle resolves (via `title` slot) to { bold: true, fg: "primary" }
-    // → primary = #82aaff
-    expect(style(defaultTheme).borderTitle("T")).toBe("\x1b[1;38;2;130;170;255mT\x1b[0m")
+    // moon.borderTitle = { bold: true, fg: "#589ed7" } in the current theme.
+    expect(style(defaultTheme).borderTitle("T")).toBe("\x1b[1;38;2;88;158;215mT\x1b[0m")
   })
 
   test("chained attrs before Style slot are preserved when slot doesn't conflict", () => {

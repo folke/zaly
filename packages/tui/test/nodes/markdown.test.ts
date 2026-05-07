@@ -113,21 +113,21 @@ describe("markdown — block callbacks", () => {
     expect(out).toContain(`${open}${"─".repeat(10)}${RESET}`)
   })
 
-  test("code block: lines padded to widest-content with 1-cell leading band", async () => {
-    // Block hugs its content rather than stretching to ctx.width; one cell
-    // of leading padding gives the background a visible band on the left.
+  test("code block: lines padded to widest-content with 2-cell horizontal band", async () => {
+    // Block hugs its content rather than stretching to ctx.width; padding is
+    // [1, 2, 1, 2] (top/bottom blank rows + 2-cell h-pad).
     const open = expectedOpen("mdCodeBlock")
     const out = render("```\nabc\n```", 80)
-    expect(out).toContain(`${open} abc${RESET}`)
+    expect(out).toContain(`${open}  abc  ${RESET}`)
   })
 
   test("code block: multi-line block pads every line to the widest", async () => {
     const open = expectedOpen("mdCodeBlock")
-    // Widest line is "console" (7); each line gets one leading space and is
-    // right-padded to widest. Total band width = widest + 1.
+    // Widest line is "console" (7); total band width = widest + 4 = 11.
+    // "abc" (3) gets centered → 4 + 3 + 4; "console" (7) gets 2 + 7 + 2.
     const out = render("```\nabc\nconsole\n```", 80)
-    expect(out).toContain(`${open} abc${" ".repeat(4)}${RESET}`)
-    expect(out).toContain(`${open} console${RESET}`)
+    expect(out).toContain(`${open}    abc    ${RESET}`)
+    expect(out).toContain(`${open}  console  ${RESET}`)
   })
 
   test("code block: highlighter output replaces plain mdCodeBlock fg when supplied", async () => {
@@ -148,15 +148,16 @@ describe("markdown — block callbacks", () => {
       "```mystery\nprint(1)\n```",
       createCallbacks({ ...ctx(40), highlighter: passthroughHighlighter })
     )
-    expect(out).toContain(`${bodyOpen} print(1)`)
+    expect(out).toContain(`${bodyOpen}  print(1)  `)
   })
 
   test("code block: width is capped at ctx.width", async () => {
     const open = expectedOpen("mdCodeBlock")
-    // Line is 12 cells; block's outer width is capped at ctx.width = 8.
-    // Leading-pad still emitted before the (over-long) content.
+    // Line is 12 cells; block's outer width is capped at ctx.width = 8. Once
+    // content exceeds the cap, no horizontal padding fits — content is
+    // emitted as-is, surrounded by full-width blank rows.
     const out = render("```\nabcdefghijkl\n```", 8)
-    expect(out).toContain(`${open} abcdefghijkl${RESET}`)
+    expect(out).toContain(`${open}abcdefghijkl${RESET}`)
   })
 
   test('code block: title="..." renders above block with mdCodeBlockTitle (marked)', () => {
@@ -165,9 +166,9 @@ describe("markdown — block callbacks", () => {
     // Direct marked path: md.ts already parses title, no component wrapper.
     const out = renderMarkdown('```ts title="foo.ts"\nx\n```', createCallbacks(ctx(10)))
     expect(out).toContain(`${titleOpen}foo.ts${RESET}`)
-    expect(out).toContain(`${bodyOpen} x`)
+    expect(out).toContain(`${bodyOpen}  x  `)
     const titleIdx = out.indexOf("foo.ts")
-    const bodyIdx = out.lastIndexOf(`${bodyOpen} x`)
+    const bodyIdx = out.lastIndexOf(`${bodyOpen}  x  `)
     expect(titleIdx).toBeLessThan(bodyIdx)
   })
 
@@ -211,6 +212,149 @@ describe("markdown — block callbacks", () => {
     expect(plain).toMatch(/● outer/)
     // Inner item prefixed by 2 spaces of indent + the depth-1 glyph.
     expect(plain).toMatch(/\n {2}○ inner/)
+  })
+})
+
+// ─── RED: list-spacing semantics ────────────────────────────────────────
+// GFM defines a list as "loose" when any item contains a blank line OR any
+// two consecutive items are blank-line separated in source. Tight lists
+// stack siblings with single newlines (no blank rows); loose lists keep
+// blank rows between siblings. These tests pin the expected post-fix
+// behaviour for the rendering pipeline.
+describe("markdown — list spacing (loose vs tight)", () => {
+  // Helper: compact view of the rendered output, minus trailing blank
+  // lines that the document-level contract leaves for the next block.
+  const view = (md: string, width = 80): string =>
+    stripAnsi(render(md, width)).replace(/^\n+|\n+$/g, "")
+
+  test("tight list: siblings stack with single newlines (no blank rows)", () => {
+    expect(view("- one\n- two\n- three")).toBe("● one\n● two\n● three")
+  })
+
+  test("tight ordered list: numeric markers stack with single newlines", () => {
+    expect(view("1. one\n2. two\n3. three")).toBe("1. one\n2. two\n3. three")
+  })
+
+  test("loose list (blank-line separated source): blank row between siblings", () => {
+    expect(view("- one\n\n- two\n\n- three")).toBe("● one\n\n● two\n\n● three")
+  })
+
+  test("loose list (item carries block content): blank rows between siblings", () => {
+    // The code block makes the parent list loose. The two prose siblings
+    // around it should be separated by blank rows.
+    const out = view("- before\n\n  ```\n  x\n  ```\n\n- after", 40)
+    // Sanity: both sibling markers are present.
+    expect(out).toMatch(/● before/)
+    expect(out).toMatch(/● after/)
+    // Loose: a blank row sits between the last line of `before`'s subtree
+    // and the marker for `after`.
+    expect(out).toMatch(/\n\n● after/)
+  })
+
+  test("nested tight list: 2-space indent, no blank rows between nested siblings", () => {
+    // Outer + tight inner — inner siblings stack tightly under the outer.
+    const out = view("- outer\n  - a\n  - b")
+    expect(out).toBe("● outer\n  ○ a\n  ○ b")
+  })
+
+  test("nested loose list: blank rows between nested siblings", () => {
+    const out = view("- outer\n  - a\n\n  - b")
+    expect(out).toBe("● outer\n  ○ a\n\n  ○ b")
+  })
+
+  test("code block inside list item: indented and bracketed by blank rows", () => {
+    // The fenced block sits under `before`, indented to the item's body
+    // column (2 spaces) plus the code block's own 2-cell horizontal pad,
+    // so the visible content sits at column 4. A blank row separates the
+    // prose line from the code block.
+    const out = view("- before\n\n  ```\n  x\n  ```", 20)
+    const lines = out.split("\n")
+    expect(lines[0]).toMatch(/^● before$/)
+    // bodyIndent (2) + code-block lpad (2) before the `x` cell.
+    expect(out).toMatch(/^ {4}x/m)
+    expect(out).toMatch(/● before\n\n {2}/)
+  })
+
+  test("paragraph after a list separated by a blank row", () => {
+    // The list ends, prose follows — the gap should be exactly one blank
+    // row (i.e. \n\n), not zero and not more.
+    expect(view("- one\n- two\n\nepilogue")).toBe("● one\n● two\n\nepilogue")
+  })
+
+  test("two top-level lists separated by paragraph keep their internal tightness", () => {
+    // Each list is independently tight; the paragraph between them is the
+    // only blank-row separator.
+    expect(view("- a\n- b\n\nmid\n\n- c\n- d")).toBe("● a\n● b\n\nmid\n\n● c\n● d")
+  })
+
+  test("tight item with multiple block elements (no blank lines): list stays tight", () => {
+    // CommonMark §5.4: a list is loose only if items have blank-line
+    // separation OR a multi-block item has blank lines *between* its
+    // blocks. Here item 1 mixes prose + code + prose with NO blank
+    // lines, so the list is tight per spec — neither parser emits a
+    // `<p>` wrap, and our renderer must agree.
+    const out = view("- before:\n  ```\n  x\n  ```\n  after.\n- next item", 20)
+    // No blank row between sibling items.
+    expect(out).toMatch(/after\.\n● next item/)
+    // Code block content is still indented under the marker column.
+    expect(out).toMatch(/^ {4}x/m)
+  })
+
+  test("nested list inside loose outer stays independently tight", () => {
+    // Per CommonMark §5.4: inner-list looseness must NOT propagate up,
+    // and outer-list looseness must NOT cascade *into* the inner list's
+    // own item separators. Here outer items are blank-line separated
+    // (→ outer loose) but each inner list is tight (→ inner siblings
+    // stack with single newlines).
+    const md = `
+- outer 1
+  - inner a
+  - inner b
+
+- outer 2
+  - inner c
+  - inner d
+      `.trim()
+    const out = view(md)
+    // Outer is loose: blank row between "outer 1"-subtree and "outer 2".
+    expect(out).toMatch(/inner b\n\n● outer 2/)
+    // Inner remains tight under each outer: siblings on consecutive
+    // lines, no blank rows between them.
+    expect(out).toMatch(/ {2}○ inner a\n {2}○ inner b/)
+    expect(out).toMatch(/ {2}○ inner c\n {2}○ inner d/)
+  })
+
+  test("loose item separates parent prose from nested list with a blank row", () => {
+    // CommonMark: paragraph in a loose list is `<p>`-wrapped, CSS gives
+    // it margin → visual gap between the parent's prose and any nested
+    // list it contains. Mirror that gap with a blank row.
+    const md = "- outer 1\n  - inner a\n\n- outer 2\n  - inner b"
+    const out = view(md)
+    // Parent prose followed by blank row, then nested marker.
+    expect(out).toMatch(/● outer 1\n\n {2}○ inner a/)
+    expect(out).toMatch(/● outer 2\n\n {2}○ inner b/)
+  })
+
+  test("tight item keeps nested list snug under parent prose (no blank row)", () => {
+    // Inverted: outer list is single-item, tight (no blank-line
+    // separation, no multi-block-with-blank-line items). Parent prose
+    // and nested list should be on consecutive lines with no gap.
+    const out = view("- outer\n  - inner")
+    expect(out).toBe("● outer\n  ○ inner")
+  })
+
+  test("code block following raw text in tight item is not glued to the text", () => {
+    // When a list is tight, the parser doesn't wrap text in `<p>`, so
+    // the text arrives in `listItem` children with no trailing `\n\n`.
+    // The code callback must still emit on its own row(s) — the leading
+    // `\n` in the code output guards this.
+    const out = view("- is:\n  ```\n  x\n  ```\n  ok.", 20)
+    // "is:" must end with a newline before the code block's first row.
+    // (The code-block top-pad row is whitespace-only, so we just check
+    // that "is:" doesn't continue into a non-newline char.)
+    expect(out).toMatch(/is:\n/)
+    // And the code "x" is a separate row.
+    expect(out).toMatch(/^ {4}x/m)
   })
 })
 
