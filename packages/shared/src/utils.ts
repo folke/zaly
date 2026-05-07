@@ -123,6 +123,6 @@ export function since(from: number, to = Date.now()): string {
   return h % 24 === 0 ? `${d}d` : `${d}d ${h % 24}h`
 }
 
-export function clamp(num: number, opts: { min?: number; max?: number }): number {
-  return Math.min(opts.max ?? num, Math.max(opts.min ?? num, num))
+export function clamp(num: number, min?: number, max?: number): number {
+  return Math.min(max ?? num, Math.max(min ?? num, num))
 }

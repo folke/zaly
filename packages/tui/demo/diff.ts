@@ -1,9 +1,5 @@
-import type { DiffEdit } from "../src/widgets/diff.ts"
-
 import { box, createCtx, diff, text } from "../src/index.ts"
 
-// Original file — a small module with three call sites we'll edit in
-// different ways to exercise add / remove / replace plus multiple hunks.
 const original = `import type { Config } from "./config.ts"
 
 import { readFileSync } from "node:fs"
@@ -27,43 +23,28 @@ export function farewell(name: string): string {
 }
 `.replace(/\n$/, "")
 
-const edits: DiffEdit[] = [
-  // Replace the JSDoc block to mention the env var fallback.
-  {
-    from: 5,
-    replacement: [
-      "/**",
-      " * Load the agent config. Looks for `agent.json` at the path given by",
-      " * `$ZALY_CONFIG`, falling back to cwd.",
-      " */",
-    ],
-    to: 7,
-  },
-  // Rewrite `loadConfig` to honour the env var.
-  {
-    from: 9,
-    replacement: [
-      "  const envPath = process.env.ZALY_CONFIG?.trim()",
-      '  const path = envPath !== undefined && envPath !== ""',
-      "    ? resolve(envPath)",
-      '    : resolve(process.cwd(), "agent.json")',
-    ],
-    to: 10,
-  },
-  // Template-literal rewrite for greet.
-  {
-    from: 15,
-    // oxlint-disable-next-line no-template-curly-in-string
-    replacement: ["  return `hello ${name}`"],
-    to: 16,
-  },
-  // Delete the farewell export entirely.
-  {
-    from: 18,
-    replacement: [],
-    to: 22,
-  },
-]
+const modified = `import type { Config } from "./config.ts"
+
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+
+/**
+ * Load the agent config. Looks for \`agent.json\` at the path given by
+ * \`$ZALY_CONFIG\`, falling back to cwd.
+ */
+export function loadConfig(): Config {
+  const envPath = process.env.ZALY_CONFIG?.trim()
+  const path = envPath !== undefined && envPath !== ""
+    ? resolve(envPath)
+    : resolve(process.cwd(), "agent.json")
+  const raw = readFileSync(path, "utf8")
+  return JSON.parse(raw) as Config
+}
+
+export function greet(name: string): string {
+  return \`hello \${name}\`
+}
+`.replace(/\n$/, "")
 
 const ctx = createCtx({ width: 100 })
 
@@ -74,8 +55,8 @@ const app = box(
   heading("@zaly/tui — diff() demo"),
   diff({
     context: 2,
-    edits,
     lang: "typescript",
+    modified,
     original,
     title: "src/config.ts",
   })

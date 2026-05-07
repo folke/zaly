@@ -11,6 +11,9 @@ import { assertFresh } from "./read.ts"
 export type WriteTool = typeof writeTool
 
 export type WriteToolMeta = FileMeta & {
+  /** File content before the write. Undefined for new files. The
+   *  post-write content is recoverable from the original call's
+   *  `params.content`, so we don't redundantly stash it on meta. */
   original?: string
 }
 

@@ -2,33 +2,27 @@ import type { WriteTool } from "@zaly/agent"
 import type { ToolResultProps } from "./index.ts"
 
 import { prettyPath } from "@zaly/shared"
-import { box, code, memo, widget } from "@zaly/tui"
+import { diff, memo, widget } from "@zaly/tui"
 
-const PREVIEW_LINE_LIMIT = 10
-
-/** Result renderer for the `read` tool. Once the file contents land,
- *  render them as a syntax-highlighted code block titled with the path.
- *
- *  The kernel's read tool prefixes lines with `cat -n`-style numbering;
- *  we strip it before highlighting so shiki tokens line up with the
- *  source. The numbering is regenerated visually by the terminal's
- *  natural row count anyway. */
+/** Result renderer for the `write` tool. Renders a unified diff between
+ *  the pre-write content (`meta.original`, empty for new files) and
+ *  the post-write content (`meta.content`). New files show as fully-
+ *  added — same shape as a GitHub "new file" diff view. */
 export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
   const path = memo(() => {
     const p = props.result()?.meta?.path
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
   const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
-  const text = memo(() => props.params?.content ?? "")
+  const original = memo(() => props.result()?.meta?.original ?? "")
+  // Post-write content comes straight from the call's `params.content` —
+  // the tool doesn't redundantly stash it on meta.
+  const modified = memo(() => props.params?.content ?? "")
 
-  return box(
-    {},
-    code({
-      code: text,
-      limit: PREVIEW_LINE_LIMIT,
-      numbered: true,
-      path,
-      title,
-    })
-  )
+  return diff({
+    modified,
+    original,
+    path,
+    title,
+  })
 })

@@ -9,7 +9,10 @@ import { assertFresh } from "./read.ts"
 
 export type EditTool = typeof editTool
 export type EditToolMeta = FileMeta & {
+  /** File content before any edit was applied. */
   original: string
+  /** File content after all edits were applied — exactly what's now on disk. */
+  content: string
 }
 
 /**
@@ -77,7 +80,7 @@ export const editTool = defineTool({
     const updated = applyEdits(original, args.edits, path)
     await writeFile(path, updated, "utf8")
     const fstat = await stat(path)
-    ctx.meta = { kind: "edit", mtime: fstat.mtimeMs, original, path }
+    ctx.meta = { content: updated, kind: "edit", mtime: fstat.mtimeMs, original, path }
 
     const bytes = Buffer.byteLength(updated, "utf8")
     const lines = countLines(updated)
