@@ -36,7 +36,8 @@
     "fg": "#82aaff"
   },
   "mdCodeBlock": {
-    "bg": "#1e2030"
+    "bg": "#1e2030",
+    "fg": "#c8d3f5"
   },
   "mdHeading": {
     "bg": "#2c314a",
