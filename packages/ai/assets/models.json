@@ -22349,45 +22349,6 @@
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
-    "opencode-go/mimo-v2-omni": {
-      "id": "mimo-v2-omni",
-      "name": "MiMo V2 Omni",
-      "family": "mimo-v2-omni",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.4,
-        "output": 2,
-        "cache_read": 0.08
-      },
-      "limit": {
-        "context": 262144,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://opencode.ai/zen/go/v1"
-    },
     "opencode-go/mimo-v2.5": {
       "id": "mimo-v2.5",
       "name": "MiMo V2.5",
@@ -22652,47 +22613,6 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://opencode.ai/zen/go/v1"
-    },
-    "opencode-go/mimo-v2-pro": {
-      "id": "mimo-v2-pro",
-      "name": "MiMo V2 Pro",
-      "family": "mimo-v2-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 1,
-        "output": 3,
-        "cache_read": 0.2,
-        "context_over_200k": {
-          "input": 2,
-          "output": 6,
-          "cache_read": 0.4
-        }
-      },
-      "limit": {
-        "context": 1048576,
-        "output": 128000
-      },
-      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://opencode.ai/zen/go/v1"
     },
@@ -32143,104 +32063,6 @@
       },
       "baseUrl": "https://zenmux.ai/api/anthropic/v1"
     },
-    "zenmux/xiaomi/mimo-v2-omni": {
-      "id": "xiaomi/mimo-v2-omni",
-      "name": "MiMo V2 Omni",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-01-01",
-      "release_date": "2026-03-20",
-      "last_updated": "2026-03-20",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.4,
-        "output": 2
-      },
-      "limit": {
-        "context": 265000,
-        "output": 265000
-      },
-      "maxTokens": 265000,
-      "provider": "openai",
-      "baseUrl": "https://zenmux.ai/api/v1"
-    },
-    "zenmux/xiaomi/mimo-v2-pro": {
-      "id": "xiaomi/mimo-v2-pro",
-      "name": "MiMo V2 Pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-01-01",
-      "release_date": "2026-03-20",
-      "last_updated": "2026-03-20",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 1.5,
-        "output": 4.5
-      },
-      "limit": {
-        "context": 1000000,
-        "output": 256000
-      },
-      "maxTokens": 256000,
-      "provider": "openai",
-      "baseUrl": "https://zenmux.ai/api/v1"
-    },
-    "zenmux/xiaomi/mimo-v2-flash": {
-      "id": "xiaomi/mimo-v2-flash",
-      "name": "MiMo-V2-Flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-01-01",
-      "release_date": "2025-12-17",
-      "last_updated": "2025-12-17",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0.1,
-        "output": 0.3,
-        "cache_read": 0.01
-      },
-      "limit": {
-        "context": 262000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://zenmux.ai/api/v1"
-    },
     "zenmux/deepseek/deepseek-v4-flash": {
       "id": "deepseek/deepseek-v4-flash",
       "name": "DeepSeek V4 Flash",
@@ -32487,6 +32309,43 @@
       "provider": "openai",
       "baseUrl": "https://zenmux.ai/api/v1"
     },
+    "zenmux/xiaomi/mimo-v2-omni": {
+      "id": "xiaomi/mimo-v2-omni",
+      "name": "MiMo V2 Omni",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08
+      },
+      "limit": {
+        "context": 265000,
+        "output": 265000
+      },
+      "maxTokens": 265000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
     "zenmux/xiaomi/mimo-v2.5": {
       "id": "xiaomi/mimo-v2.5",
       "name": "MiMo-V2.5",
@@ -32528,6 +32387,77 @@
         "output": 131072
       },
       "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/xiaomi/mimo-v2-pro": {
+      "id": "xiaomi/mimo-v2-pro",
+      "name": "MiMo V2 Pro",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 256000
+      },
+      "maxTokens": 256000,
+      "provider": "openai",
+      "baseUrl": "https://zenmux.ai/api/v1"
+    },
+    "zenmux/xiaomi/mimo-v2-flash": {
+      "id": "xiaomi/mimo-v2-flash",
+      "name": "MiMo-V2-Flash",
+      "family": "mimo",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-12-01",
+      "release_date": "2025-12-16",
+      "last_updated": "2026-02-04",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.1,
+        "output": 0.3,
+        "cache_read": 0.01
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://zenmux.ai/api/v1"
     },

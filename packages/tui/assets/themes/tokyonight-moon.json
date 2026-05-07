@@ -3,8 +3,16 @@
   "accent": "#ff966c",
   "blend": "#222436",
   "border": "#589ed7",
+  "borderTitle": {
+    "bold": true,
+    "fg": "#589ed7"
+  },
   "code": {
     "bg": "#1e2030"
+  },
+  "comment": {
+    "fg": "#636da6",
+    "italic": true
   },
   "diffAdd": {
     "bg": "#2a4556"
@@ -15,17 +23,20 @@
   "diffDel": {
     "bg": "#4b2a3d"
   },
-  "dim": "#828bb8",
+  "divider": "#589ed7",
   "error": "#c53b53",
+  "gutter": "#3b4261",
+  "highlight": {
+    "bg": "#222436",
+    "fg": "#c8d3f5"
+  },
   "info": "#0db9d7",
-  "line": "#3b4261",
   "mdCode": {
     "bg": "#444a73",
     "fg": "#82aaff"
   },
   "mdCodeBlock": {
-    "bg": "#1e2030",
-    "fg": "#c8d3f5"
+    "bg": "#1e2030"
   },
   "mdHeading": {
     "bg": "#2c314a",
@@ -84,9 +95,23 @@
     "italic": true
   },
   "mdTable": "#ff966c",
-  "muted": "#3b4261",
+  "muted": "#545c7e",
+  "overlay": {
+    "bg": "#1e2030",
+    "fg": "#c8d3f5"
+  },
   "primary": "#82aaff",
+  "quiet": {
+    "dim": true,
+    "fg": "#545c7e",
+    "italic": true
+  },
+  "selection": {
+    "bg": "#2d3f76",
+    "bold": true
+  },
   "shiki": "tokyo-night",
+  "subtle": "#1e2030",
   "success": "#4fd6be",
   "text": "#c8d3f5",
   "title": {
@@ -94,7 +119,7 @@
     "fg": "#82aaff"
   },
   "ui": {
-    "bg": "#1e2030",
+    "bg": "#2f334d",
     "fg": "#c8d3f5"
   },
   "warn": "#ffc777"
