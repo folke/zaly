@@ -162,6 +162,48 @@ interface ClaudeRecord {
    *  (masker `maxAge`, freshness, replay) sees realistic timestamps
    *  rather than the import time. */
   timestamp?: string
+  /** Claude Code attaches structured per-tool result info here, alongside
+   *  the model-visible `tool_result` block. Shape varies by tool:
+   *    - read   → `{ type: "text"|"image", file: { filePath, ... } }`
+   *    - write  → `{ type: "create", filePath, content, originalFile, ... }`
+   *    - edit   → `{ type: "update", filePath, content, originalFile, ... }`
+   *    - bash   → `{ stdout, stderr, interrupted, ... }`
+   *  We mine this for `meta` to populate on imported `ToolResultPart`s.
+   */
+  toolUseResult?: ClaudeToolUseResult
+}
+
+type ClaudeToolUseResult =
+  | string
+  | {
+      type?: "text" | "image" | "create" | "update" | "file_unchanged"
+      file?: {
+        filePath?: string
+        content?: string
+        numLines?: number
+        startLine?: number
+        totalLines?: number
+      }
+      filePath?: string
+      /** Set on MultiEdit / Write results — post-state file content. */
+      content?: string
+      /** Set on Edit results (single replacement). The post-state must
+       *  be derived by applying `oldString` → `newString` to
+       *  `originalFile`. */
+      oldString?: string
+      newString?: string
+      replaceAll?: boolean
+      originalFile?: string
+      structuredPatch?: ClaudeStructuredHunk[]
+      [key: string]: unknown
+    }
+
+interface ClaudeStructuredHunk {
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  lines: string[]
 }
 
 interface ClaudeMessage {
@@ -427,7 +469,7 @@ function toZalyMessage(
   if (!inner) return undefined
 
   let m: Message | undefined
-  if (rec.type === "user") m = toUserMessage(inner, toolCalls)
+  if (rec.type === "user") m = toUserMessage(inner, toolCalls, rec.toolUseResult)
   else if (rec.type === "assistant") m = toAssistantMessage(inner, toolCalls)
   if (!m) return undefined
 
@@ -447,7 +489,8 @@ function toZalyMessage(
 
 function toUserMessage(
   inner: ClaudeMessage,
-  toolCalls: Map<string, ZalyToolCall>
+  toolCalls: Map<string, ZalyToolCall>,
+  toolUseResult: ClaudeToolUseResult | undefined
 ): Message | undefined {
   const content = inner.content
   if (typeof content === "string") {
@@ -458,7 +501,13 @@ function toUserMessage(
   // If every block is a tool_result, this is a zaly tool message.
   if (content.every((b) => b.type === "tool_result")) {
     const parts = content
-      .map((b) => toToolResultPart(b as Extract<ClaudeBlock, { type: "tool_result" }>, toolCalls))
+      .map((b) =>
+        toToolResultPart(
+          b as Extract<ClaudeBlock, { type: "tool_result" }>,
+          toolCalls,
+          toolUseResult
+        )
+      )
       .filter((p): p is ToolResultPart => p !== undefined)
     if (parts.length === 0) return undefined
     return { content: parts, role: "tool" }
@@ -477,16 +526,152 @@ function toUserMessage(
 
 function toToolResultPart(
   block: Extract<ClaudeBlock, { type: "tool_result" }>,
-  toolCalls: Map<string, ZalyToolCall>
+  toolCalls: Map<string, ZalyToolCall>,
+  toolUseResult: ClaudeToolUseResult | undefined
 ): ToolResultPart | undefined {
   if (typeof block.tool_use_id !== "string") return undefined
+  const name = toolCalls.get(block.tool_use_id)?.name ?? ""
+  const meta = toolUseResultMeta(name, toolUseResult)
   return {
     content: toToolResultContent(block.content),
     id: block.tool_use_id,
     isError: block.is_error === true,
-    name: toolCalls.get(block.tool_use_id)?.name ?? "",
+    name,
     type: "tool-result",
+    ...(meta !== undefined ? { meta } : {}),
   }
+}
+
+/** Map Claude Code's per-tool `toolUseResult` shape onto our flat
+ *  `meta` schema. mtime is unknown at import time — we set 0 so any
+ *  later `assertFresh` check forces the agent to re-read before
+ *  mutating, rather than trusting potentially-stale bytes. */
+function toolUseResultMeta(
+  name: string,
+  result: ClaudeToolUseResult | undefined
+): Record<string, unknown> | undefined {
+  if (result === undefined || typeof result === "string") return undefined
+  switch (name) {
+    case "read": {
+      const file = result.file
+      if (!file?.filePath) return undefined
+      return {
+        full: file.totalLines !== undefined && file.numLines === file.totalLines,
+        kind: "read",
+        limit: file.numLines,
+        mtime: 0,
+        offset: file.startLine,
+        path: file.filePath,
+      }
+    }
+    case "write": {
+      if (!result.filePath) return undefined
+      // Post-write content lives on the original tool call's
+      // `params.content`; we only stash `original` (pre-write).
+      return {
+        full: true,
+        kind: "write",
+        mtime: 0,
+        original: result.originalFile,
+        path: result.filePath,
+      }
+    }
+    case "edit": {
+      if (!result.filePath) return undefined
+      // Several Claude Code shapes to handle:
+      //  1. MultiEdit / older Edit: `content` (post-state) is provided
+      //     directly alongside `originalFile` (pre-state).
+      //  2. Single Edit with full pre-state: `oldString`/`newString`
+      //     swap on top of a populated `originalFile`. Derive content
+      //     by applying the swap.
+      //  3. Single Edit without pre-state but with `structuredPatch`:
+      //     reconstruct synthetic pre/post strings from the patch hunks
+      //     (Claude Code's UI does the same trick — the patch carries
+      //     context + line numbers). The diff widget then renders with
+      //     the real file line numbers in the gutter.
+      //  4. None of the above: fall back to showing just the swap.
+      const originalFile =
+        typeof result.originalFile === "string" && result.originalFile.length > 0
+          ? result.originalFile
+          : undefined
+      let original = originalFile ?? ""
+      let content = ""
+
+      if (typeof result.content === "string") {
+        content = result.content
+      } else if (typeof result.oldString === "string" && typeof result.newString === "string") {
+        const { newString, oldString } = result
+        const applied = applyClaudeEdit(originalFile, oldString, newString, result.replaceAll)
+        if (applied !== undefined) {
+          content = applied
+        } else {
+          const synth = synthesizeFromStructuredPatch(result.structuredPatch)
+          if (synth !== undefined) {
+            original = synth.original
+            content = synth.modified
+          } else {
+            original = oldString
+            content = newString
+          }
+        }
+      }
+      return { content, kind: "edit", mtime: 0, original, path: result.filePath }
+    }
+    default: {
+      return undefined
+    }
+  }
+}
+
+/** Apply a Claude single-Edit swap to the pre-edit content. Returns
+ *  `undefined` when the edit can't be applied (no original file recorded
+ *  or the search string doesn't appear in it) — caller falls back to
+ *  showing just the swap. */
+function applyClaudeEdit(
+  original: string | undefined,
+  oldString: string,
+  newString: string,
+  replaceAll: boolean | undefined
+): string | undefined {
+  if (original === undefined || !original.includes(oldString)) return undefined
+  return replaceAll === true
+    ? original.split(oldString).join(newString)
+    : original.replace(oldString, newString)
+}
+
+/** Reconstruct synthetic pre/post strings from a Claude `structuredPatch`.
+ *  Hunks are placed at their real line numbers (`oldStart`/`newStart`)
+ *  with empty-line padding outside, so the diff widget's gutter shows
+ *  accurate file line numbers — same effect as Claude Code's UI. Lines
+ *  prefixed " "/" -" go to the original, " "/" +" go to modified. */
+function synthesizeFromStructuredPatch(
+  patch: ClaudeStructuredHunk[] | undefined
+): { original: string; modified: string } | undefined {
+  if (!Array.isArray(patch) || patch.length === 0) return undefined
+  const origLines: string[] = []
+  const modLines: string[] = []
+  for (const h of patch) {
+    padTo(origLines, h.oldStart)
+    padTo(modLines, h.newStart)
+    for (const raw of h.lines) {
+      // Each entry is a unified-diff row: " ctx", "-removed", "+added".
+      const tag = raw[0]
+      const body = raw.slice(1)
+      if (tag === "-") origLines.push(body)
+      else if (tag === "+") modLines.push(body)
+      else {
+        origLines.push(body)
+        modLines.push(body)
+      }
+    }
+  }
+  return { modified: modLines.join("\n"), original: origLines.join("\n") }
+}
+
+/** 1-based line indexing in the patch; pad with empty strings up to
+ *  the target line so subsequent pushes land at the right index. */
+function padTo(arr: string[], idx: number): void {
+  while (arr.length < idx - 1) arr.push("")
 }
 
 /** Tool result content: Claude allows string OR an array of text/image
