@@ -2,7 +2,9 @@ import type { BashTool } from "@zaly/agent"
 import type { ToolResultProps } from "./index.ts"
 
 import { justText } from "@zaly/ai"
-import { box, code, memo, text, widget } from "@zaly/tui"
+import { box, code, memo, text, widget, formatLines } from "@zaly/tui"
+
+const PREVIEW_LINE_LIMIT = 10
 
 /** Result renderer for the `bash` tool.
  *
@@ -28,11 +30,17 @@ export const bashResult = widget((props: ToolResultProps<BashTool>) => {
       code({ code: command ?? "", lang: "bash", style: false })
     ),
     text({
-      content: memo(() => {
-        const content = props.result()?.content
-        return content === undefined ? "…" : justText(content)
-      }),
-      style: "muted",
+      content: (ctx) =>
+        memo(() => {
+          const content = props.result()?.content
+          if (!content) return "…"
+          return formatLines(justText(content), {
+            limit: PREVIEW_LINE_LIMIT,
+            maxLineLength: ctx.width,
+            style: ctx.style.muted,
+          }).join("\n")
+        }),
+      style: "code",
     })
   )
 })

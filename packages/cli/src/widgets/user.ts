@@ -4,5 +4,5 @@ import { bubble } from "./bubble.ts"
 /** Single user-turn bubble. Static once committed — plain string content
  *  is enough; the closure-reactivity hooks aren't needed here. */
 export const userMessage = widget((props: { content: string }) =>
-  bubble({ type: "user" }, markdown(`**you:** ${props.content}`))
+  bubble({ type: "user" }, markdown(props.content))
 )
