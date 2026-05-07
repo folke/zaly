@@ -39,14 +39,21 @@ export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["c
     // fg; override fg with `"inherit"` so only bg + attrs wrap each row
     // and shiki's per-token colors show through on top of the backdrop.
     const wrap = highlighted === undefined ? s.mdCodeBlock : s.mdCodeBlock.fg("inherit")
-    const lines = splitAnsi(body)
-    const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + 1)
+    const hpad = 2
+    const lines = ["", ...splitAnsi(body), ""]
+    const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + hpad * 2)
     const padded = lines.map((line) => {
-      const padding = Math.max(0, width - stringWidth(line) - 1)
-      return wrap(` ${line}${" ".repeat(padding)}`)
+      const padding = Math.max(0, width - stringWidth(line))
+      const lpad = " ".repeat(Math.ceil(padding / 2))
+      const rpad = " ".repeat(padding - lpad.length)
+      return wrap(`${lpad}${line}${rpad}`)
     })
     const titleLine = meta?.title === undefined ? "" : `${s.mdCodeBlockTitle(meta.title)}\n`
-    return `${titleLine}${padded.join("\n")}\n\n`
+    // Leading `\n` guards against raw-text siblings that don't emit a
+    // paragraph-wrap (e.g. some inline-only list items where the parser
+    // drops the paragraph). Containers (`listItem`, document) collapse
+    // `\n{3,}` → `\n\n` so paragraph + code doesn't double up.
+    return `\n${titleLine}${padded.join("\n")}\n\n`
   }
 }
 
@@ -83,7 +90,7 @@ function tryHighlight(
  */
 function collectFenceLanguages(md: string): string[] {
   const langs = new Set<string>()
-  for (const m of md.matchAll(/^ {0,3}`{3,}([^\n]+)$/gm)) {
+  for (const m of md.matchAll(/^\s*`{3,}([^\n]+)$/gm)) {
     const lang = m[1].trim().split(/\s/)[0]
     if (lang !== "") langs.add(lang)
   }

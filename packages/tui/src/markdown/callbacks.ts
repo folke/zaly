@@ -4,14 +4,10 @@ import type { MdCallbacks } from "./types.ts"
 
 import { hyperlink, stringWidth } from "../style/ansi.ts"
 import { createCodeCallback } from "./code.ts"
+import { createListCallbacks } from "./list.ts"
 import { createTableCallbacks } from "./table.ts"
 
 const icons = {
-  bullets: ["●", "○", "◆", "◇"],
-  checkbox: {
-    checked: "[x]",
-    unchecked: "[ ]",
-  },
   hr: "─",
   quote: "│",
 } as const
@@ -65,36 +61,13 @@ export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
 
     link: (children, { href }) => hyperlink(href, s.mdLink(children)),
 
-    list: (children, meta) => {
-      // Nested lists need a leading newline so they break from their parent
-      // item's inline text content instead of running on the same line.
-      if (meta.depth === 0) return `${children}\n`
-      return `\n${children}`
-    },
-
-    listItem: (children, meta) => {
-      let marker = s.mdListBullet(
-        meta.ordered
-          ? `${(meta.start ?? 1) + meta.index}.`
-          : icons.bullets[meta.depth % icons.bullets.length]
-      )
-
-      const indent = "  ".repeat(meta.depth)
-      if (meta.checked !== undefined) {
-        const ref = meta.checked ? "mdListChecked" : "mdListUnchecked"
-        marker += ` ${s.add(ref)(meta.checked ? "[x]" : "[ ]")}`
-      }
-      // Children of a list item end with "\n" from their paragraph wrapper;
-      // trim to keep rows tight.
-      return `${indent}${marker} ${children.replace(/\n+$/, "")}\n`
-    },
-
     paragraph: (children) => `${children}\n\n`,
 
     strikethrough: (children) => s.mdStrikethrough(children),
 
     strong: (children) => s.mdBold(children),
 
+    ...createListCallbacks(ctx),
     ...createTableCallbacks(ctx),
   }
 }

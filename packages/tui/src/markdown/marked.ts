@@ -1,4 +1,4 @@
-import type { Tokens } from "marked"
+import type { Token, Tokens } from "marked"
 import type {
   CbNoMeta,
   MdCallbacks,
@@ -29,13 +29,13 @@ export function renderMarkdown(input: string, callbacks: MdCallbacks, opts?: MdO
   return renderTokens(tokens, callbacks, 0)
 }
 
-function renderTokens(tokens: Tokens.Generic[], cb: MdCallbacks, depth: number): string {
+function renderTokens(tokens: Token[], cb: MdCallbacks, depth: number): string {
   let out = ""
   for (const tok of tokens) out += renderToken(tok, cb, depth)
   return out
 }
 
-function renderToken(tok: Tokens.Generic, cb: MdCallbacks, depth: number): string {
+function renderToken(tok: Token, cb: MdCallbacks, depth: number): string {
   switch (tok.type) {
     case "heading": {
       const t = tok as Tokens.Heading
