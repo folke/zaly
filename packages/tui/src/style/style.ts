@@ -1,12 +1,9 @@
 import type { Theme } from "../themes/types.ts"
-import type { Step } from "./oklch.ts"
-import type { AnsiColor, AnsiStyle, Color, HexColor, Style } from "./types.ts"
+import type { AnsiColor, AnsiStyle, Color, Style } from "./types.ts"
 
 import { openAnsi } from "./ansi.ts"
-import { isHexColor, modifyColor } from "./color.ts"
-import { steps as COLOR_STEPS } from "./oklch.ts"
-
-const STEP_SET = new Set<number>(COLOR_STEPS)
+import { isHexColor } from "./color.ts"
+import { shiftLightness } from "./oklch.ts"
 
 /**
  * Build the opening SGR escape for a style descriptor. Returns '' if nothing
@@ -45,39 +42,25 @@ export function resolveStyle(ref: string | Style | undefined, theme?: Theme): St
   return ThemeResolver.from(theme).getStyle(ref)
 }
 
-function parseColor(c: string): { alpha?: number; base: string; step?: Step } {
-  let step: Step | undefined
-  let alpha: number | undefined
-  c = c.replace(/\/(\d{1,3})$/, (_, p) => {
-    const pct = Number(p)
-    if (Number.isFinite(pct) && pct >= 0 && pct <= 100) {
-      alpha = pct / 100
-      return ""
-    }
-    throw new TypeError(`Invalid alpha percentage in color "${c}": ${p}`)
-  })
-  c = c.replace(/-(\d{2,3})$/, (_, p) => {
-    const s = Number(p) as Step
-    if (STEP_SET.has(s)) {
-      step = s
-      return ""
-    }
-    throw new TypeError(`Invalid color step in color "${c}": ${p}`)
-  })
-  return { alpha, base: c, step }
+function parseColor(c: string): { base: string; lightness?: number } {
+  const m = c.match(/^(.+?)([+-]\d{1,3})$/)
+  if (!m) return { base: c }
+  let lightness = Number(m[2])
+  if (!Number.isFinite(lightness))
+    throw new TypeError(`Invalid color step in color "${c}": ${m[2]}`)
+  lightness = Math.abs(lightness) < 1 ? lightness : lightness / 100
+  return { base: m[1], lightness }
 }
 
 class ThemeResolver {
   static #cache = new Map<Partial<Theme>, ThemeResolver>()
   static #main = new ThemeResolver()
   #theme: Partial<Theme>
-  #blend?: HexColor
   #styleCache = new Map<string, Style>()
   #colorCache = new Map<string, string>()
 
   private constructor(theme: Partial<Theme> = {}) {
     this.#theme = theme
-    this.#blend = theme.blend && isHexColor(theme.blend) ? theme.blend : undefined
   }
 
   static from(theme?: Theme): ThemeResolver {
@@ -119,16 +102,12 @@ class ThemeResolver {
     if (seen.has(ref)) throw new TypeError(`Circular dependency for theme slot "${ref}".`)
     seen.add(ref)
 
-    const { base, step, alpha } = parseColor(ref)
+    const { base, lightness } = parseColor(ref)
 
     let value = this.#theme[base as keyof Theme] ?? base
     if (typeof value === "object") value = this.getColor(value[kind], kind, seen)
     else if (value !== base) value = this.getColor(value, kind, seen)
-
-    ret =
-      isHexColor(value) && (step || (alpha && this.#blend))
-        ? modifyColor(value, { alpha, bg: this.#blend, step })
-        : value
+    ret = lightness !== undefined && isHexColor(value) ? shiftLightness(value, lightness) : value
     this.#colorCache.set(key, ret)
     return ret as AnsiColor
   }

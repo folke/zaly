@@ -1,13 +1,13 @@
 import type { Theme } from "../themes/index.ts"
-import type { Step } from "./oklch.ts"
-import type { AnsiColorName, BrightAnsiColorName, Color, ColorStep, Style } from "./types.ts"
+import type { AnsiColorName, BrightAnsiColorName, Color, Style } from "./types.ts"
 
 import { defaultTheme } from "../themes/index.ts"
 import { reapplyStyle, RESET } from "./ansi.ts"
-import { steps as COLOR_STEPS } from "./oklch.ts"
 import { openStyle, resolveStyle } from "./style.ts"
 
 type AttrName = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"
+
+type AnyThemeKey = Exclude<keyof Theme, "shiki" | "$schema"> | (string & {})
 
 // Theme color slots that can chain as fg/bg. `fg`/`bg` become setter methods
 // below, so exclude them here to avoid naming collisions. `dim` is an attr on
@@ -23,18 +23,12 @@ export type StyleBuilder = {
   (text: string): string
   fg(color: Color): StyleBuilder
   bg(color: Color): StyleBuilder
-  add(slot: string | Style | undefined): StyleBuilder
-  /** Apply an alpha percentage (0..100) to the most recently set color
-   *  channel. Appends a `/<n>` suffix so the resolver pre-composites
-   *  against `theme.bg` at render time. Useful for subtle washes:
-   *  `style.primary.alpha(30)`, `style.bgError.alpha(20)`. */
-  alpha(n: number): StyleBuilder
+  add(slot?: AnyThemeKey | Style): StyleBuilder
+  lighten(n: number): StyleBuilder
+  darken(n: number): StyleBuilder
   // oxlint-disable-next-line typescript/consistent-indexed-object-style -- mapped over a key union, not an open string index
 } & {
   readonly [K in AttrName | FgChainKey | BgChainKey | FgExtractKey]: StyleBuilder
-  // oxlint-disable-next-line typescript/consistent-indexed-object-style
-} & {
-  readonly [K in Step]: StyleBuilder
 }
 
 /**
@@ -64,13 +58,12 @@ export function style(theme: Theme = defaultTheme): StyleBuilder {
 }
 
 const ATTRS = new Set<string>(["bold", "dim", "italic", "underline", "inverse", "strikethrough"])
-const STEP_SET = new Set<number>(COLOR_STEPS)
 
 /** Pending "arg-taking" op on a chain. Set when the caller accesses
  *  `.fg` / `.bg` / `.alpha` / `.add` — the chain is "parked" waiting
  *  for its argument. Calling the parked chain consumes the arg and
  *  produces the real child chain. */
-type PendingOp = "fg" | "bg" | "alpha" | "add"
+type PendingOp = "fg" | "bg" | "darken" | "add" | "lighten"
 
 /** All the inputs a chain needs to behave correctly, gathered in one
  *  object so we can pass it around cheaply instead of closing over
@@ -127,14 +120,16 @@ function fulfill(state: BuilderState, arg: unknown): StyleBuilder {
     case "bg": {
       return build({ current: { ...current, bg: arg as Color }, last: "bg", theme })
     }
-    case "alpha": {
+    case "lighten":
+    case "darken": {
       if (last === undefined) return build({ current, last, theme })
       const existing = current[last]
       if (typeof existing !== "string" || existing === "inherit") {
         return build({ current, last, theme })
       }
-      const stripped = existing.includes("/") ? existing.replace(/\/\d+$/, "") : existing
-      const next = `${stripped}/${arg as number}` as Color
+      const stripped = existing.replace(/[+-]\d+$/, "")
+      const n = Math.abs(arg as number)
+      const next = `${stripped}${pending === "lighten" ? "+" : "-"}${n}` as Color
       return build({ current: { ...current, [last]: next }, last, theme })
     }
     default: {
@@ -152,24 +147,8 @@ function fulfill(state: BuilderState, arg: unknown): StyleBuilder {
 function compileKey(state: BuilderState, key: string): StyleBuilder | undefined {
   const { current, last, theme } = state
 
-  // Numeric key → tonal variant of `last`. No-op when no channel has
-  // been set, or when the existing value is non-hex-resolvable.
-  const asNumber = Number(key)
-  if (!Number.isNaN(asNumber) && STEP_SET.has(asNumber)) {
-    if (last === undefined) return build({ current, last, theme })
-    const existing = current[last]
-    if (typeof existing !== "string" || existing === "inherit") {
-      return build({ current, last, theme })
-    }
-    // Replace (not stack) an existing suffix so `[300][500]` lands
-    // on step 500, not `-300-500`.
-    const base = existing.includes("-") ? existing.replace(/-(\d{2,3})$/, "") : existing
-    const next = `${base}-${key as ColorStep}` as Color
-    return build({ current: { ...current, [last]: next }, last, theme })
-  }
-
   // Arg-taking ops come back as chains parked in the `pending` state.
-  if (key === "fg" || key === "bg" || key === "alpha" || key === "add") {
+  if (key === "fg" || key === "bg" || key === "lighten" || key === "darken" || key === "add") {
     return build({ current, last, pending: key, theme })
   }
 

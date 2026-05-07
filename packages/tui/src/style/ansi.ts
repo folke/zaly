@@ -147,7 +147,7 @@ function _ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {
   const rgb = isHexColor(color) ? parseHex(color) : undefined
   if (rgb) {
     const indicator = kind === "fg" ? 38 : 48
-    return `${indicator};2;${rgb.r};${rgb.g};${rgb.b}`
+    return `${indicator};2;${rgb[0]};${rgb[1]};${rgb[2]}`
   }
 }
 

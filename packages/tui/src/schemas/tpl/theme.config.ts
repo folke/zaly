@@ -2,7 +2,6 @@ import type {
   AnsiColorName,
   BrightAnsiColorName,
   Color,
-  ColorStep,
   HexColor,
   ShikiTheme,
   Style,
@@ -26,21 +25,14 @@ type ColorKeys<T> = {
 const toBaseColor = createAssert<
   HexColor | AnsiColorName | BrightAnsiColorName | ThemeKey | "inherit"
 >()
-const toStepColor = createAssert<HexColor | ThemeKey>()
-const toAlphaColor = createAssert<ThemeKey>()
+const toLightnessColor = createAssert<HexColor | ThemeKey>()
 const toStyle = createAssert<UserStyle>()
-const toStep = createAssert<ColorStep>()
 const isColorKey = createIs<ColorKeys<Theme>>()
 
 function toColor(value: unknown) {
   if (typeof value !== "string") return toBaseColor(value) // will throw
-  const color = value.replace(/\/\d+/, "").replace(/-\d+/, "")
-  if (value.match(/\/\d+/)) toAlphaColor(color)
-  const step = value.match(/-(\d+)/)
-  if (step) {
-    toStep(step[1])
-    return toStepColor(color)
-  }
+  const color = value.replace(/[+-]\d+/, "")
+  if (value.match(/\/\d+/)) toLightnessColor(color)
   return toBaseColor(color)
 }
 

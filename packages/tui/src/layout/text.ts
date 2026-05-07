@@ -26,8 +26,8 @@ export function formatLines(
   } = {}
 ): string[] {
   const lines = typeof text === "string" ? splitAnsi(text) : text
-  const offset = clamp(opts.offset ?? 0, { max: lines.length, min: 0 })
-  const limit = clamp(opts.limit ?? lines.length, { max: lines.length - offset, min: 1 })
+  const offset = clamp(opts.offset ?? 0, 0, lines.length - 1)
+  const limit = clamp(opts.limit ?? lines.length, 1, lines.length - offset)
   const ellipsis = opts.style?.(ELLIPSIS) ?? ELLIPSIS
   let slice = lines
     .slice(offset, offset + limit)

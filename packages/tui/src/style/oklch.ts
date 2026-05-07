@@ -15,31 +15,8 @@
 
 import type { HexColor } from "./types.ts"
 
-/**
- * Tailwind-v4-style tonal stops (approximate). Values chosen to land on
- * a perceptually-even spread in the OKLab L channel:
- *
- *   50  → very light tint
- *   500 → base lightness (roughly matching a well-designed brand color)
- *   950 → very dark shade
- */
-export const STOPS = {
-  100: 0.95,
-  200: 0.89,
-  300: 0.81,
-  400: 0.7,
-  50: 0.98,
-  500: 0.62,
-  600: 0.55,
-  700: 0.47,
-  800: 0.37,
-  900: 0.27,
-  950: 0.18,
-} as const
-
-export type Step = keyof typeof STOPS
-
-export const steps: readonly Step[] = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
+import { clamp } from "@zaly/shared"
+import { parseHex, toHex } from "./color.ts"
 
 export interface OKLCH {
   L: number
@@ -47,26 +24,9 @@ export interface OKLCH {
   h: number
 }
 
+const cache = new Map<string, HexColor>()
+
 // ---------- conversions ----------
-
-function parseHex(hex: string): [number, number, number] {
-  let s = hex.trim().replace(/^#/, "")
-  // oxlint-disable-next-line typescript/no-misused-spread
-  if (s.length === 3) s = [...s].map((c) => c + c).join("")
-  if (s.length !== 6) throw new Error(`invalid hex color: ${hex}`)
-  const n = Number.parseInt(s, 16)
-  if (Number.isNaN(n)) throw new Error(`invalid hex color: ${hex}`)
-  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]
-}
-
-function toHex(r: number, g: number, b: number): string {
-  // oxlint-disable-next-line unicorn/consistent-function-scoping
-  const h = (n: number): string =>
-    Math.max(0, Math.min(255, Math.round(n * 255)))
-      .toString(16)
-      .padStart(2, "0")
-  return `#${h(r)}${h(g)}${h(b)}`
-}
 
 function srgbToLinear(c: number): number {
   return c <= 0.040_45 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
@@ -123,7 +83,7 @@ function inGamut([r, g, b]: [number, number, number], eps = 0.001): boolean {
  * and `h` fixed and shrinks `C` toward the achromatic axis until the
  * color fits, which is the CSS Color Level 4-recommended behavior.
  */
-export function oklchToHex(oklch: OKLCH): string {
+export function oklchToHex(oklch: OKLCH): HexColor {
   let rgb = oklchToLinearRgb(oklch)
   if (!inGamut(rgb)) {
     // Binary-search on C.
@@ -144,68 +104,21 @@ export function oklchToHex(oklch: OKLCH): string {
   return toHex(r, g, b)
 }
 
-// ---------- variant generation ----------
-
-/**
- * Return a tonal variant of `hex` at the given step (50..950).
- *
- * The input color is anchored at whichever stop's L is closest to it,
- * so passing e.g. `#82aaff` (L ≈ 0.70) gets placed at step 400 and the
- * generated 400 variant matches the input byte-for-byte. The other
- * stops are interpolated between the input's L and the tint/shade
- * extremes (STOPS[50] / STOPS[950]), so the full palette stays evenly
- * spread without shifting the caller's chosen hex off its own step.
- *
- * Hue and chroma are preserved; only L moves. Out-of-sRGB results are
- * chroma-reduced via `oklchToHex`. Results are cached keyed on
- * `${hex}:${step}`.
- */
-export function variant(hex: HexColor, step: Step): HexColor {
-  const key = `${hex}:${step}`
-  const cached = cache.get(key)
-  if (cached !== undefined) return cached as HexColor
-  if (!(step in STOPS)) throw new Error(`unknown variant step: ${step}`)
-  const base = hexToOklch(hex)
-  const targetL = anchorL(base.L, step)
-  const out = oklchToHex({ ...base, L: targetL })
-  cache.set(key, out)
-  return out as HexColor
+export function modifyOklch(hex: HexColor, modify: (o: OKLCH) => OKLCH): HexColor {
+  return oklchToHex(modify(hexToOklch(hex)))
 }
 
-/**
- * Compute the target L for `step`, anchored so the stop closest to
- * `baseL` returns `baseL` exactly. Intermediate stops interpolate
- * linearly (in step index) between the anchor and the tint/shade
- * extremes.
- */
-function anchorL(baseL: number, step: Step): number {
-  let anchor: Step = 500
-  let best = Number.POSITIVE_INFINITY
-  for (const s of steps) {
-    const d = Math.abs(STOPS[s] - baseL)
-    if (d < best) {
-      best = d
-      anchor = s
-    }
-  }
-  if (step === anchor) return baseL
-  const aIdx = steps.indexOf(anchor)
-  const sIdx = steps.indexOf(step)
-  if (sIdx < aIdx) {
-    // Tint side: interpolate from STOPS[50] (at idx 0) up to baseL.
-    const t = sIdx / aIdx
-    return STOPS[50] * (1 - t) + baseL * t
-  }
-  // Shade side: interpolate from baseL down to STOPS[950] (at last idx).
-  const t = (sIdx - aIdx) / (steps.length - 1 - aIdx)
-  return baseL * (1 - t) + STOPS[950] * t
-}
+export function shiftLightness(hex: HexColor, delta: number): HexColor {
+  const key = `${hex}:${delta}`
+  let ret = cache.get(key)
+  if (ret) return ret
 
-/** Return the full 11-stop palette for a base color. */
-export function variants(hex: string): Record<Step, string> {
-  const out = {} as Record<Step, string>
-  for (const s of steps) out[s] = variant(hex as HexColor, s)
-  return out
+  const okl = hexToOklch(hex)
+  const L = clamp(okl.L + delta, 0, 1)
+  // Pull chroma toward 0 as L approaches an extreme. Keeps near-white
+  // and near-black from going out of gamut.
+  const margin = Math.min(L, 1 - L)
+  const C = okl.C * Math.min(1, margin / 0.1)
+  cache.set(key, (ret = oklchToHex({ ...okl, C, L })))
+  return ret
 }
-
-const cache = new Map<string, string>()

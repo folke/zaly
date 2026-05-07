@@ -1,22 +1,11 @@
 import type { Theme } from "../themes/index.ts"
-import type { Step } from "./oklch.ts"
 
-export type RGBA = {
-  r: number
-  g: number
-  b: number
-  a?: number
-  hex: HexColor
-}
-
-/** Tonal-scale step as a string literal (e.g. `"300"`). Used to form
- *  variant suffixes in Color values: `primary-300`, `#82aaff-900`. */
-export type ColorStep = `${Step}`
+export type RGB = [r: number, g: number, b: number]
 
 /** Alpha percentage for `/<alpha>` suffix on Color values. Any integer
  *  0..100 is accepted at runtime; the template literal uses `${number}`
  *  so odd values like `/98` typecheck without a cast. */
-export type ColorAlpha = `${number}`
+export type ColorLightness = `${number}`
 
 /** Standard ANSI color names. */
 export type AnsiColorName =
@@ -60,8 +49,8 @@ export type Color =
   | BrightAnsiColorName
   | ThemeKey
   | "inherit"
-  | `${HexColor | ThemeKey}-${ColorStep}`
-  | `${ThemeKey}/${ColorAlpha}`
+  | `${HexColor | ThemeKey}-${ColorLightness}`
+  | `${HexColor | ThemeKey}+${ColorLightness}`
 
 export interface AnsiStyle {
   fg?: AnsiColor

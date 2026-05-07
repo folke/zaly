@@ -38,11 +38,8 @@ barplot(async () => {
     // bgFoo + fgFoo extraction from a Style slot (diff-widget path).
     bench("style.bgPrimary.fgAccent('hi')", () => s.bgPrimary.fgAccent("hi"))
 
-    // Variant suffix (tonal scale) + apply. Hits resolveColor with step.
-    bench("style.primary[300]('hi')", () => s.primary[300]("hi"))
-
     // Variant + alpha (tonal + blend against theme.bg).
-    bench("style.primary[300].alpha(20)('hi')", () => s.primary[300].alpha(20)("hi"))
+    bench("style.primary.lighten(20)('hi')", () => s.primary.lighten(20)("hi"))
 
     // `add` path — merges a slot's Style via resolveStyle.
     bench("style.add('border')('hi')", () => s.add("border")("hi"))

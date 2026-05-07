@@ -48,7 +48,7 @@ export const defaults: Theme = {
 
   // markdown
   mdBold: { bold: true },
-  mdCode: { bg: "primary/15", fg: "black" },
+  mdCode: { bg: "primary+10", fg: "black" },
   mdCodeBlock: { bg: "highlight", fg: "primary" },
   mdCodeBlockTitle: "title",
   mdHeading1: "mdHeading",
@@ -75,9 +75,9 @@ export const defaults: Theme = {
   menuLabel: "primary",
 
   // diff
-  diffAdd: { bg: "success/3", fg: "success" },
+  diffAdd: { bg: "success-50", fg: "success" },
   diffContext: "muted",
-  diffDel: { bg: "error/3", fg: "error" },
+  diffDel: { bg: "error-50", fg: "error" },
   diffLine: "gutter",
   diffTitle: "title",
 }
