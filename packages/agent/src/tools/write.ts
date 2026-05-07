@@ -10,7 +10,9 @@ import { assertFresh } from "./read.ts"
 
 export type WriteTool = typeof writeTool
 
-export type WriteToolMeta = FileMeta & {}
+export type WriteToolMeta = FileMeta & {
+  original?: string
+}
 
 /**
  * Write a file to disk. Overwrites if the file exists; creates parent
@@ -57,8 +59,9 @@ export const writeTool = defineTool({
     if (safeStat(path)?.isFile()) assertFresh(path, ctx)
 
     let text: string
+    let original: string | undefined
     try {
-      const original = await safeReadFile(path)
+      original = await safeReadFile(path)
       const eol = detectEol({ path, text: original })
       text = normalizeEol(args.content, { eol })
       await mkdir(dirname(path), { recursive: true })
@@ -74,7 +77,7 @@ export const writeTool = defineTool({
     // Record post-write so the model can re-edit without an immediate
     // re-read. Captures the new mtime.
     const fstat = await stat(path)
-    ctx.meta = { full: true, kind: "write", mtime: fstat.mtimeMs, path }
+    ctx.meta = { full: true, kind: "write", mtime: fstat.mtimeMs, original, path }
 
     const bytes = Buffer.byteLength(text, "utf8")
     const lines = countLines(text)
