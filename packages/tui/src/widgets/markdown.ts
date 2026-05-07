@@ -56,7 +56,8 @@ export class Markdown extends Node<MarkdownState> {
     callbacks.image = image.cb
 
     const rendered = fn(source, callbacks, this.state.options)
-    const final = await image.resolve(ctx, rendered)
+    const md = await image.resolve(ctx, rendered)
+    const final = md.replace(/\n\n+/g, "\n\n")
 
     // Mirror the source's trailing newlines: the renderer adds its own
     // padding after blocks (`\n\n` after paragraphs, etc.) which would
