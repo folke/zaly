@@ -157,17 +157,16 @@ describe("validateTheme — positive cases", () => {
     expect(() => validateTheme({ accent: "primary" })).not.toThrow()
   })
 
-  test("step variant accepted on hex and slot", () => {
-    expect(() => validateTheme({ accent: "primary-300", primary: "#ff0000-500" })).not.toThrow()
-  })
-
-  test("alpha variant accepted on slot ref", () => {
-    expect(() => validateTheme({ accent: "primary/20" })).not.toThrow()
+  test("lightness modifier accepted on hex and slot", () => {
+    // `<base>+N` lightens, `<base>-N` darkens (OKLCH percentage points).
+    expect(() =>
+      validateTheme({ accent: "primary+10", primary: "#ff0000-25" })
+    ).not.toThrow()
   })
 
   test("Style slot accepts fg/bg + attrs", () => {
     expect(() =>
-      validateTheme({ title: { bold: true, fg: "primary", bg: "muted/10" } })
+      validateTheme({ title: { bold: true, fg: "primary", bg: "muted-10" } })
     ).not.toThrow()
   })
 
@@ -201,9 +200,12 @@ describe("validateTheme — negative cases", () => {
     expect(() => validateTheme({ primary: { bold: true, fg: "red" } as never })).toThrow()
   })
 
-  test("unknown step number rejected", () => {
-    // 450 is not an OKLCH step; `toStep` narrows to the canonical set.
-    expect(() => validateTheme({ primary: "primary-450" as never })).toThrow()
+  test("malformed lightness modifier rejected", () => {
+    // The lightness suffix must be `+/-<number>`; anything else (extra
+    // sign, non-numeric, missing digits) trips the Color narrowing.
+    expect(() => validateTheme({ primary: "primary++10" as never })).toThrow()
+    expect(() => validateTheme({ primary: "primary+abc" as never })).toThrow()
+    expect(() => validateTheme({ primary: "primary+" as never })).toThrow()
   })
 
   test("invalid fg inside a Style rejected", () => {

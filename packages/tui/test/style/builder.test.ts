@@ -119,6 +119,157 @@ describe("style() — Style-valued theme slots", () => {
   })
 })
 
+// Pull RGB out of a truecolor SGR run for comparisons in the lightness
+// tests below.
+function rgb(out: string, kind: 38 | 48 = 38): [number, number, number] {
+  const m = new RegExp(`\\x1b\\[(?:[^m]*;)*${kind};2;(\\d+);(\\d+);(\\d+)m`).exec(out)!
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+describe("style() — lightness modifier (+N / -N)", () => {
+  // `<base>+N` / `<base>-N` shifts the resolved color's OKLCH lightness
+  // by N percentage points. Predictable and theme-bg-independent.
+
+  test("+N lightens vs the base slot", () => {
+    const base = style(defaultTheme).primary("x")
+    const lighter = style(defaultTheme).fg("primary+10")("x")
+    expect(lighter).not.toBe(base)
+    // Higher OKLCH L → higher per-channel sum (rough but reliable for
+    // mid-saturation primary colors like tokyonight #82aaff).
+    const baseSum = rgb(base).reduce((a, b) => a + b, 0)
+    const lighterSum = rgb(lighter).reduce((a, b) => a + b, 0)
+    expect(lighterSum).toBeGreaterThan(baseSum)
+  })
+
+  test("-N darkens vs the base slot", () => {
+    const base = style(defaultTheme).primary("x")
+    const darker = style(defaultTheme).fg("primary-10")("x")
+    expect(darker).not.toBe(base)
+    const baseSum = rgb(base).reduce((a, b) => a + b, 0)
+    const darkerSum = rgb(darker).reduce((a, b) => a + b, 0)
+    expect(darkerSum).toBeLessThan(baseSum)
+  })
+
+  test("works on the bg channel", () => {
+    const base = style(defaultTheme).bgPrimary("x")
+    const darker = style(defaultTheme).bg("primary-15")("x")
+    expect(rgb(darker, 48).reduce((a, b) => a + b, 0)).toBeLessThan(
+      rgb(base, 48).reduce((a, b) => a + b, 0)
+    )
+  })
+
+  test("works on a hex literal directly (no slot lookup needed)", () => {
+    const a = style().fg("#82aaff")("x")
+    const b = style().fg("#82aaff+10")("x")
+    expect(b).not.toBe(a)
+    expect(rgb(b).reduce((s, v) => s + v, 0)).toBeGreaterThan(
+      rgb(a).reduce((s, v) => s + v, 0)
+    )
+  })
+
+  test("clamps at 0 and 1 — extreme shifts saturate to black/white", () => {
+    const black = style().fg("#82aaff-100")("x")
+    const white = style().fg("#82aaff+100")("x")
+    const [r1, g1, b1] = rgb(black)
+    expect(r1 + g1 + b1).toBeLessThan(30)
+    const [r2, g2, b2] = rgb(white)
+    expect(r2 + g2 + b2).toBeGreaterThan(720)
+  })
+
+  test("zero is a no-op (same as the base)", () => {
+    expect(style(defaultTheme).fg("primary+0")("x")).toBe(
+      style(defaultTheme).primary("x")
+    )
+  })
+
+  test("chained slot ref carries the lightness modifier through", () => {
+    // A theme that aliases another slot with a lightness shift; the
+    // resolver should walk the chain and apply the shift at the leaf.
+    const theme = { ...defaultTheme, accent: "primary+10" } as never
+    const direct = style(theme).fg("primary+10")("x")
+    const viaChain = style(theme).accent("x")
+    expect(viaChain).toBe(direct)
+  })
+})
+
+describe("style() — darken / lighten methods", () => {
+  // `darken(n)` / `lighten(n)` shift the *last* set color (fg or bg)
+  // by N OKLCH percentage points. Equivalent to using the `-N` / `+N`
+  // suffix syntax — composes the same way through the resolver.
+
+  test("darken(N) on fg matches the equivalent `-N` suffix", () => {
+    const a = style(defaultTheme).primary.darken(10)("x")
+    const b = style(defaultTheme).fg("primary-10")("x")
+    expect(a).toBe(b)
+  })
+
+  test("lighten(N) on fg matches the equivalent `+N` suffix", () => {
+    const a = style(defaultTheme).primary.lighten(10)("x")
+    const b = style(defaultTheme).fg("primary+10")("x")
+    expect(a).toBe(b)
+  })
+
+  test("darken(N) targets the bg when bg was the last channel set", () => {
+    const a = style(defaultTheme).bgPrimary.darken(10)("x")
+    const b = style(defaultTheme).bg("primary-10")("x")
+    expect(a).toBe(b)
+  })
+
+  test("darken visibly darkens the rendered color", () => {
+    const base = rgb(style(defaultTheme).primary("x"))
+    const dark = rgb(style(defaultTheme).primary.darken(15)("x"))
+    expect(dark.reduce((s, v) => s + v, 0)).toBeLessThan(base.reduce((s, v) => s + v, 0))
+  })
+
+  test("lighten visibly lightens the rendered color", () => {
+    const base = rgb(style(defaultTheme).primary("x"))
+    const light = rgb(style(defaultTheme).primary.lighten(15)("x"))
+    expect(light.reduce((s, v) => s + v, 0)).toBeGreaterThan(
+      base.reduce((s, v) => s + v, 0)
+    )
+  })
+
+  test("darken(0) is a no-op", () => {
+    expect(style(defaultTheme).primary.darken(0)("x")).toBe(
+      style(defaultTheme).primary("x")
+    )
+  })
+
+  test("lighten(0) is a no-op", () => {
+    expect(style(defaultTheme).primary.lighten(0)("x")).toBe(
+      style(defaultTheme).primary("x")
+    )
+  })
+
+  test("repeated calls replace the previous shift (do not stack)", () => {
+    // The existing modifier is stripped before the new one is applied,
+    // so .darken(10).darken(5) ends with the slot at `-5`, not `-15`.
+    const a = style(defaultTheme).primary.darken(5)("x")
+    const b = style(defaultTheme).primary.darken(10).darken(5)("x")
+    expect(b).toBe(a)
+  })
+
+  test("lighten then darken on the same color: final wins", () => {
+    const a = style(defaultTheme).primary.darken(10)("x")
+    const b = style(defaultTheme).primary.lighten(20).darken(10)("x")
+    expect(b).toBe(a)
+  })
+
+  test("darken with no color set is a no-op (passthrough)", () => {
+    expect(style(defaultTheme).darken(10)("hello")).toBe("hello")
+  })
+
+  test("lighten with no color set is a no-op (passthrough)", () => {
+    expect(style(defaultTheme).lighten(10)("hello")).toBe("hello")
+  })
+
+  test("works on a hex literal directly", () => {
+    const a = style().fg("#82aaff").darken(10)("x")
+    const b = style().fg("#82aaff-10")("x")
+    expect(a).toBe(b)
+  })
+})
+
 describe("style() — inner-reset survival", () => {
   test("inner RESET gets the outer style re-applied after it", () => {
     // Simulates a nested builder call inside an outer one:
@@ -131,73 +282,3 @@ describe("style() — inner-reset survival", () => {
   })
 })
 
-describe("style() — tonal variants via -step suffix", () => {
-  test("fg slot-300 resolves through oklch", () => {
-    // tokyonight `primary` is `#82aaff`; anchored at step 400, so
-    // asking for 300 should yield a lighter hex.
-    const out = style(defaultTheme).fg("primary-300" as never)("x")
-    // Ensure we got truecolor SGR and it's not the base `#82aaff`.
-    expect(out).toMatch(/\x1b\[38;2;(\d+);(\d+);(\d+)m/)
-    const m = /\x1b\[38;2;(\d+);(\d+);(\d+)m/.exec(out)!
-    const [, r, g, b] = m.map(Number)
-    // Lighter than base → higher luminance approx.
-    expect(r + g + b).toBeGreaterThan(130 + 170 + 255 - 10)
-  })
-
-  test("bracket indexing applies to fg: style.primary[300]", () => {
-    const out = style(defaultTheme).primary[300]("x")
-    expect(out).toMatch(/\x1b\[38;2;/)
-    // Differs from the base primary(500-ish) SGR.
-    expect(out).not.toBe(style(defaultTheme).primary("x"))
-  })
-
-  test("bracket indexing applies to bg after bgSlot", () => {
-    const baseBg = style(defaultTheme).bgPrimary("x")
-    const varied = style(defaultTheme).bgPrimary[300]("x")
-    expect(varied).toMatch(/\x1b\[48;2;/)
-    expect(varied).not.toBe(baseBg)
-  })
-
-  test("bracket indexing replaces an existing step (does not stack)", () => {
-    const a = style(defaultTheme).primary[300]("x")
-    const b = style(defaultTheme).primary[500][300]("x")
-    // Final step in both cases is 300 → same output.
-    expect(b).toBe(a)
-  })
-
-  test("bracket indexing with no prior color set is a no-op", () => {
-    // No channel set → [300] returns an empty-style builder; rendered text equals input.
-    expect(style(defaultTheme)[300]("hello")).toBe("hello")
-  })
-
-  test("bgDiffAdd[200].fgDiffAdd sets bg variant and fg from the slot's own fg", () => {
-    const theme = { ...defaultTheme, diffAdd: { bg: "#223344", fg: "#c3e88d" } } as never
-    const out = style(theme).bgDiffAdd[200].fgDiffAdd("x")
-    // Both fg and bg SGR components present.
-    expect(out).toMatch(/\x1b\[(?:[^\]]*;)*48;2;/)
-    expect(out).toMatch(/\x1b\[(?:[^\]]*;)*38;2;/)
-  })
-
-  test("alpha(n) composites the last color over theme.bg", () => {
-    const full = style(defaultTheme).bgPrimary("x")
-    const washed = style(defaultTheme).bgPrimary.alpha(30)("x")
-    // Both emit a bg SGR, but the washed version's RGB should be closer
-    // to moon.bg (#222436) than the full primary (#82aaff).
-    const fullM = /\x1b\[48;2;(\d+);(\d+);(\d+)m/.exec(full)!
-    const washM = /\x1b\[48;2;(\d+);(\d+);(\d+)m/.exec(washed)!
-    expect(washM[0]).not.toBe(fullM[0])
-    const fullDist = Math.abs(Number(fullM[1]) - 0x22)
-    const washDist = Math.abs(Number(washM[1]) - 0x22)
-    expect(washDist).toBeLessThan(fullDist)
-  })
-
-  test("alpha(n) replaces an existing alpha (does not stack)", () => {
-    const a = style(defaultTheme).primary.alpha(30)("x")
-    const b = style(defaultTheme).primary.alpha(60).alpha(30)("x")
-    expect(b).toBe(a)
-  })
-
-  test("alpha(n) with no prior color set is a no-op", () => {
-    expect(style(defaultTheme).alpha(30)("hello")).toBe("hello")
-  })
-})

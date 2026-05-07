@@ -14,36 +14,33 @@ const simplify = (rows: readonly string[]): string[] =>
 
 describe("Diff widget", () => {
   test("single-line replacement shows one -/+ pair with context", async () => {
-    const original = "a\nb\nc\nd\ne"
     const n = diff({
       context: 1,
-      edits: [{ from: 2, to: 3, replacement: ["C"] }],
-      original,
+      modified: "a\nb\nC\nd\ne",
+      original: "a\nb\nc\nd\ne",
     })
     const rows = simplify(await n.render(ctx))
-    // Single gutter column: newNum for context/add, origNum for remove.
-    expect(rows).toEqual(["2   b", "3 - c", "3 + C", "4   d"])
+    // Two-column gutter: "<origNum> <newNum>" (both for context, only
+    // one side for remove/add). Trailing spaces collapsed by simplify.
+    expect(rows).toEqual(["2 2   b", "3   - c", "  3 + C", "4 4   d"])
   })
 
-  test("insertion (from === to) renders with no removed rows", async () => {
-    const original = "one\ntwo\nthree"
+  test("insertion renders with no removed rows", async () => {
     const n = diff({
       context: 0,
-      edits: [{ from: 1, to: 1, replacement: ["new"] }],
-      original,
+      modified: "one\nnew\ntwo\nthree",
+      original: "one\ntwo\nthree",
     })
     const rows = simplify(await n.render(ctx))
-    // Just the added line (context=0 → no surrounding context).
     expect(rows.filter((r) => r.includes("+"))).toHaveLength(1)
     expect(rows.filter((r) => r.includes("-"))).toHaveLength(0)
   })
 
-  test("deletion (replacement === []) renders with no added rows", async () => {
-    const original = "one\ntwo\nthree"
+  test("deletion renders with no added rows", async () => {
     const n = diff({
       context: 0,
-      edits: [{ from: 1, to: 2, replacement: [] }],
-      original,
+      modified: "one\nthree",
+      original: "one\ntwo\nthree",
     })
     const rows = simplify(await n.render(ctx))
     expect(rows.filter((r) => r.includes("+"))).toHaveLength(0)
@@ -51,70 +48,60 @@ describe("Diff widget", () => {
   })
 
   test("multiple edits align new-line numbers with accumulated offsets", async () => {
-    const original = "a\nb\nc\nd\ne"
+    // Hunk 1: replace line `b` (orig 2) with `B1` + `B2` → +1 delta.
+    // Hunk 2: drop line `d` (orig 4) → −1 delta. Post-edit total = 5 lines.
     const n = diff({
       context: 0,
-      edits: [
-        { from: 1, to: 2, replacement: ["B1", "B2"] }, // +1 line delta
-        { from: 3, to: 4, replacement: [] }, // -1 line delta
-      ],
-      original,
+      modified: "a\nB1\nB2\nc\ne",
+      original: "a\nb\nc\nd\ne",
     })
     const rows = simplify(await n.render(ctx))
-    // First hunk: line b removed at orig=2, B1/B2 added at new=2,3.
-    // Second hunk: line d removed at orig=4, newFrom would be 3 post-delta.
-    // Offsets after first edit: delta = +1. So newFrom of second edit = 3 + 1 = 4.
-    // Post-second-edit delta = 0. Total edited = 5 lines.
-    expect(rows).toContain("2 - b")
-    expect(rows).toContain("2 + B1")
-    expect(rows).toContain("3 + B2")
-    expect(rows).toContain("4 - d")
+    expect(rows).toContain("2   - b")
+    expect(rows).toContain("  2 + B1")
+    expect(rows).toContain("  3 + B2")
+    expect(rows).toContain("4   - d")
   })
 
   test("context lines fall between hunks when edits are spaced", async () => {
-    const original = "a\nb\nc\nd\ne\nf\ng"
     const n = diff({
       context: 1,
-      edits: [
-        { from: 1, to: 2, replacement: ["B"] },
-        { from: 5, to: 6, replacement: ["F"] },
-      ],
-      original,
+      modified: "a\nB\nc\nd\ne\nF\ng",
+      original: "a\nb\nc\nd\ne\nf\ng",
     })
     const rows = simplify(await n.render(ctx))
-    // Context rows appear around each hunk; they include both line numbers.
-    // Assert both hunks rendered with their flanking context.
-    expect(rows).toContain("1   a")
-    expect(rows).toContain("3   c")
-    expect(rows).toContain("5   e")
-    expect(rows).toContain("7   g")
-    // Changed lines:
-    expect(rows).toContain("2 - b")
-    expect(rows).toContain("2 + B")
-    expect(rows).toContain("6 - f")
-    expect(rows).toContain("6 + F")
+    expect(rows).toContain("1 1   a")
+    expect(rows).toContain("3 3   c")
+    expect(rows).toContain("5 5   e")
+    expect(rows).toContain("7 7   g")
+    expect(rows).toContain("2   - b")
+    expect(rows).toContain("  2 + B")
+    expect(rows).toContain("6   - f")
+    expect(rows).toContain("  6 + F")
   })
 
   test("renders a title above the diff when provided", async () => {
-    const n = diff({
-      context: 0,
-      edits: [{ from: 0, to: 1, replacement: ["y"] }],
-      original: "x",
-      title: "foo.ts",
-    })
+    const n = diff({ context: 0, modified: "y", original: "x", title: "foo.ts" })
     const rows = simplify(await n.render(ctx))
     expect(rows[0]).toBe("foo.ts")
   })
 
-  test("syntax-highlighted lang: content carries ANSI (and line count is preserved)", async () => {
+  test("syntax-highlighted lang: content carries ANSI", async () => {
     const n = diff({
       context: 1,
-      edits: [{ from: 0, to: 1, replacement: ["const x = 2"] }],
       lang: "typescript",
+      modified: "const x = 2\nconst y = 2",
       original: "const x = 1\nconst y = 2",
     })
     const rows = await n.render(ctx)
-    // Highlighted content injects SGR runs inside the row content.
     expect(rows.some((r) => r.includes("\x1b["))).toBe(true)
+  })
+
+  test("identical original/modified produces no diff rows (still emits title)", async () => {
+    const n = diff({ context: 3, modified: "a\nb\nc", original: "a\nb\nc", title: "same.ts" })
+    const rows = simplify(await n.render(ctx))
+    // Title row is the only output; no add/remove/context rows since
+    // there's no diff.
+    expect(rows.filter((r) => r.includes("-") || r.includes("+"))).toHaveLength(0)
+    expect(rows[0]).toBe("same.ts")
   })
 })
