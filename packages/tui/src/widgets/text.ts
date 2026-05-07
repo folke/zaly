@@ -25,7 +25,7 @@ import { formatText } from "../layout/text.ts"
  * text(({ style }) => style.ok(`✓ ${count}`)) // ctx-aware
  * ```
  */
-export type TextContent = Reactive<string> | ((ctx: RenderCtx) => string)
+export type TextContent = Reactive<string> | ((ctx: RenderCtx) => Reactive<string>)
 
 export interface TextStyle extends Style {
   content: TextContent
@@ -35,7 +35,7 @@ export interface TextStyle extends Style {
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
     const raw = unwrap(this.state.content)
-    const content = typeof raw === "string" ? raw : raw(ctx)
+    const content = unwrap(typeof raw === "string" ? raw : raw(ctx))
 
     const rows = formatText(content, {
       width: ctx.width,
