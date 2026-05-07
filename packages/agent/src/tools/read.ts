@@ -1,4 +1,4 @@
-import type { Content, ToolContext, ToolMeta } from "@zaly/ai"
+import type { Content, ToolContext } from "@zaly/ai"
 import type { ToolInit } from "./index.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
@@ -26,6 +26,35 @@ const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
 export type ReadTool = ReturnType<typeof createReadTool>
+
+export type FileMeta = {
+  path: string
+  mtime: number
+  kind: "read" | "write" | "edit"
+  /** True when the result reflects the whole-file content — set by
+   *  un-sliced `read` and by `write` (which always replaces the
+   *  full file). Used by the masker to know whether this result
+   *  subsumes earlier reads of the same path. `edit` never sets it
+   *  because the result is patch-relative. */
+  full?: boolean
+}
+
+function isFileMeta(meta: unknown): meta is FileMeta {
+  const m = meta as Partial<Record<string, unknown>> | undefined | null
+  return (
+    m !== undefined &&
+    m !== null &&
+    typeof m === "object" &&
+    typeof m.path === "string" &&
+    typeof m.mtime === "number" &&
+    (m.kind === "read" || m.kind === "write" || m.kind === "edit")
+  )
+}
+
+export type ReadToolMeta = FileMeta & {
+  offset: number
+  limit: number
+}
 
 /** Build the `read` tool with model-aware schema description. The
  *  attachment-shape blurb is included only when the loaded model
@@ -63,7 +92,7 @@ export function createReadTool(init: ToolInit) {
       }),
     }),
 
-    async call(args, ctx): Promise<Content> {
+    async call(args, ctx: ToolContext<ReadToolMeta>): Promise<Content> {
       const path = normPath(ctx.cwd, args.path)
       await ctx.need?.("read", path)
 
@@ -115,42 +144,18 @@ export function createReadTool(init: ToolInit) {
       // file's current bytes. write/edit consult this before mutating;
       // the masker uses `full` to know whether this read subsumes
       // earlier reads of the same path.
-      trackFile(
-        {
-          full: slice.full,
-          kind: "read",
-          mtime: fileStat.mtimeMs,
-          offset: slice.offset,
-          path,
-        },
-        ctx
-      )
+      ctx.meta = {
+        full: slice.full,
+        kind: "read",
+        limit: slice.limit,
+        mtime: fileStat.mtimeMs,
+        offset: slice.offset,
+        path,
+      }
 
       return slice.content
     },
   })
-}
-
-declare module "@zaly/ai" {
-  interface ToolMeta {
-    file?: {
-      path: string
-      mtime: number
-      kind: "read" | "write" | "edit"
-      /** True when the result reflects the whole-file content — set by
-       *  un-sliced `read` and by `write` (which always replaces the
-       *  full file). Used by the masker to know whether this result
-       *  subsumes earlier reads of the same path. `edit` never sets it
-       *  because the result is patch-relative. */
-      full?: boolean
-      offset?: number
-    }
-  }
-}
-
-export function trackFile(track: ToolMeta["file"], ctx: ToolContext): void {
-  ctx.meta ??= {}
-  ctx.meta.file = track
 }
 
 export function assertFresh(path: string, ctx: ToolContext) {
@@ -163,9 +168,12 @@ export function assertFresh(path: string, ctx: ToolContext) {
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i]
     if (m.role !== "tool") continue
-    const freshness = m.content.find((p) => p.meta?.file?.path === path)?.meta?.file
-    if (freshness?.mtime === mtime) return // Fresh! The file's mtime matches what we saw at read time.
-    if (freshness !== undefined) throw freshnessError(path, "STALE")
+    const meta = m.content
+      .map((p) => p.meta)
+      .filter(isFileMeta)
+      .find((fm) => fm.path === path)
+    if (meta?.mtime === mtime) return // Fresh! The file's mtime matches what we saw at read time.
+    if (meta !== undefined) throw freshnessError(path, "STALE")
   }
   throw freshnessError(path, "NOT_READ")
 }
@@ -193,7 +201,7 @@ export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiEr
 function formatTextSlice(
   content: string,
   { offset, limit }: { offset: number; limit: number }
-): { content: Content; full?: boolean; offset?: number } {
+): { content: Content; full?: boolean; offset: number; limit: number } {
   // Normalize line endings to LF for display. The model always sees LF;
   // edit/write detect the file's actual style and re-apply it on disk.
   content = normalizeEol(content)
@@ -205,13 +213,12 @@ function formatTextSlice(
   // Negative offset = "from the end" — Python-slice / `tail -n` semantic.
   // `-1000` on a 30-line file clamps to 0 (read whole file) rather than
   // erroring; `0` is treated as `1` (head, off-by-one tolerance).
-  const start = offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
+  let start = offset < 0 ? Math.max(0, lines.length + offset) : Math.max(0, offset - 1)
+  // Overshoot clamps to `lines.length` so the slice loop emits nothing.
+  // The agent gets an empty text + a `<slice>` meta that reports the
+  // real file size, then can re-issue with a sensible offset.
+  if (start >= lines.length) start = lines.length
   const end = Math.min(lines.length, start + limit)
-  if (start >= lines.length) {
-    return {
-      content: `(file has ${lines.length} lines; offset ${offset} is past end)`,
-    }
-  }
 
   const out: string[] = []
   for (let i = start; i < end; i++) {
@@ -225,18 +232,23 @@ function formatTextSlice(
 
   const text = out.join("\n")
   const full = start === 0 && end === lines.length
-  if (full) return { content: text, full, offset: 1 }
+  if (full) return { content: text, full, limit: lines.length, offset: 1 }
+
+  // Empty slice (overshot offset): tell the agent the offset they asked
+  // for and the real file size, rather than emitting a nonsensical
+  // "showing 6-5 of 5"-style range.
+  const sliceMsg =
+    start === end
+      ? `offset ${offset} past end of file (${lines.length} lines)`
+      : `showing ${start + 1}-${end} of ${lines.length}`
 
   return {
     content: [
-      {
-        content: `showing ${start + 1}-${end} of ${lines.length}`,
-        tag: "slice",
-        type: "meta",
-      },
+      { content: sliceMsg, tag: "slice", type: "meta" },
       { text, type: "text" },
     ],
     full,
+    limit: end - start,
     offset: start + 1,
   }
 }

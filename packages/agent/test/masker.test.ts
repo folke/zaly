@@ -1,5 +1,6 @@
-import type { Message, ToolMeta } from "@zaly/ai"
+import type { Message } from "@zaly/ai"
 import type { MaskOptions } from "../src/masker.ts"
+import type { FileMeta } from "../src/tools/read.ts"
 import type { ContextPressure } from "../src/types.ts"
 
 import { describe, expect, it } from "vitest"
@@ -24,7 +25,7 @@ function call(id: string, name: string, params: unknown): Message<"assistant"> {
 }
 
 interface ResultOpts {
-  meta?: ToolMeta
+  meta?: object
   isError?: boolean
 }
 function result(id: string, name: string, text: string, opts: ResultOpts = {}): Message<"tool"> {
@@ -43,8 +44,8 @@ function result(id: string, name: string, text: string, opts: ResultOpts = {}): 
   }
 }
 
-function fileMeta(path: string, kind: "read" | "write" | "edit", full?: boolean): ToolMeta {
-  return { file: { full, kind, mtime: 0, path } }
+function fileMeta(path: string, kind: "read" | "write" | "edit", full?: boolean): FileMeta {
+  return { full, kind, mtime: 0, path }
 }
 
 function user(text: string): Message<"user"> {

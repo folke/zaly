@@ -1,10 +1,16 @@
+import type { ToolContext } from "@zaly/ai"
+import type { FileMeta } from "./read.ts"
+
 import { defineTool, AiError } from "@zaly/ai"
 import { detectEol, normPath, normalizeEol } from "@zaly/shared"
 import { readFile, writeFile, stat } from "node:fs/promises"
 import { Type } from "typebox"
-import { assertFresh, trackFile } from "./read.ts"
+import { assertFresh } from "./read.ts"
 
 export type EditTool = typeof editTool
+export type EditToolMeta = FileMeta & {
+  original: string
+}
 
 /**
  * Apply one or more exact-text replacements to a file.
@@ -50,7 +56,7 @@ export const editTool = defineTool({
 
   async call(
     args,
-    ctx
+    ctx: ToolContext<EditToolMeta>
   ): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
     const path = normPath(ctx.cwd, args.path)
     // Edits ride the `write` scope — they're mutations.
@@ -71,7 +77,7 @@ export const editTool = defineTool({
     const updated = applyEdits(original, args.edits, path)
     await writeFile(path, updated, "utf8")
     const fstat = await stat(path)
-    trackFile({ kind: "edit", mtime: fstat.mtimeMs, path }, ctx)
+    ctx.meta = { kind: "edit", mtime: fstat.mtimeMs, original, path }
 
     const bytes = Buffer.byteLength(updated, "utf8")
     const lines = countLines(updated)

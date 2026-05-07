@@ -1,4 +1,4 @@
-import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
+import type { MetaPart, Streamable, TextPart, ToolResult, ToolContext } from "@zaly/ai"
 
 import { defineTool, stringifyContent, AiError } from "@zaly/ai"
 import { tmpdir } from "node:os"
@@ -28,7 +28,7 @@ import { uuidv7 } from "../utils/uuid.ts"
  * subagent legitimately needs a tighter scope, that's a future option.)
  */
 
-interface SubagentMeta {
+export type SubagentMeta = {
   id: string
   depth: number
   durationMs?: number
@@ -76,7 +76,7 @@ export const subagentTool = defineTool({
     }),
   }),
 
-  async call(args, ctx): Promise<Streamable> {
+  async call(args, ctx: ToolContext<SubagentMeta>): Promise<Streamable> {
     const parent = ctx.agent
     if (!parent) {
       throw new AiError({
@@ -204,8 +204,4 @@ export const subagentTool = defineTool({
   },
 })
 
-declare module "@zaly/ai" {
-  interface ToolMeta {
-    subagent?: SubagentMeta
-  }
-}
+declare module "@zaly/ai" {}

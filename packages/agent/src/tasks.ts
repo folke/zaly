@@ -70,16 +70,14 @@ export type TasksEvents = {
  *  off `ToolResultPart.meta.task`. The registry stamps this on every
  *  result it produces so the model can correlate placeholders to their
  *  eventual completion. */
-declare module "@zaly/ai" {
-  interface ToolMeta {
-    task?: {
-      id: string
-      status: TaskStatus
-      type: string
-      desc: string
-      dependsOn?: string
-      durationMs?: number
-    }
+export interface TaskMeta {
+  task?: {
+    id: string
+    status: TaskStatus
+    type: string
+    desc: string
+    dependsOn?: string
+    durationMs?: number
   }
 }
 
@@ -644,7 +642,7 @@ export class Tasks extends Emitter<TasksEvents> {
 function stampTaskMeta(
   base: ToolResult["meta"] | undefined,
   task: InternalTask
-): ToolResult["meta"] {
+): ToolResult["meta"] & TaskMeta {
   return {
     ...base,
     task: {

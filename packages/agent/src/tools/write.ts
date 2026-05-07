@@ -1,11 +1,16 @@
+import type { ToolContext } from "@zaly/ai"
+import type { FileMeta } from "./read.ts"
+
 import { AiError, defineTool } from "@zaly/ai"
 import { detectEol, normalizeEol, normPath, safeReadFile, safeStat } from "@zaly/shared"
 import { mkdir, stat, writeFile } from "node:fs/promises"
 import { dirname } from "pathe"
 import { Type } from "typebox"
-import { assertFresh, trackFile } from "./read.ts"
+import { assertFresh } from "./read.ts"
 
 export type WriteTool = typeof writeTool
+
+export type WriteToolMeta = FileMeta & {}
 
 /**
  * Write a file to disk. Overwrites if the file exists; creates parent
@@ -41,7 +46,10 @@ export const writeTool = defineTool({
     content: Type.String({ description: "File contents to write, verbatim." }),
   }),
 
-  async call(args, ctx): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
+  async call(
+    args,
+    ctx: ToolContext<WriteToolMeta>
+  ): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
     const path = normPath(ctx.cwd, args.path)
     await ctx.need?.("write", path)
 
@@ -66,7 +74,7 @@ export const writeTool = defineTool({
     // Record post-write so the model can re-edit without an immediate
     // re-read. Captures the new mtime.
     const fstat = await stat(path)
-    trackFile({ full: true, kind: "write", mtime: fstat.mtimeMs, path }, ctx)
+    ctx.meta = { full: true, kind: "write", mtime: fstat.mtimeMs, path }
 
     const bytes = Buffer.byteLength(text, "utf8")
     const lines = countLines(text)

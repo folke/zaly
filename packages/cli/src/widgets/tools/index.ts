@@ -1,10 +1,11 @@
-import type { ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Accessor, Widget } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared"
 import { widget } from "@zaly/tui"
 import { bashResult } from "./bash.ts"
 import { defaultResult } from "./default.ts"
+import { editResult } from "./edit.ts"
 import { readResult } from "./read.ts"
 import { writeResult } from "./write.ts"
 
@@ -24,10 +25,10 @@ import { writeResult } from "./write.ts"
  */
 export interface ToolResultProps<T extends Tool = Tool> {
   params?: Partial<ParamsOf<T>>
-  call: ToolCallPart
+  call: ToolCallPart<T["name"], ParamsOf<T>>
   /** Reactive — `undefined` while in flight, then the resolved
    *  `ToolResult` when the tool returns. */
-  result: Accessor<ToolResult | undefined>
+  result: Accessor<ToolResult<MetaOf<T>> | undefined>
 }
 
 export type ToolResultRenderer<T extends Tool = Tool> = Widget<ToolResultProps<T>>
@@ -38,9 +39,10 @@ export type ToolResultRenderer<T extends Tool = Tool> = Widget<ToolResultProps<T
 // runtime, and leaves the door open for lazy `import()` loaders later
 // without breaking the call site.
 const builtin = {
-  bash: () => bashResult,
-  read: () => readResult,
-  write: () => writeResult,
+  bash: () => bashResult as ToolResultRenderer,
+  edit: () => editResult as ToolResultRenderer,
+  read: () => readResult as ToolResultRenderer,
+  write: () => writeResult as ToolResultRenderer,
 } as const satisfies Record<string, () => ToolResultRenderer>
 
 export const toolResultRegistry = createRegistry<ToolResultRenderer>("tool-result").from(builtin)
@@ -55,4 +57,4 @@ export const toolResult = widget((props: ToolResultProps) => {
   return renderer(props)
 })
 
-export { bashResult, defaultResult, readResult, writeResult }
+export { bashResult, defaultResult, editResult, readResult, writeResult }

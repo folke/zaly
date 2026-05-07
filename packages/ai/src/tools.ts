@@ -1,12 +1,12 @@
 import type { Static, TObject, TSchema } from "typebox/type"
 import type {
+  Message,
+  ParamsOf,
   Streamable,
   Tool,
-  ToolContext,
-  ParamsOf,
-  ToolResult,
-  Message,
   ToolCallPart,
+  ToolContext,
+  ToolResult,
 } from "./types.ts"
 
 import { safeParseJson } from "@zaly/shared"
@@ -47,14 +47,18 @@ export function isStreamable(value: unknown): value is Streamable {
  *    execute: async ({ query, limit }) => { … },
  *  })
  *  ``` */
-export function defineTool<Params extends TObject, Result extends TSchema = TSchema>(def: {
+export function defineTool<
+  Params extends TObject,
+  Result extends TSchema = TSchema,
+  Meta extends object = object,
+>(def: {
   desc?: string
-  call: (args: Static<Params>, ctx: ToolContext) => Static<Result> | Promise<Static<Result>>
+  call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>
   name: string
   params: Params
   parallel?: boolean
   result?: Result
-}): Tool<Static<Params>, Static<Result>> {
+}): Tool<Static<Params>, Static<Result>, Meta> {
   const compiledParams = Schema.Compile(def.params)
   const compiledResult = def.result ? Schema.Compile(def.result) : undefined
   // oxlint-disable-next-line sort-keys
@@ -152,12 +156,12 @@ export function pairToolCalls(messages: readonly Message[]): Message[] {
 export function* extractToolCalls<T extends string = string>(
   messages: readonly Message[],
   tools?: T[]
-) {
+): Generator<{ call: ToolCallPart<T>; idx: number; message: Message }> {
   for (let idx = messages.length - 1; idx >= 0; idx--) {
     const m = messages[idx]
     if (m.role !== "assistant" || typeof m.content === "string") continue
     for (const p of m.content) {
-      if (p.type === "tool-call" && (tools === undefined || (tools as string[]).includes(p.name)))
+      if (p.type === "tool-call" && (tools === undefined || tools.includes(p.name as T)))
         yield { call: p as ToolCallPart<T>, idx, message: m }
     }
   }

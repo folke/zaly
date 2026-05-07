@@ -15,12 +15,12 @@
  */
 
 import type { Message, ToolCallPart, ToolContext, ToolResultPart } from "@zaly/ai"
-import type { TaskInfo } from "../src/tasks.ts"
+import type { TaskInfo, TaskMeta } from "../src/tasks.ts"
 
 import { stringifyContent, transformMeta } from "@zaly/ai"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "../src/index.ts"
 import { bashTool } from "../src/tools/bash.ts"
-import { taskStopTool, taskListTool, taskPollTool } from "../src/tools/tasks.ts"
+import { taskListTool, taskPollTool, taskStopTool } from "../src/tools/tasks.ts"
 import { uuidv7 } from "../src/utils/uuid.ts"
 
 // ── tiny output helpers ─────────────────────────────────────────────────
@@ -283,7 +283,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   tasks.graceMs = 200
 
   // Start a task that prints over time
-  const initial = await tasks.run(
+  const initial = (await tasks.run(
     [
       call("bash", {
         command: "for i in 1 2 3 4 5; do echo line $i; sleep 0.15; done",
@@ -291,7 +291,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
       }),
     ],
     makeCtx(tasks)
-  )
+  )) as ToolResultPart<string, TaskMeta>[]
   // Pull the running task's id from the placeholder's meta.task.id
   const taskId = initial[0].meta?.task?.id
   note(`(running task id: ${taskId})`)

@@ -17,6 +17,7 @@
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "func-style": "off", // 58
     "id-length": "off", // 185
+    "oxc/no-barrel-file": "off",
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     "import/exports-last": "off", // 41
     "import/group-exports": "off", // 106

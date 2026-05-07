@@ -1,5 +1,6 @@
 import type { MetaPart, Streamable, ToolContext, ToolResult } from "@zaly/ai"
 import type { Agent } from "../src/agent.ts"
+import type { SubagentMeta } from "../src/tools/subagent.ts"
 
 import { existsSync, readFileSync, rmSync } from "node:fs"
 import { afterEach, describe, expect, test } from "vitest"
@@ -27,7 +28,7 @@ afterEach(() => {
 const buildParent = async (childScripts: ReturnType<typeof okStop>[]): Promise<Agent> =>
   loadAgent({ model: mockModel(childScripts) })
 
-const ctxFor = (parent: Agent): ToolContext => ({ agent: parent })
+const ctxFor = (parent: Agent): ToolContext<SubagentMeta> => ({ agent: parent })
 
 describe("subagent tool", () => {
   test("happy path: spawns child, returns final assistant text", async () => {
@@ -108,7 +109,7 @@ describe("subagent tool", () => {
 
   test("MISSING_TOOL_CONTEXT when ctx.agent is absent", async () => {
     await expect(
-      subagentTool.call({ description: "x", prompt: "p", task: "t" }, {} as ToolContext)
+      subagentTool.call({ description: "x", prompt: "p", task: "t" }, {})
     ).rejects.toThrow(/Agent reference/)
   })
 

@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { assertFresh, createReadTool, trackFile } from "../src/tools/read.ts"
+import { assertFresh, createReadTool } from "../src/tools/read.ts"
 
 // Permissive model stub — the tests don't depend on the schema-desc
 // gating, just on tool behavior, so any Model that claims `canAttach`
@@ -136,11 +136,18 @@ describe("read tool — error paths", () => {
     await expect(callRead({ path: sub })).rejects.toMatchObject({ code: "NOT_A_FILE" })
   })
 
-  test("offset past end yields a clear placeholder string", async () => {
+  test("offset past end yields empty content with a truthful slice meta", async () => {
+    // Rather than erroring on overshoot, the read returns an empty text
+    // part plus a `<slice>` meta surfacing the offset asked for and the
+    // real file size — the agent can re-issue with a sensible offset.
     const path = fileWith(5)
-    const r = await callRead({ offset: 999, path })
-    expect(typeof r).toBe("string")
-    expect(r as string).toMatch(/past end/)
+    const result = await callRead({ offset: 999, path })
+    expect(Array.isArray(result)).toBe(true)
+    const parts = result as { type: string; content?: string; text?: string }[]
+    const slice = parts.find((p) => p.type === "meta")
+    const text = parts.find((p) => p.type === "text")
+    expect(slice?.content).toMatch(/offset 999 past end of file \(5 lines\)/)
+    expect(text?.text).toBe("")
   })
 
   test("over-long lines are truncated inline with a marker", async () => {
@@ -178,18 +185,12 @@ describe("trackFile / assertFresh", () => {
     const part: ToolResultPart = {
       content: "",
       id: "1",
-      meta: { file: { kind: "read", mtime, path } },
+      meta: { kind: "read", mtime, path },
       name: "read",
       type: "tool-result",
     }
     return { content: [part], role: "tool" }
   }
-
-  test("trackFile mutates ctx.meta.file", () => {
-    const ctx: ToolContext = {}
-    trackFile({ kind: "read", mtime: 123, path: "/x" }, ctx)
-    expect(ctx.meta?.file).toEqual({ kind: "read", mtime: 123, path: "/x" })
-  })
 
   test("assertFresh throws NOT_FOUND when the path doesn't exist", () => {
     const ctx: ToolContext = { messages: [] }

@@ -79,11 +79,11 @@ export type Attachment = ImagePart | PdfPart | AudioPart | VideoPart
 
 /** Assistant-emitted tool invocation. `args` is the decoded argument
  *  object — adapters JSON-encode when a provider expects a string. */
-export interface ToolCallPart<T extends string = string> {
+export interface ToolCallPart<N extends string = string, A = unknown> {
   type: "tool-call"
   id: string
-  name: T
-  params: unknown
+  name: N
+  params: A
 }
 
 export type ErrorCode = Uppercase<string>
@@ -132,10 +132,10 @@ export type Content = string | ContentPart[]
  *      Adapter joins text parts as the tool message body and emits a
  *      synthetic user message immediately after carrying any non-text
  *      parts (images / pdf / audio / video). */
-export type ToolResultPart<T extends string = string> = {
+export type ToolResultPart<N extends string = string, M extends object = object> = {
   type: "tool-result"
   id: string
-  name: T
+  name: N
   content: Content
   isError?: boolean
   /** Set when `isError: true` and a structured `AiError` was caught.
@@ -149,18 +149,8 @@ export type ToolResultPart<T extends string = string> = {
    *  message itself on compaction or masking — that's the point: when
    *  the conversation no longer contains the read, the model genuinely
    *  hasn't seen the file, and write/edit will demand a re-read.
-   *
-   *  `ToolMeta` is an empty interface that tool packages extend via
-   *  declaration merging:
-   *
-   *  ```ts
-   *  declare module "@zaly/ai" {
-   *    interface ToolMeta {
-   *      file?: { kind: "read" | "write" | "edit"; path: string; mtime: number }
-   *    }
-   *  }
    *  ``` */
-  meta?: ToolMeta
+  meta?: M
 }
 
 /** Assistant reasoning (Anthropic "thinking", OpenAI reasoning models).
@@ -280,7 +270,7 @@ export type Message<T extends MessageBase["role"] = MessageBase["role"]> = Extra
  *
  *  After the augmenting module is imported anywhere in the project,
  *  tools see fully-typed access to those keys without casts. */
-export interface ToolContext {
+export interface ToolContext<M extends object = object> {
   /** Session cwd — anchor for path resolution and bash-spawn cwd. */
   cwd?: string
   /** Agent-level abort. Tools that spawn long-running work should pass
@@ -290,31 +280,11 @@ export interface ToolContext {
    *  on a per-call copy of the ctx; tools mutate it during execution
    *  (`ctx.meta.file = { ... }`) to record machine-readable breadcrumbs
    *  that survive into `ToolResultPart.meta`. Wire-invisible — the model
-   *  never sees this. Use `ToolMeta` declaration merging to type the
-   *  shape; see the type below. */
-  meta?: ToolMeta
+   *  never sees this. */
+  meta?: M
 }
 
-/** Open shape for sidecar metadata tools attach to a result. Empty by
- *  default; tool packages extend it via TypeScript declaration merging:
- *
- *  ```ts
- *  // in @zaly/agent/tools/read.ts
- *  declare module "@zaly/ai" {
- *    interface ToolMeta {
- *      file?: { kind: "read" | "write" | "edit"; path: string; mtime: number }
- *    }
- *  }
- *  ```
- *
- *  Each tool that introduces a new field declares it next to the tool
- *  itself. Once the augmenting module is imported anywhere in the
- *  project, every tool's `ctx.meta` and every `ToolResultPart.meta`
- *  picks up the field with full types — no casts, no central registry. */
-// oxlint-disable-next-line typescript/no-empty-interface
-export interface ToolMeta {}
-
-export interface Tool<Params = unknown, Result = unknown> {
+export interface Tool<Params = unknown, Result = unknown, Meta extends object = object> {
   name: string
   desc?: string
   params: unknown
@@ -329,13 +299,15 @@ export interface Tool<Params = unknown, Result = unknown> {
   parallel?: boolean
   validateParams(params: unknown): Params
   validateResult?(result: unknown): Awaited<Result>
-  call(params: Params, ctx: ToolContext): Promise<Result>
-  _types?: { params: Params; result: Result }
+  call(params: Params, ctx: ToolContext<Meta>): Promise<Result>
+  _types?: { params: Params; result: Result; meta: Meta }
 }
 
 export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call"]>[0]
-  ? Record<string, unknown>
+  ? unknown
   : Parameters<T["call"]>[0]
+
+export type MetaOf<T extends Tool = Tool> = T extends Tool<unknown, unknown, infer M> ? M : object
 
 /** A long-running tool result. Tools that may take longer than the
  *  harness's grace window return one of these instead of a `ToolResult`,
@@ -371,11 +343,11 @@ export interface Streamable {
  *  part array) or a formatted error payload the model should read.
  *  `error` carries structured info for richer downstream rendering;
  *  `meta` is wire-invisible sidecar data the tool wrote to `ctx.meta`. */
-export interface ToolResult {
+export interface ToolResult<T extends object = object> {
   isError: boolean
   content: Content
   error?: ErrorInfo
-  meta?: ToolMeta
+  meta?: T
 }
 
 // ── Catalog types ────────────────────────────────────────────────────────

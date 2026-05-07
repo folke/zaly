@@ -1,8 +1,8 @@
-import type { Streamable, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { Streamable, Tool, ToolCallPart, ToolResult, ToolResultPart } from "@zaly/ai"
 import type { Envelope } from "@zaly/shared"
-import type { DoneTaskInfo, TasksEvents } from "../src/tasks.ts"
+import type { DoneTaskInfo, TaskMeta, TasksEvents } from "../src/tasks.ts"
 
-import { defineTool, AiError } from "@zaly/ai"
+import { AiError, defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { afterEach, describe, expect, test } from "vitest"
 import { taskCompletionMessage, taskInfoPart, Tasks } from "../src/tasks.ts"
@@ -156,7 +156,10 @@ describe("Tasks.run — sync tool", () => {
   test("each part stamps meta.task.{id,status,type}", async () => {
     const tasks = new Tasks()
     tasks.tools = [syncTool]
-    const parts = await tasks.run([callOf("sync", { value: "x" })], {})
+    const parts = (await tasks.run([callOf("sync", { value: "x" })], {})) as ToolResultPart<
+      string,
+      TaskMeta
+    >[]
     expect(parts[0].meta?.task?.status).toBe("done")
     expect(parts[0].meta?.task?.type).toBe("sync")
     expect(typeof parts[0].meta?.task?.id).toBe("string")
@@ -197,7 +200,7 @@ describe("Tasks.run — streamable exceeds grace", () => {
     const events: Envelope<TasksEvents>[] = []
     tasks.all((event) => events.push(event))
 
-    const parts = await tasks.run([callOf("stream")], {})
+    const parts = (await tasks.run([callOf("stream")], {})) as ToolResultPart<string, TaskMeta>[]
 
     expect(parts[0].isError).toBe(false)
     expect(parts[0].meta?.task?.status).toBe("running")
@@ -244,7 +247,10 @@ describe("Tasks.run — chain", () => {
       streamableTool({ name: "second", parallel: false, produce: () => b.streamable }),
     ]
 
-    const parts = await tasks.run([callOf("first"), callOf("second")], {})
+    const parts = (await tasks.run([callOf("first"), callOf("second")], {})) as ToolResultPart<
+      string,
+      TaskMeta
+    >[]
 
     expect(parts[0].meta?.task?.status).toBe("running")
     expect(parts[1].meta?.task?.status).toBe("pending")
@@ -308,7 +314,10 @@ describe("Tasks.run — chain", () => {
       streamableTool({ name: "para", parallel: true, produce: () => a.streamable }),
       streamableTool({ name: "para2", parallel: true, produce: () => b.streamable }),
     ]
-    const parts = await tasks.run([callOf("para"), callOf("para2")], {})
+    const parts = (await tasks.run([callOf("para"), callOf("para2")], {})) as ToolResultPart<
+      string,
+      TaskMeta
+    >[]
     expect(parts[0].meta?.task?.status).toBe("running")
     expect(parts[1].meta?.task?.status).toBe("running")
     expect(parts[1].meta?.task?.dependsOn).toBeUndefined()
@@ -329,7 +338,10 @@ describe("Tasks.run — ctx.signal abort", () => {
 
     const ac = new AbortController()
     setTimeout(() => ac.abort(), 5)
-    const parts = await tasks.run([callOf("stream")], { signal: ac.signal })
+    const parts = (await tasks.run([callOf("stream")], { signal: ac.signal })) as ToolResultPart<
+      string,
+      TaskMeta
+    >[]
     expect(parts[0].meta?.task?.status).toBe("running")
     ctrl.finish()
   })

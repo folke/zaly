@@ -16,12 +16,12 @@ const PREVIEW_LINE_LIMIT = 10
  *  natural row count anyway. */
 export const readResult = widget((props: ToolResultProps<ReadTool>) => {
   const path = memo(() => {
-    const p = props.result()?.meta?.file?.path
+    const p = props.result()?.meta?.path
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
   const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
   const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
-  const numberOffset = memo(() => props.result()?.meta?.file?.offset ?? props.params?.offset)
+  const numberOffset = memo(() => props.result()?.meta?.offset ?? props.params?.offset)
 
   return box(
     {},

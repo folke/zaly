@@ -40,7 +40,7 @@ export const bashResult = widget((props: ToolResultProps<BashTool>) => {
             style: ctx.style.muted,
           }).join("\n")
         }),
-      style: "code",
+      style: "muted",
     })
   )
 })

@@ -15,7 +15,7 @@ const PREVIEW_LINE_LIMIT = 10
  *  natural row count anyway. */
 export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
   const path = memo(() => {
-    const p = props.result()?.meta?.file?.path
+    const p = props.result()?.meta?.path
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
   const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
