@@ -42,11 +42,15 @@ export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["c
     const hpad = 2
     const lines = ["", ...splitAnsi(body), ""]
     const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + hpad * 2)
+    // Left-align with a fixed `hpad` of leading whitespace; pad the
+    // right to fill the bg out to `width`. Centering would push short
+    // lines toward the middle, which reads as visually misaligned code.
+    // Lines wider than the available room (width − hpad) drop the
+    // leading pad so the bg ends at the cap rather than overshooting.
     const padded = lines.map((line) => {
-      const padding = Math.max(0, width - stringWidth(line))
-      const lpad = " ".repeat(Math.ceil(padding / 2))
-      const rpad = " ".repeat(padding - lpad.length)
-      return wrap(`${lpad}${line}${rpad}`)
+      const w = stringWidth(line)
+      if (w >= width - hpad) return wrap(line)
+      return wrap(`${" ".repeat(hpad)}${line}${" ".repeat(width - w - hpad)}`)
     })
     const titleLine = meta?.title === undefined ? "" : `${s.mdCodeBlockTitle(meta.title)}\n`
     // Leading `\n` guards against raw-text siblings that don't emit a

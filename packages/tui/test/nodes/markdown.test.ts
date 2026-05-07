@@ -124,9 +124,10 @@ describe("markdown — block callbacks", () => {
   test("code block: multi-line block pads every line to the widest", async () => {
     const open = expectedOpen("mdCodeBlock")
     // Widest line is "console" (7); total band width = widest + 4 = 11.
-    // "abc" (3) gets centered → 4 + 3 + 4; "console" (7) gets 2 + 7 + 2.
+    // Lines are left-aligned with a fixed 2-cell leading pad and
+    // right-padded to fill: "abc" → 2 + abc + 6; "console" → 2 + console + 2.
     const out = render("```\nabc\nconsole\n```", 80)
-    expect(out).toContain(`${open}    abc    ${RESET}`)
+    expect(out).toContain(`${open}  abc      ${RESET}`)
     expect(out).toContain(`${open}  console  ${RESET}`)
   })
 
