@@ -7,7 +7,7 @@ import type { Image } from "./image.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
-import { formatText } from "../layout/text.ts"
+import { calcLayout, formatText } from "../layout/text.ts"
 import { createCallbacks } from "../markdown/callbacks.ts"
 import { createCodeHighlighter } from "../markdown/code.ts"
 import { createImageCallback } from "../markdown/image.ts"
@@ -69,6 +69,10 @@ export class Markdown extends Node<MarkdownState> {
       width: ctx.width,
       wrap: this.state.wrap,
     })
+  }
+
+  override layout() {
+    return calcLayout(unwrap(this.state.content))
   }
 }
 

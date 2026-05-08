@@ -27,7 +27,7 @@ export interface DiffState {
   lang?: string
   /** File path or other title shown at the top. May contain ANSI.
    *  Defaults to `path` when set. */
-  title?: Reactive<string>
+  title?: Reactive<string> | false
   /** Lines of surrounding context per hunk. Default: 3. */
   context?: number
 }
@@ -47,7 +47,7 @@ export class Diff extends Node<DiffState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const path = this.state.path === undefined ? undefined : unwrap(this.state.path)
     const lang = this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
-    const title = this.state.title ?? path
+    const title = this.state.title === false ? undefined : (this.state.title ?? path)
 
     const rows = await buildDiffRows(ctx, this.state, lang)
 
@@ -215,7 +215,7 @@ function renderRows(
   // - Add rows show only the new number; original column blank.
   // Wrapped continuation lines reuse the row style but emit a blank
   // gutter so the line number isn't repeated per visual row.
-  const gutterWidth = numWidth * 2 + 3 // "<orig> <new> "
+  const gutterWidth = numWidth * 2 + 5 // "<orig> <new> "
   const contentWidth = Math.max(0, ctx.width - gutterWidth)
   const blankGutter = s.diffLine(" ".repeat(gutterWidth))
 
@@ -230,9 +230,9 @@ function renderRows(
     const origStr = r.type === "add" ? "" : String(r.origNum)
     const newStr = r.type === "remove" ? "" : String(r.newNum)
     const gutterStyle = s.bg(`${styles[r.type]}+10`)
-    const gutter = gutterStyle(`${pad(origStr, numWidth)} ${pad(newStr, numWidth)} `)
+    const gutter = gutterStyle(` ${pad(origStr, numWidth)}  ${pad(newStr, numWidth)} `)
 
-    const prefix = r.type === "add" ? "+ " : r.type === "remove" ? "- " : "  "
+    const prefix = r.type === "add" ? " + " : r.type === "remove" ? " - " : "   "
     const innerWidth = Math.max(0, contentWidth - stringWidth(prefix))
 
     // Hard-wrap the content. Char-wrap (vs. word-wrap) keeps code

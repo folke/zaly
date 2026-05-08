@@ -30,7 +30,6 @@ export function mockMountCtx(surface: Surface = "stream", overrides?: Partial<Mo
       open: () => {},
     },
     surface,
-    transmit: () => {},
     ...overrides,
   }
 }

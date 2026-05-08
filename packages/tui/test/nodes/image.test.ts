@@ -78,6 +78,16 @@ function forceCaps(protocol: "kitty" | "iterm2" | undefined) {
   else process.env.TERM = "xterm-256color"
 }
 
+/** Create a render ctx whose `transmit` channel buffers bytes into the
+ *  returned `bytes` ref. The image widget routes side-channel transmit
+ *  bytes through `ctx.transmit` instead of inlining them in the row
+ *  output, so tests assert against this buffer. */
+function withTransmit(width: number): { ctx: ReturnType<typeof createCtx>; bytes: { value: string } } {
+  const bytes = { value: "" }
+  const ctx = createCtx({ transmit: (s) => (bytes.value += s), width })
+  return { bytes, ctx }
+}
+
 describe("image() — fallback when placeholders unsupported", () => {
   test("renders [alt] when alt is set", async () => {
     forceCaps(undefined)
@@ -95,39 +105,45 @@ describe("image() — fallback when placeholders unsupported", () => {
 })
 
 describe("image() — KGP rendering", () => {
-  test("first render: row[0] carries both transmit (a=t,t=f) and placement (a=p)", async () => {
+  test("first render: row[0] carries the placement (a=p), transmit goes to ctx.transmit", async () => {
     forceCaps("kitty")
-    const rows = await image(pngPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
+    const { bytes, ctx } = withTransmit(40)
+    const rows = await image(pngPath, { height: 2, width: 4 }).render(ctx)
     expect(rows).toHaveLength(2)
-    // Prepended transmit + placement in row[0], trailing `cols` spaces.
-    expect(rows[0]).toContain("\x1b_Ga=t,f=100,t=f,")
+    // Row 0: placement only, trailing `cols` spaces. Transmit lives on
+    // the side-channel, NOT in the row output.
     expect(rows[0]).toContain("\x1b_Ga=p,")
+    expect(rows[0]).not.toContain("\x1b_Ga=t,")
     expect(rows[0].endsWith("    ")).toBe(true)
     expect(rows[1]).toBe("    ")
+    // Transmit emitted via `ctx.transmit` instead.
+    expect(bytes.value).toContain("\x1b_Ga=t,f=100,t=f,")
   })
 
   test("transmit payload is base64 of the absolute PNG path", async () => {
     forceCaps("kitty")
-    const [row] = await image(pngPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
-    const start = row.indexOf(";", row.indexOf("\x1b_Ga=t,")) + 1
-    const end = row.indexOf("\x1b\\")
-    expect(Buffer.from(row.slice(start, end), "base64").toString()).toBe(pngPath)
+    const { bytes, ctx } = withTransmit(40)
+    await image(pngPath, { height: 2, width: 4 }).render(ctx)
+    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
+    const end = bytes.value.indexOf("\x1b\\")
+    expect(Buffer.from(bytes.value.slice(start, end), "base64").toString()).toBe(pngPath)
   })
 
   test("JPEG src is converted once to a temp PNG and transmitted by path", async () => {
     forceCaps("kitty")
-    const [row] = await image(jpgPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
-    const start = row.indexOf(";", row.indexOf("\x1b_Ga=t,")) + 1
-    const end = row.indexOf("\x1b\\")
-    const path = Buffer.from(row.slice(start, end), "base64").toString()
+    const { bytes, ctx } = withTransmit(40)
+    await image(jpgPath, { height: 2, width: 4 }).render(ctx)
+    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
+    const end = bytes.value.indexOf("\x1b\\")
+    const path = Buffer.from(bytes.value.slice(start, end), "base64").toString()
     expect(path).toContain("zaly-image-")
     expect(path.endsWith(".png")).toBe(true)
   })
 
   test("second render for same src omits the transmit — only the placement is emitted", async () => {
     forceCaps("kitty")
-    await image(pngPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
-    const [row] = await image(pngPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
+    await image(pngPath, { height: 2, width: 4 }).render(withTransmit(40).ctx)
+    const [row] = await image(pngPath, { height: 2, width: 4 }).render(withTransmit(40).ctx)
     expect(row).not.toContain("\x1b_Ga=t,")
     expect(row).toContain("\x1b_Ga=p,")
   })
@@ -137,8 +153,8 @@ describe("image() — KGP rendering", () => {
     // the first, flicker-free. That's our re-render story.
     forceCaps("kitty")
     const node = image(pngPath, { height: 2, width: 4 })
-    const r1 = await node.render(createCtx({ width: 40 }))
-    const r2 = await node.render(createCtx({ width: 40 }))
+    const r1 = await node.render(withTransmit(40).ctx)
+    const r2 = await node.render(withTransmit(40).ctx)
     expect(extractId(r1[0], "i")).toBe(extractId(r2[0], "i"))
     expect(extractId(r1[0], "p")).toBe(extractId(r2[0], "p"))
   })
@@ -148,16 +164,17 @@ describe("image() — KGP rendering", () => {
     // have to chunk the PNG payload inline instead of passing a path.
     forceCaps("kitty")
     process.env.SSH_CONNECTION = "192.168.0.1 54321 192.168.0.2 22"
-    const [row] = await image(pngPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
+    const { bytes, ctx } = withTransmit(40)
+    await image(pngPath, { height: 2, width: 4 }).render(ctx)
     // Header is `a=t,f=100,i=<id>,q=2` (no `t=f`). The PNG header bytes
     // (0x89 0x50 0x4E 0x47) survive the base64 round-trip.
-    expect(row).toContain("\x1b_Ga=t,f=100,i=")
-    expect(row).not.toContain(",t=f,")
-    const start = row.indexOf(";", row.indexOf("\x1b_Ga=t,")) + 1
-    const end = row.indexOf("\x1b\\")
-    const bytes = Buffer.from(row.slice(start, end), "base64")
-    expect(bytes[0]).toBe(0x89)
-    expect(bytes[1]).toBe(0x50)
+    expect(bytes.value).toContain("\x1b_Ga=t,f=100,i=")
+    expect(bytes.value).not.toContain(",t=f,")
+    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
+    const end = bytes.value.indexOf("\x1b\\")
+    const payload = Buffer.from(bytes.value.slice(start, end), "base64")
+    expect(payload[0]).toBe(0x89)
+    expect(payload[1]).toBe(0x50)
   })
 
   test("iTerm2 path: single OSC 1337 escape inline, raw source bytes in base64", async () => {
@@ -178,13 +195,13 @@ describe("image() — KGP rendering", () => {
     forceCaps("kitty")
     // tiny.png is 4×2 → aspect 0.5. With cellAspect=2, a 16-wide ctx gives
     // rows = round(16 * 0.5 / 2) = 4.
-    const rows = await image(pngPath).render(createCtx({ width: 16 }))
+    const rows = await image(pngPath).render(withTransmit(16).ctx)
     expect(rows).toHaveLength(4)
   })
 
   test("width only: height computed from source aspect ratio", async () => {
     forceCaps("kitty")
-    const rows = await image(pngPath, { cellAspect: 2, width: 8 }).render(createCtx({ width: 40 }))
+    const rows = await image(pngPath, { cellAspect: 2, width: 8 }).render(withTransmit(40).ctx)
     expect(rows).toHaveLength(2) // round(8 * 0.5 / 2) = 2
   })
 })

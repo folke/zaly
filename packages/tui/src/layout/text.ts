@@ -1,7 +1,8 @@
+import type { Layout } from "../core/state.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 
 import { clamp } from "@zaly/shared"
-import { splitAnsi, truncateAnsi, wrapAnsi } from "../style/ansi.ts"
+import { splitAnsi, stringWidth, truncateAnsi, wrapAnsi } from "../style/ansi.ts"
 
 export type WrapMode = "word" | "char" | "none"
 
@@ -55,4 +56,35 @@ export function formatLines(
   }
 
   return slice
+}
+
+function maxContent(text: string): number {
+  return text.split("\n").reduce((m, line) => Math.max(m, stringWidth(line)), 0)
+}
+
+function minContent(text: string, mode: WrapMode): number | undefined {
+  switch (mode) {
+    case "none": {
+      return
+    } // can't break, same as max
+    case "char": {
+      return 1
+    } // can break anywhere → 1cell floor
+    case "word": {
+      // longest unbreakable run
+      return text.split(/\s+/).reduce((m, word) => Math.max(m, stringWidth(word)), 0)
+    }
+    default: {
+      mode satisfies never // future modes get caught at type-check time
+      return undefined
+    }
+  }
+}
+
+export function calcLayout(text: string, opts: { wrap?: WrapMode } = {}): Layout {
+  const width = maxContent(text)
+  return {
+    minWidth: minContent(text, opts.wrap ?? "word") ?? width,
+    width,
+  }
 }

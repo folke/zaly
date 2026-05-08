@@ -20,9 +20,10 @@ describe("Diff widget", () => {
       original: "a\nb\nc\nd\ne",
     })
     const rows = simplify(await n.render(ctx))
-    // Two-column gutter: "<origNum> <newNum>" (both for context, only
-    // one side for remove/add). Trailing spaces collapsed by simplify.
-    expect(rows).toEqual(["2 2   b", "3   - c", "  3 + C", "4 4   d"])
+    // Gutter: ` <orig>  <new> ` (6 cells at numWidth=1). Prefix:
+    // `   ` for context, ` - ` for remove, ` + ` for add. Trailing
+    // spaces collapsed by simplify.
+    expect(rows).toEqual([" 2  2    b", " 3     - c", "    3  + C", " 4  4    d"])
   })
 
   test("insertion renders with no removed rows", async () => {
@@ -56,10 +57,10 @@ describe("Diff widget", () => {
       original: "a\nb\nc\nd\ne",
     })
     const rows = simplify(await n.render(ctx))
-    expect(rows).toContain("2   - b")
-    expect(rows).toContain("  2 + B1")
-    expect(rows).toContain("  3 + B2")
-    expect(rows).toContain("4   - d")
+    expect(rows).toContain(" 2     - b")
+    expect(rows).toContain("    2  + B1")
+    expect(rows).toContain("    3  + B2")
+    expect(rows).toContain(" 4     - d")
   })
 
   test("context lines fall between hunks when edits are spaced", async () => {
@@ -69,14 +70,14 @@ describe("Diff widget", () => {
       original: "a\nb\nc\nd\ne\nf\ng",
     })
     const rows = simplify(await n.render(ctx))
-    expect(rows).toContain("1 1   a")
-    expect(rows).toContain("3 3   c")
-    expect(rows).toContain("5 5   e")
-    expect(rows).toContain("7 7   g")
-    expect(rows).toContain("2   - b")
-    expect(rows).toContain("  2 + B")
-    expect(rows).toContain("6   - f")
-    expect(rows).toContain("  6 + F")
+    expect(rows).toContain(" 1  1    a")
+    expect(rows).toContain(" 3  3    c")
+    expect(rows).toContain(" 5  5    e")
+    expect(rows).toContain(" 7  7    g")
+    expect(rows).toContain(" 2     - b")
+    expect(rows).toContain("    2  + B")
+    expect(rows).toContain(" 6     - f")
+    expect(rows).toContain("    6  + F")
   })
 
   test("renders a title above the diff when provided", async () => {

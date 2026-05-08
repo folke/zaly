@@ -111,6 +111,57 @@ export class Box extends Node<BoxStyle> {
     return rows.map((row) => wrap(row))
   }
 
+  /**
+   * Intrinsic content width derived from children (or the explicit
+   * `width` when fixed). Lets parent flex containers size this Box
+   * without falling back to a measure-render — important for
+   * side-effecting children like `Image` whose first render allocates
+   * a KGP placement: rendering twice would emit two placements and the
+   * second render's `transmitOnce` returns no bytes, so the bytes from
+   * the discarded measure pass would be lost.
+   *
+   * Row direction → bases sum (plus gaps). Column direction → bases
+   * max. Both add chrome (padding + border) at the end.
+   *
+   * Children without `layout()` contribute 0 — the row allocator's
+   * render-measure fallback still kicks in for them at allocation
+   * time, but their absence here just means this Box reports a
+   * smaller intrinsic. That's the safe direction: under-report and
+   * let shrink/grow handle slack, never over-report.
+   */
+  override layout(ctx: RenderCtx) {
+    const s = this.state
+    const [, padR, , padL] = resolvePadding(s.padding)
+    const chrome = padL + padR + (resolveBorder(s.border) ? 2 : 0)
+
+    // Fixed width wins outright.
+    if (isFixedWidth(s.width)) {
+      const w = resolveSize(s.width, ctx.width) ?? 0
+      return { minWidth: w, width: w }
+    }
+
+    const kids = flattenFragments(this.children)
+    if (kids.length === 0) return { minWidth: chrome, width: chrome }
+
+    const isRow = (s.flexDirection ?? "column") === "row"
+    const totalGap = isRow ? (s.gap ?? 0) * Math.max(0, kids.length - 1) : 0
+
+    let widthAcc = 0
+    let minAcc = 0
+    for (const k of kids) {
+      const l = k.layout?.(ctx) ?? { minWidth: 0, width: 0 }
+      if (isRow) {
+        widthAcc += l.width
+        minAcc += l.minWidth
+      } else {
+        widthAcc = Math.max(widthAcc, l.width)
+        minAcc = Math.max(minAcc, l.minWidth)
+      }
+    }
+
+    return { minWidth: minAcc + totalGap + chrome, width: widthAcc + totalGap + chrome }
+  }
+
   async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {
     const children = flattenFragments(this.children)
     if (children.length === 0) return []
@@ -121,13 +172,21 @@ export class Box extends Node<BoxStyle> {
   }
 
   /**
-   * Row direction — main axis is horizontal. CSS `flex: 0 1 auto`:
-   * each child sizes to its natural max-row width unless it claims
-   * slack via `flexGrow > 0` or `width: "fill"`. Two passes — measure
-   * naturals at the upper bound (or fixed spec), allocate slot widths,
-   * re-render any child whose final slot differs from its measure
-   * width. In fit-mode the parent has no slack to give, so the
-   * allocator's available is capped at the natural sum.
+   * Row direction — main axis is horizontal. CSS-style flex:
+   * each child sizes to its intrinsic content width unless it claims
+   * slack via `flexGrow > 0` or `width: "fill"`. Slack distributes by
+   * grow weights; deficit distributes by `basis * flexShrink` clamped
+   * at each child's `min-content` floor.
+   *
+   * Sizing strategy per child:
+   *   1. `node.layout(ctx)` — sync, content-derived. If implemented,
+   *      use directly; no render needed for measurement.
+   *   2. Otherwise fall back to render-at-innerWidth and measure the
+   *      widest emitted row. Cached; the paint pass reuses the result
+   *      whenever the allocated width matches the measurement width.
+   *
+   * In `fit` mode the parent has no slack to give, so the allocator's
+   * available is capped at the natural sum.
    */
   async #layoutRow(
     children: readonly Node[],
@@ -135,21 +194,38 @@ export class Box extends Node<BoxStyle> {
     ctx: RenderCtx,
     gap: number
   ): Promise<string[]> {
-    const measureWidths = children.map((c) =>
-      isFixedWidth(c.state.width)
-        ? (resolveSize(c.state.width, innerWidth) ?? innerWidth)
-        : innerWidth
-    )
+    // Phase 1: figure out each child's intrinsic size.
+    // - `layout()` short-circuits — sync, no render.
+    // - Fallback: render at the upper bound (innerWidth or fixed spec)
+    //   and measure rows.
+    const intrinsics = children.map((c) => c.layout?.(ctx))
+    // For children with intrinsic sizing, skip the measure render
+    // entirely. Others fall back to render-at-upper-bound (their fixed
+    // width, or innerWidth if fluid).
+    const measureWidths = children.map((c, i) => {
+      if (intrinsics[i] !== undefined) return -1
+      if (isFixedWidth(c.state.width)) {
+        return resolveSize(c.state.width, innerWidth) ?? innerWidth
+      }
+      return innerWidth
+    })
     const measureRows = await Promise.all(
-      children.map((c, i) => c.render({ ...ctx, width: measureWidths[i] }))
+      children.map((c, i): Promise<string[] | undefined> => {
+        if (measureWidths[i] === -1) return Promise.resolve(undefined)
+        return c.render({ ...ctx, width: measureWidths[i] })
+      })
     )
-    const naturals = measureRows.map((rows) =>
-      rows.reduce((m, r) => Math.max(m, stringWidth(r)), 0)
-    )
+    const naturals = children.map((_, i) => {
+      const intr = intrinsics[i]
+      if (intr) return intr.width
+      return (measureRows[i] ?? []).reduce((m, r) => Math.max(m, stringWidth(r)), 0)
+    })
     const items: RowItem[] = children.map((c, i) => {
       const s = c.state
       return {
         flexGrow: s.flexGrow,
+        flexShrink: s.flexShrink,
+        intrinsicMin: intrinsics[i]?.minWidth,
         maxWidth: s.maxWidth,
         minWidth: s.minWidth,
         natural: naturals[i],
@@ -161,12 +237,16 @@ export class Box extends Node<BoxStyle> {
         ? naturals.reduce((a, b) => a + b, 0) + gap * Math.max(0, children.length - 1)
         : innerWidth
     const widths = allocateRow(items, { contentWidth: allocAvailable, gap })
+    // Phase 2: paint at allocated widths. Reuse the measure-render when
+    // the allocation matches; otherwise render fresh (cached).
     const childRows = await Promise.all(
-      children.map((c, i) =>
-        widths[i] === measureWidths[i]
-          ? Promise.resolve(measureRows[i])
-          : c.render({ ...ctx, width: widths[i] })
-      )
+      children.map((c, i): Promise<string[]> => {
+        const cached = measureRows[i]
+        if (cached !== undefined && widths[i] === measureWidths[i]) {
+          return Promise.resolve(cached)
+        }
+        return c.render({ ...ctx, width: widths[i] })
+      })
     )
     // `zipRow` expects rows to be exactly `widths[i]` wide. Children
     // that emit natural-width rows (text default, code default) get

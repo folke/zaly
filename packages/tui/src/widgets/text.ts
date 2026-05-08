@@ -5,7 +5,7 @@ import type { Style } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
-import { formatText } from "../layout/text.ts"
+import { calcLayout, formatText } from "../layout/text.ts"
 
 /**
  * Text content — three forms, resolved at render time:
@@ -34,8 +34,7 @@ export interface TextStyle extends Style {
 
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
-    const raw = unwrap(this.state.content)
-    const content = unwrap(typeof raw === "string" ? raw : raw(ctx))
+    const content = this.content(ctx)
 
     const rows = formatText(content, {
       width: ctx.width,
@@ -44,6 +43,15 @@ export class Text extends Node<TextStyle> {
 
     const style = ctx.style.add(this.state)
     return rows.map((row) => style(row))
+  }
+
+  content(ctx: RenderCtx): string {
+    const raw = unwrap(this.state.content)
+    return unwrap(typeof raw === "string" ? raw : raw(ctx))
+  }
+
+  override layout(ctx: RenderCtx) {
+    return calcLayout(this.content(ctx))
   }
 }
 

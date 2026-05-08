@@ -3,7 +3,7 @@ import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
 import type { AsyncTracker } from "./reactive.ts"
-import type { State } from "./state.ts"
+import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
 import { RenderContext } from "./ctx.ts"
@@ -66,6 +66,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
   #id?: string
   actions?: ActionMap
   type?: string
+  layout?(ctx: RenderCtx): Layout | undefined
 
   constructor(state: State<T>, ...children: Node[]) {
     super()

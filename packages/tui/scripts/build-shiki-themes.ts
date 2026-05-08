@@ -16,6 +16,7 @@ import { writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { bundledThemes } from "shiki"
+import { parseHex, toHex } from "../src/index.ts"
 
 /** Which Shiki themes we want to ship as first-class TUI themes.
  *  Order here defines the write order; no functional meaning. */
@@ -40,7 +41,7 @@ type Colors = Record<string, string | undefined>
 function pick(c: Colors, ...keys: string[]): string | undefined {
   for (const k of keys) {
     const v = c[k]
-    if (typeof v === "string" && v.length > 0) return v
+    if (typeof v === "string" && v.length > 0) return toHex(parseHex(v))
   }
   return undefined
 }

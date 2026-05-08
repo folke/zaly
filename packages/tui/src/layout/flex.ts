@@ -5,16 +5,20 @@ import { clamp, resolveSize } from "./size.ts"
 
 /**
  * Items participating in a row-direction allocation. Extends the
- * `Flexible` mixin (`width / minWidth / maxWidth / flexGrow`) with a
- * measured `natural` size used as the flex-basis when no fixed width
- * is set. Rendered out of `Node.state` by `Box`.
+ * `Flexible` mixin with the node's intrinsic content sizes (from
+ * `Node.layout()` or fallback measurement). Box constructs these
+ * before calling `allocateRow`.
  *
  * @internal
  */
 export interface RowItem extends Flexible {
-  /** Measured natural (content) width — used as the flex-basis when
-   *  no fixed `width` is set. Falls back to 0 when omitted. */
+  /** Measured natural (max-content) width — used as the flex-basis
+   *  when no fixed `width` is set. Falls back to 0 when omitted. */
   natural?: number
+  /** Intrinsic min-content width — the smallest the node can render
+   *  without breaking content. Acts as a shrink floor below which the
+   *  allocator won't go (combined with `Flexible.minWidth`). */
+  intrinsicMin?: number
 }
 
 export interface AllocateOpts {
@@ -23,19 +27,25 @@ export interface AllocateOpts {
 }
 
 /**
- * Allocate widths to row-direction children with CSS `flex: 0 1 auto`
+ * Allocate widths to row-direction children with CSS-style flex
  * semantics. Each item starts at its **basis**:
  *
  *   - `width: <number | "N%">` → resolved fixed width.
- *   - `width: "fill"` or any non-fixed spec → `natural` (content size,
- *     0 when not provided).
+ *   - `width: "fill"` → 0 (claim slack, ignore intrinsic).
+ *   - any other non-fixed spec → `natural` (content size, 0 when not
+ *     provided).
  *
- * Slack (`available - sum(basis)`) only flows to items with positive
- * `flexGrow` or `width: "fill"` (which implies `flexGrow: 1`). Items
- * without either stay at their basis — leftover slack is *not*
- * redistributed to siblings (callers/parents pad the row to fill).
- * `min`/`max` clamp per-item; rounding remainder lands on the last
- * grower.
+ * Three branches:
+ *
+ *   - `slack > 0`: distribute by `flexGrow`. Items without grow weight
+ *     stay at basis; leftover slack is *not* smeared onto siblings.
+ *   - `slack < 0` (deficit): distribute the shortfall by
+ *     `basis * flexShrink` (CSS shrink default = 1). Each item is
+ *     clamped at its `minWidth` floor so content doesn't break.
+ *   - `slack == 0`: items take their basis as-is.
+ *
+ * `min`/`max` (combined with `intrinsicMin`) clamp per-item; rounding
+ * remainder lands on the last grower / shrinker.
  *
  * @internal
  */
@@ -46,6 +56,10 @@ export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): numb
 
   const bases: number[] = Array.from({ length: items.length })
   const grows: number[] = Array.from({ length: items.length })
+  const shrinks: number[] = Array.from({ length: items.length })
+  // Effective minimum per item — the larger of the user-set `minWidth`
+  // and the node's intrinsic `min-content`. Shrink can't go below this.
+  const mins: number[] = Array.from({ length: items.length })
   let baseSum = 0
   let growSum = 0
 
@@ -54,44 +68,110 @@ export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): numb
     if (isFixedWidth(item.width)) {
       bases[i] = resolveSize(item.width, contentWidth) ?? 0
       grows[i] = 0
+      shrinks[i] = 0 // Fixed-width items never shrink — author asked for an exact size.
+    } else if (item.width === "fill") {
+      // `fill` claims slack and ignores intrinsic basis (CSS `flex: 1 1 0`).
+      bases[i] = 0
+      grows[i] = item.flexGrow ?? 1
+      shrinks[i] = item.flexShrink ?? 1
     } else {
       bases[i] = item.natural ?? 0
-      // `width: "fill"` with no explicit `flexGrow` implies grow 1 —
-      // fill is the way callers say "claim slack" without a numeric
-      // weight.
-      grows[i] = item.flexGrow ?? (item.width === "fill" ? 1 : 0)
+      grows[i] = item.flexGrow ?? 0
+      shrinks[i] = item.flexShrink ?? 1
     }
+    const intrinsicMin = item.intrinsicMin ?? 0
+    const userMin = resolveSize(item.minWidth, contentWidth) ?? 0
+    mins[i] = Math.max(intrinsicMin, userMin)
     baseSum += bases[i]
     growSum += grows[i]
   }
 
-  const slack = Math.max(0, available - baseSum)
+  const slack = available - baseSum
   const widths: number[] = Array.from({ length: items.length })
   let allocated = 0
   let lastGrowIndex = -1
+  let lastShrinkIndex = -1
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i]
-    let w = bases[i]
-    if (growSum > 0 && grows[i] > 0) {
-      w += Math.floor((slack * grows[i]) / growSum)
-      lastGrowIndex = i
+  if (slack >= 0) {
+    // Grow phase — distribute slack among items that asked for it.
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      let w = bases[i]
+      if (growSum > 0 && grows[i] > 0) {
+        w += Math.floor((slack * grows[i]) / growSum)
+        lastGrowIndex = i
+      }
+      w = clamp(w, { available: contentWidth, max: item.maxWidth, min: mins[i] })
+      widths[i] = w
+      allocated += w
     }
-    w = clamp(w, { available: contentWidth, max: item.maxWidth, min: item.minWidth })
-    widths[i] = w
-    allocated += w
-  }
-
-  // Tail grower absorbs rounding remainder and any over/underflow from
-  // min/max clamps. We aim at `baseSum + slack` (i.e. `available` capped
-  // at non-negative slack), not `available` — when there are no growers
-  // and bases sum to less than `available`, the leftover is real slack
-  // that the parent will pad as end-of-row space, not a remainder to
-  // smear onto siblings.
-  if (lastGrowIndex !== -1) {
-    const target = baseSum + slack
-    if (allocated !== target) {
-      widths[lastGrowIndex] = Math.max(0, widths[lastGrowIndex] + (target - allocated))
+    // Tail grower absorbs rounding remainder and any over/underflow
+    // from min/max clamps. We aim at `baseSum + slack` (i.e. exactly
+    // `available`) only when growers exist; otherwise leftover is real
+    // slack the parent will pad as end-of-row space.
+    if (lastGrowIndex !== -1) {
+      const target = baseSum + slack
+      if (allocated !== target) {
+        widths[lastGrowIndex] = Math.max(0, widths[lastGrowIndex] + (target - allocated))
+      }
+    }
+  } else {
+    // Shrink phase — distribute the deficit weighted by `basis * shrink`.
+    // Items at their `mins[i]` floor stop shrinking; the remaining
+    // deficit re-routes to the others. Iterate until stable or no
+    // shrinkable items remain.
+    for (let i = 0; i < items.length; i++) widths[i] = bases[i]
+    let deficit = -slack // positive
+    const frozen: boolean[] = Array.from({ length: items.length }, () => false)
+    // Cap loop at items.length+1 — each pass freezes at least one item
+    // or fully resolves the deficit. Bounded, no risk of looping.
+    for (let pass = 0; pass <= items.length && deficit > 0; pass++) {
+      let weightSum = 0
+      for (let i = 0; i < items.length; i++) {
+        if (!frozen[i]) weightSum += widths[i] * shrinks[i]
+      }
+      if (weightSum === 0) break // nothing left can shrink
+      let froze = false
+      for (let i = 0; i < items.length; i++) {
+        if (frozen[i]) continue
+        const share = Math.floor((deficit * widths[i] * shrinks[i]) / weightSum)
+        const next = widths[i] - share
+        if (next <= mins[i]) {
+          deficit -= widths[i] - mins[i]
+          widths[i] = mins[i]
+          frozen[i] = true
+          froze = true
+        } else {
+          widths[i] = next
+          lastShrinkIndex = i
+        }
+      }
+      if (!froze) {
+        // Apply remaining deficit proportionally one more time without
+        // freezing — the round above didn't hit any floor.
+        deficit = 0
+      }
+    }
+    for (let i = 0; i < items.length; i++) {
+      widths[i] = clamp(widths[i], {
+        available: contentWidth,
+        max: items[i].maxWidth,
+        min: mins[i],
+      })
+      allocated += widths[i]
+    }
+    // Soak any rounding-shaped over/underflow into the last shrinker so
+    // the row sums exactly to `available` (or to the minSum floor when
+    // mins force overflow).
+    if (lastShrinkIndex !== -1) {
+      const target = Math.max(available, mins.reduce((a, b) => a + b, 0))
+      if (allocated !== target) {
+        const adj = target - allocated
+        widths[lastShrinkIndex] = Math.max(
+          mins[lastShrinkIndex],
+          widths[lastShrinkIndex] + adj
+        )
+      }
     }
   }
 

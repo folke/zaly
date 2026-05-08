@@ -39,11 +39,21 @@ export interface Flexible {
   /** Requested width. `"fill"` requests whatever remains after fixed
    *  children; a number requests exactly that many columns. */
   width?: Size
-  /** Floor for allocated width. */
+  /** Floor for allocated width. Combined with the node's intrinsic
+   *  `Layout.minWidth` — the larger of the two wins. */
   minWidth?: Size
   /** Ceiling for allocated width. */
   maxWidth?: Size
   /** Weight used to distribute remaining space. Higher weight = more
    *  growth. Unset children default to weight 1 if requested `"fill"`. */
   flexGrow?: number
+  /** Weight used to distribute the deficit when sibling bases exceed
+   *  available width. Higher weight shrinks more aggressively. Defaults
+   *  to `1` (CSS `flex-shrink`). Set to `0` to opt out of shrinking. */
+  flexShrink?: number
+}
+
+export interface Layout {
+  width: number
+  minWidth: number
 }
