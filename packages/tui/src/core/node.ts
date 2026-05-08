@@ -49,7 +49,7 @@ export type BaseEvents = {
  * the whole field instead.
  */
 export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter<BaseEvents, E> {
-  #cache?: { rows: string[]; version: number }
+  #cache?: { rows: string[]; version: number; width: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
   /** Bumped on every `invalidate()`. Captured at the start of a render
@@ -246,10 +246,17 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     // panel (autocomplete, modal) whose first paint happened while
     // hidden would swallow the flip-to-visible invalidate.
     if (!unwrap(this.state.visible ?? true)) {
-      this.#cache = { rows: [], version: ctx.version }
+      this.#cache = { rows: [], version: ctx.version, width: ctx.width }
       return this.#cache.rows
     }
-    if (this.#cache?.version === ctx.version) return this.#cache.rows
+    // Cache key includes `ctx.width` because rendered output is
+    // width-dependent. `version` alone catches state/theme mutations
+    // (top-level bumps version on theme change), but a parent passing
+    // a different `width` to the same node — common in flex
+    // measure-then-allocate passes — needs a fresh render.
+    if (this.#cache?.version === ctx.version && this.#cache.width === ctx.width) {
+      return this.#cache.rows
+    }
     // Per-render hook. Fires before `_render` so listeners can update
     // signals that the upcoming render (or its descendants) will read
     // — typically capturing ctx-derived data (theme, width) into
@@ -263,7 +270,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     const stamp = this.#invalidations
     const rows = await this._render(ctx)
     if (this.#invalidations === stamp) {
-      this.#cache = { rows, version: ctx.version }
+      this.#cache = { rows, version: ctx.version, width: ctx.width }
     }
     return rows
   }
