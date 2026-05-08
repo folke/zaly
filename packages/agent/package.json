@@ -38,7 +38,7 @@
     "@types/shell-quote": "^1.7.5"
   },
   "peerDependencies": {
-    "typebox": "^1.1.37"
+    "typebox": "^1.1.38"
   },
   "engines": {
     "bun": ">=1.2",
