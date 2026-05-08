@@ -2,14 +2,15 @@
 // oxlint-disable typescript/no-unnecessary-condition
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
+import type { Layout } from "../core/state.ts"
+import type { WrapMode } from "../layout/text.ts"
 
 import { basename, extname } from "pathe"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
-import { stringWidth, wrapAnsi } from "../style/ansi.ts"
+import { calcLayout, countLines } from "../layout/text.ts"
+import { splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
 import { createAnsiHighlighter } from "../style/shiki.ts"
-import { box } from "./box.ts"
-import { text } from "./text.ts"
 
 export interface DiffState {
   /** Pre-state file content. Plain string or reactive accessor —
@@ -25,11 +26,9 @@ export interface DiffState {
   /** Language for syntax highlighting (any shiki-bundled name or
    *  alias). Defaults from `path` when set. */
   lang?: string
-  /** File path or other title shown at the top. May contain ANSI.
-   *  Defaults to `path` when set. */
-  title?: Reactive<string> | false
   /** Lines of surrounding context per hunk. Default: 3. */
   context?: number
+  wrap?: WrapMode
 }
 
 /**
@@ -47,21 +46,23 @@ export class Diff extends Node<DiffState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const path = this.state.path === undefined ? undefined : unwrap(this.state.path)
     const lang = this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
-    const title = this.state.title === false ? undefined : (this.state.title ?? path)
+    this.state.wrap ??= "word"
+    return await buildDiffRows(ctx, this.state, lang)
+  }
 
-    const rows = await buildDiffRows(ctx, this.state, lang)
-
-    const body = rows.join("\n")
-    const titleNode =
-      title === undefined
-        ? undefined
-        : text((tctx) => tctx.style.codeTitle(unwrap(title)), { wrap: "none" })
-    const wrapper = box(
-      { bg: "code", flexDirection: "column", width: "fit" },
-      titleNode,
-      text(body, { wrap: "none" })
-    )
-    return wrapper.render(ctx)
+  override layout(): Layout {
+    const original = calcLayout(unwrap(this.state.original), { wrap: this.state.wrap })
+    const modified = calcLayout(unwrap(this.state.modified), { wrap: this.state.wrap })
+    const numWidth = Math.max(
+      1,
+      countLines(unwrap(this.state.original)),
+      countLines(unwrap(this.state.modified))
+    ).toString().length
+    const padding = numWidth * 2 + 4 + 4
+    return {
+      minWidth: Math.max(original.minWidth, modified.minWidth) + padding,
+      width: Math.max(original.width, modified.width) + padding,
+    }
   }
 }
 
@@ -215,9 +216,9 @@ function renderRows(
   // - Add rows show only the new number; original column blank.
   // Wrapped continuation lines reuse the row style but emit a blank
   // gutter so the line number isn't repeated per visual row.
-  const gutterWidth = numWidth * 2 + 5 // "<orig> <new> "
+  const gutterWidth = numWidth * 2 + 4 // "<orig> <new> "
   const contentWidth = Math.max(0, ctx.width - gutterWidth)
-  const blankGutter = s.diffLine(" ".repeat(gutterWidth))
+  const blankGutter = " ".repeat(gutterWidth - 2) + s.dim("↪ ")
 
   const styles = {
     add: "diffAdd",
@@ -233,23 +234,23 @@ function renderRows(
     const gutter = gutterStyle(` ${pad(origStr, numWidth)}  ${pad(newStr, numWidth)} `)
 
     const prefix = r.type === "add" ? " + " : r.type === "remove" ? " - " : "   "
-    const innerWidth = Math.max(0, contentWidth - stringWidth(prefix))
+    const innerWidth = Math.max(0, contentWidth - stringWidth(prefix) - 1)
 
     // Hard-wrap the content. Char-wrap (vs. word-wrap) keeps code
     // diffs honest — splitting by word boundaries would shift columns
     // mid-line and make alignment confusing.
     const wrapped =
       innerWidth > 0 && stringWidth(r.content) > innerWidth
-        ? wrapAnsi(r.content, innerWidth, { mode: "char" }).split("\n")
+        ? splitAnsi(wrapAnsi(r.content, innerWidth, { mode: "word" }))
         : [r.content]
 
     const rowStyle = s.bg(styles[r.type])
     for (let i = 0; i < wrapped.length; i++) {
       const wline = wrapped[i]
-      const pw = Math.max(0, innerWidth - stringWidth(wline))
-      const bodyLine = prefix + wline + " ".repeat(pw)
-      const styledBody = rowStyle === undefined ? bodyLine : rowStyle(bodyLine)
-      out.push((i === 0 ? gutter : blankGutter) + styledBody)
+      const pw = Math.max(0, innerWidth - stringWidth(wline) + 1)
+      const bodyLine = (i === 0 ? prefix : "   ") + wline + " ".repeat(pw)
+      const styledBody = rowStyle?.(bodyLine) ?? bodyLine
+      out.push((i === 0 ? gutter : gutterStyle(blankGutter)) + styledBody)
     }
   }
   return out

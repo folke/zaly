@@ -80,11 +80,19 @@ export class WidgetNode<S extends object, C extends Node = Node> extends Node<S>
     return this.#child
   }
 
-  async _render(ctx: RenderCtx): Promise<string[]> {
+  #getChild(): C {
     if (this.#child === undefined) {
       this.#child = this.#create(this.state) // runs ONCE; props is captured by closure
       this.add(this.#child) // adopt as real child so layout/parent ops work
     }
-    return this.#child.render(ctx)
+    return this.#child
+  }
+
+  override layoutChildren(): Node[] {
+    return [this.#getChild()]
+  }
+
+  async _render(ctx: RenderCtx): Promise<string[]> {
+    return this.#getChild().render(ctx)
   }
 }

@@ -88,3 +88,13 @@ export function calcLayout(text: string, opts: { wrap?: WrapMode } = {}): Layout
     width,
   }
 }
+
+export function countLines(text: string): number {
+  let count = 0
+  let pos = text.indexOf("\n")
+  while (pos !== -1) {
+    count++
+    pos = text.indexOf("\n", pos + 1)
+  }
+  return count
+}
