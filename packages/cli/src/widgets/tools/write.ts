@@ -13,7 +13,6 @@ export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
     const p = props.result()?.meta?.path
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
-  const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
   const original = memo(() => props.result()?.meta?.original ?? "")
   // Post-write content comes straight from the call's `params.content` —
   // the tool doesn't redundantly stash it on meta.
@@ -23,6 +22,6 @@ export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
     modified,
     original,
     path,
-    title,
+    title: false,
   })
 })

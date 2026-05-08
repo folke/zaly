@@ -13,7 +13,6 @@ export const editResult = widget((props: ToolResultProps<EditTool>) => {
     const p = props.result()?.meta?.path ?? props.params?.path
     return p ? prettyPath(p) : "unknown path"
   })
-  const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
   const original = memo(() => props.result()?.meta?.original ?? "")
   const modified = memo(() => props.result()?.meta?.content ?? "")
 
@@ -21,6 +20,6 @@ export const editResult = widget((props: ToolResultProps<EditTool>) => {
     modified,
     original,
     path,
-    title,
+    title: false,
   })
 })
