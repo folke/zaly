@@ -54,6 +54,12 @@ export interface RenderCtx {
    *    returning. Right for the stream surface — once rows commit to
    *    scrollback, signal updates can't repaint them. */
   async?: boolean
+  /** Queue a side-channel ANSI payload (e.g. KGP image transmit) for
+   *  the renderer to flush before the next paint. Use this to keep
+   *  side-effecting bytes out of cached row strings — what `_render`
+   *  returns should be safe to reuse across paints, and transmit
+   *  bytes shouldn't be. */
+  readonly transmit: (seq: string) => void
 }
 
 /**
@@ -104,13 +110,6 @@ export interface MountCtx {
    *  pass a function for richer predicates. Same semantics as
    *  `Renderer.findNode`. */
   readonly findNode: (match: string | ((n: Node) => boolean)) => Node[]
-
-  /** Queue a side-channel ANSI payload (e.g. KGP image transmit) for
-   *  the renderer to flush before the next paint. Use this to keep
-   *  side-effecting bytes out of cached row strings — what `_render`
-   *  returns should be safe to reuse across paints, and transmit
-   *  bytes shouldn't be. */
-  readonly transmit: (seq: string) => void
 }
 
 /**
@@ -146,7 +145,9 @@ export function createCtx(opts?: Partial<RenderCtx> & { theme?: Theme }): Render
   const tw = termWidth() ?? 80
   return {
     style: style(theme),
+    transmit: (data) => process.stdout.write(data),
     version: opts?.version ?? 0,
     width: Math.min(opts?.width ?? tw, tw),
+    ...opts,
   }
 }

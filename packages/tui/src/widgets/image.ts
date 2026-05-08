@@ -80,12 +80,8 @@ export class Image extends Node<ImageState> {
       // before mount (rare — tests, headless previews), fall back to
       // inlining the transmit into the lead so the picture still
       // shows correctly the first time.
-      if (this.ctx?.transmit && t.transmit) {
-        this.ctx.transmit(t.transmit)
-        lead = placement(t.imageId, this.#placementId, { cols, rows })
-      } else {
-        lead = t.transmit + placement(t.imageId, this.#placementId, { cols, rows })
-      }
+      if (t.transmit) ctx.transmit(t.transmit)
+      lead = placement(t.imageId, this.#placementId, { cols, rows })
     } else {
       lead = encodeIterm2(Buffer.from(img.data).toString("base64"), {
         height: `${rows}`,

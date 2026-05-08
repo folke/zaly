@@ -203,6 +203,7 @@ export class Renderer {
     ) {
       this.#ctx = createCtx({
         theme: this.#theme,
+        transmit: (seq) => this.terminal.enqueueTransmit(seq),
         version: this.#ctxVersion,
         width: this.terminal.cols,
       })
@@ -325,7 +326,6 @@ export class Renderer {
         open: (o) => this.overlay.open(o),
       },
       surface,
-      transmit: (seq) => this.terminal.enqueueTransmit(seq),
     }
   }
 
