@@ -140,7 +140,7 @@ export class Box extends Node<BoxStyle> {
       return { minWidth: w, width: w }
     }
 
-    const kids = flattenFragments(this.children)
+    const kids = layoutNodes(this.children)
     if (kids.length === 0) return { minWidth: chrome, width: chrome }
 
     const isRow = (s.flexDirection ?? "column") === "row"
@@ -149,7 +149,7 @@ export class Box extends Node<BoxStyle> {
     let widthAcc = 0
     let minAcc = 0
     for (const k of kids) {
-      const l = k.layout?.(ctx) ?? { minWidth: 0, width: 0 }
+      const l = k.getLayout(ctx) ?? { minWidth: 0, width: 0 }
       if (isRow) {
         widthAcc += l.width
         minAcc += l.minWidth
@@ -163,7 +163,7 @@ export class Box extends Node<BoxStyle> {
   }
 
   async #layoutChildren(innerWidth: number, ctx: RenderCtx): Promise<string[]> {
-    const children = flattenFragments(this.children)
+    const children = layoutNodes(this.children)
     if (children.length === 0) return []
     const gap = this.state.gap ?? 0
     return (this.state.flexDirection ?? "column") === "row"
@@ -198,7 +198,7 @@ export class Box extends Node<BoxStyle> {
     // - `layout()` short-circuits — sync, no render.
     // - Fallback: render at the upper bound (innerWidth or fixed spec)
     //   and measure rows.
-    const intrinsics = children.map((c) => c.layout?.(ctx))
+    const intrinsics = children.map((c) => c.getLayout(ctx))
     // For children with intrinsic sizing, skip the measure render
     // entirely. Others fall back to render-at-upper-bound (their fixed
     // width, or innerWidth if fluid).
@@ -323,21 +323,8 @@ export function box(style: State<BoxStyle>, ...children: Child[]): Box {
  * the parent box's flex distribution, gap, and cross-axis sizing
  * instead of collapsing into a single slot.
  */
-function flattenFragments(children: readonly Node[]): readonly Node[] {
-  let needs = false
-  for (const c of children) {
-    if (c.layoutChildren !== undefined) {
-      needs = true
-      break
-    }
-  }
-  if (!needs) return children
-  const out: Node[] = []
-  for (const c of children) {
-    if (c.layoutChildren !== undefined) out.push(...flattenFragments(c.layoutChildren()))
-    else out.push(c)
-  }
-  return out
+function layoutNodes(children: readonly Node[]): readonly Node[] {
+  return children.flatMap((c) => c.layoutNodes)
 }
 
 function resolvePadding(p: Padding | undefined): [t: number, r: number, b: number, l: number] {

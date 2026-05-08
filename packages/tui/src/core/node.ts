@@ -39,7 +39,10 @@ export type BaseEvents = {
  * through nested objects/arrays (`n.state.padding[0] = 1`) do NOT — reassign
  * the whole field instead.
  */
-export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter<BaseEvents, E> {
+export abstract class Node<T extends object = object, E extends {} = {}> extends Emitter<
+  BaseEvents,
+  E
+> {
   #cache?: { rows: string[]; version: number; width: number }
   #parent?: Node
   #rendering: Promise<string[]> | undefined
@@ -50,6 +53,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
    *  that case so the surface's already-scheduled re-paint sees a
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
+  #setupDone = false
   readonly #children: Node[] = []
   readonly #state: State<T>
   readonly state: State<T>
@@ -58,7 +62,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
   #tracker = new Set<Promise<unknown>>()
   actions?: ActionMap
   type?: string
-  layout?(ctx: RenderCtx): Layout | undefined
+  protected layout?(ctx: RenderCtx): Layout | undefined
 
   constructor(state: State<T>, ...children: Node[]) {
     super()
@@ -128,7 +132,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
    *  their own flex props through to the parent box, can share its
    *  `gap`, and a row containing a `show` with multiple flex children
    *  allocates per-leaf-slot rather than collapsing into one. */
-  layoutChildren?(): readonly Node[]
+  protected layoutChildren?(): readonly Node[]
 
   // Make parent readonly
   get parent(): Node | undefined {
@@ -170,6 +174,22 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     if (value === undefined) return this.#id
     this.#id = value
     return this
+  }
+
+  protected setup(): void {}
+
+  getLayout(ctx: RenderCtx): Layout | undefined {
+    if (!this.layout) return
+    this.#ensureSetup()
+    return this.layout(ctx)
+  }
+
+  get layoutNodes(): readonly Node[] {
+    if (this.layoutChildren === undefined) return [this]
+    this.#ensureSetup()
+    const ret: Node[] = []
+    for (const c of this.with(() => this.layoutChildren?.()) ?? []) ret.push(...c.layoutNodes)
+    return ret
   }
 
   setState(patch: Partial<State<T>>): this {
@@ -218,6 +238,22 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     return this
   }
 
+  #ensureSetup(): void {
+    if (this.#setupDone) return
+    this.with(() => {})
+  }
+
+  with<R>(fn: () => R, ctx?: RenderCtx): R {
+    const wrapped = () => {
+      if (!this.#setupDone) {
+        this.#setupDone = true
+        this.setup()
+      }
+      return fn()
+    }
+    return withActiveNode(this, () => (ctx ? withContext(RenderContext, ctx, wrapped) : wrapped()))
+  }
+
   async render(ctx: RenderCtx): Promise<string[]> {
     // `visible: false` on the state suppresses the render entirely —
     // no `_render` call, no cached rows, zero layout footprint. Opt-in
@@ -226,15 +262,11 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     // stick around in the tree so we don't re-create them each time.
     // Resolve inside the tracking ctx so a signal accessor read
     // subscribes this node.
-    this.#rendering ??= withActiveNode(this, () =>
-      // Publish the current `ctx` to `RenderContext` so widget bodies
-      // and effects (anywhere in the subtree) can read it via
-      // `useContext(RenderContext)` without prop-drilling. ALS
-      // preserves the value across awaits.
-      withContext(RenderContext, ctx, () =>
-        ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)
-      )
+    this.#rendering ??= this.with(
+      () => (ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)),
+      ctx
     )
+
     try {
       return await this.#rendering
     } finally {

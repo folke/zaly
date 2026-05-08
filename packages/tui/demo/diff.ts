@@ -58,7 +58,6 @@ const app = box(
     lang: "typescript",
     modified,
     original,
-    title: "src/config.ts",
   })
 )
 

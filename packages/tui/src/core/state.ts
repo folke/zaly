@@ -12,11 +12,9 @@ import type { Reactive } from "./reactive.ts"
  *     visibility from shared state. `Node.render` unwraps it at render
  *     time so the subscription goes through the usual tracking ctx.
  */
-type BaseState = {
-  visible?: Reactive<boolean>
-}
+interface BaseState extends FlexState, LayoutState {}
 
-export type State<T extends object = object> = T & BaseState & Flexible
+export type State<T extends object = object> = T & BaseState
 
 /** Widget state mixin: `Style` (fg/bg/attrs) plus `BaseState`
  *  (visibility + any future framework-level state fields). Widget state
@@ -24,6 +22,10 @@ export type State<T extends object = object> = T & BaseState & Flexible
  *  cleanly separated at the type level without each widget having to
  *  compose the two manually. */
 export type StyleState = Style
+
+export interface LayoutState {
+  visible?: Reactive<boolean>
+}
 
 /**
  * Fields a flex-row child contributes to the allocator. Widget state
@@ -35,7 +37,7 @@ export type StyleState = Style
  * them in one shared shape means widgets opt in explicitly without
  * Box's row code needing per-widget casts.
  */
-export interface Flexible {
+export interface FlexState {
   /** Requested width. `"fill"` requests whatever remains after fixed
    *  children; a number requests exactly that many columns. */
   width?: Size

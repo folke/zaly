@@ -70,6 +70,11 @@ export class WidgetNode<S extends object, C extends Node = Node> extends Node<S>
     this.#create = fn
   }
 
+  override setup() {
+    this.#child = this.#create(this.state) // runs ONCE; props is captured by closure
+    this.add(this.#child) // adopt as real child so layout/parent ops work
+  }
+
   get child(): C {
     if (this.#child === undefined) {
       throw new Error(
@@ -80,19 +85,11 @@ export class WidgetNode<S extends object, C extends Node = Node> extends Node<S>
     return this.#child
   }
 
-  #getChild(): C {
-    if (this.#child === undefined) {
-      this.#child = this.#create(this.state) // runs ONCE; props is captured by closure
-      this.add(this.#child) // adopt as real child so layout/parent ops work
-    }
-    return this.#child
-  }
-
-  override layoutChildren(): Node[] {
-    return [this.#getChild()]
+  override layout(ctx: RenderCtx) {
+    return this.child.getLayout(ctx)
   }
 
   async _render(ctx: RenderCtx): Promise<string[]> {
-    return this.#getChild().render(ctx)
+    return this.child.render(ctx)
   }
 }

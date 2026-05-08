@@ -1,4 +1,4 @@
-import type { Flexible } from "../core/state.ts"
+import type { FlexState } from "../core/state.ts"
 
 import { sliceAnsi, stringWidth } from "../style/ansi.ts"
 import { clamp, resolveSize } from "./size.ts"
@@ -11,7 +11,7 @@ import { clamp, resolveSize } from "./size.ts"
  *
  * @internal
  */
-export interface RowItem extends Flexible {
+export interface RowItem extends FlexState {
   /** Measured natural (max-content) width — used as the flex-basis
    *  when no fixed `width` is set. Falls back to 0 when omitted. */
   natural?: number
@@ -164,13 +164,13 @@ export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): numb
     // the row sums exactly to `available` (or to the minSum floor when
     // mins force overflow).
     if (lastShrinkIndex !== -1) {
-      const target = Math.max(available, mins.reduce((a, b) => a + b, 0))
+      const target = Math.max(
+        available,
+        mins.reduce((a, b) => a + b, 0)
+      )
       if (allocated !== target) {
         const adj = target - allocated
-        widths[lastShrinkIndex] = Math.max(
-          mins[lastShrinkIndex],
-          widths[lastShrinkIndex] + adj
-        )
+        widths[lastShrinkIndex] = Math.max(mins[lastShrinkIndex], widths[lastShrinkIndex] + adj)
       }
     }
   }
@@ -185,7 +185,7 @@ export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): numb
  *
  * @internal
  */
-export function isFixedWidth(w: Flexible["width"]): boolean {
+export function isFixedWidth(w: FlexState["width"]): boolean {
   return typeof w === "number" || (typeof w === "string" && w.endsWith("%"))
 }
 

@@ -50,7 +50,7 @@ describe("box()", () => {
 
   test("falsy children are filtered out", () => {
     const t = text("kept")
-    // oxlint-disable-next-line no-null — exercising the documented filter.
+    // oxlint-disable-next-line unicorn/no-null
     const b = box({}, t, false, null, undefined, text("also-kept"))
     expect(b.children).toHaveLength(2)
     expect(b.children[0]).toBe(t)

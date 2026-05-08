@@ -22,6 +22,5 @@ export const writeResult = widget((props: ToolResultProps<WriteTool>) => {
     modified,
     original,
     path,
-    title: false,
   })
 })

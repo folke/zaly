@@ -80,12 +80,6 @@ describe("Diff widget", () => {
     expect(rows).toContain("    6  + F")
   })
 
-  test("renders a title above the diff when provided", async () => {
-    const n = diff({ context: 0, modified: "y", original: "x", title: "foo.ts" })
-    const rows = simplify(await n.render(ctx))
-    expect(rows[0]).toBe("foo.ts")
-  })
-
   test("syntax-highlighted lang: content carries ANSI", async () => {
     const n = diff({
       context: 1,
@@ -98,11 +92,10 @@ describe("Diff widget", () => {
   })
 
   test("identical original/modified produces no diff rows (still emits title)", async () => {
-    const n = diff({ context: 3, modified: "a\nb\nc", original: "a\nb\nc", title: "same.ts" })
+    const n = diff({ context: 3, modified: "a\nb\nc", original: "a\nb\nc" })
     const rows = simplify(await n.render(ctx))
     // Title row is the only output; no add/remove/context rows since
     // there's no diff.
     expect(rows.filter((r) => r.includes("-") || r.includes("+"))).toHaveLength(0)
-    expect(rows[0]).toBe("same.ts")
   })
 })

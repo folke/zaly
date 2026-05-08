@@ -20,6 +20,5 @@ export const editResult = widget((props: ToolResultProps<EditTool>) => {
     modified,
     original,
     path,
-    title: false,
   })
 })
