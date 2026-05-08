@@ -2,19 +2,11 @@ import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
-import type { AsyncTracker } from "./reactive.ts"
 import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
 import { RenderContext } from "./ctx.ts"
-import {
-  AsyncTrackerContext,
-  inRenderContextOf,
-  unwrap,
-  useContext,
-  withActiveNode,
-  withContext,
-} from "./reactive.ts"
+import { inRenderContextOf, unwrap, withActiveNode, withContext } from "./reactive.ts"
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */
@@ -24,10 +16,9 @@ export type BaseEvents = {
   unmount: {}
   /** Fired synchronously at the top of every `_render` that actually
    *  runs (skipped on cache hits and `visible:false`). Listeners run
-   *  inside the render's ALS chain — `useContext(RenderContext)` and
-   *  `useContext(AsyncTrackerContext)` resolve against the live ctx.
-   *  Used by `createRenderEffect` to capture render-time data
-   *  (theme, width, …) into signals. */
+   *  inside the render's ALS chain — `useContext(RenderContext)`
+   *  resolves against the live ctx. Used by `createRenderEffect` to
+   *  capture render-time data (theme, width, …) into signals. */
   render: {}
   focus: {}
   blur: {}
@@ -64,6 +55,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
   readonly state: State<T>
   #ctx?: MountCtx
   #id?: string
+  #tracker = new Set<Promise<unknown>>()
   actions?: ActionMap
   type?: string
   layout?(ctx: RenderCtx): Layout | undefined
@@ -80,6 +72,45 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
       },
     })
     children.forEach((c) => this.add(c))
+  }
+
+  /** Register an in-flight promise on this node's tracker. Auto-removed
+   *  on settle. Producers (typically `createAsync`) call this; drain
+   *  loops and `<Suspense>` boundaries read via `pending()` / `drain()`. */
+  track(p: Promise<unknown>): void {
+    this.#tracker.add(p)
+    void p.finally(() => this.#tracker.delete(p))
+  }
+
+  /** Pending async work in this node's subtree (default), or just this
+   *  node when called with `{ full: false }`. Includes promises from
+   *  every descendant via recursion through `#children`. */
+  pending(opts: { full?: boolean } = {}): Promise<unknown>[] {
+    const ret = [...this.#tracker]
+    if (opts.full === false) return ret
+    for (const c of this.#children) ret.push(...c.pending(opts))
+    return ret
+  }
+
+  /** Await pending async work, looping until stable. Same `full` flag
+   *  as `pending`. Used internally by drain-mode renders and externally
+   *  by Suspense boundaries that need to wait for their subtree. */
+  async drain(opts: { full?: boolean } = {}): Promise<void> {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    while (true) {
+      const ps = [...this.pending(opts)]
+      if (ps.length === 0) return
+      // oxlint-disable-next-line no-await-in-loop
+      await Promise.all(ps)
+    }
+  }
+
+  /** Drop the tracker on unmount. The promises continue to run, but
+   *  their `setValue` writes are gated by `createAsync`'s gen counter
+   *  — if the node remounts and creates a new run, stale promises see
+   *  a stale gen and no-op. */
+  protected onUnmount() {
+    this.#tracker.clear()
   }
 
   get children(): readonly Node[] {
@@ -200,7 +231,9 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
       // and effects (anywhere in the subtree) can read it via
       // `useContext(RenderContext)` without prop-drilling. ALS
       // preserves the value across awaits.
-      withContext(RenderContext, ctx, () => this.#renderWithAsync(ctx))
+      withContext(RenderContext, ctx, () =>
+        ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)
+      )
     )
     try {
       return await this.#rendering
@@ -209,36 +242,28 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
     }
   }
 
-  /** Outermost render installs an `AsyncTracker` so descendants'
-   *  `createAsync` calls always have a registration target. Inner
-   *  renders inherit it via ALS and pass through to `#renderCore`.
+  /** Render with drain semantics: render → if `createAsync` registered
+   *  pending work on *this* node's tracker, await it → re-render with
+   *  resolved values → loop until stable.
    *
-   *  The `ctx.async` flag governs only whether the outermost awaits
-   *  the tracker before returning:
-   *    - `false` (drain): render, await pending, repeat until stable.
-   *    - `true`  (fire-and-forget): return immediately; signal updates
-   *      from the resolving promises invalidate subscribers later. */
-  async #renderWithAsync(ctx: RenderCtx): Promise<string[]> {
-    // Inner renders just delegate — their createAsyncs land in the
-    // outermost's tracker.
-    if (useContext(AsyncTrackerContext) !== undefined) {
-      return this.#render(ctx)
+   *  Each child's `render` runs the same drain on its own subtree, so
+   *  the loop here only waits for promises owned by *this* node;
+   *  descendants have already settled by the time their `render`
+   *  returned. The `ctx.async` flag chooses between this drain mode
+   *  and fire-and-forget — see `#renderWithAsync`. */
+  async #renderWithDrain(ctx: RenderCtx): Promise<string[]> {
+    // Drain self only — children drain themselves before returning to us.
+    // This node's tracker may grow across iterations (chained async,
+    // or fresh `createAsync` registrations from re-running effects), so
+    // loop until empty.
+    let rows = await this.#render(ctx)
+    while (this.#tracker.size > 0) {
+      // oxlint-disable-next-line no-await-in-loop
+      await this.drain({ full: false })
+      // oxlint-disable-next-line no-await-in-loop
+      rows = await this.#render(ctx)
     }
-    const tracker: AsyncTracker = new Set()
-    return withContext(AsyncTrackerContext, tracker, async () => {
-      if (ctx.async === true) return this.#render(ctx)
-      // Drain: render, await pending, repeat until stable. The tracker
-      // can be re-populated during the await (chained async, or fresh
-      // `createAsync` registrations from a newly-rendered subtree), so
-      // loop until empty.
-      for (;;) {
-        // oxlint-disable-next-line no-await-in-loop
-        const rows = await this.#render(ctx)
-        if (tracker.size === 0) return rows
-        // oxlint-disable-next-line no-await-in-loop
-        await Promise.all(tracker)
-      }
-    })
+    return rows
   }
 
   async #render(ctx: RenderCtx): Promise<string[]> {
@@ -379,6 +404,7 @@ export abstract class Node<T extends {} = {}, E extends {} = {}> extends Emitter
   unmount(): this {
     if (!this.#ctx) return this
     for (const c of this.#children) c.unmount()
+    this.#tracker.clear()
     this.emit("unmount")
     this.#ctx = undefined
     return this

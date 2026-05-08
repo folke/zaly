@@ -216,8 +216,7 @@ const activeNodeStore = new AsyncLocalStorage<Node | undefined>()
  * hasn't meaningfully changed.
  *
  * The callback runs inside the render's ALS chain — `useContext(...)`
- * resolves against the active render's `RenderContext` and
- * `AsyncTrackerContext`.
+ * resolves against the active render's `RenderContext`.
  *
  * Auto-disposes on the owner's `unmount`. Idempotent re-mount: the
  * Node's emitter cleans up on unmount but the closure stays valid; if
@@ -423,38 +422,15 @@ export function memo<T>(fn: () => T): Accessor<T> {
 // ---- async -----------------------------------------------------------
 
 /**
- * A drain-able set of in-flight promises. Producers (`createAsync`,
- * Node classes that await directly) `add` their promise, `delete` it
- * on settle. Consumers (stream surface, `Suspense`) await everything
- * in the set and re-render until the set is stable.
- *
- * Threaded through the render tree via `AsyncTrackerContext`.
- */
-export type AsyncTracker = Set<Promise<unknown>>
-
-/**
- * Render-scope handle to the active drain target. Surfaces / Suspense
- * boundaries install one via `withContext`; producers register their
- * pending work with whatever's innermost.
- *
- * Consumer pattern (Node class):
- * ```ts
- * const tracker = useContext(AsyncTrackerContext)
- * const p = doAsyncWork()
- * tracker?.add(p)
- * try { return await p } finally { tracker?.delete(p) }
- * ```
- *
- * Producer pattern (widget): use `createAsync` — handles registration,
- * stale-write protection, and signal-driven re-fire.
- */
-export const AsyncTrackerContext = createContext<AsyncTracker | undefined>(undefined)
-
-/**
- * Solid-style async accessor. `fn` reads signals (tracked); the
+ * Resource-style async accessor. `fn` reads signals (tracked); the
  * effect re-fires when any of them change. Each run registers its
- * promise with the active `AsyncTrackerContext` so the surface's
- * drain awaits it before commit.
+ * in-flight promise on the calling node's tracker so a surrounding
+ * drain (`Node.render({ async: false })`) awaits it before commit.
+ *
+ * Must be called inside `Node.render()` or `Node.setup()` — the
+ * active node owns the async work for its lifetime. The node binding
+ * is captured once at call time; effect re-fires re-register against
+ * the same node regardless of where the scheduler runs them.
  *
  * ```ts
  * const highlighted = createAsync(
@@ -493,9 +469,10 @@ export function createAsync<T>(
 ): Accessor<T | undefined> {
   const [value, setValue] = signal<T | undefined>(opts?.initialValue)
   let gen = 0
+  const node = useActiveNode()
+  if (!node) throw new Error("createAsync must be called inside a Node.render()")
   effect(() => {
     const my = ++gen
-    const tracker = useContext(AsyncTrackerContext)
     let p: Promise<T>
     try {
       p = fn(untrack(value))
@@ -504,7 +481,7 @@ export function createAsync<T>(
       // tracker registration / cleanup path stays uniform.
       p = Promise.reject(error as Error)
     }
-    tracker?.add(p)
+    node.track(p)
     p.then(
       (v) => {
         if (my === gen) setValue(v)
@@ -513,9 +490,7 @@ export function createAsync<T>(
         // Swallow — async failures leave the previous (or initial)
         // value in place.
       }
-    ).finally(() => {
-      tracker?.delete(p)
-    })
+    )
   })
   return value
 }

@@ -48,11 +48,12 @@ export interface RenderCtx {
    *    signal updates from the resolving promises invalidate
    *    subscribers later. Right for the UI surface, which re-renders
    *    cheaply.
-   *  - `false` — drain mode: the outermost `Node.render` installs an
-   *    `AsyncTracker`, awaits any pending work registered by
-   *    descendants, and re-renders until the tracker is stable before
-   *    returning. Right for the stream surface — once rows commit to
-   *    scrollback, signal updates can't repaint them. */
+   *  - `false` — drain mode: every `Node.render` awaits its own pending
+   *    work (registered by `createAsync` against the node's tracker)
+   *    and re-renders until stable before returning. Each level drains
+   *    its own subtree implicitly via the recursive `render` calls.
+   *    Right for the stream surface — once rows commit to scrollback,
+   *    signal updates can't repaint them. */
   async?: boolean
   /** Queue a side-channel ANSI payload (e.g. KGP image transmit) for
    *  the renderer to flush before the next paint. Use this to keep
