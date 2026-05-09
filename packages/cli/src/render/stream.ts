@@ -7,7 +7,7 @@ import type {
   ToolResult,
   ToolResultPart,
 } from "@zaly/ai"
-import type { Renderer } from "@zaly/tui"
+import type { Renderer, Setter } from "@zaly/tui"
 
 import { isAttachment, justText, toParts } from "@zaly/ai"
 import { signal, toAccessor } from "@zaly/tui"
@@ -28,18 +28,13 @@ export interface StreamHandle {
   dispose: () => void
 }
 
-/** Local handle on the in-flight assistant text bubble. The bubble's
- *  content is a signal; deltas append via the setter. */
-interface ActiveText {
-  setContent: (next: string | ((prev: string) => string)) => void
-}
-
-interface ActiveReasoning {
-  setContent: (next: string | ((prev: string) => string)) => void
-}
-
 interface ActiveTool {
   setResult: (next: ToolResult | undefined) => void
+}
+
+interface ActiveWidget {
+  type: "text" | "reasoning"
+  setContent: Setter<string>
 }
 
 /**
@@ -48,51 +43,31 @@ interface ActiveTool {
  * results can flip them to ✓/✗.
  */
 export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
-  let active: ActiveText | undefined
-  let activeReasoning: ActiveReasoning | undefined
+  let active: ActiveWidget | undefined
   const tools = new Map<string, ActiveTool>()
 
-  const ensureBubble = (): ActiveText => {
-    if (active) return active
-    const [content, setContent] = signal("")
-    renderer.stream.append(assistantMessage({ content }))
-    const handle: ActiveText = { setContent }
-    active = handle
-    return handle
-  }
-
-  const ensureReasoning = (): ActiveReasoning => {
-    if (activeReasoning) return activeReasoning
-    const [content, setContent] = signal("")
-    renderer.stream.append(reasoningMessage({ content }))
-    const handle: ActiveReasoning = { setContent }
-    activeReasoning = handle
-    return handle
+  const update = (type: "text" | "reasoning", delta: string): void => {
+    if (active?.type !== type) active = undefined
+    if (!active) {
+      const [content, setContent] = signal("")
+      renderer.stream.append(
+        type === "text" ? assistantMessage({ content }) : reasoningMessage({ content })
+      )
+      active = { setContent, type }
+    }
+    active.setContent((prev) => prev + delta)
   }
 
   const onStream = (e: { event: StreamEvent }): void => {
     if (e.event.type === "reasoning-delta" && e.event.delta !== "") {
-      // Reasoning streams come before (or interleave with) text on
-      // models that emit it. Close the active text bubble so a
-      // later text-delta opens a fresh one below the reasoning.
-      active = undefined
-      const delta = e.event.delta
-      ensureReasoning().setContent((prev) => prev + delta)
-      return
-    }
-    if (e.event.type === "text-delta" && e.event.delta !== "") {
-      // Text supersedes reasoning — close the reasoning bubble so it
-      // doesn't get re-opened by a later reasoning chunk in the same
-      // turn (rare but possible). The next reasoning event would
-      // start a fresh bubble below the text.
-      activeReasoning = undefined
-      const delta = e.event.delta
-      ensureBubble().setContent((prev) => prev + delta)
+      update("reasoning", e.event.delta)
+    } else if (e.event.type === "text-delta" && e.event.delta !== "") {
+      update("text", e.event.delta)
     }
   }
+
   const onCall = (e: { call: ToolCallPart }): void => {
     active = undefined
-    activeReasoning = undefined
     const [result, setResult] = signal<ToolResult | undefined>(undefined)
     renderer.stream.append(toolCall({ call: e.call, result }))
     tools.set(e.call.id, { setResult })
@@ -103,7 +78,6 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
   }
   const onStep = (): void => {
     active = undefined
-    activeReasoning = undefined
   }
 
   agent.on("stream-event", onStream)
@@ -120,7 +94,6 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
     },
     pushUser(content, attachments) {
       active = undefined
-      activeReasoning = undefined
       renderer.stream.append(userMessage({ attachments, content }))
     },
     replay(messages) {
@@ -150,7 +123,6 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       // Reset live-streaming state so the next real event creates a
       // fresh bubble after the replayed history.
       active = undefined
-      activeReasoning = undefined
     },
   }
 }
