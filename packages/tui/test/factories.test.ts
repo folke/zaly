@@ -61,7 +61,7 @@ describe("widget()", () => {
   test("calling the widget produces a WidgetNode wrapping the inner Node", async () => {
     const greeting = widget((props: { name: string }) => text(`hi ${props.name}`))
     const node = greeting({ name: "ada" })
-    await node._render(ctx(10)) // forces the inner node to be created so we can inspect it
+    await node.render(ctx(10)) // forces the inner node to be created so we can inspect it
     expect(node.child).toBeInstanceOf(Text)
     expect(node.state).toMatchObject({ name: "ada" })
     expect(await node.render(ctx(10))).toEqual(["hi ada"])
@@ -78,7 +78,7 @@ describe("widget()", () => {
     counter({ id: 3 })
     // component is lazily creaated on first render
     expect(calls).toBe(0)
-    await c._render(ctx(10))
+    await c.render(ctx(10))
     expect(calls).toBe(1)
     await c._render(ctx(10))
     expect(calls).toBe(1)
