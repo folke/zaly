@@ -448,9 +448,11 @@ async function toAssistantItems(msg: Message<"assistant">): Promise<ResponsesInp
     if (part.type === "reasoning") {
       flushText()
       // `signature` carries `encrypted_content` for codex round-trip.
-      // Drop the item entirely when no encrypted content is available
-      // — sending a reasoning item with only summary text isn't valid
-      // input, and plaintext reasoning is provider-internal.
+      // Drop the item when no encrypted content is available — sending
+      // a reasoning item with only summary text isn't valid input, and
+      // plaintext reasoning is provider-internal. Cross-provider
+      // foreign blobs are already filtered out at the Model layer
+      // (transform drops reasoning whose modelId doesn't match).
       if (part.signature !== undefined && part.signature !== "") {
         // `summary` is required on input reasoning items (empty array
         // is fine when no summary text was streamed).

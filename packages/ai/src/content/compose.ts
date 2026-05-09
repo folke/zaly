@@ -1,7 +1,7 @@
 import type { CompressOpts } from "@zaly/shared"
 import type { Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
-import type { ContentTransform } from "./transform.ts"
+import type { AnyPart, ContentTransform } from "./transform.ts"
 
 import { cleanTextAgent, imageCompress } from "@zaly/shared"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
@@ -47,7 +47,7 @@ export function dropAttachments() {
  *  ct.pipe(attachmentToMeta("audio", "video"))
  *  ``` */
 export function attachmentToMeta<K extends Attachment["type"]>(...kinds: readonly K[]) {
-  return <T extends ContentPart>(ct: ContentTransform<T>) => {
+  return <T extends AnyPart>(ct: ContentTransform<T>) => {
     let result: ContentTransform = ct as ContentTransform
     for (const k of kinds) {
       // The lint rule below misfires on `result.map` (the transform

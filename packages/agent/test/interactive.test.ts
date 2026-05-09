@@ -275,12 +275,16 @@ describe("Agent — mutable prompt + tools", () => {
       id: "mock/x",
       options: {} as never,
       provider: {} as never,
-      async *stream(req: { prompt?: string[] }) {
-        lastPrompt = req.prompt
-        yield {
-          finishReason: "stop" as const,
-          type: "finish" as const,
-          usage: { input: 1, output: 1 },
+      async stream(ctx: { prompt?: string[] }) {
+        lastPrompt = ctx.prompt
+        return {
+          content: "",
+          meta: {
+            finishReason: "stop" as const,
+            modelId: "mock/x",
+            usage: { input: 1, output: 1 },
+          },
+          role: "assistant" as const,
         }
       },
     } as never

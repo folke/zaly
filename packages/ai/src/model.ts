@@ -1,6 +1,7 @@
 import type { AuthProvider } from "./auth/index.ts"
-import type { ContentTransform } from "./content/transform.ts"
+import type { AnyPart, ContentTransform } from "./content/transform.ts"
 import type {
+  CollectOptions,
   Context,
   Provider,
   StreamEvent,
@@ -15,42 +16,18 @@ import { envAuth } from "./auth/index.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
+import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/index.ts"
-import { pairToolCalls } from "./tools.ts"
+import { pairedToolIds } from "./tools.ts"
 import { withRetry } from "./utils/retry.ts"
 
 const ATTACHMENT_KINDS: readonly Attachment["type"][] = ["image", "pdf", "audio", "video"]
 
-/** Apply the model-level transform to one message. Free function
- *  rather than a method so each role's branch can return its own
- *  narrowed `Message<...>` shape — switching on `msg.role` inside a
- *  method that returns `Message` confuses the union assignment. */
-function transformMessage(msg: Message, transform: ContentTransform): Message {
-  switch (msg.role) {
-    // Assistant carries text/reasoning/tool-call only — no attachments.
-    case "assistant": {
-      return msg
-    }
-    case "tool": {
-      const content = msg.content.map((part) => ({
-        ...part,
-        content:
-          typeof part.content === "string"
-            ? part.content
-            : (transform.runSync(part.content) as typeof part.content),
-      }))
-      return { ...msg, content }
-    }
-    case "system": {
-      if (typeof msg.content === "string") return msg
-      return { ...msg, content: transform.runSync(msg.content) as typeof msg.content }
-    }
-    case "user": {
-      if (typeof msg.content === "string") return msg
-      return { ...msg, content: transform.runSync(msg.content) as typeof msg.content }
-    }
-  }
+export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
+  meta: Required<NonNullable<Message<"assistant">["meta"]>>
 }
+
+export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -70,15 +47,34 @@ export class Model<T extends AnyProvider = string> {
   // (`canAttach(kind) === false`); future catalog-driven steps land
   // here too. `undefined` when the model accepts everything — common
   // case, short-circuits in `#transform`.
-  readonly #transform: ContentTransform | undefined
+  readonly #ct: ContentTransform<AnyPart>
 
   constructor(opts: { id: string; spec: ModelSpec; provider: Provider<T> }) {
     this.id = opts.id
     this.spec = opts.spec
     this.provider = opts.provider
+    this.#ct = createTransform<AnyPart>()
     const unsupported = ATTACHMENT_KINDS.filter((k) => !this.canAttach(k))
-    if (unsupported.length > 0)
-      this.#transform = createTransform().pipe(attachmentToMeta(...unsupported))
+    if (unsupported.length > 0) this.#ct = this.#ct.pipe(attachmentToMeta(...unsupported))
+  }
+
+  #transform(messages: Message[], opts: StreamOptions): Message[] {
+    const toolIds = pairedToolIds(messages)
+    let ct = this.#ct
+    ct = ct
+      .map("tool-result", (part) => (toolIds.has(part.id) ? part : undefined))
+      .map("tool-call", (part) => (toolIds.has(part.id) ? part : undefined))
+    const ret: Message[] = []
+    const reasoning = opts.reasoning && opts.reasoning.effort !== "off"
+    for (const m of messages) {
+      let mct = ct
+      // Drop reasoning if model ids don't match or reasoning is disabled
+      if (m.role === "assistant" && (!reasoning || m.meta?.modelId !== this.id))
+        mct = mct.drop("reasoning")
+      const t = mct.runMessageSync(m)
+      if (t !== undefined) ret.push(t)
+    }
+    return ret
   }
 
   /** Stream a turn against this model. Demotes any attachments the
@@ -93,20 +89,7 @@ export class Model<T extends AnyProvider = string> {
    *
    *  If the model has catalog cost data, `finish` events get a
    *  populated `usage.cost` breakdown. */
-  stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
-    /** Apply the model-level transform to every message's content. No-op
-     *  when the model accepts everything (`#transform === undefined`).
-     *  Synchronous because the underlying steps are sync and we want
-     *  `stream()` to stay sync at the call site. */
-    if (this.#transform !== undefined) {
-      const messages = ctx.messages.map((m) => transformMessage(m, this.#transform!))
-      ctx = { ...ctx, messages }
-    }
-    // Defensive sanitisation: drop unpaired tool calls / results before
-    // they hit the provider. Typically left behind by a Ctrl+C during
-    // tool execution; provider APIs reject the payload outright when
-    // a function_call has no matching function_call_output.
-    ctx = { ...ctx, messages: pairToolCalls(ctx.messages) }
+  #stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
     // Auto-apply the catalog's max-output budget when the caller didn't
     // override it. Matters for OpenAI: without this the adapter omits
     // `max_tokens` / `max_completion_tokens` and reasoning models burn
@@ -114,30 +97,43 @@ export class Model<T extends AnyProvider = string> {
     // reply. Anthropic's adapter has its own internal `?? 4096` fallback
     // — we set the catalog value here so it wins over that default.
     const limit = this.spec.maxTokens ?? this.spec.limit.output
-    const maxTokens = Math.min(opts.maxTokens ?? limit, limit)
-    const reasoning = this.spec.reasoning ? opts.reasoning : undefined
-    const inner = this.provider.stream({
-      ctx,
+    const streamOpts: StreamOptions = {
+      ...opts,
+      maxTokens: Math.min(opts.maxTokens ?? limit, limit),
+      reasoning: this.spec.reasoning ? opts.reasoning : undefined,
+    }
+
+    /** Apply the model-level transform to every message's content. No-op
+     *  when the model accepts everything (`#transform === undefined`).
+     *  Synchronous because the underlying steps are sync and we want
+     *  `stream()` to stay sync at the call site. */
+    const messages = this.#transform(ctx.messages, streamOpts)
+
+    return this.provider.stream({
+      ctx: { ...ctx, messages },
       model: this.spec.id,
-      opts: { ...opts, maxTokens, reasoning },
+      opts: streamOpts,
       quirks: this.spec.quirks,
     })
-    return this.spec.cost ? this.#augment(inner) : inner
+  }
+
+  async stream(ctx: Context, opts: ModelStreamOptions = {}): Promise<AssistantMessage> {
+    const ret = await collect(this.#stream(ctx, opts), opts)
+    const meta = {
+      ...ret.message.meta, // just in case so that we capture future provider-level meta
+      finishReason: ret.finishReason,
+      modelId: this.id,
+      usage: {
+        ...ret.usage,
+        cost: this.spec.cost ? computeCost(ret.usage, this.spec.cost) : undefined,
+      },
+    }
+    return { ...ret.message, meta }
   }
 
   canAttach(modality: Modality): boolean {
     if (!this.spec.attachment) return false
     return this.spec.modalities.input.includes(modality)
-  }
-
-  /** Wrap a provider's stream so the `finish` event's `usage` carries
-   *  computed `cost`. All other events pass through unchanged. */
-  async *#augment(stream: AsyncIterable<StreamEvent>): AsyncIterable<StreamEvent> {
-    for await (const ev of stream) {
-      if (this.spec.cost && ev.type === "finish")
-        ev.usage = { ...ev.usage, cost: computeCost(ev.usage, this.spec.cost) }
-      yield ev
-    }
   }
 }
 

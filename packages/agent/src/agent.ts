@@ -1,8 +1,10 @@
 // oxlint-disable no-await-in-loop
 import type {
+  AssistantMessage,
   Message,
   MetaPart,
   Model,
+  ModelStreamOptions,
   TokenCount,
   Tool,
   ToolCallPart,
@@ -12,7 +14,7 @@ import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
 import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
-import { AiError, collect, isContextOverflow, validateToolParams } from "@zaly/ai"
+import { AiError, isContextOverflow, validateToolParams } from "@zaly/ai"
 import { Emitter, normPath, toError } from "@zaly/shared"
 import { Masker } from "./masker.ts"
 import { Notifier } from "./notify.ts"
@@ -483,7 +485,7 @@ export class Agent extends Emitter<AgentEvents> {
   async #collect() {
     this.#abortController = new AbortController()
     const caching = this.#opts.caching !== false
-    const stream = this.#opts.model.stream(
+    return this.#opts.model.stream(
       {
         messages: this.#withCacheMarker([...this.#masked], caching),
         prompt: this.#prompt,
@@ -491,13 +493,6 @@ export class Agent extends Emitter<AgentEvents> {
       },
       this.#streamOpts(caching)
     )
-    return await collect(stream, {
-      onEvent: (event) => {
-        this.emit("stream-event", { event })
-        void this.#opts.onEvent?.(event)
-      },
-      onUpdate: this.#opts.onUpdate,
-    })
   }
 
   #shouldAutoCompact(): boolean {
@@ -523,16 +518,22 @@ export class Agent extends Emitter<AgentEvents> {
   /** Build the per-stream `StreamOptions`. Adds `cacheTools: true` for
    *  Anthropic when caching is on so the trailing tool definition gets
    *  marked, caching the `system + tools` prefix across the session. */
-  #streamOpts(caching: boolean) {
+  #streamOpts(caching: boolean): ModelStreamOptions {
     const base = this.#opts.request ?? {}
     const signal = this.#abortController?.signal
-    if (!caching) return { ...base, signal }
     return {
       ...base,
-      providerOptions: {
-        ...base.providerOptions,
-        anthropic: { cacheTools: true, ...base.providerOptions?.anthropic },
+      onEvent: (event) => {
+        this.emit("stream-event", { event })
+        void this.#opts.onEvent?.(event)
       },
+      onUpdate: this.#opts.onUpdate,
+      providerOptions: caching
+        ? {
+            ...base.providerOptions,
+            anthropic: { cacheTools: true, ...base.providerOptions?.anthropic },
+          }
+        : base.providerOptions,
       signal,
     }
   }
@@ -558,7 +559,8 @@ export class Agent extends Emitter<AgentEvents> {
 
     this.#setStatus("streaming")
 
-    let collected
+    let collected: AssistantMessage
+
     try {
       collected = await this.#collect()
     } catch (error) {
@@ -573,9 +575,9 @@ export class Agent extends Emitter<AgentEvents> {
     }
 
     const result: Omit<StepResult, "kind"> = {
-      finishReason: collected.finishReason,
-      message: collected.message,
-      usage: collected.usage,
+      finishReason: collected.meta.finishReason,
+      message: collected,
+      usage: collected.meta.usage,
     }
 
     // Silent-overflow check BEFORE committing the message — gives the
@@ -588,18 +590,13 @@ export class Agent extends Emitter<AgentEvents> {
         // writes. `usage.input` is uncached-only; the cache fields are
         // separate billing tiers that still occupy the context window.
         usageInput:
-          collected.usage.input +
-          (collected.usage.cacheRead ?? 0) +
-          (collected.usage.cacheWrite ?? 0),
+          result.usage.input + (result.usage.cacheRead ?? 0) + (result.usage.cacheWrite ?? 0),
       })
     )
       return { kind: "context-overflow", ...result }
 
-    const calls = this.#parseToolCalls(collected.message)
-    await this.session.add(collected.message, {
-      finishReason: collected.finishReason,
-      usage: collected.usage,
-    })
+    const calls = this.#parseToolCalls(collected)
+    await this.session.add(collected)
 
     if (calls.length === 0) return { kind: "natural", ...result }
 

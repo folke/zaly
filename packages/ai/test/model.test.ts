@@ -3,7 +3,6 @@ import type { Provider, StreamEvent } from "../src/provider.ts"
 import { describe, expect, test } from "vitest"
 import { loadModel } from "../src/model.ts"
 import { addModels } from "../src/models.ts"
-import { collect } from "../src/provider.ts"
 import { providerRegistry } from "../src/providers/index.ts"
 
 // ── Local mock provider (registered once for the whole file) ───────────
@@ -75,8 +74,8 @@ describe("Model.stream — cost augmentation", () => {
       },
     ]
     const model = await loadModel("mock-cost-test/cheap")
-    const { usage } = await collect(model.stream({ messages: [{ content: "hi", role: "user" }] }))
-    const cost = usage.cost!
+    const message = await model.stream({ messages: [{ content: "hi", role: "user" }] })
+    const cost = message.meta.usage.cost!
     // Uncached input = 1000 - 200 - 100 = 700
     // Prices per million: input=1, output=4, cache_read=0.5, cache_write=5, reasoning=8
     expect(cost.input).toBeCloseTo((700 * 1) / 1_000_000)
@@ -89,9 +88,9 @@ describe("Model.stream — cost augmentation", () => {
   test("models without a price table get usage but no cost", async () => {
     scriptedEvents = [{ finishReason: "stop", type: "finish", usage: { input: 100, output: 10 } }]
     const model = await loadModel("mock-cost-test/freebie")
-    const { usage } = await collect(model.stream({ messages: [{ content: "hi", role: "user" }] }))
-    expect(usage.input).toBe(100)
-    expect(usage.output).toBe(10)
-    expect(usage.cost).toBeUndefined()
+    const message = await model.stream({ messages: [{ content: "hi", role: "user" }] })
+    expect(message.meta.usage.input).toBe(100)
+    expect(message.meta.usage.output).toBe(10)
+    expect(message.meta.usage.cost).toBeUndefined()
   })
 })

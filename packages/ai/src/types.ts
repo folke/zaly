@@ -12,6 +12,7 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
+import type { FinishReason, Usage } from "./provider.ts"
 import type { AnyProvider } from "./providers/index.ts"
 
 /** Plain text in user, assistant, or tool-result content. */
@@ -160,6 +161,10 @@ export type ToolResultPart<N extends string = string, M extends object = object>
 export interface ReasoningPart {
   type: "reasoning"
   text: string
+  /** Opaque round-trip token (Anthropic signature, OpenAI Responses
+   *  `encrypted_content`). Valid only for the model that produced it
+   *  — Model.stream's transform drops reasoning whose owning model id
+   *  doesn't match before forwarding to the provider. */
   signature?: string
 }
 
@@ -215,6 +220,7 @@ type MessageBase = {
   | {
       role: "assistant"
       content: string | (TextPart | ReasoningPart | ToolCallPart)[]
+      meta?: { finishReason?: FinishReason; usage?: Usage; modelId?: string }
     }
   | {
       role: "tool"

@@ -3,7 +3,7 @@ import type { Agent } from "../agent.ts"
 import type { Session } from "../session/index.ts"
 import type { ToolStatOptions } from "./utils.ts"
 
-import { collect, toXml } from "@zaly/ai"
+import { toXml } from "@zaly/ai"
 import { SUMMARY_HEADER, SUMMARY_PROMPT, SYSTEM_PROMPT } from "./prompt.ts"
 import {
   extractBashUsage,
@@ -109,21 +109,17 @@ export class Compaction {
 
   async #summarize(message: Message<"user">): Promise<string> {
     const model = this.#agent.model
-
-    const ret = await collect(
-      model.stream(
-        {
-          messages: [message],
-          prompt: [SYSTEM_PROMPT],
-        },
-        {
-          maxTokens: this.#opts.maxSummaryTokens,
-          reasoning: this.#opts.reasoning,
-          signal: this.#opts.signal,
-        }
-      )
+    const m = await model.stream(
+      {
+        messages: [message],
+        prompt: [SYSTEM_PROMPT],
+      },
+      {
+        maxTokens: this.#opts.maxSummaryTokens,
+        reasoning: this.#opts.reasoning,
+        signal: this.#opts.signal,
+      }
     )
-    const m = ret.message
     if (typeof m.content === "string") return m.content
     const parts = m.content.filter((p) => p.type === "text").map((p) => p.text)
     return parts.join("\n")

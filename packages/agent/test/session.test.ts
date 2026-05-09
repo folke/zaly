@@ -5,14 +5,24 @@ import type { SessionEvents, SessionNode } from "../src/session/index.ts"
 import { describe, expect, test } from "vitest"
 import { MemoryStore, Session } from "../src/session/index.ts"
 
-const u = (text: string): Message => ({ content: text, role: "user" })
-const a = (text: string): Message => ({ content: text, role: "assistant" })
+const u = (text: string): Message<"user"> => ({ content: text, role: "user" })
+const a = (text: string): Message<"assistant"> => ({ content: text, role: "assistant" })
 
 /** Strip session-assigned `id` / `ts` so deep-equal comparisons against
- *  hand-built `u()` / `a()` messages work. */
+ *  hand-built `u()` / `a()` messages work. Also strips
+ *  `meta.modelId` since it's reconstructed from session-meta on read,
+ *  not intrinsic to the message. Empty `meta` is removed entirely. */
 function bare(msgs: readonly Message[]): Message[] {
   return msgs.map((m) => {
     const { id: _id, ts: _ts, ...rest } = m
+    if (rest.role === "assistant" && rest.meta) {
+      const { modelId: _mid, ...metaRest } = rest.meta
+      if (Object.keys(metaRest).length === 0) {
+        const { meta: _drop, ...noMeta } = rest
+        return noMeta as Message
+      }
+      return { ...rest, meta: metaRest } as Message
+    }
     return rest as Message
   })
 }
@@ -369,7 +379,7 @@ describe("Session — JSONL persistence", () => {
     await s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
     await s.add(u("hi"))
     await s.update({ modelId: "openai/gpt-4o", prompt: ["be more detailed"] })
-    await s.add(a("hello"), { usage: { input: 5, output: 2 } })
+    await s.add({ ...a("hello"), meta: { usage: { input: 5, output: 2 } } })
     await s.add(u("again"))
     await s.close()
 

@@ -6,6 +6,7 @@ import type {
   StreamOptions,
   TokenCount,
   Tool,
+  AssistantMessage,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { StepKind } from "./events.ts"
@@ -117,7 +118,7 @@ export interface ContextPressure {
  *  logic between steps. */
 export interface StepResult {
   kind: StepKind
-  message?: Message<"assistant">
+  message?: AssistantMessage
   toolMessage?: Message<"tool">
   finishReason: FinishReason
   usage: TokenCount

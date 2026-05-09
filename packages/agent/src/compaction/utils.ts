@@ -282,9 +282,7 @@ export async function messageTail(
 
   for (const m of messages) {
     queue.unshift(m)
-    // eslint-disable-next-line no-await-in-loop
-    const node = await ctx.session.node(m.id)
-    const usage = node?.usage
+    const usage = m.role === "assistant" ? m.meta?.usage : undefined
     if (!usage) continue
     const current = usage.input + usage.output + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0)
     // clamp for masker and similar events that might shrink the context size

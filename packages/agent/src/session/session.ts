@@ -2,10 +2,10 @@ import type { Message } from "@zaly/ai"
 import type { SessionStore } from "./store.ts"
 import type {
   InternalMeta,
-  MessageMeta,
   PersistedMeta,
   SessionEvents,
   SessionInit,
+  SessionMessage,
   SessionMeta,
   SessionNode,
   SessionNodeView,
@@ -216,18 +216,23 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
    *  prior load), they're used as the node's uuid / timestamp; otherwise
    *  fresh values are generated. The committed message always carries
    *  both — `m.id === node.uuid` and `m.ts === node.ts`. */
-  async add(message: Message, meta?: MessageMeta): Promise<string> {
+  async add(message: Message): Promise<string> {
     const uuid = message.id ?? uuidv7()
     const ts = message.ts ?? Date.now()
-    const m =
-      message.id !== undefined && message.ts !== undefined ? message : { ...message, id: uuid, ts }
+    const current = this.#view.meta.modelId
+
+    const m = { ...message, id: uuid, ts }
+    if (m.role === "assistant" && m.meta) {
+      const { modelId, ...meta } = m.meta ?? {}
+      if (modelId && modelId !== current) await this.update({ modelId: m.meta.modelId })
+      m.meta = meta
+    }
     return this.#commit({
       message: m,
       parentUuid: this.#store.root?.uuid,
       ts,
       type: "message",
       uuid,
-      ...meta,
     })
   }
 
@@ -364,20 +369,20 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     let cursor = opts.uuid ?? this.#store.root?.uuid
     let limit = opts.limit ?? Infinity
     let compact: SessionNode<"compact"> | undefined
-    const messages: Message[] = []
+    const messageNodes: SessionNode<"message">[] = []
 
     while (cursor) {
       // eslint-disable-next-line no-await-in-loop
       const node = await this.#store.get(cursor)
-      if (!node || (node.type === "message" && messages.length + 1 > limit)) break
+      if (!node || (node.type === "message" && messageNodes.length + 1 > limit)) break
       cursor = node.parentUuid
       reverse.push(node)
-      if (node.type === "message") messages.push(node.message)
+      if (node.type === "message") messageNodes.push(node)
       if (node.type === "compact" && (opts.active ?? true)) {
         if (compact) break // stop at the first compact
         compact = node
         // update limit to the compact's tail
-        limit = Math.min(limit, messages.length + node.tail)
+        limit = Math.min(limit, messageNodes.length + node.tail)
       }
     }
 
@@ -388,6 +393,15 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     for (const n of reverse.toReversed()) {
       if (n.type === "session-meta") meta = n.meta
       nodes.set(n.uuid, { ...n, meta })
+    }
+
+    const messages: SessionMessage[] = []
+    for (const n of messageNodes) {
+      // add `id`, `ts` and `modelId` (if assistant turn) to the message
+      const m = { ...n.message, id: n.uuid, ts: n.ts }
+      if (m.role === "assistant") m.meta = { ...m.meta, modelId: meta.modelId }
+      n.message = m
+      messages.push(m)
     }
 
     // Add compaction summary as the first message

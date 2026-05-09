@@ -103,54 +103,19 @@ export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
   return tool.validateParams(args)
 }
 
-/**
- * Drop unpaired tool calls and tool results from a message history.
- * Provider APIs require strict pairing: every assistant `tool-call`
- * must have a corresponding `tool-result` later in the array, and
- * vice versa. Orphans (typically left behind by a Ctrl+C during tool
- * execution, or a crash between call emission and result persistence)
- * cause hard failures — OpenAI Responses returns *"No tool output
- * found for function call …"*; Anthropic returns a similar
- * `tool_use_without_tool_result` error.
- *
- * The pass:
- *   - drops assistant `tool-call` parts whose id isn't in any later
- *     `tool` message;
- *   - drops `tool-result` parts whose id wasn't in any earlier
- *     assistant message;
- *   - drops assistant/tool messages that end up with zero parts.
- *
- * Pure function — never mutates the input. Cheap (two linear walks).
- * Called from `Model.stream` so every provider gets sanitised input.
- */
-export function pairToolCalls(messages: readonly Message[]): Message[] {
-  const resultIds = new Set<string>()
+export function pairedToolIds(messages: readonly Message[]) {
+  const valid = new Set<string>()
   const callIds = new Set<string>()
   for (const m of messages) {
     if (m.role === "tool") {
-      for (const p of m.content) resultIds.add(p.id)
+      for (const p of m.content) if (callIds.has(p.id)) valid.add(p.id)
     } else if (m.role === "assistant" && Array.isArray(m.content)) {
       for (const p of m.content) {
         if (p.type === "tool-call") callIds.add(p.id)
       }
     }
   }
-
-  const out: Message[] = []
-  for (const m of messages) {
-    if (m.role === "assistant" && Array.isArray(m.content)) {
-      const filtered = m.content.filter((p) => p.type !== "tool-call" || resultIds.has(p.id))
-      if (filtered.length === 0) continue
-      out.push(filtered.length === m.content.length ? m : { ...m, content: filtered })
-    } else if (m.role === "tool") {
-      const filtered = m.content.filter((p) => callIds.has(p.id))
-      if (filtered.length === 0) continue
-      out.push(filtered.length === m.content.length ? m : { ...m, content: filtered })
-    } else {
-      out.push(m)
-    }
-  }
-  return out
+  return valid
 }
 
 export function* extractToolCalls<T extends string = string>(

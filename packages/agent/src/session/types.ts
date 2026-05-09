@@ -1,4 +1,4 @@
-import type { FinishReason, Message, Usage } from "@zaly/ai"
+import type { Message } from "@zaly/ai"
 import type { SessionStore } from "./store.ts"
 
 // ── Records ──────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ type SessionN = {
   | { type: "session-start" }
   | { type: "session-resume" }
   | { type: "session-meta"; meta: PersistedMeta }
-  | ({ type: "message"; message: Message } & MessageMeta)
+  | { type: "message"; message: Message }
   | {
       type: "compact"
       /** Whether the loop kicked off compaction itself or the user did. */
@@ -39,6 +39,8 @@ type SessionN = {
     }
 )
 type SessionNodeType = SessionN["type"]
+
+export type SessionMessage = Message & { ts: number; id: string }
 
 export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<
   SessionN,
@@ -72,16 +74,6 @@ export type SessionMeta = {
   cwd?: string
   modelId?: string
   prompt?: string[]
-}
-
-/** Optional per-message metadata. Populated for assistant nodes the
- *  agent commits after a step (carrying model + usage + finish info);
- *  unset for user / tool messages or anything added directly. */
-export interface MessageMeta {
-  /** Token usage from the step that produced this message. */
-  usage?: Usage
-  /** Provider-side finish reason for the step. */
-  finishReason?: FinishReason
 }
 
 // ── Events ───────────────────────────────────────────────────────────────

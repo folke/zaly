@@ -8,14 +8,18 @@ const u = (text: string): Message => ({ content: text, role: "user" })
 const a = (text: string): Message => ({ content: text, role: "assistant" })
 
 /** Build a started session and seed a script of `[message, usage?]`
- *  pairs. The usage is attached as `MessageMeta` so it lands on the
- *  message node and `messageTail` can find it via `session.node()`. */
+ *  pairs. Usage is attached to the assistant message's `meta.usage` so
+ *  `messageTail` can read it directly off the message. */
 async function build(
   script: readonly (readonly [Message, Usage?])[]
 ): Promise<{ session: Session; messages: Message[] }> {
   const session = await Session.load({ store: new MemoryStore() })
   await session.start()
-  for (const [m, usage] of script) await session.add(m, usage ? { usage } : undefined)
+  for (const [m, usage] of script) {
+    const msg: Message =
+      usage && m.role === "assistant" ? { ...m, meta: { ...m.meta, usage } } : m
+    await session.add(msg)
+  }
   return { messages: [...session.messages], session }
 }
 

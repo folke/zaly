@@ -96,9 +96,9 @@ export class App {
       }
     })
 
-    const last = this.#agent.messages[this.#agent.messages.length - 1]
-    const node = await this.#agent.session.node(last)
-    if (node?.usage) this.#usage.set(node.usage)
+    const last = this.#agent.messages[this.#agent.messages.length - 1] as Message | undefined
+    const usage = last?.role === "assistant" ? last.meta?.usage : undefined
+    if (usage) this.#usage.set(usage)
 
     // Replay the tail of a resumed conversation so the stream surface
     // isn't empty on session load. 20 messages ≈ a handful of recent

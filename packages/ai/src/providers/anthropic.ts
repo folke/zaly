@@ -458,13 +458,18 @@ async function toAnthropicMessage(
             // commits a zero-length text part.
             if (part.text !== "") content.push({ text: part.text, type: "text" })
           } else if (part.type === "reasoning") {
-            // Anthropic round-trips thinking blocks during tool-use cycles.
-            // `signature` is opaque and must be preserved verbatim.
-            content.push({
-              signature: part.signature,
-              thinking: part.text,
-              type: "thinking",
-            })
+            // Anthropic round-trips thinking blocks during tool-use
+            // cycles; `signature` is opaque and must be preserved
+            // verbatim. Drop signature-less reasoning — Anthropic 400s
+            // on it, and the Model layer's transform has already
+            // ensured anything reaching here came from the same model.
+            if (part.signature !== undefined) {
+              content.push({
+                signature: part.signature,
+                thinking: part.text,
+                type: "thinking",
+              })
+            }
           } else {
             content.push({
               id: part.id,

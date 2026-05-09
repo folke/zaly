@@ -13,7 +13,7 @@
  *   MODEL                 override the default id
  */
 
-import { collect, envAuth, listModels, loadModel } from "../src/index.ts"
+import { envAuth, listModels, loadModel } from "../src/index.ts"
 
 const id = process.env.MODEL ?? "openrouter/minimax/minimax-m2.7"
 
@@ -32,19 +32,15 @@ console.log()
 // Reasoning models stream thoughts via `reasoning-delta` before any
 // `text-delta`; we dim them so the final answer stands out.
 let mode: "reasoning" | "text" | undefined
-const { finishReason, message, usage } = await collect(
-  model.stream(
-    {
-      messages: [
-        { content: "You are a concise assistant.", role: "system" },
-        { content: "Write a two-sentence haiku about the terminal.", role: "user" },
-      ],
-    },
-    {
-      maxTokens: 1024,
-    }
-  ),
+const message = await model.stream(
   {
+    messages: [
+      { content: "You are a concise assistant.", role: "system" },
+      { content: "Write a two-sentence haiku about the terminal.", role: "user" },
+    ],
+  },
+  {
+    maxTokens: 1024,
     onEvent: (e) => {
       if (e.type === "reasoning-delta") {
         if (mode !== "reasoning") {
@@ -64,6 +60,6 @@ const { finishReason, message, usage } = await collect(
 if (mode === "reasoning") process.stdout.write("\x1b[0m")
 process.stdout.write("\n\n")
 
-console.log("finish reason:", finishReason)
-console.log("usage:", usage)
+console.log("finish reason:", message.meta.finishReason)
+console.log("usage:", message.meta.usage)
 console.log("message:", JSON.stringify(message, undefined, 2))

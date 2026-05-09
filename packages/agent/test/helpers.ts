@@ -1,7 +1,15 @@
-import type { Message, Model, StreamEvent, TokenCount } from "@zaly/ai"
+import type {
+  AssistantMessage,
+  Message,
+  Model,
+  ModelStreamOptions,
+  StreamEvent,
+  TokenCount,
+} from "@zaly/ai"
 import type { AgentStopReason } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
+import { collect } from "@zaly/ai"
 import { Agent } from "../src/agent.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
@@ -24,15 +32,37 @@ const mockSpec = {
   reasoning: false,
 } as unknown as Model["spec"]
 
+/** Drive `collect` over a script of stream events while honoring
+ *  `onEvent` / `onUpdate` callbacks the agent passes in. Stamps the
+ *  meta the way `Model.stream` would so the agent sees the same shape
+ *  in tests as in production. */
+async function fakeStream(
+  modelId: string,
+  events: StreamEvent[],
+  opts: ModelStreamOptions = {}
+): Promise<AssistantMessage> {
+  async function* iter(): AsyncIterable<StreamEvent> {
+    for (const ev of events) yield ev
+  }
+  const ret = await collect(iter(), opts)
+  return {
+    ...ret.message,
+    meta: {
+      finishReason: ret.finishReason,
+      modelId,
+      usage: ret.usage,
+    },
+  } as AssistantMessage
+}
+
 export function mockModel(scripts: StreamEvent[][]): Model {
-  // oxlint-disable-next-line no-unused-vars -- closure mutation
   let turn = 0
   return {
     id: "mock/x",
     spec: mockSpec,
     provider: {} as Model["provider"],
-    async *stream() {
-      for (const ev of scripts[turn++]) yield ev
+    stream(_ctx: never, opts: ModelStreamOptions = {}) {
+      return fakeStream("mock/x", scripts[turn++], opts)
     },
   } as unknown as Model
 }
@@ -55,9 +85,9 @@ export function pendingModel(): {
       id: "mock/x",
       spec: mockSpec,
       provider: {} as Model["provider"],
-      async *stream() {
+      async stream(_ctx: never, opts: ModelStreamOptions = {}) {
         const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
-        for (const ev of events) yield ev
+        return fakeStream("mock/x", events, opts)
       },
     } as unknown as Model,
     release(events: StreamEvent[]): void {
@@ -76,8 +106,7 @@ export function throwingModel(message: string): Model {
     id: "mock/x",
     spec: mockSpec,
     provider: {} as Model["provider"],
-    // eslint-disable-next-line require-yield
-    async *stream() {
+    async stream() {
       throw new Error(message)
     },
   } as unknown as Model
@@ -132,12 +161,12 @@ export async function runAgent(
  *  session JSONL. Used by `test/compaction.ts` and `test/masker.ts`. */
 export async function loadSession(path: string, opts?: { limit?: number }): Promise<Session> {
   if (path.includes(".claude")) {
-    const { messages, metas } = await loadClaudeSession(path, { walk: "all" })
+    const { messages } = await loadClaudeSession(path, { walk: "all" })
 
     const s = await Session.load() // in-memory, no path
     await s.start()
     for (const m of messages.slice(-(opts?.limit ?? 2000))) {
-      await s.add(m, m.id ? metas.get(m.id) : undefined)
+      await s.add(m)
     }
     return s
   }

@@ -8,7 +8,6 @@ import type {
   ToolResultPart,
   Usage,
 } from "@zaly/ai"
-import type { MessageMeta } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
 import { JsonlReader } from "./jsonl.ts"
@@ -89,7 +88,7 @@ export interface ZalyToolCall {
 export async function loadClaudeSession(
   path: string,
   opts: ClaudeSessionOptions = {}
-): Promise<{ messages: Message[]; metas: Map<string, MessageMeta> }> {
+): Promise<{ messages: Message[] }> {
   // Honor `~` and relative shorthands — config-file / env paths often
   // include them and Node's fs APIs don't expand `~` natively.
   path = normPath(path)
@@ -98,13 +97,14 @@ export async function loadClaudeSession(
   const toolCalls = collectToolCalls(chain, convert)
 
   const messages: Message[] = []
-  const metas = new Map<string, MessageMeta>()
   for (const rec of chain) {
     const msg = toZalyMessage(rec, toolCalls)
     if (!msg) continue
+    if (msg.role === "assistant") {
+      const usage = recordUsage(rec)
+      if (usage) msg.meta = { ...msg.meta, usage }
+    }
     messages.push(msg)
-    const meta = recordMeta(rec)
-    if (meta && msg.id) metas.set(msg.id, meta)
   }
   messages.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
   // De-duplicate tool_use ids. Claude Code branching / sidechain replay
@@ -124,13 +124,13 @@ export async function loadClaudeSession(
     const last = messages.at(-1)!
     messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
   }
-  return { messages, metas }
+  return { messages }
 }
 
-/** Build a `MessageMeta` from a Claude record's `message.usage` block.
- *  Returns undefined when no usage info is present (user messages, tool
- *  results) — `MessageMeta` itself is optional on `Session.add`. */
-function recordMeta(rec: ClaudeRecord): MessageMeta | undefined {
+/** Build a `Usage` from a Claude record's `message.usage` block.
+ *  Returns undefined when no usage info is present (user messages,
+ *  tool results). The caller stamps it onto `message.meta.usage`. */
+function recordUsage(rec: ClaudeRecord): Usage | undefined {
   const u = rec.message?.usage
   if (!u) return undefined
   const usage: Usage = {
@@ -139,7 +139,7 @@ function recordMeta(rec: ClaudeRecord): MessageMeta | undefined {
   }
   if (u.cache_read_input_tokens !== undefined) usage.cacheRead = u.cache_read_input_tokens
   if (u.cache_creation_input_tokens !== undefined) usage.cacheWrite = u.cache_creation_input_tokens
-  return { usage }
+  return usage
 }
 
 // ── Parsing ──────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import type { ContentPart, ReasoningPart, ToolCallPart, ToolResultPart } from "../types.ts"
+import type { ContentPart, Message, ReasoningPart, ToolCallPart, ToolResultPart } from "../types.ts"
 
 /** Anything with a discriminator — broad enough to carry the full
  *  message-level part union (`ContentPart` plus `ReasoningPart`,
@@ -189,6 +189,18 @@ export class ContentTransform<T extends AnyPart = ContentPart> {
       parts = result
     }
     return parts as T[]
+  }
+
+  async runMessage<M extends Message = Message>(message: M): Promise<M | undefined> {
+    if (typeof message.content === "string") return message
+    const parts = await this.run(message.content as AnyPart[])
+    return parts.length > 0 ? { ...message, content: parts } : undefined
+  }
+
+  runMessageSync<M extends Message = Message>(message: M): M | undefined {
+    if (typeof message.content === "string") return message
+    const parts = this.runSync(message.content as AnyPart[])
+    return parts.length > 0 ? { ...message, content: parts } : undefined
   }
 
   // Append a stage; returns a new instance with a (possibly) different

@@ -1,6 +1,6 @@
 import type { Message, ToolCallPart } from "@zaly/ai"
 
-import { collect, defineTool, loadModel, runTool } from "@zaly/ai"
+import { defineTool, loadModel, runTool } from "@zaly/ai"
 import { Type } from "typebox"
 
 const multiply = defineTool({
@@ -15,7 +15,7 @@ const model = await loadModel(process.env.MODEL ?? "openai/gpt-4o-mini")
 const messages: Message[] = [{ content: "What is 17 × 23?", role: "user" }]
 
 for (;;) {
-  const { message } = await collect(model.stream({ messages, tools: [multiply] }))
+  const message = await model.stream({ messages, tools: [multiply] })
   messages.push(message)
 
   const calls = (Array.isArray(message.content) ? message.content : []).filter(
