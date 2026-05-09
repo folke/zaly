@@ -1,4 +1,5 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Layout } from "../core/state.ts"
 
 import { fileDetect, imageInfo } from "@zaly/shared"
 import { Node } from "../core/node.ts"
@@ -50,6 +51,10 @@ export class Image extends Node<ImageState> {
 
   get fallback(): string[] {
     return [this.state.alt ?? `[Image: ${this.state.src}]`]
+  }
+
+  override layout(): Layout {
+    return { minWidth: 50, width: 100 }
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
