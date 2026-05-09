@@ -73,14 +73,14 @@ export type AnthropicContent = Awaited<ReturnType<typeof transformAnthropic>>
  * request shape, streams responses via SSE, and emits normalised
  * `StreamEvent`s.
  *
- * Scope of this adapter (v0):
- *   - text + tool messages, streaming, tool calls, usage/cost
- *   - prompt caching (`cache_control: { type: "ephemeral" }`)
+ * Covered:
+ *   - text / image / PDF content parts (incl. image-bearing tool results)
+ *   - tool calls + tool results, streaming, usage/cost
+ *   - prompt caching (`cache_control: { type: "ephemeral" }` — rolling
+ *     marker on the trailing message + the trailing tool definition)
  *   - extended thinking via `reasoning.effort` / `reasoning.budget`
  *
- * Deferred:
- *   - image / PDF content parts
- *   - image-bearing tool results
+ * Not implemented:
  *   - server-side tools (computer-use, web_search, …)
  *   - `response_format` (Anthropic has no JSON mode — use tools)
  */
@@ -126,7 +126,6 @@ interface AnthropicRequest {
   temperature?: number
   stop_sequences?: string[]
   thinking?: { type: "enabled"; budget_tokens: number }
-  metadata?: { user_id?: string }
   stream: true
 }
 
@@ -194,14 +193,9 @@ interface AnthropicTool {
   cache_control?: { type: "ephemeral" }
 }
 
-interface AnthropicRequestOptions {
-  userId?: string
-}
-
 async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const { ctx, opts } = req
   const caching = opts.caching ?? true
-  const specific = (opts.providerOptions?.anthropic ?? {}) as AnthropicRequestOptions
   // Anthropic requires max_tokens. Fall back to a generous default if
   // the caller didn't set one — `Model.stream` fills this from
   // `limit.output` for catalog-routed calls.
@@ -254,7 +248,6 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const thinking = thinkingBudget(opts.reasoning, maxTokens)
   if (thinking !== undefined) out.thinking = thinking
 
-  if (specific.userId !== undefined) out.metadata = { user_id: specific.userId }
   return out
 }
 

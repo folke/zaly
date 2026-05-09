@@ -609,32 +609,6 @@ describe("openai: request translation", () => {
     })
   })
 
-  test("providerOptions.openai passes OpenAI-specific fields through", async () => {
-    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
-    const provider = createOpenAI({ apiKey: "test", fetch })
-    await drain(
-      provider.stream(
-        streamReq({
-          messages: [{ content: "x", role: "user" }],
-          model: "m",
-          providerOptions: {
-            openai: {
-              parallelToolCalls: false,
-              seed: 42,
-              serviceTier: "priority",
-              user: "u-123",
-            },
-          },
-        })
-      )
-    )
-    const body = recorded[0].body as Record<string, unknown>
-    expect(body.parallel_tool_calls).toBe(false)
-    expect(body.seed).toBe(42)
-    expect(body.user).toBe("u-123")
-    expect(body.service_tier).toBe("priority")
-  })
-
   test("maxTokens defaults to max_tokens wire field without quirks", async () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })

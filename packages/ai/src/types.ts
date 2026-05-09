@@ -4,9 +4,7 @@
  * Shape is OpenAI's role layout (`system` / `user` / `assistant` / `tool`
  * as discrete messages, tool results on their own role) combined with
  * Anthropic-style ordered content parts so interleaved text + tool calls
- * round-trip faithfully where the provider supports it. Provider-specific
- * hints (cache markers, reasoning effort, …) live in an open
- * `providerOptions` bag so core types stay provider-agnostic.
+ * round-trip faithfully where the provider supports it.
  *
  * Adapter translation rules live in the per-provider modules; see
  * `design.sketch.ts` at the package root for the side-by-side comparison.
@@ -166,21 +164,6 @@ export interface ReasoningPart {
    *  — Model.stream's transform drops reasoning whose owning model id
    *  doesn't match before forwarding to the provider. */
   signature?: string
-}
-
-/** Per-request escape hatches keyed by provider. Adapters read the
- *  keys they own; unknown keys are ignored. Use this only for
- *  power-user knobs that only make sense on one provider
- *  (`logit_bias`, `service_tier`, OpenRouter routing preferences,
- *  Anthropic metadata, etc.) — for cross-cutting concerns (reasoning,
- *  tool choice, response format) use the top-level `StreamOptions`
- *  fields instead. */
-export interface RequestProviderOptions {
-  openai?: Record<string, unknown>
-  anthropic?: Record<string, unknown>
-  openrouter?: Record<string, unknown>
-  google?: Record<string, unknown>
-  [provider: string]: Record<string, unknown> | undefined
 }
 
 type MessageBase = {

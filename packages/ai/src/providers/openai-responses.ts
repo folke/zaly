@@ -110,7 +110,6 @@ interface ResponsesRequest {
   instructions?: string
   tools?: ResponsesTool[]
   tool_choice?: "auto" | "required" | "none" | { type: "function"; name: string }
-  parallel_tool_calls?: boolean
   temperature?: number
   max_output_tokens?: number
   reasoning?: { effort?: "minimal" | "low" | "medium" | "high"; summary?: string }
@@ -119,11 +118,8 @@ interface ResponsesRequest {
     verbosity?: "low" | "medium" | "high"
   }
   include?: string[]
-  prompt_cache_key?: string
   store?: boolean
   stream: true
-  service_tier?: "auto" | "default" | "flex" | "priority"
-  metadata?: Record<string, string>
 }
 
 type ResponsesTextFormat =
@@ -183,17 +179,9 @@ type ResponsesContentBlock =
     }
   | { type: "output_text"; text: string }
 
-interface ResponsesRequestOptions {
-  parallelToolCalls?: boolean
-  serviceTier?: "auto" | "default" | "flex" | "priority"
-  promptCacheKey?: string
-  metadata?: Record<string, string>
-}
-
 async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
   const quirks = req.quirks ?? {}
   const { ctx, opts } = req
-  const specific = (opts.providerOptions?.openai ?? {}) as ResponsesRequestOptions
 
   const input: ResponsesInputItem[] = []
   // Sequential — one source message can fan out to multiple input items
@@ -254,11 +242,6 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
 
   if (quirks.responsesStore !== undefined) out.store = quirks.responsesStore
   if (quirks.responsesInclude !== undefined) out.include = quirks.responsesInclude
-
-  if (specific.parallelToolCalls !== undefined) out.parallel_tool_calls = specific.parallelToolCalls
-  if (specific.serviceTier !== undefined) out.service_tier = specific.serviceTier
-  if (specific.promptCacheKey !== undefined) out.prompt_cache_key = specific.promptCacheKey
-  if (specific.metadata !== undefined) out.metadata = specific.metadata
 
   return out
 }

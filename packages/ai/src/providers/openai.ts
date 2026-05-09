@@ -149,19 +149,6 @@ interface OpenAIChatRequest {
         type: "json_schema"
         json_schema: { name: string; schema: unknown; strict?: boolean }
       }
-  parallel_tool_calls?: boolean
-  seed?: number
-  user?: string
-  service_tier?: "auto" | "default" | "flex" | "priority"
-  logit_bias?: Record<string, number>
-}
-
-interface OpenAIRequestOptions {
-  parallelToolCalls?: boolean
-  seed?: number
-  user?: string
-  serviceTier?: "auto" | "default" | "flex" | "priority"
-  logitBias?: Record<string, number>
 }
 
 interface OpenAITool {
@@ -199,7 +186,6 @@ type OpenAIContentPart =
 async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   const quirks = req.quirks ?? {}
   const { ctx, opts } = req
-  const specific = (opts.providerOptions?.openai ?? {}) as OpenAIRequestOptions
   // Sequential await — a single source message can produce multiple
   // wire messages (tool results with image/audio attachments emit a
   // tool message + a synthetic user message carrying the attachments,
@@ -250,11 +236,6 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
     out.response_format = toOpenAIResponseFormat(opts.responseFormat)
   }
 
-  if (specific.parallelToolCalls !== undefined) out.parallel_tool_calls = specific.parallelToolCalls
-  if (specific.seed !== undefined) out.seed = specific.seed
-  if (specific.user !== undefined) out.user = specific.user
-  if (specific.serviceTier !== undefined) out.service_tier = specific.serviceTier
-  if (specific.logitBias !== undefined) out.logit_bias = specific.logitBias
   return out
 }
 

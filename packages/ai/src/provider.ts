@@ -1,12 +1,4 @@
-import type {
-  Message,
-  Quirks,
-  ReasoningPart,
-  RequestProviderOptions,
-  TextPart,
-  Tool,
-  ToolCallPart,
-} from "./types.ts"
+import type { Message, Quirks, ReasoningPart, TextPart, Tool, ToolCallPart } from "./types.ts"
 
 /** Conversational input — what's being conversed about. Stable across
  *  the run (mutated turn-by-turn as the conversation grows); separate
@@ -52,9 +44,6 @@ export interface StreamOptions {
    *  Useful as a debugging kill-switch or when a caller wants strict
    *  per-token billing. */
   caching?: boolean
-  /** Power-user escape hatch for provider-specific flags. Adapters
-   *  read keys they own; unknown keys are ignored. */
-  providerOptions?: RequestProviderOptions
 }
 
 /** What a `Provider` adapter receives. Internal — assembled by
