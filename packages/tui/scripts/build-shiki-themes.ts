@@ -12,15 +12,20 @@
  * reference slots by name, so inheritance is automatic).
  */
 
+import type { ThemeRegistrationResolved } from "shiki"
+import type { Color, HexColor, Style } from "../src/index.ts"
+import type { ShikiTheme } from "../src/style/shiki.ts"
+import type { Theme } from "../src/themes/index.ts"
+
 import { writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { bundledThemes } from "shiki"
+import { bundledThemes, normalizeTheme } from "shiki"
 import { parseHex, toHex } from "../src/index.ts"
 
 /** Which Shiki themes we want to ship as first-class TUI themes.
  *  Order here defines the write order; no functional meaning. */
-const THEMES: readonly string[] = [
+const THEMES = [
   "catppuccin-mocha",
   "catppuccin-latte",
   "dracula",
@@ -30,93 +35,179 @@ const THEMES: readonly string[] = [
   "gruvbox-dark-medium",
   "one-dark-pro",
   "rose-pine",
-]
+] as const satisfies readonly ShikiTheme[]
 
 const here = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(here, "../assets/themes")
 
-type Colors = Record<string, string | undefined>
-
-/** Pick the first non-empty value from a list of candidate keys. */
-function pick(c: Colors, ...keys: string[]): string | undefined {
-  for (const k of keys) {
-    const v = c[k]
-    if (typeof v === "string" && v.length > 0) return toHex(parseHex(v))
-  }
-  return undefined
+function parseColor(bg: HexColor, hex?: string): HexColor | undefined {
+  if (hex === undefined) return
+  // blend hex alpha against the theme bg, since that's what these slots are meant for and
+  if (hex.length < 9) return hex as HexColor
+  const rgb = parseHex(bg)
+  const base = hex.slice(0, 7) as HexColor
+  const fg = parseHex(base)
+  const alpha = Number.parseInt(hex.slice(7, 9), 16) / 255
+  const blended = rgb.map((c, i) => Math.round(c * (1 - alpha) + fg[i] * alpha))
+  return toHex(blended[0], blended[1], blended[2])
 }
 
-/** Convert a shiki theme's `colors` map into our `Theme` shape. */
-function toTui(id: string, c: Colors): Record<string, unknown> {
-  // console.log(c)
-  const fg = pick(c, "editor.foreground")
-  const bg = pick(c, "editor.background")
-  const primary = pick(c, "textLink.foreground", "charts.blue", "terminal.ansiBlue")
-  const accent = pick(c, "charts.purple", "terminal.ansiMagenta")
-  const success = pick(c, "charts.green", "terminal.ansiGreen")
-  const info = pick(c, "charts.blue", "terminal.ansiBlue")
-  const warn = pick(c, "editorWarning.foreground", "charts.yellow", "terminal.ansiYellow")
-  const error = pick(
-    c,
-    "errorForeground",
-    "editorError.foreground",
-    "charts.red",
-    "terminal.ansiRed"
-  )
-  const muted = pick(c, "terminal.ansiBrightBlack", "charts.lines", "panel.border")
-  const dim = pick(c, "terminal.ansiWhite", "charts.lines") ?? muted
-  const border = pick(c, "panel.border", "editorGroup.border") ?? muted
-  // Shiki emits translucent `#rrggbbaa` for diff/selection tints —
-  // keep the alpha. Our color resolver composites against the theme
-  // bg, which is exactly what these VSCode slots expect.
-  const diffAddBg = pick(c, "diffEditor.insertedTextBackground")
-  const diffDelBg = pick(c, "diffEditor.removedTextBackground")
-  const menuActiveBg = pick(c, "list.activeSelectionBackground", "editor.selectionBackground")
-  const codeBg = pick(c, "textCodeBlock.background", "editorInlayHint.background")
+function parse(theme: ThemeRegistrationResolved) {
+  const rules = new Map<string, Style>()
+  const bg = theme.bg as HexColor
+  const settings = theme.settings
+  for (const s of settings) {
+    const scopes = (typeof s.scope === "string" ? s.scope.split(",") : (s.scope ?? [])).map((sc) =>
+      sc.trim()
+    )
+    const style: Style = {
+      bold: s.settings.fontStyle?.includes("bold"),
+      italic: s.settings.fontStyle?.includes("italic"),
+      underline: s.settings.fontStyle?.includes("underline"),
+      strikethrough: s.settings.fontStyle?.includes("strikethrough"),
+      fg: parseColor(bg, s.settings.foreground),
+      bg: parseColor(bg, s.settings.background),
+    }
+    for (const scope of scopes) {
+      rules.set(scope, Object.fromEntries(Object.entries(style).filter(([_, v]) => v)) as Style)
+    }
+  }
+  // Scope-rule lookup: walks `a.b.c` → `a.b` → `a` until a settings
+  // entry matches. First key that resolves wins.
+  const style = (...keys: string[]) => {
+    for (const k of keys) {
+      const parts = k.split(".")
+      for (let i = parts.length; i > 0; i--) {
+        const scope = parts.slice(0, i).join(".")
+        if (rules.has(scope)) return rules.get(scope)
+      }
+    }
+  }
+  // VSCode color-slot lookup: walks `theme.colors` for any of the
+  // given keys (`terminal.ansiBlue`, `editorLink.activeForeground`,
+  // …). Alpha-blends against the theme bg. First defined value wins.
+  const colors = theme.colors ?? {}
+  const color = (...keys: string[]): HexColor | undefined => {
+    for (const k of keys) {
+      const v = colors[k]
+      if (v) return parseColor(bg, v)
+    }
+  }
 
-  const out: Record<string, unknown> = {
+  return {
+    scopes: [...rules.keys()].toSorted(),
+    style,
+    color,
+    fg: (...keys: string[]) => keys.map((k) => style(k)?.fg).find((v) => v !== undefined),
+    bg: (...keys: string[]) => keys.map((k) => style(k)?.bg).find((v) => v !== undefined),
+  }
+}
+
+/** Convert a shiki theme's `colors` map + `settings` rules into our
+ *  `Theme` shape. Two helpers in play:
+ *    - `t.color(...vsKeys)`: VSCode UI color names (`terminal.ansiBlue`,
+ *      `panel.border`, `diffEditor.insertedTextBackground`, …) → look up
+ *      `theme.colors[key]`, alpha-blend against the theme bg.
+ *    - `t.style(...scopes)`: TextMate scope names (`comment`,
+ *      `heading.1.markdown`, `markup.bold`, …) → walk the `settings`
+ *      rules to find a Style (with `fg` / `bg` / `bold` / `italic`).
+ *
+ *  Slots only get emitted when the theme actually defines them.
+ *  Anything missing falls back to `defaults` in `themes/default.ts`. */
+function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme> {
+  const t = parse(theme)
+  const fg = theme.fg as HexColor
+  const bg = theme.bg as HexColor
+
+  const out: Partial<Theme> & { $schema: string } = {
     $schema: "file:./../schemas/theme.schema.json",
     /** Matching shiki theme name — used by the markdown/code renderers
      *  so syntax highlighting aligns with the TUI palette. */
     shiki: id,
-    text: fg,
-    blend: bg,
-    ui: { bg, fg },
-    primary,
-    accent,
-    dim,
-    muted,
-    success,
-    info,
-    warn,
-    error,
-    border,
-  }
 
-  if (diffAddBg) out.diffAdd = { bg: diffAddBg }
-  if (diffDelBg) out.diffDel = { bg: diffDelBg }
-  if (menuActiveBg) out.menuActive = { bg: menuActiveBg }
-  if (codeBg) out.code = { bg: codeBg }
-  if (codeBg) out.mdCodeBlock = { bg: codeBg }
+    // ── base palette (VSCode color slots) ──────────────────────────────
+    text: fg,
+    subtle: t.color("terminal.ansiBrightBlack"),
+    ui: { bg, fg },
+    primary: t.color("textLink.foreground", "terminal.ansiBlue"),
+    accent: t.color("textLink.activeForeground", "terminal.ansiMagenta"),
+    success: t.color("terminal.ansiGreen", "gitDecoration.addedResourceForeground"),
+    info: t.color("terminal.ansiCyan", "terminal.ansiBlue"),
+    warn: t.color("editorWarning.foreground", "terminal.ansiYellow"),
+    error: t.color("editorError.foreground", "terminal.ansiRed"),
+    muted: t.color("terminal.ansiBrightBlack", "editorWhitespace.foreground"),
+    border: t.color("panel.border", "editorGroup.border", "terminal.ansiBrightBlack"),
+
+    // ── code / surfaces (VSCode color slots) ───────────────────────────
+    code: optBg(t.color("textCodeBlock.background", "editor.background")),
+    mdCodeBlock: optBg(t.color("textCodeBlock.background", "editor.background")),
+    overlay: optBg(t.color("editorWidget.background", "menu.background")),
+    highlight: optBg(t.color("editor.selectionBackground", "list.activeSelectionBackground")),
+    menuActive: optBg(t.color("list.activeSelectionBackground", "editor.selectionBackground")),
+    selection: optBg(t.color("editor.selectionBackground")),
+
+    // ── diff (mix VSCode bg + TextMate fg) ─────────────────────────────
+    diffAdd: combine(
+      t.color("diffEditor.insertedTextBackground", "diffEditor.insertedLineBackground"),
+      t.fg("markup.inserted.diff")
+    ),
+    diffDel: combine(
+      t.color("diffEditor.removedTextBackground", "diffEditor.removedLineBackground"),
+      t.fg("markup.deleted.diff")
+    ),
+    diffTitle: t.style("meta.diff.header.from-file", "meta.diff.header.to-file"),
+
+    // ── code annotations (scope rules) ─────────────────────────────────
+    comment: t.style("comment"),
+
+    // ── markdown (scope rules) ─────────────────────────────────────────
+    mdHeading: t.style("heading.1.markdown", "markup.heading"),
+    mdHeading1: t.style("heading.1.markdown", "markup.heading.heading-1"),
+    mdHeading2: t.style("heading.2.markdown", "markup.heading.heading-2"),
+    mdHeading3: t.style("heading.3.markdown", "markup.heading.heading-3"),
+    mdHeading4: t.style("heading.4.markdown", "markup.heading.heading-4"),
+    mdHeading5: t.style("heading.5.markdown", "markup.heading.heading-5"),
+    mdHeading6: t.style("heading.6.markdown", "markup.heading.heading-6"),
+    mdBold: t.style("markup.bold"),
+    mdItalic: t.style("markup.italic"),
+    mdStrikethrough: t.style("markup.strikethrough"),
+    mdLink: t.style("markup.link", "markup.underline.link", "string.other.link.title.markdown"),
+    mdQuote: t.style("markup.quote"),
+    mdListBullet: t.style("markup.list.bullet"),
+    mdCode: t.style("markup.inline.raw.string.markdown", "markup.raw"),
+    mdHr: t.style("meta.separator.markdown"),
+  }
 
   // Drop undefined keys — the JSON schema won't accept them and we
   // want missing slots to fall back to the built-in defaults.
-  for (const [k, v] of Object.entries(out)) {
+  for (const [k, v] of Object.entries(out) as [string, unknown][]) {
     if (v === undefined) Reflect.deleteProperty(out, k)
   }
   return out
 }
 
-async function build(id: string): Promise<void> {
-  const loader = (bundledThemes as Record<string, undefined | (() => Promise<unknown>)>)[id]
-  if (!loader) {
-    console.error(`!  unknown shiki theme: ${id}`)
-    return
-  }
-  const mod = (await loader()) as { default?: { colors?: Colors } } & { colors?: Colors }
-  const theme = mod.default ?? mod
-  const colors = theme.colors ?? {}
-  const tui = toTui(id, colors)
+/** Wrap a `bg` color in a Style only when defined; lets `out.foo =
+ *  optBg(...)` produce undefined for missing slots so the cleanup pass
+ *  drops them. */
+function optBg(bg: HexColor | undefined): Style | undefined {
+  return bg ? { bg } : undefined
+}
+
+/** Build a Style with whatever of `bg` / `fg` are defined; undefined
+ *  when neither is. */
+function combine(bg: Color | undefined, fg: Color | undefined): Style | undefined {
+  if (!bg && !fg) return undefined
+  const s: Style = {}
+  if (bg) s.bg = bg
+  if (fg) s.fg = fg
+  return s
+}
+
+async function build(id: ShikiTheme): Promise<void> {
+  const loader = bundledThemes[id]
+  const mod = await loader()
+  const theme = mod.default
+  const tui = toTui(id, normalizeTheme(theme))
   const path = resolve(outDir, `${id}.json`)
   // oxlint-disable-next-line no-null -- JSON.stringify's replacer arg
   writeFileSync(path, `${JSON.stringify(tui, null, 2)}\n`)

@@ -1,34 +1,74 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "nord",
-  "text": "#d8dee9",
-  "blend": "#2e3440",
+  "text": "#d8dee9ff",
+  "subtle": "#4c566a",
   "ui": {
-    "bg": "#2e3440",
-    "fg": "#d8dee9"
+    "bg": "#2e3440ff",
+    "fg": "#d8dee9ff"
   },
   "primary": "#88c0d0",
-  "accent": "#b48ead",
-  "dim": "#e5e9f0",
-  "muted": "#4c566a",
+  "accent": "#88c0d0",
   "success": "#a3be8c",
-  "info": "#81a1c1",
+  "info": "#88c0d0",
   "warn": "#ebcb8b",
   "error": "#bf616a",
+  "muted": "#4c566a",
   "border": "#3b4252",
-  "diffAdd": {
-    "bg": "#81a1c133"
-  },
-  "diffDel": {
-    "bg": "#bf616a4d"
-  },
-  "menuActive": {
-    "bg": "#88c0d0"
-  },
   "code": {
     "bg": "#4c566a"
   },
   "mdCodeBlock": {
     "bg": "#4c566a"
+  },
+  "overlay": {
+    "bg": "#2e3440"
+  },
+  "highlight": {
+    "bg": "#3f4758"
+  },
+  "menuActive": {
+    "bg": "#88c0d0"
+  },
+  "selection": {
+    "bg": "#3f4758"
+  },
+  "diffAdd": {
+    "bg": "#3f4a5a",
+    "fg": "#A3BE8C"
+  },
+  "diffDel": {
+    "bg": "#5a424d",
+    "fg": "#BF616A"
+  },
+  "comment": {
+    "fg": "#616E88"
+  },
+  "mdHeading": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading1": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading2": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading3": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading4": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading5": {
+    "fg": "#88C0D0"
+  },
+  "mdHeading6": {
+    "fg": "#88C0D0"
+  },
+  "mdBold": {
+    "bold": true
+  },
+  "mdLink": {
+    "fg": "#A3BE8C"
   }
 }

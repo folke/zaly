@@ -38,12 +38,6 @@ export type Theme = {
   primary: Color
   /** Secondary accent — distinct hue from `primary`. */
   accent: Color
-  /** Compositing reference — the color `alpha()` blends transparent
-   *  values toward when terminals can't render real alpha. Set to
-   *  whatever this theme presumes sits behind rendered content
-   *  (typically the terminal's own bg). Defaults to `"inherit"`,
-   *  which makes `alpha()` silently no-op. */
-  blend: Color
 
   // ── text ─────────────────────────────────────────────────────────────
 

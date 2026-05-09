@@ -13,7 +13,6 @@ export const defaults: Theme = {
   // base colors
   primary: "blue",
   accent: "brightMagenta",
-  blend: "inherit",
 
   // text
   text: "inherit",

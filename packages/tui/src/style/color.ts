@@ -6,10 +6,7 @@ export function toHex(c: RGB): HexColor
 export function toHex(r: number, g: number, b: number): HexColor
 export function toHex(x: number | RGB, y?: number, z?: number): HexColor {
   const [r, g, b] = Array.isArray(x) ? x : [x, y!, z!]
-  const h = (n: number): string =>
-    clamp(Math.round(n * 255), 0, 255)
-      .toString(16)
-      .padStart(2, "0")
+  const h = (n: number): string => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0")
   return `#${h(r)}${h(g)}${h(b)}`
 }
 

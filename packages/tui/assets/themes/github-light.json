@@ -2,33 +2,102 @@
   "$schema": "file:./../schemas/theme.schema.json",
   "shiki": "github-light",
   "text": "#24292e",
-  "blend": "#fff",
+  "subtle": "#959da5",
   "ui": {
     "bg": "#fff",
     "fg": "#24292e"
   },
   "primary": "#0366d6",
-  "accent": "#5a32a3",
-  "dim": "#6a737d",
-  "muted": "#959da5",
+  "accent": "#005cc5",
   "success": "#28a745",
-  "info": "#0366d6",
+  "info": "#1b7c83",
   "warn": "#f9c513",
   "error": "#cb2431",
+  "muted": "#959da5",
   "border": "#e1e4e8",
-  "diffAdd": {
-    "bg": "#34d05822"
-  },
-  "diffDel": {
-    "bg": "#d73a4922"
-  },
-  "menuActive": {
-    "bg": "#e2e5e9"
-  },
   "code": {
     "bg": "#f6f8fa"
   },
   "mdCodeBlock": {
     "bg": "#f6f8fa"
+  },
+  "overlay": {
+    "bg": "#f6f8fa"
+  },
+  "highlight": {
+    "bg": "#dae9f9"
+  },
+  "menuActive": {
+    "bg": "#e2e5e9"
+  },
+  "selection": {
+    "bg": "#dae9f9"
+  },
+  "diffAdd": {
+    "bg": "#e4f9e9",
+    "fg": "#22863a"
+  },
+  "diffDel": {
+    "bg": "#fae5e7",
+    "fg": "#b31d28"
+  },
+  "diffTitle": {
+    "fg": "#b31d28",
+    "bg": "#ffeef0"
+  },
+  "comment": {
+    "fg": "#6a737d"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#005cc5"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#24292e"
+  },
+  "mdItalic": {
+    "italic": true,
+    "fg": "#24292e"
+  },
+  "mdStrikethrough": {
+    "strikethrough": true
+  },
+  "mdLink": {
+    "underline": true
+  },
+  "mdQuote": {
+    "fg": "#22863a"
+  },
+  "mdCode": {
+    "fg": "#005cc5"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#005cc5"
   }
 }
