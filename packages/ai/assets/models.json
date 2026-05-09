@@ -15989,6 +15989,48 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/tencent/hy3-preview": {
+      "id": "tencent/hy3-preview",
+      "name": "Hy3 preview",
+      "family": "Hy",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.066,
+        "output": 0.26,
+        "cache_read": 0.029,
+        "cache_write": 0.029
+      },
+      "limit": {
+        "context": 256000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/poolside/laguna-m.1:free": {
       "id": "poolside/laguna-m.1:free",
       "name": "Laguna M.1",
@@ -21218,7 +21260,7 @@
       "id": "xiaomi/mimo-v2.5-pro",
       "name": "Xiaomi: MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -21370,7 +21412,7 @@
       "id": "xiaomi/mimo-v2-pro",
       "name": "Xiaomi: MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -32366,7 +32408,7 @@
       "id": "xiaomi/mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -32488,7 +32530,7 @@
       "id": "xiaomi/mimo-v2-pro",
       "name": "MiMo V2 Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
@@ -34791,9 +34833,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 1.74,
-        "output": 3.48,
-        "cache_read": 0.145
+        "input": 1.69,
+        "output": 3.38,
+        "cache_read": 0.13
       },
       "limit": {
         "context": 1048576,
@@ -34807,7 +34849,7 @@
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -34932,7 +34974,7 @@
       "id": "mimo-v2-pro",
       "name": "MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -48734,7 +48776,7 @@
       "id": "xiaomi/mimo-v2.5-pro",
       "name": "Xiaomi: MiMo V2.5 Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -48856,7 +48898,7 @@
       "id": "xiaomi/mimo-v2-pro",
       "name": "Xiaomi: MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
@@ -50010,7 +50052,7 @@
       "id": "mimo-v2-pro",
       "name": "MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -50135,7 +50177,7 @@
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -51692,39 +51734,6 @@
       },
       "baseUrl": "https://opencode.ai/zen/v1"
     },
-    "opencode/hy3-preview-free": {
-      "id": "hy3-preview-free",
-      "name": "Hy3 preview Free",
-      "family": "hy3-free",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-06",
-      "release_date": "2026-04-20",
-      "last_updated": "2026-04-20",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "limit": {
-        "context": 256000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://opencode.ai/zen/v1"
-    },
     "opencode/minimax-m2.5": {
       "id": "minimax-m2.5",
       "name": "MiniMax M2.5",
@@ -53272,6 +53281,43 @@
       "provider": "openai",
       "baseUrl": "https://api.tokenfactory.nebius.com/v1"
     },
+    "nebius/deepseek-ai/DeepSeek-V4-Pro": {
+      "id": "deepseek-ai/DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.75,
+        "output": 3.5,
+        "cache_read": 0.15
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.tokenfactory.nebius.com/v1"
+    },
     "poe/topazlabs-co/topazlabs": {
       "id": "topazlabs-co/topazlabs",
       "name": "TopazLabs",
@@ -53413,6 +53459,41 @@
         "output": 0
       },
       "maxTokens": 0,
+      "provider": "openai",
+      "baseUrl": "https://api.poe.com/v1"
+    },
+    "poe/novita/kimi-k2.6": {
+      "id": "novita/kimi-k2.6",
+      "name": "Kimi-K2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-20",
+      "last_updated": "2026-05-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.96,
+        "output": 4.04,
+        "cache_read": 0.16
+      },
+      "limit": {
+        "context": 262144,
+        "input": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://api.poe.com/v1"
     },
@@ -53582,6 +53663,66 @@
         "output": 16384
       },
       "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://api.poe.com/v1"
+    },
+    "poe/empiriolabs/deepseek-v4-pro-el": {
+      "id": "empiriolabs/deepseek-v4-pro-el",
+      "name": "DeepSeek-V4-Pro-EL",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-02",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1.67,
+        "output": 3.33
+      },
+      "limit": {
+        "context": 1000000,
+        "input": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.poe.com/v1"
+    },
+    "poe/empiriolabs/deepseek-v4-flash-el": {
+      "id": "empiriolabs/deepseek-v4-flash-el",
+      "name": "DeepSeek-V4-Flash-EL",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "release_date": "2026-04-24",
+      "last_updated": "2026-05-02",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.14,
+        "output": 0.28
+      },
+      "limit": {
+        "context": 1000000,
+        "input": 1000000,
+        "output": 384000
+      },
+      "maxTokens": 384000,
       "provider": "openai",
       "baseUrl": "https://api.poe.com/v1"
     },
@@ -71618,6 +71759,38 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/llama3-8b-instruct": {
+      "id": "llama3-8b-instruct",
+      "name": "Llama 3.1 Instruct (8B)",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2024-07-23",
+      "last_updated": "2024-07-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.198,
+        "output": 0.198
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/anthropic-claude-opus-4.7": {
       "id": "anthropic-claude-opus-4.7",
       "name": "Claude Opus 4.7",
@@ -71693,6 +71866,34 @@
         "output": 64000
       },
       "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/qwen-2.5-14b-instruct": {
+      "id": "qwen-2.5-14b-instruct",
+      "name": "Qwen 2.5 14B Instruct",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-09",
+      "release_date": "2024-09-19",
+      "last_updated": "2024-09-19",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -71898,6 +72099,33 @@
         "output": 128000
       },
       "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/mistral-7b-instruct-v0.3": {
+      "id": "mistral-7b-instruct-v0.3",
+      "name": "Mistral 7B Instruct v0.3",
+      "family": "mistral",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2024-05-22",
+      "last_updated": "2024-05-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 32768,
+        "output": 32768
+      },
+      "maxTokens": 32768,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -72212,6 +72440,41 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/anthropic-claude-4.5-haiku": {
+      "id": "anthropic-claude-4.5-haiku",
+      "name": "Claude Haiku 4.5",
+      "family": "claude-haiku",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-02-28",
+      "release_date": "2025-10-15",
+      "last_updated": "2025-10-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 5,
+        "cache_read": 1,
+        "cache_write": 1.25
+      },
+      "limit": {
+        "context": 200000,
+        "output": 64000
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/openai-gpt-4.1": {
       "id": "openai-gpt-4.1",
       "name": "GPT-4.1",
@@ -72315,6 +72578,33 @@
         "output": 64000
       },
       "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/nemotron-3-nano-30b": {
+      "id": "nemotron-3-nano-30b",
+      "name": "Nemotron 3 Nano 30B A3B",
+      "family": "nemotron",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-04-14",
+      "last_updated": "2025-04-14",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -72777,6 +73067,34 @@
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
+    "digitalocean/ministral-3-8b-instruct-2512": {
+      "id": "ministral-3-8b-instruct-2512",
+      "name": "Ministral 3 8B",
+      "family": "ministral",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2025-12-15",
+      "last_updated": "2025-12-15",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
     "digitalocean/minimax-m2.5": {
       "id": "minimax-m2.5",
       "name": "MiniMax M2.5",
@@ -73131,6 +73449,34 @@
       },
       "status": "beta",
       "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://inference.do-ai.run/v1"
+    },
+    "digitalocean/deepseek-v3": {
+      "id": "deepseek-v3",
+      "name": "DeepSeek V3",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2024-07",
+      "release_date": "2024-12-26",
+      "last_updated": "2025-03-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 163840,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://inference.do-ai.run/v1"
     },
@@ -80525,39 +80871,6 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
-    "llmgateway/qwen3.6-max-preview": {
-      "id": "qwen3.6-max-preview",
-      "name": "Qwen3.6 Max Preview",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-04",
-      "release_date": "2026-04-20",
-      "last_updated": "2026-04-20",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 1.3,
-        "output": 7.8,
-        "cache_read": 0.13
-      },
-      "limit": {
-        "context": 262144,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://api.llmgateway.io/v1"
-    },
     "llmgateway/gpt-oss-120b": {
       "id": "gpt-oss-120b",
       "name": "GPT OSS 120B",
@@ -81071,6 +81384,47 @@
       },
       "limit": {
         "context": 204800,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/mimo-v2.5-pro": {
+      "id": "mimo-v2.5-pro",
+      "name": "MiMo-V2.5-Pro",
+      "family": "mimo",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
         "output": 131072
       },
       "maxTokens": 131072,
@@ -81921,6 +82275,46 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/mimo-v2-omni": {
+      "id": "mimo-v2-omni",
+      "name": "MiMo-V2-Omni",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08
+      },
+      "limit": {
+        "context": 262144,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/gpt-5.3-codex": {
       "id": "gpt-5.3-codex",
       "name": "GPT-5.3 Codex",
@@ -82131,6 +82525,50 @@
         "output": 65536
       },
       "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/mimo-v2.5": {
+      "id": "mimo-v2.5",
+      "name": "MiMo-V2.5",
+      "family": "mimo",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-04-22",
+      "last_updated": "2026-04-22",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.4,
+        "output": 2,
+        "cache_read": 0.08,
+        "context_over_200k": {
+          "input": 0.8,
+          "output": 4,
+          "cache_read": 0.16
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -82835,6 +83273,45 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/gemini-3.1-flash-lite": {
+      "id": "gemini-3.1-flash-lite",
+      "name": "Gemini 3.1 Flash Lite",
+      "family": "gemini-flash-lite",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-05-07",
+      "last_updated": "2026-05-07",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video",
+          "audio",
+          "pdf"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0.25,
+        "output": 1.5,
+        "cache_read": 0.025,
+        "cache_write": 1
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/qwen3-next-80b-a3b-thinking": {
       "id": "qwen3-next-80b-a3b-thinking",
       "name": "Qwen3-Next 80B-A3B (Thinking)",
@@ -83173,6 +83650,44 @@
         "output": 65536
       },
       "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/grok-4-3": {
+      "id": "grok-4-3",
+      "name": "Grok 4.3",
+      "family": "grok",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-05-01",
+      "last_updated": "2026-05-01",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2.5,
+          "output": 5,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1000000,
+        "output": 30000
+      },
+      "maxTokens": 30000,
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
@@ -83941,6 +84456,47 @@
       "provider": "openai",
       "baseUrl": "https://api.llmgateway.io/v1"
     },
+    "llmgateway/mimo-v2-pro": {
+      "id": "mimo-v2-pro",
+      "name": "MiMo-V2-Pro",
+      "family": "mimo",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "knowledge": "2024-12",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-03-18",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1,
+        "output": 3,
+        "cache_read": 0.2,
+        "context_over_200k": {
+          "input": 2,
+          "output": 6,
+          "cache_read": 0.4
+        }
+      },
+      "limit": {
+        "context": 1048576,
+        "output": 131072
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
     "llmgateway/o3": {
       "id": "o3",
       "name": "o3",
@@ -84285,6 +84841,40 @@
         "input": 0.1,
         "output": 0.3,
         "cache_read": 0.01
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.llmgateway.io/v1"
+    },
+    "llmgateway/qwen3.6-max-preview": {
+      "id": "qwen3.6-max-preview",
+      "name": "Qwen3.6 Max Preview",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-20",
+      "last_updated": "2026-04-20",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 1.3,
+        "output": 7.8,
+        "cache_read": 0.13,
+        "cache_write": 1.625
       },
       "limit": {
         "context": 262144,
@@ -92046,7 +92636,7 @@
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -92171,7 +92761,7 @@
       "id": "mimo-v2-pro",
       "name": "MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -93114,7 +93704,7 @@
       "id": "mimo-v2-pro",
       "name": "MiMo-V2-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -93239,7 +93829,7 @@
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
       "family": "mimo",
-      "attachment": true,
+      "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
