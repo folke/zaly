@@ -101,7 +101,7 @@ export function oklchToHex(oklch: OKLCH): HexColor {
     number,
     number,
   ]
-  return toHex(r, g, b)
+  return toHex(r * 255, g * 255, b * 255)
 }
 
 export function modifyOklch(hex: HexColor, modify: (o: OKLCH) => OKLCH): HexColor {
