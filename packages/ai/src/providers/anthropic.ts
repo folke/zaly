@@ -87,14 +87,13 @@ export type AnthropicContent = Awaited<ReturnType<typeof transformAnthropic>>
 export function createAnthropic(config: ProviderOptions = {}): Provider<"anthropic"> {
   const baseUrl = (config.baseUrl ?? "https://api.anthropic.com/v1").replace(/\/$/, "")
   const doFetch = config.fetch ?? fetch
-  const caching = config.caching !== false
 
   const auth = (): Record<string, string> => (config.apiKey ? { "x-api-key": config.apiKey } : {})
 
   return {
     id: "anthropic",
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
-      const body = await buildRequest(req, caching)
+      const body = await buildRequest(req)
       const response = await doFetch(`${baseUrl}/messages`, {
         body: safeStringify(body),
         headers: {
@@ -197,14 +196,11 @@ interface AnthropicTool {
 
 interface AnthropicRequestOptions {
   userId?: string
-  /** Cache the trailing tool definition. Adapter uses this when the
-   *  harness wants the tool block cached but isn't carrying a per-tool
-   *  hint (which we don't model in the core `Tool` type). */
-  cacheTools?: boolean
 }
 
-async function buildRequest(req: ProviderRequest, caching: boolean): Promise<AnthropicRequest> {
+async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const { ctx, opts } = req
+  const caching = opts.caching ?? true
   const specific = (opts.providerOptions?.anthropic ?? {}) as AnthropicRequestOptions
   // Anthropic requires max_tokens. Fall back to a generous default if
   // the caller didn't set one — `Model.stream` fills this from
@@ -246,9 +242,10 @@ async function buildRequest(req: ProviderRequest, caching: boolean): Promise<Ant
 
   if (ctx.tools !== undefined && ctx.tools.length > 0) {
     out.tools = ctx.tools.map((t) => toAnthropicTool(t))
-    if (specific.cacheTools === true && caching) {
+    if (caching) {
       // Marker on the last tool covers all tools above it in the cache
-      // prefix, per Anthropic's caching rules.
+      // prefix, per Anthropic's caching rules — caches the
+      // `system + tools` segment across the whole session.
       out.tools[out.tools.length - 1].cache_control = { type: "ephemeral" }
     }
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
@@ -345,12 +342,15 @@ async function toAnthropicMessages(
     } else {
       out.push(block)
     }
-    if (caching && msg.cache !== undefined) {
-      // Mark the last content block of this message as a cache breakpoint.
-      const target = out[out.length - 1].content.at(-1)
-      if (target !== undefined && supportsCacheControl(target)) {
-        target.cache_control = { type: "ephemeral" }
-      }
+  }
+  // Rolling cache breakpoint: mark the last content block of the
+  // trailing message. This caches the `system + tools + messages-up-to-last`
+  // prefix; every turn the marker rolls forward, so each request hits
+  // the previous turn's cache.
+  if (caching && out.length > 0) {
+    const target = out[out.length - 1].content.at(-1)
+    if (target !== undefined && supportsCacheControl(target)) {
+      target.cache_control = { type: "ephemeral" }
     }
   }
   return out
@@ -747,9 +747,7 @@ function* handleEvent(
  *  model. */
 export function systemToUser(msg: Message<"system">): Message<"user"> {
   return {
-    cache: msg.cache,
     content: [{ content: msg.content, tag: "system-reminder", type: "meta" }],
-    providerOptions: msg.providerOptions,
     role: "user",
   }
 }

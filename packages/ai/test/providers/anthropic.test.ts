@@ -109,17 +109,18 @@ describe("anthropic: request translation", () => {
     ])
   })
 
-  test("cache hint on a mid-convo system message attaches to the wrapped user content", async () => {
-    // The session message's `cache` hint propagates to the converted user
-    // message; Anthropic's per-message cache rule says the marker lands
-    // on the LAST content block of that message.
+  test("rolling cache marker lands on the last block of the trailing message", async () => {
+    // With `caching` on (default), the adapter places `cache_control`
+    // on the last content block of the LAST message — the rolling
+    // breakpoint that lets every turn hit the previous turn's cache.
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
+          caching: true,
           messages: [
-            { cache: { type: "ephemeral" }, content: "long preamble", role: "system" },
+            { content: "long preamble", role: "system" },
             { content: "hi", role: "user" },
           ],
           model: "m",
@@ -128,16 +129,11 @@ describe("anthropic: request translation", () => {
     )
     const body = recorded[0].body as { messages: { content: unknown }[]; system?: unknown }
     expect(body.system).toBeUndefined()
-    // The wrapped system content + the user message merge into one
-    // `role: "user"` block (Anthropic-coalesce). The cache_control marker
-    // sits on the last block of the original system-converted message.
+    // Wrapped system content + user message coalesce into one `role:
+    // "user"` block; the rolling marker sits on its last block ("hi").
     expect(body.messages[0].content).toEqual([
-      {
-        cache_control: { type: "ephemeral" },
-        text: "<system-reminder>long preamble</system-reminder>",
-        type: "text",
-      },
-      { text: "hi", type: "text" },
+      { text: "<system-reminder>long preamble</system-reminder>", type: "text" },
+      { cache_control: { type: "ephemeral" }, text: "hi", type: "text" },
     ])
   })
 
@@ -202,15 +198,15 @@ describe("anthropic: request translation", () => {
     ])
   })
 
-  test("cache hint on user message with image marks the image block", async () => {
+  test("rolling cache marker lands on a trailing image block", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
+          caching: true,
           messages: [
             {
-              cache: { type: "ephemeral" },
               content: [
                 {
                   mime: "image/png",
@@ -344,15 +340,15 @@ describe("anthropic: request translation", () => {
     ])
   })
 
-  test("cache hint on a PDF-only message marks the document block", async () => {
+  test("rolling cache marker lands on a trailing document block", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
+          caching: true,
           messages: [
             {
-              cache: { type: "ephemeral" },
               content: [
                 {
                   mime: "application/pdf",
@@ -554,15 +550,15 @@ describe("anthropic: request translation", () => {
     expect(result.is_error).toBe(true)
   })
 
-  test("user message cache hint marks last content block", async () => {
+  test("rolling cache marker lands on the last block of a multi-block trailing message", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
+          caching: true,
           messages: [
             {
-              cache: { type: "ephemeral" },
               content: [
                 { text: "a", type: "text" },
                 { text: "b", type: "text" },
@@ -582,17 +578,26 @@ describe("anthropic: request translation", () => {
     ])
   })
 
-  test("caching: false suppresses cache hints on the wire", async () => {
+  test("caching: false suppresses all cache_control markers on the wire", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
-    const provider = createAnthropic({ apiKey: "test", caching: false, fetch })
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    const tool: Tool = {
+      desc: "x",
+      call: async () => ({}),
+      params: { type: "object" },
+      name: "t",
+      validateParams: (x) => x,
+    }
     await drain(
       provider.stream(
         streamReq({
+          caching: false,
           messages: [
-            { cache: { type: "ephemeral" }, content: "preamble", role: "system" },
-            { cache: { type: "ephemeral" }, content: "hi", role: "user" },
+            { content: "preamble", role: "system" },
+            { content: "hi", role: "user" },
           ],
           model: "m",
+          tools: [tool],
         })
       )
     )

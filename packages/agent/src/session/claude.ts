@@ -112,18 +112,6 @@ export async function loadClaudeSession(
   // (especially with `walk: "all"`); downstream consumers like the
   // masker or any (id → call) lookup expect uniqueness.
   dedupCallIds(messages)
-  // Mark the last message as a cache prefix endpoint. Anthropic's
-  // adapter emits `cache_control: { type: "ephemeral" }` on the last
-  // content block of the tagged message; all preceding history rides as
-  // a cached prefix on subsequent calls within the 5-minute window. The
-  // first request still pays full price, but every follow-up that lands
-  // in the cache window only bills for the new tokens — critical for
-  // long imported sessions where the full history would otherwise blow
-  // through TPM limits on each turn.
-  if (messages.length > 0) {
-    const last = messages.at(-1)!
-    messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
-  }
   return { messages }
 }
 

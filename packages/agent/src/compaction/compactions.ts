@@ -115,6 +115,7 @@ export class Compaction {
         prompt: [SYSTEM_PROMPT],
       },
       {
+        caching: false,
         maxTokens: this.#opts.maxSummaryTokens,
         reasoning: this.#opts.reasoning,
         signal: this.#opts.signal,

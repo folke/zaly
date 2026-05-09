@@ -8,7 +8,11 @@ import type { Message, Quirks, Tool } from "../../src/types.ts"
 import type { FetchLike } from "../../src/utils/retry.ts"
 
 /** Build a `ProviderRequest` from a flat options shape — convenient for
- *  tests that don't care about the `ctx` / `opts` split. */
+ *  tests that don't care about the `ctx` / `opts` split.
+ *
+ *  Defaults `caching: false` so request-shape assertions stay focused
+ *  on translation rather than cache-marker noise. Caching-specific
+ *  tests pass `caching: true` explicitly. */
 export function streamReq(
   flat: {
     model: string
@@ -18,7 +22,8 @@ export function streamReq(
     quirks?: Quirks
   } & StreamOptions
 ): ProviderRequest {
-  const { model, messages, prompt, tools, quirks, ...opts } = flat
+  const { model, messages, prompt, tools, quirks, ...rest } = flat
+  const opts: StreamOptions = { caching: false, ...rest }
   return { ctx: { messages, prompt, tools }, model, opts, quirks }
 }
 

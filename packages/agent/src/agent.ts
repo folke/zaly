@@ -227,7 +227,6 @@ export class Agent extends Emitter<AgentEvents> {
     let tools = [...this.tools].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
     const ret = await Agent.load({
-      caching: this.#opts.caching,
       cwd: this.#cwd,
       depth: childDepth,
       masking: this.#opts.masking,
@@ -484,14 +483,13 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #collect() {
     this.#abortController = new AbortController()
-    const caching = this.#opts.caching !== false
     return this.#opts.model.stream(
       {
-        messages: this.#withCacheMarker([...this.#masked], caching),
+        messages: [...this.#masked],
         prompt: this.#prompt,
         tools: [...this.tools],
       },
-      this.#streamOpts(caching)
+      this.#streamOpts()
     )
   }
 
@@ -502,25 +500,8 @@ export class Agent extends Emitter<AgentEvents> {
     return this.pressure.ratio >= threshold
   }
 
-  /** Mark the trailing message as a cache breakpoint. Anthropic's
-   *  adapter places `cache_control` on that message's last content
-   *  block, caching the prefix up through it. The marker rolls forward
-   *  each turn — every request hits the previous turn's cache. */
-  #withCacheMarker(messages: Message[], caching: boolean): Message[] {
-    if (!caching || messages.length === 0) return messages
-    const last = messages[messages.length - 1]
-    // Respect an explicit hint from the caller — don't override.
-    if (last.cache !== undefined) return messages
-    messages[messages.length - 1] = { ...last, cache: { type: "ephemeral" } }
-    return messages
-  }
-
-  /** Build the per-stream `StreamOptions`. Adds `cacheTools: true` for
-   *  Anthropic when caching is on so the trailing tool definition gets
-   *  marked, caching the `system + tools` prefix across the session. */
-  #streamOpts(caching: boolean): ModelStreamOptions {
+  #streamOpts(): ModelStreamOptions {
     const base = this.#opts.request ?? {}
-    const signal = this.#abortController?.signal
     return {
       ...base,
       onEvent: (event) => {
@@ -528,13 +509,7 @@ export class Agent extends Emitter<AgentEvents> {
         void this.#opts.onEvent?.(event)
       },
       onUpdate: this.#opts.onUpdate,
-      providerOptions: caching
-        ? {
-            ...base.providerOptions,
-            anthropic: { cacheTools: true, ...base.providerOptions?.anthropic },
-          }
-        : base.providerOptions,
-      signal,
+      signal: this.#abortController?.signal,
     }
   }
 

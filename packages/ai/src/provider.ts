@@ -40,6 +40,18 @@ export interface StreamOptions {
   strictTools?: boolean
   /** Abort signal — cancels the in-flight stream. */
   signal?: AbortSignal
+  /** Enable provider prompt caching. Default `true`.
+   *
+   *  Adapter behaviour:
+   *    - Anthropic: places `cache_control: { type: "ephemeral" }` on
+   *      the trailing tool definition and on the last content block of
+   *      the last message — caching `system + tools` across the session
+   *      and the rolling prefix up to the previous turn.
+   *    - OpenAI: prefix caching is automatic; this flag is a no-op.
+   *
+   *  Useful as a debugging kill-switch or when a caller wants strict
+   *  per-token billing. */
+  caching?: boolean
   /** Power-user escape hatch for provider-specific flags. Adapters
    *  read keys they own; unknown keys are ignored. */
   providerOptions?: RequestProviderOptions

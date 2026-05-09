@@ -200,19 +200,6 @@ export interface AgentOptions extends CollectOptions {
    *  Children inherit it automatically. */
   swarm?: Swarm
 
-  /** Enable provider prompt caching (Anthropic). When `true` (default),
-   *  the agent marks the trailing tool definition and the last message
-   *  of every request with `cache_control: { type: "ephemeral" }`,
-   *  giving Anthropic two cacheable prefixes:
-   *    1. `system + tools` — stable across the whole session.
-   *    2. `system + tools + messages-up-to-last` — extends every turn,
-   *       so each request hits the previous turn's cache.
-   *
-   *  Cost model: writes are 1.25× input price; reads are 0.1×. Worth
-   *  it past ~2 hits in 5 min, which is the typical multi-turn case.
-   *  Set `false` to disable for billing-strict scenarios. */
-  caching?: boolean
-
   /** Heartbeat interval (ms) for the Tasks registry. While at least one
    *  task is pending or running, the agent injects a `<heartbeat>` system
    *  message at this cadence so the model sees what's still going and

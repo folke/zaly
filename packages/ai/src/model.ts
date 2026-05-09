@@ -99,6 +99,7 @@ export class Model<T extends AnyProvider = string> {
     const limit = this.spec.maxTokens ?? this.spec.limit.output
     const streamOpts: StreamOptions = {
       ...opts,
+      caching: opts.caching ?? true,
       maxTokens: Math.min(opts.maxTokens ?? limit, limit),
       reasoning: this.spec.reasoning ? opts.reasoning : undefined,
     }

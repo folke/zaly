@@ -183,25 +183,11 @@ export interface RequestProviderOptions {
   [provider: string]: Record<string, unknown> | undefined
 }
 
-/** Cross-provider cache hint attached to a message. The harness
- *  places these at stable cut-points (tool defs, system prompt, last
- *  stable turn) as part of its context-assembly policy.
- *
- *  - Anthropic: emits `cache_control: { type: "ephemeral" }` on the
- *    last content block of the tagged message.
- *  - OpenAI: no-op (prefix caching is automatic; the adapter already
- *    keeps prefixes byte-stable, which is all OpenAI needs). */
-export interface CacheHint {
-  type: "ephemeral"
-}
-
 type MessageBase = {
   /** Stable session-scoped identifier. Set by `Session.add`. */
   id?: string
   /** Wall-clock commit time (ms). Set by `Session.add`. */
   ts?: number
-  cache?: CacheHint
-  providerOptions?: ProviderOptions
 } & (
   | {
       role: "system"
@@ -524,16 +510,6 @@ export interface ProviderOptions {
   /** Fetch impl — injection point for retry wrappers, proxies,
    *  instrumentation. Defaults to the platform `fetch`. */
   fetch?: FetchLike
-  /** Honor `CacheHint`s placed by the harness. Default `true`.
-   *
-   *  Adapter behaviour when `false`: cache hints are ignored and no
-   *  provider-side cache markers are sent. Useful as a debugging
-   *  kill-switch or when a caller wants strict per-token billing.
-   *
-   *  Only affects providers with explicit, opt-in cache APIs
-   *  (Anthropic `cache_control`). OpenAI's prefix caching is automatic
-   *  and unaffected by this flag. */
-  caching?: boolean
 }
 
 /** Provider-specific wire quirks that "OpenAI compatibility" doesn't
