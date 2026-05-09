@@ -344,7 +344,7 @@ export interface Streamable {
  *  `error` carries structured info for richer downstream rendering;
  *  `meta` is wire-invisible sidecar data the tool wrote to `ctx.meta`. */
 export interface ToolResult<T extends object = object> {
-  isError: boolean
+  isError?: boolean
   content: Content
   error?: ErrorInfo
   meta?: T

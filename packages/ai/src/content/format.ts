@@ -35,6 +35,10 @@ export function isAttachment(p: { type: string }): p is Attachment {
   return isContentPart(p) && ATT_TYPES.has(p.type)
 }
 
+export function toParts<T>(content: string | T[]): (T | TextPart)[] {
+  return typeof content === "string" ? [{ text: content, type: "text" }] : content
+}
+
 /** Returns true if any non-text, non-meta part is present in a content
  *  value — signal to provider adapters that an attachment-fallback emit
  *  may be needed (e.g. OpenAI tool messages can't carry images, so the

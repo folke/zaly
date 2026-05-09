@@ -1,8 +1,15 @@
 import type { Agent } from "@zaly/agent"
-import type { Message, StreamEvent, ToolCallPart, ToolResult, ToolResultPart } from "@zaly/ai"
+import type {
+  Attachment,
+  Message,
+  StreamEvent,
+  ToolCallPart,
+  ToolResult,
+  ToolResultPart,
+} from "@zaly/ai"
 import type { Renderer } from "@zaly/tui"
 
-import { stringifyContent } from "@zaly/ai"
+import { isAttachment, justText, toParts } from "@zaly/ai"
 import { signal, toAccessor } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
@@ -10,7 +17,7 @@ import { toolCall } from "../widgets/tool.ts"
 import { userMessage } from "../widgets/user.ts"
 
 export interface StreamHandle {
-  pushUser: (content: string) => void
+  pushUser: (content: string, attachments?: readonly Attachment[]) => void
   /** Replay a slice of the loaded session into the stream surface so a
    *  resumed conversation isn't visually empty. Renders each message
    *  with its existing widget (`userMessage`, `assistantMessage`,
@@ -64,11 +71,7 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
   }
 
   const onStream = (e: { event: StreamEvent }): void => {
-    if (
-      e.event.type === "reasoning-delta" &&
-      typeof e.event.delta === "string" &&
-      e.event.delta !== ""
-    ) {
+    if (e.event.type === "reasoning-delta" && e.event.delta !== "") {
       // Reasoning streams come before (or interleave with) text on
       // models that emit it. Close the active text bubble so a
       // later text-delta opens a fresh one below the reasoning.
@@ -77,11 +80,7 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       ensureReasoning().setContent((prev) => prev + delta)
       return
     }
-    if (
-      e.event.type === "text-delta" &&
-      typeof e.event.delta === "string" &&
-      e.event.delta !== ""
-    ) {
+    if (e.event.type === "text-delta" && e.event.delta !== "") {
       // Text supersedes reasoning — close the reasoning bubble so it
       // doesn't get re-opened by a later reasoning chunk in the same
       // turn (rare but possible). The next reasoning event would
@@ -119,10 +118,10 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       agent.off("tool-result", onResult)
       agent.off("step-end", onStep)
     },
-    pushUser(content) {
+    pushUser(content, attachments) {
       active = undefined
       activeReasoning = undefined
-      renderer.stream.append(userMessage({ content }))
+      renderer.stream.append(userMessage({ attachments, content }))
     },
     replay(messages) {
       // Pre-index tool results by call id so each assistant tool-call
@@ -136,8 +135,11 @@ export function bindStream(renderer: Renderer, agent: Agent): StreamHandle {
       }
       for (const m of messages) {
         if (m.role === "user") {
-          const text = stringifyContent(m.content)
-          if (text !== "") renderer.stream.append(userMessage({ content: text }))
+          const text = justText(m.content)
+          const attachments = toParts(m.content).filter((p) => isAttachment(p))
+          if (text !== "" || attachments.length > 0) {
+            renderer.stream.append(userMessage({ attachments, content: text }))
+          }
         } else if (m.role === "assistant") {
           renderAssistant(renderer, m, results)
         }
@@ -158,51 +160,13 @@ function renderAssistant(
   msg: Message<"assistant">,
   results: Map<string, ToolResultPart>
 ): void {
-  if (typeof msg.content === "string") {
-    if (msg.content !== "") {
-      renderer.stream.append(assistantMessage({ content: msg.content }))
-    }
-    return
-  }
-  // Walk parts in order, accumulating text into a single bubble and
-  // breaking out for each tool-call / reasoning block so the rendering
-  // matches what the live event stream produces.
-  let textBuffer = ""
-  let reasoningBuffer = ""
-  const flushText = (): void => {
-    if (textBuffer === "") return
-    renderer.stream.append(assistantMessage({ content: textBuffer }))
-    textBuffer = ""
-  }
-  const flushReasoning = (): void => {
-    if (reasoningBuffer === "") return
-    renderer.stream.append(reasoningMessage({ content: reasoningBuffer }))
-    reasoningBuffer = ""
-  }
-  for (const part of msg.content) {
-    if (part.type === "text") {
-      flushReasoning()
-      textBuffer += part.text
-    } else if (part.type === "reasoning") {
-      flushText()
-      reasoningBuffer += part.text
-    } else {
-      // tool-call — exhaustive against assistant content's part union.
-      flushReasoning()
-      flushText()
-      const result = results.get(part.id)
-      const resolved: ToolResult | undefined =
-        result === undefined
-          ? undefined
-          : {
-              content: result.content,
-              error: result.error,
-              isError: result.isError ?? false,
-              meta: result.meta,
-            }
-      renderer.stream.append(toolCall({ call: part, result: toAccessor(resolved) }))
+  for (const part of toParts(msg.content)) {
+    if (part.type === "text" && part.text !== "") {
+      renderer.stream.append(assistantMessage({ content: part.text }))
+    } else if (part.type === "reasoning" && part.text !== "") {
+      renderer.stream.append(reasoningMessage({ content: part.text }))
+    } else if (part.type === "tool-call") {
+      renderer.stream.append(toolCall({ call: part, result: toAccessor(results.get(part.id)) }))
     }
   }
-  flushReasoning()
-  flushText()
 }

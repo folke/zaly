@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Attachment, ContentPart, ImagePart, PdfPart, TextPart, Usage } from "@zaly/ai"
+import type { Attachment, ContentPart, Message, TextPart, Usage } from "@zaly/ai"
 import type { Input, LogCallable } from "@zaly/tui"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
@@ -8,17 +8,10 @@ import { toImagePart, toPdfPart } from "@zaly/ai"
 import { fileDetect, imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
-import { basename } from "pathe"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
 import { buildRenderer } from "./render/index.ts"
 import { compactionMarker } from "./widgets/index.ts"
-
-/** A staged attachment waiting to be sent. The `part` is what goes to
- *  the agent, `path` is the on-disk source for stream-side markdown. */
-type StagedAttachment =
-  | { kind: "image"; part: ImagePart; path: string }
-  | { kind: "pdf"; part: PdfPart; path: string }
 
 /**
  * App = the long-lived glue between Agent and Renderer. Keeps state
@@ -43,7 +36,7 @@ export class App {
    *  on-disk source so the stream's markdown view can render the
    *  image inline (`![](path)`) or link the PDF (`[name](path)`).
    *  Cleared on every submit so indices stay small and per-message. */
-  readonly #attachments = new Map<number, StagedAttachment>()
+  readonly #attachments = new Map<number, Attachment>()
   #attachCounter = 0
 
   constructor(config: Config) {
@@ -162,7 +155,7 @@ export class App {
         return insertAtCursor(input, att.path)
       }
       const idx = ++this.#attachCounter
-      this.#attachments.set(idx, { kind: "image", part: toImagePart(ready), path: att.path })
+      this.#attachments.set(idx, toImagePart(ready))
       insertAtCursor(input, `[Image #${idx}]`)
       return
     }
@@ -174,7 +167,7 @@ export class App {
       })
       if (!data) return insertAtCursor(input, att.path)
       const idx = ++this.#attachCounter
-      this.#attachments.set(idx, { kind: "pdf", part: toPdfPart(data), path: att.path })
+      this.#attachments.set(idx, toPdfPart(data))
       insertAtCursor(input, `[PDF #${idx}]`)
       return
     }
@@ -186,34 +179,26 @@ export class App {
   }
 
   async #submit(text: string): Promise<void> {
-    // Collect referenced attachments in document order. Pastes the
-    // user deleted before submit are silently dropped.
+    // Walk placeholder refs in document order — collect the encoded
+    // parts (for the agent) and matching display attachments (for the
+    // bubble's image/pdf widgets). Pastes the user deleted before
+    // submit are silently dropped.
     const re = /\[(Image|PDF) #(\d+)\]/g
     const referenced: Attachment[] = []
     for (const m of text.matchAll(re)) {
       const entry = this.#attachments.get(Number(m[2]))
-      if (entry) referenced.push(entry.part)
+      if (!entry) continue
+      referenced.push(entry)
     }
 
-    // Stream display: swap placeholders for markdown refs on their
-    // own line. The markdown widget only renders an image as a block
-    // (real picture rows) when the `![](…)` reference sits alone on
-    // a line — inline refs fall back to alt text. Padding with blank
-    // lines triggers block render. PDFs become regular markdown
-    // links so the user sees a clickable filename in the transcript.
-    //
-    // The agent gets the raw text (with `[Image #n]` / `[PDF #n]`
-    // placeholders) plus the encoded parts as separate content
-    // entries — the model correlates them via the literal placeholder.
-    const display = text.replace(re, (whole, _kind, n) => {
-      const entry = this.#attachments.get(Number(n))
-      if (!entry) return whole
-      if (entry.kind === "image") return `\n\n![](${entry.path})\n\n`
-      return `\n\n[${basename(entry.path)}](${entry.path})\n\n`
-    })
-    this.#render.stream.pushUser(display)
+    // Stream display: original text (with `[Image #n]` / `[PDF #n]`
+    // placeholders, since the user typed it that way) + attachments
+    // rendered as image/pdf widgets. Agent gets the same raw text plus
+    // encoded parts as separate content entries — the model correlates
+    // them via the literal placeholder.
+    this.#render.stream.pushUser(text, referenced)
 
-    const message =
+    const message: Message<"user"> =
       referenced.length === 0
         ? { content: text, role: "user" as const }
         : {
