@@ -1,0 +1,45 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "min-light",
+  "text": "#24292eff",
+  "subtle": "#a1a1a1",
+  "ui": {
+    "bg": "#ffffff",
+    "fg": "#24292eff"
+  },
+  "primary": "#000",
+  "accent": "#000",
+  "success": "#77cc00",
+  "info": "#4dbf99",
+  "warn": "#f29718",
+  "error": "#D32F2F",
+  "muted": "#a1a1a1",
+  "border": "#f4f4f4",
+  "code": {
+    "bg": "#ffffff"
+  },
+  "mdCodeBlock": {
+    "bg": "#ffffff"
+  },
+  "highlight": {
+    "bg": "#EEE"
+  },
+  "menuActive": {
+    "bg": "#EEE"
+  },
+  "diffAdd": {
+    "bg": "#eaf8e4"
+  },
+  "diffDel": {
+    "bg": "#f7dee5"
+  },
+  "comment": {
+    "fg": "#c2c3c5"
+  },
+  "mdLink": {
+    "fg": "#22863a"
+  },
+  "mdCode": {
+    "fg": "#2b5581"
+  }
+}

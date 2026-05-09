@@ -1,0 +1,41 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "min-dark",
+  "text": "#b392f0",
+  "subtle": "#5c5c5c",
+  "ui": {
+    "bg": "#1f1f1f",
+    "fg": "#b392f0"
+  },
+  "primary": "#CCC",
+  "accent": "#fafafa",
+  "muted": "#5c5c5c",
+  "border": "#5c5c5c",
+  "code": {
+    "bg": "#1f1f1f"
+  },
+  "mdCodeBlock": {
+    "bg": "#1f1f1f"
+  },
+  "highlight": {
+    "bg": "#212121"
+  },
+  "menuActive": {
+    "bg": "#212121"
+  },
+  "diffAdd": {
+    "bg": "#273322"
+  },
+  "diffDel": {
+    "bg": "#411727"
+  },
+  "comment": {
+    "fg": "#6b737c"
+  },
+  "mdLink": {
+    "fg": "#ffab70"
+  },
+  "mdCode": {
+    "fg": "#9db1c5"
+  }
+}

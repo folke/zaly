@@ -1,0 +1,79 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "vesper",
+  "text": "#FFF",
+  "ui": {
+    "bg": "#101010",
+    "fg": "#FFF"
+  },
+  "primary": "#FFC799",
+  "accent": "#FFCFA8",
+  "warn": "#FFC799",
+  "error": "#FF8080",
+  "code": {
+    "bg": "#101010"
+  },
+  "mdCodeBlock": {
+    "bg": "#101010"
+  },
+  "overlay": {
+    "bg": "#101010"
+  },
+  "highlight": {
+    "bg": "#333333"
+  },
+  "menuActive": {
+    "bg": "#232323"
+  },
+  "selection": {
+    "bg": "#333333"
+  },
+  "diffAdd": {
+    "bg": "#1b2421",
+    "fg": "#99FFE4"
+  },
+  "diffDel": {
+    "bg": "#241919",
+    "fg": "#FF8080"
+  },
+  "comment": {
+    "fg": "#575757"
+  },
+  "mdHeading": {
+    "fg": "#FFC799"
+  },
+  "mdHeading1": {
+    "fg": "#FFC799"
+  },
+  "mdHeading2": {
+    "fg": "#FFC799"
+  },
+  "mdHeading3": {
+    "fg": "#FFC799"
+  },
+  "mdHeading4": {
+    "fg": "#FFC799"
+  },
+  "mdHeading5": {
+    "fg": "#FFC799"
+  },
+  "mdHeading6": {
+    "fg": "#FFC799"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#FFF"
+  },
+  "mdItalic": {
+    "italic": true,
+    "fg": "#FFF"
+  },
+  "mdLink": {
+    "underline": true,
+    "fg": "#FFC799"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#65737E"
+  }
+}

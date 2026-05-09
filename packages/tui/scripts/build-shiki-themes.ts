@@ -26,15 +26,31 @@ import { parseHex, toHex } from "../src/index.ts"
 /** Which Shiki themes we want to ship as first-class TUI themes.
  *  Order here defines the write order; no functional meaning. */
 const THEMES = [
-  "catppuccin-mocha",
+  "ayu-dark",
+  "catppuccin-frappe",
   "catppuccin-latte",
+  "catppuccin-macchiato",
+  "catppuccin-mocha",
   "dracula",
-  "nord",
   "github-dark",
   "github-light",
   "gruvbox-dark-medium",
+  "material-theme-palenight",
+  "min-dark",
+  "min-light",
+  "monokai",
+  "night-owl",
+  "nord",
   "one-dark-pro",
+  "one-light",
+  "poimandres",
   "rose-pine",
+  "solarized-dark",
+  "solarized-light",
+  "synthwave-84",
+  "vesper",
+  "vitesse-dark",
+  "vitesse-light",
 ] as const satisfies readonly ShikiTheme[]
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -57,6 +73,8 @@ function parse(theme: ThemeRegistrationResolved) {
   const bg = theme.bg as HexColor
   const settings = theme.settings
   for (const s of settings) {
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    if (!s.settings) continue
     const scopes = (typeof s.scope === "string" ? s.scope.split(",") : (s.scope ?? [])).map((sc) =>
       sc.trim()
     )
@@ -204,6 +222,9 @@ function combine(bg: Color | undefined, fg: Color | undefined): Style | undefine
 }
 
 async function build(id: ShikiTheme): Promise<void> {
+  for (const t of Object.keys(bundledThemes)) {
+    console.log(`  ${t}`)
+  }
   const loader = bundledThemes[id]
   const mod = await loader()
   const theme = mod.default

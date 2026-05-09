@@ -27,7 +27,7 @@
   "error": "#db4b4b",
   "gutter": "#3b4261",
   "highlight": {
-    "bg": "#1a1b26",
+    "bg": "#292e42",
     "fg": "#c0caf5"
   },
   "info": "#0db9d7",
@@ -120,7 +120,7 @@
     "fg": "#7aa2f7"
   },
   "ui": {
-    "bg": "#292e42",
+    "bg": "#1a1b26",
     "fg": "#c0caf5"
   },
   "warn": "#e0af68"

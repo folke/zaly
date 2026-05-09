@@ -18,8 +18,20 @@ import type { Theme } from "./types.ts"
  * can pass this map straight to `themeRegistry` with no cast.
  */
 export const builtin = {
+  "ayu-dark": () =>
+    import("../../assets/themes/ayu-dark.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "catppuccin-frappe": () =>
+    import("../../assets/themes/catppuccin-frappe.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
   "catppuccin-latte": () =>
     import("../../assets/themes/catppuccin-latte.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "catppuccin-macchiato": () =>
+    import("../../assets/themes/catppuccin-macchiato.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
     ),
   "catppuccin-mocha": () =>
@@ -42,6 +54,26 @@ export const builtin = {
     import("../../assets/themes/gruvbox-dark-medium.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
     ),
+  "material-theme-palenight": () =>
+    import("../../assets/themes/material-theme-palenight.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "min-dark": () =>
+    import("../../assets/themes/min-dark.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "min-light": () =>
+    import("../../assets/themes/min-light.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  monokai: () =>
+    import("../../assets/themes/monokai.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "night-owl": () =>
+    import("../../assets/themes/night-owl.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
   nord: () =>
     import("../../assets/themes/nord.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
@@ -50,8 +82,28 @@ export const builtin = {
     import("../../assets/themes/one-dark-pro.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
     ),
+  "one-light": () =>
+    import("../../assets/themes/one-light.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  poimandres: () =>
+    import("../../assets/themes/poimandres.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
   "rose-pine": () =>
     import("../../assets/themes/rose-pine.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "solarized-dark": () =>
+    import("../../assets/themes/solarized-dark.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "solarized-light": () =>
+    import("../../assets/themes/solarized-light.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "synthwave-84": () =>
+    import("../../assets/themes/synthwave-84.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
     ),
   "tokyonight-day": () =>
@@ -68,6 +120,18 @@ export const builtin = {
     ),
   "tokyonight-storm": () =>
     import("../../assets/themes/tokyonight-storm.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  vesper: () =>
+    import("../../assets/themes/vesper.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "vitesse-dark": () =>
+    import("../../assets/themes/vitesse-dark.json", { with: { type: "json" } }).then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "vitesse-light": () =>
+    import("../../assets/themes/vitesse-light.json", { with: { type: "json" } }).then(
       (m) => m.default as Partial<Theme>
     ),
 } as const satisfies LoaderMap<Promise<Partial<Theme>>>

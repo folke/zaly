@@ -21,7 +21,7 @@ const PANEL_WIDTH = 25
 // Pull every bundled theme from the async loader map, plus the pure-ansi
 // fallback (not a JSON — loaded via `loadTheme("ansi")`) as a final column
 // so the render shows how palette-only terminals resolve every slot.
-const names: string[] = [...themeRegistry.keys(), "ansi"]
+const names: string[] = [...themeRegistry.keys(), "ansi"].toSorted()
 
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })

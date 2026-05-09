@@ -42,8 +42,7 @@
   "scripts": {
     "bench": "bun bench/run.ts",
     "build": "tsdown --cwd ../../ --filter @zaly/tui",
-    "build:themes": "bun scripts/build-themes.ts",
-    "build:shiki-themes": "bun scripts/build-shiki-themes.ts",
+    "build:themes": "bun scripts/build-shiki-themes.ts && bun scripts/build-tokyonight-themes.ts && bun scripts/gen-themes.ts && oxfmt src/themes/builtin.ts",
     "build:typia": "bun scripts/build-schemas.ts",
     "check": "oxlint",
     "docs:api": "typedoc",

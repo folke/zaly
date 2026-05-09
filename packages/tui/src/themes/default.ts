@@ -16,7 +16,7 @@ export const defaults: Theme = {
 
   // text
   text: "inherit",
-  muted: { fg: "brightBlack" },
+  muted: { dim: true },
   quiet: { dim: true, fg: "muted", italic: true },
   comment: { fg: "muted", italic: true },
   title: { bold: true, fg: "primary" },
@@ -32,7 +32,7 @@ export const defaults: Theme = {
   selection: { bg: "brightBlue", fg: "black" },
   gutter: "subtle",
   prompt: "inherit",
-  border: "subtle",
+  border: "black",
   borderTitle: "title",
 
   // code

@@ -1,0 +1,99 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "shiki": "solarized-light",
+  "text": "#657B83",
+  "subtle": "#002b36",
+  "ui": {
+    "bg": "#FDF6E3",
+    "fg": "#657B83"
+  },
+  "primary": "#268bd2",
+  "accent": "#d33682",
+  "success": "#859900",
+  "info": "#2aa198",
+  "warn": "#b58900",
+  "error": "#dc322f",
+  "muted": "#002b36",
+  "border": "#DDD6C1",
+  "code": {
+    "bg": "#FDF6E3"
+  },
+  "mdCodeBlock": {
+    "bg": "#FDF6E3"
+  },
+  "overlay": {
+    "bg": "#EEE8D5"
+  },
+  "highlight": {
+    "bg": "#EEE8D5"
+  },
+  "menuActive": {
+    "bg": "#DFCA88"
+  },
+  "selection": {
+    "bg": "#EEE8D5"
+  },
+  "diffAdd": {
+    "fg": "#859900"
+  },
+  "diffDel": {
+    "fg": "#DC322F"
+  },
+  "diffTitle": {
+    "italic": true,
+    "fg": "#268BD2"
+  },
+  "comment": {
+    "italic": true,
+    "fg": "#93A1A1"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#268BD2"
+  },
+  "mdBold": {
+    "bold": true
+  },
+  "mdItalic": {
+    "italic": true
+  },
+  "mdStrikethrough": {
+    "strikethrough": true
+  },
+  "mdLink": {
+    "fg": "#2AA198"
+  },
+  "mdQuote": {
+    "fg": "#859900"
+  },
+  "mdListBullet": {
+    "fg": "#B58900"
+  },
+  "mdCode": {
+    "fg": "#2AA198"
+  }
+}
