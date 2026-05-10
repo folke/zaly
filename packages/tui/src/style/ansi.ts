@@ -154,6 +154,7 @@ function _ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {
 }
 
 export function openAnsi(style: AnsiStyle) {
+  if (!hasColors) return ""
   const params: (number | string | undefined)[] = []
   for (const [key, code] of ATTRS) if (style[key]) params.push(code)
   if (style.fg !== undefined) params.push(ansiColor(style.fg, "fg"))

@@ -3,6 +3,7 @@ import type { LogLevel } from "../logger/levels.ts"
 import type { Color } from "../style/types.ts"
 import type { TextContent } from "./text.ts"
 
+import { hasColors } from "@zaly/shared/env"
 import { Node, isNode } from "../core/node.ts"
 import { stringWidth } from "../style/ansi.ts"
 import { text as textFactory } from "./text.ts"
@@ -45,11 +46,22 @@ export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
   warn: { color: "warn", icon: "⚠", style: "badge", textColor: "warn" },
 }
 
+export const noColorStyles: Record<LogStyle, LogStyle> = {
+  badge: "title",
+  icon: "text",
+  prompt: "text",
+  text: "text",
+  title: "text",
+}
+
 export class Log extends Node<LogState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const s = this.state
     const base = defaultLogStyles[s.level]
-    const style: LogStyle = s.style ?? base.style
+
+    let style: LogStyle = s.style ?? base.style
+    if (!hasColors) style = noColorStyles[style]
+
     let icon = s.icon ?? base.icon ?? ""
     icon = icon === "" ? "" : `${icon}${" ".repeat(2 - stringWidth(icon))}`
     const color: Color = s.color ?? base.color ?? "inherit"
