@@ -12,12 +12,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./env": "./src/env.ts",
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
+      "./env": "./dist/env.mjs",
       "./package.json": "./package.json"
     }
   },
