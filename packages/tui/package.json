@@ -14,17 +14,25 @@
   "type": "module",
   "imports": {
     "#ansi": {
+      "source": "./src/runtime/ansi.node.ts",
       "bun": "./src/runtime/ansi.bun.ts",
       "default": "./src/runtime/ansi.node.ts"
     },
     "#md": {
+      "source": "./src/runtime/md.node.ts",
       "bun": "./src/runtime/md.bun.ts",
       "default": "./src/runtime/md.node.ts"
     }
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./themes": "./src/themes/registry.ts",
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./themes": {
+      "bun": "./src/themes/registry.ts",
+      "default": "./dist/themes.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -71,9 +79,6 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": [
-    "sharp"
-  ],
   "inlinedDependencies": {
     "ansi-regex": "6.2.2",
     "ansi-styles": "6.2.3",
@@ -87,5 +92,8 @@
     ],
     "strip-ansi": "7.2.0",
     "wrap-ansi": "10.0.0"
-  }
+  },
+  "trustedDependencies": [
+    "sharp"
+  ]
 }

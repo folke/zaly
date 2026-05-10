@@ -10,4 +10,14 @@ export default defineConfig({
       zaly: "./bin/zaly.ts",
     },
   },
+  outputOptions: {
+    plugins: [
+      {
+        name: "fix-shebang",
+        renderChunk(code) {
+          return code.replace(/^#!.*\bbun\b.*/, "#!/usr/bin/env node")
+        },
+      },
+    ],
+  },
 })

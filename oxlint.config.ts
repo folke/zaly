@@ -101,7 +101,7 @@ export default defineConfig({
     "no-underscore-dangle": "off", // 4
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { location: "start", terms: ["todo", "fixme", "bug"] }],
-    "oxc/no-barrel-file": "warn",
+    "oxc/no-barrel-file": "off",
     "prefer-destructuring": "off", // 3
     "prefer-template": "warn",
     "sort-imports": "off", // 64

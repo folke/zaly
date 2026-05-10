@@ -24,7 +24,8 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     //"declaration": true,
-    "isolatedDeclarations": false
+    "isolatedDeclarations": false,
+    "customConditions": ["bun"]
   },
   "exclude": ["packages/*/dist", "node_modules", "packages/*/node_modules"]
 }

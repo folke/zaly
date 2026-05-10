@@ -11,9 +11,18 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./env": "./src/env.ts",
-    "./registry": "./src/registry.ts",
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./env": {
+      "bun": "./src/env.ts",
+      "default": "./dist/env.mjs"
+    },
+    "./registry": {
+      "bun": "./src/registry.ts",
+      "default": "./dist/registry.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

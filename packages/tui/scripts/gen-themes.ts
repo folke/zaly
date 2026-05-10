@@ -24,7 +24,7 @@ function genBuiltin(names: readonly string[]): string {
   const entries = names
     .map(
       (n) =>
-        `  "${n}": () => import("../../${ASSET_DIR}/${n}.json", { with: { type: "json" } }).then((m) => m.default as Partial<Theme>),`
+        `  "${n}": () => import("../../${ASSET_DIR}/${n}.json").then((m) => m.default as Partial<Theme>),`
     )
     .join("\n")
 
