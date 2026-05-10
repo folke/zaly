@@ -1,5 +1,5 @@
 // oxlint-disable import/no-named-as-default-member
-import type { Theme } from "../../themes/index.ts"
+import type { Theme } from "../../themes/registry.ts"
 
 import typia from "typia"
 

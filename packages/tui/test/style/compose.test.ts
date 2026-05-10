@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { reapplyStyle } from "../../src/style/ansi.ts"
 import { resolveStyle } from "../../src/style/style.ts"
-import { defaultTheme } from "../../src/themes/index.ts"
+import { defaultTheme } from "../../src/themes/registry.ts"
 
 describe("reapplyStyle", () => {
   const esc = "\x1b[48;2;255;0;0m"

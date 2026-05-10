@@ -1,7 +1,7 @@
 import type { Theme } from "../themes/types.ts"
 import type { AnsiColorName, BrightAnsiColorName, Color, Style } from "./types.ts"
 
-import { defaultTheme } from "../themes/index.ts"
+import { defaultTheme } from "../themes/registry.ts"
 import { reapplyStyle, RESET } from "./ansi.ts"
 import { openStyle, resolveStyle } from "./style.ts"
 

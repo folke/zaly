@@ -1,4 +1,4 @@
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "../themes/registry.ts"
 
 export type RGB = [r: number, g: number, b: number]
 

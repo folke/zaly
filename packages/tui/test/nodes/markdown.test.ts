@@ -8,7 +8,7 @@ import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
 import { RESET } from "../../src/style/ansi.ts"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
-import { defaultTheme } from "../../src/themes/index.ts"
+import { defaultTheme } from "../../src/themes/registry.ts"
 
 // No-op `transmit` so kitty image transmits don't leak to stdout during
 // tests. Tests that need to assert on transmit bytes pass their own.

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { style } from "../../src/style/builder.ts"
-import { defaultTheme } from "../../src/themes/index.ts"
+import { defaultTheme } from "../../src/themes/registry.ts"
 
 describe("style() — ANSI fg", () => {
   test("plain red", () => {

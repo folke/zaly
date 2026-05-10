@@ -9,7 +9,6 @@ import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "js
 import { builtin } from "./builtin.ts"
 import { defaults } from "./default.ts"
 
-export { defaults } from "./default.ts"
 export type { Theme, ThemeValue } from "./types.ts"
 
 /** Built-in theme names plus the synthetic `"ansi"` palette (no JSON

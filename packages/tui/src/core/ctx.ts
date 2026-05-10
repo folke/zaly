@@ -2,12 +2,12 @@ import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
 import type { Surface } from "../renderer/index.ts"
 import type { StyleBuilder } from "../style/builder.ts"
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "../themes/registry.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Node } from "./node.ts"
 
 import { style } from "../style/builder.ts"
-import { defaultTheme } from "../themes/index.ts"
+import { defaultTheme } from "../themes/registry.ts"
 import { createContext } from "./reactive.ts"
 
 export type { StyleBuilder, Theme }

@@ -11,7 +11,7 @@
 
 import { barplot, bench, summary } from "mitata"
 import { style } from "../src/style/builder.ts"
-import { defaultTheme } from "../src/themes/index.ts"
+import { defaultTheme } from "../src/themes/registry.ts"
 
 const s = style(defaultTheme)
 
