@@ -5,4 +5,9 @@ export default defineConfig({
     index: "src/index.ts",
     zaly: "bin/zaly.ts",
   },
+  exports: {
+    bin: {
+      zaly: "./bin/zaly.ts",
+    },
+  },
 })

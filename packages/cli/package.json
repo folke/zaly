@@ -7,7 +7,7 @@
     "url": "git+https://github.com/folke/zaly.git"
   },
   "bin": {
-    "cli": "./bin/zaly.ts"
+    "zaly": "./bin/zaly.ts"
   },
   "files": [
     "src/**/*",
@@ -23,7 +23,7 @@
   "publishConfig": {
     "access": "public",
     "bin": {
-      "cli": "./dist/zaly.mjs"
+      "zaly": "./dist/zaly.mjs"
     },
     "exports": {
       ".": "./dist/index.mjs",
@@ -51,10 +51,10 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": [
-    "sharp"
-  ],
   "inlinedDependencies": {
     "pathe": "2.0.3"
-  }
+  },
+  "trustedDependencies": [
+    "sharp"
+  ]
 }
