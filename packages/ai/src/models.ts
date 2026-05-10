@@ -1,6 +1,7 @@
 import type { AuthProvider } from "./auth/index.ts"
 import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
 
+import { compareNaturalDescNumbers } from "@zaly/shared"
 import { hasAuth } from "./auth/index.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
@@ -77,12 +78,21 @@ export interface ModelFilter {
   auth?: AuthProvider
   reasoning?: boolean
   modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
+  filter?: string | ((m: ModelSpec) => boolean)
 }
 
-export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
+export async function filterModel(id: string, m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
   if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth))) return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
+  if (
+    opts?.filter !== undefined &&
+    typeof opts.filter === "string" &&
+    !id.includes(opts.filter.toLowerCase())
+  )
+    return false
+  if (opts?.filter !== undefined && typeof opts.filter === "function" && !opts.filter(m))
+    return false
   return true
 }
 
@@ -118,9 +128,12 @@ export async function listModels(opts?: ModelFilter): Promise<Record<string, Mod
     id,
     attachProviderInfo(stored, catalog, id),
   ])
+
+  entries.sort(([a], [b]) => compareNaturalDescNumbers(a, b))
+
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.
-  const verdicts = await Promise.all(entries.map(([, m]) => filterModel(m, opts)))
+  const verdicts = await Promise.all(entries.map(([id, m]) => filterModel(id, m, opts)))
   const out: Record<string, ModelSpec> = {}
   for (const [i, [id, m]] of entries.entries()) {
     if (verdicts[i]) out[id] = m
