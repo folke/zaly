@@ -248,24 +248,6 @@ export function extractConversation(
   return toXml(text, "conversation", { indent: false })
 }
 
-export function extractUserMessages(ctx: CompactionContext): string {
-  const { messages } = ctx
-  const blocks: string[] = []
-  for (const m of messages) {
-    if (m.role !== "user") continue
-    const texts: string[] = []
-    if (typeof m.content === "string") texts.push(m.content)
-    else {
-      for (const part of m.content) {
-        if (part.type === "text") texts.push(part.text)
-      }
-    }
-    const text = truncate(texts.join("\n").replace(/\s+/g, " ").trim(), 100)
-    if (text) blocks.push(text.trim())
-  }
-  return toXml(blocks.map((m) => `- ${m}`).join("\n"), "user-messages", { indent: false })
-}
-
 // ── Tail selection ────────────────────────────────────────────────────
 
 export async function messageTail(

@@ -38,7 +38,6 @@ type ResizeListener = (cols: number, rows: number) => void
 
 // ESC helpers — keeping as plain string constants so greps / docs line up.
 const CSI = "\x1b["
-const ESC = "\x1b"
 
 /** @internal */
 export class Terminal {
@@ -281,6 +280,3 @@ export class Terminal {
     return () => this.#resizeListeners.delete(fn)
   }
 }
-
-/** @internal */
-export { CSI, ESC }

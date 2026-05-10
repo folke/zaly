@@ -11,7 +11,7 @@ export type ProviderLoader<T extends string = string> = (
  *  the `BuiltinProvider` union for free. `satisfies` preserves literal
  *  keys — widening to `Record<string, ProviderLoader>` would erase
  *  them and lose the typed autocomplete. */
-export const providers = {
+const providers = {
   anthropic: (opts) => import("./anthropic.ts").then((m) => m.createAnthropic(opts)),
   openai: (opts) => import("./openai.ts").then((m) => m.createOpenAI(opts)),
   "openai-responses": (opts) =>

@@ -24,7 +24,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./themes": "./src/themes/index.ts",
+    "./themes": "./src/themes/registry.ts",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -65,8 +65,7 @@
   "devDependencies": {
     "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
-    "sharp": "^0.34.5",
-    "type-fest": "^5.6.0"
+    "sharp": "^0.34.5"
   },
   "engines": {
     "bun": ">=1.2",

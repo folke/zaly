@@ -45,7 +45,7 @@ const builtin = {
   write: () => writeResult as ToolResultRenderer,
 } as const satisfies Record<string, () => ToolResultRenderer>
 
-export const toolResultRegistry = createRegistry<ToolResultRenderer>("tool-result").from(builtin)
+const toolResultRegistry = createRegistry<ToolResultRenderer>("tool-result").from(builtin)
 
 /** Dispatcher widget — picks a renderer by `call.name` and falls back
  *  to the generic default. Plugins extend the registry; this widget

@@ -1,6 +1,6 @@
 import type { Model } from "@zaly/ai"
 
-import { createRegistry } from "@zaly/shared"
+import { createRegistry } from "@zaly/shared/registry"
 
 export interface PromptCtx {
   model: Model

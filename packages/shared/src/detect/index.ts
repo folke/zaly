@@ -1,5 +1,0 @@
-export type { ImageFormat } from "./image.ts"
-export type { TextFormat } from "./text.ts"
-export { imageDetector } from "./image.ts"
-export { pdfDetector } from "./pdf.ts"
-export * from "./file.ts"

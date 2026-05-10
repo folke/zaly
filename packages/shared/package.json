@@ -13,6 +13,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./env": "./src/env.ts",
+    "./registry": "./src/registry.ts",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -20,6 +21,7 @@
     "exports": {
       ".": "./dist/index.mjs",
       "./env": "./dist/env.mjs",
+      "./registry": "./dist/registry.mjs",
       "./package.json": "./package.json"
     }
   },

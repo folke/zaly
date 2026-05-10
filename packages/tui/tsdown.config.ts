@@ -12,7 +12,7 @@ export default defineConfig({
     index: "src/index.ts",
     ansi: "src/runtime/ansi.node.ts",
     md: "src/runtime/md.node.ts",
-    themes: "src/themes/index.ts",
+    themes: "src/themes/registry.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

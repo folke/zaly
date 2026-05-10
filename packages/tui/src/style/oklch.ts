@@ -104,10 +104,6 @@ export function oklchToHex(oklch: OKLCH): HexColor {
   return toHex(r * 255, g * 255, b * 255)
 }
 
-export function modifyOklch(hex: HexColor, modify: (o: OKLCH) => OKLCH): HexColor {
-  return oklchToHex(modify(hexToOklch(hex)))
-}
-
 export function shiftLightness(hex: HexColor, delta: number): HexColor {
   const key = `${hex}:${delta}`
   let ret = cache.get(key)

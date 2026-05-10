@@ -93,7 +93,7 @@ export class Notifier {
   }
 }
 
-export function timeInfo(t = Date.now()): {
+function timeInfo(t = Date.now()): {
   day: string
   date: string
   time: string

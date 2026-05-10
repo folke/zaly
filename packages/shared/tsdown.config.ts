@@ -4,5 +4,6 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     env: "src/env.ts",
+    registry: "src/registry.ts",
   },
 })

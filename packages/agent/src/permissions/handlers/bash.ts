@@ -124,7 +124,7 @@ interface ParsedPattern {
 }
 
 /** Combine two verdicts: deny dominates, ask beats allow. */
-export function combine(a: Verdict, b: Verdict): Verdict {
+function combine(a: Verdict, b: Verdict): Verdict {
   if (a === "deny" || b === "deny") return "deny"
   if (a === "ask" || b === "ask") return "ask"
   return "allow"
@@ -176,7 +176,7 @@ export function matchRule(rule: Rule, seg: Segment): boolean {
 }
 
 /** First-match-wins resolution. Returns `undefined` if no rule matches. */
-export function resolveRules(rules: readonly Rule[], seg: Segment): Verdict | undefined {
+function resolveRules(rules: readonly Rule[], seg: Segment): Verdict | undefined {
   for (const r of rules) {
     if (matchRule(r, seg)) return r.policy
   }
