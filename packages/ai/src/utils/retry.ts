@@ -16,8 +16,6 @@
  */
 import type { FetchLike } from "../types.ts"
 
-export type { FetchLike } from "../types.ts"
-
 export interface RetryOptions {
   /** Max retry attempts — `0` disables retries. Default `3`. */
   retries?: number

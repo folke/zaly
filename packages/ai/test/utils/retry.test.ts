@@ -1,4 +1,4 @@
-import type { FetchLike } from "../../src/utils/retry.ts"
+import type { FetchLike } from "../../src/types.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { withRetry } from "../../src/utils/retry.ts"

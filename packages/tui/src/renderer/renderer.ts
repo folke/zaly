@@ -1,7 +1,8 @@
-import type { MountCtx, RenderCtx, Theme } from "../core/ctx.ts"
+import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { ActionInfo } from "../input/actions.ts"
 import type { LogCallable, LoggerOptions } from "../logger/logger.ts"
+import type { Theme } from "../themes/types.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 

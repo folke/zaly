@@ -4,8 +4,7 @@
  * the network.
  */
 import type { ProviderRequest, StreamOptions } from "../../src/provider.ts"
-import type { Message, Quirks, Tool } from "../../src/types.ts"
-import type { FetchLike } from "../../src/utils/retry.ts"
+import type { FetchLike, Message, Quirks, Tool } from "../../src/types.ts"
 
 /** Build a `ProviderRequest` from a flat options shape — convenient for
  *  tests that don't care about the `ctx` / `opts` split.

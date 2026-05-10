@@ -1,5 +1,6 @@
 export type * from "./image/index.ts"
 export type * from "./markdown/index.ts"
+export type * from "./themes/types.ts"
 export * from "./core/index.ts"
 export * from "./layout/index.ts"
 export * from "./logger/index.ts"

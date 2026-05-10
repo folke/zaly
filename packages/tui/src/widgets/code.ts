@@ -1,6 +1,6 @@
-import type { StyleBuilder } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
+import type { StyleBuilder } from "../style/builder.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 
