@@ -1,6 +1,7 @@
 import type { AnsiColor, AnsiStyle } from "./types.ts"
 
 import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
+import { hasColors } from "@zaly/shared/env"
 import { isHexColor, parseHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;
@@ -125,6 +126,7 @@ export function hyperlink(url: string, text: string): string {
 }
 
 export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {
+  if (!hasColors) return
   const key = `${color}-${kind}`
   let cached = colorCache.get(key)
   if (cached === undefined) colorCache.set(key, (cached = _ansiColor(color, kind)) ?? notFound)

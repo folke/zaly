@@ -4,6 +4,7 @@ import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 
+import { hasColors } from "@zaly/shared/env"
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
 import {
@@ -79,6 +80,7 @@ export const code = widget((props: State<CodeState>) => {
   const body = createAsync(
     async () => {
       const source = unwrap(props.code) // tracked
+      if (!hasColors) return source
       const t = style()?.theme
       if (!syntax || !lang || t === undefined) return source
       return highlightSource(source, lang, t)

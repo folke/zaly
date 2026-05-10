@@ -5,6 +5,7 @@ import type { WrapMode } from "../layout/text.ts"
 import type { MdOptions } from "../markdown/index.ts"
 import type { Image } from "./image.ts"
 
+import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
@@ -36,11 +37,12 @@ export class Markdown extends Node<MarkdownState> {
   // move/resize of the existing placement.
   readonly images = new Map<string, Image>()
 
-  protected async _render(ctx: RenderCtx): Promise<string[]> {
+  async #render(ctx: RenderCtx): Promise<string> {
+    const source = unwrap(this.state.content)
+    if (!hasColors) return source
+
     const { renderMarkdown } = await import("#md")
     const fn = this.state.options?.render ?? renderMarkdown
-
-    const source = unwrap(this.state.content)
 
     const callbacks = createCallbacks({
       ...ctx,
@@ -55,17 +57,20 @@ export class Markdown extends Node<MarkdownState> {
     const image = createImageCallback(this)
     callbacks.image = image.cb
 
-    const rendered = fn(source, callbacks, this.state.options)
-    const md = await image.resolve(ctx, rendered)
-    const final = md.replace(/\n\n+/g, "\n\n")
-
+    let rendered = fn(source, callbacks, this.state.options)
+    rendered = await image.resolve(ctx, rendered)
+    rendered = rendered.replace(/\n\n+/g, "\n\n")
     // Mirror the source's trailing newlines: the renderer adds its own
     // padding after blocks (`\n\n` after paragraphs, etc.) which would
     // leave stray blank rows. Normalizing to what the caller typed keeps
     // single-line inputs compact and preserves explicit spacing when
     // they asked for it.
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
-    return formatText(final.replace(/\n+$/, trailing), {
+    return rendered.replace(/\n+$/, trailing)
+  }
+
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
+    return formatText(await this.#render(ctx), {
       width: ctx.width,
       wrap: this.state.wrap,
     })
