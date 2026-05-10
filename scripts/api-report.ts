@@ -96,7 +96,8 @@ function reportForPackage(pkgSlug: string): boolean {
     if (subpath === "./package.json") continue
     const out = entryTarget(target)
     if (!out) continue
-    const dts = out.endsWith(".mjs") ? mjsToDts(out) : out.endsWith(".d.mts") ? out : undefined
+    let dts = out.endsWith(".mjs") ? mjsToDts(out) : undefined
+    dts ??= out.endsWith(".d.mts") ? out : undefined
     if (!dts) continue
 
     const config = ExtractorConfig.prepare({

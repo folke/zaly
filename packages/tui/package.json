@@ -71,6 +71,9 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
+  "trustedDependencies": [
+    "sharp"
+  ],
   "inlinedDependencies": {
     "ansi-regex": "6.2.2",
     "ansi-styles": "6.2.3",
@@ -84,8 +87,5 @@
     ],
     "strip-ansi": "7.2.0",
     "wrap-ansi": "10.0.0"
-  },
-  "trustedDependencies": [
-    "sharp"
-  ]
+  }
 }

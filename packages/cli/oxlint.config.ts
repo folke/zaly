@@ -1,8 +1,8 @@
 import { defineConfig } from "oxlint"
-import baseConfig from "../../oxlint.config.ts"
+const baseConfig = await import("../../oxlint.config.ts" as string)
 
 export default defineConfig({
-  extends: [baseConfig],
+  extends: [baseConfig.default],
   rules: {
     "eslint/no-console": "off",
   },
