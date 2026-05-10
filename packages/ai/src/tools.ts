@@ -177,7 +177,7 @@ export function toErrorResult(err: unknown): ToolResult {
  *  the optional `validateResult` schema (strict — drift is a tool bug)
  *  and normalises the value into the parts shape. `meta` comes from the
  *  per-call `ctx.meta` slot the harness manages. */
-export function formatToolResult<O>(
+function formatToolResult<O>(
   tool: Tool<unknown, O>,
   raw: Awaited<O>,
   meta?: ToolResult["meta"]
@@ -190,7 +190,7 @@ export function formatToolResult<O>(
  *  the tool didn't write anything. The harness sets `ctx.meta = {}` on
  *  a per-call copy before invoking the tool; this helper centralises
  *  the "absent if empty" rule so result shapes stay clean. */
-export function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
+function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
   return Object.keys(ctx.meta ?? {}).length > 0 ? ctx.meta : undefined
 }
 

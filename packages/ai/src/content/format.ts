@@ -138,7 +138,7 @@ export function metaToTextPart(m: MetaPart): TextPart {
  *  newline if it's long / multi-line); a `retry: true` marker is
  *  appended for retryable errors. Same shape `errorToMetaPart`
  *  embeds inside its `<error>` content. */
-export function renderErrorPart(e: ErrorPart): string {
+function renderErrorPart(e: ErrorPart): string {
   const nl = e.message.length > 200 || e.message.includes("\n")
   const lines = [`❌ ${e.code}${nl ? ":\n" : ": "}${e.message}`]
   if (e.retryable) lines.push("retry: true")

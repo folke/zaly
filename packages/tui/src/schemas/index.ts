@@ -5,4 +5,3 @@
 // relative imports inside the `schemas/` dir are unaffected.
 
 export { validateTheme } from "./gen/theme.config.ts"
-export { ThemeSchema } from "./gen/theme.schema.ts"

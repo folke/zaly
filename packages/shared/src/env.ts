@@ -1,3 +1,11 @@
+/**
+ * Cross-runtime env detection. Intentional public surface — every
+ * symbol here is exposed via `@zaly/shared/env` regardless of whether
+ * it currently has an internal consumer.
+ *
+ * @public
+ */
+
 const argv = process.argv
 const env = process.env
 

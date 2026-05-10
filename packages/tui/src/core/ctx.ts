@@ -118,7 +118,7 @@ export interface MountCtx {
  *
  * @internal
  */
-export function termWidth(): number | undefined {
+function termWidth(): number | undefined {
   if (typeof process === "undefined") return undefined
   const cols = process.stdout.columns
   return typeof cols === "number" && cols > 0 ? cols : undefined

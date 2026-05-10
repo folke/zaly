@@ -361,7 +361,7 @@ function collectToolCalls(
  *  toolbox; everything else falls through to a lowercased name with
  *  params untouched. Composable: custom converters can call this for
  *  unhandled cases. */
-export function defaultConvertTool(call: ClaudeToolCall): ZalyToolCall {
+function defaultConvertTool(call: ClaudeToolCall): ZalyToolCall {
   const input = (call.input ?? {}) as Record<string, unknown>
   switch (call.name) {
     case "Read": {

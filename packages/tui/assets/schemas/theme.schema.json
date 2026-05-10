@@ -5,6 +5,7 @@
     "shiki": {
       "type": "string",
       "enum": [
+        "red",
         "andromeeda",
         "aurora-x",
         "ayu-dark",
@@ -55,7 +56,6 @@
         "one-light",
         "plastic",
         "poimandres",
-        "red",
         "rose-pine",
         "rose-pine-dawn",
         "rose-pine-moon",
@@ -316,8 +316,8 @@
         {
           "type": "string",
           "enum": [
-            "red",
             "black",
+            "red",
             "green",
             "yellow",
             "blue",
@@ -326,8 +326,8 @@
             "white",
             "gray",
             "grey",
-            "brightRed",
             "brightBlack",
+            "brightRed",
             "brightGreen",
             "brightYellow",
             "brightBlue",
@@ -407,8 +407,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -417,8 +417,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -522,8 +522,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -532,8 +532,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -610,8 +610,8 @@
             {
               "type": "string",
               "enum": [
-                "red",
                 "black",
+                "red",
                 "green",
                 "yellow",
                 "blue",
@@ -620,8 +620,8 @@
                 "white",
                 "gray",
                 "grey",
-                "brightRed",
                 "brightBlack",
+                "brightRed",
                 "brightGreen",
                 "brightYellow",
                 "brightBlue",
@@ -700,8 +700,8 @@
                 {
                   "type": "string",
                   "enum": [
-                    "red",
                     "black",
+                    "red",
                     "green",
                     "yellow",
                     "blue",
@@ -710,8 +710,8 @@
                     "white",
                     "gray",
                     "grey",
-                    "brightRed",
                     "brightBlack",
+                    "brightRed",
                     "brightGreen",
                     "brightYellow",
                     "brightBlue",

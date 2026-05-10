@@ -150,7 +150,7 @@ function toCredentials(json: TokenResponse): CodexCredentials {
 
 // ── Persistence ─────────────────────────────────────────────────────────
 
-export async function readCodexCredentials(): Promise<CodexCredentials | undefined> {
+async function readCodexCredentials(): Promise<CodexCredentials | undefined> {
   try {
     const raw = await readFile(STORAGE_PATH, "utf8")
     return JSON.parse(raw) as CodexCredentials
@@ -160,7 +160,7 @@ export async function readCodexCredentials(): Promise<CodexCredentials | undefin
   }
 }
 
-export async function writeCodexCredentials(creds: CodexCredentials): Promise<void> {
+async function writeCodexCredentials(creds: CodexCredentials): Promise<void> {
   await mkdir(dirname(STORAGE_PATH), { mode: 0o700, recursive: true })
   await writeFile(STORAGE_PATH, JSON.stringify(creds, undefined, 2), { mode: 0o600 })
 }
@@ -392,7 +392,7 @@ function isStale(creds: CodexCredentials, now = Date.now()): boolean {
 
 /** Get the current credential, refreshing on disk if expired. Returns
  *  `undefined` when no file exists (user hasn't run `loginCodex`). */
-export async function getCodexCredentials(): Promise<CodexCredentials | undefined> {
+async function getCodexCredentials(): Promise<CodexCredentials | undefined> {
   const creds = await readCodexCredentials()
   if (creds === undefined) return undefined
   if (!isStale(creds)) return creds

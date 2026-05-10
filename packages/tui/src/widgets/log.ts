@@ -34,7 +34,7 @@ interface LevelDefaults {
 
 /** Per-level default prefix style + icon + color. Matches rekal's
  *  `defaultStyles` table, adapted to zaly's theme slots. */
-export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
+const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
   cancel: { color: "warn", icon: "✖ ", style: "icon" },
   debug: { color: "info", icon: "⚙ ", style: "prompt" },
   error: { color: "error", icon: "✖ ", style: "badge", textColor: "error" },
@@ -46,7 +46,7 @@ export const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
   warn: { color: "warn", icon: "⚠", style: "badge", textColor: "warn" },
 }
 
-export const noColorStyles: Record<LogStyle, LogStyle> = {
+const noColorStyles: Record<LogStyle, LogStyle> = {
   badge: "title",
   icon: "text",
   prompt: "text",
