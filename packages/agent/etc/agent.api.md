@@ -215,9 +215,9 @@ export type EditTool = typeof editTool;
 // @public (undocumented)
 export const handlerRegistry: _$_zaly_shared0.Registry<PermissionHandler<string>, void, {
     readonly bash: () => PermissionHandler<"bash">;
-    readonly read: () => PermissionHandler<"read" | "write">;
+    readonly read: () => PermissionHandler<"write" | "read">;
     readonly tool: () => PermissionHandler<"tool">;
-    readonly write: () => PermissionHandler<"read" | "write">;
+    readonly write: () => PermissionHandler<"write" | "read">;
 }>;
 
 // @public (undocumented)
@@ -743,8 +743,8 @@ export interface ToolInit {
 // @public (undocumented)
 export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknown, object>>, ToolInit, {
     readonly agent_send: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        to: string;
         content: string;
+        to: string;
     }, unknown, object>>;
     readonly agent_spawn: () => Promise<Tool<unknown, unknown, object> | Tool<{
         task?: string | undefined;
@@ -752,12 +752,12 @@ export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknow
         desc: string;
         prompt: string;
     }, unknown, object>>;
-    readonly bash: () => Promise<Tool<unknown, unknown, object> | Tool<{
+    readonly bash: () => Promise<Tool<{
         description: string;
         command: string;
         max_lines: number;
         timeout: number;
-    }, unknown, object>>;
+    }, unknown, object> | Tool<unknown, unknown, object>>;
     readonly edit: () => Promise<Tool<unknown, unknown, object> | Tool<{
         path: string;
         edits: {
@@ -795,10 +795,10 @@ export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknow
         hint?: string | undefined;
         delayMs: number;
     }, unknown, object>>;
-    readonly write: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        content: string;
+    readonly write: () => Promise<Tool<{
         path: string;
-    }, unknown, WriteToolMeta>>;
+        content: string;
+    }, unknown, WriteToolMeta> | Tool<unknown, unknown, object>>;
 }>;
 
 // @public
