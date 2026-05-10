@@ -1,5 +1,5 @@
 import type { FileData } from "../files.ts"
-import type { FileTypeDetect, MagicMatch } from "./index.ts"
+import type { FileTypeDetect, MagicMatch } from "./file.ts"
 
 export type ImageFormat = (typeof formats)[number]
 

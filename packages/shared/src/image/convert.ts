@@ -1,13 +1,14 @@
 // oxlint-disable no-await-in-loop
 import type sharpType from "sharp"
 import type { PngOptions } from "sharp"
-import type { DetectedFile, DetectedImage, ImageFormat } from "../detect/index.ts"
+import type { DetectedFile, DetectedImage } from "../detect/file.ts"
+import type { ImageFormat } from "../detect/image.ts"
 import type { ImageInfo } from "./info.ts"
 
 import { writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
-import { fileDetect } from "../detect/index.ts"
+import { fileDetect } from "../detect/file.ts"
 import { fileHash } from "../files.ts"
 import { safeStat } from "../utils.ts"
 import { imageInfo } from "./info.ts"

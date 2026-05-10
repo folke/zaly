@@ -1,4 +1,4 @@
-import type { FileTypeDetect } from "./index.ts"
+import type { FileTypeDetect } from "./file.ts"
 
 /** PDF detector — single format, single magic signature. PDFs always
  *  start with `%PDF-` (followed by a version string). No MIME/ext

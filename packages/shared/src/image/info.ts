@@ -1,4 +1,5 @@
-import type { DetectedImage, ImageFormat } from "../detect/index.ts"
+import type { DetectedImage } from "../detect/file.ts"
+import type { ImageFormat } from "../detect/image.ts"
 
 import { imageMeta } from "image-meta"
 

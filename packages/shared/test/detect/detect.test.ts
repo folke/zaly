@@ -2,13 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import {
-  detect,
-  fileDetect,
-  imageDetector,
-  isFileFormat,
-  isFileType,
-} from "../../src/detect/index.ts"
+import { detect, fileDetect, isFileFormat, isFileType } from "../../src/detect/file.ts"
+import { imageDetector } from "../../src/detect/image.ts"
 import { fileData, fileHash } from "../../src/files.ts"
 
 // Smallest possible PNG signature + IHDR for a 1×1 image. Enough for

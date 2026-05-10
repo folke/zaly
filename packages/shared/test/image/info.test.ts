@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { fileDetect } from "../../src/detect/index.ts"
+import { fileDetect } from "../../src/detect/file.ts"
 import { imageInfo } from "../../src/image/info.ts"
 
 // Real 1×1 PNG — image-meta needs a valid IHDR to pull dimensions.
