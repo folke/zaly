@@ -35,17 +35,6 @@ export interface ActionsSourceOptions {
 }
 
 // @public (undocumented)
-export interface AllocateOpts {
-    // (undocumented)
-    contentWidth: number;
-    // (undocumented)
-    gap: number;
-}
-
-// @internal
-export function allocateRow(items: readonly RowItem[], opts: AllocateOpts): number[];
-
-// @public (undocumented)
 export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inherit";
 
 // @public (undocumented)
@@ -142,53 +131,6 @@ export type BaseEvents = {
     };
 };
 
-// @public
-export interface BorderChars {
-    // (undocumented)
-    bl: string;
-    // (undocumented)
-    br: string;
-    // (undocumented)
-    h: string;
-    // (undocumented)
-    tl: string;
-    // (undocumented)
-    tr: string;
-    // (undocumented)
-    v: string;
-}
-
-// @internal (undocumented)
-export const borders: {
-    readonly double: {
-        readonly bl: "╚";
-        readonly br: "╝";
-        readonly h: "═";
-        readonly tl: "╔";
-        readonly tr: "╗";
-        readonly v: "║";
-    };
-    readonly rounded: {
-        readonly bl: "╰";
-        readonly br: "╯";
-        readonly h: "─";
-        readonly tl: "╭";
-        readonly tr: "╮";
-        readonly v: "│";
-    };
-    readonly single: {
-        readonly bl: "└";
-        readonly br: "┘";
-        readonly h: "─";
-        readonly tl: "┌";
-        readonly tr: "┐";
-        readonly v: "│";
-    };
-};
-
-// @public (undocumented)
-export type BorderSpec = boolean | "single" | "double" | "rounded" | BorderChars;
-
 // @public (undocumented)
 export class Box extends Node<BoxStyle> {
     layout(ctx: RenderCtx): {
@@ -235,19 +177,6 @@ export type BuiltinTheme = BuiltinThemeName | "ansi";
 export function calcLayout(text: string, opts?: {
     wrap?: WrapMode;
 }): Layout;
-
-// @internal
-export function clamp(value: number, opts: ClampOpts): number;
-
-// @public (undocumented)
-export interface ClampOpts {
-    // (undocumented)
-    available: number;
-    // (undocumented)
-    max?: Size;
-    // (undocumented)
-    min?: Size;
-}
 
 // @public
 export const code: (state: State<CodeState>) => WidgetNode<CodeState, Box>;
@@ -354,17 +283,6 @@ export interface DiffState {
     wrap?: WrapMode;
 }
 
-// @internal
-export function drawBorder(rows: readonly string[], chars: BorderChars, opts?: DrawBorderOpts): string[];
-
-// @public (undocumented)
-export interface DrawBorderOpts {
-    borderStyle?: StyleBuilder;
-    title?: string;
-    titleAlign?: TitleAlign;
-    titleStyle?: StyleBuilder;
-}
-
 // @public
 export function effect(fn: () => void): () => void;
 
@@ -462,9 +380,6 @@ export function image(src: string, style?: Omit<ImageState, "src">): Image;
 // @public (undocumented)
 export function image(state: ImageState): Image;
 
-// @public
-export type ImageProtocol = "kitty" | "iterm2";
-
 // @public (undocumented)
 export interface ImageState {
     alt?: string;
@@ -556,9 +471,6 @@ export interface InspectOptions {
 
 // @internal
 export function isAccessor<T>(v: unknown): v is Accessor<T>;
-
-// @internal
-export function isFixedWidth(w: FlexState["width"]): boolean;
 
 // @public (undocumented)
 export function isHexColor(s: string): s is HexColor;
@@ -950,14 +862,8 @@ export class OverlaySurface extends Surface {
 // @public (undocumented)
 export type Padding = number | readonly [v: number, h: number] | readonly [t: number, r: number, b: number, l: number];
 
-// @internal
-export function padRow(row: string, width: number): string;
-
 // @public (undocumented)
 export function parseHex(hex: string): RGB;
-
-// @public
-export type Pct = `${number}%`;
 
 // @public (undocumented)
 export class Progress extends Node<ProgressState> {
@@ -1061,20 +967,8 @@ export const RESET = "\u001B[0m";
 // @internal
 export function resetImageTransmitCache(): void;
 
-// @internal
-export function resolveBorder(spec: BorderSpec | undefined): BorderChars | undefined;
-
-// @internal
-export function resolveSize(size: Size | undefined, available: number): number | undefined;
-
 // @public (undocumented)
 export type RGB = [r: number, g: number, b: number];
-
-// @internal
-export interface RowItem extends FlexState {
-    intrinsicMin?: number;
-    natural?: number;
-}
 
 // @public
 export type Setter<T> = ((next: T | ((prev: T) => T)) => void) & {
@@ -1115,9 +1009,6 @@ export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>] & {
 export function signal<T>(initial: T): Signal<T>;
 
 // @public
-export type Size = number | Pct | "fill" | "fit";
-
-// @public
 export function sliceAnsi(s: string, start: number, end?: number): string;
 
 // @public
@@ -1155,17 +1046,6 @@ export type SpinnerStyle = keyof typeof spinnerFrames;
 
 // @public
 export function splitAnsi(s: string): string[];
-
-// @internal
-export function stackColumn(children: readonly (readonly string[])[], opts: StackOpts): string[];
-
-// @public (undocumented)
-export interface StackOpts {
-    // (undocumented)
-    gap: number;
-    // (undocumented)
-    width: number;
-}
 
 // @public
 export class Stream extends Surface {
@@ -1369,9 +1249,6 @@ export const themeRegistry: _$_zaly_shared0.Registry<Promise<Partial<Theme>>, vo
 // @public
 export type ThemeValue = Color | Style;
 
-// @public (undocumented)
-export type TitleAlign = "left" | "center" | "right";
-
 // @public
 export function toAccessor<T>(value: T): Accessor<T>;
 
@@ -1454,17 +1331,6 @@ export interface WrapOpts {
     // (undocumented)
     mode?: "word" | "char";
 }
-
-// @public (undocumented)
-export interface ZipOpts {
-    // (undocumented)
-    gap: number;
-    // (undocumented)
-    widths: readonly number[];
-}
-
-// @internal
-export function zipRow(children: readonly (readonly string[])[], opts: ZipOpts): string[];
 
 // (No @packageDocumentation comment for this package)
 
