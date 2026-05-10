@@ -9,9 +9,7 @@ import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
-import { createCallbacks } from "../markdown/callbacks.ts"
-import { createCodeHighlighter } from "../markdown/code.ts"
-import { createImageCallback } from "../markdown/image.ts"
+import { MarkdownRenderer } from "../markdown/renderer.ts"
 
 export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
@@ -37,36 +35,21 @@ export class Markdown extends Node<MarkdownState> {
   // move/resize of the existing placement.
   readonly images = new Map<string, Image>()
 
+  #renderer: MarkdownRenderer
+
+  constructor(state: State<MarkdownState>) {
+    super(state)
+    this.#renderer = new MarkdownRenderer({ ...state.options, parent: this })
+  }
+
   async #render(ctx: RenderCtx): Promise<string> {
     const source = unwrap(this.state.content)
-    if (!hasColors) return source
-
-    const { renderMarkdown } = await import("#md")
-    const fn = this.state.options?.render ?? renderMarkdown
-
-    const callbacks = createCallbacks({
-      ...ctx,
-      highlighter: (this.state.syntax ?? true) ? await createCodeHighlighter(source) : undefined,
-    })
-
-    // Image handling: the callback emits `<img id=N>` markers during
-    // rendering; a post-processing resolver then renders the referenced
-    // images concurrently and splices their rows back in. Keeps the
-    // markdown callback surface synchronous while supporting async
-    // image preparation.
-    const image = createImageCallback(this)
-    callbacks.image = image.cb
-
-    let rendered = fn(source, callbacks, this.state.options)
-    rendered = await image.resolve(ctx, rendered)
-    rendered = rendered.replace(/\n\n+/g, "\n\n")
-    // Mirror the source's trailing newlines: the renderer adds its own
-    // padding after blocks (`\n\n` after paragraphs, etc.) which would
-    // leave stray blank rows. Normalizing to what the caller typed keeps
-    // single-line inputs compact and preserves explicit spacing when
-    // they asked for it.
-    const trailing = /\n*$/.exec(source)?.[0] ?? ""
-    return rendered.replace(/\n+$/, trailing)
+    return !hasColors
+      ? source
+      : this.#renderer.render(source, {
+          ...ctx,
+          highlight: this.state.syntax ?? true,
+        })
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {

@@ -18,6 +18,7 @@ export interface ImageHost {
   /** Attach a freshly-created `Image` as a child so mount/unmount
    *  propagate. */
   add(child: Node): unknown
+  remove(child: Node): unknown
 }
 
 /** Per-occurrence image metadata collected during markdown rendering. */
@@ -80,11 +81,13 @@ export function createImageCallback(host: ImageHost): {
       // so multiple occurrences cost N placements but only one transmit.
       const ordinals = new Map<string, number>()
       const rowsByEntry: string[][] = []
+      const used = new Set<string>()
       await Promise.all(
         entries.map(async (entry, idx) => {
           const ord = ordinals.get(entry.src) ?? 0
           ordinals.set(entry.src, ord + 1)
           const key = `${entry.src}\u0000${ord}`
+          used.add(key)
           let img = cache.get(key)
           if (img === undefined) {
             img = new Image({ alt: entry.alt, src: entry.src })
@@ -94,6 +97,16 @@ export function createImageCallback(host: ImageHost): {
           rowsByEntry[idx] = await img.render(ctx)
         })
       )
+
+      for (const [key] of cache) {
+        if (!used.has(key)) {
+          const img = cache.get(key)
+          if (img) {
+            host.remove(img)
+            cache.delete(key)
+          }
+        }
+      }
 
       // Walk the rendered output line by line:
       //   - Marker alone on its line (whitespace + ANSI tolerated) →

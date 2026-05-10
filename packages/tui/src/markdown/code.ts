@@ -1,9 +1,12 @@
 import type { AnsiHighlighter, ShikiTheme } from "../style/shiki.ts"
-import type { MarkdownCtx } from "./callbacks.ts"
+import type { MarkdownCbCtx } from "./callbacks.ts"
 import type { MdCallbacks } from "./types.ts"
 
 import { splitAnsi, stringWidth } from "../style/ansi.ts"
 
+// Pre-load any fenced-block languages we see in the source. Once this
+// resolves, the code callback (sync) can call `codeToAnsi` safely —
+// `createAnsiHighlighter` is idempotent + returns the shared singleton.
 export async function createCodeHighlighter(content: string, theme?: ShikiTheme) {
   const langs = collectFenceLanguages(content).filter(Boolean)
   // Only load when needed
@@ -20,19 +23,16 @@ export async function createCodeHighlighter(content: string, theme?: ShikiTheme)
  * widest-content + 1, apply `mdCodeBlock` as a bg-only backdrop, and prefix an
  * optional title line from `title="..."`.
  */
-export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["code"]> {
-  // Pre-load any fenced-block languages we see in the source. Once this
-  // resolves, the code callback (sync) can call `codeToAnsi` safely —
-  // `createAnsiHighlighter` is idempotent + returns the shared singleton.
+export function createCodeCallback(ctx: MarkdownCbCtx): NonNullable<MdCallbacks["code"]> {
+  const highlighter = ctx.highlighter
+
   const s = ctx.style
   return (text, meta) => {
     // Try syntax highlighting when a highlighter is wired in and the
     // language is already loaded on it. shiki's sync path requires the
     // grammar + theme to be preloaded — callers do that via
     // `createAnsiHighlighter({ langs, themes })` before rendering.
-    const highlighted = ctx.highlighter
-      ? tryHighlight(ctx.highlighter, text, meta?.language)
-      : undefined
+    const highlighted = highlighter ? tryHighlight(highlighter, text, meta?.language) : undefined
     const body = highlighted ?? text.replace(/\n+$/, "")
 
     // For highlighted output the per-token fgs would clash with the slot's

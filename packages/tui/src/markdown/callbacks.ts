@@ -12,7 +12,7 @@ const icons = {
   quote: "│",
 } as const
 
-export type MarkdownCtx = RenderCtx & {
+export type MarkdownCbCtx = RenderCtx & {
   highlighter?: AnsiHighlighter
 }
 
@@ -23,7 +23,7 @@ export type MarkdownCtx = RenderCtx & {
  * a custom `Text` content function).
  * @internal
  */
-export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
+export function createCallbacks(ctx: MarkdownCbCtx): MdCallbacks {
   const s = ctx.style
 
   return {

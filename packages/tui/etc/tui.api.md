@@ -236,12 +236,6 @@ export function calcLayout(text: string, opts?: {
     wrap?: WrapMode;
 }): Layout;
 
-// @public (undocumented)
-export type CbNoMeta = (children: string) => string | null | undefined;
-
-// @public (undocumented)
-export type CbWith<M> = (children: string, meta: M) => string | null | undefined;
-
 // @internal
 export function clamp(value: number, opts: ClampOpts): number;
 
@@ -334,9 +328,6 @@ export function createRenderEffect(fn: () => void): void;
 
 // @public
 export function createRenderer(opts?: RendererOptions): Renderer;
-
-// @public
-export const defaultLogStyles: Record<LogLevel, LevelDefaults>;
 
 // @public
 export const defaultTheme: Theme;
@@ -701,6 +692,7 @@ export function makeLog(logger: Logger): LogCallable;
 
 // @public (undocumented)
 export class Markdown extends Node<MarkdownState> {
+    constructor(state: State<MarkdownState>);
     // (undocumented)
     readonly images: Map<string, Image>;
     // (undocumented)
@@ -716,6 +708,24 @@ export function markdown(content: Reactive<string>, style?: Omit<State<MarkdownS
 export function markdown(state: State<MarkdownState>): Markdown;
 
 // @public (undocumented)
+export type MarkdownCtx = RenderCtx & {
+    highlight?: AnsiHighlighter | boolean;
+    images?: boolean;
+};
+
+// @public (undocumented)
+export type MarkdownOptions = MdOptions & {
+    parent?: Node;
+};
+
+// @public (undocumented)
+export class MarkdownRenderer {
+    constructor(opts?: MarkdownOptions);
+    // (undocumented)
+    render(source: string, ctx: MarkdownCtx): Promise<string>;
+}
+
+// @public (undocumented)
 export interface MarkdownState {
     content: Reactive<string>;
     options?: MdOptions;
@@ -726,97 +736,6 @@ export interface MarkdownState {
 
 // @public
 export type Matcher = (s: string) => number;
-
-// @public
-export interface MdCallbacks {
-    // (undocumented)
-    blockquote?: CbNoMeta;
-    // (undocumented)
-    code?: (children: string, meta?: MdCodeBlockMeta) => string | null | undefined;
-    // (undocumented)
-    codespan?: CbNoMeta;
-    // (undocumented)
-    emphasis?: CbNoMeta;
-    // (undocumented)
-    heading?: CbWith<MdHeadingMeta>;
-    // (undocumented)
-    hr?: CbNoMeta;
-    // (undocumented)
-    html?: CbNoMeta;
-    // (undocumented)
-    image?: CbWith<MdImageMeta>;
-    // (undocumented)
-    link?: CbWith<MdLinkMeta>;
-    // (undocumented)
-    list?: CbWith<MdListMeta>;
-    // (undocumented)
-    listItem?: CbWith<MdListItemMeta>;
-    // (undocumented)
-    paragraph?: CbNoMeta;
-    // (undocumented)
-    strikethrough?: CbNoMeta;
-    // (undocumented)
-    strong?: CbNoMeta;
-    // (undocumented)
-    table?: CbNoMeta;
-    // (undocumented)
-    tbody?: CbNoMeta;
-    // (undocumented)
-    td?: (children: string, meta?: MdCellMeta) => string | null | undefined;
-    // (undocumented)
-    text?: (text: string) => string | null | undefined;
-    // (undocumented)
-    th?: (children: string, meta?: MdCellMeta) => string | null | undefined;
-    // (undocumented)
-    thead?: CbNoMeta;
-    // (undocumented)
-    tr?: CbNoMeta;
-}
-
-// @public (undocumented)
-export interface MdCellMeta {
-    align?: "left" | "center" | "right";
-}
-
-// @public (undocumented)
-export interface MdCodeBlockMeta {
-    language?: string;
-    title?: string;
-}
-
-// @public (undocumented)
-export interface MdHeadingMeta {
-    id?: string;
-    level: number;
-}
-
-// @public (undocumented)
-export interface MdImageMeta {
-    src: string;
-    title?: string;
-}
-
-// @public (undocumented)
-export interface MdLinkMeta {
-    href: string;
-    title?: string;
-}
-
-// @public (undocumented)
-export interface MdListItemMeta {
-    checked?: boolean;
-    depth: number;
-    index: number;
-    ordered: boolean;
-    start?: number;
-}
-
-// @public (undocumented)
-export interface MdListMeta {
-    depth: number;
-    ordered: boolean;
-    start?: number;
-}
 
 // @public
 export interface MdOptions {
@@ -921,9 +840,6 @@ export interface MountCtx {
     };
     readonly surface: SurfaceType;
 }
-
-// @public (undocumented)
-export const noColorStyles: Record<LogStyle, LogStyle>;
 
 // @public
 export abstract class Node<T extends object = object, E extends {} = {}> extends Emitter<BaseEvents, E> {

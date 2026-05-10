@@ -1,1 +1,2 @@
-export type * from "./types.ts"
+export type { MdOptions, RenderMarkdown } from "./types.ts"
+export * from "./renderer.ts"
