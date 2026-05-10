@@ -14,8 +14,8 @@ import {
   toXml,
 } from "@zaly/ai"
 import { normPath, safeStringify, since } from "@zaly/shared"
-import { parseBash } from "../permissions/handlers/bash/parser.ts"
-import { TOOLS } from "../permissions/handlers/bash/tools.ts"
+import { parseBash } from "../utils/bash/parser.ts"
+import { TOOLS } from "../utils/bash/tools.ts"
 
 export type ToolStat = {
   count: number

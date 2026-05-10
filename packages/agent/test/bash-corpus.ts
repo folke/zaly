@@ -1,4 +1,4 @@
-import { parseBash } from "../src/permissions/handlers/bash/parser.ts"
+import { parseBash } from "../src/utils/bash/parser.ts"
 import { PermissionManager } from "../src/permissions/index.ts"
 import bash from "./bash.json" with { type: "json" }
 

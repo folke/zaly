@@ -1,7 +1,7 @@
 import type { PermissionHandler } from "../types.ts"
 
 import { createRegistry } from "@zaly/shared"
-import { bashHandler } from "./bash/index.ts"
+import { bashHandler } from "./bash.ts"
 import { fileHandler } from "./files.ts"
 import { toolHandler } from "./tool.ts"
 
