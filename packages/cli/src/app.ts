@@ -3,7 +3,7 @@ import type { Attachment, ContentPart, Message, TextPart, Usage } from "@zaly/ai
 import type { Input, LogCallable, Theme } from "@zaly/tui"
 import type { Cli } from "./cli.ts"
 import type { Config } from "./config.ts"
-import type { RenderHandle } from "./render/index.ts"
+import type { RenderHandle } from "./render/renderer.ts"
 
 import { toImagePart, toPdfPart } from "@zaly/ai"
 import { fileDetect, imageConvert, imageInfo } from "@zaly/shared"
@@ -11,7 +11,7 @@ import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
-import { buildRenderer } from "./render/index.ts"
+import { buildRenderer } from "./render/renderer.ts"
 import { compactionMarker } from "./widgets/index.ts"
 
 /**
