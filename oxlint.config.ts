@@ -50,24 +50,31 @@ function restrictedImports(opts: { allowIndex?: boolean } = {}) {
 }
 
 export default defineConfig({
-  options: {
-    typeAware: true,
-    typeCheck: true,
-    reportUnusedDisableDirectives: "warn",
+  categories: {
+    correctness: "error",
+    perf: "warn",
+    style: "warn",
+    suspicious: "warn",
+    // "pedantic": "warn",
+    // "restriction": "error"
+    // "nursery": "error"
   },
   env: {
     node: true,
   },
-  plugins: ["eslint", "typescript", "unicorn", "oxc", "import"],
   ignorePatterns: ["foo*.ts"],
+  options: {
+    reportUnusedDisableDirectives: "warn",
+    typeAware: true,
+    typeCheck: true,
+  },
+  plugins: ["eslint", "typescript", "unicorn", "oxc", "import"],
   rules: {
     "capitalized-comments": "off", // 98
-    "new-cap": ["warn", { capIsNewExceptionPattern: "(Intl|Value|Type|Schema|compiled\\w*)\\." }],
     curly: "off", // 154
     eqeqeq: ["error", "always", { null: "ignore" }],
     "func-style": "off", // 58
     "id-length": "off", // 185
-    "oxc/no-barrel-file": "off",
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     "import/exports-last": "off", // 41
     "import/group-exports": "off", // 106
@@ -79,8 +86,9 @@ export default defineConfig({
     "import/no-nodejs-modules": "off",
     "import/prefer-default-export": "off", // 10
     "init-declarations": "off", // 4
-    "max-statements": "off", // 26
     "max-params": ["warn", 4],
+    "max-statements": "off", // 26
+    "new-cap": ["warn", { capIsNewExceptionPattern: "(Intl|Value|Type|Schema|compiled\\w*)\\." }],
     "no-console": "warn",
     "no-continue": "off", // 24
     "no-control-regex": "off", // 2
@@ -92,7 +100,8 @@ export default defineConfig({
     "no-ternary": "off",
     "no-underscore-dangle": "off", // 4
     "no-unused-vars": "warn",
-    "no-warning-comments": ["warn", { terms: ["todo", "fixme", "bug"], location: "start" }],
+    "no-warning-comments": ["warn", { location: "start", terms: ["todo", "fixme", "bug"] }],
+    "oxc/no-barrel-file": "warn",
     "prefer-destructuring": "off", // 3
     "prefer-template": "warn",
     "sort-imports": "off", // 64
@@ -115,15 +124,6 @@ export default defineConfig({
     "unicorn/prefer-module": "error",
     "unicorn/prefer-node-protocol": "error",
   },
-  categories: {
-    correctness: "error",
-    suspicious: "warn",
-    // "pedantic": "warn",
-    perf: "warn",
-    style: "warn",
-    // "restriction": "error"
-    // "nursery": "error"
-  },
   overrides: [
     {
       files: ["**/index.ts"],
@@ -134,9 +134,9 @@ export default defineConfig({
     {
       files: ["!src/**/*.ts"],
       rules: {
+        "eslint/no-await-in-loop": "off",
         "eslint/no-console": "off",
         "eslint/sort-keys": "off",
-        "eslint/no-await-in-loop": "off",
         "no-restricted-imports": "off",
       },
     },

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "tags": ["-lintignore"],
+  "workspaces": {
+    "packages/*": {
+      "project": "src/**/*.ts",
+      "ignore": ["src/**/tpl/*.ts", "src/**/gen/*.ts"],
+      "includeEntryExports": true
+    }
+  }
+}
