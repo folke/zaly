@@ -60,4 +60,3 @@ describe("resolveStyle", () => {
     expect(resolveStyle("primary")).toEqual({ fg: "primary" })
   })
 })
-

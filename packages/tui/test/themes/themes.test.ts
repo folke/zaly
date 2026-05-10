@@ -159,9 +159,7 @@ describe("validateTheme — positive cases", () => {
 
   test("lightness modifier accepted on hex and slot", () => {
     // `<base>+N` lightens, `<base>-N` darkens (OKLCH percentage points).
-    expect(() =>
-      validateTheme({ accent: "primary+10", primary: "#ff0000-25" })
-    ).not.toThrow()
+    expect(() => validateTheme({ accent: "primary+10", primary: "#ff0000-25" })).not.toThrow()
   })
 
   test("Style slot accepts fg/bg + attrs", () => {

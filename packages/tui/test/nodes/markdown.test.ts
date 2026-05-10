@@ -12,8 +12,7 @@ import { defaultTheme } from "../../src/themes/index.ts"
 
 // No-op `transmit` so kitty image transmits don't leak to stdout during
 // tests. Tests that need to assert on transmit bytes pass their own.
-const ctx = (width = 80) =>
-  createCtx({ theme: defaultTheme, transmit: () => {}, width })
+const ctx = (width = 80) => createCtx({ theme: defaultTheme, transmit: () => {}, width })
 
 function render(md: string, width = 80): string {
   return renderMarkdown(md, createCallbacks(ctx(width)))

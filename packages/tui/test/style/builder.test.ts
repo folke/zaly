@@ -162,9 +162,7 @@ describe("style() — lightness modifier (+N / -N)", () => {
     const a = style().fg("#82aaff")("x")
     const b = style().fg("#82aaff+10")("x")
     expect(b).not.toBe(a)
-    expect(rgb(b).reduce((s, v) => s + v, 0)).toBeGreaterThan(
-      rgb(a).reduce((s, v) => s + v, 0)
-    )
+    expect(rgb(b).reduce((s, v) => s + v, 0)).toBeGreaterThan(rgb(a).reduce((s, v) => s + v, 0))
   })
 
   test("clamps at 0 and 1 — extreme shifts saturate to black/white", () => {
@@ -177,9 +175,7 @@ describe("style() — lightness modifier (+N / -N)", () => {
   })
 
   test("zero is a no-op (same as the base)", () => {
-    expect(style(defaultTheme).fg("primary+0")("x")).toBe(
-      style(defaultTheme).primary("x")
-    )
+    expect(style(defaultTheme).fg("primary+0")("x")).toBe(style(defaultTheme).primary("x"))
   })
 
   test("chained slot ref carries the lightness modifier through", () => {
@@ -224,21 +220,15 @@ describe("style() — darken / lighten methods", () => {
   test("lighten visibly lightens the rendered color", () => {
     const base = rgb(style(defaultTheme).primary("x"))
     const light = rgb(style(defaultTheme).primary.lighten(15)("x"))
-    expect(light.reduce((s, v) => s + v, 0)).toBeGreaterThan(
-      base.reduce((s, v) => s + v, 0)
-    )
+    expect(light.reduce((s, v) => s + v, 0)).toBeGreaterThan(base.reduce((s, v) => s + v, 0))
   })
 
   test("darken(0) is a no-op", () => {
-    expect(style(defaultTheme).primary.darken(0)("x")).toBe(
-      style(defaultTheme).primary("x")
-    )
+    expect(style(defaultTheme).primary.darken(0)("x")).toBe(style(defaultTheme).primary("x"))
   })
 
   test("lighten(0) is a no-op", () => {
-    expect(style(defaultTheme).primary.lighten(0)("x")).toBe(
-      style(defaultTheme).primary("x")
-    )
+    expect(style(defaultTheme).primary.lighten(0)("x")).toBe(style(defaultTheme).primary("x"))
   })
 
   test("repeated calls replace the previous shift (do not stack)", () => {
@@ -281,4 +271,3 @@ describe("style() — inner-reset survival", () => {
     expect(outer).toBe(`\x1b[31mpre\x1b[1mx\x1b[0m\x1b[31mpost\x1b[0m`)
   })
 })
-

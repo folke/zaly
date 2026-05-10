@@ -82,7 +82,10 @@ function forceCaps(protocol: "kitty" | "iterm2" | undefined) {
  *  returned `bytes` ref. The image widget routes side-channel transmit
  *  bytes through `ctx.transmit` instead of inlining them in the row
  *  output, so tests assert against this buffer. */
-function withTransmit(width: number): { ctx: ReturnType<typeof createCtx>; bytes: { value: string } } {
+function withTransmit(width: number): {
+  ctx: ReturnType<typeof createCtx>
+  bytes: { value: string }
+} {
   const bytes = { value: "" }
   const ctx = createCtx({ transmit: (s) => (bytes.value += s), width })
   return { bytes, ctx }

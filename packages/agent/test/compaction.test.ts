@@ -16,8 +16,7 @@ async function build(
   const session = await Session.load({ store: new MemoryStore() })
   await session.start()
   for (const [m, usage] of script) {
-    const msg: Message =
-      usage && m.role === "assistant" ? { ...m, meta: { ...m.meta, usage } } : m
+    const msg: Message = usage && m.role === "assistant" ? { ...m, meta: { ...m.meta, usage } } : m
     await session.add(msg)
   }
   return { messages: [...session.messages], session }

@@ -25862,6 +25862,42 @@
       "provider": "openai",
       "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
     },
+    "firepass/accounts/fireworks/routers/kimi-k2p6-turbo": {
+      "id": "accounts/fireworks/routers/kimi-k2p6-turbo",
+      "name": "Kimi K2.6 Turbo",
+      "family": "kimi-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-04-17",
+      "last_updated": "2026-04-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "limit": {
+        "context": 262000,
+        "output": 262000
+      },
+      "maxTokens": 262000,
+      "provider": "openai",
+      "baseUrl": "https://api.fireworks.ai/inference/v1/"
+    },
     "minimax-cn-coding-plan/MiniMax-M2": {
       "id": "MiniMax-M2",
       "name": "MiniMax-M2",
@@ -48965,40 +49001,6 @@
       "provider": "openai",
       "baseUrl": "https://api.kilo.ai/api/gateway"
     },
-    "github-copilot/gpt-5.1-codex-max": {
-      "id": "gpt-5.1-codex-max",
-      "name": "GPT-5.1-Codex-max",
-      "family": "gpt-codex",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2024-09-30",
-      "release_date": "2025-12-04",
-      "last_updated": "2025-12-04",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 400000,
-        "input": 128000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
     "github-copilot/claude-opus-4.6": {
       "id": "claude-opus-4.6",
       "name": "Claude Opus 4.6",
@@ -49166,43 +49168,6 @@
       },
       "limit": {
         "context": 264000,
-        "input": 128000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
-    "github-copilot/gemini-3-pro-preview": {
-      "id": "gemini-3-pro-preview",
-      "name": "Gemini 3 Pro Preview",
-      "family": "gemini-pro",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2025-01",
-      "release_date": "2025-11-18",
-      "last_updated": "2025-11-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
         "input": 128000,
         "output": 64000
       },
@@ -49417,74 +49382,6 @@
       "provider": "openai",
       "baseUrl": "https://api.githubcopilot.com"
     },
-    "github-copilot/gpt-5.1-codex-mini": {
-      "id": "gpt-5.1-codex-mini",
-      "name": "GPT-5.1-Codex-mini",
-      "family": "gpt-codex",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2024-09-30",
-      "release_date": "2025-11-13",
-      "last_updated": "2025-11-13",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 400000,
-        "input": 128000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
-    "github-copilot/claude-sonnet-4": {
-      "id": "claude-sonnet-4",
-      "name": "Claude Sonnet 4",
-      "family": "claude-sonnet",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2025-03-31",
-      "release_date": "2025-05-22",
-      "last_updated": "2025-05-22",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 216000,
-        "input": 128000,
-        "output": 16000
-      },
-      "maxTokens": 16000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
     "github-copilot/grok-code-fast-1": {
       "id": "grok-code-fast-1",
       "name": "Grok Code Fast 1",
@@ -49511,40 +49408,6 @@
       },
       "limit": {
         "context": 128000,
-        "input": 128000,
-        "output": 64000
-      },
-      "maxTokens": 64000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
-    "github-copilot/gpt-5.1": {
-      "id": "gpt-5.1",
-      "name": "GPT-5.1",
-      "family": "gpt",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2024-09-30",
-      "release_date": "2025-11-13",
-      "last_updated": "2025-11-13",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 264000,
         "input": 128000,
         "output": 64000
       },
@@ -49688,39 +49551,6 @@
       "provider": "openai",
       "baseUrl": "https://api.githubcopilot.com"
     },
-    "github-copilot/gpt-5": {
-      "id": "gpt-5",
-      "name": "GPT-5",
-      "family": "gpt",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-10",
-      "release_date": "2025-08-07",
-      "last_updated": "2025-08-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
     "github-copilot/claude-haiku-4.5": {
       "id": "claude-haiku-4.5",
       "name": "Claude Haiku 4.5",
@@ -49820,40 +49650,6 @@
         "output": 32000
       },
       "maxTokens": 32000,
-      "provider": "openai",
-      "baseUrl": "https://api.githubcopilot.com"
-    },
-    "github-copilot/gpt-5.1-codex": {
-      "id": "gpt-5.1-codex",
-      "name": "GPT-5.1-Codex",
-      "family": "gpt-codex",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": false,
-      "knowledge": "2024-09-30",
-      "release_date": "2025-11-13",
-      "last_updated": "2025-11-13",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 400000,
-        "input": 128000,
-        "output": 128000
-      },
-      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://api.githubcopilot.com"
     },
@@ -95142,6 +94938,16 @@
       "name": "Alibaba (China)",
       "doc": "https://www.alibabacloud.com/help/en/model-studio/models"
     },
+    "firepass": {
+      "id": "firepass",
+      "env": [
+        "FIREPASS_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.fireworks.ai/inference/v1/",
+      "name": "Fireworks (Firepass)",
+      "doc": "https://docs.fireworks.ai/firepass"
+    },
     "minimax-cn-coding-plan": {
       "id": "minimax-cn-coding-plan",
       "env": [
@@ -95791,7 +95597,7 @@
       ],
       "npm": "@ai-sdk/google",
       "name": "Google",
-      "doc": "https://ai.google.dev/gemini-api/docs/pricing",
+      "doc": "https://ai.google.dev/gemini-api/docs/models",
       "api": "https://generativelanguage.googleapis.com/v1beta/openai"
     },
     "drun": {
