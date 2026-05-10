@@ -1,8 +1,8 @@
-import type { AuthProvider } from "./auth/index.ts"
+import type { AuthProvider } from "./auth/auth.ts"
 import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
 
 import { compareNaturalDescNumbers } from "@zaly/shared"
-import { hasAuth } from "./auth/index.ts"
+import { hasAuth } from "./auth/auth.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than

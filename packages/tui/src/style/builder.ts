@@ -1,4 +1,4 @@
-import type { Theme } from "../themes/index.ts"
+import type { Theme } from "../themes/types.ts"
 import type { AnsiColorName, BrightAnsiColorName, Color, Style } from "./types.ts"
 
 import { defaultTheme } from "../themes/index.ts"
