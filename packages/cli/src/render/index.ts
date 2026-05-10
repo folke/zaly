@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Reactive, Renderer } from "@zaly/tui"
+import type { Reactive, Renderer, RendererOptions } from "@zaly/tui"
 import type { StreamHandle } from "./stream.ts"
 import type { UiState } from "./ui.ts"
 
@@ -20,8 +20,8 @@ export interface RenderHandle {
  * (ui, stream-bridge, overlays) but leaves higher-level orchestration
  * — actions, input handling, agent.send — to App.
  */
-export function buildRenderer(agent: Agent, ui: UiState): RenderHandle {
-  const renderer = createRenderer()
+export function buildRenderer(agent: Agent, ui: UiState, opts: RendererOptions = {}): RenderHandle {
+  const renderer = createRenderer(opts)
   renderer.logger.install()
   const overlays = buildOverlays(renderer)
   const { input } = buildUi(renderer, ui)

@@ -1,6 +1,7 @@
 import type { Agent } from "@zaly/agent"
 import type { Attachment, ContentPart, Message, TextPart, Usage } from "@zaly/ai"
-import type { Input, LogCallable } from "@zaly/tui"
+import type { Input, LogCallable, Theme } from "@zaly/tui"
+import type { Cli } from "./cli.ts"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/index.ts"
 
@@ -21,6 +22,7 @@ import { compactionMarker } from "./widgets/index.ts"
  */
 export class App {
   readonly #config: Config
+  #theme!: Theme
   #agent!: Agent
   #render!: RenderHandle
   #log!: LogCallable
@@ -39,12 +41,13 @@ export class App {
   readonly #attachments = new Map<number, Attachment>()
   #attachCounter = 0
 
-  constructor(config: Config) {
+  private constructor(config: Config) {
     this.#config = config
   }
 
-  static async start(config: Config): Promise<App> {
-    const app = new App(config)
+  static async start(cli: Cli): Promise<App> {
+    const app = new App(cli.config)
+    app.#theme = await cli.loadTheme()
     await app.#boot()
     app.#render.renderer.start()
     return app
@@ -54,12 +57,16 @@ export class App {
     this.#agent = await buildAgent(this.#config)
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
 
-    this.#render = buildRenderer(this.#agent, {
-      busy: this.#busy.get,
-      model: this.#model.get,
-      status: this.#status.get,
-      usage: this.#usage.get,
-    })
+    this.#render = buildRenderer(
+      this.#agent,
+      {
+        busy: this.#busy.get,
+        model: this.#model.get,
+        status: this.#status.get,
+        usage: this.#usage.get,
+      },
+      { theme: this.#theme }
+    )
 
     this.#log = this.#render.renderer.log
 

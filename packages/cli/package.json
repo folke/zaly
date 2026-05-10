@@ -39,6 +39,7 @@
     "@zaly/ai": "workspace:*",
     "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*",
+    "citty": "^0.2.2",
     "pathe": "^2.0.3"
   },
   "optionalDependencies": {

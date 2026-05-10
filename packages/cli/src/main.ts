@@ -1,7 +1,7 @@
-import { App } from "./app.ts"
-import { resolveConfig } from "./config.ts"
+import { runMain } from "citty"
+import { Cli, mainCommand } from "./cli.ts"
 
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
-  const config = resolveConfig(argv)
-  await App.start(config)
+  const cli = new Cli()
+  await runMain(mainCommand(cli), { rawArgs: [...argv] })
 }
