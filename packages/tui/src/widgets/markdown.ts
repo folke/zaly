@@ -2,7 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
-import type { MdOptions } from "../markdown/index.ts"
+import type { MdOptions } from "../markdown/types.ts"
 import type { Image } from "./image.ts"
 
 import { hasColors } from "@zaly/shared/env"

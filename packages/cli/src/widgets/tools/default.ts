@@ -1,4 +1,4 @@
-import type { ToolResultProps } from "./index.ts"
+import type { ToolResultProps } from "./registry.ts"
 
 import { stringifyContent } from "@zaly/ai"
 import { text, unwrap, widget } from "@zaly/tui"

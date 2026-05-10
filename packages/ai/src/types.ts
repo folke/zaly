@@ -11,7 +11,7 @@
  */
 
 import type { FinishReason, Usage } from "./provider.ts"
-import type { AnyProvider } from "./providers/index.ts"
+import type { AnyProvider } from "./providers/registry.ts"
 
 /** Plain text in user, assistant, or tool-result content. */
 export interface TextPart {

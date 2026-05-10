@@ -1,4 +1,4 @@
-import type { AuthProvider } from "./auth/index.ts"
+import type { AuthProvider } from "./auth/auth.ts"
 import type { AnyPart, ContentTransform } from "./content/transform.ts"
 import type {
   CollectOptions,
@@ -9,15 +9,15 @@ import type {
   TokenCount,
   Usage,
 } from "./provider.ts"
-import type { AnyProvider } from "./providers/index.ts"
+import type { AnyProvider } from "./providers/registry.ts"
 import type { Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
 
-import { envAuth } from "./auth/index.ts"
+import { envAuth } from "./auth/auth.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
 import { collect } from "./provider.ts"
-import { providerRegistry } from "./providers/index.ts"
+import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
 import { withRetry } from "./utils/retry.ts"
 

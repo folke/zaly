@@ -12,7 +12,7 @@ import { readFile } from "node:fs/promises"
 import { registerActions } from "./actions.ts"
 import { buildAgent } from "./agent.ts"
 import { buildRenderer } from "./render/renderer.ts"
-import { compactionMarker } from "./widgets/index.ts"
+import { compactionMarker } from "./widgets/compaction.ts"
 
 /**
  * App = the long-lived glue between Agent and Renderer. Keeps state

@@ -1,4 +1,4 @@
-import type { PromptCtx } from "./index.ts"
+import type { PromptCtx } from "./registry.ts"
 
 import os from "node:os"
 

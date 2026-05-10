@@ -88,7 +88,7 @@ export default defineConfig({
     "no-implicit-coercion": "off", // 4
     "no-labels": "off", // 4
     "no-magic-numbers": "off", // 278
-    "no-restricted-imports": ["error", restrictedImports({ allowIndex: true })],
+    "no-restricted-imports": ["error", restrictedImports({ allowIndex: false })],
     "no-ternary": "off",
     "no-underscore-dangle": "off", // 4
     "no-unused-vars": "warn",

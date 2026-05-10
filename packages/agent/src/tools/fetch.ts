@@ -1,5 +1,5 @@
 import type { Attachment, MetaPart, TextPart, Tool } from "@zaly/ai"
-import type { ToolInit } from "./index.ts"
+import type { ToolInit } from "./registry.ts"
 
 import { defineTool, toAttachment } from "@zaly/ai"
 import { fileDetect } from "@zaly/shared"

@@ -1,5 +1,5 @@
 import type { Content, ToolContext } from "@zaly/ai"
-import type { ToolInit } from "./index.ts"
+import type { ToolInit } from "./registry.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
 import { fileDetect, normalizeEol, normPath, safeStat } from "@zaly/shared"

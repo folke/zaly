@@ -1,12 +1,12 @@
+import type { ShikiTheme } from "../../style/shiki.ts"
 import type {
   AnsiColorName,
   BrightAnsiColorName,
   Color,
   HexColor,
-  ShikiTheme,
   Style,
   ThemeKey,
-} from "../../style/index.ts"
+} from "../../style/types.ts"
 import type { Theme } from "../../themes/types.ts"
 
 import { createAssert, createAssertEquals, createIs } from "typia"

@@ -1,4 +1,4 @@
-import type { PromptCtx } from "./index.ts"
+import type { PromptCtx } from "./registry.ts"
 
 import { parseModelId } from "@zaly/ai"
 

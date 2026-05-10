@@ -2,7 +2,7 @@ import type { PermissionPresetName } from "./presets.ts"
 import type { CheckResult, Rule, Verdict } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
-import { handlerRegistry } from "./handlers/index.ts"
+import { handlerRegistry } from "./handlers/registry.ts"
 import { permissionPresets } from "./presets.ts"
 
 export type PermissionOptions = {

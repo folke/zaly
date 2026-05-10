@@ -1,6 +1,6 @@
 import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
-import type { Surface } from "../renderer/index.ts"
+import type { SurfaceType } from "../renderer/renderer.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../themes/registry.ts"
 import type { Overlay } from "../widgets/overlay.ts"
@@ -76,7 +76,7 @@ export interface RenderCtx {
  */
 export interface MountCtx {
   /** Which surface owns this subtree. */
-  readonly surface: Surface
+  readonly surface: SurfaceType
 
   /** Overlay capabilities — open/close an Overlay node from inside a
    *  widget (e.g. a confirm dialog, autocomplete popover, tooltip). */

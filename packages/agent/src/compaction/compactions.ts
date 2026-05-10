@@ -1,6 +1,6 @@
 import type { Message, ReasoningOptions } from "@zaly/ai"
 import type { Agent } from "../agent.ts"
-import type { Session } from "../session/index.ts"
+import type { Session } from "../session/session.ts"
 import type { ToolStatOptions } from "./utils.ts"
 
 import { toXml } from "@zaly/ai"

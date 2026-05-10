@@ -1,4 +1,4 @@
-import type { MdCallbacks, MdCodeBlockMeta, MdOptions } from "../markdown/index.ts"
+import type { MdCallbacks, MdCodeBlockMeta, MdOptions } from "../markdown/types.ts"
 
 import { encodeFenceInfoStrings, parseCodeInfoString } from "../markdown/utils.ts"
 

@@ -1,5 +1,5 @@
 import type { EditTool } from "@zaly/agent"
-import type { ToolResultProps } from "./index.ts"
+import type { ToolResultProps } from "./registry.ts"
 
 import { prettyPath } from "@zaly/shared"
 import { diff, memo, widget } from "@zaly/tui"

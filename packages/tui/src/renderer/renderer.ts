@@ -27,7 +27,7 @@ export interface RendererOptions {
   logger?: LoggerOptions
 }
 
-export type Surface = "stream" | "ui" | "overlay"
+export type SurfaceType = "stream" | "ui" | "overlay"
 
 /** Visitor signature for `Renderer.walk`. Return `"stop"` to halt. */
 export type NodeVisitor = (node: Node) => void | "stop"
@@ -305,7 +305,7 @@ export class Renderer {
   /** Build a MountCtx for a given surface. Each call creates a fresh
    *  object but closes over the same underlying services, so nodes
    *  across surfaces share a single overlay surface, router, etc. */
-  #mountCtxFor(surface: Surface): MountCtx {
+  #mountCtxFor(surface: SurfaceType): MountCtx {
     return {
       actions: this.actions,
       findNode: (m) => this.findNode(m),

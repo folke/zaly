@@ -1,5 +1,5 @@
 import type { Node } from "../core/node.ts"
-import type { Renderer } from "../renderer/index.ts"
+import type { Renderer } from "../renderer/renderer.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Menu } from "../widgets/menu.ts"
 import type { KeyPattern } from "./keys.ts"

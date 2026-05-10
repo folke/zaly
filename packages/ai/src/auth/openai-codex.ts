@@ -16,7 +16,7 @@
  */
 
 import type { ModelSpec } from "../types.ts"
-import type { AuthCredentials, AuthProvider } from "./index.ts"
+import type { AuthProvider, AuthCredentials } from "./auth.ts"
 
 import { normPath } from "@zaly/shared"
 import { mkdir, readFile, writeFile } from "node:fs/promises"

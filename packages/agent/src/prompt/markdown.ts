@@ -1,5 +1,5 @@
 import type { ResourceScope } from "../utils/resource.ts"
-import type { PromptCtx } from "./index.ts"
+import type { PromptCtx } from "./registry.ts"
 
 import { safeReadFile } from "@zaly/shared"
 import { findResource } from "../utils/resource.ts"

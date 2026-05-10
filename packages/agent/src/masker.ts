@@ -1,7 +1,7 @@
 import type { Attachment, Message, TextPart, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
 import type { EditTool } from "./tools/edit.ts"
-import type { AnyTool } from "./tools/index.ts"
 import type { ReadTool } from "./tools/read.ts"
+import type { AnyTool } from "./tools/registry.ts"
 import type { WriteTool } from "./tools/write.ts"
 import type { ContextPressure } from "./types.ts"
 

@@ -6,7 +6,7 @@ import type {
   MdImageMeta,
   MdListItemMeta,
   MdOptions,
-} from "./index.ts"
+} from "./types.ts"
 
 import { marked } from "marked"
 import { parseCodeInfoString } from "./utils.ts"

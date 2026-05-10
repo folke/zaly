@@ -3,7 +3,7 @@ import type { Emitter, Envelope } from "@zaly/shared"
 import type { AgentEvents, AgentStopReason } from "./events.ts"
 
 import { safeStringify } from "@zaly/shared"
-import { addUsage } from "./utils/index.ts"
+import { addUsage } from "./utils/usage.ts"
 
 /** Caps + heuristics that can end a run early. Wired into the
  *  `AgentSession` loop via a single `detect()` call after each step. */

@@ -12,20 +12,17 @@ import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { StepKind } from "./events.ts"
 import type { MaskOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
-import type {
-  PermissionManager,
-  PermissionOptions,
-  PermissionScope,
-  PermissionScopes,
-  Suggestion,
-} from "./permissions/index.ts"
-import type { AnyPrompt } from "./prompt/index.ts"
-import type { Session, SessionOptions } from "./session/index.ts"
+import type { PermissionScope, PermissionScopes } from "./permissions/handlers/registry.ts"
+import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
+import type { Suggestion } from "./permissions/types.ts"
+import type { AnyPrompt } from "./prompt/registry.ts"
+import type { Session } from "./session/session.ts"
+import type { SessionOptions } from "./session/types.ts"
 import type { Skills } from "./skills.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
-import type { AnyTool } from "./tools/index.ts"
+import type { AnyTool } from "./tools/registry.ts"
 
 // Declaration-merge agent-side capabilities into ToolContext. Importing
 // any agent code (which any consumer ultimately does) loads this file,

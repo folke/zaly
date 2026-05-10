@@ -1,5 +1,5 @@
 import type { ReadTool } from "@zaly/agent"
-import type { ToolResultProps } from "./index.ts"
+import type { ToolResultProps } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"

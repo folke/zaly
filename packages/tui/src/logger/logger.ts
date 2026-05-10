@@ -3,8 +3,8 @@ import type { LogState } from "../widgets/log.ts"
 import type { InspectOptions } from "./inspect.ts"
 import type { LogApi, LogFn, LogLevel } from "./levels.ts"
 
-import { markdown } from "../widgets/index.ts"
 import { log } from "../widgets/log.ts"
+import { markdown } from "../widgets/markdown.ts"
 import { inspect, isMarkdown } from "./inspect.ts"
 import { LOG_LEVELS, LoggerBase, shouldLog } from "./levels.ts"
 

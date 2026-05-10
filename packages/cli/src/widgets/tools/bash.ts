@@ -1,5 +1,5 @@
 import type { BashTool } from "@zaly/agent"
-import type { ToolResultProps } from "./index.ts"
+import type { ToolResultProps } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { box, code, memo, text, widget, formatLines } from "@zaly/tui"

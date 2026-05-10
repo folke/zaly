@@ -1,6 +1,6 @@
 import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
-import type { Surface } from "../renderer/index.ts"
+import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
 import type { Layout, State } from "./state.ts"
 
@@ -147,7 +147,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this.#ctx
   }
 
-  get surface(): Surface | undefined {
+  get surface(): SurfaceType | undefined {
     return this.#ctx?.surface
   }
 
