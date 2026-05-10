@@ -41,6 +41,8 @@ export async function loadTheme(
   o ??= DEFAULT_THEME
   const opts = typeof o === "string" ? { name: o } : o
 
+  if (opts.name?.endsWith(".json")) return loadTheme({ path: opts.name })
+
   if (opts.name) {
     const files = (opts.dirs ?? []).map((dir) => resolve(dir, `${opts.name}.json`))
     const file = files.find((path) => safeStat(path)?.isFile())
