@@ -9,6 +9,10 @@ out
 dist
 *.tgz
 
+# api-extractor staging (the .api.md report under etc/ is committed)
+temp
+tsdoc-metadata.json
+
 # code coverage
 coverage
 *.lcov
