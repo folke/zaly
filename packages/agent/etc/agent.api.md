@@ -213,11 +213,17 @@ export type DoneTaskInfo = Extract<TaskInfo, {
 export type EditTool = typeof editTool;
 
 // @public (undocumented)
+export type EditToolMeta = FileMeta & {
+    original: string; /** File content after all edits were applied — exactly what's now on disk. */
+    content: string;
+};
+
+// @public (undocumented)
 export const handlerRegistry: _$_zaly_shared0.Registry<PermissionHandler<string>, void, {
     readonly bash: () => PermissionHandler<"bash">;
-    readonly read: () => PermissionHandler<"write" | "read">;
+    readonly read: () => PermissionHandler<"read" | "write">;
     readonly tool: () => PermissionHandler<"tool">;
-    readonly write: () => PermissionHandler<"write" | "read">;
+    readonly write: () => PermissionHandler<"read" | "write">;
 }>;
 
 // @public (undocumented)
@@ -404,6 +410,12 @@ export function projectScope(cwd?: string): string;
 
 // @public (undocumented)
 export type ReadTool = ReturnType<typeof createReadTool>;
+
+// @public (undocumented)
+export type ReadToolMeta = FileMeta & {
+    offset: number;
+    limit: number;
+};
 
 // @public (undocumented)
 export type ResolvedMaskOptions = {
@@ -743,21 +755,21 @@ export interface ToolInit {
 // @public (undocumented)
 export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknown, object>>, ToolInit, {
     readonly agent_send: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        content: string;
         to: string;
+        content: string;
     }, unknown, object>>;
     readonly agent_spawn: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        task?: string | undefined;
         name: string;
         desc: string;
         prompt: string;
+        task?: string | undefined;
     }, unknown, object>>;
-    readonly bash: () => Promise<Tool<{
-        description: string;
+    readonly bash: () => Promise<Tool<unknown, unknown, object> | Tool<{
         command: string;
+        description: string;
         max_lines: number;
         timeout: number;
-    }, unknown, object> | Tool<unknown, unknown, object>>;
+    }, unknown, object>>;
     readonly edit: () => Promise<Tool<unknown, unknown, object> | Tool<{
         path: string;
         edits: {
@@ -772,9 +784,9 @@ export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknow
         limit: number;
     }, unknown, ReadToolMeta>>;
     readonly search: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        freshness?: "pd" | "pw" | "pm" | "py" | undefined;
         query: string;
         count: number;
+        freshness?: "pd" | "pm" | "pw" | "py" | undefined;
         country: string;
     }, unknown, object>>;
     readonly subagent: () => Promise<Tool<unknown, unknown, object> | Tool<{
@@ -792,13 +804,13 @@ export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknow
         id: string;
     }, unknown, object>>;
     readonly wakeup: () => Promise<Tool<unknown, unknown, object> | Tool<{
-        hint?: string | undefined;
         delayMs: number;
+        hint?: string | undefined;
     }, unknown, object>>;
-    readonly write: () => Promise<Tool<{
+    readonly write: () => Promise<Tool<unknown, unknown, object> | Tool<{
         path: string;
         content: string;
-    }, unknown, WriteToolMeta> | Tool<unknown, unknown, object>>;
+    }, unknown, WriteToolMeta>>;
 }>;
 
 // @public
@@ -815,6 +827,11 @@ export type Verdict = "allow" | "deny" | "ask";
 
 // @public (undocumented)
 export type WriteTool = typeof writeTool;
+
+// @public (undocumented)
+export type WriteToolMeta = FileMeta & {
+    original?: string;
+};
 
 // @public (undocumented)
 export interface ZalyToolCall {

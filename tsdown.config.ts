@@ -12,8 +12,10 @@ export default defineConfig({
   deps: {
     alwaysBundle: ["slice-ansi", "string-width", "wrap-ansi", "pathe"],
   },
+  entry: {},
   dts: {
     sourcemap: true,
+    tsgo: true,
   },
   exports: {
     devExports: true,

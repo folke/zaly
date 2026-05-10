@@ -210,7 +210,9 @@ export type ErrorPart = ErrorInfo & {
 };
 
 // @public
-export function errorToMeta(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<({
+export function errorToMeta(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<Exclude<T, {
+    type: "error";
+}> | ({
     type: "meta";
     tag?: string;
     data?: unknown;
@@ -224,9 +226,7 @@ export function errorToMeta(): <T extends ContentPart>(ct: ContentTransform<T>) 
     content?: Content;
 } & {
     content: Content;
-}) | Exclude<T, {
-    type: "error";
-}>>;
+})>;
 
 // @public
 export function errorToMetaPart(e: ErrorPart): MetaPart;
@@ -610,13 +610,13 @@ export function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown, ctx: ToolConte
 export function safeParseToolParams<T extends Tool = Tool>(params: unknown): Partial<ParamsOf<T>> | undefined;
 
 // @public
-export function sanitizeText(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<(Extract<T, {
+export function sanitizeText(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<Exclude<T, {
+    type: "text";
+}> | (Extract<T, {
     type: "text";
 }> & {
     text: string;
-}) | Exclude<T, {
-    type: "text";
-}>>;
+})>;
 
 // @public
 export interface Streamable {

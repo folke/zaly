@@ -298,6 +298,15 @@ export interface FilesSourceOptions {
     trigger?: RegExp;
 }
 
+// @public
+export interface FlexState {
+    flexGrow?: number;
+    flexShrink?: number;
+    maxWidth?: Size;
+    minWidth?: Size;
+    width?: Size;
+}
+
 // @public (undocumented)
 export function formatLines(text: string | string[], opts?: {
     numbered?: boolean;
@@ -483,6 +492,20 @@ export function isMarkdown(s: string): boolean;
 
 // @internal
 export function isNode(x: unknown): x is Node;
+
+// @public (undocumented)
+export interface Layout {
+    // (undocumented)
+    minWidth: number;
+    // (undocumented)
+    width: number;
+}
+
+// @public (undocumented)
+export interface LayoutState {
+    // (undocumented)
+    visible?: Reactive<boolean>;
+}
 
 // @public
 export function loadTheme(name?: string): Promise<Theme>;
@@ -1026,10 +1049,10 @@ export function spinner(state?: SpinnerState): Spinner;
 
 // @internal
 export const spinnerFrames: {
-    readonly arrow: readonly ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"];
+    readonly arrow: readonly ["\u2190", "\u2196", "\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199"];
     readonly bouncingBar: readonly ["[    ]", "[=   ]", "[==  ]", "[=== ]", "[ ===]", "[  ==]", "[   =]", "[    ]"];
-    readonly circle: readonly ["◐", "◓", "◑", "◒"];
-    readonly dots: readonly ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    readonly circle: readonly ["\u25D0", "\u25D3", "\u25D1", "\u25D2"];
+    readonly dots: readonly ["\u280B", "\u2819", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"];
     readonly line: readonly ["-", "\\", "|", "/"];
 };
 
@@ -1046,6 +1069,9 @@ export type SpinnerStyle = keyof typeof spinnerFrames;
 
 // @public
 export function splitAnsi(s: string): string[];
+
+// @public (undocumented)
+export type State<T extends object = object> = T & BaseState;
 
 // @public
 export class Stream extends Surface {
@@ -1095,6 +1121,9 @@ export type StyleBuilder = {
     lighten(n: number): StyleBuilder;
     darken(n: number): StyleBuilder;
 } & { readonly [K in AttrName | FgChainKey | BgChainKey | FgExtractKey]: StyleBuilder };
+
+// @public
+export type StyleState = Style;
 
 // @public (undocumented)
 export type SurfaceType = "stream" | "ui" | "overlay";

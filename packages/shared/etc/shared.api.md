@@ -354,7 +354,7 @@ export const safeReadFile: (p: string) => Promise<string | undefined>;
 export const safeReadFileSync: (path: string) => string | undefined;
 
 // @public (undocumented)
-export const safeStat: (path: _$node_fs0.PathLike, options?: _$node_fs0.StatSyncOptions | undefined) => _$node_fs0.Stats | _$node_fs0.BigIntStats | undefined;
+export const safeStat: (path: _$node_fs0.PathLike, options?: _$node_fs0.StatSyncOptions | undefined) => _$node_fs0.BigIntStats | _$node_fs0.Stats | undefined;
 
 // @public
 export function safeStringify(value: unknown, replacer?: (key: string, value: unknown) => unknown): string;
