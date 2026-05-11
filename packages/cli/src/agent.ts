@@ -2,14 +2,7 @@ import type { ManagedSession, Session } from "@zaly/agent"
 import type { AuthProvider, Message } from "@zaly/ai"
 import type { Config, ResumeRequest } from "./config.ts"
 
-import {
-  Agent,
-  loadClaudeSession,
-  sessionCreate,
-  sessionList,
-  sessionLoad,
-  sessionResume,
-} from "@zaly/agent"
+import { Agent, sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent"
 import { chainAuth, codexAuth, envAuth, loadModel } from "@zaly/ai"
 import { basename, dirname, isAbsolute } from "pathe"
 
@@ -89,6 +82,7 @@ async function resolveExplicit(req: Extract<ResumeRequest, { kind: "explicit" }>
   // when the path lives under `~/.claude/projects/...`.
   if (ref.includes("/") || ref.endsWith(".jsonl") || isAbsolute(ref)) {
     if (isClaudePath(ref)) {
+      const { loadClaudeSession } = await import("@zaly/agent")
       const loaded = await loadClaudeSession(ref)
       return { messages: loaded.messages, session: undefined }
     }
