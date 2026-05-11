@@ -570,7 +570,7 @@ export class Agent extends Emitter<AgentEvents> {
     )
       return { kind: "context-overflow", ...result }
 
-    const calls = this.#parseToolCalls(collected)
+    const calls = await this.#parseToolCalls(collected)
     await this.session.add(collected)
 
     if (calls.length === 0) return { kind: "natural", ...result }
@@ -582,14 +582,14 @@ export class Agent extends Emitter<AgentEvents> {
     }
   }
 
-  #parseToolCalls(message: Message): ToolCallPart[] {
+  async #parseToolCalls(message: Message): Promise<ToolCallPart[]> {
     if (typeof message.content === "string") return []
     const calls = message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
     for (const call of calls) {
       const tool = this.tools.find((t) => t.name === call.name)
       if (!tool) continue
       try {
-        call.params = validateToolParams(tool, call.params) ?? call.params
+        call.params = (await validateToolParams(tool, call.params)) ?? call.params
       } catch {}
     }
     return calls

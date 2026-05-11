@@ -19,7 +19,7 @@ const enabled = Boolean(process.env.LIVE) && Boolean(process.env.BRAVE_API_KEY)
 type Parts = (MetaPart | TextPart)[]
 
 const callSearch = async (args: Record<string, unknown>): Promise<Parts> => {
-  const validated = searchTool.validateParams(args)
+  const validated = await searchTool.validator.validateParams(args)
   return (await searchTool.call(validated, {})) as Parts
 }
 
@@ -61,23 +61,25 @@ describe.skipIf(!enabled)("search: live", () => {
     expect(sources.length).toBeLessThanOrEqual(2)
   }, 30_000)
 
-  test("freshness filter rejected as schema-invalid when not in the enum", () => {
-    expect(() => searchTool.validateParams({ query: "x", freshness: "yesterday" })).toThrow(/❌/)
+  test("freshness filter rejected as schema-invalid when not in the enum", async () => {
+    await expect(
+      searchTool.validator.validateParams({ query: "x", freshness: "yesterday" }),
+    ).rejects.toThrow(/❌/)
   })
 
-  test("missing query rejected at validation", () => {
-    expect(() => searchTool.validateParams({})).toThrow(/❌/)
+  test("missing query rejected at validation", async () => {
+    await expect(searchTool.validator.validateParams({})).rejects.toThrow(/❌/)
   })
 })
 
 describe("search: offline (no API call)", () => {
-  test("validateParams applies defaults (count=10, country=us)", () => {
-    const v = searchTool.validateParams({ query: "x" })
+  test("validateParams applies defaults (count=10, country=us)", async () => {
+    const v = await searchTool.validator.validateParams({ query: "x" })
     expect(v).toEqual({ query: "x", count: 10, country: "us" })
   })
 
-  test("validateParams coerces string count to integer", () => {
-    const v = searchTool.validateParams({ query: "x", count: "5" })
+  test("validateParams coerces string count to integer", async () => {
+    const v = await searchTool.validator.validateParams({ query: "x", count: "5" })
     expect(v.count).toBe(5)
   })
 

@@ -8,7 +8,8 @@ import { Value } from "typebox/value"
  *    3. `Clean`   — strip properties not declared in the schema
  *
  *  Never throws and never validates. The caller should follow up with
- *  `validate()` to confirm the shape actually matches before use.
+ *  a compiled `.Check`/`.Errors` step to confirm the shape actually
+ *  matches before use.
  */
 export function coerce(schema: {}, value: unknown) {
   const converted = Value.Convert(schema, value)

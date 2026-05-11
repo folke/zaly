@@ -1,14 +1,14 @@
 import type { TSchema } from "typebox"
 
 import { Type } from "typebox"
+import { Value } from "typebox/value"
 import { describe, expect, test } from "vitest"
-import { stringifyErrors } from "../../src/json/stringify.ts"
-import { validate } from "../../src/json/validate.ts"
+import { stringifyErrors } from "../../src/validate/stringify.ts"
 
 function annotate(schema: TSchema, value: unknown) {
-  const result = validate(schema, value)
-  if (result.success) throw new Error("expected validation failure")
-  return stringifyErrors(schema, value, result.errors)
+  const errors = Value.Errors(schema, value)
+  if (errors.length === 0) throw new Error("expected validation failure")
+  return stringifyErrors(schema, value, errors)
 }
 
 describe("stringifyErrors — basic errors", () => {

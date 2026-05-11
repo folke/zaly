@@ -5,17 +5,16 @@
  *   1. Strip obvious envelope noise (markdown code fences, a leading
  *      prose prefix, leading whitespace).
  *   2. Try `JSON.parse` first — the happy path for well-formed args.
- *   3. Fall back to `jsonrepair` — handles missing commas, smart
- *      quotes, Python-style booleans, trailing commas, unquoted
- *      keys, truncation, and dozens of other malformed-JSON shapes
- *      LLMs emit in the wild.
+ *   3. Fall back to `jsonrepair` (lazy-imported on first repair) —
+ *      handles missing commas, smart quotes, Python-style booleans,
+ *      trailing commas, unquoted keys, truncation, and dozens of other
+ *      malformed-JSON shapes LLMs emit in the wild.
  *
  * Returns a discriminated result rather than throwing — callers always
- * know whether they have a parsed value or a failure reason. The
- * coerce/validate steps further up the pipeline never see exceptions
- * from parse.
+ * know whether they have a parsed value or a failure reason. Async so
+ * the `jsonrepair` import is deferred until actually needed; well-formed
+ * inputs never load it.
  */
-import { jsonrepair } from "jsonrepair"
 
 export type ParseResult<T = unknown> =
   | { success: true; data: T; repaired: boolean }
@@ -28,12 +27,12 @@ export type ParseResult<T = unknown> =
  *  correlates strongly with weaker models and temperature > 0.
  *
  *  ```ts
- *  const result = parseJson(rawArgs)
+ *  const result = await parseJson(rawArgs)
  *  if (!result.success) …          // syntactically unsalvageable
  *  if (result.repaired) tel.increment("json.repaired")
  *  ```
  */
-export function parseJson<T = unknown>(input: string): ParseResult<T> {
+export async function parseJson<T = unknown>(input: string): Promise<ParseResult<T>> {
   const cleaned = stripEnvelope(input)
   if (cleaned === "") {
     return { error: "empty input", success: false }
@@ -46,6 +45,7 @@ export function parseJson<T = unknown>(input: string): ParseResult<T> {
   }
 
   try {
+    const { jsonrepair } = await import("jsonrepair")
     const repaired = jsonrepair(cleaned)
     return { data: JSON.parse(repaired) as T, repaired: true, success: true }
   } catch (error) {

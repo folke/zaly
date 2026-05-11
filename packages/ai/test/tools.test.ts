@@ -15,28 +15,23 @@ describe("defineTool", () => {
   test("builds a Tool with input schema + validators", () => {
     expect(Adder.name).toBe("add")
     expect(Adder.desc).toBe("add two numbers")
-    expect(typeof Adder.validateParams).toBe("function")
+    expect(typeof Adder.validator.validateParams).toBe("function")
     expect(typeof Adder.call).toBe("function")
   })
 
-  test("validateInput coerces stringified primitives", () => {
-    const input = Adder.validateParams({ a: "3", b: "4" })
+  test("validateInput coerces stringified primitives", async () => {
+    const input = await Adder.validator.validateParams({ a: "3", b: "4" })
     expect(input).toEqual({ a: 3, b: 4 })
   })
 
-  test("validateInput strips unknown properties", () => {
-    const input = Adder.validateParams({ a: 1, b: 2, junk: "x" })
+  test("validateInput strips unknown properties", async () => {
+    const input = await Adder.validator.validateParams({ a: 1, b: 2, junk: "x" })
     expect(input).toEqual({ a: 1, b: 2 })
   })
 
-  test("validateInput throws with annotated message on bad input", () => {
-    try {
-      Adder.validateParams({ a: "notanumber" })
-      throw new Error("expected throw")
-    } catch (error) {
-      expect((error as Error).message).toMatch(/❌/)
-      expect((error as Error).message).toContain("b")
-    }
+  test("validateInput throws with annotated message on bad input", async () => {
+    await expect(Adder.validator.validateParams({ a: "notanumber" })).rejects.toThrow(/❌/)
+    await expect(Adder.validator.validateParams({ a: "notanumber" })).rejects.toThrow(/b/)
   })
 })
 
@@ -51,27 +46,27 @@ describe("defineTool — TypeBox defaults", () => {
     call: (args) => args,
   })
 
-  test("missing optional with default is filled in", () => {
-    const input = Search.validateParams({ query: "tokyo" })
+  test("missing optional with default is filled in", async () => {
+    const input = await Search.validator.validateParams({ query: "tokyo" })
     expect(input).toEqual({ query: "tokyo", limit: 10, offset: 0 })
   })
 
-  test("explicitly-provided value beats the default", () => {
-    const input = Search.validateParams({ query: "x", limit: 5 })
+  test("explicitly-provided value beats the default", async () => {
+    const input = await Search.validator.validateParams({ query: "x", limit: 5 })
     expect(input).toEqual({ query: "x", limit: 5, offset: 0 })
   })
 
-  test("default of 0 is treated as a real value, not 'missing'", () => {
+  test("default of 0 is treated as a real value, not 'missing'", async () => {
     // Off-by-one regression guard: `Value.Default` must distinguish
     // "field absent" from "field present with falsy value." We pass
     // `offset: 0` explicitly and expect it to round-trip — not get
     // re-defaulted to anything else.
-    const input = Search.validateParams({ query: "x", offset: 0 })
+    const input = await Search.validator.validateParams({ query: "x", offset: 0 })
     expect(input.offset).toBe(0)
   })
 
-  test("default applies after primitive coercion (string '5' → 5)", () => {
-    const input = Search.validateParams({ query: "x", limit: "5" })
+  test("default applies after primitive coercion (string '5' → 5)", async () => {
+    const input = await Search.validator.validateParams({ query: "x", limit: "5" })
     expect(input).toEqual({ query: "x", limit: 5, offset: 0 })
   })
 
@@ -87,7 +82,7 @@ describe("defineTool — TypeBox defaults", () => {
     expect(JSON.parse(text)).toEqual({ query: "hi", limit: 10, offset: 0 })
   })
 
-  test("nested object defaults are filled in recursively", () => {
+  test("nested object defaults are filled in recursively", async () => {
     const Nested = defineTool({
       name: "nested",
       params: Type.Object({
@@ -98,15 +93,15 @@ describe("defineTool — TypeBox defaults", () => {
       }),
       call: (args) => args,
     })
-    expect(Nested.validateParams({ opts: {} })).toEqual({
+    expect(await Nested.validator.validateParams({ opts: {} })).toEqual({
       opts: { retries: 3, timeout: 30 },
     })
-    expect(Nested.validateParams({ opts: { retries: 1 } })).toEqual({
+    expect(await Nested.validator.validateParams({ opts: { retries: 1 } })).toEqual({
       opts: { retries: 1, timeout: 30 },
     })
   })
 
-  test("array element defaults are NOT injected for absent elements", () => {
+  test("array element defaults are NOT injected for absent elements", async () => {
     // Sanity: defaults apply to declared properties, not array slots.
     // The array stays [] when the model passes [].
     const Tags = defineTool({
@@ -116,16 +111,18 @@ describe("defineTool — TypeBox defaults", () => {
       }),
       call: (args) => args,
     })
-    expect(Tags.validateParams({})).toEqual({ tags: [] })
-    expect(Tags.validateParams({ tags: ["a"] })).toEqual({ tags: ["a"] })
+    expect(await Tags.validator.validateParams({})).toEqual({ tags: [] })
+    expect(await Tags.validator.validateParams({ tags: ["a"] })).toEqual({ tags: ["a"] })
   })
 
-  test("default + bad type still errors after coercion can't fix it", () => {
-    expect(() => Search.validateParams({ query: 123, limit: "not-a-number" })).toThrow(/❌/)
+  test("default + bad type still errors after coercion can't fix it", async () => {
+    await expect(
+      Search.validator.validateParams({ query: 123, limit: "not-a-number" }),
+    ).rejects.toThrow(/❌/)
   })
 
-  test("required field with no default still required even when other fields default", () => {
-    expect(() => Search.validateParams({})).toThrow(/❌/)
+  test("required field with no default still required even when other fields default", async () => {
+    await expect(Search.validator.validateParams({})).rejects.toThrow(/❌/)
   })
 })
 

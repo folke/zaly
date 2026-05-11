@@ -83,7 +83,10 @@ describe("subagent tool", () => {
       call: () => "noop",
       name: "noop",
       params: {},
-      validateParams: () => ({}),
+      validator: {
+        validateParams: async () => ({}),
+        validateResult: async (x: unknown) => x,
+      },
     }
     const parent = await loadAgent({
       maxDepth: 1, // child at depth 1 == maxDepth → no subagent
@@ -113,12 +116,12 @@ describe("subagent tool", () => {
     ).rejects.toThrow(/Agent reference/)
   })
 
-  test("missing required params surface as INVALID_INPUT", () => {
-    expect(() => subagentTool.validateParams({ task: "t" })).toThrow(/❌/)
+  test("missing required params surface as INVALID_INPUT", async () => {
+    await expect(subagentTool.validator.validateParams({ task: "t" })).rejects.toThrow(/❌/)
   })
 
-  test("validateParams round-trips with all required fields", () => {
-    const args = subagentTool.validateParams({
+  test("validateParams round-trips with all required fields", async () => {
+    const args = await subagentTool.validator.validateParams({
       description: "x",
       prompt: "p",
       task: "t",

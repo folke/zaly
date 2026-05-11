@@ -38,7 +38,7 @@ async function callRead(args: Record<string, unknown>): Promise<ReadResult> {
   // Mirror the runtime path: coerce + apply schema defaults before
   // invoking `call`. Calling `call` directly skips defaults like
   // `limit` and `offset`, so the test would diverge from production.
-  const validated = readTool.validateParams(args)
+  const validated = await readTool.validator.validateParams(args)
   return (await readTool.call(validated, {})) as ReadResult
 }
 

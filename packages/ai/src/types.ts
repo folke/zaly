@@ -272,8 +272,12 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
    *  should keep the default; pure-read tools (read, fetch, list) can opt
    *  in by setting `parallel: true`. */
   parallel?: boolean
-  validateParams(params: unknown): Params
-  validateResult?(result: unknown): Awaited<Result>
+  /** Per-tool validator. Owns the params/result compile state and
+   *  lazy-loads typebox on first call. Created by `defineTool`. */
+  validator: {
+    validateParams(params: unknown): Promise<Params>
+    validateResult(result: unknown): Promise<Awaited<Result>>
+  }
   call(params: Params, ctx: ToolContext<Meta>): Promise<Result>
   _types?: { params: Params; result: Result; meta: Meta }
 }

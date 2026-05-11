@@ -23,8 +23,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
 // oxlint-disable-next-line no-restricted-imports
 import { dirname } from "node:path"
-import { oauthErrorPage, oauthSuccessPage } from "./oauth-page.ts"
-import { generatePkce } from "./utils.ts"
 
 // ── Config ──────────────────────────────────────────────────────────────
 
@@ -187,6 +185,7 @@ export interface CodexLoginCallbacks {
  *  returns them. Caller supplies UI callbacks for opening the browser
  *  and (optionally) accepting a manually pasted code. */
 export async function loginCodex(callbacks: CodexLoginCallbacks): Promise<CodexCredentials> {
+  const { generatePkce } = await import("./utils.ts")
   const { challenge, verifier } = await generatePkce()
   const state = randomState()
 
@@ -317,6 +316,8 @@ async function startCallbackServer(
     resolveCode = resolve
     rejectCode = reject
   })
+
+  const { oauthErrorPage, oauthSuccessPage } = await import("./oauth-page.ts")
 
   const server = createServer((req, res) => {
     try {

@@ -1,6 +1,6 @@
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
-import { coerce } from "../../src/json/coerce.ts"
+import { coerce } from "../../src/validate/coerce.ts"
 
 describe("coerce — primitive conversion", () => {
   test("coerces string to number", () => {

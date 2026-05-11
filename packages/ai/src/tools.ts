@@ -10,13 +10,9 @@ import type {
 } from "./types.ts"
 
 import { safeParseJson } from "@zaly/shared"
-import Schema from "typebox/schema"
 import { toContent } from "./content/format.ts"
 import { toErrorPart } from "./content/part.ts"
-import { AiError } from "./error.ts"
-import { coerce } from "./json/coerce.ts"
-import { parseJson } from "./json/parse.ts"
-import { stringifyErrors } from "./json/stringify.ts"
+import { Validator } from "./validate/validate.ts"
 
 export type { Streamable, ToolResult } from "./types.ts"
 
@@ -32,10 +28,10 @@ export function isStreamable(value: unknown): value is Streamable {
   )
 }
 
-/** Declarative tool factory. Wires `validateInput` and (optionally)
- *  `validateOutput` from TypeBox schemas: inputs are coerced then
- *  validated (LLM-lenient), outputs are validated strictly (tool bug
- *  if shape drifts).
+/** Declarative tool factory. Attaches a `Validator` that lazy-loads
+ *  typebox on first call: inputs are coerced then validated
+ *  (LLM-lenient), outputs are validated strictly (tool bug if shape
+ *  drifts).
  *
  *  `execute` receives the fully-validated `Static<S>` type — no need
  *  to narrow or parse inside the handler.
@@ -59,8 +55,6 @@ export function defineTool<
   parallel?: boolean
   result?: Result
 }): Tool<Static<Params>, Static<Result>, Meta> {
-  const compiledParams = Schema.Compile(def.params)
-  const compiledResult = def.result ? Schema.Compile(def.result) : undefined
   // oxlint-disable-next-line sort-keys
   return {
     name: def.name,
@@ -69,38 +63,17 @@ export function defineTool<
     parallel: def.parallel,
     result: def.result,
     call: async (args, ctx) => def.call(args, ctx),
-    validateParams(args: unknown): Static<Params> {
-      const coerced = coerce(def.params, args)
-      if (compiledParams.Check(coerced)) return coerced
-      const [, errors] = compiledParams.Errors(coerced)
-      throw new AiError({
-        code: "INVALID_INPUT",
-        data: errors,
-        message: stringifyErrors(def.params, coerced, errors),
-      })
-    },
-    validateResult: compiledResult
-      ? (result: unknown): Awaited<Static<Result>> =>
-          compiledResult.Parse(result) as Awaited<Static<Result>>
-      : undefined,
-  }
+    validator: new Validator(def.params, def.result),
+  } as Tool<Static<Params>, Static<Result>, Meta>
 }
 
-/** Parse and validate raw tool arguments. JSON-string inputs are decoded
- *  first; the result is run through `tool.validateParams` (which coerces
- *  LLM quirks before strict schema check). Throws `AiError` on parse
- *  or validation failure — callers wrap with `toErrorResult` to land
+/** Validate raw tool arguments. JSON-string inputs are decoded
+ *  internally by the validator; the result is run through
+ *  schema coercion + strict check. Throws `AiError` on parse or
+ *  validation failure — callers wrap with `toErrorResult` to land
  *  back on a `ToolResult`. */
-export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I {
-  let args = rawArgs
-  if (typeof args === "string") {
-    const parsed = parseJson(args)
-    if (!parsed.success) {
-      throw new AiError({ code: "INVALID_INPUT", message: `invalid JSON: ${parsed.error}` })
-    }
-    args = parsed.data
-  }
-  return tool.validateParams(args)
+export async function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): Promise<I> {
+  return tool.validator.validateParams(rawArgs)
 }
 
 export function pairedToolIds(messages: readonly Message[]) {
@@ -135,7 +108,7 @@ export function* extractToolCalls<T extends string = string>(
 /** Lightweight reader for a `ToolCallPart.params` value.
  *
  *  In the normal agent flow, the kernel pre-validates each tool call:
- *    `part.params = validateToolParams(tool, params) ?? params`
+ *    `part.params = await validateToolParams(tool, params) ?? params`
  *  So `params` is either:
  *    - the canonical, schema-coerced object (validation succeeded), or
  *    - the raw model output (validation failed) — usually a JSON string
@@ -174,15 +147,15 @@ export function toErrorResult(err: unknown): ToolResult {
 }
 
 /** Build a successful `ToolResult` from a tool's raw return value. Runs
- *  the optional `validateResult` schema (strict — drift is a tool bug)
+ *  the optional result-schema validation (strict — drift is a tool bug)
  *  and normalises the value into the parts shape. `meta` comes from the
  *  per-call `ctx.meta` slot the harness manages. */
-function formatToolResult<O>(
+async function formatToolResult<O>(
   tool: Tool<unknown, O>,
   raw: Awaited<O>,
   meta?: ToolResult["meta"]
-): ToolResult {
-  const validated = tool.validateResult ? tool.validateResult(raw) : raw
+): Promise<ToolResult> {
+  const validated = await tool.validator.validateResult(raw)
   return { content: toContent(validated), isError: false, meta }
 }
 
@@ -234,7 +207,7 @@ export async function runTool<I, O>(
 
   let params: I
   try {
-    params = validateToolParams(tool, rawArgs)
+    params = await validateToolParams(tool, rawArgs)
   } catch (error) {
     return toErrorResult(error)
   }
