@@ -104,7 +104,13 @@ export class App {
     const tail = preloaded.session
       ? preloaded.session.messages.slice(-50)
       : preloaded.messages.slice(-50)
-    for (const node of replay(tail)) this.#renderer.stream.append(node)
+    for (const node of replay(tail)) {
+      this.#renderer.stream.append(node)
+      // Yield to the event loop between appends so the renderer paints
+      // each message progressively rather than all at once at the end.
+      // oxlint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
 
     this.#agent = await buildAgent(this.#config, preloaded)
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)

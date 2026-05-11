@@ -5,8 +5,7 @@ import type { MountCtx, RenderCtx } from "./ctx.ts"
 import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
-import { RenderContext } from "./ctx.ts"
-import { inRenderContextOf, unwrap, withActiveNode, withContext } from "./reactive.ts"
+import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */
@@ -15,11 +14,11 @@ export type BaseEvents = {
   mount: {}
   unmount: {}
   /** Fired synchronously at the top of every `_render` that actually
-   *  runs (skipped on cache hits and `visible:false`). Listeners run
-   *  inside the render's ALS chain — `useContext(RenderContext)`
-   *  resolves against the live ctx. Used by `createRenderEffect` to
-   *  capture render-time data (theme, width, …) into signals. */
-  render: {}
+   *  runs (skipped on cache hits and `visible:false`). Carries the live
+   *  `RenderCtx` so listeners can read width/theme/version directly —
+   *  `createRenderEffect` consumes this to capture per-render data into
+   *  signals. */
+  render: { ctx: RenderCtx }
   focus: {}
   blur: {}
   key: { key: RoutedKey }
@@ -54,6 +53,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
   #setupDone = false
+  #contexts?: Map<symbol, unknown>
   readonly #children: Node[] = []
   readonly #state: State<T>
   readonly state: State<T>
@@ -155,6 +155,20 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this.#ctx !== undefined
   }
 
+  /** Read-only view of this node's provided contexts. Populated by
+   *  `provideContext(...)` calls during setup or `_render`. Walked
+   *  upward via the owner frame chain by `useContext`. */
+  get contexts(): ReadonlyMap<symbol, unknown> | undefined {
+    return this.#contexts
+  }
+
+  /** Internal — used by `provideContext` to write a value into this
+   *  node's context map. Allocates the map on first use.
+   *  @internal */
+  setContext(id: symbol, value: unknown): void {
+    ;(this.#contexts ??= new Map()).set(id, value)
+  }
+
   /**
    * Read or set the node's `id`. Called without args, returns the
    * current id. Called with a string, sets it and returns `this` for
@@ -243,15 +257,14 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     this.with(() => {})
   }
 
-  with<R>(fn: () => R, ctx?: RenderCtx): R {
-    const wrapped = () => {
+  with<R>(fn: () => R): R {
+    return withActiveNode(this, () => {
       if (!this.#setupDone) {
         this.#setupDone = true
         this.setup()
       }
       return fn()
-    }
-    return withActiveNode(this, () => (ctx ? withContext(RenderContext, ctx, wrapped) : wrapped()))
+    })
   }
 
   async render(ctx: RenderCtx): Promise<string[]> {
@@ -262,9 +275,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // stick around in the tree so we don't re-create them each time.
     // Resolve inside the tracking ctx so a signal accessor read
     // subscribes this node.
-    this.#rendering ??= this.with(
-      () => (ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)),
-      ctx
+    this.#rendering ??= this.with(() =>
+      ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)
     )
 
     try {
@@ -319,7 +331,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // signals that the upcoming render (or its descendants) will read
     // — typically capturing ctx-derived data (theme, width) into
     // signals that async closures need.
-    this.emit("render")
+    this.emit("render", { ctx })
     // Capture the invalidation count *before* awaiting `_render`. If
     // it bumps mid-render, the rows we get back are based on stale
     // state — the external mutation that bumped it has already emitted

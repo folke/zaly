@@ -6,15 +6,7 @@ import type { Theme } from "../themes/types.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { extname } from "pathe"
-import { RenderContext } from "../core/ctx.ts"
-import {
-  createAsync,
-  createRenderEffect,
-  memo,
-  signal,
-  unwrap,
-  useContext,
-} from "../core/reactive.ts"
+import { createAsync, createRenderEffect, memo, signal, unwrap } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
 import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
@@ -52,7 +44,8 @@ export interface CodeState {
  *
  * Composition over custom layout — the backdrop is `box({ bg: "code",
  * width: "fit" })`, the body is plain `text(...)`. The active render
- * context (theme, style, width) is read via `useContext(RenderContext)`.
+ * context (theme, style, width) is captured via `createRenderEffect`
+ * into a signal so the async highlight closure can read it.
  *
  * Async highlighting flows through `createAsync`: signal reads inside
  * the async closure auto-track, so `props.code` (or any other reactive
@@ -71,10 +64,7 @@ export const code = widget((props: State<CodeState>) => {
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
   const [style, setStyle] = signal<StyleBuilder | undefined>(undefined)
-  createRenderEffect(() => {
-    const ctx = useContext(RenderContext)
-    if (ctx?.style) setStyle(() => ctx.style)
-  })
+  createRenderEffect((ctx) => setStyle(() => ctx.style))
 
   const title = memo(() => unwrap(props.title) ?? path)
   const body = createAsync(

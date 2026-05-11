@@ -1,6 +1,6 @@
 import type { ManagedSession, Session } from "@zaly/agent/session"
 import type { Message } from "@zaly/ai"
-import type { Config, ResumeRequest } from "./config.ts"
+import type { Config, ResumeRequest } from "../config.ts"
 
 import { sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent/session"
 import { basename, dirname, isAbsolute } from "pathe"

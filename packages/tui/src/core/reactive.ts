@@ -1,3 +1,4 @@
+import type { RenderCtx } from "./ctx.ts"
 import type { Node } from "./node.ts"
 
 import { AsyncLocalStorage } from "node:async_hooks"
@@ -71,53 +72,60 @@ export function untrack<T>(fn: () => T): T {
 // ---- context ---------------------------------------------------------
 
 /**
- * Solid-style context for sharing values down the render tree without
- * prop-drilling. The renderer publishes `RenderCtxContext` for every
- * `_render`; widgets can publish their own (theming overrides, focus
- * scope, drag state, plugin services) via `withContext`.
+ * Solid-style context for sharing values down the owner chain without
+ * prop-drilling. Widgets publish values via `provideContext` (in setup
+ * or `_render`); descendants read via `useContext`.
  *
  * ```ts
  * const ThemeOverride = createContext<Theme | undefined>(undefined)
  *
- * // provider:
- * withContext(ThemeOverride, customTheme, () => child.render(ctx))
+ * // provider (in a widget body / setup / _render):
+ * provideContext(ThemeOverride, customTheme)
  *
- * // consumer:
+ * // consumer (anywhere with an active node or owner chain):
  * const theme = useContext(ThemeOverride) ?? defaultTheme
  * ```
  *
- * Implementation: a single ALS holds an immutable Map keyed by context
- * id; `withContext` creates a layered Map for its scope. Reads walk
- * the current Map; misses fall back to the context's default. Survives
- * `await` boundaries via the same ALS that powers tracking.
+ * Implementation: each `Node` carries an optional `#contexts` map keyed
+ * by context id. Lookups walk the *owner frame chain* (`OwnerFrame.owner`
+ * pointers), reading the live `#contexts` of each frame's node and
+ * falling back to the context's default if no ancestor provides it.
+ *
+ * The owner chain is the render-call ancestry captured at frame push
+ * (via `withActiveNode`) — independent of mount status. Effects/memos
+ * capture their creation frame and re-establish it on re-fire, so
+ * detached re-runs walk the same chain they would have at creation.
  */
 export interface Context<T> {
   readonly id: symbol
   readonly defaultValue: T
 }
 
-const contextStore = new AsyncLocalStorage<Map<symbol, unknown>>()
-
 export function createContext<T>(defaultValue: T): Context<T> {
   return { defaultValue, id: Symbol("@zaly/tui/context") }
 }
 
-/** Run `fn` with `ctx` set to `value`. Nested calls layer; the
- *  innermost wins for that id. */
-export function withContext<T, R>(ctx: Context<T>, value: T, fn: () => R): R {
-  const parent = contextStore.getStore()
-  const next = new Map(parent)
-  next.set(ctx.id, value)
-  return contextStore.run(next, fn)
+/** Publish `value` for `ctx` on the active node. Persistent: the value
+ *  stays on the node across renders until overwritten. Descendants (in
+ *  the render-call sense) that read via `useContext` walk up the owner
+ *  chain and find it. */
+export function provideContext<T>(ctx: Context<T>, value: T): void {
+  const frame = activeOwnerStore.getStore()
+  if (frame === undefined) {
+    throw new Error("provideContext: no active node — call from a widget body / _render")
+  }
+  frame.node.setContext(ctx.id, value)
 }
 
-/** Read the current value of `ctx`. Returns the default when no
- *  ancestor `withContext` is in scope. */
+/** Read the current value of `ctx`. Walks the owner frame chain
+ *  (render-call ancestry, not mount tree). Returns the context's
+ *  default when no ancestor has provided a value. */
 export function useContext<T>(ctx: Context<T>): T {
-  const map = contextStore.getStore()
-  if (map === undefined) return ctx.defaultValue
-  const v = map.get(ctx.id)
-  return v === undefined ? ctx.defaultValue : (v as T)
+  for (let f = activeOwnerStore.getStore(); f !== undefined; f = f.owner) {
+    const map = f.node.contexts
+    if (map?.has(ctx.id)) return map.get(ctx.id) as T
+  }
+  return ctx.defaultValue
 }
 
 // ---- public types ----------------------------------------------------
@@ -172,11 +180,27 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
 
 // ---- Node integration ------------------------------------------------
 
+/** An entry in the owner chain. `owner` points at the frame that was
+ *  active when this one was pushed — i.e. the render-call ancestry,
+ *  *not* the mount-tree ancestry. Mount status doesn't affect this
+ *  chain: a transient node used for measurement still resolves
+ *  context correctly because its frame's `owner` is whichever node's
+ *  render created it. */
+export interface OwnerFrame {
+  readonly node: Node
+  readonly owner?: OwnerFrame
+}
+
+const activeOwnerStore = new AsyncLocalStorage<OwnerFrame | undefined>()
+
 /** Run `fn` as the `node`'s render pass. Signal reads inside subscribe
  *  the node; subscriptions auto-clear on unmount. Stale deps across
  *  renders persist until unmount — mildly wasteful (extra
  *  invalidations), but cheaper than re-tracking per render and
  *  harmless (invalidate is idempotent).
+ *
+ *  Pushes an `OwnerFrame` whose `owner` is the previously active frame,
+ *  so the chain mirrors the render-call stack at this moment in time.
  *
  *  @internal */
 export function withActiveNode<T>(node: Node, fn: () => T): T {
@@ -193,7 +217,19 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
     }
     nodeCtx.set(node, ctx)
   }
-  return activeNodeStore.run(node, () => withTracking(ctx, fn))
+  const parent = activeOwnerStore.getStore()
+  const frame: OwnerFrame = { node, owner: parent }
+  return activeOwnerStore.run(frame, () => withTracking(ctx, fn))
+}
+
+/** Run `fn` with a pre-existing owner frame restored. Used by
+ *  `effect` / `memo` to re-establish their creation-time owner chain
+ *  on re-fire, so `useContext` walks the same ancestry regardless of
+ *  whether the re-fire was triggered from inside or outside a render.
+ *
+ *  @internal */
+export function withOwnerFrame<T>(frame: OwnerFrame, fn: () => T): T {
+  return activeOwnerStore.run(frame, fn)
 }
 
 /** The `Node` whose render is currently active, or `undefined` outside
@@ -202,10 +238,16 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
  *
  *  @internal */
 export function useActiveNode(): Node | undefined {
-  return activeNodeStore.getStore()
+  return activeOwnerStore.getStore()?.node
 }
 
-const activeNodeStore = new AsyncLocalStorage<Node | undefined>()
+/** Current owner frame, or `undefined` outside any render. Captured by
+ *  effects/memos at creation time and restored on re-fire.
+ *
+ *  @internal */
+export function useActiveOwner(): OwnerFrame | undefined {
+  return activeOwnerStore.getStore()
+}
 
 /**
  * Register a per-render hook on the active owner node. The callback
@@ -215,8 +257,10 @@ const activeNodeStore = new AsyncLocalStorage<Node | undefined>()
  * theme / resize / explicit ctx changes, so a cache hit means ctx
  * hasn't meaningfully changed.
  *
- * The callback runs inside the render's ALS chain — `useContext(...)`
- * resolves against the active render's `RenderContext`.
+ * The callback receives the live `RenderCtx` directly — width, theme,
+ * version, transmit. Use this to capture per-render data (theme, style)
+ * into signals that async closures (`createAsync`) can read later, since
+ * those run outside the render and don't have access to ctx.
  *
  * Auto-disposes on the owner's `unmount`. Idempotent re-mount: the
  * Node's emitter cleans up on unmount but the closure stays valid; if
@@ -225,19 +269,17 @@ const activeNodeStore = new AsyncLocalStorage<Node | undefined>()
  *
  * ```ts
  * const [theme, setTheme] = signal<Theme | undefined>(undefined)
- * createRenderEffect(() => {
- *   const ctx = useContext(RenderContext)
- *   if (ctx) setTheme(ctx.style.theme)
- * })
+ * createRenderEffect((ctx) => setTheme(ctx.style.theme))
  * ```
  */
-export function createRenderEffect(fn: () => void): void {
+export function createRenderEffect(fn: (ctx: RenderCtx) => void): void {
   const owner = useActiveNode()
   if (owner === undefined) {
     throw new Error("createRenderEffect must be called inside a node render")
   }
-  owner.on("render", fn)
-  owner.once("unmount", () => owner.off("render", fn))
+  const handler = (e: { ctx: RenderCtx }): void => fn(e.ctx)
+  owner.on("render", handler)
+  owner.once("unmount", () => owner.off("render", handler))
 }
 
 /** Whether we're currently executing inside `node`'s own render call
@@ -361,6 +403,13 @@ export function effect(fn: () => void): () => void {
   let cleanups: (() => void)[] = []
   let disposed = false
 
+  // Capture the owner frame at creation time. Re-fires triggered by
+  // signal writes run in the *writer's* ALS context, which has nothing
+  // to do with where the effect was created. Restoring the captured
+  // frame on each run keeps `useContext` walking the same ancestry
+  // regardless of who triggered the re-fire.
+  const owner = useActiveOwner()
+
   const ctx: TrackingCtx = {
     notify: () => {
       if (disposed) return
@@ -376,7 +425,9 @@ export function effect(fn: () => void): () => void {
     const old = cleanups
     cleanups = []
     for (const c of old) c()
-    withTracking(ctx, fn)
+    const tracked = (): void => withTracking(ctx, fn)
+    if (owner !== undefined) withOwnerFrame(owner, tracked)
+    else tracked()
   }
 
   run()
@@ -434,12 +485,11 @@ export function memo<T>(fn: () => T): Accessor<T> {
  * text(highlighted)
  * ```
  *
- * **`fn` should not reach for `RenderContext`** — per-render fields
- * (width / version) don't apply at the time the async work runs, and
- * effect re-fires happen in signal-write batches outside any render
- * so `useContext(RenderContext)` returns `undefined` there. Owning
- * widgets capture what they need (theme, etc.) into a signal during
- * render and feed that into `fn`.
+ * **`fn` should not reach for per-render data** (width, theme via
+ * `RenderCtx`) — the async closure runs after the render returns and
+ * re-fires outside any render. Use `createRenderEffect((ctx) => ...)`
+ * to capture what you need (theme, style) into a signal at render time
+ * and read that signal from `fn`.
  *
  * **Stale-write protection**: each run bumps a generation counter;
  * late `.then` callbacks check it and skip `setValue` if a newer run
