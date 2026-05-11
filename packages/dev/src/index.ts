@@ -2,9 +2,9 @@
 // oxlint-disable sort-keys
 
 import { defineCommand, runCommand, runMain, showUsage } from "citty"
-import { readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
-import { dirname, resolve } from "pathe"
+import { dirname, join, resolve } from "pathe"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 
@@ -23,6 +23,14 @@ function currentPackage(): string | undefined {
 function currentSlug(): string | undefined {
   const name = currentPackage()
   return name?.startsWith("@zaly/") ? name.slice("@zaly/".length) : undefined
+}
+
+function allPackageDirs(): string[] {
+  const pkgsRoot = join(root, "packages")
+  return readdirSync(pkgsRoot, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(pkgsRoot, d.name, "package.json")))
+    .map((d) => join(pkgsRoot, d.name))
+    .toSorted()
 }
 
 async function exec(cmd: string[], cwd: string = process.cwd()): Promise<void> {
@@ -97,6 +105,35 @@ const main = defineCommand({
       },
       run: async ({ rawArgs }) => {
         await exec(["oxfmt", ...rawArgs])
+      },
+    }),
+    bench: defineCommand({
+      meta: {
+        name: "bench",
+        description:
+          "Run mitata `*.bench.ts` under bench/; --imports times cold `bun -e 'import X'` via hyperfine",
+      },
+      args: {
+        pattern: { type: "positional", required: false, description: "Substring or glob filter" },
+        imports: {
+          type: "boolean",
+          description: "Bench cold imports (deps + exports) via hyperfine",
+          default: false,
+        },
+      },
+      run: async ({ args }) => {
+        const { runMitata, runImports } = await import("./bench.ts")
+        const pkgDirs = (() => {
+          const cwd = process.cwd()
+          return cwd === root ? allPackageDirs() : [cwd]
+        })()
+        if (args.imports) {
+          await runImports({ pkgDirs, exec })
+          return
+        }
+        const dirs = pkgDirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
+        const ok = await runMitata({ dirs, pattern: args.pattern })
+        if (!ok) process.exit(1)
       },
     }),
     api: defineCommand({

@@ -33,7 +33,6 @@
     "@vitest/coverage-v8": "4.1.5",
     "@zaly/dev": "workspace:*",
     "knip": "^6.12.2",
-    "mitata": "^1.0.34",
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1",

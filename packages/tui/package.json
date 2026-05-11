@@ -52,7 +52,7 @@
     }
   },
   "scripts": {
-    "bench": "bun bench/run.ts",
+    "bench": "z bench",
     "build": "z build",
     "build:schemas": "bun scripts/schemas.ts",
     "build:themes-1-shiki": "bun scripts/themes-shiki.ts",
