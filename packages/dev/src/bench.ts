@@ -10,6 +10,8 @@
  *   subpath. One process per package keeps the comparison table local.
  */
 
+import type { Runtime } from "./cli.ts"
+
 import { run } from "mitata"
 import { globSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -70,7 +72,8 @@ export interface RunImportsOpts {
   exec: (cmd: string[], cwd?: string) => Promise<void>
 }
 
-export async function runImports(opts: RunImportsOpts): Promise<void> {
+export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promise<void> {
+  runtime ??= "bun"
   const { createCtx, defaultTheme, markdown } = await import("@zaly/tui")
   const ctx = createCtx({ theme: defaultTheme })
   const tmpRoot = mkdtempSync(join(tmpdir(), "z-bench-imports-"))
@@ -80,8 +83,8 @@ export async function runImports(opts: RunImportsOpts): Promise<void> {
       if (specs.length === 0) continue
       const pkgName = readPkg(dir).name ?? dir
       process.stdout.write(`\n── ${pkgName} ──\n`)
-      const cases = ["bun -e ' '", ...specs.map((s) => `bun -e 'import "${s}"'`)]
-      const names = ["bun", ...specs].flatMap((s) => ["-n", s])
+      const cases = [`${runtime} -e ' '`, ...specs.map((s) => `${runtime} -e 'import "${s}"'`)]
+      const names = [runtime, ...specs].flatMap((s) => ["-n", s])
       const out = join(tmpRoot, `${pkgName.replace(/[@/]/g, "_")}.md`)
       await opts.exec(
         [

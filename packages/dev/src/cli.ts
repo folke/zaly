@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 // oxlint-disable sort-keys
 
 import { defineCommand, runCommand, runMain, showUsage } from "citty"
@@ -9,6 +8,8 @@ import { dirname, join, resolve } from "pathe"
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 
 const passthrough = new Set(["test", "lint", "fmt"])
+
+export type Runtime = "bun" | "node"
 
 function currentPackage(): string | undefined {
   if (process.cwd() === root) return undefined
@@ -121,6 +122,12 @@ const main = defineCommand({
           description: "Bench cold imports (deps + exports) via hyperfine",
           default: false,
         },
+        runtime: {
+          type: "enum",
+          enum: ["bun", "node"],
+          description: "Runtime to use for import benchmarks",
+          default: "bun",
+        },
       },
       run: async ({ args }) => {
         const { runMitata, runImports } = await import("./bench.ts")
@@ -129,7 +136,7 @@ const main = defineCommand({
           return cwd === root ? allPackageDirs() : [cwd]
         })()
         if (args.imports) {
-          await runImports({ pkgDirs, exec })
+          await runImports({ pkgDirs, exec }, args.runtime)
           return
         }
         const dirs = pkgDirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
@@ -158,13 +165,15 @@ const main = defineCommand({
   },
 })
 
-await runMain(main, {
-  showUsage: async (cmd) => {
-    const meta = await cmd.meta
-    if (passthrough.has(meta?.name ?? "")) {
-      await runCommand(cmd, { rawArgs: ["--help"] })
-      return
-    }
-    await showUsage(cmd)
-  },
-})
+export async function run() {
+  await runMain(main, {
+    showUsage: async (cmd) => {
+      const meta = await cmd.meta
+      if (passthrough.has(meta?.name ?? "")) {
+        await runCommand(cmd, { rawArgs: ["--help"] })
+        return
+      }
+      await showUsage(cmd)
+    },
+  })
+}

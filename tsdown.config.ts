@@ -55,5 +55,8 @@ export default defineConfig({
   },
   format: ["esm"],
   publint: true,
-  workspace: "packages/*",
+  workspace: {
+    include: "packages/*",
+    exclude: ["packages/dev"],
+  },
 })

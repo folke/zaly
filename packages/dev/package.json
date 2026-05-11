@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "bin": {
-    "z": "./src/index.ts"
+    "z": "./bin/z.ts"
   },
   "type": "module",
   "dependencies": {
