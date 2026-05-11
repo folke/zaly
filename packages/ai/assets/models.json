@@ -35686,7 +35686,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -35697,49 +35697,15 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.02,
-        "output": 0.1
+        "input": 0.0245,
+        "output": 0.0978,
+        "cache_read": 0.01225
       },
       "limit": {
         "context": 32768,
         "output": 32768
       },
       "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/NousResearch/Hermes-4-405B-FP8-TEE": {
-      "id": "NousResearch/Hermes-4-405B-FP8-TEE",
-      "name": "Hermes 4 405B FP8 TEE",
-      "family": "nousresearch",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2
-      },
-      "limit": {
-        "context": 131072,
-        "output": 65536
-      },
-      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -35756,7 +35722,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -35767,49 +35733,15 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.01,
-        "output": 0.05
+        "input": 0.0136,
+        "output": 0.0543,
+        "cache_read": 0.0068
       },
       "limit": {
         "context": 40960,
         "output": 40960
       },
       "maxTokens": 40960,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/NousResearch/Hermes-4-70B": {
-      "id": "NousResearch/Hermes-4-70B",
-      "name": "Hermes 4 70B",
-      "family": "nousresearch",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.11,
-        "output": 0.38
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -35826,7 +35758,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -35838,7 +35770,8 @@
       "open_weights": true,
       "cost": {
         "input": 0.06,
-        "output": 0.22
+        "output": 0.22,
+        "cache_read": 0.03
       },
       "limit": {
         "context": 40960,
@@ -35848,151 +35781,17 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/Qwen/Qwen3-Coder-Next": {
-      "id": "Qwen/Qwen3-Coder-Next",
-      "name": "Qwen3 Coder Next",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-02-05",
-      "last_updated": "2026-02-05",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.07,
-        "output": 0.3
-      },
-      "limit": {
-        "context": 262144,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/Qwen/Qwen3-235B-A22B": {
-      "id": "Qwen/Qwen3-235B-A22B",
-      "name": "Qwen3 235B A22B",
+    "chutes/Qwen/Qwen3-32B-TEE": {
+      "id": "Qwen/Qwen3-32B-TEE",
+      "name": "Qwen3 32B TEE",
       "family": "qwen",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
       "structured_output": true,
       "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2
-      },
-      "limit": {
-        "context": 40960,
-        "output": 40960
-      },
-      "maxTokens": 40960,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/Qwen/Qwen3-Next-80B-A3B-Instruct": {
-      "id": "Qwen/Qwen3-Next-80B-A3B-Instruct",
-      "name": "Qwen3 Next 80B A3B Instruct",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.1,
-        "output": 0.8
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/Qwen/Qwen3-30B-A3B-Instruct-2507": {
-      "id": "Qwen/Qwen3-30B-A3B-Instruct-2507",
-      "name": "Qwen3 30B A3B Instruct 2507",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.08,
-        "output": 0.33
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/Qwen/Qwen3-32B": {
-      "id": "Qwen/Qwen3-32B",
-      "name": "Qwen3 32B",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36015,20 +35814,51 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/Qwen/Qwen3-14B": {
-      "id": "Qwen/Qwen3-14B",
-      "name": "Qwen3 14B",
+    "chutes/Qwen/Qwen3.6-27B-TEE": {
+      "id": "Qwen/Qwen3.6-27B-TEE",
+      "name": "Qwen3.6 27B TEE",
       "family": "qwen",
-      "attachment": false,
+      "attachment": true,
       "reasoning": true,
       "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
       },
+      "open_weights": true,
+      "cost": {
+        "input": 0.195,
+        "output": 1.56,
+        "cache_read": 0.0975
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://llm.chutes.ai/v1"
+    },
+    "chutes/Qwen/Qwen3-Next-80B-A3B-Instruct": {
+      "id": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+      "name": "Qwen3 Next 80B A3B Instruct",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36039,14 +35869,15 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.05,
-        "output": 0.22
+        "input": 0.1,
+        "output": 0.8,
+        "cache_read": 0.05
       },
       "limit": {
-        "context": 40960,
-        "output": 40960
+        "context": 262144,
+        "output": 262144
       },
-      "maxTokens": 40960,
+      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -36060,7 +35891,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36071,9 +35902,42 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.08,
-        "output": 0.55,
-        "cache_read": 0.04
+        "input": 0.1,
+        "output": 0.6,
+        "cache_read": 0.05
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://llm.chutes.ai/v1"
+    },
+    "chutes/Qwen/Qwen3-Coder-Next-TEE": {
+      "id": "Qwen/Qwen3-Coder-Next-TEE",
+      "name": "Qwen3 Coder Next TEE",
+      "family": "qwen",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.12,
+        "output": 0.75,
+        "cache_read": 0.06
       },
       "limit": {
         "context": 262144,
@@ -36096,7 +35960,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36108,7 +35972,8 @@
       "open_weights": true,
       "cost": {
         "input": 0.11,
-        "output": 0.6
+        "output": 0.6,
+        "cache_read": 0.055
       },
       "limit": {
         "context": 262144,
@@ -36131,7 +35996,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-02-18",
-      "last_updated": "2026-02-18",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text",
@@ -36155,72 +36020,6 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8-TEE": {
-      "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8-TEE",
-      "name": "Qwen3 Coder 480B A35B Instruct FP8 TEE",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.22,
-        "output": 0.95,
-        "cache_read": 0.11
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/Qwen/Qwen3-VL-235B-A22B-Instruct": {
-      "id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-      "name": "Qwen3 VL 235B A22B Instruct",
-      "family": "qwen",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
     "chutes/Qwen/Qwen2.5-72B-Instruct": {
       "id": "Qwen/Qwen2.5-72B-Instruct",
       "name": "Qwen2.5 72B Instruct",
@@ -36231,7 +36030,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36242,8 +36041,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.13,
-        "output": 0.52
+        "input": 0.2989,
+        "output": 1.1957,
+        "cache_read": 0.14945
       },
       "limit": {
         "context": 32768,
@@ -36266,7 +36066,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-04-08",
-      "last_updated": "2026-04-08",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36277,160 +36077,29 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.95,
-        "output": 3.15,
-        "cache_read": 0.475
+        "input": 1.05,
+        "output": 3.5,
+        "cache_read": 0.525
       },
       "limit": {
         "context": 202752,
         "output": 65535
       },
       "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/zai-org/GLM-4.7-Flash": {
-      "id": "zai-org/GLM-4.7-Flash",
-      "name": "GLM 4.7 Flash",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.06,
-        "output": 0.35
-      },
-      "limit": {
-        "context": 202752,
-        "output": 65535
-      },
-      "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/zai-org/GLM-4.5-TEE": {
-      "id": "zai-org/GLM-4.5-TEE",
-      "name": "GLM 4.5 TEE",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.35,
-        "output": 1.55
-      },
-      "limit": {
-        "context": 131072,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/zai-org/GLM-4.6-FP8": {
-      "id": "zai-org/GLM-4.6-FP8",
-      "name": "GLM 4.6 FP8",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2
-      },
-      "limit": {
-        "context": 202752,
-        "output": 65535
-      },
-      "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/zai-org/GLM-4.5-Air": {
-      "id": "zai-org/GLM-4.5-Air",
-      "name": "GLM 4.5 Air",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.05,
-        "output": 0.22
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
     "chutes/zai-org/GLM-4.7-FP8": {
       "id": "zai-org/GLM-4.7-FP8",
       "name": "GLM 4.7 FP8",
+      "family": "glm",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36441,8 +36110,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.3,
-        "output": 1.2
+        "input": 0.2989,
+        "output": 1.1957,
+        "cache_read": 0.14945
       },
       "limit": {
         "context": 202752,
@@ -36465,7 +36135,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-02-14",
-      "last_updated": "2026-02-14",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36477,7 +36147,7 @@
       "open_weights": true,
       "cost": {
         "input": 0.95,
-        "output": 3.15,
+        "output": 2.55,
         "cache_read": 0.475
       },
       "limit": {
@@ -36485,37 +36155,6 @@
         "output": 65535
       },
       "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/zai-org/GLM-4.5-FP8": {
-      "id": "zai-org/GLM-4.5-FP8",
-      "name": "GLM 4.5 FP8",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.3,
-        "output": 1.2
-      },
-      "limit": {
-        "context": 131072,
-        "output": 65536
-      },
-      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -36532,7 +36171,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36543,8 +36182,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.4,
-        "output": 1.5
+        "input": 0.39,
+        "output": 1.75,
+        "cache_read": 0.195
       },
       "limit": {
         "context": 202752,
@@ -36558,7 +36198,7 @@
       "id": "zai-org/GLM-4.6V",
       "name": "GLM 4.6V",
       "family": "glm",
-      "attachment": false,
+      "attachment": true,
       "reasoning": true,
       "tool_call": true,
       "interleaved": {
@@ -36567,7 +36207,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text",
@@ -36604,7 +36244,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-03-11",
-      "last_updated": "2026-03-11",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36615,9 +36255,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.49,
-        "output": 1.96,
-        "cache_read": 0.245
+        "input": 0.4891,
+        "output": 1.9565,
+        "cache_read": 0.24455
       },
       "limit": {
         "context": 202752,
@@ -36627,84 +36267,17 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/zai-org/GLM-4.6-TEE": {
-      "id": "zai-org/GLM-4.6-TEE",
-      "name": "GLM 4.6 TEE",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.4,
-        "output": 1.7,
-        "cache_read": 0.2
-      },
-      "limit": {
-        "context": 202752,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/mistralai/Devstral-2-123B-Instruct-2512-TEE": {
-      "id": "mistralai/Devstral-2-123B-Instruct-2512-TEE",
-      "name": "Devstral 2 123B Instruct 2512 TEE",
+    "chutes/XiaomiMiMo/MiMo-V2-Flash-TEE": {
+      "id": "XiaomiMiMo/MiMo-V2-Flash-TEE",
+      "name": "MiMo V2 Flash TEE",
+      "family": "mimo",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
-      "release_date": "2026-01-10",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.05,
-        "output": 0.22
-      },
-      "limit": {
-        "context": 262144,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/XiaomiMiMo/MiMo-V2-Flash": {
-      "id": "XiaomiMiMo/MiMo-V2-Flash",
-      "name": "MiMo V2 Flash",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": false,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-27",
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36716,112 +36289,14 @@
       "open_weights": true,
       "cost": {
         "input": 0.09,
-        "output": 0.29
+        "output": 0.29,
+        "cache_read": 0.045
       },
       "limit": {
         "context": 262144,
-        "output": 32000
+        "output": 65536
       },
-      "maxTokens": 32000,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/chutesai/Mistral-Small-3.2-24B-Instruct-2506": {
-      "id": "chutesai/Mistral-Small-3.2-24B-Instruct-2506",
-      "name": "Mistral Small 3.2 24B Instruct 2506",
-      "family": "chutesai",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.06,
-        "output": 0.18
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/chutesai/Mistral-Small-3.1-24B-Instruct-2503": {
-      "id": "chutesai/Mistral-Small-3.1-24B-Instruct-2503",
-      "name": "Mistral Small 3.1 24B Instruct 2503",
-      "family": "chutesai",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.03,
-        "output": 0.11,
-        "cache_read": 0.015
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16": {
-      "id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
-      "name": "NVIDIA Nemotron 3 Nano 30B A3B BF16",
-      "family": "nemotron",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.06,
-        "output": 0.24
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -36838,7 +36313,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36849,8 +36324,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.03,
-        "output": 0.11
+        "input": 0.0272,
+        "output": 0.1087,
+        "cache_read": 0.0136
       },
       "limit": {
         "context": 131072,
@@ -36873,7 +36349,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36884,8 +36360,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.2,
-        "output": 0.8
+        "input": 0.27,
+        "output": 1,
+        "cache_read": 0.135
       },
       "limit": {
         "context": 163840,
@@ -36905,7 +36382,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36916,44 +36393,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.19,
-        "output": 0.87,
-        "cache_read": 0.095
-      },
-      "limit": {
-        "context": 163840,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/deepseek-ai/DeepSeek-V3.1-Terminus-TEE": {
-      "id": "deepseek-ai/DeepSeek-V3.1-Terminus-TEE",
-      "name": "DeepSeek V3.1 Terminus TEE",
-      "family": "deepseek",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.23,
-        "output": 0.9
+        "input": 0.25,
+        "output": 1,
+        "cache_read": 0.125
       },
       "limit": {
         "context": 163840,
@@ -36976,7 +36418,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -36987,8 +36429,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.4,
-        "output": 1.75
+        "input": 0.45,
+        "output": 2.15,
+        "cache_read": 0.225
       },
       "limit": {
         "context": 163840,
@@ -37011,7 +36454,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -37034,41 +36477,6 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/openai/gpt-oss-20b": {
-      "id": "openai/gpt-oss-20b",
-      "name": "gpt oss 20b",
-      "family": "gpt-oss",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.02,
-        "output": 0.1
-      },
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "maxTokens": 131072,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
     "chutes/openai/gpt-oss-120b-TEE": {
       "id": "openai/gpt-oss-120b-TEE",
       "name": "gpt oss 120b TEE",
@@ -37082,7 +36490,7 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -37093,8 +36501,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.04,
-        "output": 0.18
+        "input": 0.09,
+        "output": 0.36,
+        "cache_read": 0.045
       },
       "limit": {
         "context": 131072,
@@ -37104,50 +36513,17 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/unsloth/Mistral-Small-24B-Instruct-2501": {
-      "id": "unsloth/Mistral-Small-24B-Instruct-2501",
-      "name": "Mistral Small 24B Instruct 2501",
-      "family": "unsloth",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.03,
-        "output": 0.11
-      },
-      "limit": {
-        "context": 32768,
-        "output": 32768
-      },
-      "maxTokens": 32768,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
     "chutes/unsloth/gemma-3-27b-it": {
       "id": "unsloth/gemma-3-27b-it",
       "name": "gemma 3 27b it",
       "family": "unsloth",
-      "attachment": false,
+      "attachment": true,
       "reasoning": false,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
       "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text",
@@ -37159,9 +36535,9 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.04,
-        "output": 0.15,
-        "cache_read": 0.02
+        "input": 0.0272,
+        "output": 0.1087,
+        "cache_read": 0.0136
       },
       "limit": {
         "context": 128000,
@@ -37171,23 +36547,21 @@
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
-    "chutes/moonshotai/Kimi-K2-Thinking-TEE": {
-      "id": "moonshotai/Kimi-K2-Thinking-TEE",
-      "name": "Kimi K2 Thinking TEE",
-      "family": "kimi-thinking",
-      "attachment": false,
+    "chutes/google/gemma-4-31B-turbo-TEE": {
+      "id": "google/gemma-4-31B-turbo-TEE",
+      "name": "gemma 4 31B turbo TEE",
+      "family": "gemma",
+      "attachment": true,
       "reasoning": true,
       "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
       "structured_output": true,
       "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image"
         ],
         "output": [
           "text"
@@ -37195,47 +36569,15 @@
       },
       "open_weights": true,
       "cost": {
-        "input": 0.4,
-        "output": 1.75
+        "input": 0.13,
+        "output": 0.38,
+        "cache_read": 0.065
       },
       "limit": {
-        "context": 262144,
-        "output": 65535
+        "context": 131072,
+        "output": 65536
       },
-      "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/moonshotai/Kimi-K2-Instruct-0905": {
-      "id": "moonshotai/Kimi-K2-Instruct-0905",
-      "name": "Kimi K2 Instruct 0905",
-      "family": "kimi",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.39,
-        "output": 1.9,
-        "cache_read": 0.195
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -37253,7 +36595,46 @@
       "temperature": true,
       "knowledge": "2025-12",
       "release_date": "2026-04-20",
-      "last_updated": "2026-04-23",
+      "last_updated": "2026-04-25",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.475
+      },
+      "limit": {
+        "context": 262144,
+        "output": 65535
+      },
+      "maxTokens": 65535,
+      "provider": "openai",
+      "baseUrl": "https://llm.chutes.ai/v1"
+    },
+    "chutes/moonshotai/Kimi-K2.5-TEE": {
+      "id": "moonshotai/Kimi-K2.5-TEE",
+      "name": "Kimi K2.5 TEE",
+      "family": "kimi",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2024-10",
+      "release_date": "2026-01-27",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text",
@@ -37267,86 +36648,14 @@
       "open_weights": true,
       "cost": {
         "input": 0.44,
-        "output": 2
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/moonshotai/Kimi-K2.5-TEE": {
-      "id": "moonshotai/Kimi-K2.5-TEE",
-      "name": "Kimi K2.5 TEE",
-      "family": "kimi",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2024-10",
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.6,
-        "output": 3
+        "output": 2,
+        "cache_read": 0.22
       },
       "limit": {
         "context": 262144,
         "output": 65535
       },
       "maxTokens": 65535,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/MiniMaxAI/MiniMax-M2.1-TEE": {
-      "id": "MiniMaxAI/MiniMax-M2.1-TEE",
-      "name": "MiniMax M2.1 TEE",
-      "family": "minimax",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.27,
-        "output": 1.12
-      },
-      "limit": {
-        "context": 196608,
-        "output": 65536
-      },
-      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -37363,7 +36672,40 @@
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-02-15",
-      "last_updated": "2026-02-15",
+      "last_updated": "2026-04-25",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0.15,
+        "output": 1.2,
+        "cache_read": 0.075
+      },
+      "limit": {
+        "context": 196608,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://llm.chutes.ai/v1"
+    },
+    "chutes/tngtech/DeepSeek-TNG-R1T2-Chimera-TEE": {
+      "id": "tngtech/DeepSeek-TNG-R1T2-Chimera-TEE",
+      "name": "DeepSeek TNG R1T2 Chimera TEE",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-25",
+      "last_updated": "2026-04-25",
       "modalities": {
         "input": [
           "text"
@@ -37379,111 +36721,10 @@
         "cache_read": 0.15
       },
       "limit": {
-        "context": 196608,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/tngtech/TNG-R1T-Chimera-Turbo": {
-      "id": "tngtech/TNG-R1T-Chimera-Turbo",
-      "name": "TNG R1T Chimera Turbo",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.22,
-        "output": 0.6
-      },
-      "limit": {
-        "context": 163840,
-        "output": 65536
-      },
-      "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/tngtech/DeepSeek-TNG-R1T2-Chimera": {
-      "id": "tngtech/DeepSeek-TNG-R1T2-Chimera",
-      "name": "DeepSeek TNG R1T2 Chimera",
-      "family": "tngtech",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.25,
-        "output": 0.85
-      },
-      "limit": {
         "context": 163840,
         "output": 163840
       },
       "maxTokens": 163840,
-      "provider": "openai",
-      "baseUrl": "https://llm.chutes.ai/v1"
-    },
-    "chutes/tngtech/TNG-R1T-Chimera-TEE": {
-      "id": "tngtech/TNG-R1T-Chimera-TEE",
-      "name": "TNG R1T Chimera TEE",
-      "family": "tngtech",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-12-29",
-      "last_updated": "2026-01-10",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0.25,
-        "output": 0.85
-      },
-      "limit": {
-        "context": 163840,
-        "output": 65536
-      },
-      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://llm.chutes.ai/v1"
     },
@@ -66067,6 +65308,36 @@
       "provider": "openai",
       "baseUrl": "https://api.synthetic.new/openai/v1"
     },
+    "nvidia/upstage/solar-10_7b-instruct": {
+      "id": "upstage/solar-10_7b-instruct",
+      "name": "solar-10.7b-instruct",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2024-06-05",
+      "last_updated": "2025-04-10",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 128000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
     "nvidia/stepfun-ai/step-3.5-flash": {
       "id": "stepfun-ai/step-3.5-flash",
       "name": "Step 3.5 Flash",
@@ -66094,37 +65365,6 @@
         "output": 16384
       },
       "maxTokens": 16384,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/mistralai/codestral-22b-instruct-v0.1": {
-      "id": "mistralai/codestral-22b-instruct-v0.1",
-      "name": "Codestral 22b Instruct V0.1",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-05-29",
-      "last_updated": "2024-05-29",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66195,50 +65435,15 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/mistralai/ministral-14b-instruct-2512": {
-      "id": "mistralai/ministral-14b-instruct-2512",
-      "name": "Ministral 3 14B Instruct 2512",
-      "family": "ministral",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2025-12",
-      "release_date": "2025-12-01",
-      "last_updated": "2025-12-08",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/mistralai/mistral-small-3.1-24b-instruct-2503": {
-      "id": "mistralai/mistral-small-3.1-24b-instruct-2503",
-      "name": "Mistral Small 3.1 24b Instruct 2503",
+    "nvidia/mistralai/mistral-nemotron": {
+      "id": "mistralai/mistral-nemotron",
+      "name": "mistral-nemotron",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
-      "structured_output": true,
       "temperature": true,
-      "release_date": "2025-03-11",
-      "last_updated": "2025-03-11",
+      "release_date": "2025-06-11",
+      "last_updated": "2025-06-12",
       "modalities": {
         "input": [
           "text"
@@ -66254,22 +65459,112 @@
       },
       "limit": {
         "context": 128000,
-        "output": 4096
+        "output": 8192
       },
-      "maxTokens": 4096,
+      "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/mistralai/mistral-large-2-instruct": {
-      "id": "mistralai/mistral-large-2-instruct",
-      "name": "Mistral Large 2 Instruct",
+    "nvidia/mistralai/mixtral-8x22b-instruct": {
+      "id": "mistralai/mixtral-8x22b-instruct",
+      "name": "Mistral: Mixtral 8x22B Instruct",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2024-04-17",
+      "last_updated": "2024-04-17",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 65536,
+        "output": 13108
+      },
+      "maxTokens": 13108,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/mistralai/mixtral-8x7b-instruct": {
+      "id": "mistralai/mixtral-8x7b-instruct",
+      "name": "Mistral: Mixtral 8x7B Instruct",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2023-12-10",
+      "last_updated": "2026-03-15",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 32768,
+        "output": 16384
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/mistralai/mistral-7b-instruct-v03": {
+      "id": "mistralai/mistral-7b-instruct-v03",
+      "name": "Mistral-7B-Instruct-v0.3",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
-      "release_date": "2024-07-24",
-      "last_updated": "2024-07-24",
+      "release_date": "2025-04-01",
+      "last_updated": "2025-04-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 65536,
+        "output": 65536
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/mistralai/mistral-small-4-119b-2603": {
+      "id": "mistralai/mistral-small-4-119b-2603",
+      "name": "mistral-small-4-119b-2603",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-16",
+      "last_updated": "2026-03-16",
       "modalities": {
         "input": [
           "text"
@@ -66285,55 +65580,21 @@
       },
       "limit": {
         "context": 128000,
-        "output": 4096
+        "output": 8192
       },
-      "maxTokens": 4096,
+      "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/microsoft/phi-3-medium-4k-instruct": {
-      "id": "microsoft/phi-3-medium-4k-instruct",
-      "name": "Phi 3 Medium 4k Instruct",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2023-10",
-      "release_date": "2024-05-07",
-      "last_updated": "2024-05-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 4000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3.5-moe-instruct": {
-      "id": "microsoft/phi-3.5-moe-instruct",
-      "name": "Phi 3.5 Moe Instruct",
+    "nvidia/sarvamai/sarvam-m": {
+      "id": "sarvamai/sarvam-m",
+      "name": "sarvam-m",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
-      "structured_output": true,
       "temperature": true,
-      "release_date": "2024-08-17",
-      "last_updated": "2024-08-17",
+      "release_date": "2025-07-25",
+      "last_updated": "2025-07-25",
       "modalities": {
         "input": [
           "text"
@@ -66349,9 +65610,9 @@
       },
       "limit": {
         "context": 128000,
-        "output": 4096
+        "output": 8192
       },
-      "maxTokens": 4096,
+      "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66386,169 +65647,6 @@
         "output": 8192
       },
       "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3-small-8k-instruct": {
-      "id": "microsoft/phi-3-small-8k-instruct",
-      "name": "Phi 3 Small 8k Instruct",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2023-10",
-      "release_date": "2024-05-07",
-      "last_updated": "2024-05-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 8000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3-vision-128k-instruct": {
-      "id": "microsoft/phi-3-vision-128k-instruct",
-      "name": "Phi 3 Vision 128k Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-05-19",
-      "last_updated": "2024-05-19",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3.5-vision-instruct": {
-      "id": "microsoft/phi-3.5-vision-instruct",
-      "name": "Phi 3.5 Vision Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-08-16",
-      "last_updated": "2024-08-16",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3-small-128k-instruct": {
-      "id": "microsoft/phi-3-small-128k-instruct",
-      "name": "Phi 3 Small 128k Instruct",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2023-10",
-      "release_date": "2024-05-07",
-      "last_updated": "2024-05-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/microsoft/phi-3-medium-128k-instruct": {
-      "id": "microsoft/phi-3-medium-128k-instruct",
-      "name": "Phi 3 Medium 128k Instruct",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2023-10",
-      "release_date": "2024-05-07",
-      "last_updated": "2024-05-07",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66587,68 +65685,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/nvidia/nemotron-4-340b-instruct": {
-      "id": "nvidia/nemotron-4-340b-instruct",
-      "name": "Nemotron 4 340b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-06-13",
-      "last_updated": "2024-06-13",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/nvidia/llama3-chatqa-1.5-70b": {
-      "id": "nvidia/llama3-chatqa-1.5-70b",
-      "name": "Llama3 Chatqa 1.5 70b",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-04-28",
-      "last_updated": "2024-04-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/nvidia/nemotron-3-super-120b-a12b": {
       "id": "nvidia/nemotron-3-super-120b-a12b",
       "name": "Nemotron 3 Super",
@@ -66678,6 +65714,69 @@
         "output": 262144
       },
       "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/nvidia/nemotron-voicechat": {
+      "id": "nvidia/nemotron-voicechat",
+      "name": "nemotron-voicechat",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-16",
+      "last_updated": "2026-03-16",
+      "modalities": {
+        "input": [
+          "text",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 128000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/nvidia/llama-3_3-nemotron-super-49b-v1_5": {
+      "id": "nvidia/llama-3_3-nemotron-super-49b-v1_5",
+      "name": "Llama 3.3 Nemotron Super 49B v1.5",
+      "family": "nemotron",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2025-07-25",
+      "last_updated": "2025-07-25",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 131072,
+        "output": 131072
+      },
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66713,17 +65812,15 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/nvidia/llama-3.1-nemotron-ultra-253b-v1": {
-      "id": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-      "name": "Llama-3.1-Nemotron-Ultra-253B-v1",
-      "family": "llama",
+    "nvidia/nvidia/nemotron-mini-4b-instruct": {
+      "id": "nvidia/nemotron-mini-4b-instruct",
+      "name": "nemotron-mini-4b-instruct",
       "attachment": false,
-      "reasoning": true,
+      "reasoning": false,
       "tool_call": true,
       "temperature": true,
-      "knowledge": "2024-07",
-      "release_date": "2024-07-01",
-      "last_updated": "2025-09-05",
+      "release_date": "2024-08-21",
+      "last_updated": "2024-08-26",
       "modalities": {
         "input": [
           "text"
@@ -66732,16 +65829,48 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 128000,
+        "output": 8192
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/nvidia/llama-3_3-nemotron-super-49b-v1": {
+      "id": "nvidia/llama-3_3-nemotron-super-49b-v1",
+      "name": "Llama 3.3 Nemotron Super 49B v1",
+      "family": "nemotron",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2023-12",
+      "release_date": "2025-04-07",
+      "last_updated": "2025-04-07",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
       "cost": {
         "input": 0,
         "output": 0
       },
       "limit": {
         "context": 131072,
-        "output": 8192
+        "output": 131072
       },
-      "maxTokens": 8192,
+      "maxTokens": 131072,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66777,131 +65906,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/nvidia/llama-3.1-nemotron-51b-instruct": {
-      "id": "nvidia/llama-3.1-nemotron-51b-instruct",
-      "name": "Llama 3.1 Nemotron 51b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-09-22",
-      "last_updated": "2024-09-22",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/nvidia/llama-3.1-nemotron-70b-instruct": {
-      "id": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "name": "Llama 3.1 Nemotron 70b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-10-12",
-      "last_updated": "2024-10-12",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/deepseek-ai/deepseek-v3.1": {
-      "id": "deepseek-ai/deepseek-v3.1",
-      "name": "DeepSeek V3.1",
-      "family": "deepseek",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-07",
-      "release_date": "2025-08-20",
-      "last_updated": "2025-08-26",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/deepseek-ai/deepseek-coder-6.7b-instruct": {
-      "id": "deepseek-ai/deepseek-coder-6.7b-instruct",
-      "name": "Deepseek Coder 6.7b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2023-10-29",
-      "last_updated": "2023-10-29",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/deepseek-ai/deepseek-v3.2": {
       "id": "deepseek-ai/deepseek-v3.2",
       "name": "DeepSeek V3.2",
@@ -66931,37 +65935,6 @@
         "output": 65536
       },
       "maxTokens": 65536,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/deepseek-ai/deepseek-r1-0528": {
-      "id": "deepseek-ai/deepseek-r1-0528",
-      "name": "Deepseek R1 0528",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-05-28",
-      "last_updated": "2025-05-28",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -66997,16 +65970,17 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/minimaxai/minimax-m2.7": {
-      "id": "minimaxai/minimax-m2.7",
-      "name": "MiniMax-M2.7",
-      "family": "minimax",
+    "nvidia/openai/gpt-oss-20b": {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT OSS 20B",
+      "family": "gpt-oss",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
+      "structured_output": true,
       "temperature": true,
-      "release_date": "2026-03-18",
-      "last_updated": "2026-04-11",
+      "release_date": "2025-08-05",
+      "last_updated": "2025-08-05",
       "modalities": {
         "input": [
           "text"
@@ -67021,23 +65995,23 @@
         "output": 0
       },
       "limit": {
-        "context": 204800,
-        "output": 131072
+        "context": 131072,
+        "output": 32768
       },
-      "maxTokens": 131072,
+      "maxTokens": 32768,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/minimaxai/minimax-m2.1": {
-      "id": "minimaxai/minimax-m2.1",
-      "name": "MiniMax-M2.1",
+    "nvidia/minimaxai/minimax-m2.7": {
+      "id": "minimaxai/minimax-m2.7",
+      "name": "MiniMax-M2.7",
       "family": "minimax",
       "attachment": false,
       "reasoning": true,
       "tool_call": true,
       "temperature": true,
-      "release_date": "2025-12-23",
-      "last_updated": "2025-12-23",
+      "release_date": "2026-03-18",
+      "last_updated": "2026-04-11",
       "modalities": {
         "input": [
           "text"
@@ -67126,41 +66100,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/z-ai/glm5": {
-      "id": "z-ai/glm5",
-      "name": "GLM5",
-      "family": "glm",
-      "attachment": false,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-02-12",
-      "last_updated": "2026-02-12",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 202752,
-        "output": 131000
-      },
-      "maxTokens": 131000,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/z-ai/glm-5.1": {
       "id": "z-ai/glm-5.1",
       "name": "GLM-5.1",
@@ -67196,39 +66135,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/meta/llama-4-scout-17b-16e-instruct": {
-      "id": "meta/llama-4-scout-17b-16e-instruct",
-      "name": "Llama 4 Scout 17b 16e Instruct",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "knowledge": "2024-02",
-      "release_date": "2025-04-02",
-      "last_updated": "2025-04-02",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/meta/llama-3.3-70b-instruct": {
       "id": "meta/llama-3.3-70b-instruct",
       "name": "Llama 3.3 70b Instruct",
@@ -67260,19 +66166,21 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/meta/llama3-8b-instruct": {
-      "id": "meta/llama3-8b-instruct",
-      "name": "Llama3 8b Instruct",
-      "attachment": false,
+    "nvidia/meta/llama-3.2-90b-vision-instruct": {
+      "id": "meta/llama-3.2-90b-vision-instruct",
+      "name": "Llama-3.2-90B-Vision-Instruct",
+      "family": "llama",
+      "attachment": true,
       "reasoning": false,
       "tool_call": true,
-      "structured_output": true,
       "temperature": true,
-      "release_date": "2024-04-17",
-      "last_updated": "2024-04-17",
+      "knowledge": "2023-12",
+      "release_date": "2024-09-25",
+      "last_updated": "2024-09-25",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image"
         ],
         "output": [
           "text"
@@ -67285,40 +66193,9 @@
       },
       "limit": {
         "context": 128000,
-        "output": 4096
+        "output": 8192
       },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/meta/llama3-70b-instruct": {
-      "id": "meta/llama3-70b-instruct",
-      "name": "Llama3 70b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-04-17",
-      "last_updated": "2024-04-17",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
+      "maxTokens": 8192,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -67451,16 +66328,17 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/meta/llama-3.1-405b-instruct": {
-      "id": "meta/llama-3.1-405b-instruct",
-      "name": "Llama 3.1 405b Instruct",
+    "nvidia/meta/llama-3.1-8b-instruct": {
+      "id": "meta/llama-3.1-8b-instruct",
+      "name": "Llama 3.1 8B Instruct",
+      "family": "llama",
       "attachment": false,
       "reasoning": false,
       "tool_call": true,
-      "structured_output": true,
       "temperature": true,
-      "release_date": "2024-07-16",
-      "last_updated": "2024-07-16",
+      "knowledge": "2023-12",
+      "release_date": "2025-01-01",
+      "last_updated": "2025-01-01",
       "modalities": {
         "input": [
           "text"
@@ -67475,58 +66353,30 @@
         "output": 0
       },
       "limit": {
-        "context": 128000,
+        "context": 16000,
         "output": 4096
       },
       "maxTokens": 4096,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/qwen/qwen3-235b-a22b": {
-      "id": "qwen/qwen3-235b-a22b",
-      "name": "Qwen3-235B-A22B",
+    "nvidia/qwen/qwen3.5-122b-a10b": {
+      "id": "qwen/qwen3.5-122b-a10b",
+      "name": "Qwen3.5 122B-A10B",
       "family": "qwen",
-      "attachment": false,
+      "attachment": true,
       "reasoning": true,
       "tool_call": true,
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2024-12-01",
-      "last_updated": "2025-09-05",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 131072,
-        "output": 8192
-      },
-      "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/qwen/qwen2.5-coder-7b-instruct": {
-      "id": "qwen/qwen2.5-coder-7b-instruct",
-      "name": "Qwen2.5 Coder 7b Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
       "structured_output": true,
       "temperature": true,
-      "release_date": "2024-09-17",
-      "last_updated": "2024-09-17",
+      "release_date": "2026-02-23",
+      "last_updated": "2026-02-23",
       "modalities": {
         "input": [
-          "text"
+          "text",
+          "image",
+          "video",
+          "audio"
         ],
         "output": [
           "text"
@@ -67538,10 +66388,10 @@
         "output": 0
       },
       "limit": {
-        "context": 128000,
-        "output": 4096
+        "context": 262144,
+        "output": 65536
       },
-      "maxTokens": 4096,
+      "maxTokens": 65536,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -67770,38 +66620,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/google/gemma-3-1b-it": {
-      "id": "google/gemma-3-1b-it",
-      "name": "Gemma 3 1b It",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-03-10",
-      "last_updated": "2025-03-10",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/google/gemma-4-31b-it": {
       "id": "google/gemma-4-31b-it",
       "name": "Gemma-4-31B-IT",
@@ -67836,37 +66654,6 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/google/gemma-3-12b-it": {
-      "id": "google/gemma-3-12b-it",
-      "name": "Gemma 3 12b It",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-03-01",
-      "last_updated": "2025-03-01",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
     "nvidia/google/gemma-3n-e2b-it": {
       "id": "google/gemma-3n-e2b-it",
       "name": "Gemma 3n E2b It",
@@ -67882,37 +66669,6 @@
         "input": [
           "text",
           "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 128000,
-        "output": 4096
-      },
-      "maxTokens": 4096,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/google/gemma-2-27b-it": {
-      "id": "google/gemma-2-27b-it",
-      "name": "Gemma 2 27b It",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2024-06-24",
-      "last_updated": "2024-06-24",
-      "modalities": {
-        "input": [
-          "text"
         ],
         "output": [
           "text"
@@ -67961,43 +66717,6 @@
         "output": 8192
       },
       "maxTokens": 8192,
-      "provider": "openai",
-      "baseUrl": "https://integrate.api.nvidia.com/v1"
-    },
-    "nvidia/moonshotai/kimi-k2.5": {
-      "id": "moonshotai/kimi-k2.5",
-      "name": "Kimi K2.5",
-      "family": "kimi",
-      "attachment": true,
-      "reasoning": true,
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2025-07",
-      "release_date": "2026-01-27",
-      "last_updated": "2026-01-27",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "limit": {
-        "context": 262144,
-        "output": 262144
-      },
-      "maxTokens": 262144,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
@@ -68139,21 +66858,18 @@
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
-    "nvidia/mistralai/mistral-medium-3.5-128b": {
-      "id": "mistralai/mistral-medium-3.5-128b",
-      "name": "Mistral Medium 3.5 128B",
-      "family": "mistral-medium",
-      "attachment": true,
-      "reasoning": true,
+    "nvidia/abacusai/dracarys-llama-3_1-70b-instruct": {
+      "id": "abacusai/dracarys-llama-3_1-70b-instruct",
+      "name": "dracarys-llama-3.1-70b-instruct",
+      "attachment": false,
+      "reasoning": false,
       "tool_call": true,
-      "structured_output": true,
       "temperature": true,
-      "release_date": "2026-04-29",
-      "last_updated": "2026-04-29",
+      "release_date": "2024-09-11",
+      "last_updated": "2025-05-22",
       "modalities": {
         "input": [
-          "text",
-          "image"
+          "text"
         ],
         "output": [
           "text"
@@ -68165,10 +66881,42 @@
         "output": 0
       },
       "limit": {
-        "context": 262144,
-        "output": 262144
+        "context": 128000,
+        "output": 8192
       },
-      "maxTokens": 262144,
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1"
+    },
+    "nvidia/bytedance/seed-oss-36b-instruct": {
+      "id": "bytedance/seed-oss-36b-instruct",
+      "name": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+      "family": "seed",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2025-09-04",
+      "last_updated": "2025-11-25",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "limit": {
+        "context": 262000,
+        "output": 262000
+      },
+      "maxTokens": 262000,
       "provider": "openai",
       "baseUrl": "https://integrate.api.nvidia.com/v1"
     },
