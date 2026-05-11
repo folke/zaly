@@ -14,9 +14,7 @@
   "scripts": {
     "lint": "z lint",
     "fmt": "z fmt",
-    "fix": "z lint --fix",
-    "build": "bun build:assets && z build",
-    "build:assets": "bun run --sequential --no-exit-on-error --workspaces 'build:*'",
+    "build": "z build",
     "test": "z test --bun",
     "pkg": "bun --workspaces install",
     "rules": "bun ./scripts/oxlint-rules.ts",

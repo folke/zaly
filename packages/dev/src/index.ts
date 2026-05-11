@@ -31,6 +31,18 @@ async function exec(cmd: string[], cwd: string = process.cwd()): Promise<void> {
   if (code !== 0) process.exit(code)
 }
 
+async function runScripts(script: string, pkg?: string): Promise<void> {
+  const args = [
+    "bun",
+    "run",
+    "--sequential",
+    "--no-exit-on-error",
+    pkg ? `--filter=${pkg}` : "--workspaces",
+    script,
+  ]
+  await exec(args)
+}
+
 const main = defineCommand({
   meta: {
     name: "z",
@@ -44,6 +56,7 @@ const main = defineCommand({
       },
       run: async () => {
         const pkg = currentPackage()
+        await runScripts("build:*", pkg)
         const args = ["tsdown", "--cwd", root, ...(pkg ? ["--filter", pkg] : [])]
         await exec(args)
       },

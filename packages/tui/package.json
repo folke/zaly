@@ -54,8 +54,10 @@
   "scripts": {
     "bench": "bun bench/run.ts",
     "build": "z build",
-    "build:themes": "bun scripts/build-shiki-themes.ts && bun scripts/build-tokyonight-themes.ts && bun scripts/gen-themes.ts && oxfmt src/themes/builtin.ts",
-    "build:typia": "bun scripts/build-schemas.ts",
+    "build:themes-1-shiki": "bun scripts/themes-shiki.ts",
+    "build:themes-2-tokyonight": "bun scripts/themes-tokyonight.ts",
+    "build:themes-3-builtin": "bun scripts/themes-builtin.ts && oxfmt src/themes/builtin.ts",
+    "build:schemas": "bun scripts/schemas.ts",
     "lint": "z lint",
     "docs:api": "typedoc",
     "docs:dev": "bun run docs:api && vitepress dev docs",
