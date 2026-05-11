@@ -4,9 +4,10 @@
 
 ```ts
 
-import { CompressOpts } from '@zaly/shared';
-import { DetectedFile } from '@zaly/shared';
-import { DetectedImage } from '@zaly/shared';
+import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
+import { CompressOpts } from '@zaly/shared/image';
+import { DetectedFile } from '@zaly/shared/detect';
+import { DetectedImage } from '@zaly/shared/detect';
 import { Static } from 'typebox/type';
 import { TObject } from 'typebox/type';
 import { TSchema } from 'typebox/type';
@@ -27,6 +28,9 @@ export class AiError extends Error implements ErrorInfo {
     // (undocumented)
     readonly retryable?: boolean;
 }
+
+// @public (undocumented)
+export type AnyAuthProvider = BuiltinAuthProvider | (string & {});
 
 // @public
 export type AnyPart = ContentPart | ToolCallPart | ToolResultPart | ReasoningPart;
@@ -56,16 +60,22 @@ export interface AuthCredentials {
 }
 
 // @public
+export function authenticate(model: ModelSpec, auth?: AuthProvider): Promise<AuthCredentials | undefined>;
+
+// @public
 export interface AuthProvider {
     // (undocumented)
     getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>;
 }
 
+// @public (undocumented)
+export type BuiltinAuthProvider = keyof typeof authProviders;
+
 // @public
 export function builtinProviders(): Promise<Readonly<Record<string, Omit<ProviderInfo, "models">>>>;
 
 // @public
-export function chainAuth(...providers: AuthProvider[]): AuthProvider;
+export function chainAuth(...providers: (AuthProvider | AnyAuthProvider)[]): AuthProvider;
 
 // @public
 export const codexAuth: AuthProvider;
@@ -189,9 +199,6 @@ export function dropAttachments(): <T extends ContentPart>(ct: ContentTransform<
 }>, {
     type: "video";
 }>>;
-
-// @public
-export const envAuth: AuthProvider;
 
 // @public (undocumented)
 export type ErrorCode = Uppercase<string>;
@@ -395,7 +402,7 @@ export class Model<T extends AnyProvider = string> {
 // @public
 export interface ModelFilter {
     // (undocumented)
-    auth?: AuthProvider;
+    auth?: AuthProvider | true;
     // (undocumented)
     filter?: string | ((m: ModelSpec) => boolean);
     // (undocumented)
@@ -488,9 +495,22 @@ export function pairedToolIds(messages: readonly Message[]): Set<string>;
 export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call"]>[0] ? unknown : Parameters<T["call"]>[0];
 
 // @public
+export function parseJson<T = unknown>(input: string): Promise<ParseResult<T>>;
+
+// @public
 export function parseModelId(id: string): {
     provider: string;
     model: string;
+};
+
+// @public
+export type ParseResult<T = unknown> = {
+    success: true;
+    data: T;
+    repaired: boolean;
+} | {
+    success: false;
+    error: string;
 };
 
 // @public (undocumented)
@@ -525,6 +545,12 @@ export interface ProviderOptions {
     fetch?: FetchLike;
     headers?: Record<string, string>;
 }
+
+// @public (undocumented)
+export const providerRegistry: _$_zaly_shared_registry0.Registry<Promise<AuthProvider>, void, {
+    readonly codex: () => Promise<AuthProvider>;
+    readonly env: () => Promise<AuthProvider>;
+}>;
 
 // @public
 export interface ProviderRequest {
@@ -729,10 +755,10 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
         result: Result;
         meta: Meta;
     };
-    // (undocumented)
-    validateParams(params: unknown): Params;
-    // (undocumented)
-    validateResult?(result: unknown): Awaited<Result>;
+    validator: {
+        validateParams(params: unknown): Promise<Params>;
+        validateResult(result: unknown): Promise<Awaited<Result>>;
+    };
 }
 
 // @public
@@ -803,7 +829,7 @@ export interface Usage extends TokenCount {
 }
 
 // @public
-export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): I;
+export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): Promise<I>;
 
 // @public (undocumented)
 export type VideoPart = FilePart<"video", "video/mp4" | "video/webm">;

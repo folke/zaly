@@ -5,8 +5,6 @@
 ```ts
 
 import * as _$node_fs0 from 'node:fs';
-import { ChildProcess } from 'node:child_process';
-import sharpType from 'sharp';
 
 // @public (undocumented)
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R;
@@ -16,46 +14,6 @@ export const AsyncEmitter: new <A extends EventMap_2 = never, B extends EventMap
 
 // @public (undocumented)
 export type AsyncEmitter<A extends EventMap_2 = never, B extends EventMap_2 = never, C extends EventMap_2 = never, D extends EventMap_2 = never> = InstanceType<typeof BaseEmitter<A, Promise<void>>> & InstanceType<typeof BaseEmitter<B, Promise<void>>> & InstanceType<typeof BaseEmitter<C, Promise<void>>> & InstanceType<typeof BaseEmitter<D, Promise<void>>>;
-
-// @public (undocumented)
-export abstract class BaseStream<T> implements Stream<T> {
-    // (undocumented)
-    add(chunk: Buffer): void;
-    // (undocumented)
-    protected chunks: T[];
-    // (undocumented)
-    get done(): boolean;
-    // (undocumented)
-    finish(): void;
-    // (undocumented)
-    protected abstract onAdd(chunk: Buffer): T;
-    // (undocumented)
-    protected onFinish: () => void;
-    // (undocumented)
-    protected abstract onResult(chunks: T[]): T;
-    // (undocumented)
-    get result(): T;
-}
-
-// @public (undocumented)
-export type BaseStreamOpts<T> = {
-    transform: (chunk: Buffer) => T;
-    concat: (chunks: T[]) => T;
-};
-
-// @public
-export function bufferedTailStream<T>(stream: Stream<T>): {
-    stream: Stream<T>;
-    startTailing: (path: string) => void;
-};
-
-// @public (undocumented)
-export class BufferStream extends BaseStream<Buffer> {
-    // (undocumented)
-    protected onAdd(chunk: Buffer): Buffer;
-    // (undocumented)
-    protected onResult(chunks: Buffer[]): Buffer;
-}
 
 // @public (undocumented)
 export function clamp(num: number, min?: number, max?: number): number;
@@ -83,63 +41,11 @@ export const cleanTextTui: (s: string, opts?: CleanTextOpts) => string;
 // @public
 export function compareNaturalDescNumbers(a: string, b: string): number;
 
-// @public (undocumented)
-export interface CompressOpts {
-    maxBytes?: number;
-    maxDimension?: number;
-    quality?: number;
-}
-
 // @public
 export function createRegistry<V, O = void>(label: string): Registry<V, O>;
 
 // @public (undocumented)
 export function decodePath(encoded: string): string;
-
-// @public
-export function detect<T extends string, F extends string>(cfg: FileTypeDetect<T, F>, file: FileData): {
-    type: T;
-    format: F;
-} | undefined;
-
-// @public (undocumented)
-export type DetectedBinary = FileData & {
-    type: "binary";
-    format: "unknown";
-};
-
-// @public
-export type DetectedFile = (FileData & {
-    type: "image";
-    format: ImageFormat;
-}) | (FileData & {
-    type: "pdf";
-    format: "pdf";
-}) | (FileData & {
-    type: "text";
-    format: TextFormat;
-}) | (FileData & {
-    type: "binary";
-    format: "unknown";
-});
-
-// @public
-export type DetectedImage<T extends ImageFormat = ImageFormat> = FileData & {
-    type: "image";
-    format: T;
-};
-
-// @public (undocumented)
-export type DetectedPdf = FileData & {
-    type: "pdf";
-    format: "pdf";
-};
-
-// @public (undocumented)
-export type DetectedText<T extends TextFormat = TextFormat> = FileData & {
-    type: "text";
-    format: T;
-};
 
 // @public
 export function detectEol(input: string | {
@@ -172,102 +78,13 @@ export type EventOf<T extends EventMap_2, K extends keyof T & string> = {
 } & T[K];
 
 // @public (undocumented)
-export type FileData = {
-    data: Uint8Array; /** On-disk path, when the source resolved to a local file. */
-    path?: string; /** Source URL, when the source was an http(s) URL or file URI. */
-    url?: string;
-    hash?: string;
-    mime?: string;
-    base64?: string;
-};
-
-// @public (undocumented)
-export function fileData(source: string | FileSource): Promise<FileData | undefined>;
-
-// @public
-export function fileDetect(src: string | FileSource): Promise<DetectedFile | undefined>;
-
-// @public (undocumented)
-export function fileHash<T extends {
-    data: Uint8Array;
-    hash?: string;
-}>(file: T): string;
-
-// @public (undocumented)
-export type FileSource = Partial<FileData> & ({
-    data: Uint8Array;
-} | {
-    path: string;
-} | {
-    url: string;
-} | {
-    base64: string;
-});
-
-// @public
-export interface FileTypeDetect<T extends string, F extends string> {
-    custom?: (file: FileData) => F | undefined;
-    ext?: Partial<Record<string, F>>;
-    // (undocumented)
-    formats: readonly F[];
-    magic?: Partial<Record<F, readonly MagicMatch[]>>;
-    mime?: Partial<Record<string, F>>;
-    // (undocumented)
-    type: T;
-}
-
-// @public (undocumented)
 export function findUp(root: string, name: string, stop?: string): string | undefined;
-
-// @public
-export type FormatOf<T extends DetectedFile["type"]> = Extract<DetectedFile, {
-    type: T;
-}>["format"];
 
 // @public (undocumented)
 export function gitRoot(path: string): string | undefined;
 
 // @public (undocumented)
 export function hash(content: string | Uint8Array, len?: number): string;
-
-// @public
-export function imageCompress(img: DetectedImage, opts?: CompressOpts): Promise<DetectedImage<"jpeg" | "png" | "webp">>;
-
-// @public
-export function imageConvert<T extends WritableFormat>(img: DetectedImage, format: T | [T, ...T[]]): Promise<ImageInfo<T> | DetectedImage<T> | undefined>;
-
-// @public
-export type ImageInfo<T extends ImageFormat = ImageFormat> = DetectedImage<T> & {
-    width: number;
-    height: number;
-};
-
-// @public
-export function imageInfo<T extends ImageFormat>(img: DetectedImage<T>): ImageInfo<T>;
-
-// @public
-export function isBinaryData(data: Uint8Array, threshold?: number): boolean;
-
-// @public
-export function isFileFormat<T extends DetectedFile["type"], F extends FormatOf<T>>(file: DetectedFile, type: T, format: F): file is Extract<DetectedFile, {
-    type: T;
-}> & {
-    format: F;
-};
-
-// @public
-export function isFileType<T extends DetectedFile["type"]>(file: DetectedFile, type: T): file is Extract<DetectedFile, {
-    type: T;
-}>;
-
-// @public
-export function isSSH(): boolean;
-
-// @public (undocumented)
-export function isWritable(img: DetectedFile): img is DetectedImage<WritableFormat>;
-
-// @public
-export type KillReason = "timeout" | "abort" | "maxBuffer" | "manual";
 
 // @public
 export type Listener<E, Self, R extends void | Promise<void> = void> = (event: E, self: Self) => R;
@@ -280,12 +97,6 @@ export { Loader_2 as Loader }
 export type LoaderMap<V, O = void> = Record<string, Loader_2<V, O>>;
 
 // @public
-export type MagicMatch = readonly {
-    o?: number;
-    b: string | readonly number[];
-}[];
-
-// @public
 export function normalizeEol(s: string, opts?: {
     loneCr?: string;
     eol?: EOL;
@@ -296,29 +107,6 @@ export function normPath(...paths: (string | undefined)[]): string;
 
 // @public (undocumented)
 export function prettyPath(path: string): string;
-
-// @public (undocumented)
-export class ProxyStream<T, X = T> implements Stream<X> {
-    constructor(stream: Stream<T>, opts?: ProxyStreamOptions<T, X>);
-    // (undocumented)
-    add(chunk: Buffer): void;
-    // (undocumented)
-    close(): Promise<void>;
-    // (undocumented)
-    get done(): boolean;
-    // (undocumented)
-    finish(): void;
-    // (undocumented)
-    get result(): X;
-}
-
-// @public (undocumented)
-export type ProxyStreamOptions<T, X> = {
-    add?: (chunk: Buffer) => void;
-    finish?: () => void;
-    close?: () => Promise<void>;
-    result?: (innerResult: T) => X;
-};
 
 // @public (undocumented)
 export function randomHash(len?: number): string;
@@ -363,87 +151,6 @@ export function safeStringify(value: unknown, replacer?: (key: string, value: un
 export function since(from: number, to?: number): string;
 
 // @public
-export class Spawn<O = Buffer, E = Buffer> {
-    constructor(cmd: string, args?: readonly string[], opts?: SpawnOpts<O, E>);
-    abort(opts?: {
-        delay?: number;
-    }): void;
-    // (undocumented)
-    readonly args: readonly string[];
-    // (undocumented)
-    readonly child: ChildProcess;
-    closeStdin(): void;
-    // (undocumented)
-    readonly cmd: string;
-    static DEFAULT_ABORT_DELAY: number;
-    // (undocumented)
-    get done(): boolean;
-    // (undocumented)
-    get exitCode(): number | undefined;
-    kill(signal?: NodeJS.Signals): void;
-    // (undocumented)
-    get killed(): boolean;
-    // (undocumented)
-    get killReason(): KillReason | undefined;
-    // (undocumented)
-    readonly opts: SpawnOpts<O, E>;
-    // (undocumented)
-    get pid(): number | undefined;
-    get result(): Promise<SpawnResult<O, E>>;
-    // (undocumented)
-    get signal(): NodeJS.Signals | undefined;
-    get stderr(): E;
-    get stdout(): O;
-    write(data: Buffer | string): void;
-}
-
-// @public (undocumented)
-export interface SpawnOpts<O = Buffer, E = Buffer> {
-    // (undocumented)
-    cwd?: string;
-    // (undocumented)
-    env?: NodeJS.ProcessEnv;
-    keepStdinOpen?: boolean;
-    maxBuffer?: number;
-    shell?: boolean;
-    signal?: AbortSignal;
-    // (undocumented)
-    stderr?: Stream<E>;
-    stdin?: Buffer | string;
-    // (undocumented)
-    stdout?: Stream<O>;
-    timeout?: number;
-}
-
-// @public (undocumented)
-export interface SpawnResult<O = Buffer, E = Buffer> {
-    // (undocumented)
-    code: number;
-    killed: boolean;
-    killReason?: KillReason;
-    signal?: NodeJS.Signals;
-    // (undocumented)
-    stderr: E;
-    // (undocumented)
-    stdout: O;
-}
-
-// @public
-export function spawnText(cmd: string, args?: readonly string[], opts?: SpawnOpts): Promise<string | undefined>;
-
-// @public
-export function spawnWithInput(cmd: string, args: readonly string[], input: string): Promise<boolean>;
-
-// @public (undocumented)
-export type Stream<T> = {
-    add(chunk: Buffer): void;
-    finish(): void;
-    close?(): Promise<void>;
-    readonly result: T;
-    readonly done: boolean;
-};
-
-// @public
 export function stripAdversarial(s: string): string;
 
 // @public
@@ -458,32 +165,10 @@ export function stripBinary(s: string, opts?: {
 }): string;
 
 // @public (undocumented)
-export function tailedStream<T>(stream: Stream<T>, path: string): Stream<T>;
-
-// @public (undocumented)
-export class TextStream extends BaseStream<string> {
-    // (undocumented)
-    onAdd(chunk: Buffer): string;
-    // (undocumented)
-    onFinish: () => number;
-    // (undocumented)
-    onResult(chunks: string[]): string;
-}
-
-// @public (undocumented)
 export function toError(err: unknown): Error;
 
 // @public (undocumented)
-export function transformStream<T, X>(stream: Stream<T>, transform: (chunk: T) => X): Stream<X>;
-
-// @public
-export function which(cmd: string): string | undefined;
-
-// @public (undocumented)
 export function withError<T>(fn: () => T, errorMsg: string): T;
-
-// @public (undocumented)
-export type WritableFormat = keyof typeof SHARP_WRITERS;
 
 // (No @packageDocumentation comment for this package)
 

@@ -180,29 +180,12 @@ export type CheckResult = {
 };
 
 // @public
-export interface ClaudeSessionOptions {
-    convertTool?: ConvertTool;
-    walk?: "active" | "all";
-}
-
-// @public (undocumented)
-export interface ClaudeToolCall {
-    // (undocumented)
-    input: unknown;
-    // (undocumented)
-    name: string;
-}
-
-// @public
 export interface ContextPressure {
     level: number;
     limit: number;
     ratio: number;
     used: number;
 }
-
-// @public (undocumented)
-export type ConvertTool = (call: ClaudeToolCall) => ZalyToolCall | undefined;
 
 // @public
 export type DoneTaskInfo = Extract<TaskInfo, {
@@ -225,56 +208,6 @@ export const handlerRegistry: _$_zaly_shared0.Registry<PermissionHandler<string>
     readonly tool: () => PermissionHandler<"tool">;
     readonly write: () => PermissionHandler<"read" | "write">;
 }>;
-
-// @public (undocumented)
-export type InternalMeta = {
-    version?: number;
-    sessionId?: string;
-};
-
-// @public (undocumented)
-export class JsonlReader<T> {
-    constructor(path: string);
-    // (undocumented)
-    close(): Promise<void>;
-    // (undocumented)
-    next(): Promise<T | undefined>;
-    // (undocumented)
-    readonly path: string;
-}
-
-// @public
-export class JsonlStore implements SessionStore {
-    constructor(path: string);
-    // (undocumented)
-    all(): AsyncIterable<SessionNode>;
-    // (undocumented)
-    close(): Promise<void>;
-    // (undocumented)
-    get(id: string): Promise<SessionNode | undefined>;
-    static load(path: string): Promise<JsonlStore>;
-    // (undocumented)
-    readonly path: string;
-    // (undocumented)
-    get root(): SessionNode | undefined;
-    // (undocumented)
-    write(node: SessionNode): Promise<void>;
-}
-
-// @public (undocumented)
-export function loadClaudeSession(path: string, opts?: ClaudeSessionOptions): Promise<{
-    messages: Message[];
-}>;
-
-// @public (undocumented)
-export type ManagedSession = {
-    id: string;
-    scope: string;
-    path: string;
-    dir: string;
-    cwd?: string;
-    mtime?: number;
-};
 
 // @public
 export class Masker {
@@ -303,19 +236,6 @@ export type MaskRule = {
     maxTurns?: number;
     maxAge?: number;
 };
-
-// @public
-export class MemoryStore implements SessionStore {
-    constructor(nodes?: Iterable<SessionNode>);
-    // (undocumented)
-    all(): Iterable<SessionNode>;
-    // (undocumented)
-    get(id: string): Promise<SessionNode | undefined>;
-    // (undocumented)
-    get root(): SessionNode | undefined;
-    // (undocumented)
-    write(node: SessionNode): Promise<void>;
-}
 
 // @public (undocumented)
 export interface PermissionContext<T extends string> {
@@ -400,15 +320,6 @@ export interface PermissionScopes {
 }
 
 // @public (undocumented)
-export type PersistedMeta = InternalMeta & SessionMeta;
-
-// @public
-export type PersistedNode = SessionNode;
-
-// @public (undocumented)
-export function projectScope(cwd?: string): string;
-
-// @public (undocumented)
 export type ReadTool = ReturnType<typeof createReadTool>;
 
 // @public (undocumented)
@@ -430,156 +341,6 @@ export type Rule<T extends string = string> = {
     scope: T;
     pattern: string;
     policy: Verdict;
-};
-
-// @public
-export class Session<T extends SessionStore = SessionStore> extends Emitter<SessionEvents> {
-    protected constructor(opts: SessionInit<T>);
-    add(message: Message): Promise<string>;
-    close(): Promise<void>;
-    compact(opts: {
-        trigger?: "manual" | "auto";
-        preTokens?: number;
-        durationMs?: number;
-        tail: number;
-        summary: Message<"system">;
-    }): Promise<string>;
-    // (undocumented)
-    get cwd(): string;
-    // (undocumented)
-    get dir(): string;
-    get head(): string | undefined;
-    history(limit?: number): Promise<readonly Message[]>;
-    // (undocumented)
-    get id(): string;
-    static load<T extends SessionStore = SessionStore>(opts: SessionOptions<T> & {
-        store: T;
-    }): Promise<Session<T>>;
-    // (undocumented)
-    static load(opts: SessionOptions & {
-        path: string;
-    }): Promise<Session<JsonlStore>>;
-    // (undocumented)
-    static load(opts?: SessionOptions & {}): Promise<Session<MemoryStore>>;
-    get messages(): readonly Message[];
-    get meta(): SessionMeta;
-    node(id?: string | Message): Promise<(SessionNodeView & {
-        type: "message";
-    }) | undefined>;
-    nodes(): Iterable<SessionNode> | AsyncIterable<SessionNode>;
-    // (undocumented)
-    get path(): string | undefined;
-    // (undocumented)
-    get root(): SessionNode | undefined;
-    start(meta?: SessionMeta): Promise<string | undefined>;
-    // (undocumented)
-    update(meta: SessionMeta, opts?: {
-        force?: boolean;
-    }): Promise<string>;
-}
-
-// @public (undocumented)
-export function sessionCreate(opts: SessionScope): Promise<Session<SessionStore>>;
-
-// @public
-export type SessionEvents = {
-    node: {
-        node: SessionNode;
-    };
-    navigate: {
-        head: string | undefined;
-        messages: readonly Message[];
-    };
-    compact: {
-        node: SessionNode<"compact">;
-    };
-    cwd: {
-        cwd: string;
-    };
-    meta: {
-        meta: SessionMeta;
-        prev: SessionMeta;
-        changes: Partial<Omit<SessionMeta, "cwd">>;
-    };
-    "session-start": {};
-    "session-resume": {};
-};
-
-// @public (undocumented)
-export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions & {
-    store: T;
-    meta?: PersistedMeta;
-};
-
-// @public (undocumented)
-export function sessionList(opts?: Partial<SessionScope> & {
-    sort?: boolean;
-}): Promise<ManagedSession[]>;
-
-// @public (undocumented)
-export function sessionLoad(opts: ManagedSession): Promise<Session>;
-
-// @public (undocumented)
-export type SessionMessage = Message & {
-    ts: number;
-    id: string;
-};
-
-// @public (undocumented)
-export type SessionMeta = {
-    cwd?: string;
-    modelId?: string;
-    prompt?: string[];
-};
-
-// @public (undocumented)
-export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<SessionN, {
-    type: T;
-}>;
-
-// @public
-export type SessionNodeView = SessionNode & {
-    meta: PersistedMeta;
-};
-
-// @public (undocumented)
-export type SessionOptions<T extends SessionStore = SessionStore> = {
-    id?: string;
-    cwd?: string;
-    store?: T;
-    path?: string;
-    dir?: string;
-};
-
-// @public (undocumented)
-export function sessionResume(opts: SessionScope): Promise<Session | undefined>;
-
-// @public (undocumented)
-export type SessionScope = {
-    id?: string;
-    scope?: string;
-    cwd?: string;
-} & ({
-    scope: string;
-} | {
-    cwd: string;
-});
-
-// @public
-export interface SessionStore {
-    all?(): Iterable<SessionNode> | AsyncIterable<SessionNode>;
-    close?(): Promise<void>;
-    get(id: string): Promise<SessionNode | undefined>;
-    readonly root: SessionNode | undefined;
-    write(node: SessionNode): Promise<void>;
-}
-
-// @public (undocumented)
-export type SessionView = {
-    messages: Message[];
-    nodes: Map<string, SessionNodeView>;
-    meta: PersistedMeta;
-    compact?: SessionNode<"compact">;
 };
 
 // @public
@@ -832,14 +593,6 @@ export type WriteTool = typeof writeTool;
 export type WriteToolMeta = FileMeta & {
     original?: string;
 };
-
-// @public (undocumented)
-export interface ZalyToolCall {
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    params: unknown;
-}
 
 // (No @packageDocumentation comment for this package)
 

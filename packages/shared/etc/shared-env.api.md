@@ -11,7 +11,13 @@ export const hasColors: boolean;
 export const hasTTY: boolean;
 
 // @public (undocumented)
+export const isBun: boolean;
+
+// @public (undocumented)
 export const isCI: boolean;
+
+// @public
+export const isSSH: boolean;
 
 // @public (undocumented)
 export const isTest: boolean;
@@ -21,16 +27,6 @@ export const isWin: boolean;
 
 // @public (undocumented)
 export const nodeENV: string | undefined;
-
-// @public (undocumented)
-export const termCols: {
-    get: () => number;
-};
-
-// @public (undocumented)
-export const termRows: {
-    get: () => number;
-};
 
 // (No @packageDocumentation comment for this package)
 
