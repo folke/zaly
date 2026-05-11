@@ -3,7 +3,8 @@
 import type { Node, RenderCtx, Theme } from "@zaly/tui"
 import type { Config } from "./config.ts"
 
-import { createCtx, defaultTheme, loadTheme, Logger, themeRegistry } from "@zaly/tui"
+import { createCtx, Logger } from "@zaly/tui"
+import { defaultTheme, loadTheme } from "@zaly/tui/themes"
 import { defineCommand } from "citty"
 import { resolveConfig } from "./config.ts"
 
@@ -73,6 +74,7 @@ export class Cli extends Logger {
   }
 
   async listThemes(): Promise<void> {
+    const { themeRegistry } = await import("@zaly/tui/themes")
     const md = ["# Available themes"]
     for (const name of themeRegistry.keys().toSorted()) {
       md.push(`- **${name}**`)

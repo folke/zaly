@@ -1,5 +1,5 @@
-import { box, createCtx, loadTheme, text } from "@zaly/tui"
-import { themeRegistry } from "../src/themes/registry.ts"
+import { box, createCtx, text } from "@zaly/tui"
+import { loadTheme, themeRegistry } from "../src/themes/registry.ts"
 
 /**
  * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`

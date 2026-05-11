@@ -1,4 +1,5 @@
-import { box, createCtx, loadTheme, text, widget } from "../src/index.ts"
+import { box, createCtx, text, widget } from "../src/index.ts"
+import { loadTheme } from "../src/themes/registry.ts"
 
 async function demo(label: string, name: string): Promise<void> {
   const theme = await loadTheme(name)

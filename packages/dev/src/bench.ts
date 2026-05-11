@@ -74,8 +74,8 @@ export interface RunImportsOpts {
 
 export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promise<void> {
   runtime ??= "bun"
-  const { createCtx, defaultTheme, markdown } = await import("@zaly/tui")
-  const ctx = createCtx({ theme: defaultTheme })
+  const { createCtx, markdown } = await import("@zaly/tui")
+  const ctx = createCtx({})
   const tmpRoot = mkdtempSync(join(tmpdir(), "z-bench-imports-"))
   try {
     for (const dir of opts.pkgDirs) {

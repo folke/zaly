@@ -1,4 +1,5 @@
-import { box, code, createCtx, loadTheme, text } from "../src/index.ts"
+import { box, code, createCtx, text } from "../src/index.ts"
+import { loadTheme } from "../src/themes/registry.ts"
 
 const samples = [
   {
