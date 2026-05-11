@@ -5,7 +5,7 @@
 ```ts
 
 import * as _$_zaly_ai0 from '@zaly/ai';
-import * as _$_zaly_shared0 from '@zaly/shared';
+import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
 import { AssistantMessage } from '@zaly/ai';
 import { CollectOptions } from '@zaly/ai';
 import { Emitter } from '@zaly/shared';
@@ -202,7 +202,7 @@ export type EditToolMeta = FileMeta & {
 };
 
 // @public (undocumented)
-export const handlerRegistry: _$_zaly_shared0.Registry<PermissionHandler<string>, void, {
+export const handlerRegistry: _$_zaly_shared_registry0.Registry<PermissionHandler<string>, void, {
     readonly bash: () => PermissionHandler<"bash">;
     readonly read: () => PermissionHandler<"read" | "write">;
     readonly tool: () => PermissionHandler<"tool">;
@@ -262,7 +262,7 @@ export class PermissionManager {
     // (undocumented)
     readonly cwd: string;
     get invalidRules(): readonly Rule[];
-    register: (name: string, loader: _$_zaly_shared0.Loader<PermissionHandler<string>, void>) => () => void;
+    register: (name: string, loader: _$_zaly_shared_registry0.Loader<PermissionHandler<string>, void>) => () => void;
     // (undocumented)
     removeWorkspace(path: string): void;
     // (undocumented)
@@ -514,7 +514,7 @@ export interface ToolInit {
 }
 
 // @public (undocumented)
-export const toolRegistry: _$_zaly_shared0.Registry<Promise<Tool<unknown, unknown, object>>, ToolInit, {
+export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknown, unknown, object>>, ToolInit, {
     readonly agent_send: () => Promise<Tool<unknown, unknown, object> | Tool<{
         to: string;
         content: string;

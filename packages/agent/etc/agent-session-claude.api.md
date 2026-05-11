@@ -8,33 +8,13 @@ import { Message } from '@zaly/ai';
 
 // @public
 export interface ClaudeSessionOptions {
-    convertTool?: ConvertTool;
     walk?: "active" | "all";
 }
-
-// @public (undocumented)
-export interface ClaudeToolCall {
-    // (undocumented)
-    input: unknown;
-    // (undocumented)
-    name: string;
-}
-
-// @public (undocumented)
-export type ConvertTool = (call: ClaudeToolCall) => ZalyToolCall | undefined;
 
 // @public (undocumented)
 export function loadClaudeSession(path: string, opts?: ClaudeSessionOptions): Promise<{
     messages: Message[];
 }>;
-
-// @public (undocumented)
-export interface ZalyToolCall {
-    // (undocumented)
-    name: string;
-    // (undocumented)
-    params: unknown;
-}
 
 // (No @packageDocumentation comment for this package)
 

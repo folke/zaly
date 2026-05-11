@@ -4,7 +4,6 @@
 
 ```ts
 
-import * as _$_zaly_shared0 from '@zaly/shared';
 import { BundledLanguage } from 'shiki';
 import { BundledTheme } from 'shiki';
 import { Dirent } from 'node:fs';
@@ -65,9 +64,6 @@ export interface AnsiStyle {
 
 // @public (undocumented)
 export type AnyStyle = Style | Color;
-
-// @public (undocumented)
-export type AnyTheme = BuiltinTheme | (string & {});
 
 // @public
 export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
@@ -170,9 +166,6 @@ export interface BoxStyle extends Style {
 // @public
 export type BrightAnsiColorName = `bright${Capitalize<AnsiColorName>}`;
 
-// @public
-export type BuiltinTheme = BuiltinThemeName | "ansi";
-
 // @public (undocumented)
 export function calcLayout(text: string, opts?: {
     wrap?: WrapMode;
@@ -257,9 +250,6 @@ export function createRenderEffect(fn: () => void): void;
 
 // @public
 export function createRenderer(opts?: RendererOptions): Renderer;
-
-// @public
-export const defaultTheme: Theme;
 
 // @public
 export class Diff extends Node<DiffState> {
@@ -506,20 +496,6 @@ export interface LayoutState {
     // (undocumented)
     visible?: Reactive<boolean>;
 }
-
-// @public
-export function loadTheme(name?: string): Promise<Theme>;
-
-// @public (undocumented)
-export function loadTheme(opts: {
-    name: string;
-    dirs?: string[];
-}): Promise<Theme>;
-
-// @public (undocumented)
-export function loadTheme(opts: {
-    path: string;
-}): Promise<Theme>;
 
 // @public (undocumented)
 export class Log extends Node<LogState> {
@@ -1241,39 +1217,6 @@ export type Theme = {
 
 // @public (undocumented)
 export type ThemeKey = keyof Theme;
-
-// @public
-export const themeRegistry: _$_zaly_shared0.Registry<Promise<Partial<Theme>>, void, {
-    readonly "ayu-dark": () => Promise<Partial<Theme>>;
-    readonly "catppuccin-frappe": () => Promise<Partial<Theme>>;
-    readonly "catppuccin-latte": () => Promise<Partial<Theme>>;
-    readonly "catppuccin-macchiato": () => Promise<Partial<Theme>>;
-    readonly "catppuccin-mocha": () => Promise<Partial<Theme>>;
-    readonly dracula: () => Promise<Partial<Theme>>;
-    readonly "github-dark": () => Promise<Partial<Theme>>;
-    readonly "github-light": () => Promise<Partial<Theme>>;
-    readonly "gruvbox-dark-medium": () => Promise<Partial<Theme>>;
-    readonly "material-theme-palenight": () => Promise<Partial<Theme>>;
-    readonly "min-dark": () => Promise<Partial<Theme>>;
-    readonly "min-light": () => Promise<Partial<Theme>>;
-    readonly monokai: () => Promise<Partial<Theme>>;
-    readonly "night-owl": () => Promise<Partial<Theme>>;
-    readonly nord: () => Promise<Partial<Theme>>;
-    readonly "one-dark-pro": () => Promise<Partial<Theme>>;
-    readonly "one-light": () => Promise<Partial<Theme>>;
-    readonly poimandres: () => Promise<Partial<Theme>>;
-    readonly "rose-pine": () => Promise<Partial<Theme>>;
-    readonly "solarized-dark": () => Promise<Partial<Theme>>;
-    readonly "solarized-light": () => Promise<Partial<Theme>>;
-    readonly "synthwave-84": () => Promise<Partial<Theme>>;
-    readonly "tokyonight-day": () => Promise<Partial<Theme>>;
-    readonly "tokyonight-moon": () => Promise<Partial<Theme>>;
-    readonly "tokyonight-night": () => Promise<Partial<Theme>>;
-    readonly "tokyonight-storm": () => Promise<Partial<Theme>>;
-    readonly vesper: () => Promise<Partial<Theme>>;
-    readonly "vitesse-dark": () => Promise<Partial<Theme>>;
-    readonly "vitesse-light": () => Promise<Partial<Theme>>;
-}>;
 
 // @public
 export type ThemeValue = Color | Style;

@@ -79,6 +79,8 @@ function reportForPackage(root: string, slug: string, check: boolean): boolean {
   const pkgPath = join(pkgDir, "package.json")
   if (!existsSync(pkgPath)) return true
 
+  console.log(`Generating API report for @zaly/${slug}...`)
+
   const pkg: PackageJson = JSON.parse(readFileSync(pkgPath, "utf8"))
   mkdirSync(join(pkgDir, "etc"), { recursive: true })
   // `publishConfig.exports` carries the dist-shape (`./dist/*.mjs`); use

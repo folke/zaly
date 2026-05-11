@@ -53,17 +53,6 @@ import { JsonlReader } from "./jsonl.ts"
  * imported chain in zaly format.
  */
 export interface ClaudeSessionOptions {
-  /** Hook to convert a Claude tool call into a zaly equivalent. Returns
-   *  the converted `{ name, params }` (e.g. `Read` → `read`, `file_path`
-   *  → `path`) or `undefined` to leave it unchanged. The id is preserved
-   *  so the matching `tool_result` correlates correctly.
-   *
-   *  Defaults to `defaultConvertTool`, which maps Claude Code's
-   *  `Read`/`Write`/`Edit`/`MultiEdit`/`Bash` to zaly equivalents and
-   *  lowercases anything else. Pass a custom function to extend or
-   *  override; call `defaultConvertTool` from inside it to fall through
-   *  for unhandled cases. */
-  convertTool?: ConvertTool
   /** Which messages to import:
    *    - `"active"` (default) — walks `parentUuid` back from the most
    *      recent on-chain message. Returns the conversation as the model
@@ -75,12 +64,12 @@ export interface ClaudeSessionOptions {
   walk?: "active" | "all"
 }
 
-export type ConvertTool = (call: ClaudeToolCall) => ZalyToolCall | undefined
-export interface ClaudeToolCall {
+type ConvertTool = (call: ClaudeToolCall) => ZalyToolCall | undefined
+interface ClaudeToolCall {
   name: string
   input: unknown
 }
-export interface ZalyToolCall {
+interface ZalyToolCall {
   name: string
   params: unknown
 }
@@ -92,7 +81,7 @@ export async function loadClaudeSession(
   // Honor `~` and relative shorthands — config-file / env paths often
   // include them and Node's fs APIs don't expand `~` natively.
   path = normPath(path)
-  const convert = opts.convertTool ?? defaultConvertTool
+  const convert = defaultConvertTool
   const chain = opts.walk === "all" ? await collectAll(path) : await walkChainLazy(path)
   const toolCalls = collectToolCalls(chain, convert)
 

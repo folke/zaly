@@ -4,7 +4,7 @@
 
 ```ts
 
-import * as _$_zaly_shared0 from '@zaly/shared';
+import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
 import { BundledTheme } from 'shiki';
 
 // @public (undocumented)
@@ -31,7 +31,7 @@ export function loadTheme(opts: {
 }): Promise<Theme>;
 
 // @public
-export const themeRegistry: _$_zaly_shared0.Registry<Promise<Partial<Theme>>, void, {
+export const themeRegistry: _$_zaly_shared_registry0.Registry<Promise<Partial<Theme>>, void, {
     readonly "ayu-dark": () => Promise<Partial<Theme>>;
     readonly "catppuccin-frappe": () => Promise<Partial<Theme>>;
     readonly "catppuccin-latte": () => Promise<Partial<Theme>>;

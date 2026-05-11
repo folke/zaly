@@ -41,9 +41,6 @@ export const cleanTextTui: (s: string, opts?: CleanTextOpts) => string;
 // @public
 export function compareNaturalDescNumbers(a: string, b: string): number;
 
-// @public
-export function createRegistry<V, O = void>(label: string): Registry<V, O>;
-
 // @public (undocumented)
 export function decodePath(encoded: string): string;
 
@@ -89,13 +86,6 @@ export function hash(content: string | Uint8Array, len?: number): string;
 // @public
 export type Listener<E, Self, R extends void | Promise<void> = void> = (event: E, self: Self) => R;
 
-// @public (undocumented)
-type Loader_2<V, O = void> = (opts: O) => V;
-export { Loader_2 as Loader }
-
-// @public (undocumented)
-export type LoaderMap<V, O = void> = Record<string, Loader_2<V, O>>;
-
 // @public
 export function normalizeEol(s: string, opts?: {
     loneCr?: string;
@@ -110,21 +100,6 @@ export function prettyPath(path: string): string;
 
 // @public (undocumented)
 export function randomHash(len?: number): string;
-
-// @public (undocumented)
-export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> {
-    constructor(label: string);
-    from<const E extends LoaderMap<V, O>>(entries: E): Registry<V, O, E>;
-    // (undocumented)
-    has(name: string): boolean;
-    // (undocumented)
-    keys(): string[];
-    load<N extends (keyof I & string) | (string & {})>(name: N, ...args: LoadArgs<O>): N extends keyof I ? Resolved<I[N]> : V;
-    register(name: string, loader: Loader_2<V, O>): () => void;
-}
-
-// @public
-export type Resolved<L> = L extends Loader_2<infer V, infer _O> ? V : never;
 
 // @public (undocumented)
 export function safeAsyncFn<T extends AnyFn<any[], Promise<any>>>(fn: T): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined>;
