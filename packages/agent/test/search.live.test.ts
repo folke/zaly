@@ -63,7 +63,7 @@ describe.skipIf(!enabled)("search: live", () => {
 
   test("freshness filter rejected as schema-invalid when not in the enum", async () => {
     await expect(
-      searchTool.validator.validateParams({ query: "x", freshness: "yesterday" }),
+      searchTool.validator.validateParams({ query: "x", freshness: "yesterday" })
     ).rejects.toThrow(/❌/)
   })
 

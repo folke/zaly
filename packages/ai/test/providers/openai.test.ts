@@ -424,7 +424,10 @@ describe("openai: request translation", () => {
       call: async () => ({}),
       params: { properties: { city: { type: "string" } }, type: "object" },
       name: "get_weather",
-      validator: { validateParams: async (x: unknown) => x, validateResult: async (x: unknown) => x },
+      validator: {
+        validateParams: async (x: unknown) => x,
+        validateResult: async (x: unknown) => x,
+      },
     }
     await drain(
       provider.stream(
@@ -456,7 +459,10 @@ describe("openai: request translation", () => {
       call: async () => ({}),
       params: { type: "object" },
       name: "t",
-      validator: { validateParams: async (x: unknown) => x, validateResult: async (x: unknown) => x },
+      validator: {
+        validateParams: async (x: unknown) => x,
+        validateResult: async (x: unknown) => x,
+      },
     }
     await drain(
       provider.stream(
@@ -478,7 +484,10 @@ describe("openai: request translation", () => {
       call: async () => ({}),
       params: { type: "object" },
       name: "t",
-      validator: { validateParams: async (x: unknown) => x, validateResult: async (x: unknown) => x },
+      validator: {
+        validateParams: async (x: unknown) => x,
+        validateResult: async (x: unknown) => x,
+      },
     }
     await drain(
       provider.stream(
@@ -503,7 +512,10 @@ describe("openai: request translation", () => {
       call: async () => ({}),
       params: { type: "object" },
       name: "t",
-      validator: { validateParams: async (x: unknown) => x, validateResult: async (x: unknown) => x },
+      validator: {
+        validateParams: async (x: unknown) => x,
+        validateResult: async (x: unknown) => x,
+      },
     }
     await drain(
       provider.stream(

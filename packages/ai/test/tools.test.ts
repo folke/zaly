@@ -117,7 +117,7 @@ describe("defineTool — TypeBox defaults", () => {
 
   test("default + bad type still errors after coercion can't fix it", async () => {
     await expect(
-      Search.validator.validateParams({ query: 123, limit: "not-a-number" }),
+      Search.validator.validateParams({ query: 123, limit: "not-a-number" })
     ).rejects.toThrow(/❌/)
   })
 

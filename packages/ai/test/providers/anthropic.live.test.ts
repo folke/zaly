@@ -80,7 +80,10 @@ describe.skipIf(!enabled)("anthropic: live", () => {
         type: "object",
       },
       name: "get_weather",
-      validator: { validateParams: async (x: unknown) => x, validateResult: async (x: unknown) => x },
+      validator: {
+        validateParams: async (x: unknown) => x,
+        validateResult: async (x: unknown) => x,
+      },
     }
     const message = await model.stream(
       {
