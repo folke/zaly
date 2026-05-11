@@ -20,7 +20,6 @@
     "lint": "z lint",
     "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
-    "rules": "bun ./scripts/oxlint-rules.ts",
     "test": "z test --bun",
     "test:live": "LIVE=1 bun test live",
     "up": "bun update --latest; for pkg in packages/*; do (cd $pkg && bun update --latest); done"
@@ -37,7 +36,6 @@
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1",
     "publint": "^0.3.20",
-    "ts-morph": "^28.0.0",
     "tsdown": "^0.22.0",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",
