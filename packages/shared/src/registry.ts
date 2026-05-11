@@ -76,7 +76,7 @@ export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> 
   }
 
   keys(): string[] {
-    return [...this.#entries.keys()].toSorted()
+    return [...this.#entries.keys()]
   }
 
   /** Bulk-register a literal map of entries. The `const E` modifier and

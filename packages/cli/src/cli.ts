@@ -74,7 +74,7 @@ export class Cli extends Logger {
 
   async listThemes(): Promise<void> {
     const md = ["# Available themes"]
-    for (const name of themeRegistry.keys()) {
+    for (const name of themeRegistry.keys().toSorted()) {
       md.push(`- **${name}**`)
     }
     this.log(md.join("\n"))
