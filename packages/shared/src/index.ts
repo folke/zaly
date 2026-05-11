@@ -1,5 +1,4 @@
 export * from "./emitter.ts"
-export * from "./registry.ts"
 export * from "./utils.ts"
 export * from "./path.ts"
 export * from "./text.ts"

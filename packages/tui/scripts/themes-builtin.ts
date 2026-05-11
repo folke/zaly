@@ -28,7 +28,7 @@ function genBuiltin(names: readonly string[]): string {
     )
     .join("\n")
 
-  return `${header}import type { LoaderMap } from "@zaly/shared"
+  return `${header}import type { LoaderMap } from "@zaly/shared/registry"
 import type { Theme } from "./types.ts"
 
 /**

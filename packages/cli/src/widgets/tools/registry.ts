@@ -1,7 +1,7 @@
 import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Accessor, Widget } from "@zaly/tui"
 
-import { createRegistry } from "@zaly/shared"
+import { createRegistry } from "@zaly/shared/registry"
 import { widget } from "@zaly/tui"
 import { bashResult } from "./bash.ts"
 import { defaultResult } from "./default.ts"

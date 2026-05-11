@@ -1,6 +1,6 @@
 import type { Model, Tool } from "@zaly/ai"
 
-import { createRegistry } from "@zaly/shared"
+import { createRegistry } from "@zaly/shared/registry"
 
 /** Per-load context handed to every tool factory. Lets factories
  *  customise the tool — typically schema descriptions — based on the

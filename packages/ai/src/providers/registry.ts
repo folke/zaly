@@ -1,7 +1,7 @@
 import type { Provider } from "../provider.ts"
 import type { ProviderOptions } from "../types.ts"
 
-import { createRegistry } from "@zaly/shared"
+import { createRegistry } from "@zaly/shared/registry"
 
 export type ProviderLoader<T extends string = string> = (
   opts: ProviderOptions

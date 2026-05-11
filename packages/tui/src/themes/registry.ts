@@ -2,7 +2,8 @@
 import type { BuiltinThemeName } from "./builtin.ts"
 import type { Theme } from "./types.ts"
 
-import { createRegistry, safeStat, withError } from "@zaly/shared"
+import { safeStat, withError } from "@zaly/shared"
+import { createRegistry } from "@zaly/shared/registry"
 import { readFileSync } from "node:fs"
 import { resolve } from "pathe"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
