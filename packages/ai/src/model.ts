@@ -12,7 +12,7 @@ import type {
 import type { AnyProvider } from "./providers/registry.ts"
 import type { Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
 
-import { envAuth } from "./auth/auth.ts"
+import { authenticate } from "./auth/auth.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel } from "./models.ts"
@@ -154,7 +154,7 @@ export class Model<T extends AnyProvider = string> {
 export async function loadModel(
   source: string | ModelSpec,
   overrides?: Partial<ModelSpec>,
-  auth: AuthProvider = envAuth
+  auth?: AuthProvider
 ): Promise<Model> {
   // Full model URI. Get from the catalog if it's a string; if it's already a spec, construct
   const id =
@@ -169,7 +169,7 @@ export async function loadModel(
     )
   }
   const spec: ModelSpec = { ...base, ...overrides }
-  const creds = await auth.getAuth(spec)
+  const creds = await authenticate(spec, auth)
   const provider = await providerRegistry.load(spec.provider, {
     ...spec,
     apiKey: spec.apiKey ?? creds?.apiKey,

@@ -1,9 +1,9 @@
 import type { ManagedSession, Session } from "@zaly/agent"
-import type { AuthProvider, Message } from "@zaly/ai"
+import type { Message } from "@zaly/ai"
 import type { Config, ResumeRequest } from "./config.ts"
 
 import { Agent, sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent"
-import { chainAuth, codexAuth, envAuth, loadModel } from "@zaly/ai"
+import { loadModel } from "@zaly/ai"
 import { basename, dirname, isAbsolute } from "pathe"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
@@ -31,10 +31,9 @@ const DEFAULT_TOOLS = [
  * (`messages` only) or a managed zaly `Session`.
  */
 export async function buildAgent(config: Config): Promise<Agent> {
-  const auth = chainAuth(codexAuth, envAuth)
-  const model = await loadModel(config.modelId, { apiKey: config.apiKey }, auth)
+  const model = await loadModel(config.modelId, { apiKey: config.apiKey })
 
-  const { messages, session } = await resolveResume(config, auth)
+  const { messages, session } = await resolveResume(config)
   const tools = config.tools ?? [...DEFAULT_TOOLS]
   const reasoning = config.reasoning ? { effort: config.reasoning } : undefined
 
@@ -53,7 +52,7 @@ interface ResolvedResume {
   messages: Message[]
 }
 
-async function resolveResume(config: Config, _auth: AuthProvider): Promise<ResolvedResume> {
+async function resolveResume(config: Config): Promise<ResolvedResume> {
   const { resume } = config
   const scope = { cwd: config.cwd }
 

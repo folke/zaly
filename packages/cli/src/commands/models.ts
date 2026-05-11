@@ -3,7 +3,7 @@
 import type { ParsedArgs } from "citty"
 import type { Cli } from "../cli.ts"
 
-import { chainAuth, codexAuth, envAuth, listModels } from "@zaly/ai"
+import { listModels } from "@zaly/ai"
 import { defineCommand } from "citty"
 
 type ModelsArgs = ParsedArgs<{
@@ -42,9 +42,8 @@ export function modelsCommand(cli: Cli) {
 async function run(_cli: Cli, args: ModelsArgs): Promise<void> {
   // Default: only models the current auth chain can authenticate.
   // `--all`: every catalog row, regardless of local credentials.
-  const auth = chainAuth(codexAuth, envAuth)
   const models = await listModels({
-    auth: args.all ? undefined : auth,
+    auth: args.all ? undefined : true,
     filter: args.pattern,
   })
 

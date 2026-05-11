@@ -75,14 +75,15 @@ export async function getModel(id: string): Promise<ModelSpec | undefined> {
  *                  Explicit form `{ input?, output? }` lets callers
  *                  narrow on generation direction too. */
 export interface ModelFilter {
-  auth?: AuthProvider
+  auth?: AuthProvider | true
   reasoning?: boolean
   modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
   filter?: string | ((m: ModelSpec) => boolean)
 }
 
 export async function filterModel(id: string, m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
-  if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth))) return false
+  if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth === true ? undefined : opts.auth)))
+    return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
   if (
