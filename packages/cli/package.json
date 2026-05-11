@@ -40,6 +40,7 @@
   "scripts": {
     "build": "tsdown --cwd ../../ --filter @zaly/cli",
     "check": "oxlint",
+    "postinstall": "node ./scripts/postinstall.mjs",
     "test": "bun test && vitest -r ../../ --project @zaly/cli run"
   },
   "dependencies": {
