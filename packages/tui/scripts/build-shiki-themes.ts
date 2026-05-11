@@ -222,9 +222,6 @@ function combine(bg: Color | undefined, fg: Color | undefined): Style | undefine
 }
 
 async function build(id: ShikiTheme): Promise<void> {
-  for (const t of Object.keys(bundledThemes)) {
-    console.log(`  ${t}`)
-  }
   const loader = bundledThemes[id]
   const mod = await loader()
   const theme = mod.default

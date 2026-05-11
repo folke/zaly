@@ -1,5 +1,4 @@
 {
-  "$schema": "file:///home/folke/projects/zaly/packages/tui/assets/schemas/theme.schema.json",
   "accent": "#b15c00",
   "blend": "#e1e2e7",
   "border": "#4094a3",
