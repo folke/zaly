@@ -10,14 +10,16 @@ export default defineConfig({
   },
   entry: {
     index: "src/index.ts",
-    ansi: "src/runtime/ansi.node.ts",
-    md: "src/runtime/md.node.ts",
+    "ansi.node": "src/runtime/ansi.node.ts",
+    "md.node": "src/runtime/md.node.ts",
+    "ansi.bun": "src/runtime/ansi.bun.ts",
+    "md.bun": "src/runtime/md.bun.ts",
     themes: "src/themes/registry.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate
     // chunks (for `publishConfig.imports` to point at). They're not
     // part of the public surface.
-    exclude: ["ansi", "md"],
+    exclude: ["ansi.*", "md.*"],
   },
 })

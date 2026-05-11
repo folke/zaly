@@ -14,14 +14,12 @@
   "type": "module",
   "imports": {
     "#ansi": {
-      "source": "./src/runtime/ansi.node.ts",
       "bun": "./src/runtime/ansi.bun.ts",
-      "default": "./src/runtime/ansi.node.ts"
+      "default": "./dist/ansi.node.mjs"
     },
     "#md": {
-      "source": "./src/runtime/md.node.ts",
       "bun": "./src/runtime/md.bun.ts",
-      "default": "./src/runtime/md.node.ts"
+      "default": "./dist/md.node.mjs"
     }
   },
   "exports": {
@@ -43,8 +41,14 @@
       "./package.json": "./package.json"
     },
     "imports": {
-      "#ansi": "./dist/ansi.mjs",
-      "#md": "./dist/md.mjs"
+      "#ansi": {
+        "bun": "./dist/ansi.bun.mjs",
+        "default": "./dist/ansi.node.mjs"
+      },
+      "#md": {
+        "bun": "./dist/md.bun.mjs",
+        "default": "./dist/md.node.mjs"
+      }
     }
   },
   "scripts": {

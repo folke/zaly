@@ -11,31 +11,36 @@ import { defineConfig } from "tsdown"
 // oxlint, editor LSP, tsgo) reads the `bun` branch of exports → src.
 //
 // Per-package `imports` (tui's `#ansi`, `#md`) split runtime impls:
-//   "#ansi": {
-//     "bun":     "./src/runtime/ansi.bun.ts",     // Bun-specific impl
-//     "source":  "./src/runtime/ansi.node.ts",    // vitest opts in here
-//     "default": "./src/runtime/ansi.node.ts"     // everyone else
-//   }
-// Vitest is the only tool that adds `source` to its conditions; without it,
-// vitest would resolve to the `bun` branch (since `customConditions: ["bun"]`
-// flows through) and try to execute Bun-only code under Node. The `source`
-// condition steers vitest to the node impl while leaving Bun's auto-resolved
-// `bun` path untouched.
+//   dev imports:
+//     "#ansi": {
+//       "bun":     "./src/runtime/ansi.bun.ts",   // Bun runtime → bun impl
+//       "default": "./src/runtime/ansi.node.ts"   // everything else → node impl
+//     }
+//   publishConfig.imports (consumer-facing, bundled):
+//     "#ansi": {
+//       "bun":     "./dist/ansi.bun.mjs",
+//       "default": "./dist/ansi.node.mjs"
+//     }
+// Bun-auto matches `bun` → bun impl. tsgo/oxlint also match `bun` (via
+// customConditions), seeing the bun impl's types — fine because both impls
+// share an API. Published Bun consumers automatically get the bun bundle;
+// published Node consumers get the node bundle.
 //
-// tsgo / oxlint also read the `bun` branch here. That's fine — they only
-// need declarations, not runtime behaviour, and both impls share an API.
+// Vitest runs under Node but needs the node impl regardless of which
+// condition wins. Handled via `test.alias` in vitest.config.ts pointing
+// `#ansi` / `#md` directly at the node-impl source files — bypasses the
+// imports map entirely for vitest, so we don't need a third condition.
 //
 // ─── Why not...
 //
-//   `devExports: true`     — exports replace publishConfig directly; attw
-//                            doesn't resolve publishConfig, sees src, errors.
-//   `devExports: "source"` — Bun would need `--conditions=source` on every
-//                            invocation; `bun` is auto-added, `source` is not.
-//   one condition for both axes — vitest can't separately opt into
-//                                 source-from-exports and node-impl-from-imports.
+//   `devExports: true`  — exports replace publishConfig directly; attw
+//                         doesn't resolve publishConfig, sees src, errors.
+//   collapse imports to one condition — published Bun consumers wouldn't
+//                                       get the bun-specific bundle without
+//                                       an opt-in flag on their side.
 
 export default defineConfig({
-  // attw: { profile: "esm-only" }, // doesn't resolve publishConfig, so disable
+  attw: { profile: "esm-only" }, // doesn't resolve publishConfig, so disable
   clean: true,
   deps: {
     alwaysBundle: ["slice-ansi", "string-width", "wrap-ansi", "pathe"],
