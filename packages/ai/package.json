@@ -25,10 +25,10 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/ai",
+    "build": "z build",
     "build:models": "bun scripts/fetch-models.ts && bun scripts/build-models.ts",
-    "check": "oxlint",
-    "test": "bun test && vitest -r ../../ --project @zaly/ai run"
+    "lint": "z lint",
+    "test": "z test"
   },
   "dependencies": {
     "@zaly/shared": "workspace:*",

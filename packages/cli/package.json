@@ -38,10 +38,10 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/cli",
-    "check": "oxlint",
+    "build": "z build",
+    "lint": "z lint",
     "postinstall": "node ./scripts/postinstall.mjs",
-    "test": "bun test && vitest -r ../../ --project @zaly/cli run"
+    "test": "z test"
   },
   "dependencies": {
     "@zaly/agent": "workspace:*",

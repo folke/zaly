@@ -35,9 +35,9 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/shared",
-    "check": "oxlint",
-    "test": "bun test && vitest -r ../../ --project @zaly/shared run"
+    "build": "z build",
+    "lint": "z lint",
+    "test": "z test"
   },
   "dependencies": {
     "image-meta": "^0.2.2",

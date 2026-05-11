@@ -25,9 +25,9 @@
     }
   },
   "scripts": {
-    "build": "tsdown --cwd ../../ --filter @zaly/agent",
-    "check": "oxlint",
-    "test": "bun test && vitest -r ../../ --project @zaly/agent run"
+    "build": "z build",
+    "lint": "z lint",
+    "test": "z test"
   },
   "dependencies": {
     "@zaly/ai": "workspace:*",

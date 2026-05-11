@@ -1,0 +1,13 @@
+{
+  "name": "@zaly/dev",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "z": "./src/index.ts"
+  },
+  "dependencies": {
+    "citty": "^0.2.2",
+    "pathe": "^2.0.3"
+  }
+}
