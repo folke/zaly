@@ -6,7 +6,10 @@
   "printWidth": 100,
   "trailingComma": "es5",
   "proseWrap": "preserve",
-  // "sortPackageJson": true,
+  "sortPackageJson": {
+    "sortScripts": true
+  },
+  "ignorePatterns": ["packages/*/etc/**/*", "packages/*/assets/**/*", "packages/*/src/**/gen/**/*"],
   // "sortTailwindcss": true,
   "sortImports": {
     "newlinesBetween": false,

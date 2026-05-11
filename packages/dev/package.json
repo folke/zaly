@@ -2,10 +2,10 @@
   "name": "@zaly/dev",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "bin": {
     "z": "./src/index.ts"
   },
+  "type": "module",
   "dependencies": {
     "@microsoft/api-extractor": "^7.58.7",
     "citty": "^0.2.2",

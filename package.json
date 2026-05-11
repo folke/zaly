@@ -12,18 +12,18 @@
   ],
   "type": "module",
   "scripts": {
-    "lint": "z lint",
-    "fmt": "z fmt",
+    "api": "z api",
+    "api:check": "z api --check",
     "build": "z build",
-    "test": "z test --bun",
+    "fmt": "z fmt",
+    "knip": "knip",
+    "lint": "z lint",
+    "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
     "rules": "bun ./scripts/oxlint-rules.ts",
-    "out": "bun outdated; bun outdated --filter '*'",
-    "up": "bun update --latest; for pkg in packages/*; do (cd $pkg && bun update --latest); done",
+    "test": "z test --bun",
     "test:live": "LIVE=1 bun test live",
-    "knip": "knip",
-    "api": "z api",
-    "api:check": "z api --check"
+    "up": "bun update --latest; for pkg in packages/*; do (cd $pkg && bun update --latest); done"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.2",
