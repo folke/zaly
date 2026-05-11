@@ -12,9 +12,8 @@ const env = process.env
 export const hasTTY = process.stdout.isTTY && env.TERM !== "dumb"
 export const isWin = process.platform === "win32"
 export const isCI = !!env.CI
+export const isBun = !!process.versions.bun
 
-export const termCols = { get: () => (hasTTY ? process.stdout.columns : 80) }
-export const termRows = { get: () => (hasTTY ? process.stdout.rows : 24) }
 export const nodeENV: string | undefined = process.env.NODE_ENV
 
 export const isTest: boolean = nodeENV === "test" || !!env.TEST
@@ -27,4 +26,5 @@ export const hasColors =
  *  clipboard tools on the remote host write to the *remote* clipboard,
  *  which is rarely what the user wants — flip to OSC 52 instead. Other
  *  tools may also want to behave differently in remote sessions. */
-export const isSSH = process.env.SSH_TTY ?? process.env.SSH_CONNECTION ?? process.env.SSH_CLIENT
+export const isSSH =
+  !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION || !!process.env.SSH_CLIENT
