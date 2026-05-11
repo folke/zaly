@@ -5,7 +5,6 @@ import type { Cli } from "./cli.ts"
 import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/renderer.ts"
 
-import { toImagePart, toPdfPart } from "@zaly/ai"
 import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
 import { registerActions } from "./actions.ts"
@@ -148,6 +147,7 @@ export class App {
       att.kind === "file" &&
       (att.type === "application/pdf" || att.path.toLowerCase().endsWith(".pdf"))
 
+    const { toImagePart, toPdfPart } = await import("@zaly/ai")
     if (isImage && this.#agent.model.canAttach("image")) {
       const { fileDetect } = await import("@zaly/shared/detect")
       const detected = await fileDetect(att.path)

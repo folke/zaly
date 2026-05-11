@@ -1,10 +1,10 @@
 // oxlint-disable sort-keys
 
-import type { ManagedSession } from "@zaly/agent"
+import type { ManagedSession } from "@zaly/agent/session"
 import type { ParsedArgs } from "citty"
 import type { Cli } from "../cli.ts"
 
-import { sessionList } from "@zaly/agent"
+import { sessionList } from "@zaly/agent/session"
 import { defineCommand } from "citty"
 import { rm } from "node:fs/promises"
 import { basename, dirname, isAbsolute } from "pathe"

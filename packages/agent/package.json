@@ -15,12 +15,22 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
+    "./session": {
+      "bun": "./src/session/index.ts",
+      "default": "./dist/session.mjs"
+    },
+    "./session/claude": {
+      "bun": "./src/session/claude.ts",
+      "default": "./dist/session/claude.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
+      "./session": "./dist/session.mjs",
+      "./session/claude": "./dist/session/claude.mjs",
       "./package.json": "./package.json"
     }
   },

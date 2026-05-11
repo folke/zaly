@@ -16,9 +16,9 @@
   ],
   "type": "module",
   "exports": {
-    ".": {
-      "bun": "./src/index.ts",
-      "default": "./dist/index.mjs"
+    "./main": {
+      "bun": "./src/main.ts",
+      "default": "./dist/main.mjs"
     },
     "./zaly": {
       "bun": "./bin/zaly.ts",
@@ -32,7 +32,7 @@
       "zaly": "./dist/zaly.mjs"
     },
     "exports": {
-      ".": "./dist/index.mjs",
+      "./main": "./dist/main.mjs",
       "./zaly": "./dist/zaly.mjs",
       "./package.json": "./package.json"
     }

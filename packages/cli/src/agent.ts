@@ -1,9 +1,9 @@
-import type { ManagedSession, Session } from "@zaly/agent"
+import type { Agent } from "@zaly/agent"
+import type { ManagedSession, Session } from "@zaly/agent/session"
 import type { Message } from "@zaly/ai"
 import type { Config, ResumeRequest } from "./config.ts"
 
-import { Agent, sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent"
-import { loadModel } from "@zaly/ai"
+import { sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent/session"
 import { basename, dirname, isAbsolute } from "pathe"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
@@ -31,6 +31,8 @@ const DEFAULT_TOOLS = [
  * (`messages` only) or a managed zaly `Session`.
  */
 export async function buildAgent(config: Config): Promise<Agent> {
+  const { Agent } = await import("@zaly/agent")
+  const { loadModel } = await import("@zaly/ai")
   const model = await loadModel(config.modelId, { apiKey: config.apiKey })
 
   const { messages, session } = await resolveResume(config)
@@ -81,7 +83,7 @@ async function resolveExplicit(req: Extract<ResumeRequest, { kind: "explicit" }>
   // when the path lives under `~/.claude/projects/...`.
   if (ref.includes("/") || ref.endsWith(".jsonl") || isAbsolute(ref)) {
     if (isClaudePath(ref)) {
-      const { loadClaudeSession } = await import("@zaly/agent")
+      const { loadClaudeSession } = await import("@zaly/agent/session/claude")
       const loaded = await loadClaudeSession(ref)
       return { messages: loaded.messages, session: undefined }
     }
