@@ -7,6 +7,7 @@
     "z": "./src/index.ts"
   },
   "dependencies": {
+    "@microsoft/api-extractor": "^7.58.7",
     "citty": "^0.2.2",
     "pathe": "^2.0.3"
   }

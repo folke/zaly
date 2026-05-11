@@ -1,19 +1,17 @@
 /**
- * Generate API surface reports (`etc/<pkg>[-<subpath>].api.md`) for every
- * package in the monorepo. Entries are derived from each package's
- * `package.json#exports` field — add a sub-path there and a report
- * appears automatically. No per-package `api-extractor.json` needed.
- *
- * Usage:
- *   bun scripts/api-report.ts          # update reports in place (dev)
- *   CI=true bun scripts/api-report.ts  # fail if any report drifted (CI)
+ * Generate API surface reports (`etc/<pkg>[-<subpath>].api.md`) for one or
+ * more packages. Entries are derived from each package's
+ * `package.json#exports` field — add a sub-path there and a report appears
+ * automatically. No per-package `api-extractor.json` needed.
  */
+
+// oxlint-disable sort-keys
 
 import type { IConfigFile } from "@microsoft/api-extractor"
 
 import { Extractor, ExtractorConfig, ExtractorLogLevel } from "@microsoft/api-extractor"
 import { existsSync, mkdirSync, readFileSync } from "node:fs"
-import { join, resolve } from "node:path"
+import { join } from "pathe"
 
 interface PackageJson {
   name: string
@@ -24,8 +22,7 @@ interface PackageJson {
 type ExportTarget = string | { default?: string; types?: string; import?: string }
 
 // `@zaly/cli` is a leaf binary, not consumed externally — skip it.
-const PACKAGES = ["agent", "ai", "shared", "tui"]
-const ROOT = resolve(import.meta.dir, "..")
+export const API_PACKAGES = ["agent", "ai", "shared", "tui"] as const
 
 function reportName(pkgName: string, subpath: string): string {
   const base = pkgName.split("/").pop()!
@@ -77,8 +74,8 @@ function configFor(pkgDir: string, pkgName: string, subpath: string, dts: string
   }
 }
 
-function reportForPackage(pkgSlug: string): boolean {
-  const pkgDir = join(ROOT, "packages", pkgSlug)
+function reportForPackage(root: string, slug: string, check: boolean): boolean {
+  const pkgDir = join(root, "packages", slug)
   const pkgPath = join(pkgDir, "package.json")
   if (!existsSync(pkgPath)) return true
 
@@ -107,7 +104,7 @@ function reportForPackage(pkgSlug: string): boolean {
     })
 
     const result = Extractor.invoke(config, {
-      localBuild: process.env.CI !== "true",
+      localBuild: !check,
       showVerboseMessages: false,
     })
     if (!result.succeeded) allOk = false
@@ -115,8 +112,15 @@ function reportForPackage(pkgSlug: string): boolean {
   return allOk
 }
 
-let allOk = true
-for (const pkg of PACKAGES) {
-  if (!reportForPackage(pkg)) allOk = false
+export function runApi(opts: { root: string; slug?: string; check: boolean }): boolean {
+  if (opts.slug && !API_PACKAGES.includes(opts.slug as (typeof API_PACKAGES)[number])) {
+    process.stderr.write(`no API report defined for @zaly/${opts.slug}\n`)
+    return true
+  }
+  const targets = opts.slug ? [opts.slug] : [...API_PACKAGES]
+  let allOk = true
+  for (const slug of targets) {
+    if (!reportForPackage(opts.root, slug, opts.check)) allOk = false
+  }
+  return allOk
 }
-if (!allOk) process.exit(1)
