@@ -1,6 +1,6 @@
 import type { Cli } from "../cli.ts"
 
-import { App } from "../app.ts"
+import { App } from "../app/app.ts"
 
 /** Default handler when no subcommand is given — launches the
  *  long-lived TUI session. Lazy-imported by `Cli.tui()` so other

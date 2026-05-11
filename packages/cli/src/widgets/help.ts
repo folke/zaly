@@ -1,16 +1,22 @@
 import type { Renderer } from "@zaly/tui"
 
-import { overlay, text } from "@zaly/tui"
+import { overlay, signal, text } from "@zaly/tui"
 
 /**
- * Built-in overlays. Help is auto-derived from the actions registry so
- * it stays in sync as new commands are added.
+ * Help overlay. Reads `renderer.actions` reactively — the list re-
+ * renders whenever an action is registered or unregistered (covers
+ * Phase B agent-action registration, future `/reload-plugins`, etc.)
  */
-export function buildOverlays(renderer: Renderer): {
-  help: ReturnType<typeof overlay>
-  toggleHelp: () => void
+export function helpOverlay(renderer: Renderer): {
+  overlay: ReturnType<typeof overlay>
+  toggle: () => void
 } {
-  const help = overlay(
+  const [actions, setActions] = signal(renderer.actions.list())
+  renderer.actions.onChange(() => {
+    setActions(renderer.actions.list())
+  })
+
+  const o = overlay(
     {
       border: "rounded",
       borderTitle: "help",
@@ -24,7 +30,7 @@ export function buildOverlays(renderer: Renderer): {
     text(
       ({ style }) => {
         const rows: string[] = []
-        for (const [id, info] of renderer.actions.list()) {
+        for (const [id, info] of actions()) {
           if (info.hidden || !id.startsWith("app.")) continue
           const name = (info.name ?? id).padEnd(8)
           const desc = (info.desc ?? "").padEnd(28)
@@ -38,10 +44,10 @@ export function buildOverlays(renderer: Renderer): {
   )
 
   return {
-    help,
-    toggleHelp() {
-      if (help.mounted) help.close()
-      else renderer.overlay.open(help)
+    overlay: o,
+    toggle() {
+      if (o.mounted) o.close()
+      else renderer.overlay.open(o)
     },
   }
 }

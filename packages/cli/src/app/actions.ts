@@ -1,24 +1,13 @@
 import type { Agent } from "@zaly/agent"
 import type { Renderer } from "@zaly/tui"
 
-import { loginCodex } from "@zaly/ai"
-
-export interface ActionContext {
-  agent: Agent
-  renderer: Renderer
-  /** Toggles the help overlay; wired by render/overlay.ts. */
-  toggleHelp: () => void
-  /** Disposes the current agent and starts a fresh one. */
-  reset: () => Promise<void>
-}
-
 /**
- * Register all slash-command actions. Each one shows up in the help
- * overlay, in `/`-triggered autocomplete, and is dispatchable from
- * keymaps via `renderer.actions.dispatch("app.<name>")`.
+ * UI-only actions — registered in Phase A (no agent required).
+ * Composer state, help overlay toggle, process exit. Each shows up in
+ * the help overlay and in `/`-triggered autocomplete.
  */
-export function registerActions(ctx: ActionContext): void {
-  const { renderer } = ctx
+export function registerUiActions(opts: { renderer: Renderer; toggleHelp: () => void }): void {
+  const { renderer, toggleHelp } = opts
   renderer.actions.register({
     "app.clear": {
       desc: "clear the composer",
@@ -30,20 +19,9 @@ export function registerActions(ctx: ActionContext): void {
       },
       name: "clear",
     },
-    "app.compact": {
-      desc: "summarize older history to free context space",
-      fn: () => {
-        console.log("Compacting history...")
-        void ctx.agent
-          .compact()
-          .catch((error) => console.error("Compaction failed:", error))
-          .finally(() => console.log("Compaction complete."))
-      },
-      name: "compact",
-    },
     "app.help": {
       desc: "toggle help overlay",
-      fn: ctx.toggleHelp,
+      fn: toggleHelp,
       keys: ["ctrl-h"],
       name: "help",
     },
@@ -51,7 +29,9 @@ export function registerActions(ctx: ActionContext): void {
       desc: "authorize zaly with your ChatGPT (codex) account",
       fn: () => {
         void runCodexLogin().catch((error) => {
-          console.error("[login] failed:", error instanceof Error ? error.message : error)
+          process.stderr.write(
+            `[login] failed: ${error instanceof Error ? error.message : String(error)}\n`
+          )
         })
       },
       name: "login",
@@ -64,14 +44,40 @@ export function registerActions(ctx: ActionContext): void {
       },
       name: "quit",
     },
+  })
+}
+
+/**
+ * Agent-dependent actions — registered in Phase B once `buildAgent`
+ * resolves. Hot-add to the registry: the help overlay subscribes via
+ * `actions.onChange` and re-renders as soon as these appear.
+ */
+export function registerAgentActions(opts: {
+  renderer: Renderer
+  agent: Agent
+  reset: () => Promise<void>
+}): void {
+  const { renderer, agent, reset } = opts
+  renderer.actions.register({
+    "app.compact": {
+      desc: "summarize older history to free context space",
+      fn: () => {
+        console.info("Compacting history...\n")
+        void agent
+          .compact()
+          .catch((error) => console.error(`Compaction failed: ${error}\n`))
+          .finally(() => console.info("Compaction complete.\n"))
+      },
+      name: "compact",
+    },
     "app.reset": {
       desc: "start a fresh session",
-      fn: () => void ctx.reset(),
+      fn: () => void reset(),
       name: "reset",
     },
     "app.stop": {
       desc: "abort the current run",
-      fn: () => ctx.agent.abort(),
+      fn: () => agent.abort(),
       keys: ["ctrl-x"],
       name: "stop",
     },
@@ -79,24 +85,24 @@ export function registerActions(ctx: ActionContext): void {
 }
 
 /** Drive the codex PKCE login flow with progress messages streamed to
- *  stdout. The TUI surfaces them in the conversation area, same as
- *  `app.compact`. Browser is opened via the platform `open` /
- *  `xdg-open` / `start` helper; on bind failure the URL is printed for
- *  the user to copy manually. */
+ *  stdout. Browser is opened via the platform `open` / `xdg-open` /
+ *  `start` helper; on bind failure the URL is printed for the user to
+ *  copy manually. */
 async function runCodexLogin(): Promise<void> {
-  console.log("[login] starting OpenAI Codex (ChatGPT) authorization…")
+  process.stdout.write("[login] starting OpenAI Codex (ChatGPT) authorization…\n")
+  const { loginCodex } = await import("@zaly/ai")
   const creds = await loginCodex({
     onAuthUrl: ({ url }) => {
-      console.log(
-        `[login] open this URL in your browser if it doesn't open automatically:\n  ${url}`
+      process.stdout.write(
+        `[login] open this URL in your browser if it doesn't open automatically:\n  ${url}\n`
       )
       openBrowser(url)
     },
     onProgress: (message) => {
-      console.log(`[login] ${message}`)
+      process.stdout.write(`[login] ${message}\n`)
     },
   })
-  console.log(`[login] linked ChatGPT account ${creds.accountId}.`)
+  process.stdout.write(`[login] linked ChatGPT account ${creds.accountId}.\n`)
 }
 
 /** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures

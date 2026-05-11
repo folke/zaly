@@ -1,4 +1,3 @@
-import type { Agent } from "@zaly/agent"
 import type { ManagedSession, Session } from "@zaly/agent/session"
 import type { Message } from "@zaly/ai"
 import type { Config, ResumeRequest } from "./config.ts"
@@ -6,55 +5,23 @@ import type { Config, ResumeRequest } from "./config.ts"
 import { sessionCreate, sessionList, sessionLoad, sessionResume } from "@zaly/agent/session"
 import { basename, dirname, isAbsolute } from "pathe"
 
-/** Default tool list when `--tools` isn't passed. Mirrors the previous
- *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
-const DEFAULT_TOOLS = [
-  "bash",
-  "edit",
-  "fetch",
-  "read",
-  "search",
-  "subagent",
-  "agent_send",
-  "agent_spawn",
-  "task_list",
-  "task_poll",
-  "task_stop",
-  "wakeup",
-  "write",
-] as const
-
-/**
- * Build a fresh Agent for the CLI from a resolved `Config`. Owns the
- * resume/session resolution: `--session` and `--resume` both flow
- * through here and end up as either an imported Claude session
- * (`messages` only) or a managed zaly `Session`.
- */
-export async function buildAgent(config: Config): Promise<Agent> {
-  const { Agent } = await import("@zaly/agent")
-  const { loadModel } = await import("@zaly/ai")
-  const model = await loadModel(config.modelId, { apiKey: config.apiKey })
-
-  const { messages, session } = await resolveResume(config)
-  const tools = config.tools ?? [...DEFAULT_TOOLS]
-  const reasoning = config.reasoning ? { effort: config.reasoning } : undefined
-
-  return Agent.load({
-    messages,
-    model,
-    permissions: config.yolo ? { preset: "yolo" } : undefined,
-    request: { reasoning },
-    session,
-    tools,
-  })
-}
-
-interface ResolvedResume {
+export interface LoadedSession {
+  /** Pre-loaded session for managed/resume paths. Pass to `Agent.load`
+   *  to skip the disk hydration step. */
   session?: Session
+  /** Materialised messages for Claude Code session imports. Empty for
+   *  managed sessions — read `session.messages` instead. */
   messages: Message[]
 }
 
-async function resolveResume(config: Config): Promise<ResolvedResume> {
+/**
+ * Resolve a `Config.resume` directive into either a pre-loaded managed
+ * `Session` or a Claude Code import (`messages` only). Pure side-effect-
+ * free disk work — no Agent construction. Cheap enough that the TUI can
+ * call it during Phase B (post-paint) and stream replay nodes before
+ * the agent's model + auth resolution finishes.
+ */
+export async function loadSession(config: Config): Promise<LoadedSession> {
   const { resume } = config
   const scope = { cwd: config.cwd }
 
@@ -76,7 +43,10 @@ async function resolveResume(config: Config): Promise<ResolvedResume> {
   }
 }
 
-async function resolveExplicit(req: Extract<ResumeRequest, { kind: "explicit" }>, config: Config) {
+async function resolveExplicit(
+  req: Extract<ResumeRequest, { kind: "explicit" }>,
+  config: Config
+): Promise<LoadedSession> {
   const ref = req.value
 
   // Path forms — Claude Code session imports route here automatically
