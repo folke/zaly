@@ -19,6 +19,7 @@ interface PackageJson {
   name?: string
   dependencies?: Record<string, string>
   optionalDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
   exports?: Record<string, unknown>
 }
 
@@ -54,6 +55,7 @@ function importSpecs(pkgDir: string): string[] {
   const specs: string[] = []
   for (const dep of Object.keys(pkg.dependencies ?? {})) specs.push(dep)
   for (const dep of Object.keys(pkg.optionalDependencies ?? {})) specs.push(dep)
+  for (const dep of Object.keys(pkg.peerDependencies ?? {})) specs.push(dep)
   if (pkg.name) {
     for (const sub of Object.keys(pkg.exports ?? {})) {
       if (sub === "./package.json") continue
