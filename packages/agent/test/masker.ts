@@ -119,7 +119,7 @@ async function estimateAttachment(att: Attachment): Promise<number> {
   if (!detected) return 0
   if (detected.type === "image") {
     try {
-      const info = imageInfo(detected)
+      const info = await imageInfo(detected)
       return Math.ceil((info.width * info.height) / ANTHROPIC_IMAGE_DIVISOR)
     } catch {
       return 0

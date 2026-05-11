@@ -51,7 +51,7 @@ export async function imageConvert<T extends WritableFormat>(
     // we already know the format and have the path.
     const data = await readFile(tempPath).catch(() => undefined)
     if (data === undefined) return
-    return imageInfo({ data, format: target, path: tempPath, type: "image" })
+    return await imageInfo({ data, format: target, path: tempPath, type: "image" })
   }
 
   const sharp = await getSharp()

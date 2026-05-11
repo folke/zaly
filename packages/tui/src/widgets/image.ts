@@ -65,7 +65,7 @@ export class Image extends Node<ImageState> {
 
     const detected = await fileDetect(this.state.src)
     if (detected?.type !== "image") return this.fallback
-    const img = imageInfo(detected)
+    const img = await imageInfo(detected)
 
     const { cols, rows } = dims(this.state, img, Math.min(ctx.width, 80))
     const blank = " ".repeat(cols)

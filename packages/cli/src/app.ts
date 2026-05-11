@@ -155,7 +155,7 @@ export class App {
         this.#log.error(`couldn't read image \`${att.path}\``)
         return insertAtCursor(input, att.path)
       }
-      const info = imageInfo(detected)
+      const info = await imageInfo(detected)
       const ready = await imageConvert(info, ["png", "jpeg", "webp"])
       if (!ready) {
         this.#log.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)

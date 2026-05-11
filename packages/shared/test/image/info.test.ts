@@ -26,7 +26,7 @@ describe("imageInfo", () => {
     const detected = await fileDetect(p)
     expect(detected?.type).toBe("image")
     if (detected?.type !== "image") return
-    const info = imageInfo(detected)
+    const info = await imageInfo(detected)
     expect(info.format).toBe("png")
     expect(info.width).toBe(1)
     expect(info.height).toBe(1)
@@ -44,6 +44,6 @@ describe("imageInfo", () => {
     const detected = await fileDetect(p)
     expect(detected?.type).toBe("image")
     if (detected?.type !== "image") return
-    expect(() => imageInfo(detected)).toThrow()
+    await expect(async () => await imageInfo(detected)).rejects.toThrow()
   })
 })
