@@ -71,8 +71,6 @@
         "@zaly/tui": "workspace:*",
         "citty": "^0.2.2",
         "pathe": "^2.0.3",
-      },
-      "optionalDependencies": {
         "sharp": "^0.34.5",
       },
     },
@@ -80,11 +78,11 @@
       "name": "@zaly/shared",
       "version": "0.0.0",
       "dependencies": {
-        "image-meta": "latest",
-        "pathe": "latest",
+        "image-meta": "^0.2.2",
+        "pathe": "^2.0.3",
       },
       "optionalDependencies": {
-        "sharp": "latest",
+        "sharp": "^0.34.5",
       },
     },
     "packages/tui": {

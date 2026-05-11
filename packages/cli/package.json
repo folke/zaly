@@ -49,9 +49,7 @@
     "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*",
     "citty": "^0.2.2",
-    "pathe": "^2.0.3"
-  },
-  "optionalDependencies": {
+    "pathe": "^2.0.3",
     "sharp": "^0.34.5"
   },
   "engines": {

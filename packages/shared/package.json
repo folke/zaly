@@ -50,9 +50,6 @@
     "bun": ">=1.2",
     "node": ">=24"
   },
-  "trustedDependencies": [
-    "sharp"
-  ],
   "inlinedDependencies": {
     "pathe": "2.0.3"
   }

@@ -96,8 +96,5 @@
     ],
     "strip-ansi": "7.2.0",
     "wrap-ansi": "10.0.0"
-  },
-  "trustedDependencies": [
-    "sharp"
-  ]
+  }
 }
