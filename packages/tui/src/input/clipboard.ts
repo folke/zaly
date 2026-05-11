@@ -1,4 +1,6 @@
-import { isSSH, safeStat, Spawn, spawnText, spawnWithInput, which } from "@zaly/shared"
+import { safeStat } from "@zaly/shared"
+import { isSSH } from "@zaly/shared/env"
+import { Spawn, spawnText, spawnWithInput, which } from "@zaly/shared/process"
 import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { platform } from "node:process"
@@ -139,7 +141,7 @@ function resetClipboardCache(): void {
  * user's clipboard definitely has it".
  */
 async function writeClipboardText(text: string): Promise<boolean> {
-  if (isSSH()) {
+  if (isSSH) {
     writeOsc52(text)
     return true
   }

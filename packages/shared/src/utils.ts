@@ -1,9 +1,7 @@
 import { createHash } from "node:crypto"
 import { readFileSync, statSync } from "node:fs"
 import { readFile } from "node:fs/promises"
-import { homedir } from "node:os"
-import { dirname, join, relative, resolve } from "pathe"
-import { reverseResolveAlias } from "pathe/utils"
+import { dirname, join, resolve } from "pathe"
 
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R
 
@@ -78,27 +76,9 @@ export function findUp(root: string, name: string, stop?: string) {
   }
 }
 
-// Similar to path.resolve but also expands ~ to the user home
-// directory. Accepts undefined / empty entries (filtered out) so
-// callers can pass an optional base without a `?? process.cwd()`
-// dance — `resolve()` defaults to `process.cwd()` when nothing
-// absolute remains.
-export function normPath(...paths: (string | undefined)[]) {
-  return resolve(
-    ...paths.filter((p): p is string => !!p).map((p) => p.replace(/^~(?=\/|\\|$)/, homedir()))
-  )
-}
-
 export function gitRoot(path: string) {
   const git = findUp(path, ".git")
   return git ? dirname(git) : undefined
-}
-
-export function prettyPath(path: string) {
-  let rel = relative(process.cwd(), path)
-  rel = rel === "" ? "." : rel
-  rel = rel.startsWith("..") ? (reverseResolveAlias(path, { "~": homedir() })[0] ?? path) : rel
-  return rel
 }
 
 export function withError<T>(fn: () => T, errorMsg: string): T {

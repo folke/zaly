@@ -6,7 +6,6 @@ import type { Config } from "./config.ts"
 import type { RenderHandle } from "./render/renderer.ts"
 
 import { toImagePart, toPdfPart } from "@zaly/ai"
-import { fileDetect, imageConvert, imageInfo } from "@zaly/shared"
 import { signal } from "@zaly/tui"
 import { readFile } from "node:fs/promises"
 import { registerActions } from "./actions.ts"
@@ -150,12 +149,15 @@ export class App {
       (att.type === "application/pdf" || att.path.toLowerCase().endsWith(".pdf"))
 
     if (isImage && this.#agent.model.canAttach("image")) {
+      const { fileDetect } = await import("@zaly/shared/detect")
       const detected = await fileDetect(att.path)
       if (detected?.type !== "image") {
         this.#log.error(`couldn't read image \`${att.path}\``)
         return insertAtCursor(input, att.path)
       }
+      const { imageInfo } = await import("@zaly/shared/image")
       const info = await imageInfo(detected)
+      const { imageConvert } = await import("@zaly/shared/image")
       const ready = await imageConvert(info, ["png", "jpeg", "webp"])
       if (!ready) {
         this.#log.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)

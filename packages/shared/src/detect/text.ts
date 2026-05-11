@@ -1,4 +1,4 @@
-import type { FileData } from "../files.ts"
+import type { FileData } from "./data.ts"
 
 export type TextFormat = "plain" | "json" | "xml" | "html" | "markdown" | "csv"
 

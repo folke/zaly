@@ -25,7 +25,8 @@ import {
   isContentPart,
   metaToText,
 } from "@zaly/ai"
-import { fileDetect, imageInfo } from "@zaly/shared"
+import { fileDetect } from "@zaly/shared/detect"
+import { imageInfo } from "@zaly/shared/image"
 import { Masker } from "../src/masker.ts"
 import { loadSession } from "./helpers.ts"
 

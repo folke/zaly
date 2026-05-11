@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
-import { isSSH, which } from "../src/index.ts"
+import { isSSH } from "../src/env.ts"
 import { Spawn, spawnText, spawnWithInput } from "../src/process/spawn.ts"
+import { which } from "../src/process/system.ts"
 
 describe("Spawn — basics", () => {
   test("buffers stdout and resolves with exit code 0", async () => {
@@ -147,9 +148,9 @@ describe("isSSH", () => {
     delete process.env.SSH_CONNECTION
     delete process.env.SSH_CLIENT
     try {
-      expect(isSSH()).toBe(false)
+      expect(isSSH).toBe(false)
       process.env.SSH_TTY = "/dev/pts/0"
-      expect(isSSH()).toBe(true)
+      expect(isSSH).toBe(true)
     } finally {
       delete process.env.SSH_TTY
       if (before !== undefined) process.env.SSH_TTY = before

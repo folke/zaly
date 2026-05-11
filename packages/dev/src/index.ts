@@ -44,6 +44,7 @@ async function runScripts(script: string, pkg?: string): Promise<void> {
     "bun",
     "run",
     "--sequential",
+    "--if-present",
     "--no-exit-on-error",
     pkg ? `--filter=${pkg}` : "--workspaces",
     script,

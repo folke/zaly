@@ -1,9 +1,9 @@
-import type { CompressOpts } from "@zaly/shared"
+import type { CompressOpts } from "@zaly/shared/image"
 import type { Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
 import type { AnyPart, ContentTransform } from "./transform.ts"
 
-import { cleanTextAgent, imageCompress } from "@zaly/shared"
+import { cleanTextAgent } from "@zaly/shared"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
 import { inlineFile } from "./part.ts"
 
@@ -120,6 +120,7 @@ function compressImagePart(opts: CompressOpts) {
     const format = formatFromMime(img.mime)
     if (format === undefined) return img
     const data = Buffer.from(img.source.data, "base64")
+    const { imageCompress } = await import("@zaly/shared/image")
     const compressed = await imageCompress({ data, format, type: "image" }, opts)
     return {
       ...img,

@@ -5,5 +5,8 @@ export default defineConfig({
     index: "src/index.ts",
     env: "src/env.ts",
     registry: "src/registry.ts",
+    process: "src/process/index.ts",
+    detect: "src/detect/index.ts",
+    image: "src/image/index.ts",
   },
 })

@@ -22,3 +22,9 @@ export const isTest: boolean = nodeENV === "test" || !!env.TEST
 export const hasColors =
   !(!!env.NO_COLOR || argv.includes("--no-color")) &&
   (!!env.FORCE_COLOR || argv.includes("--color") || isWin || hasTTY || isCI || isTest)
+
+/** True when the process looks like it's running under SSH. Native
+ *  clipboard tools on the remote host write to the *remote* clipboard,
+ *  which is rarely what the user wants — flip to OSC 52 instead. Other
+ *  tools may also want to behave differently in remote sessions. */
+export const isSSH = process.env.SSH_TTY ?? process.env.SSH_CONNECTION ?? process.env.SSH_CLIENT

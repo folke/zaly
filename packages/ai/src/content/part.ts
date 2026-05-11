@@ -1,7 +1,6 @@
-import type { DetectedFile, DetectedImage } from "@zaly/shared"
+import type { DetectedFile, DetectedImage } from "@zaly/shared/detect"
 import type { Attachment, ErrorPart, ImagePart, MetaPart, PdfPart } from "../types.ts"
 
-import { fileData, imageConvert } from "@zaly/shared"
 import { AiError } from "../error.ts"
 
 // ── Part constructors (raw → ContentPart) ────────────────────────────────
@@ -44,6 +43,7 @@ export async function toAttachment(file: DetectedFile): Promise<Attachment | und
   if (file.type === "pdf") return toPdfPart(file.data)
 
   // Image
+  const { imageConvert } = await import("@zaly/shared/image")
   const ready = await imageConvert(file, ["png", "jpeg", "webp"])
   return ready ? toImagePart(ready) : undefined
 }
@@ -55,6 +55,7 @@ export async function toAttachment(file: DetectedFile): Promise<Attachment | und
  *  MetaPart on read failure. */
 export async function inlineFile<P extends Attachment>(part: P): Promise<Inlined<P> | MetaPart> {
   if (part.source.type !== "file") return part as Inlined<P>
+  const { fileData } = await import("@zaly/shared/detect")
   const file = await fileData({ path: part.source.path })
   if (!file) {
     return {

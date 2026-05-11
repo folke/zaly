@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import { resolve } from "pathe"
-import { hash, safeFn } from "./utils.ts"
+import { hash, safeFn } from "../utils.ts"
 
 export type FileData = {
   data: Uint8Array
@@ -75,39 +75,4 @@ export function isBinaryData(data: Uint8Array, threshold = 0.05): boolean {
     if (b < 9 || (b > 13 && b < 32) || b === 127) bad++
   }
   return bad / sample.length > threshold
-}
-
-/** Encoding rules (applied in order):
- *    `+` → `++`   (escape literal +)
- *    `%` → `%%`   (escape literal %)
- *    `/` → `+`    (path separator)
- *    `:` → `%`    (Windows drive colon) */
-export function encodePath(path: string): string {
-  return path.replace(/\+/g, "++").replace(/%/g, "%%").replace(/\//g, "+").replace(/:/g, "%")
-}
-
-export function decodePath(encoded: string): string {
-  let out = ""
-  let i = 0
-  while (i < encoded.length) {
-    const c = encoded[i]
-    const next = encoded[i + 1]
-    if (c === "+" && next === "+") {
-      out += "+"
-      i += 2
-    } else if (c === "%" && next === "%") {
-      out += "%"
-      i += 2
-    } else if (c === "+") {
-      out += "/"
-      i++
-    } else if (c === "%") {
-      out += ":"
-      i++
-    } else {
-      out += c
-      i++
-    }
-  }
-  return out
 }

@@ -1,8 +1,8 @@
-import type { FileData, FileSource } from "../files.ts"
+import type { FileData, FileSource } from "./data.ts"
 import type { ImageFormat } from "./image.ts"
 import type { TextFormat } from "./text.ts"
 
-import { fileData, isBinaryData } from "../files.ts"
+import { fileData, isBinaryData } from "./data.ts"
 import { imageDetector } from "./image.ts"
 import { pdfDetector } from "./pdf.ts"
 import { detectTextFormat } from "./text.ts"

@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { fileData, fileHash } from "../../src/detect/data.ts"
 import { detect, fileDetect, isFileFormat, isFileType } from "../../src/detect/file.ts"
 import { imageDetector } from "../../src/detect/image.ts"
-import { fileData, fileHash } from "../../src/files.ts"
 
 // Smallest possible PNG signature + IHDR for a 1×1 image. Enough for
 // magic-byte sniffing; image-meta can also parse it.

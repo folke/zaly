@@ -2,7 +2,6 @@ import type { Attachment, MetaPart, TextPart, Tool } from "@zaly/ai"
 import type { ToolInit } from "./registry.ts"
 
 import { defineTool, toAttachment } from "@zaly/ai"
-import { fileDetect } from "@zaly/shared"
 import { Type } from "typebox"
 
 const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps runaway HTML pages
@@ -63,6 +62,7 @@ export function createFetchTool(init: ToolInit): Tool {
       // re-fetching from its own IP. Only attach kinds the model accepts;
       // unsupported kinds fall through to the text branch (rendered via
       // `<image>` / `<pdf>` placeholders by the wire pipeline).
+      const { fileDetect } = await import("@zaly/shared/detect")
       const file = await fileDetect({
         data: bytes,
         mime: contentType || undefined,

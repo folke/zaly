@@ -63,11 +63,3 @@ function isExecutable(path: string): boolean {
   if (platform === "win32") return true
   return (Number(s.mode) & 0o111) !== 0
 }
-
-/** True when the process looks like it's running under SSH. Native
- *  clipboard tools on the remote host write to the *remote* clipboard,
- *  which is rarely what the user wants — flip to OSC 52 instead. Other
- *  tools may also want to behave differently in remote sessions. */
-export function isSSH(): boolean {
-  return Boolean(process.env.SSH_TTY ?? process.env.SSH_CONNECTION ?? process.env.SSH_CLIENT)
-}

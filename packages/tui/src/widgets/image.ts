@@ -1,7 +1,8 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Layout } from "../core/state.ts"
 
-import { fileDetect, imageInfo } from "@zaly/shared"
+import { fileDetect } from "@zaly/shared/detect"
+import { imageInfo } from "@zaly/shared/image"
 import { Node } from "../core/node.ts"
 import { imageCapabilities } from "../image/capabilities.ts"
 import { encode as encodeIterm2 } from "../image/iterm.ts"

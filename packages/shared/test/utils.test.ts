@@ -2,12 +2,11 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { join, resolve } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { normPath, prettyPath } from "../src/path.ts"
 import {
   findUp,
   gitRoot,
   hash,
-  normPath,
-  prettyPath,
   safeAsyncFn,
   safeFn,
   safeReadFile,

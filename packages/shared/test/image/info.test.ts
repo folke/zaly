@@ -44,6 +44,6 @@ describe("imageInfo", () => {
     const detected = await fileDetect(p)
     expect(detected?.type).toBe("image")
     if (detected?.type !== "image") return
-    await expect(async () => await imageInfo(detected)).rejects.toThrow()
+    await expect(() => imageInfo(detected)).rejects.toThrow()
   })
 })

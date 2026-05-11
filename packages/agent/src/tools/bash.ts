@@ -1,14 +1,8 @@
 import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool } from "@zaly/ai"
-import {
-  bufferedTailStream,
-  cleanTextTui,
-  normPath,
-  randomHash,
-  Spawn,
-  TextStream,
-} from "@zaly/shared"
+import { cleanTextTui, normPath, randomHash } from "@zaly/shared"
+import { bufferedTailStream, Spawn, TextStream } from "@zaly/shared/process"
 import { mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"

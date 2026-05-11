@@ -16,9 +16,9 @@
  * Reference: https://sw.kovidgoyal.net/kitty/graphics-protocol/
  */
 
-import type { ImageInfo } from "@zaly/shared"
+import type { ImageInfo } from "@zaly/shared/image"
 
-import { imageConvert, fileHash } from "@zaly/shared"
+import { fileHash } from "@zaly/shared/detect"
 import { isRemoteSession } from "./capabilities.ts"
 
 const CHUNK_SIZE = 4096
@@ -59,6 +59,7 @@ export async function transmitOnce(
   const key = fileHash(info)
   let entry = transmitCache.get(key)
   if (entry === undefined) {
+    const { imageConvert } = await import("@zaly/shared/image")
     const png = await imageConvert(info, "png")
     if (!png) return undefined
     const promise = (async () => {
