@@ -1,13 +1,25 @@
 import type { Node } from "../core/node.ts"
-import type { State } from "../core/state.ts"
 
 import { createNode } from "../core/reactive.ts"
 
-/** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
- *  themselves — props in, Node out, runs once at construction. */
-export type Widget<S, N extends Node = Node> = (props: S) => N
+export type Props = Record<string, any>
 
-export type WidgetState<T extends object = object> = State<T> & { children?: readonly Node[] }
+/** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
+ *  themselves — props in, Node out, runs once at construction.
+ *
+ *  The props argument is optional when every field of `P` is optional
+ *  (or `P` is `{}` outright), so `noPropsWidget()` doesn't force a
+ *  `noPropsWidget({})` call site. The `{} extends P` check is the
+ *  canonical TS idiom for "P has no required fields". */
+export type Widget<
+  P extends Props = {},
+  N extends Node = Node,
+  C extends Node = never,
+> = {} extends P ? (props?: P, ...children: C[]) => N : (props: P, ...children: C[]) => N
+
+export type WidgetFactory<S extends Props = {}, N extends Node = Node, C extends Node = never> = (
+  fn: Widget<S, N, C>
+) => Widget<S, N, C>
 
 /**
  * Type helper for declaring widgets — runtime identity, just `return fn`.
@@ -40,19 +52,13 @@ export type WidgetState<T extends object = object> = State<T> & { children?: rea
  *   - Either way, the state arg is optional when every field of the
  *     resolved state is optional (so bare `widget()` works).
  */
-type WidgetArgs<S> = "children" extends keyof S
-  ? {} extends Omit<S, "children">
-    ? [state?: Omit<S, "children">, ...children: Node[]]
-    : [state: Omit<S, "children">, ...children: Node[]]
-  : {} extends S
-    ? [state?: S]
-    : [state: S]
 
-export function widget<S extends object, N extends Node = Node>(
-  fn: (props: State<S>) => N
-): (...args: WidgetArgs<State<S>>) => N {
-  return ((stateArg?: State<S>, ...children: Node[]) => {
-    const state = { ...stateArg, children } as State<S> & { children?: readonly Node[] }
-    return createNode(() => fn(state))
-  }) as (...args: WidgetArgs<State<S>>) => N
+export function widget<S extends Props, N extends Node = Node, C extends Node = never>(
+  fn: Widget<S, N, C>
+): Widget<S, N, C> {
+  return ((props?: S, ...children: C[]) => createNode(() => fn(props as S, ...children))) as Widget<
+    S,
+    N,
+    C
+  >
 }

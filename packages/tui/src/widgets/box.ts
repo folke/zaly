@@ -40,7 +40,7 @@ export interface BoxStyle extends Style {
   borderTitleStyle?: string | Style
 }
 
-export class Box extends Node<BoxStyle> {
+export class Box<T extends object = {}> extends Node<BoxStyle & T> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const style = this.state
 

@@ -24,7 +24,7 @@ export type BubbleProps = {
   style?: AnyStyle
 }
 
-export const bubble = widget((props: BubbleProps & { children: readonly Node[] }) => {
+export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) => {
   const b = bubbles[unwrap(props.type)] as Bubble
   const tvpad = b.highlight ? 1 : 0
   return box(
@@ -32,7 +32,7 @@ export const bubble = widget((props: BubbleProps & { children: readonly Node[] }
     box(
       { flexDirection: "row", padding: [tvpad, 0, tvpad, 1], style: b.highlight, width: "fill" },
       text(({ style }) => style.add(b.style)(b.icon)),
-      box({ flexDirection: "column", padding: [0, 1], style: props.style }, ...props.children)
+      box({ flexDirection: "column", padding: [0, 1], style: props.style }, ...children)
     )
   )
 })
