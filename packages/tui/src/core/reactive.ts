@@ -574,6 +574,98 @@ export function memo<T>(fn: () => T): Accessor<T> {
   return get
 }
 
+// ---- signal store ----------------------------------------------------
+
+/**
+ * Reactive struct — one `signal` per top-level field. Reads via the
+ * returned Proxy track; writes (via `set` / `update`) only notify when
+ * the new value differs from the current one (value-equality `===`).
+ *
+ * Use this when a widget needs a small "reactive ctx" struct — e.g.
+ * `Markdown` carrying `{ width, theme, highlight, transmit }`. A single
+ * `Signal<Struct>` over the whole object always fires on `set({...spread})`
+ * because object literals are reference-unequal. Per-field signals
+ * sidestep that and give natural fine-grained tracking without manual
+ * diff gates in the consumer.
+ *
+ * Shape is fixed at construction — only fields present in `initial`
+ * are tracked. Add `undefined` placeholders for keys you intend to fill
+ * later; the type stays correct because keys come from `initial`.
+ *
+ * ```ts
+ * type Ctx = { width: number; theme?: Theme; highlight: boolean }
+ * const ctx = createSignalStore<Ctx>({ width: 0, highlight: true })
+ *
+ * createAsync(async () => {
+ *   const w = ctx.width                // tracked; re-fires on flip
+ *   const t = ctx.theme                // tracked
+ *   return render(source, { width: w, theme: t })
+ * }, { initialValue: "" })
+ *
+ * // From inside _render or wherever fresh ctx arrives:
+ * ctx.update({ width: rctx.width, theme: rctx.style.theme })
+ * ```
+ */
+export type SignalStore<T extends object> = {
+  readonly [K in keyof T]: T[K]
+} & {
+  /** Replace one field. No-op when the new value equals the current. */
+  set<K extends keyof T>(key: K, value: T[K]): void
+  /** Bulk-set multiple fields. Each underlying signal short-circuits
+   *  on value-equality, so unchanged fields don't notify. */
+  update(patch: Partial<T>): void
+}
+
+export function createStore<T extends object>(initial: T): SignalStore<T> {
+  const sigs = {} as { [K in keyof T]: Signal<T[K]> }
+  for (const key of Object.keys(initial) as (keyof T)[]) {
+    sigs[key] = signal(initial[key])
+  }
+  // Lazy-init for keys not present in `initial` so callers don't have
+  // to seed every field upfront. `set` and `update` are intentionally
+  // not on the target — they live in the Proxy's `get` branch so they
+  // never appear in `ownKeys` / spread.
+  const ensure = <K extends keyof T>(key: K, init?: T[K]): Signal<T[K]> => {
+    sigs[key] ??= signal(init as T[K])
+    return sigs[key]
+  }
+  const setKey = <K extends keyof T>(key: K, value: T[K]): void => {
+    // Wrap in updater form so `signal.set`'s `typeof === "function"`
+    // detection always picks the outer closure — necessary for storing
+    // function-typed fields like `transmit` without `set` invoking
+    // them as updaters.
+    ensure(key, value).set(() => value)
+  }
+  const updateFn = (patch: Partial<T>): void => {
+    for (const k of Object.keys(patch) as (keyof T)[]) {
+      const v = patch[k]
+      if (v !== undefined) setKey(k, v as T[typeof k])
+    }
+  }
+  return new Proxy({} as object, {
+    // `{ ...store }` walks ownKeys + getOwnPropertyDescriptor. Returning
+    // the signal-backed keys (not `set` / `update`) makes spread copy
+    // the *current value* of each field — what callers actually want
+    // when passing the store as a plain-object ctx to downstream code.
+    get(_, key) {
+      if (key === "set") return setKey
+      if (key === "update") return updateFn
+      return ensure(key as keyof T).get()
+    },
+    getOwnPropertyDescriptor(_, key) {
+      const sig = sigs[key as keyof T]
+      if (sig === undefined) return undefined
+      return { configurable: true, enumerable: true, value: sig.get() }
+    },
+    has(_, key) {
+      return key === "set" || key === "update" || (key as keyof T) in sigs
+    },
+    ownKeys() {
+      return Reflect.ownKeys(sigs)
+    },
+  }) as SignalStore<T>
+}
+
 // ---- suspense --------------------------------------------------------
 
 /**

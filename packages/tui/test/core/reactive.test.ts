@@ -3,7 +3,7 @@ import type { RenderCtx } from "../../src/core/ctx.ts"
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Node } from "../../src/core/node.ts"
-import { effect, memo, signal } from "../../src/core/reactive.ts"
+import { createStore, effect, memo, signal } from "../../src/core/reactive.ts"
 import { defaultTheme as theme } from "../../src/themes/registry.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })
@@ -189,5 +189,72 @@ describe("memo", () => {
     expect(quadrupled()).toBe(4)
     setN(3)
     expect(quadrupled()).toBe(12)
+  })
+})
+
+describe("createStore", () => {
+  test("reads return current values", () => {
+    const s = createStore<{ a: number; b: string }>({ a: 1, b: "hi" })
+    expect(s.a).toBe(1)
+    expect(s.b).toBe("hi")
+  })
+
+  test("update only fires effects for fields that changed", () => {
+    const s = createStore<{ a: number; b: number }>({ a: 1, b: 2 })
+    let aReads = 0
+    let bReads = 0
+    effect(() => {
+      void s.a
+      aReads++
+    })
+    effect(() => {
+      void s.b
+      bReads++
+    })
+    expect(aReads).toBe(1)
+    expect(bReads).toBe(1)
+    s.update({ a: 99, b: 2 }) // b unchanged
+    expect(aReads).toBe(2)
+    expect(bReads).toBe(1) // no notify on equal value
+    s.update({ a: 99 }) // a unchanged
+    expect(aReads).toBe(2)
+    expect(bReads).toBe(1)
+  })
+
+  test("store-typed function fields don't get invoked as updaters", () => {
+    type Ctx = { fn: () => string }
+    const s = createStore<Ctx>({ fn: () => "first" })
+    // oxlint-disable-next-line unicorn/consistent-function-scoping
+    const replacement = (): string => "second"
+    s.set("fn", replacement)
+    // The stored value must be the function itself, not the result of
+    // invoking it. Spread also exposes it correctly.
+    expect(s.fn).toBe(replacement)
+    expect(s.fn()).toBe("second")
+    expect({ ...s }.fn).toBe(replacement)
+  })
+
+  test("spread yields the current values of every field", () => {
+    const s = createStore<{ a: number; b: string }>({ a: 1, b: "hi" })
+    s.update({ a: 7, b: "there" })
+    const plain = { ...s }
+    expect(plain).toEqual({ a: 7, b: "there" })
+    // `set` / `update` must not leak into the spread payload.
+    expect("set" in plain).toBe(false)
+    expect("update" in plain).toBe(false)
+  })
+
+  test("spread inside a tracked scope subscribes per spread field", () => {
+    const s = createStore<{ a: number; b: string }>({ a: 1, b: "hi" })
+    let snapshot: { a: number; b: string } | undefined
+    let runs = 0
+    effect(() => {
+      snapshot = { ...s }
+      runs++
+    })
+    expect(snapshot).toEqual({ a: 1, b: "hi" })
+    s.set("a", 2)
+    expect(runs).toBe(2)
+    expect(snapshot).toEqual({ a: 2, b: "hi" })
   })
 })
