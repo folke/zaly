@@ -97,7 +97,7 @@ async function main(): Promise<void> {
   for (let i = 0; i < responses.length; i++) {
     setStatus(`streaming ${i + 1}/${responses.length}`)
     const node = markdown("", { wrap: "word" })
-    renderer.stream.append(node)
+    renderer.stream.append(() => node)
     const full = responses[i]
     let j = 0
     while (j < full.length) {

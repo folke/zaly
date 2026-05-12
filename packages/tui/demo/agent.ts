@@ -65,6 +65,7 @@ const help = overlay(
       rows.push(style.bold("Try:"))
       rows.push(`${style.accent("/review")} autocomplete ergonomics`)
       rows.push(style.accent("open @src/renderer/index.ts and explain it"))
+
       return rows.join("\n")
     },
     { wrap: "none" }
@@ -130,7 +131,7 @@ renderer.ui.add(() =>
 
 // ── Intro + welcome toast ────────────────────────────────────────────
 
-renderer.stream.append(
+renderer.stream.append(() =>
   markdown(`## agent harness
 
 A mock coding-assistant shell built on **@zaly/tui**. Try \`/\` for commands, \`@\` for files, or just ask a question.`)
@@ -201,8 +202,8 @@ async function streamReply(prompt: string, full: string): Promise<void> {
   setProgressValue(0)
 
   const reply = markdown("")
-  renderer.stream.append(markdown(`**you:** ${prompt}`))
-  renderer.stream.append(reply)
+  renderer.stream.append(() => markdown(`**you:** ${prompt}`))
+  renderer.stream.append(() => reply)
 
   let i = 0
   while (i < full.length) {

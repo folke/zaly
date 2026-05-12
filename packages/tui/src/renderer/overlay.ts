@@ -48,7 +48,7 @@ export class OverlaySurface extends Surface {
 
   /** Register an overlay with the surface. Function form runs `fn`
    *  inside a fresh Owner scope and adopts the returned Overlay. */
-  add(overlay: () => Overlay): Overlay {
+  add<O extends Overlay>(overlay: () => O): O {
     const resolved = withOwner(this.deps.rootOwner, () => createNode(overlay))
     if (this.#overlays.includes(resolved)) return resolved
     this.#overlays.push(resolved)

@@ -139,7 +139,7 @@ export class App {
     })
 
     this.#agent.session.on("compact", () => {
-      this.#renderer.stream.append(compactionMarker())
+      this.#renderer.stream.append(() => compactionMarker())
     })
 
     // Hand control to the status signal — flip from "loading" to

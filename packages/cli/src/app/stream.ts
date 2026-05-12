@@ -33,7 +33,7 @@ export function bindStream(renderer: Renderer, agent: Agent): () => void {
     if (active?.type !== type) active = undefined
     if (!active) {
       const [content, setContent] = signal("")
-      renderer.stream.append(
+      renderer.stream.append(() =>
         type === "text" ? assistantMessage({ content }) : reasoningMessage({ content })
       )
       active = { setContent, type }
@@ -52,7 +52,7 @@ export function bindStream(renderer: Renderer, agent: Agent): () => void {
   const onCall = (e: { call: ToolCallPart }): void => {
     active = undefined
     const [result, setResult] = signal<ToolResult | undefined>(undefined)
-    renderer.stream.append(toolCall({ call: e.call, result }))
+    renderer.stream.append(() => toolCall({ call: e.call, result }))
     tools.set(e.call.id, { setResult })
   }
 

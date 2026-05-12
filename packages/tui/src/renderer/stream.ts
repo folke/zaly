@@ -73,7 +73,7 @@ export class Stream extends Surface {
    * `provideContext` inside `fn` attach to that scope) and appends the
    * returned Node. The Owner disposes when the Node unmounts.
    */
-  append(node: Node | (() => Node)): this {
+  append<N extends Node>(node: () => N): N {
     const resolved = withOwner(this.rootOwner, () => createNode(node))
     resolved.on("invalidate", this.onDirty)
     this.#state.push({ live: true, node: resolved })
@@ -81,7 +81,7 @@ export class Stream extends Surface {
     if (this.running && ctx) resolved.mount(ctx)
     this.commit({ keep: this.#opts.maxLive, render: false })
     this.emit("dirty")
-    return this
+    return resolved
   }
 
   /** How many rows the live region may occupy. */

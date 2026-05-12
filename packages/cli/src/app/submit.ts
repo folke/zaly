@@ -21,7 +21,7 @@ export function submit(
   agent: Agent,
   renderer: Renderer
 ): void {
-  renderer.stream.append(userMessage({ attachments, content: text }))
+  renderer.stream.append(() => userMessage({ attachments, content: text }))
 
   const message: Message<"user"> =
     attachments.length === 0

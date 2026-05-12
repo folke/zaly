@@ -18,7 +18,7 @@ import { userMessage } from "../widgets/user.ts"
  * messages (heartbeats, wakeups) are skipped — they're not useful
  * chrome on resume.
  */
-export function* replay(messages: readonly Message[]): Generator<Node> {
+export function* replay(messages: readonly Message[]): Generator<() => Node> {
   // Pre-index tool results by call id. Single pass — tool messages
   // always follow their assistant in the conversation, but the index
   // decouples us from that ordering assumption.
@@ -33,7 +33,7 @@ export function* replay(messages: readonly Message[]): Generator<Node> {
       const text = justText(m.content)
       const attachments = toParts(m.content).filter((p) => isAttachment(p))
       if (text === "" && attachments.length === 0) continue
-      yield userMessage({ attachments, content: text })
+      yield () => userMessage({ attachments, content: text })
     } else if (m.role === "assistant") {
       yield* renderAssistant(m, results)
     }
@@ -46,14 +46,14 @@ export function* replay(messages: readonly Message[]): Generator<Node> {
 function* renderAssistant(
   msg: Message<"assistant">,
   results: Map<string, ToolResultPart>
-): Generator<Node> {
+): Generator<() => Node> {
   for (const part of toParts(msg.content)) {
     if (part.type === "text" && part.text !== "") {
-      yield assistantMessage({ content: part.text })
+      yield () => assistantMessage({ content: part.text })
     } else if (part.type === "reasoning" && part.text !== "") {
-      yield reasoningMessage({ content: part.text })
+      yield () => reasoningMessage({ content: part.text })
     } else if (part.type === "tool-call") {
-      yield toolCall({ call: part, result: toAccessor(results.get(part.id)) })
+      yield () => toolCall({ call: part, result: toAccessor(results.get(part.id)) })
     }
   }
 }

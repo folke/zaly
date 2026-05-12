@@ -85,7 +85,7 @@ renderer.ui.add(() =>
         .focus()
         .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
-          renderer.stream.append(markdown(`**you:** ${value}`))
+          renderer.stream.append(() => markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
         })
     ),

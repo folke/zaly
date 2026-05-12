@@ -27,13 +27,13 @@ renderer.ui.add(() =>
         .focus()
         .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
-          renderer.stream.append(markdown(`**you:** ${value}`))
+          renderer.stream.append(() => markdown(`**you:** ${value}`))
           self.setState({ cursor: 0, value: "" })
         })
         .on("attach", ({ attachment: att }) => {
-          renderer.stream.append(markdown(`*pasted ${att.kind}:* \`${att.path}\``))
+          renderer.stream.append(() => markdown(`*pasted ${att.kind}:* \`${att.path}\``))
           if (att.kind === "image" || att.type.startsWith("image/")) {
-            renderer.stream.append(image(att.path))
+            renderer.stream.append(() => image(att.path))
           }
         })
     )

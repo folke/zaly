@@ -69,9 +69,10 @@ export class UI extends Surface {
    *  fresh Owner scope (so `signal` / `effect` / `onCleanup` /
    *  `provideContext` inside `fn` attach to that scope) and adds the
    *  returned Node. The Owner disposes when the Node unmounts. */
-  add(child: () => Node): this {
-    this.#root.add(withOwner(this.rootOwner, () => createNode(child)))
-    return this
+  add<N extends Node>(child: () => N): N {
+    const ret = withOwner(this.rootOwner, () => createNode(child))
+    this.#root.add(ret)
+    return ret
   }
 
   /** Current rendered height (rows). */

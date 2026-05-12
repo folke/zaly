@@ -40,7 +40,7 @@ export class Cli extends Logger {
         // did — leaves `#queue` as the original `Promise.resolve()`,
         // making `await this.#queue` a no-op and racing process.exit().
         this.#queue = this.#queue
-          .then(() => this.#append(node))
+          .then(() => this.#append(node()))
           .catch((error) => process.stderr.write(`Logger error: ${error}\n`))
       },
     })

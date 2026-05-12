@@ -46,7 +46,7 @@ async function drain() {
 describe("Stream.flush — first render", () => {
   test("writes rows at scrollBottom inside a synchronized-output block", async () => {
     const { stdout, stream } = mount(20, 10)
-    stream.append(text("hello"))
+    stream.append(() => text("hello"))
     await stream.render()
     expect(stdout.all).toContain("\x1b[?2026h")
     expect(stdout.all).toContain("\x1b[?2026l")
@@ -56,7 +56,7 @@ describe("Stream.flush — first render", () => {
 
   test("a state mutation schedules a flush automatically", async () => {
     const { stdout, stream } = mount(20, 10)
-    stream.append(text("hello"))
+    stream.append(() => text("hello"))
     await drain()
     expect(stdout.all).toContain("hello")
   })
@@ -66,7 +66,7 @@ describe("Stream.flush — tail growth", () => {
   test("re-renders with absolute-cursor rewrites when state mutates", async () => {
     const { stdout, stream } = mount(20, 10)
     const t = text("one")
-    stream.append(t)
+    stream.append(() => t)
     await stream.render()
     stdout.clear()
 
@@ -79,7 +79,7 @@ describe("Stream.flush — tail growth", () => {
   test("growing the tail by one row emits the new row through the bottom", async () => {
     const { stdout, stream } = mount(10, 10)
     const t = text("one")
-    stream.append(t)
+    stream.append(() => t)
     await stream.render()
     stdout.clear()
 
@@ -95,7 +95,7 @@ describe("Stream.flush — tail overflowing the live region", () => {
   test("new rows are emitted through the bottom", async () => {
     const { stdout, stream } = mount(20, 5) // liveHeight = 5
     const t = text("a\nb\nc")
-    stream.append(t)
+    stream.append(() => t)
     await stream.render()
     stdout.clear()
 
@@ -110,11 +110,11 @@ describe("Stream.flush — tail overflowing the live region", () => {
 describe("Stream.append — dropping the previous tail", () => {
   test("appending a new tail paints the new row through the bottom", async () => {
     const { stdout, stream } = mount(20, 10)
-    stream.append(text("one"))
+    stream.append(() => text("one"))
     await stream.render()
     stdout.clear()
 
-    stream.append(text("two"))
+    stream.append(() => text("two"))
     await stream.render()
     expect(stdout.all).toContain("\n")
     expect(stdout.all).toContain("two")
@@ -127,8 +127,8 @@ describe("Stream.append — dropping the previous tail", () => {
     // would never be painted. The #live queue fixes that — every
     // appended node is rendered before it's dropped from the queue.
     const { stdout, stream } = mount(20, 10)
-    stream.append(text("one"))
-    stream.append(text("two"))
+    stream.append(() => text("one"))
+    stream.append(() => text("two"))
     await drain()
     expect(stdout.all).toContain("one")
     expect(stdout.all).toContain("two")
@@ -139,7 +139,7 @@ describe("Stream.onStart / onStop", () => {
   test("onStart mounts every tracked node; onStop unmounts them", async () => {
     const { stream } = mount(20, 10)
     const t = text("x")
-    stream.append(t)
+    stream.append(() => t)
     // Before the surface is "running", appends don't trigger mount.
     expect(t.mounted).toBe(false)
     stream.onStart(mockMountCtx("stream"))
@@ -153,7 +153,7 @@ describe("Stream.onStart / onStop", () => {
     const { stream } = mount(20, 10)
     stream.onStart(mockMountCtx("stream"))
     const t = text("x")
-    stream.append(t)
+    stream.append(() => t)
     expect(t.mounted).toBe(true)
   })
 })

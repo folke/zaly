@@ -6,7 +6,7 @@ import { makeHarness } from "./harness.ts"
 describe("Renderer — resize", () => {
   test("stream rows re-render at new width after resize", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
-    h.renderer.stream.append(text("hello world"))
+    h.renderer.stream.append(() => text("hello world"))
     await h.flush()
     expect(h.viewport()[4]).toBe("hello world")
 
@@ -19,7 +19,7 @@ describe("Renderer — resize", () => {
 
   test("narrower resize word-wraps a previously-fitting line", async () => {
     const h = await makeHarness({ cols: 40, rows: 5 })
-    h.renderer.stream.append(text("the quick brown fox jumps"))
+    h.renderer.stream.append(() => text("the quick brown fox jumps"))
     await h.flush()
     expect(h.viewport()[4]).toBe("the quick brown fox jumps")
 
@@ -37,7 +37,7 @@ describe("Renderer — resize", () => {
   test("footer (UI) re-anchors after resize to shorter viewport", async () => {
     const h = await makeHarness({ cols: 30, rows: 8 })
     h.renderer.ui.root.add(text("> footer"))
-    h.renderer.stream.append(text("body line"))
+    h.renderer.stream.append(() => text("body line"))
     await h.flush()
     expect(h.viewport()[7]).toBe("> footer")
     expect(h.viewport()[6]).toBe("body line")
@@ -74,7 +74,7 @@ describe("Renderer — resize", () => {
     // not carry stale bytes from before the clear.
     const h = await makeHarness({ cols: 30, rows: 10 })
     for (const label of ["alpha", "beta", "gamma"]) {
-      h.renderer.stream.append(text(label))
+      h.renderer.stream.append(() => text(label))
       await h.flush()
     }
     await h.resize(30, 4)

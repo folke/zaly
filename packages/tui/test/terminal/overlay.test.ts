@@ -7,7 +7,7 @@ import { makeHarness } from "./harness.ts"
 describe("Overlay surface", () => {
   test("open paints the overlay rows at (x, y)", async () => {
     const h = await makeHarness({ cols: 20, rows: 8 })
-    h.renderer.stream.append(text("a\nb\nc\nd\ne\nf\ng\nh"))
+    h.renderer.stream.append(() => text("a\nb\nc\nd\ne\nf\ng\nh"))
     await h.flush()
     // Sanity: stream filled the viewport.
     expect(h.viewport()).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"])
@@ -27,7 +27,7 @@ describe("Overlay surface", () => {
 
   test("close overdraws the overlay area by repainting stream + ui", async () => {
     const h = await makeHarness({ cols: 20, rows: 6 })
-    h.renderer.stream.append(text("one\ntwo\nthree\nfour\nfive\nsix"))
+    h.renderer.stream.append(() => text("one\ntwo\nthree\nfour\nfive\nsix"))
     await h.flush()
     expect(h.viewport()).toEqual(["one", "two", "three", "four", "five", "six"])
 
@@ -46,7 +46,7 @@ describe("Overlay surface", () => {
 
   test("multiple overlays paint in z-order (higher on top)", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
-    h.renderer.stream.append(text("base"))
+    h.renderer.stream.append(() => text("base"))
     await h.flush()
 
     const bottom = overlay({ width: 3, x: 1, y: 2, zIndex: 0 }, text("AAA", { width: 3 }))
@@ -63,7 +63,7 @@ describe("Overlay surface", () => {
 
   test("mutating a subtree node re-renders the overlay (dirty → flush)", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
-    h.renderer.stream.append(text("stream"))
+    h.renderer.stream.append(() => text("stream"))
     await h.flush()
 
     const t = text("hi")
@@ -83,7 +83,7 @@ describe("Overlay surface", () => {
     // tracked region. Before the fix, stream's \n-growth scrolled the
     // overlay bytes up (ghost at y-1) and promoted them into scrollback.
     const h = await makeHarness({ cols: 20, rows: 20 })
-    h.renderer.stream.append(text("one\ntwo\nthree"))
+    h.renderer.stream.append(() => text("one\ntwo\nthree"))
     await h.flush()
 
     const o = overlay({ width: 3, x: 1, y: 5 }, text("OVL", { width: 3 }))
@@ -92,7 +92,7 @@ describe("Overlay surface", () => {
     expect(h.viewport()[4]).toBe("OVL") // row 5 (0-indexed 4)
 
     // Grow the stream past its old extent so \n fires.
-    h.renderer.stream.append(text("a\nb\nc\nd\ne\nf\ng\nh"))
+    h.renderer.stream.append(() => text("a\nb\nc\nd\ne\nf\ng\nh"))
     await h.flush()
 
     // Overlay still at its absolute y=5 (prefix — the ghostty harness
@@ -110,7 +110,7 @@ describe("Overlay surface", () => {
   test("overlay bytes never enter scrollback when stream grows", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
     // Fill the region to the brim with stream content.
-    h.renderer.stream.append(text("r1\nr2\nr3\nr4\nr5"))
+    h.renderer.stream.append(() => text("r1\nr2\nr3\nr4\nr5"))
     await h.flush()
     expect(h.viewport()).toEqual(["r1", "r2", "r3", "r4", "r5"])
 
@@ -124,7 +124,7 @@ describe("Overlay surface", () => {
     // of them should carry overlay bytes. (Checking OVL absence rather
     // than strict equality because the ghostty-web harness can carry
     // some scrollback across tests in the same file.)
-    h.renderer.stream.append(text("r6\nr7\nr8"))
+    h.renderer.stream.append(() => text("r6\nr7\nr8"))
     await h.flush()
     const sb = h.scrollback()
     expect(sb.some((r) => r.includes("OVL"))).toBe(false)
@@ -136,7 +136,7 @@ describe("Overlay surface", () => {
 
   test("open then immediate close is a no-op on screen", async () => {
     const h = await makeHarness({ cols: 20, rows: 4 })
-    h.renderer.stream.append(text("a\nb\nc\nd"))
+    h.renderer.stream.append(() => text("a\nb\nc\nd"))
     await h.flush()
     const o = overlay({ x: 0, y: 1 }, text("X"))
     h.renderer.overlay.open(() => o)
@@ -150,7 +150,7 @@ describe("Overlay surface", () => {
 describe("Overlay surface — with ui footer", () => {
   test("overlay can overlap the ui footer too", async () => {
     const h = await makeHarness({ cols: 20, rows: 6 })
-    h.renderer.stream.append(text("s1\ns2\ns3"))
+    h.renderer.stream.append(() => text("s1\ns2\ns3"))
     h.renderer.ui.root.add(box({}, text("footer")))
     await h.flush()
     // Footer is at the bottom row.

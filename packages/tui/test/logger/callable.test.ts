@@ -7,8 +7,10 @@ import { Logger, makeLog } from "../../src/logger/logger.ts"
 const fakeStream = () => {
   const nodes: Node[] = []
   return {
-    append(n: Node) {
+    append<N extends Node>(node: () => N): N {
+      const n = node()
       nodes.push(n)
+      return n
     },
     nodes,
   }

@@ -10,7 +10,7 @@ import { LOG_LEVELS, LoggerBase, shouldLog } from "./levels.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
 export interface LoggerStream {
-  append(node: Node): unknown
+  append(node: () => Node): unknown
 }
 
 export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node
@@ -90,9 +90,8 @@ export class Logger extends LoggerBase {
 
   protected _log(level: LogLevel, ...msg: unknown[]): void {
     if (!shouldLog(level, this.#opts.minLevel)) return
-    const node = this.#factory(level, msg)
     if (this.#stream) {
-      this.#stream.append(node)
+      this.#stream.append(() => this.#factory(level, msg))
       return
     }
     this.#writeFallback(level, msg)
