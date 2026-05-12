@@ -55,6 +55,11 @@ const noColorStyles: Record<LogStyle, LogStyle> = {
 }
 
 export class Log extends Node<LogState> {
+  constructor(state: LogState) {
+    super(state)
+    if (isNode(state.content)) this.add(state.content)
+  }
+
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const s = this.state
     const base = defaultLogStyles[s.level]
