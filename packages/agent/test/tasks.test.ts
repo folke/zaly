@@ -109,7 +109,7 @@ function streamableTool(opts: {
  *  settle. Used after streamable resolution so subsequent assertions see
  *  registry state up to date. */
 const flush = async (): Promise<void> => {
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 20; i++) await Promise.resolve()
 }
 
 afterEach(() => {

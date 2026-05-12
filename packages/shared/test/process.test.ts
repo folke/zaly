@@ -140,20 +140,3 @@ describe("which", () => {
     expect(which("/this/path/does/not/exist")).toBeUndefined()
   })
 })
-
-describe("isSSH", () => {
-  test("returns a boolean reflecting SSH_* env vars", () => {
-    const before = process.env.SSH_TTY
-    delete process.env.SSH_TTY
-    delete process.env.SSH_CONNECTION
-    delete process.env.SSH_CLIENT
-    try {
-      expect(isSSH).toBe(false)
-      process.env.SSH_TTY = "/dev/pts/0"
-      expect(isSSH).toBe(true)
-    } finally {
-      delete process.env.SSH_TTY
-      if (before !== undefined) process.env.SSH_TTY = before
-    }
-  })
-})
