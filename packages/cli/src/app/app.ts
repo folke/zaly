@@ -4,7 +4,7 @@ import type { Input, LogCallable, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Config } from "../config.ts"
 
-import { createRenderer, signal, createRef } from "@zaly/tui"
+import { createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { helpOverlay } from "../widgets/help.ts"
 import { appUi } from "../widgets/ui.ts"
@@ -118,13 +118,8 @@ export class App {
     const tail = preloaded.session
       ? preloaded.session.messages.slice(-50)
       : preloaded.messages.slice(-50)
-    for (const node of replay(tail)) {
-      this.#renderer.stream.append(node)
-      // Yield to the event loop between appends so the renderer paints
-      // each message progressively rather than all at once at the end.
-      // oxlint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => setTimeout(resolve, 0))
-    }
+
+    await replay(tail, this.#renderer)
 
     this.#agent = await buildAgent(this.#config, preloaded)
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
