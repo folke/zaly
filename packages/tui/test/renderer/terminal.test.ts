@@ -60,12 +60,15 @@ describe("Terminal.start / stop", () => {
 describe("Terminal.sync", () => {
   test("wraps a block of writes with ?2026h / ?2026l", () => {
     const { stdout, terminal } = makeTerminal()
+    terminal.start()
+    stdout.clear()
     terminal.sync(() => terminal.write("hello"))
     expect(stdout.all).toBe(`\x1b[?2026hhello\x1b[?2026l`)
   })
 
   test("still emits the terminator if the callback throws", () => {
     const { stdout, terminal } = makeTerminal()
+    terminal.start()
     expect(() =>
       terminal.sync(() => {
         terminal.write("x")

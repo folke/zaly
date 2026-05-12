@@ -2,6 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { State } from "../core/state.ts"
 
 import { Node } from "../core/node.ts"
+import { createNode } from "../core/reactive.ts"
 
 /** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
  *  themselves — props in, Node out, runs once at construction. */
@@ -50,15 +51,11 @@ type WidgetArgs<S> = "children" extends keyof S
 
 export function widget<S extends object, N extends Node = Node>(
   fn: (props: State<S>) => N
-): (...args: WidgetArgs<State<S>>) => WidgetNode<S, N> {
+): (...args: WidgetArgs<State<S>>) => N {
   return ((stateArg?: State<S>, ...children: Node[]) => {
-    // Children always carried through props as a (possibly empty)
-    // array — bodies that opt into children declare `children:
-    // readonly Node[]` in their state type and read `props.children`
-    // freely; bodies that don't see `[]` and ignore it.
     const state = { ...stateArg, children } as State<S> & { children?: readonly Node[] }
-    return new WidgetNode(fn, state)
-  }) as (...args: WidgetArgs<State<S>>) => WidgetNode<S, N>
+    return createNode(() => fn(state))
+  }) as (...args: WidgetArgs<State<S>>) => N
 }
 
 export class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {

@@ -201,6 +201,10 @@ export class Terminal {
     this.#stdout.write(s)
   }
 
+  #write(s: string): void {
+    this.#stdout.write(s)
+  }
+
   // ---------- side-channel transmit queue ----------
   //
   // Some terminal protocols separate "register data" from "place at
@@ -284,11 +288,12 @@ export class Terminal {
    * both escapes, so there's no downside.
    */
   sync(fn: () => void): void {
+    if (!this.#started) return
     this.write(`${CSI}?2026h`)
     try {
       fn()
     } finally {
-      this.write(`${CSI}?2026l`)
+      this.#write(`${CSI}?2026l`)
     }
   }
 

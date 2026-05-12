@@ -342,11 +342,10 @@ function getNodeTrackingCtx(node: Node): TrackingCtx {
  *  owner.dispose()
  *  ```
  */
-export function createRoot<T>(fn: () => T): { owner: Owner; result: T } {
+export function createRoot<T>(fn: (dispose: () => void) => T): T {
   const parent = activeOwnerStore.getStore()
   const owner = new Owner(undefined, parent)
-  const result = withOwner(owner, fn)
-  return { owner, result }
+  return withOwner(owner, () => fn(() => owner.dispose()))
 }
 
 /** Resolve a `Node | (() => Node)` input to a `Node`. Bare-Node input
@@ -370,10 +369,7 @@ export function createRoot<T>(fn: () => T): { owner: Owner; result: T } {
  */
 export function createNode<T extends Node>(node: T | (() => T)): T {
   if (typeof node !== "function") return node
-  const { owner, result } = createRoot(node)
-  owner.node = result
-  result.once("unmount", () => owner.dispose())
-  return result
+  return createRoot((dispose) => node().once("unmount", dispose))
 }
 
 /** Register a cleanup against the active Owner. Fires when the Owner

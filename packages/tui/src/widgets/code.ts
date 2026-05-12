@@ -1,12 +1,11 @@
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
-import type { StyleBuilder } from "../style/builder.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 
-import { hasColors } from "@zaly/shared/env"
 import { extname } from "pathe"
-import { createAsync, createRenderEffect, memo, signal, unwrap } from "../core/reactive.ts"
+import { RenderContext } from "../core/ctx.ts"
+import { memo, unwrap, useContext } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
 import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
@@ -63,20 +62,26 @@ export const code = widget((props: State<CodeState>) => {
 
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
-  const [style, setStyle] = signal<StyleBuilder | undefined>(undefined)
-  createRenderEffect((ctx) => setStyle(() => ctx.style))
+
+  const style = memo(() => useContext(RenderContext)?.style)
 
   const title = memo(() => unwrap(props.title) ?? path)
-  const body = createAsync(
-    async () => {
-      const source = unwrap(props.code) // tracked
-      if (!hasColors) return source
-      const t = style()?.theme
-      if (!syntax || !lang || t === undefined) return source
-      return highlightSource(source, lang, t)
-    },
-    { initialValue: unwrap(props.code) }
-  )
+  const body = () => {
+    const source = unwrap(props.code) // tracked
+    if (syntax) void highlightSource(source, lang ?? "", style()?.theme)
+    return source
+  }
+  // FIXME: createAsync
+  // const body = createAsync(
+  //   async () => {
+  //     const source = unwrap(props.code) // tracked
+  //     if (!hasColors) return source
+  //     const t = style()?.theme
+  //     if (!syntax || !lang || t === undefined) return source
+  //     return highlightSource(source, lang, t)
+  //   },
+  //   { initialValue: unwrap(props.code) }
+  // )
 
   const formatted = memo(() =>
     formatLines(body(), {
@@ -104,12 +109,12 @@ export const code = widget((props: State<CodeState>) => {
   )
 })
 
-async function highlightSource(source: string, lang: string, theme: Theme): Promise<string> {
+async function highlightSource(source: string, lang: string, theme?: Theme): Promise<string> {
   if (!(await isLang(lang))) return source
   try {
     const highlighter = await createAnsiHighlighter({
       langs: [lang],
-      theme: theme.shiki,
+      theme: theme?.shiki,
     })
     const out = highlighter(source.replace(/\n+$/, ""), lang)
     return out.replace(/\n+$/, "")

@@ -8,6 +8,9 @@ import type { Node } from "./node.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
+import { createContext } from "./reactive.ts"
+
+export const RenderContext = createContext<RenderCtx>()
 
 /**
  * Passed to every `render(ctx)` call. Width flows in; height emerges from
