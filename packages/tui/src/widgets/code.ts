@@ -63,13 +63,13 @@ export const code = widget((props: State<CodeState>) => {
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
 
-  const style = memo(() => useContext(RenderContext)?.style())
+  const ctx = useContext(RenderContext)
 
   const title = memo(() => unwrap(props.title) ?? path)
   const body = () => {
     const source = unwrap(props.code) // tracked
-    if (syntax) void highlightSource(source, lang ?? "", style()?.theme)
-    return source
+    if (syntax) void highlightSource(source, lang ?? "", ctx?.style().theme)
+    return ctx?.style() ? "have style" : "no style"
   }
   // FIXME: createAsync
   // const body = createAsync(
@@ -90,7 +90,7 @@ export const code = widget((props: State<CodeState>) => {
       numberOffset: unwrap(props.numberOffset),
       numbered: props.numbered,
       offset: unwrap(props.offset),
-      style: style()?.gutter,
+      style: ctx?.style().gutter,
     }).join("\n")
   )
 

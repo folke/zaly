@@ -627,7 +627,12 @@ export function effect(fn: () => void): () => void {
 export function memo<T>(fn: () => T): Accessor<T> {
   const [get, set] = signal<T>(undefined as T)
   effect(() => {
-    set(fn())
+    // Wrap in the updater form so `signal.set`'s `typeof === "function"`
+    // detection always picks the outer closure, never `fn()`'s return
+    // value. Without this, memoizing a callable `T` (e.g. a chainable
+    // `StyleBuilder`) would cause `set` to invoke it as an updater and
+    // cache the call result instead of the value itself.
+    set(() => fn())
   })
   return get
 }
