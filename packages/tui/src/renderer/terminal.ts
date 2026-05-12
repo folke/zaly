@@ -128,6 +128,16 @@ export class Terminal {
         this.stop()
         process.exit(0)
       }
+      const onCrash = (err: unknown): void => {
+        this.stop()
+        process.stdout.write("", () => {
+          // oxlint-disable-next-line no-console
+          console.error(err)
+          process.exit(1)
+        })
+      }
+      process.once("uncaughtException", onCrash)
+      process.once("unhandledRejection", onCrash)
       process.once("SIGINT", bye)
       process.once("SIGTERM", bye)
       const onExit = (): void => this.stop()
@@ -136,6 +146,8 @@ export class Terminal {
         process.off("SIGINT", bye)
         process.off("SIGTERM", bye)
         process.off("exit", onExit)
+        process.off("uncaughtException", onCrash)
+        process.off("unhandledRejection", onCrash)
       }
     }
   }
@@ -143,15 +155,21 @@ export class Terminal {
   /** Restore terminal modes, detach listeners. Idempotent. */
   stop(): void {
     if (!this.#started) return
-    this.#started = false
 
-    // Remove all Kitty images
-    this.write(`\x1b_Ga=d,d=A\x1b\\`)
+    try {
+      // Remove all Kitty images
+      this.write(`\x1b_Ga=d,d=A\x1b\\`)
 
-    // Clear scroll region (if set), disable paste/focus reporting,
-    // auto-wrap back on, cursor back on.
-    if (this.#reserveBottom > 0) this.clearScrollRegion()
-    this.write(`${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
+      // Clear scroll region (if set), disable paste/focus reporting,
+      // auto-wrap back on, cursor back on.
+      if (this.#reserveBottom > 0) this.clearScrollRegion()
+      // Wipe the visible viewport — covers both leftover footer rows
+      // and any half-painted stream rows from an in-flight render that
+      // was killed mid-paint (crash path). Scrollback is unaffected.
+      this.write(`${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
+    } finally {
+      this.#started = false
+    }
 
     if (this.#stdin?.isTTY && typeof this.#stdin.setRawMode === "function") {
       this.#stdin.setRawMode(this.#prevRawMode ?? false)
@@ -179,6 +197,7 @@ export class Terminal {
 
   /** Low-level write. Use escape helpers + this to emit sequences. */
   write(s: string): void {
+    if (!this.#started) return
     this.#stdout.write(s)
   }
 
