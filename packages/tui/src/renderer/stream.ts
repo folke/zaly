@@ -137,16 +137,24 @@ export class Stream extends Surface {
     // or frozen states whose cached rows are from an older ctx version
     // (resize / theme swap).
     const ctx = this.getCtx()
-    // Snapshot the "anything pending at start" flag BEFORE compute. The
-    // first compute pass can synchronously drain a boundary (when a
-    // `createAsync` promise has already settled — the `.then` /
-    // `.finally` microtasks fire during compute's own awaits, decrementing
-    // the boundary back to 0). If we relied on `active()` after compute,
-    // we'd skip the drain entirely and paint `s.rows` from the
-    // initial-value render — even though the resolved value already
-    // invalidated each node's internal cache. So: if anything was active
-    // at start, force at least one re-render pass.
-    let needsDrain = states.some((s) => s.boundary.active())
+    // Two races force at-least-one drain iteration:
+    //
+    //   A) Boundary was active at start, then settled during the
+    //      compute pass (its `.then` / `.finally` fired during compute's
+    //      own awaits). Without `wasActive`, the `while` check below
+    //      would see `active() === false` and skip drain — but
+    //      `setValue` already cleared each node's cache, and `s.rows`
+    //      was set from the initial-value render. We'd paint stale.
+    //   B) Boundary was idle at start, then turned active *during*
+    //      compute (e.g. Markdown's `_render` sets a tracked signal
+    //      that re-fires `createAsync`, incrementing the boundary
+    //      while inside `_render`). `wasActive` alone wouldn't catch
+    //      this — we check `active()` post-compute too.
+    //
+    // Net rule: drain at least once if we were active at start OR if
+    // anything became active during compute. Inside the loop, keep
+    // going while any boundary is still active.
+    let wasActive = states.some((s) => s.boundary.active())
     // First pass: only re-render states that actually need it — live
     // tail, never-rendered, or stale-cache (resize / theme swap). Non-
     // live states with valid cached rows skip work.
@@ -163,7 +171,7 @@ export class Stream extends Surface {
     // resolutions can land against already-frozen states (e.g. a replay
     // node that became non-live before its highlight finished). The
     // Node-internal cache makes unchanged renders a no-op.
-    while (needsDrain) {
+    while (wasActive || states.some((s) => s.boundary.active())) {
       // oxlint-disable-next-line no-await-in-loop
       await Promise.all(states.filter((s) => s.boundary.active()).map((s) => s.boundary.whenIdle()))
       // oxlint-disable-next-line no-await-in-loop
@@ -173,7 +181,9 @@ export class Stream extends Surface {
           s.version = ctx.version
         })
       )
-      needsDrain = states.some((s) => s.boundary.active())
+      // `wasActive` only forces ONE extra iteration to cover race A.
+      // Subsequent iterations are governed by the post-compute check.
+      wasActive = false
     }
 
     const allRows: string[] = []
