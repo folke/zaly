@@ -64,7 +64,7 @@ export class Renderer {
   readonly #theme: Theme | undefined
   #running = false
   #escTimer: ReturnType<typeof setTimeout> | undefined
-  #scheduled = false
+  #rendering?: Promise<void>
   #dirty = false
   /** Monotonic cache-key for `RenderCtx`. Bumped on any event that
    *  invalidates every node cache in the tree (resize, theme swap). */
@@ -324,29 +324,56 @@ export class Renderer {
     }
   }
 
+  /** Mark dirty and ensure the render loop is active. Cheap and
+   *  idempotent — synchronous invalidations within the same tick all
+   *  collapse into one paint via the microtask boundary at the top of
+   *  the loop. */
   #schedule(): void {
     this.#dirty = true
     // Nothing to paint until the renderer is actually running.
     // Tracked `#dirty` is preserved so `start()` picks it up via the
     // initial mount-triggered flush (or the first invalidate after).
     if (!this.#running) return
-    if (this.#scheduled) return
-    this.#scheduled = true
-    queueMicrotask(() => {
-      // A `stop()` may have landed between scheduling and the
-      // microtask firing; bail so we don't write to a terminal that
-      // just tore down. `#dirty` stays set, so the next `start()` can
-      // drain it.
-      if (!this.#running) {
-        this.#scheduled = false
-        return
+    if (this.#rendering !== undefined) return
+
+    this.#rendering = (async () => {
+      try {
+        // Microtask boundary: batch every same-tick invalidation into
+        // one paint. Without this, the first `await` inside `#render`
+        // may or may not happen early enough for synchronous follow-up
+        // invalidates to land in the same pass.
+        await Promise.resolve()
+        while (this.#dirty && this.#running) {
+          this.#dirty = false
+          try {
+            // oxlint-disable-next-line no-await-in-loop
+            await this.#render()
+          } catch (error) {
+            // Kill the loop before the trace lands, so no further
+            // paints race against the crash handler's output. Re-throw
+            // next tick so `uncaughtException` picks it up with the
+            // terminal already torn down cleanly.
+            this.#running = false
+            process.nextTick(() => {
+              throw error
+            })
+            return
+          }
+        }
+      } finally {
+        this.#rendering = undefined
       }
-      this.#dirty = false
-      void this.render().finally(() => {
-        this.#scheduled = false
-        if (this.#dirty) this.#schedule()
-      })
-    })
+    })()
+  }
+
+  /** Force a paint if dirty, and wait until the loop is idle. Useful
+   *  for tests and external "redraw and tell me when done" flows.
+   *  Concurrent callers share the same in-flight promise — no extra
+   *  paints are queued. */
+  async render(): Promise<void> {
+    if (!this.#running) return
+    this.#schedule()
+    if (this.#rendering !== undefined) await this.#rendering
   }
 
   /**
@@ -356,7 +383,7 @@ export class Renderer {
    * function that collects its paint closure; those run back-to-back
    * inside the outer sync after all compute phases settle.
    */
-  async render(): Promise<void> {
+  async #render(): Promise<void> {
     const paints: { paint: () => void; order: number }[] = []
     const capture =
       (order: number) =>
