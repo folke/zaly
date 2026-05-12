@@ -74,8 +74,7 @@ export interface RunImportsOpts {
 
 export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promise<void> {
   runtime ??= "bun"
-  const { createCtx, markdown } = await import("@zaly/tui")
-  const ctx = createCtx({})
+  const { markdown, createRender } = await import("@zaly/tui")
   const tmpRoot = mkdtempSync(join(tmpdir(), "z-bench-imports-"))
   try {
     for (const dir of opts.pkgDirs) {
@@ -101,8 +100,7 @@ export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promi
         dir
       )
       const md = readFileSync(out, "utf8")
-      const node = markdown(md)
-      const rows = await node.render(ctx)
+      const rows = await createRender(() => markdown(md))
       process.stdout.write(`\n${rows.join("\n")}`)
     }
   } finally {
