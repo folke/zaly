@@ -63,7 +63,7 @@ export const code = widget((props: State<CodeState>) => {
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
 
-  const style = memo(() => useContext(RenderContext)?.style)
+  const style = memo(() => useContext(RenderContext)?.style())
 
   const title = memo(() => unwrap(props.title) ?? path)
   const body = () => {

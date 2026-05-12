@@ -1,16 +1,20 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Owner } from "../core/reactive.ts"
 import type { ActionInfo } from "../input/actions.ts"
 import type { LogCallable, LoggerOptions } from "../logger/logger.ts"
 import type { Theme } from "../themes/types.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 
-import { createCtx } from "../core/ctx.ts"
+import { createCtx, RenderContext } from "../core/ctx.ts"
+import { createRoot, memo, provideContext, signal, useActiveOwner } from "../core/reactive.ts"
 import { Actions, defaultActions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
 import { InputRouter } from "../input/router.ts"
 import { Logger, makeLog } from "../logger/logger.ts"
+import { style as buildStyle } from "../style/builder.ts"
+import { defaultTheme } from "../themes/registry.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
 import { Terminal } from "./terminal.ts"
@@ -62,6 +66,14 @@ export class Renderer {
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
   readonly #theme: Theme | undefined
+  /** Root Owner — every surface's function-shape `add` / `append` runs
+   *  its child under this Owner via `withOwner(#rootOwner, …)`, so
+   *  context values provided here (`RenderContext`, future global
+   *  scopes) are visible to every widget body in the tree. */
+  readonly #rootOwner: Owner
+  /** Setter for the ambient theme. Wired into `RenderContext.theme` so
+   *  widgets that read it re-fire on swap. */
+  readonly #setTheme: (theme: Theme) => void
   #running = false
   #escTimer: ReturnType<typeof setTimeout> | undefined
   #rendering?: Promise<void>
@@ -107,10 +119,27 @@ export class Renderer {
     const uiOpts: UIOptions = {}
     if (opts.uiMaxHeight !== undefined) uiOpts.maxHeight = opts.uiMaxHeight
 
-    this.ui = new UI(this.terminal, getCtx, uiOpts)
-    this.stream = new Stream(this.terminal, getCtx)
+    // Reactive ambient state — theme is the live source of truth for
+    // the components-facing `RenderContext`. Style derives from it via
+    // a memo so descendants that read `style()` re-fire on theme swap.
+    const [theme, setTheme] = signal<Theme>(opts.theme ?? defaultTheme)
+    const styleAccessor = memo(() => buildStyle(theme()))
+    this.#setTheme = setTheme
+
+    // Root Owner: an entry point for `useContext` walks. Every widget
+    // body added via `ui.add(fn)` / `stream.append(fn)` / `overlay.add(fn)`
+    // runs under this Owner, so `useContext(RenderContext)` resolves
+    // to the values provided here.
+    this.#rootOwner = createRoot(() => {
+      provideContext(RenderContext, { style: styleAccessor, theme })
+      return useActiveOwner() as Owner
+    })
+
+    this.ui = new UI(this.terminal, getCtx, this.#rootOwner, uiOpts)
+    this.stream = new Stream(this.terminal, getCtx, this.#rootOwner)
     this.overlay = new OverlaySurface({
       getCtx,
+      rootOwner: this.#rootOwner,
       stream: this.stream,
       terminal: this.terminal,
       ui: this.ui,
@@ -217,6 +246,14 @@ export class Renderer {
    *  unsubscribe function. Use for one-off app-level bindings where a
    *  named action would be overkill. */
   bind: InputRouter["bind"] = (pattern, handler) => this.input.bind(pattern, handler)
+
+  /** Swap the ambient theme. Widgets that read `theme()` / `style()`
+   *  from `useContext(RenderContext)` re-fire automatically; primitive
+   *  Nodes that compare cache against `ctx.version` need the version
+   *  bump that already happens elsewhere on theme-driven invalidation. */
+  setTheme(theme: Theme): void {
+    this.#setTheme(theme)
+  }
 
   start(): void {
     if (this.#running) return

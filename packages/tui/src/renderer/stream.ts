@@ -1,8 +1,9 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Owner } from "../core/reactive.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { createNode } from "../core/reactive.ts"
+import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
 
 type RenderState = {
@@ -56,6 +57,7 @@ export class Stream extends Surface {
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
+    private readonly rootOwner: Owner,
     opts: Partial<StreamOptions> = {}
   ) {
     super()
@@ -72,7 +74,7 @@ export class Stream extends Surface {
    * returned Node. The Owner disposes when the Node unmounts.
    */
   append(node: Node | (() => Node)): this {
-    const resolved = createNode(node)
+    const resolved = withOwner(this.rootOwner, () => createNode(node))
     resolved.on("invalidate", this.onDirty)
     this.#state.push({ live: true, node: resolved })
     const ctx = this.mountCtx

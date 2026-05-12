@@ -1,9 +1,10 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Owner } from "../core/reactive.ts"
 import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { createNode } from "../core/reactive.ts"
+import { createNode, withOwner } from "../core/reactive.ts"
 import { box } from "../widgets/box.ts"
 import { Surface } from "./surface.ts"
 
@@ -36,6 +37,7 @@ export class UI extends Surface {
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
+    private readonly rootOwner: Owner,
     opts: UIOptions = {}
   ) {
     super()
@@ -68,7 +70,7 @@ export class UI extends Surface {
    *  `provideContext` inside `fn` attach to that scope) and adds the
    *  returned Node. The Owner disposes when the Node unmounts. */
   add(child: Node | (() => Node)): this {
-    this.#root.add(createNode(child))
+    this.#root.add(withOwner(this.rootOwner, () => createNode(child)))
     return this
   }
 

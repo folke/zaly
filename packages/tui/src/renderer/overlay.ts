@@ -1,16 +1,18 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Owner } from "../core/reactive.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Stream } from "./stream.ts"
 import type { Terminal } from "./terminal.ts"
 import type { UI } from "./ui.ts"
 
-import { createNode } from "../core/reactive.ts"
+import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
 
 export interface OverlayDeps {
   terminal: Terminal
   getCtx: () => RenderCtx
+  rootOwner: Owner
   stream: Stream
   ui: UI
 }
@@ -47,7 +49,7 @@ export class OverlaySurface extends Surface {
   /** Register an overlay with the surface. Function form runs `fn`
    *  inside a fresh Owner scope and adopts the returned Overlay. */
   add(overlay: Overlay | (() => Overlay)): this {
-    const resolved = createNode(overlay)
+    const resolved = withOwner(this.deps.rootOwner, () => createNode(overlay))
     if (this.#overlays.includes(resolved)) return this
     this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))

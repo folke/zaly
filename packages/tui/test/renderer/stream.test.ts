@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
+import { createRoot, useActiveOwner } from "../../src/core/reactive.ts"
 import { Stream } from "../../src/renderer/stream.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { text } from "../../src/widgets/text.ts"
@@ -16,7 +17,8 @@ function mount(cols = 20, rows = 10) {
   terminal.start()
   stdout.clear()
   const ctx = createCtx({ width: terminal.cols })
-  const stream = new Stream(terminal, () => ctx)
+  const rootOwner = createRoot(() => useActiveOwner()!)
+  const stream = new Stream(terminal, () => ctx, rootOwner)
   // Tests exercise Stream in isolation (no Renderer present). Self-
   // schedule on `"dirty"` so `stream.add(...)` still eventually renders
   // when awaiting microtasks, mirroring the Renderer's behaviour.
