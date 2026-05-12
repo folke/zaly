@@ -66,16 +66,19 @@ export class App {
 
     const help = helpOverlay(this.#renderer)
     this.#renderer.overlay.add(help)
-    const ui = appUi({
-      actions: this.#renderer.actions,
-      state: {
-        busy: this.#busy.get,
-        model: this.#model.get,
-        status: this.#status.get,
-        usage: this.#usage.get,
-      },
-    })
-    this.#renderer.ui.add(ui)
+
+    this.#renderer.ui.add(() =>
+      appUi({
+        actions: this.#renderer.actions,
+        state: {
+          busy: this.#busy.get,
+          model: this.#model.get,
+          status: this.#status.get,
+          usage: this.#usage.get,
+        },
+      })
+    )
+
     // FIXME: should no longer be needed without WidgetNode, tbd
     await this.#renderer.render()
     this.#input = this.#renderer.getNode("composer") as Input

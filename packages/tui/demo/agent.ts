@@ -107,7 +107,7 @@ const completions = autocomplete({
 
 // ── Footer ───────────────────────────────────────────────────────────
 
-renderer.ui.add(
+renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
     box(

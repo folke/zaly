@@ -76,7 +76,7 @@ const [status, setStatus] = signal("streaming")
 const [progressValue, setProgressValue] = signal(0)
 const [spinning, setSpinning] = signal(true)
 
-renderer.ui.add(
+renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
     box(

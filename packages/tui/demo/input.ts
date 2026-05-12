@@ -13,7 +13,7 @@ import { box, createRenderer, image, input, markdown, text } from "../src/index.
 
 const renderer = createRenderer()
 
-renderer.ui.add(
+renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
     text(

@@ -19,7 +19,7 @@ import { box, createRenderer, spinner, text } from "../src/index.ts"
 
 const renderer = createRenderer({ logger: { minLevel: "trace" } })
 
-renderer.ui.add(
+renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
     box(

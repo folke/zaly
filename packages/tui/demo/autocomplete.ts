@@ -70,7 +70,7 @@ renderer.actions.register({
   },
 })
 
-renderer.ui.add(
+renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
     text(
