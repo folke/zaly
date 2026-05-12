@@ -5,6 +5,7 @@ import type { Stream } from "./stream.ts"
 import type { Terminal } from "./terminal.ts"
 import type { UI } from "./ui.ts"
 
+import { createNode } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
 
 export interface OverlayDeps {
@@ -43,14 +44,17 @@ export class OverlaySurface extends Surface {
     return this.#overlays.filter((o) => o.visible && o.ctx !== undefined)
   }
 
-  add(overlay: Overlay): this {
-    if (this.#overlays.includes(overlay)) return this
-    this.#overlays.push(overlay)
+  /** Register an overlay with the surface. Function form runs `fn`
+   *  inside a fresh Owner scope and adopts the returned Overlay. */
+  add(overlay: Overlay | (() => Overlay)): this {
+    const resolved = createNode(overlay)
+    if (this.#overlays.includes(resolved)) return this
+    this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
-    overlay.on("invalidate", this.onDirty)
+    resolved.on("invalidate", this.onDirty)
     const ctx = this.mountCtx
-    if (this.running && ctx) overlay.mount(ctx)
-    if (overlay.visible) this.emit("dirty")
+    if (this.running && ctx) resolved.mount(ctx)
+    if (resolved.visible) this.emit("dirty")
     return this
   }
 

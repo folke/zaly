@@ -3,6 +3,7 @@ import type { Node } from "../core/node.ts"
 import type { Box } from "../widgets/box.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { createNode } from "../core/reactive.ts"
 import { box } from "../widgets/box.ts"
 import { Surface } from "./surface.ts"
 
@@ -60,9 +61,14 @@ export class UI extends Surface {
   }
 
   /** Shortcut: add a child to the footer root. Same semantics as
-   *  `ui.root.add(child)`; returns `this` for chaining. */
-  add(child: Parameters<Box["add"]>[0]): this {
-    this.#root.add(child)
+   *  `ui.root.add(child)`; returns `this` for chaining.
+   *
+   *  Function form: `add(() => box(…))` runs the function inside a
+   *  fresh Owner scope (so `signal` / `effect` / `onCleanup` /
+   *  `provideContext` inside `fn` attach to that scope) and adds the
+   *  returned Node. The Owner disposes when the Node unmounts. */
+  add(child: Node | (() => Node)): this {
+    this.#root.add(createNode(child))
     return this
   }
 

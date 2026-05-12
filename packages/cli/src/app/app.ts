@@ -76,6 +76,7 @@ export class App {
       },
     })
     this.#renderer.ui.add(ui)
+    // FIXME: should no longer be needed without WidgetNode, tbd
     await this.#renderer.render()
     this.#input = this.#renderer.getNode("composer") as Input
 

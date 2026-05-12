@@ -5,9 +5,8 @@ async function demo(label: string, name: string): Promise<void> {
   const theme = await loadTheme(name)
   const ctx = createCtx({ theme })
 
-  const status = widget((props: { level: "success" | "warn" | "error"; msg: string }) =>
+  const status = (props: { level: "success" | "warn" | "error"; msg: string }) =>
     text(({ style }) => `${style.bold[props.level](" ● ")}${style.dim(props.msg)}`)
-  )
 
   const app = box(
     { gap: 1 },

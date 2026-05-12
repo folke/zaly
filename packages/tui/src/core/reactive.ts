@@ -105,16 +105,15 @@ export function createContext<T>(defaultValue: T): Context<T> {
   return { defaultValue, id: Symbol("@zaly/tui/context") }
 }
 
-/** Publish `value` for `ctx` on the active node. Persistent: the value
- *  stays on the node across renders until overwritten. Descendants (in
- *  the render-call sense) that read via `useContext` walk up the owner
- *  chain and find it. */
+/** Publish `value` for `ctx` on the active Owner. Persistent for the
+ *  Owner's lifetime. Descendants (in the render-call sense) that read
+ *  via `useContext` walk up the Owner chain and find it. */
 export function provideContext<T>(ctx: Context<T>, value: T): void {
   const owner = activeOwnerStore.getStore()
   if (owner === undefined) {
     throw new Error("provideContext: no active Owner — call from a widget body / _render")
   }
-  owner.node.setContext(ctx.id, value)
+  owner.setContext(ctx.id, value)
 }
 
 /** Read the current value of `ctx`. Walks the Owner chain
@@ -122,7 +121,7 @@ export function provideContext<T>(ctx: Context<T>, value: T): void {
  *  default when no ancestor has provided a value. */
 export function useContext<T>(ctx: Context<T>): T {
   for (let o = activeOwnerStore.getStore(); o !== undefined; o = o.parent) {
-    const map = o.node.contexts
+    const map = o.contexts
     if (map?.has(ctx.id)) return map.get(ctx.id) as T
   }
   return ctx.defaultValue
@@ -200,17 +199,31 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
  */
 export class Owner {
   parent?: Owner
-  readonly node: Node
+  /** Host Node when the Owner is bound 1:1 to a Node (the common case
+   *  via `withActiveNode`). `undefined` for headless roots created via
+   *  `createRoot` whose body hasn't yet returned a Node (or doesn't). */
+  node?: Node
   #cleanups: (() => void)[] = []
+  #contexts?: Map<symbol, unknown>
   #disposed = false
 
-  constructor(node: Node, parent?: Owner) {
+  constructor(node?: Node, parent?: Owner) {
     this.node = node
     this.parent = parent
   }
 
   get disposed(): boolean {
     return this.#disposed
+  }
+
+  /** Live view of this Owner's provided contexts. Populated by
+   *  `provideContext`. Walked upward via `parent` by `useContext`. */
+  get contexts(): ReadonlyMap<symbol, unknown> | undefined {
+    return this.#contexts
+  }
+
+  setContext(id: symbol, value: unknown): void {
+    ;(this.#contexts ??= new Map()).set(id, value)
   }
 
   /** Register a cleanup. Runs on `dispose()`. */
@@ -236,6 +249,7 @@ export class Owner {
       }
     }
     this.#cleanups = []
+    this.#contexts = undefined
   }
 }
 
@@ -295,6 +309,69 @@ function getNodeTrackingCtx(node: Node): TrackingCtx {
     nodeCtx.set(node, ctx)
   }
   return ctx
+}
+
+/** Create a fresh Owner scope and run `fn` inside it. Returns
+ *  whatever `fn` returns. The Owner's parent is whatever was active at
+ *  the call site (or `undefined` at module top).
+ *
+ *  The Owner is *not* auto-disposed — callers manage its lifetime via
+ *  the Owner returned alongside the result, or (more commonly) by
+ *  binding the Owner to a Node and disposing it on that Node's
+ *  unmount.
+ *
+ *  Typical use is via a surface's function-shape `add(fn)` API which
+ *  wraps this internally:
+ *
+ *  ```ts
+ *  ui.add(() => {
+ *    const [count, setCount] = signal(0)
+ *    onCleanup(() => console.log("gone"))
+ *    return text(() => `count: ${count()}`)
+ *  })
+ *  ```
+ *
+ *  For headless reactive scopes (tests, programmatic effects), call
+ *  `createRoot` directly:
+ *
+ *  ```ts
+ *  const { result, owner } = createRoot(() => signal(0))
+ *  // ... use result ...
+ *  owner.dispose()
+ *  ```
+ */
+export function createRoot<T>(fn: () => T): { owner: Owner; result: T } {
+  const parent = activeOwnerStore.getStore()
+  const owner = new Owner(undefined, parent)
+  const result = withOwner(owner, fn)
+  return { owner, result }
+}
+
+/** Resolve a `Node | (() => Node)` input to a `Node`. Bare-Node input
+ *  passes through unchanged. Function input runs inside a fresh Owner
+ *  scope (via `createRoot`); the Owner binds to the returned Node and
+ *  disposes when the Node unmounts.
+ *
+ *  Surfaces and containers use this at the boundary where children
+ *  enter the tree — `ui.add(createNode(child))`, `stream.append(...)`,
+ *  etc. — so consumers can pass either shape uniformly.
+ *
+ *  ```ts
+ *  ui.add(box({}, text("hi")))               // bare Node — no Owner scope
+ *  ui.add(() => {
+ *    const [c, setC] = signal(0)
+ *    onCleanup(() => clearInterval(timer))
+ *    const timer = setInterval(() => setC(x => x + 1), 1000)
+ *    return text(() => `count: ${c()}`)
+ *  })                                          // function — Owner scope per add
+ *  ```
+ */
+export function createNode<T extends Node>(node: T | (() => T)): T {
+  if (typeof node !== "function") return node
+  const { owner, result } = createRoot(node)
+  owner.node = result
+  result.once("unmount", () => owner.dispose())
+  return result
 }
 
 /** Register a cleanup against the active Owner. Fires when the Owner

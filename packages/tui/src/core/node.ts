@@ -53,7 +53,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
   #setupDone = false
-  #contexts?: Map<symbol, unknown>
   readonly #children: Node[] = []
   readonly #state: State<T>
   readonly state: State<T>
@@ -153,20 +152,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   get mounted(): boolean {
     return this.#ctx !== undefined
-  }
-
-  /** Read-only view of this node's provided contexts. Populated by
-   *  `provideContext(...)` calls during setup or `_render`. Walked
-   *  upward via the owner frame chain by `useContext`. */
-  get contexts(): ReadonlyMap<symbol, unknown> | undefined {
-    return this.#contexts
-  }
-
-  /** Internal — used by `provideContext` to write a value into this
-   *  node's context map. Allocates the map on first use.
-   *  @internal */
-  setContext(id: symbol, value: unknown): void {
-    ;(this.#contexts ??= new Map()).set(id, value)
   }
 
   /**

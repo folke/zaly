@@ -2,6 +2,7 @@ import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { createNode } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
 
 type RenderState = {
@@ -64,12 +65,18 @@ export class Stream extends Surface {
   /**
    * Append `node` as the new live tail. The previous tail is frozen —
    * it stops receiving re-renders even if its state mutates.
+   *
+   * Function form: `append(() => node)` runs the function inside a
+   * fresh Owner scope (so `signal` / `effect` / `onCleanup` /
+   * `provideContext` inside `fn` attach to that scope) and appends the
+   * returned Node. The Owner disposes when the Node unmounts.
    */
-  append(node: Node): this {
-    node.on("invalidate", this.onDirty)
-    this.#state.push({ live: true, node })
+  append(node: Node | (() => Node)): this {
+    const resolved = createNode(node)
+    resolved.on("invalidate", this.onDirty)
+    this.#state.push({ live: true, node: resolved })
     const ctx = this.mountCtx
-    if (this.running && ctx) node.mount(ctx)
+    if (this.running && ctx) resolved.mount(ctx)
     this.commit({ keep: this.#opts.maxLive, render: false })
     this.emit("dirty")
     return this
