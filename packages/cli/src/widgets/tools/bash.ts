@@ -26,7 +26,7 @@ export const bashResult = widget((props: ToolResultProps<BashTool>) => {
     { flexDirection: "column", padding: [0, 1], style: "code", width: "fit" },
     box(
       { flexDirection: "row", width: "fit" },
-      text("❯", { style: "primary", width: 2 }),
+      text("❯ ", { style: "primary" }),
       code({ code: command ?? "", lang: "bash", style: false })
     ),
     text({

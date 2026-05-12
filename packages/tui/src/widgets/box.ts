@@ -215,7 +215,16 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
         return c.render({ ...ctx, width: measureWidths[i] })
       })
     )
-    const naturals = children.map((_, i) => {
+    const naturals = children.map((c, i) => {
+      // A fixed `state.width` is what the allocator will actually
+      // assign this child — use it directly so the fit-mode
+      // `allocAvailable` sum below matches what we'll consume. Falling
+      // back to intrinsic when there's no override under-reports a
+      // child like `text("x", { width: 2 })` and shrinks every sibling
+      // by the missing cells.
+      if (isFixedWidth(c.state.width)) {
+        return resolveSize(c.state.width, innerWidth) ?? 0
+      }
       const intr = intrinsics[i]
       if (intr) return intr.width
       return (measureRows[i] ?? []).reduce((m, r) => Math.max(m, stringWidth(r)), 0)

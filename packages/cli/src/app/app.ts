@@ -61,7 +61,7 @@ export class App {
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
     this.#renderer = createRenderer({ theme: this.#theme })
-    // this.#renderer.logger.install()
+    this.#renderer.logger.install()
     this.#log = this.#renderer.log
 
     const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
