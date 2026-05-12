@@ -46,7 +46,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
    *  that case so the surface's already-scheduled re-paint sees a
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
-  #setupDone = false
   readonly #children: Node[] = []
   readonly #state: State<T>
   readonly state: State<T>
@@ -129,17 +128,13 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this
   }
 
-  protected setup(): void {}
-
   getLayout(ctx: RenderCtx): Layout | undefined {
     if (!this.layout) return
-    this.#ensureSetup()
     return this.layout(ctx)
   }
 
   get layoutNodes(): readonly Node[] {
     if (this.layoutChildren === undefined) return [this]
-    this.#ensureSetup()
     const ret: Node[] = []
     for (const c of this.with(() => this.layoutChildren?.()) ?? []) ret.push(...c.layoutNodes)
     return ret
@@ -191,19 +186,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this
   }
 
-  #ensureSetup(): void {
-    if (this.#setupDone) return
-    this.with(() => {})
-  }
-
   with<R>(fn: () => R): R {
-    return withActiveNode(this, () => {
-      if (!this.#setupDone) {
-        this.#setupDone = true
-        this.setup()
-      }
-      return fn()
-    })
+    return withActiveNode(this, () => fn())
   }
 
   async render(ctx: RenderCtx): Promise<string[]> {

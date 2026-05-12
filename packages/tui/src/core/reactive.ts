@@ -181,17 +181,20 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
 // ---- Owner -----------------------------------------------------------
 
 /**
- * Reactive ownership scope. Independent of mount-tree position: the
- * chain (`parent` pointers) mirrors the render-call ancestry, not
- * `Node.parent` — a transient node used for measurement still resolves
- * context correctly because its Owner's `parent` is whichever node's
- * render created it.
+ * Reactive ownership scope — bundles cleanups + provided contexts
+ * scoped to a single widget body (or a `createRoot` headless scope).
  *
- * For now there's a 1:1 mapping between `Node` and `Owner` — every
- * Node gets its own Owner the first time `withActiveNode` is called on
- * it, and the Owner disposes when the Node unmounts. A later refactor
- * may relax this to "Owner only at widget / surface boundaries," at
- * which point primitive Nodes wouldn't push their own Owner.
+ * Owners form a chain via `parent` mirroring the call-time widget
+ * nesting: when `widget()` is invoked inside another widget's body,
+ * `createNode` creates the inner Owner with `parent =
+ * activeOwnerStore.getStore()` (the outer widget's Owner). That chain
+ * is what `useContext` walks.
+ *
+ * Owners are **not** bound to Nodes anymore — a widget's `createNode`
+ * pairs the Owner with the constructed Node only through
+ * `Node.once("unmount", () => owner.dispose())`. Primitive Nodes
+ * (`text`, `box`, …) don't get their own Owner; they share whatever
+ * Owner created them.
  *
  * Use `onCleanup(cb)` to register cleanups against the active Owner.
  * Disposing the Owner runs them in reverse-registration order.
@@ -200,16 +203,11 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
  */
 export class Owner {
   parent?: Owner
-  /** Host Node when the Owner is bound 1:1 to a Node (the common case
-   *  via `withActiveNode`). `undefined` for headless roots created via
-   *  `createRoot` whose body hasn't yet returned a Node (or doesn't). */
-  node?: Node
   #cleanups: (() => void)[] = []
   #contexts?: Map<symbol, unknown>
   #disposed = false
 
-  constructor(node?: Node, parent?: Owner) {
-    this.node = node
+  constructor(parent?: Owner) {
     this.parent = parent
   }
 
@@ -255,25 +253,21 @@ export class Owner {
 }
 
 const activeOwnerStore = new AsyncLocalStorage<Owner | undefined>()
-const nodeOwners = new WeakMap<Node, Owner>()
 
 /** Run `fn` as the `node`'s render pass. Signal reads inside subscribe
- *  the node; subscriptions auto-clear on unmount. Stale deps across
- *  renders persist until unmount — mildly wasteful (extra
- *  invalidations), but cheaper than re-tracking per render and
- *  harmless (invalidate is idempotent).
+ *  the node's tracking ctx; the ctx's `notify` is `node.invalidate`,
+ *  so any signal write that this render depended on invalidates the
+ *  node and clears its cache. Cleanups are registered against the
+ *  Node's `unmount` event.
  *
- *  Establishes an `Owner` for the node (lazy, 1:1) and pushes it as
- *  the active Owner for the duration of `fn`. `Owner.parent` is
- *  refreshed each call to mirror the current render-call ancestry, so
- *  `useContext` walks always see the most recent render's chain.
+ *  Does **not** push an Owner — primitive Nodes share whatever Owner
+ *  was active in their caller. Widget bodies install their own Owner
+ *  via `createNode` at construction time, which is when `useContext`
+ *  / `provideContext` / `effect` / `memo` care about the active scope.
  *
  *  @internal */
 export function withActiveNode<T>(node: Node, fn: () => T): T {
-  const ctx = getNodeTrackingCtx(node)
-  const owner = getOrCreateOwner(node)
-  owner.parent = activeOwnerStore.getStore()
-  return activeOwnerStore.run(owner, () => withTracking(ctx, fn))
+  return withTracking(getNodeTrackingCtx(node), fn)
 }
 
 /** Run `fn` with a pre-existing Owner restored. Used by `effect` /
@@ -284,18 +278,6 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
  *  @internal */
 export function withOwner<T>(owner: Owner, fn: () => T): T {
   return activeOwnerStore.run(owner, fn)
-}
-
-function getOrCreateOwner(node: Node): Owner {
-  let owner = nodeOwners.get(node)
-  if (owner === undefined) {
-    owner = new Owner(node, activeOwnerStore.getStore())
-    nodeOwners.set(node, owner)
-    // Wire Node unmount → Owner dispose. `once` so re-mounts don't
-    // double-register; the Owner itself is idempotent on dispose.
-    node.once("unmount", () => owner!.dispose())
-  }
-  return owner
 }
 
 function getNodeTrackingCtx(node: Node): TrackingCtx {
@@ -343,37 +325,35 @@ function getNodeTrackingCtx(node: Node): TrackingCtx {
  */
 export function createRoot<T>(fn: (dispose: () => void) => T): T {
   const parent = activeOwnerStore.getStore()
-  const owner = new Owner(undefined, parent)
+  const owner = new Owner(parent)
   return withOwner(owner, () => fn(() => owner.dispose()))
 }
 
-/** Resolve a `Node | (() => Node)` input to a `Node`. Bare-Node input
- *  passes through unchanged. Function input runs inside a fresh Owner
- *  scope (via `createRoot`); the Owner binds to the returned Node and
- *  disposes when the Node unmounts.
+/** Run `fn` inside a fresh Owner scope and bind the returned Node to
+ *  that scope — when the Node unmounts, the Owner disposes (firing
+ *  every `onCleanup`, tearing down every `effect` / `memo` /
+ *  `createAsync` registered in the body).
  *
- *  Surfaces and containers use this at the boundary where children
- *  enter the tree — `ui.add(createNode(child))`, `stream.append(...)`,
- *  etc. — so consumers can pass either shape uniformly.
+ *  This is what `widget()` calls under the hood: it's the per-instance
+ *  scope boundary. Surfaces also call it directly at their `add` /
+ *  `append` entry points so each appended subtree gets its own root.
  *
  *  ```ts
- *  ui.add(box({}, text("hi")))               // bare Node — no Owner scope
  *  ui.add(() => {
  *    const [c, setC] = signal(0)
  *    onCleanup(() => clearInterval(timer))
  *    const timer = setInterval(() => setC(x => x + 1), 1000)
  *    return text(() => `count: ${c()}`)
- *  })                                          // function — Owner scope per add
+ *  })
  *  ```
  */
-export function createNode<T extends Node>(node: T | (() => T)): T {
-  if (typeof node !== "function") return node
-  return createRoot((dispose) => node().once("unmount", dispose))
+export function createNode<T extends Node>(fn: () => T): T {
+  return createRoot((dispose) => fn().once("unmount", dispose))
 }
 
 /** Register a cleanup against the active Owner. Fires when the Owner
- *  disposes (which, in the 1:1 Node↔Owner model, means the Node
- *  unmounts).
+ *  disposes — i.e. when the widget body's `createNode` Node unmounts,
+ *  or when the surrounding `createRoot` is disposed.
  *
  *  ```ts
  *  function widgetBody() {
@@ -388,18 +368,9 @@ export function createNode<T extends Node>(node: T | (() => T)): T {
 export function onCleanup(fn: () => void): void {
   const owner = activeOwnerStore.getStore()
   if (owner === undefined) {
-    throw new Error("onCleanup: no active Owner — call from inside a render / widget body")
+    throw new Error("onCleanup: no active Owner — call from inside a widget body / createRoot")
   }
   owner.addCleanup(fn)
-}
-
-/** The `Node` whose render is currently active, or `undefined` outside
- *  any render. Used by widget-body helpers (`createRenderEffect`,
- *  `onMount`, …) to anchor lifecycle subscriptions to the owner.
- *
- *  @internal */
-export function useActiveNode(): Node | undefined {
-  return activeOwnerStore.getStore()?.node
 }
 
 /** Current Owner, or `undefined` outside any render. Captured by
