@@ -7,6 +7,8 @@
  * escape sequences through the helpers exposed below.
  */
 
+import { inspect } from "node:util"
+
 export interface TerminalWriter {
   readonly columns: number
   readonly rows: number
@@ -130,10 +132,9 @@ export class Terminal {
       }
       const onCrash = (err: unknown): void => {
         this.stop()
+        const insp = process.versions.bun ? Bun.inspect : inspect
         process.stdout.write("", () => {
-          // oxlint-disable-next-line no-console
-          console.error(err)
-          process.exit(1)
+          process.stdout.write(insp(err, { colors: true }))
         })
       }
       process.once("uncaughtException", onCrash)
