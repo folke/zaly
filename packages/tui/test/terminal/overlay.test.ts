@@ -14,7 +14,7 @@ describe("Overlay surface", () => {
 
     // Overlay a small two-row box at column 3, row 2.
     const o = overlay({ x: 3, y: 2 }, text("XX"))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
 
     // The overlay's single row "XX" lands at row 2 (1-based → index 1),
@@ -32,7 +32,7 @@ describe("Overlay surface", () => {
     expect(h.viewport()).toEqual(["one", "two", "three", "four", "five", "six"])
 
     const o = overlay({ x: 1, y: 3 }, text("MODAL"))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
     // Confirm it's actually painted.
     expect(h.viewport()[2]).toBe("MODAL")
@@ -51,8 +51,8 @@ describe("Overlay surface", () => {
 
     const bottom = overlay({ width: 3, x: 1, y: 2, zIndex: 0 }, text("AAA", { width: 3 }))
     const top = overlay({ width: 2, x: 1, y: 2, zIndex: 5 }, text("BB", { width: 2 }))
-    h.renderer.overlay.open(bottom)
-    h.renderer.overlay.open(top)
+    h.renderer.overlay.open(() => bottom)
+    h.renderer.overlay.open(() => top)
     await h.flush()
 
     // `top` paints 2 cells of "BB" on cols 1-2; `bottom` already placed
@@ -68,7 +68,7 @@ describe("Overlay surface", () => {
 
     const t = text("hi")
     const o = overlay({ x: 1, y: 2 }, t)
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
     expect(h.viewport()[1]).toBe("hi")
 
@@ -87,7 +87,7 @@ describe("Overlay surface", () => {
     await h.flush()
 
     const o = overlay({ width: 3, x: 1, y: 5 }, text("OVL", { width: 3 }))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
     expect(h.viewport()[4]).toBe("OVL") // row 5 (0-indexed 4)
 
@@ -116,7 +116,7 @@ describe("Overlay surface", () => {
 
     // Overlay the middle row. Its bytes sit on top of r3 visually.
     const o = overlay({ width: 3, x: 1, y: 3 }, text("OVL", { width: 3 }))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
     expect(h.viewport()[2]).toBe("OVL")
 
@@ -139,7 +139,7 @@ describe("Overlay surface", () => {
     h.renderer.stream.append(text("a\nb\nc\nd"))
     await h.flush()
     const o = overlay({ x: 0, y: 1 }, text("X"))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     h.renderer.overlay.close(o)
     await h.flush()
     expect(h.viewport()).toEqual(["a", "b", "c", "d"])
@@ -159,7 +159,7 @@ describe("Overlay surface — with ui footer", () => {
     // Overlay at the footer row column 1. Use width:1 on the text so it
     // renders as exactly one cell rather than padding to ctx.width.
     const o = overlay({ width: 1, x: 1, y: 6 }, text("!", { width: 1 }))
-    h.renderer.overlay.open(o)
+    h.renderer.overlay.open(() => o)
     await h.flush()
     expect(h.viewport()[5]).toBe("!ooter")
     h.dispose()

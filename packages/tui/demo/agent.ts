@@ -70,7 +70,7 @@ const help = overlay(
     { wrap: "none" }
   )
 )
-renderer.overlay.add(help)
+renderer.overlay.add(() => help)
 
 // ── Actions ──────────────────────────────────────────────────────────
 // Each slash command is an action. `actionsSource` picks them up
@@ -229,7 +229,7 @@ composer.on("submit", ({ value }, self) => {
 })
 
 renderer.start()
-renderer.overlay.add(toast.show())
+renderer.overlay.add(() => toast).show()
 setTimeout(() => {
   if (toast.mounted) toast.hide()
 }, 3500)

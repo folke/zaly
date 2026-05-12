@@ -65,7 +65,7 @@ const helpPanel = overlay(
     { wrap: "none" }
   )
 )
-renderer.overlay.add(helpPanel)
+renderer.overlay.add(() => helpPanel)
 
 const [message, setMessage] = signal("")
 const toastWidth = memo(() => message().length + 4) // 2 spaces padding on each side
@@ -83,7 +83,7 @@ const toast = overlay(
   text(({ style }) => style.bold(message()), { wrap: "none" })
 )
 
-renderer.overlay.add(toast)
+renderer.overlay.add(() => toast)
 
 function showToast(m: string): void {
   toast.state.width = toastWidth()

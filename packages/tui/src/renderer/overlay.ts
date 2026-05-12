@@ -48,16 +48,16 @@ export class OverlaySurface extends Surface {
 
   /** Register an overlay with the surface. Function form runs `fn`
    *  inside a fresh Owner scope and adopts the returned Overlay. */
-  add(overlay: Overlay | (() => Overlay)): this {
+  add(overlay: () => Overlay): Overlay {
     const resolved = withOwner(this.deps.rootOwner, () => createNode(overlay))
-    if (this.#overlays.includes(resolved)) return this
+    if (this.#overlays.includes(resolved)) return resolved
     this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
     resolved.on("invalidate", this.onDirty)
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
     if (resolved.visible) this.emit("dirty")
-    return this
+    return resolved
   }
 
   remove(overlay: Overlay): this {
@@ -71,10 +71,8 @@ export class OverlaySurface extends Surface {
     return this
   }
 
-  open(overlay: Overlay): this {
-    this.add(overlay)
-    overlay.show()
-    return this
+  open(overlay: () => Overlay): Overlay {
+    return this.add(overlay).show()
   }
 
   close(overlay: Overlay): this {

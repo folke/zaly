@@ -64,8 +64,7 @@ export class App {
     // this.#renderer.logger.install()
     this.#log = this.#renderer.log
 
-    const help = helpOverlay(this.#renderer)
-    this.#renderer.overlay.add(help)
+    const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
 
     this.#renderer.ui.add(() =>
       appUi({

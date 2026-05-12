@@ -4,8 +4,8 @@ import type { SurfaceType } from "../renderer/renderer.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../themes/types.ts"
 import type { Overlay } from "../widgets/overlay.ts"
-import type { Accessor } from "./reactive.ts"
 import type { Node } from "./node.ts"
+import type { Accessor } from "./reactive.ts"
 
 import { style } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
@@ -82,7 +82,7 @@ export interface MountCtx {
   /** Overlay capabilities — open/close an Overlay node from inside a
    *  widget (e.g. a confirm dialog, autocomplete popover, tooltip). */
   readonly overlay: {
-    readonly add: (o: Overlay) => void
+    readonly add: (o: () => Overlay) => void
     readonly remove: (o: Overlay) => void
   }
 
