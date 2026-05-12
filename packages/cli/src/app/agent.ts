@@ -74,10 +74,7 @@ export function wireAgent(agent: Agent, signals: AgentSignals): () => void {
     if (reason !== "error") return
     signals.setStatus("error")
     const err = agent.lastError
-    if (err) {
-      process.stderr.write(`${err.name}: ${err.message}\n`)
-      if (err.stack) process.stderr.write(`${err.stack}\n`)
-    }
+    if (err) console.error(`${err.name}: ${err.message}`)
   }
 
   agent.on("step-end", onStepEnd)
