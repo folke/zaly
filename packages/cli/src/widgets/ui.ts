@@ -1,5 +1,5 @@
 import type { Usage } from "@zaly/ai"
-import type { Actions, Reactive } from "@zaly/tui"
+import type { Actions, Input, Reactive, Ref } from "@zaly/tui"
 
 import { actionsSource, autocomplete, box, filesSource, input, text } from "@zaly/tui"
 import { statusline } from "./statusline.ts"
@@ -16,7 +16,7 @@ export interface UiState {
  * Returned `input` is the composer node so `app.ts` can wire its
  * `submit` / `attach` handlers.
  */
-export const appUi = (props: { state: UiState; actions: Actions }) =>
+export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<Input> }) =>
   box(
     { padding: [1, 0, 0, 0] },
     box(
@@ -33,7 +33,7 @@ export const appUi = (props: { state: UiState; actions: Actions }) =>
       box(
         { flexDirection: "row", gap: 1 },
         text(({ style }) => style.primary("❯"), { width: 1 }),
-        input({ placeholder: "Ask zaly anything…" }).id("composer").focus()
+        input({ placeholder: "Ask zaly anything…" }).ref(props.composer).focus()
       )
     )
   )

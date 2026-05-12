@@ -5,7 +5,7 @@ import type { MountCtx, RenderCtx } from "./ctx.ts"
 import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
-import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
+import { inRenderContextOf, unwrap, withActiveNode, type Ref } from "./reactive.ts"
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */
@@ -387,6 +387,11 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   toggle(): this {
     this.state.visible = !this.visible
+    return this
+  }
+
+  ref(ref?: Ref<this>): this {
+    if (ref) ref.value = this
     return this
   }
 }

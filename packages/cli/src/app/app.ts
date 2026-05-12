@@ -4,7 +4,7 @@ import type { Input, LogCallable, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Config } from "../config.ts"
 
-import { createRenderer, signal } from "@zaly/tui"
+import { createRenderer, signal, createRef } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { helpOverlay } from "../widgets/help.ts"
 import { appUi } from "../widgets/ui.ts"
@@ -66,9 +66,12 @@ export class App {
 
     const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
 
+    const composer = createRef<Input>()
+
     this.#renderer.ui.add(() =>
       appUi({
         actions: this.#renderer.actions,
+        composer,
         state: {
           busy: this.#busy.get,
           model: this.#model.get,
@@ -78,7 +81,7 @@ export class App {
       })
     )
 
-    this.#input = this.#renderer.getNode("composer") as Input
+    this.#input = composer()
 
     registerUiActions({ renderer: this.#renderer, toggleHelp: () => help.toggle() })
 

@@ -710,3 +710,20 @@ export function createAsync<T>(
   })
   return value
 }
+
+export type Ref<T> = (() => T) & { value: T }
+
+export function createRef<T>(): Ref<T> {
+  let current: T | undefined
+  const get = (): T => {
+    if (current === undefined) throw new Error("Ref value accessed before initialization")
+    return current
+  }
+  Object.defineProperty(get, "value", {
+    get,
+    set: (v: T) => {
+      current = v
+    },
+  })
+  return get as Ref<T>
+}
