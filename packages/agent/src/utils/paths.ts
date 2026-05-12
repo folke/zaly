@@ -21,6 +21,12 @@ export const zalyPaths = {
   get sessions(): string {
     return join(this.root, "sessions")
   },
+  /** Cross-run user state — last model picked, future prefs, etc.
+   *  Distinct from `config/` (intended for user-editable settings);
+   *  state is "things we remember between runs". */
+  get state(): string {
+    return join(this.root, "state.json")
+  },
   get tmp(): string {
     return join(this.root, "tmp")
   },
