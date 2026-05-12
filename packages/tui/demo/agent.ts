@@ -32,9 +32,9 @@ const [status, setStatus] = signal("ready")
 const [progressValue, setProgressValue] = signal(0)
 const [model] = signal("claude-opus-ish")
 
-const composer = input({ placeholder: "Ask me to review an API, sketch a plan, or open a file…" })
-  .id("composer")
-  .focus()
+const composer = input({
+  placeholder: "Ask me to review an API, sketch a plan, or open a file…",
+}).focus()
 
 // ── Help overlay ─────────────────────────────────────────────────────
 // Auto-built from the action catalog so it stays in sync as you add
@@ -98,7 +98,7 @@ renderer.actions.register({
 // ── Autocomplete ─────────────────────────────────────────────────────
 
 const completions = autocomplete({
-  input: "composer",
+  input: composer,
   maxHeight: 8,
   sources: {
     slash: actionsSource({ actions: renderer.actions }),

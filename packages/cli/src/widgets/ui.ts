@@ -23,7 +23,7 @@ export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<I
       { flexDirection: "column", padding: [0, 1], style: "ui" },
       statusline(props.state),
       autocomplete({
-        input: "composer",
+        input: props.composer,
         maxHeight: 8,
         sources: {
           file: filesSource(),

@@ -83,7 +83,11 @@ export class App {
 
     this.#input = composer()
 
-    registerUiActions({ renderer: this.#renderer, toggleHelp: () => help.toggle() })
+    registerUiActions({
+      composer: this.#input,
+      renderer: this.#renderer,
+      toggleHelp: () => help.toggle(),
+    })
 
     // Submit gated on busy — typing is fine during Phase B, but Enter
     // waits for the agent to be ready.

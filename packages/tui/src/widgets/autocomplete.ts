@@ -1,5 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
+import type { Ref } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
 import type { RoutedKey } from "../input/router.ts"
 import type { MenuItem, MenuRender } from "./menu.ts"
@@ -51,10 +52,13 @@ export interface CompletionSource<T = MenuItem> {
 export interface AutocompleteState extends StyleState {}
 
 export interface AutocompleteOptions {
-  /** The `Input` to watch. Pass the node directly, or a string id that
-   *  resolves through `ctx.getNode` on mount — the latter enables fully
-   *  inline composition where the input doesn't need a local binding. */
-  input: Input | string
+  /** The `Input` to watch. Pass the node directly, or a `Ref<Input>`
+   *  populated by `node.ref(ref)` elsewhere in the tree — the latter
+   *  enables fully inline composition where the input doesn't need a
+   *  local binding. The ref is dereferenced on mount, so wiring is
+   *  type-safe and ordering-flexible (autocomplete can be constructed
+   *  before the Input is). */
+  input: Input | Ref<Input>
   // Per-source item types are erased at this level — each source
   // declares its own `T` which is preserved within its own `complete`
   // / `accept` / `render` callbacks. The `complete` event payload is
@@ -119,7 +123,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   override readonly type = Autocomplete.type
 
   readonly menu: Menu
-  readonly #inputRef: Input | string
+  readonly #inputRef: Input | Ref<Input>
   readonly #sources: Record<string, CompletionSource<any>>
   #input?: Input
   #match: Match | undefined
@@ -144,8 +148,9 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     this.add(this.menu)
 
     // If a concrete Input is passed, wire immediately so the widget
-    // works without a mount step (tests, standalone usage). String ids
-    // resolve on mount.
+    // works without a mount step (tests, standalone usage). Refs
+    // resolve on mount — by then the Input has been constructed and
+    // wired via `node.ref(ref)`.
     if (this.#inputRef instanceof Input) this.#bindInput(this.#inputRef)
 
     // Bridge menu events to input rewrite.
@@ -158,12 +163,15 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     })
 
     this.on("mount", () => {
-      if (this.#input === undefined && typeof this.#inputRef === "string") {
-        const node = this.ctx?.getNode(this.#inputRef)
-        if (!(node instanceof Input)) {
-          throw new Error(`autocomplete: no Input with id "${this.#inputRef}" found in tree`)
+      if (this.#input === undefined && !(this.#inputRef instanceof Input)) {
+        // Ref dereferences via `.value`, which throws if it hasn't been
+        // wired by a `node.ref(ref)` call on an `Input` somewhere in
+        // the tree. Surface that as a clearer message.
+        try {
+          this.#bindInput(this.#inputRef.value)
+        } catch {
+          throw new Error("autocomplete: input Ref was not wired before mount")
         }
-        this.#bindInput(node)
       }
       if (this.#input) this.#installKeyIntercept(this.#input)
     })

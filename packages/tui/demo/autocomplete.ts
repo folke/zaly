@@ -1,7 +1,10 @@
+import type { Input } from "../src/index.ts"
+
 import {
   actionsSource,
   autocomplete,
   box,
+  createRef,
   createRenderer,
   filesSource,
   githubSource,
@@ -70,6 +73,8 @@ renderer.actions.register({
   },
 })
 
+const chatInput = createRef<Input>()
+
 renderer.ui.add(() =>
   box(
     { style: "ui", flexDirection: "column", padding: [0, 1] },
@@ -81,7 +86,7 @@ renderer.ui.add(() =>
       { flexDirection: "row", gap: 1 },
       text(({ style }) => style.primary("❯"), { width: 1 }),
       input({ placeholder: "try / or @ …" })
-        .id("chat-input")
+        .ref(chatInput)
         .focus()
         .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
@@ -90,7 +95,7 @@ renderer.ui.add(() =>
         })
     ),
     autocomplete({
-      input: "chat-input",
+      input: chatInput,
       maxHeight: 8,
       sources: {
         files: filesSource(),

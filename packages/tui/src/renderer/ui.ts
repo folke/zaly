@@ -42,12 +42,6 @@ export class UI extends Surface {
   ) {
     super()
     this.#maxHeight = opts.maxHeight
-    // Tag the root as scope `"global"` — the input router resolves
-    // `"global.*"` keymap bindings by walking the focused node's parent
-    // chain, and any focusable widget ultimately parents to this root.
-    // So this tagging is what makes globals fire on every keystroke
-    // without a dedicated always-matching path in the router.
-    this.#root.id("global")
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", this.onDirty)

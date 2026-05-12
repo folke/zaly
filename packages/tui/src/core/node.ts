@@ -2,10 +2,11 @@ import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
+import type { Ref } from "./reactive.ts"
 import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
-import { inRenderContextOf, unwrap, withActiveNode, type Ref } from "./reactive.ts"
+import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */

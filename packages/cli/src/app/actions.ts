@@ -1,21 +1,22 @@
 import type { Agent } from "@zaly/agent"
-import type { Renderer } from "@zaly/tui"
+import type { Input, Renderer } from "@zaly/tui"
 
 /**
  * UI-only actions — registered in Phase A (no agent required).
  * Composer state, help overlay toggle, process exit. Each shows up in
  * the help overlay and in `/`-triggered autocomplete.
  */
-export function registerUiActions(opts: { renderer: Renderer; toggleHelp: () => void }): void {
-  const { renderer, toggleHelp } = opts
+export function registerUiActions(opts: {
+  renderer: Renderer
+  composer: Input
+  toggleHelp: () => void
+}): void {
+  const { renderer, composer, toggleHelp } = opts
   renderer.actions.register({
     "app.clear": {
       desc: "clear the composer",
       fn: () => {
-        const node = renderer.getNode("composer") as
-          | { setState: (p: { cursor: number; value: string }) => void }
-          | undefined
-        node?.setState({ cursor: 0, value: "" })
+        composer.setState({ cursor: 0, value: "" })
       },
       name: "clear",
     },
