@@ -13,12 +13,6 @@ export type BaseEvents = {
   invalidate: {}
   mount: {}
   unmount: {}
-  /** Fired synchronously at the top of every `_render` that actually
-   *  runs (skipped on cache hits and `visible:false`). Carries the live
-   *  `RenderCtx` so listeners can read width/theme/version directly —
-   *  `createRenderEffect` consumes this to capture per-render data into
-   *  signals. */
-  render: { ctx: RenderCtx }
   focus: {}
   blur: {}
   key: { key: RoutedKey }
@@ -58,7 +52,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   readonly state: State<T>
   #ctx?: MountCtx
   #id?: string
-  #tracker = new Set<Promise<unknown>>()
   actions?: ActionMap
   type?: string
   protected layout?(ctx: RenderCtx): Layout | undefined
@@ -75,45 +68,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
       },
     })
     children.forEach((c) => this.add(c))
-  }
-
-  /** Register an in-flight promise on this node's tracker. Auto-removed
-   *  on settle. Producers (typically `createAsync`) call this; drain
-   *  loops and `<Suspense>` boundaries read via `pending()` / `drain()`. */
-  track(p: Promise<unknown>): void {
-    this.#tracker.add(p)
-    void p.finally(() => this.#tracker.delete(p))
-  }
-
-  /** Pending async work in this node's subtree (default), or just this
-   *  node when called with `{ full: false }`. Includes promises from
-   *  every descendant via recursion through `#children`. */
-  pending(opts: { full?: boolean } = {}): Promise<unknown>[] {
-    const ret = [...this.#tracker]
-    if (opts.full === false) return ret
-    for (const c of this.#children) ret.push(...c.pending(opts))
-    return ret
-  }
-
-  /** Await pending async work, looping until stable. Same `full` flag
-   *  as `pending`. Used internally by drain-mode renders and externally
-   *  by Suspense boundaries that need to wait for their subtree. */
-  async drain(opts: { full?: boolean } = {}): Promise<void> {
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
-    while (true) {
-      const ps = [...this.pending(opts)]
-      if (ps.length === 0) return
-      // oxlint-disable-next-line no-await-in-loop
-      await Promise.all(ps)
-    }
-  }
-
-  /** Drop the tracker on unmount. The promises continue to run, but
-   *  their `setValue` writes are gated by `createAsync`'s gen counter
-   *  — if the node remounts and creates a new run, stale promises see
-   *  a stale gen and no-op. */
-  protected onUnmount() {
-    this.#tracker.clear()
   }
 
   get children(): readonly Node[] {
@@ -256,43 +210,18 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // `visible: false` on the state suppresses the render entirely —
     // no `_render` call, no cached rows, zero layout footprint. Opt-in
     // via `state.visible`; absence or `true` is the default shown path.
-    // Useful for toggled panels (autocomplete, log, modals) that should
-    // stick around in the tree so we don't re-create them each time.
     // Resolve inside the tracking ctx so a signal accessor read
-    // subscribes this node.
-    this.#rendering ??= this.with(() =>
-      ctx.async === true ? this.#render(ctx) : this.#renderWithDrain(ctx)
-    )
+    // subscribes this node. Async work registered via `createAsync` is
+    // fire-and-forget here; surfaces that need a "wait until settled"
+    // commit (Stream) install a `SuspenseContext` boundary at their
+    // append boundary and await it before painting.
+    this.#rendering ??= this.with(() => this.#render(ctx))
 
     try {
       return await this.#rendering
     } finally {
       this.#rendering = undefined
     }
-  }
-
-  /** Render with drain semantics: render → if `createAsync` registered
-   *  pending work on *this* node's tracker, await it → re-render with
-   *  resolved values → loop until stable.
-   *
-   *  Each child's `render` runs the same drain on its own subtree, so
-   *  the loop here only waits for promises owned by *this* node;
-   *  descendants have already settled by the time their `render`
-   *  returned. The `ctx.async` flag chooses between this drain mode
-   *  and fire-and-forget — see `#renderWithAsync`. */
-  async #renderWithDrain(ctx: RenderCtx): Promise<string[]> {
-    // Drain self only — children drain themselves before returning to us.
-    // This node's tracker may grow across iterations (chained async,
-    // or fresh `createAsync` registrations from re-running effects), so
-    // loop until empty.
-    let rows = await this.#render(ctx)
-    while (this.#tracker.size > 0) {
-      // oxlint-disable-next-line no-await-in-loop
-      await this.drain({ full: false })
-      // oxlint-disable-next-line no-await-in-loop
-      rows = await this.#render(ctx)
-    }
-    return rows
   }
 
   async #render(ctx: RenderCtx): Promise<string[]> {
@@ -312,11 +241,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     if (this.#cache?.version === ctx.version && this.#cache.width === ctx.width) {
       return this.#cache.rows
     }
-    // Per-render hook. Fires before `_render` so listeners can update
-    // signals that the upcoming render (or its descendants) will read
-    // — typically capturing ctx-derived data (theme, width) into
-    // signals that async closures need.
-    this.emit("render", { ctx })
     // Capture the invalidation count *before* awaiting `_render`. If
     // it bumps mid-render, the rows we get back are based on stale
     // state — the external mutation that bumped it has already emitted
@@ -433,7 +357,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   unmount(): this {
     if (!this.#ctx) return this
     for (const c of this.#children) c.unmount()
-    this.#tracker.clear()
     this.emit("unmount")
     this.#ctx = undefined
     return this

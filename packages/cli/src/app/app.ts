@@ -78,8 +78,6 @@ export class App {
       })
     )
 
-    // FIXME: should no longer be needed without WidgetNode, tbd
-    await this.#renderer.render()
     this.#input = this.#renderer.getNode("composer") as Input
 
     registerUiActions({ renderer: this.#renderer, toggleHelp: () => help.toggle() })

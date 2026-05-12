@@ -1,13 +1,25 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Owner } from "../core/reactive.ts"
+import type { Owner, SuspenseBoundary } from "../core/reactive.ts"
 import type { Terminal } from "./terminal.ts"
 
-import { createNode, withOwner } from "../core/reactive.ts"
+import {
+  createNode,
+  createSuspenseBoundary,
+  provideContext,
+  SuspenseContext,
+  withOwner,
+} from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
 
 type RenderState = {
   node: Node
+  /** Per-state Suspense boundary. Installed at `append` time inside the
+   *  Owner scope of the appended subtree, so `createAsync` calls inside
+   *  the tree find it via `useContext(SuspenseContext)`. Stream's render
+   *  loop awaits `whenIdle()` between compute and paint so rows promoted
+   *  to scrollback always reflect resolved async values. */
+  boundary: SuspenseBoundary
   /** Undefined until the first render pass populates it. */
   rows?: string[]
   /** `ctx.version` captured when `rows` was produced. When the current
@@ -74,9 +86,20 @@ export class Stream extends Surface {
    * returned Node. The Owner disposes when the Node unmounts.
    */
   append<N extends Node>(node: () => N): N {
-    const resolved = withOwner(this.rootOwner, () => createNode(node))
+    // Each appended subtree gets its own Suspense boundary so the render
+    // loop can wait for `createAsync` work below it to settle before
+    // committing rows to scrollback. The boundary is provided inside
+    // the new Owner scope so `useContext(SuspenseContext)` walks from
+    // descendants find it.
+    const boundary = createSuspenseBoundary()
+    const resolved = withOwner(this.rootOwner, () =>
+      createNode(() => {
+        provideContext(SuspenseContext, boundary)
+        return node()
+      })
+    )
     resolved.on("invalidate", this.onDirty)
-    this.#state.push({ live: true, node: resolved })
+    this.#state.push({ boundary, live: true, node: resolved })
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
     this.commit({ keep: this.#opts.maxLive, render: false })
@@ -114,6 +137,19 @@ export class Stream extends Surface {
     // or frozen states whose cached rows are from an older ctx version
     // (resize / theme swap).
     const ctx = this.getCtx()
+    // Snapshot the "anything pending at start" flag BEFORE compute. The
+    // first compute pass can synchronously drain a boundary (when a
+    // `createAsync` promise has already settled — the `.then` /
+    // `.finally` microtasks fire during compute's own awaits, decrementing
+    // the boundary back to 0). If we relied on `active()` after compute,
+    // we'd skip the drain entirely and paint `s.rows` from the
+    // initial-value render — even though the resolved value already
+    // invalidated each node's internal cache. So: if anything was active
+    // at start, force at least one re-render pass.
+    let needsDrain = states.some((s) => s.boundary.active())
+    // First pass: only re-render states that actually need it — live
+    // tail, never-rendered, or stale-cache (resize / theme swap). Non-
+    // live states with valid cached rows skip work.
     await Promise.all(
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
@@ -122,6 +158,23 @@ export class Stream extends Surface {
         }
       })
     )
+
+    // Drain phase. Re-render every state unconditionally — `createAsync`
+    // resolutions can land against already-frozen states (e.g. a replay
+    // node that became non-live before its highlight finished). The
+    // Node-internal cache makes unchanged renders a no-op.
+    while (needsDrain) {
+      // oxlint-disable-next-line no-await-in-loop
+      await Promise.all(states.filter((s) => s.boundary.active()).map((s) => s.boundary.whenIdle()))
+      // oxlint-disable-next-line no-await-in-loop
+      await Promise.all(
+        states.map(async (s) => {
+          s.rows = await s.node.render(ctx)
+          s.version = ctx.version
+        })
+      )
+      needsDrain = states.some((s) => s.boundary.active())
+    }
 
     const allRows: string[] = []
     for (const s of states) if (s.rows) allRows.push(...s.rows)

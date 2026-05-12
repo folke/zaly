@@ -3,9 +3,10 @@ import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 
+import { hasColors } from "@zaly/shared/env"
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
-import { memo, unwrap, useContext } from "../core/reactive.ts"
+import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
 import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
@@ -42,18 +43,18 @@ export interface CodeState {
  * shrink-to-content backdrop, optionally titled.
  *
  * Composition over custom layout — the backdrop is `box({ bg: "code",
- * width: "fit" })`, the body is plain `text(...)`. The active render
- * context (theme, style, width) is captured via `createRenderEffect`
- * into a signal so the async highlight closure can read it.
+ * width: "fit" })`, the body is plain `text(...)`. Ambient theme/style
+ * arrive via `useContext(RenderContext)`; the async closure reads
+ * `style()?.theme` so it stays correct across theme swaps.
  *
  * Async highlighting flows through `createAsync`: signal reads inside
  * the async closure auto-track, so `props.code` (or any other reactive
  * source) drives a re-fire. The accessor returns `initialValue` (the
  * plain source) until shiki resolves, then swaps to the highlighted
- * version. On surfaces rendered with `ctx.async === false` (e.g. the
- * stream surface), the outermost `Node.render` drains pending
- * `createAsync` work before returning, so committed-to-scrollback rows
- * always reflect the resolved highlight.
+ * version. When called inside a Stream surface's `append`, the surface
+ * installs a `SuspenseContext` boundary; Stream awaits it before
+ * painting, so rows committed to scrollback always reflect the
+ * resolved highlight rather than the initial plain source.
  */
 export const code = widget((props: State<CodeState>) => {
   const path = unwrap(props.path)
@@ -63,25 +64,19 @@ export const code = widget((props: State<CodeState>) => {
   // Theme is sourced from a render-time hook since the async closure
   // runs outside the render phase.
 
-  const ctx = useContext(RenderContext)
+  const context = useContext(RenderContext)
 
   const title = memo(() => unwrap(props.title) ?? path)
-  const body = () => {
-    const source = unwrap(props.code) // tracked
-    if (syntax) void highlightSource(source, lang ?? "", ctx?.style().theme)
-    return ctx?.style() ? "have style" : "no style"
-  }
-  // FIXME: createAsync
-  // const body = createAsync(
-  //   async () => {
-  //     const source = unwrap(props.code) // tracked
-  //     if (!hasColors) return source
-  //     const t = style()?.theme
-  //     if (!syntax || !lang || t === undefined) return source
-  //     return highlightSource(source, lang, t)
-  //   },
-  //   { initialValue: unwrap(props.code) }
-  // )
+  const body = createAsync(
+    async () => {
+      const source = unwrap(props.code) // tracked
+      if (!hasColors) return source
+      const t = context?.style().theme
+      if (!syntax || !lang || t === undefined) return source
+      return await highlightSource(source, lang, t)
+    },
+    { initialValue: unwrap(props.code) }
+  )
 
   const formatted = memo(() =>
     formatLines(body(), {
@@ -90,7 +85,7 @@ export const code = widget((props: State<CodeState>) => {
       numberOffset: unwrap(props.numberOffset),
       numbered: props.numbered,
       offset: unwrap(props.offset),
-      style: ctx?.style().gutter,
+      style: context?.style().gutter,
     }).join("\n")
   )
 

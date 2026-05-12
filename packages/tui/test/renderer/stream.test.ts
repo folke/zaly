@@ -1,6 +1,12 @@
+// oxlint-disable unicorn/consistent-function-scoping
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { createRoot, useActiveOwner } from "../../src/core/reactive.ts"
+import {
+  createAsync,
+  createRoot,
+  memo,
+  useActiveOwner,
+} from "../../src/core/reactive.ts"
 import { Stream } from "../../src/renderer/stream.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { text } from "../../src/widgets/text.ts"
@@ -155,5 +161,65 @@ describe("Stream.onStart / onStop", () => {
     const t = text("x")
     stream.append(() => t)
     expect(t.mounted).toBe(true)
+  })
+})
+
+describe("Stream — drain through real surface", () => {
+  test("single append: createAsync resolves before paint, paint shows resolved value", async () => {
+    const { stdout, stream } = mount(40, 10)
+    let resolveWork: (v: string) => void = () => {}
+    const work = new Promise<string>((r) => {
+      resolveWork = r
+    })
+    stream.append(() => {
+      const body = createAsync(() => work, { initialValue: "INIT" })
+      const formatted = memo(() => `>${body()}<`)
+      return text(formatted, { wrap: "none" })
+    })
+
+    // Resolve BEFORE awaiting render so the boundary settles while the
+    // drain loop is suspended on whenIdle.
+    resolveWork("DONE")
+    await stream.render()
+
+    expect(stdout.all).toContain(">DONE<")
+    expect(stdout.all).not.toContain(">INIT<")
+  })
+
+  test("two sequential appends — each highlights via its own boundary", async () => {
+    // Reproduces the user's replay scenario: append → render → append → render.
+    const { stdout, stream } = mount(40, 10)
+
+    // ---- first append ----
+    let resolveA: (v: string) => void = () => {}
+    const workA = new Promise<string>((r) => {
+      resolveA = r
+    })
+    stream.append(() => {
+      const body = createAsync(() => workA, { initialValue: "A:INIT" })
+      const formatted = memo(() => `>${body()}<`)
+      return text(formatted, { wrap: "none" })
+    })
+    resolveA("A:DONE")
+    await stream.render()
+
+    expect(stdout.all).toContain(">A:DONE<")
+
+    // ---- second append (the case that fails in replay) ----
+    stdout.clear()
+    let resolveB: (v: string) => void = () => {}
+    const workB = new Promise<string>((r) => {
+      resolveB = r
+    })
+    stream.append(() => {
+      const body = createAsync(() => workB, { initialValue: "B:INIT" })
+      const formatted = memo(() => `>${body()}<`)
+      return text(formatted, { wrap: "none" })
+    })
+    resolveB("B:DONE")
+    await stream.render()
+
+    expect(stdout.all).toContain(">B:DONE<")
+    expect(stdout.all).not.toContain(">B:INIT<")
   })
 })

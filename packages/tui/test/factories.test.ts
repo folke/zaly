@@ -58,32 +58,29 @@ describe("box()", () => {
 })
 
 describe("widget()", () => {
-  test("calling the widget produces a WidgetNode wrapping the inner Node", async () => {
+  test("calling the widget eagerly returns the inner Node", async () => {
     const greeting = widget((props: { name: string }) => text(`hi ${props.name}`))
     const node = greeting({ name: "ada" })
-    await node.render(ctx(10)) // forces the inner node to be created so we can inspect it
     expect(node).toBeInstanceOf(Text)
     expect(node.state).toMatchObject({ content: "hi ada" })
     expect(await node.render(ctx(10))).toEqual(["hi ada"])
   })
 
-  // FIXME: this test is no longer valid
-  // test("body runs exactly once at construction", async () => {
-  //   let calls = 0
-  //   const counter = widget((props: { id: number }) => {
-  //     calls++
-  //     return text(`#${props.id}`)
-  //   })
-  //   const c = counter({ id: 1 })
-  //   counter({ id: 2 })
-  //   counter({ id: 3 })
-  //   // component is lazily creaated on first render
-  //   expect(calls).toBe(0)
-  //   await c.render(ctx(10))
-  //   expect(calls).toBe(1)
-  //   //await c._render(ctx(10))
-  //   expect(calls).toBe(1)
-  // })
+  test("body runs exactly once per instance at construction", async () => {
+    let calls = 0
+    const counter = widget((props: { id: number }) => {
+      calls++
+      return text(`#${props.id}`)
+    })
+    const c = counter({ id: 1 })
+    counter({ id: 2 })
+    counter({ id: 3 })
+    // Eager construction — three instances → three body runs.
+    expect(calls).toBe(3)
+    await c.render(ctx(10))
+    // Rendering does not re-run the body.
+    expect(calls).toBe(3)
+  })
 
   test("composes inside a parent like any other Node factory", async () => {
     const tag = widget((props: { text: string }) => text(`[${props.text}]`, { width: 5 }))

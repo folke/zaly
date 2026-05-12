@@ -1,7 +1,6 @@
-import type { RenderCtx } from "../core/ctx.ts"
+import type { Node } from "../core/node.ts"
 import type { State } from "../core/state.ts"
 
-import { Node } from "../core/node.ts"
 import { createNode } from "../core/reactive.ts"
 
 /** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
@@ -56,37 +55,4 @@ export function widget<S extends object, N extends Node = Node>(
     const state = { ...stateArg, children } as State<S> & { children?: readonly Node[] }
     return createNode(() => fn(state))
   }) as (...args: WidgetArgs<State<S>>) => N
-}
-
-export class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {
-  readonly #create: (props: S) => C
-  #child?: C
-
-  constructor(fn: (props: S) => C, props: State<S>) {
-    super(props)
-    this.#create = fn
-  }
-
-  override setup() {
-    this.#child = this.#create(this.state) // runs ONCE; props is captured by closure
-    this.add(this.#child) // adopt as real child so layout/parent ops work
-  }
-
-  get child(): C {
-    if (this.#child === undefined) {
-      throw new Error(
-        "WidgetNode.child accessed before first render — body runs lazily in `_render`. " +
-          "Call `await widget.render(ctx)` first if you need to inspect the inner tree."
-      )
-    }
-    return this.#child
-  }
-
-  override layout(ctx: RenderCtx) {
-    return this.child.getLayout(ctx)
-  }
-
-  async _render(ctx: RenderCtx): Promise<string[]> {
-    return this.child.render(ctx)
-  }
 }

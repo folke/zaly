@@ -1,4 +1,3 @@
-import type { RenderCtx } from "./ctx.ts"
 import type { Node } from "./node.ts"
 
 import { AsyncLocalStorage } from "node:async_hooks"
@@ -411,39 +410,6 @@ export function useActiveOwner(): Owner | undefined {
   return activeOwnerStore.getStore()
 }
 
-/**
- * Register a per-render hook on the active owner node. The callback
- * runs synchronously at the top of every `_render` (after the
- * `visible:false` short-circuit and the cache check, before
- * `_render`). Cache-hit renders skip it — `ctx.version` only bumps on
- * theme / resize / explicit ctx changes, so a cache hit means ctx
- * hasn't meaningfully changed.
- *
- * The callback receives the live `RenderCtx` directly — width, theme,
- * version, transmit. Use this to capture per-render data (theme, style)
- * into signals that async closures (`createAsync`) can read later, since
- * those run outside the render and don't have access to ctx.
- *
- * Auto-disposes on the owner's `unmount`. Idempotent re-mount: the
- * Node's emitter cleans up on unmount but the closure stays valid; if
- * the owner mounts again, callers who want re-attachment do so
- * explicitly.
- *
- * ```ts
- * const [theme, setTheme] = signal<Theme | undefined>(undefined)
- * createRenderEffect((ctx) => setTheme(ctx.style.theme))
- * ```
- */
-export function createRenderEffect(fn: (ctx: RenderCtx) => void): void {
-  const owner = useActiveNode()
-  if (owner === undefined) {
-    throw new Error("createRenderEffect must be called inside a node render")
-  }
-  const handler = (e: { ctx: RenderCtx }): void => fn(e.ctx)
-  owner.on("render", handler)
-  owner.once("unmount", () => owner.off("render", handler))
-}
-
 /** Whether we're currently executing inside `node`'s own render call
  *  stack — i.e. this code path was reached synchronously (or via an
  *  await preserved by `AsyncLocalStorage`) from `node`'s `withActiveNode`.
@@ -637,18 +603,80 @@ export function memo<T>(fn: () => T): Accessor<T> {
   return get
 }
 
+// ---- suspense --------------------------------------------------------
+
+/**
+ * Suspense boundary handle — the value of `SuspenseContext`. Consumers
+ * (`createAsync`) call `increment` / `decrement` around in-flight work
+ * so providers (Stream's append, a `suspense()` widget) can observe
+ * "is anything pending below me".
+ *
+ * Boundaries chain: when a `suspense()` body installs its own boundary,
+ * its `parent` is the nearest ancestor boundary. Count flips at the
+ * 0→1 and 1→0 transitions propagate to the parent, so the outermost
+ * boundary's count is `> 0` iff *any* descendant has pending work —
+ * a single integer, no walks.
+ *
+ * `whenIdle` resolves when count returns to 0. Used by Stream to gate
+ * paint on resolved async; could be used by any other "wait for
+ * subtree to settle" caller.
+ */
+export type SuspenseBoundary = {
+  increment(): void
+  decrement(): void
+  active(): boolean
+  whenIdle(): Promise<void>
+}
+
+/** Nearest Suspense provider in the Owner chain. `undefined` when no
+ *  boundary is installed — `createAsync` runs fire-and-forget in that
+ *  case (signal resolves later, normal invalidation re-renders). */
+export const SuspenseContext = createContext<SuspenseBoundary | undefined>(undefined)
+
+/**
+ * Build a boundary whose count flips propagate to `parent` on the 0→1
+ * and 1→0 transitions. Used by Stream's `append` and the `suspense()`
+ * widget. Internal-ish — most callers shouldn't construct boundaries
+ * directly.
+ *
+ * @internal
+ */
+export function createSuspenseBoundary(parent?: SuspenseBoundary): SuspenseBoundary {
+  let count = 0
+  let idle: { promise: Promise<void>; resolve: () => void } | undefined
+  return {
+    active: () => count > 0,
+    decrement: () => {
+      if (count === 0) return
+      count--
+      if (count === 0) {
+        parent?.decrement()
+        idle?.resolve()
+        idle = undefined
+      }
+    },
+    increment: () => {
+      count++
+      if (count === 1) parent?.increment()
+    },
+    whenIdle: () => {
+      if (count === 0) return Promise.resolve()
+      if (idle === undefined) {
+        const { promise, resolve } = Promise.withResolvers<void>()
+        idle = { promise, resolve }
+      }
+      return idle.promise
+    },
+  }
+}
+
 // ---- async -----------------------------------------------------------
 
 /**
  * Resource-style async accessor. `fn` reads signals (tracked); the
- * effect re-fires when any of them change. Each run registers its
- * in-flight promise on the calling node's tracker so a surrounding
- * drain (`Node.render({ async: false })`) awaits it before commit.
- *
- * Must be called inside `Node.render()` or `Node.setup()` — the
- * active node owns the async work for its lifetime. The node binding
- * is captured once at call time; effect re-fires re-register against
- * the same node regardless of where the scheduler runs them.
+ * effect re-fires when any of them change. Each run notifies the
+ * nearest `SuspenseContext` so a surrounding boundary (Stream's
+ * append, a `suspense()` widget) can observe pending work.
  *
  * ```ts
  * const highlighted = createAsync(
@@ -658,19 +686,20 @@ export function memo<T>(fn: () => T): Accessor<T> {
  * text(highlighted)
  * ```
  *
- * **`fn` should not reach for per-render data** (width, theme via
- * `RenderCtx`) — the async closure runs after the render returns and
- * re-fires outside any render. Use `createRenderEffect((ctx) => ...)`
- * to capture what you need (theme, style) into a signal at render time
- * and read that signal from `fn`.
- *
  * **Stale-write protection**: each run bumps a generation counter;
  * late `.then` callbacks check it and skip `setValue` if a newer run
- * has already fired.
+ * has already fired. The boundary is decremented exactly once per
+ * increment (in the settle callback, regardless of staleness).
  *
  * **`prev`** is the previously resolved value (or `initialValue`) —
  * useful for diff-based fetches. Reading it does *not* track, so
  * resolving the new value won't re-fire the effect.
+ *
+ * **No active boundary** → increment/decrement no-op, work is
+ * fire-and-forget. Right for UI surface widgets that re-render
+ * cheaply on signal change. The Stream surface installs a boundary
+ * per appended subtree so committed-to-scrollback rows always reflect
+ * resolved values.
  */
 export function createAsync<T>(
   fn: (prev: T | undefined) => Promise<T>,
@@ -685,9 +714,8 @@ export function createAsync<T>(
   opts?: { initialValue?: T }
 ): Accessor<T | undefined> {
   const [value, setValue] = signal<T | undefined>(opts?.initialValue)
+  const suspense = useContext(SuspenseContext)
   let gen = 0
-  const node = useActiveNode()
-  if (!node) throw new Error("createAsync must be called inside a Node.render()")
   effect(() => {
     const my = ++gen
     let p: Promise<T>
@@ -695,19 +723,19 @@ export function createAsync<T>(
       p = fn(untrack(value))
     } catch (error) {
       // Sync throw inside `fn` — surface as a rejected promise so the
-      // tracker registration / cleanup path stays uniform.
+      // boundary increment / decrement path stays uniform.
       p = Promise.reject(error as Error)
     }
-    node.track(p)
+    suspense?.increment()
     p.then(
       (v) => {
-        if (my === gen) setValue(v)
+        if (my === gen) setValue(() => v)
       },
       () => {
         // Swallow — async failures leave the previous (or initial)
         // value in place.
       }
-    )
+    ).finally(() => suspense?.decrement())
   })
   return value
 }
