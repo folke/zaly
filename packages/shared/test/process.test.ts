@@ -1,5 +1,4 @@
 import { describe, expect, test } from "vitest"
-import { isSSH } from "../src/env.ts"
 import { Spawn, spawnText, spawnWithInput } from "../src/process/spawn.ts"
 import { which } from "../src/process/system.ts"
 

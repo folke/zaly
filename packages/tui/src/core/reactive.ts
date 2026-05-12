@@ -110,19 +110,19 @@ export function createContext<T>(defaultValue: T): Context<T> {
  *  the render-call sense) that read via `useContext` walk up the owner
  *  chain and find it. */
 export function provideContext<T>(ctx: Context<T>, value: T): void {
-  const frame = activeOwnerStore.getStore()
-  if (frame === undefined) {
-    throw new Error("provideContext: no active node — call from a widget body / _render")
+  const owner = activeOwnerStore.getStore()
+  if (owner === undefined) {
+    throw new Error("provideContext: no active Owner — call from a widget body / _render")
   }
-  frame.node.setContext(ctx.id, value)
+  owner.node.setContext(ctx.id, value)
 }
 
-/** Read the current value of `ctx`. Walks the owner frame chain
+/** Read the current value of `ctx`. Walks the Owner chain
  *  (render-call ancestry, not mount tree). Returns the context's
  *  default when no ancestor has provided a value. */
 export function useContext<T>(ctx: Context<T>): T {
-  for (let f = activeOwnerStore.getStore(); f !== undefined; f = f.owner) {
-    const map = f.node.contexts
+  for (let o = activeOwnerStore.getStore(); o !== undefined; o = o.parent) {
+    const map = o.node.contexts
     if (map?.has(ctx.id)) return map.get(ctx.id) as T
   }
   return ctx.defaultValue
@@ -178,20 +178,69 @@ function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F 
   return fn
 }
 
-// ---- Node integration ------------------------------------------------
+// ---- Owner -----------------------------------------------------------
 
-/** An entry in the owner chain. `owner` points at the frame that was
- *  active when this one was pushed — i.e. the render-call ancestry,
- *  *not* the mount-tree ancestry. Mount status doesn't affect this
- *  chain: a transient node used for measurement still resolves
- *  context correctly because its frame's `owner` is whichever node's
- *  render created it. */
-export interface OwnerFrame {
+/**
+ * Reactive ownership scope. Independent of mount-tree position: the
+ * chain (`parent` pointers) mirrors the render-call ancestry, not
+ * `Node.parent` — a transient node used for measurement still resolves
+ * context correctly because its Owner's `parent` is whichever node's
+ * render created it.
+ *
+ * For now there's a 1:1 mapping between `Node` and `Owner` — every
+ * Node gets its own Owner the first time `withActiveNode` is called on
+ * it, and the Owner disposes when the Node unmounts. A later refactor
+ * may relax this to "Owner only at widget / surface boundaries," at
+ * which point primitive Nodes wouldn't push their own Owner.
+ *
+ * Use `onCleanup(cb)` to register cleanups against the active Owner.
+ * Disposing the Owner runs them in reverse-registration order.
+ *
+ * @internal
+ */
+export class Owner {
+  parent?: Owner
   readonly node: Node
-  readonly owner?: OwnerFrame
+  #cleanups: (() => void)[] = []
+  #disposed = false
+
+  constructor(node: Node, parent?: Owner) {
+    this.node = node
+    this.parent = parent
+  }
+
+  get disposed(): boolean {
+    return this.#disposed
+  }
+
+  /** Register a cleanup. Runs on `dispose()`. */
+  addCleanup(fn: () => void): void {
+    if (this.#disposed) {
+      fn()
+      return
+    }
+    this.#cleanups.push(fn)
+  }
+
+  /** Fire cleanups in reverse-registration order. Idempotent. */
+  dispose(): void {
+    if (this.#disposed) return
+    this.#disposed = true
+    for (let i = this.#cleanups.length - 1; i >= 0; i--) {
+      try {
+        this.#cleanups[i]()
+      } catch (error) {
+        // Don't let one bad cleanup poison the rest.
+        // oxlint-disable-next-line no-console
+        console.error("Owner cleanup threw:", error)
+      }
+    }
+    this.#cleanups = []
+  }
 }
 
-const activeOwnerStore = new AsyncLocalStorage<OwnerFrame | undefined>()
+const activeOwnerStore = new AsyncLocalStorage<Owner | undefined>()
+const nodeOwners = new WeakMap<Node, Owner>()
 
 /** Run `fn` as the `node`'s render pass. Signal reads inside subscribe
  *  the node; subscriptions auto-clear on unmount. Stale deps across
@@ -199,14 +248,42 @@ const activeOwnerStore = new AsyncLocalStorage<OwnerFrame | undefined>()
  *  invalidations), but cheaper than re-tracking per render and
  *  harmless (invalidate is idempotent).
  *
- *  Pushes an `OwnerFrame` whose `owner` is the previously active frame,
- *  so the chain mirrors the render-call stack at this moment in time.
+ *  Establishes an `Owner` for the node (lazy, 1:1) and pushes it as
+ *  the active Owner for the duration of `fn`. `Owner.parent` is
+ *  refreshed each call to mirror the current render-call ancestry, so
+ *  `useContext` walks always see the most recent render's chain.
  *
  *  @internal */
 export function withActiveNode<T>(node: Node, fn: () => T): T {
-  // Lazy-create a stable per-node ctx: reusing the same `notify`
-  // identity means multiple reads of the same signal dedupe in its
-  // subscriber set.
+  const ctx = getNodeTrackingCtx(node)
+  const owner = getOrCreateOwner(node)
+  owner.parent = activeOwnerStore.getStore()
+  return activeOwnerStore.run(owner, () => withTracking(ctx, fn))
+}
+
+/** Run `fn` with a pre-existing Owner restored. Used by `effect` /
+ *  `memo` to re-establish their creation-time owner chain on re-fire,
+ *  so `useContext` walks the same ancestry regardless of whether the
+ *  re-fire was triggered from inside or outside a render.
+ *
+ *  @internal */
+export function withOwner<T>(owner: Owner, fn: () => T): T {
+  return activeOwnerStore.run(owner, fn)
+}
+
+function getOrCreateOwner(node: Node): Owner {
+  let owner = nodeOwners.get(node)
+  if (owner === undefined) {
+    owner = new Owner(node, activeOwnerStore.getStore())
+    nodeOwners.set(node, owner)
+    // Wire Node unmount → Owner dispose. `once` so re-mounts don't
+    // double-register; the Owner itself is idempotent on dispose.
+    node.once("unmount", () => owner!.dispose())
+  }
+  return owner
+}
+
+function getNodeTrackingCtx(node: Node): TrackingCtx {
   let ctx = nodeCtx.get(node)
   if (ctx === undefined) {
     ctx = {
@@ -217,19 +294,29 @@ export function withActiveNode<T>(node: Node, fn: () => T): T {
     }
     nodeCtx.set(node, ctx)
   }
-  const parent = activeOwnerStore.getStore()
-  const frame: OwnerFrame = { node, owner: parent }
-  return activeOwnerStore.run(frame, () => withTracking(ctx, fn))
+  return ctx
 }
 
-/** Run `fn` with a pre-existing owner frame restored. Used by
- *  `effect` / `memo` to re-establish their creation-time owner chain
- *  on re-fire, so `useContext` walks the same ancestry regardless of
- *  whether the re-fire was triggered from inside or outside a render.
+/** Register a cleanup against the active Owner. Fires when the Owner
+ *  disposes (which, in the 1:1 Node↔Owner model, means the Node
+ *  unmounts).
  *
- *  @internal */
-export function withOwnerFrame<T>(frame: OwnerFrame, fn: () => T): T {
-  return activeOwnerStore.run(frame, fn)
+ *  ```ts
+ *  function widgetBody() {
+ *    const id = setInterval(() => tick(), 1000)
+ *    onCleanup(() => clearInterval(id))
+ *    return box(…)
+ *  }
+ *  ```
+ *
+ *  Throws if called outside any active Owner — the cleanup would
+ *  never fire and the caller is almost certainly mistaken. */
+export function onCleanup(fn: () => void): void {
+  const owner = activeOwnerStore.getStore()
+  if (owner === undefined) {
+    throw new Error("onCleanup: no active Owner — call from inside a render / widget body")
+  }
+  owner.addCleanup(fn)
 }
 
 /** The `Node` whose render is currently active, or `undefined` outside
@@ -241,11 +328,11 @@ export function useActiveNode(): Node | undefined {
   return activeOwnerStore.getStore()?.node
 }
 
-/** Current owner frame, or `undefined` outside any render. Captured by
+/** Current Owner, or `undefined` outside any render. Captured by
  *  effects/memos at creation time and restored on re-fire.
  *
  *  @internal */
-export function useActiveOwner(): OwnerFrame | undefined {
+export function useActiveOwner(): Owner | undefined {
   return activeOwnerStore.getStore()
 }
 
@@ -403,11 +490,11 @@ export function effect(fn: () => void): () => void {
   let cleanups: (() => void)[] = []
   let disposed = false
 
-  // Capture the owner frame at creation time. Re-fires triggered by
-  // signal writes run in the *writer's* ALS context, which has nothing
-  // to do with where the effect was created. Restoring the captured
-  // frame on each run keeps `useContext` walking the same ancestry
-  // regardless of who triggered the re-fire.
+  // Capture the Owner at creation time. Re-fires triggered by signal
+  // writes run in the *writer's* ALS context, which has nothing to do
+  // with where the effect was created. Restoring the captured Owner on
+  // each run keeps `useContext` walking the same ancestry regardless
+  // of who triggered the re-fire.
   const owner = useActiveOwner()
 
   const ctx: TrackingCtx = {
@@ -426,17 +513,23 @@ export function effect(fn: () => void): () => void {
     cleanups = []
     for (const c of old) c()
     const tracked = (): void => withTracking(ctx, fn)
-    if (owner !== undefined) withOwnerFrame(owner, tracked)
+    if (owner !== undefined) withOwner(owner, tracked)
     else tracked()
   }
 
-  run()
-
-  return () => {
+  // Auto-dispose on owner teardown. If there's no owner, the caller
+  // owns the returned dispose function and is responsible for cleanup.
+  const dispose = (): void => {
+    if (disposed) return
     disposed = true
     for (const c of cleanups) c()
     cleanups = []
   }
+  owner?.addCleanup(dispose)
+
+  run()
+
+  return dispose
 }
 
 // ---- memo ------------------------------------------------------------
