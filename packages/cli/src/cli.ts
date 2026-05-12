@@ -95,7 +95,8 @@ export function mainCommand(cli: Cli) {
       model: {
         type: "string",
         alias: ["m"],
-        description: "Model id (provider/model). Falls back to $ZALY_MODEL / $MODEL.",
+        description:
+          "Model id (provider/model). When omitted: uses the resumed session's model, else the last model you used (saved in ~/.zaly/state.json), else a built-in fallback.",
       },
       "api-key": {
         type: "string",

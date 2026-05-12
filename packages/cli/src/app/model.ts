@@ -1,0 +1,44 @@
+import type { Config } from "../config.ts"
+import type { LoadedSession } from "./session.ts"
+
+import { readState, writeState } from "../state.ts"
+
+/** Hardcoded last-resort default. Used when there's no `--model`, no
+ *  resumed session model, and no persisted `lastModel`. Will be
+ *  replaced by an interactive picker once we ship one. */
+const FALLBACK_MODEL = "anthropic/claude-sonnet-4-6"
+
+/**
+ * Resolve the model id to use for this run. Precedence:
+ *
+ *   1. `--model X` (explicit user input) — wins always. Persists as
+ *      `lastModel` so subsequent invocations default to it.
+ *   2. Resumed session's `meta.modelId` — when continuing an existing
+ *      conversation, stick with whatever model authored it. **Not**
+ *      persisted: looking at history shouldn't silently flip the
+ *      user's global default.
+ *   3. `~/.zaly/state.json` `lastModel` — the user's implicit
+ *      preference from the last time they chose explicitly.
+ *   4. `FALLBACK_MODEL` — last-resort hardcoded id. Not persisted.
+ *
+ * Async because step 3 hits disk. State writes are best-effort and
+ * silent — losing the "last model" hint isn't worth a crash.
+ */
+export async function resolveModelId(config: Config, loaded: LoadedSession): Promise<string> {
+  if (config.model !== undefined) {
+    await writeState({ lastModel: config.model })
+    return config.model
+  }
+  const sessionModel = loaded.session?.meta.modelId
+  if (sessionModel !== undefined) return sessionModel
+  const state = await readState()
+  if (state.lastModel !== undefined) return state.lastModel
+  return FALLBACK_MODEL
+}
+
+/** Persist a new "last model" choice — used when the user switches
+ *  models mid-session via a future `/model` command. Distinct from
+ *  `resolveModelId`'s implicit writes so the call site reads cleanly. */
+export async function rememberModel(modelId: string): Promise<void> {
+  await writeState({ lastModel: modelId })
+}

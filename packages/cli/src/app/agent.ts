@@ -25,12 +25,16 @@ const DEFAULT_TOOLS = [
 /**
  * Build a fresh Agent from a resolved `Config` and a pre-loaded
  * session. Pre-loading the session lets the TUI paint replay history
- * before the agent's model + auth resolution finishes (Phase B).
+ * before the agent's model + auth resolution finishes (Phase B). The
+ * model id is resolved against the session here (not in `resolveConfig`)
+ * because the session has to be loaded async first.
  */
 export async function buildAgent(config: Config, preloaded: LoadedSession): Promise<Agent> {
   const { Agent } = await import("@zaly/agent")
   const { loadModel } = await import("@zaly/ai")
-  const model = await loadModel(config.modelId, { apiKey: config.apiKey })
+  const { resolveModelId } = await import("./model.ts")
+  const modelId = await resolveModelId(config, preloaded)
+  const model = await loadModel(modelId, { apiKey: config.apiKey })
 
   const tools = config.tools ?? [...DEFAULT_TOOLS]
   const reasoning = config.reasoning ? { effort: config.reasoning } : undefined

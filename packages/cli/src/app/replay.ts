@@ -1,12 +1,48 @@
 import type { Message, ToolResultPart } from "@zaly/ai"
-import type { Node } from "@zaly/tui"
+import type { Node, Renderer } from "@zaly/tui"
 
 import { isAttachment, justText, toParts } from "@zaly/ai"
-import { toAccessor } from "@zaly/tui"
+import { overlay, toAccessor } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
 import { toolCall } from "../widgets/tool.ts"
 import { userMessage } from "../widgets/user.ts"
+
+export async function replay(messages: readonly Message[], renderer: Renderer) {
+  const nodes = [...toWidgets(messages)]
+  const len = 5
+  const tail = nodes.splice(-len, len)
+
+  const over = renderer.overlay
+    .add(() =>
+      overlay(
+        {
+          height: renderer.terminal.rows - renderer.ui.height,
+          verticalAlign: "bottom",
+          width: renderer.terminal.cols,
+          x: 0,
+          y: 1,
+        },
+        ...tail.map((node) => node())
+      )
+    )
+    .show()
+  await renderer.render()
+
+  await Promise.resolve()
+
+  for (const node of nodes) {
+    renderer.stream.append(node)
+    // oxlint-disable-next-line no-await-in-loop
+    await Promise.resolve()
+  }
+
+  await renderer.render()
+
+  renderer.overlay.remove(over)
+  //for (const node of over.children) renderer.stream.append(() => node)
+  for (const node of tail) renderer.stream.append(node)
+}
 
 /**
  * Turn a tail of a session's messages into a stream of widget nodes.
@@ -18,7 +54,7 @@ import { userMessage } from "../widgets/user.ts"
  * messages (heartbeats, wakeups) are skipped — they're not useful
  * chrome on resume.
  */
-export function* replay(messages: readonly Message[]): Generator<() => Node> {
+function* toWidgets(messages: readonly Message[]): Generator<() => Node> {
   // Pre-index tool results by call id. Single pass — tool messages
   // always follow their assistant in the conversation, but the index
   // decouples us from that ordering assumption.

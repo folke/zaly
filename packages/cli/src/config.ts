@@ -16,7 +16,10 @@ export type ResumeRequest =
 
 export interface Config {
   cwd: string
-  modelId: string
+  /** Explicit `--model` request, if any. The actual id used for the
+   *  run is resolved later via `resolveModelId` against the session
+   *  and `~/.zaly/state.json` — this field is just the CLI input. */
+  model?: string
   apiKey?: string
   /** Tool names to expose to the agent. Falls back to the default tool
    *  list (defined in `commands/tui.ts`) when undefined. */
@@ -29,12 +32,13 @@ export interface Config {
   resume: ResumeRequest
 }
 
-/** Resolve runtime config from parsed CLI args + env. Pure — no
- *  filesystem access, no model registry, no auth. The caller (agent.ts /
- *  command handlers) consumes this to build the actual runtime. */
-export function resolveConfig(args: CliArgs, env: NodeJS.ProcessEnv = process.env): Config {
+/** Resolve runtime config from parsed CLI args. Pure — no filesystem
+ *  access, no model registry, no auth. The caller (agent.ts / command
+ *  handlers) consumes this to build the actual runtime. Model id
+ *  resolution lives in `resolveModelId` because it depends on the
+ *  resumed session, which is loaded async during Phase B. */
+export function resolveConfig(args: CliArgs): Config {
   const cwd = normPath(args.cwd ?? process.cwd())
-  const modelId = args.model ?? env.ZALY_MODEL ?? env.MODEL ?? "anthropic/claude-sonnet-4-6"
   const reasoning = (args.reasoning ?? args.thinking) as ReasoningEffort | undefined
   // `--session <x>` wins over `--resume` when both are set.
   let resume: ResumeRequest = { kind: "none" }
@@ -43,7 +47,7 @@ export function resolveConfig(args: CliArgs, env: NodeJS.ProcessEnv = process.en
   return {
     apiKey: args["api-key"],
     cwd,
-    modelId,
+    model: args.model,
     reasoning,
     resume,
     theme: args.theme,
