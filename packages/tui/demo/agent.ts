@@ -70,11 +70,7 @@ const help = overlay(
     { wrap: "none" }
   )
 )
-
-function toggleHelp(): void {
-  if (help.mounted) help.close()
-  else renderer.overlay.open(help)
-}
+renderer.overlay.add(help)
 
 // ── Actions ──────────────────────────────────────────────────────────
 // Each slash command is an action. `actionsSource` picks them up
@@ -85,7 +81,12 @@ renderer.actions.register({
   "app.plan": { name: "plan", desc: "draft a tiny plan", fn: () => dispatchReply("plan") },
   "app.review": { name: "review", desc: "review the API shape", fn: () => dispatchReply("review") },
   "app.ship": { name: "ship", desc: "write a release note", fn: () => dispatchReply("ship") },
-  "app.help": { name: "help", desc: "toggle help overlay", keys: ["ctrl-h"], fn: toggleHelp },
+  "app.help": {
+    name: "help",
+    desc: "toggle help overlay",
+    keys: ["ctrl-h"],
+    fn: () => help.toggle(),
+  },
   "app.clear": {
     name: "clear",
     desc: "clear the composer",
@@ -228,7 +229,7 @@ composer.on("submit", ({ value }, self) => {
 })
 
 renderer.start()
-renderer.overlay.open(toast)
+renderer.overlay.add(toast.show())
 setTimeout(() => {
-  if (toast.mounted) toast.close()
+  if (toast.mounted) toast.hide()
 }, 3500)

@@ -2,6 +2,7 @@ import {
   box,
   createRenderer,
   markdown,
+  memo,
   overlay,
   progress,
   signal,
@@ -64,28 +65,35 @@ const helpPanel = overlay(
     { wrap: "none" }
   )
 )
+renderer.overlay.add(helpPanel)
 
-function showToast(message: string): void {
-  const t = overlay(
-    {
-      bg: "success-700",
-      fg: "overlay",
-      padding: [0, 1],
-      width: message.length + 4,
-      x: 60,
-      y: 2,
-      zIndex: 20,
-    },
-    text(({ style }) => style.bold(message), { wrap: "none" })
-  )
-  renderer.overlay.open(t)
-  setTimeout(() => t.close(), 1800).unref()
+const [message, setMessage] = signal("")
+const toastWidth = memo(() => message().length + 4) // 2 spaces padding on each side
+
+const toast = overlay(
+  {
+    bg: "success-700",
+    fg: "overlay",
+    padding: [0, 1],
+    width: toastWidth(),
+    x: 60,
+    y: 2,
+    zIndex: 20,
+  },
+  text(({ style }) => style.bold(message()), { wrap: "none" })
+)
+
+renderer.overlay.add(toast)
+
+function showToast(m: string): void {
+  toast.state.width = toastWidth()
+  setMessage(m)
+  toast.show()
+  setTimeout(() => toast.hide(), 1800).unref()
 }
 
 renderer.bind("h", () => {
-  if (helpPanel.mounted) helpPanel.close()
-  else renderer.overlay.open(helpPanel)
-  return true
+  helpPanel.toggle()
 })
 renderer.bind("t", () => {
   showToast("toast · overlay over stream")
@@ -119,7 +127,7 @@ you can leave the help open the whole time.`,
 ]
 
 renderer.start()
-renderer.overlay.open(helpPanel)
+helpPanel.show()
 showToast("hi! overlays are up")
 
 async function main(): Promise<void> {

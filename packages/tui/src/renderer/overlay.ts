@@ -32,7 +32,7 @@ export interface OverlayDeps {
  *     so overlays that touch row 0 can disrupt scrollback.
  */
 export class OverlaySurface extends Surface {
-  readonly #active: Overlay[] = []
+  readonly #overlays: Overlay[] = []
 
   constructor(private readonly deps: OverlayDeps) {
     super()
@@ -40,52 +40,56 @@ export class OverlaySurface extends Surface {
 
   /** Active overlays in paint order (low → high z-index). */
   get active(): readonly Overlay[] {
-    return this.#active
+    return this.#overlays.filter((o) => o.visible && o.ctx !== undefined)
   }
 
-  /** Show `overlay`. No-op if it's already open. */
-  open(overlay: Overlay): this {
-    if (this.#active.includes(overlay)) return this
-    this.#active.push(overlay)
-    this.#active.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
+  add(overlay: Overlay): this {
+    if (this.#overlays.includes(overlay)) return this
+    this.#overlays.push(overlay)
+    this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
     overlay.on("invalidate", this.onDirty)
     const ctx = this.mountCtx
     if (this.running && ctx) overlay.mount(ctx)
-    this.emit("dirty")
+    if (overlay.visible) this.emit("dirty")
     return this
   }
 
-  /**
-   * Hide `overlay`. The stream's `markStale` state from the most recent
-   * paint already tells it to rewrite the overlay-covered rows on the
-   * next tick, so we only need to kick the UI into a full repaint —
-   * UI has no equivalent staleness channel and would otherwise leave
-   * overlay bytes visible on its footer.
-   */
-  close(overlay: Overlay): this {
-    const i = this.#active.indexOf(overlay)
+  remove(overlay: Overlay): this {
+    const i = this.#overlays.indexOf(overlay)
     if (i === -1) return this
     if (overlay.mounted) overlay.unmount()
-    this.#active.splice(i, 1)
+    this.#overlays.splice(i, 1)
     overlay.off("invalidate", this.onDirty)
     this.deps.ui.invalidate()
     this.emit("dirty")
     return this
   }
 
+  open(overlay: Overlay): this {
+    this.add(overlay)
+    overlay.show()
+    return this
+  }
+
+  close(overlay: Overlay): this {
+    overlay.hide()
+    this.remove(overlay)
+    return this
+  }
+
   /** Every currently-open overlay node, for renderer traversals. */
   get nodes(): readonly Node[] {
-    return this.#active
+    return this.#overlays
   }
 
   protected mountAll(ctx: MountCtx): void {
-    for (const o of this.#active) if (!o.mounted) o.mount(ctx)
+    for (const o of this.#overlays) if (!o.mounted) o.mount(ctx)
   }
 
   protected unmountAll(): void {
     // Active set is preserved so a subsequent `onStart()` remounts the
     // same stack in z-order.
-    for (const o of this.#active) if (o.mounted) o.unmount()
+    for (const o of this.#overlays) if (o.mounted) o.unmount()
   }
 
   /**
@@ -99,7 +103,7 @@ export class OverlaySurface extends Surface {
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.deps.getCtx()
     await Promise.all(
-      this.#active.map(async (o) => {
+      this.active.map(async (o) => {
         // Use the overlay's natural width if it doesn't set one (box
         // handles `fill` vs numeric); we pass ctx unchanged and let the
         // box layout decide how wide it wants to be against `ctx.width`.

@@ -1,8 +1,7 @@
 import type { Usage } from "@zaly/ai"
-import type { Reactive, Renderer } from "@zaly/tui"
+import type { Actions, Reactive } from "@zaly/tui"
 
-import { box, text } from "@zaly/tui"
-import { composer } from "./composer.ts"
+import { actionsSource, autocomplete, box, filesSource, input, text, widget } from "@zaly/tui"
 import { statusline } from "./statusline.ts"
 
 export interface UiState {
@@ -17,27 +16,25 @@ export interface UiState {
  * Returned `input` is the composer node so `app.ts` can wire its
  * `submit` / `attach` handlers.
  */
-export function appUi(
-  renderer: Renderer,
-  state: UiState
-): { input: ReturnType<typeof composer>["input"] } {
-  const c = composer(renderer)
-
-  renderer.ui.add(
+export const appUi = widget((props: { state: UiState; actions: Actions }) =>
+  box(
+    { padding: [1, 0, 0, 0] },
     box(
-      { padding: [1, 0, 0, 0] },
+      { flexDirection: "column", padding: [0, 1], style: "ui" },
+      statusline(props.state),
+      autocomplete({
+        input: "composer",
+        maxHeight: 8,
+        sources: {
+          file: filesSource(),
+          slash: actionsSource({ actions: props.actions }),
+        },
+      }),
       box(
-        { flexDirection: "column", padding: [0, 1], style: "ui" },
-        statusline(state),
-        c.autocomplete,
-        box(
-          { flexDirection: "row", gap: 1 },
-          text(({ style }) => style.primary("❯"), { width: 1 }),
-          c.input
-        )
+        { flexDirection: "row", gap: 1 },
+        text(({ style }) => style.primary("❯"), { width: 1 }),
+        input({ placeholder: "Ask zaly anything…" }).id("composer").focus()
       )
     )
   )
-
-  return { input: c.input }
-}
+)

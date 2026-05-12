@@ -65,8 +65,8 @@ export interface MountCtx {
   /** Overlay capabilities — open/close an Overlay node from inside a
    *  widget (e.g. a confirm dialog, autocomplete popover, tooltip). */
   readonly overlay: {
-    readonly open: (o: Overlay) => void
-    readonly close: (o: Overlay) => void
+    readonly add: (o: Overlay) => void
+    readonly remove: (o: Overlay) => void
   }
 
   /** Input capabilities — a narrow slice of the router. We deliberately

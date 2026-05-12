@@ -1,4 +1,4 @@
-import type { Renderer } from "@zaly/tui"
+import type { Actions } from "@zaly/tui"
 
 import { overlay, signal, text } from "@zaly/tui"
 
@@ -7,16 +7,13 @@ import { overlay, signal, text } from "@zaly/tui"
  * renders whenever an action is registered or unregistered (covers
  * Phase B agent-action registration, future `/reload-plugins`, etc.)
  */
-export function helpOverlay(renderer: Renderer): {
-  overlay: ReturnType<typeof overlay>
-  toggle: () => void
-} {
-  const [actions, setActions] = signal(renderer.actions.list())
-  renderer.actions.onChange(() => {
-    setActions(renderer.actions.list())
-  })
 
-  const o = overlay(
+export const helpOverlay = (props: { actions: Actions }) => {
+  const [actions, setActions] = signal(props.actions.list())
+  props.actions.onChange(() => {
+    setActions(props.actions.list())
+  })
+  return overlay(
     {
       border: "rounded",
       borderTitle: "help",
@@ -42,12 +39,4 @@ export function helpOverlay(renderer: Renderer): {
       { wrap: "none" }
     )
   )
-
-  return {
-    overlay: o,
-    toggle() {
-      if (o.mounted) o.close()
-      else renderer.overlay.open(o)
-    },
-  }
 }

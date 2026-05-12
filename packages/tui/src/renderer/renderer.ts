@@ -317,8 +317,8 @@ export class Renderer {
         focus: (node) => this.input.focus(node),
       },
       overlay: {
-        close: (o) => this.overlay.close(o),
-        open: (o) => this.overlay.open(o),
+        add: (o) => this.overlay.add(o),
+        remove: (o) => this.overlay.remove(o),
       },
       surface,
     }

@@ -1,4 +1,5 @@
 export type * from "./themes/types.ts"
+export type * from "./input/actions.ts"
 export * from "./core/index.ts"
 export * from "./layout/text.ts"
 export * from "./logger/index.ts"

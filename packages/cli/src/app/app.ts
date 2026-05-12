@@ -1,6 +1,6 @@
 import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
-import type { LogCallable, Theme } from "@zaly/tui"
+import type { Input, LogCallable, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Config } from "../config.ts"
 
@@ -31,7 +31,7 @@ export class App {
   readonly #config: Config
   #theme!: Theme
   #renderer!: ReturnType<typeof createRenderer>
-  #input!: ReturnType<typeof appUi>["input"]
+  #input!: Input
   #log!: LogCallable
 
   #agent?: Agent
@@ -52,28 +52,34 @@ export class App {
   static async start(cli: Cli): Promise<App> {
     const app = new App(cli.config)
     app.#theme = await cli.loadTheme()
-    app.#initRenderer()
+    await app.#initRenderer()
     app.#renderer.start()
     void app.#initSessionAndAgent()
     return app
   }
 
   /** Phase A — synchronous UI. No agent, no session. */
-  #initRenderer(): void {
+  async #initRenderer(): Promise<void> {
     this.#renderer = createRenderer({ theme: this.#theme })
-    this.#renderer.logger.install()
+    // this.#renderer.logger.install()
     this.#log = this.#renderer.log
 
     const help = helpOverlay(this.#renderer)
-    const ui = appUi(this.#renderer, {
-      busy: this.#busy.get,
-      model: this.#model.get,
-      status: this.#status.get,
-      usage: this.#usage.get,
+    this.#renderer.overlay.add(help)
+    const ui = appUi({
+      actions: this.#renderer.actions,
+      state: {
+        busy: this.#busy.get,
+        model: this.#model.get,
+        status: this.#status.get,
+        usage: this.#usage.get,
+      },
     })
-    this.#input = ui.input
+    this.#renderer.ui.add(ui)
+    await this.#renderer.render()
+    this.#input = this.#renderer.getNode("composer") as Input
 
-    registerUiActions({ renderer: this.#renderer, toggleHelp: help.toggle })
+    registerUiActions({ renderer: this.#renderer, toggleHelp: () => help.toggle() })
 
     // Submit gated on busy — typing is fine during Phase B, but Enter
     // waits for the agent to be ready.

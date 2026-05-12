@@ -29,8 +29,8 @@ export function mockMountCtx(
       focus: (node) => router.focus(node),
     },
     overlay: {
-      close: () => {},
-      open: () => {},
+      add: () => {},
+      remove: () => {},
     },
     surface,
     ...overrides,

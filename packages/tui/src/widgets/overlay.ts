@@ -3,6 +3,7 @@ import type { State } from "../core/state.ts"
 import type { BoxStyle } from "./box.ts"
 
 import { Box } from "./box.ts"
+import { widget } from "./widget.ts"
 
 export interface OverlayState extends BoxStyle {
   /** Absolute column (1-based) of the overlay's left edge. */
@@ -34,29 +35,18 @@ export class Overlay extends Box {
   override readonly type = Overlay.type
   /** Narrow `state` to the Overlay shape without re-initialising the field. */
   declare readonly state: State<OverlayState>
-
-  /**
-   * Close this overlay via the MountCtx. Symmetric counterpart to
-   * `ctx.overlay.open(overlay)` or `renderer.overlay.open(overlay)` —
-   * once open, an overlay is mounted and can dismiss itself via its
-   * own `ctx`. No-op if the overlay isn't currently open. Returns
-   * `this` for chaining.
-   *
-   * There's no corresponding `open()` method because an overlay isn't
-   * mounted until it's opened, so it has no `ctx` to reach the
-   * OverlaySurface through. Open via `ctx.overlay.open(overlay)` from
-   * a mounted widget, or `renderer.overlay.open(overlay)` from app code.
-   */
-  close(): this {
-    this.ctx?.overlay.close(this)
-    return this
-  }
 }
 
 type Child = Node | false | null | undefined
 
 export function overlay(state: State<OverlayState>, ...children: Child[]): Overlay {
-  const o = new Overlay(state)
+  const o = new Overlay({ visible: false, ...state })
   for (const c of children) if (c) o.add(c)
   return o
+}
+
+export function overl<S extends object = object, N extends Node = Node>(
+  fn: (props: State<S & OverlayState>) => N
+) {
+  return widget<S & OverlayState, N>(fn)
 }

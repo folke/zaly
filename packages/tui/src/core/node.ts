@@ -315,7 +315,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // `hadCache === true` and cascades up — otherwise a toggleable
     // panel (autocomplete, modal) whose first paint happened while
     // hidden would swallow the flip-to-visible invalidate.
-    if (!unwrap(this.state.visible ?? true)) {
+    if (!(unwrap(this.state.visible) ?? true)) {
       this.#cache = { rows: [], version: ctx.version, width: ctx.width }
       return this.#cache.rows
     }
@@ -474,6 +474,27 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   /** Release focus. No-op when not mounted. */
   blur(): this {
     this.#ctx?.input.blur()
+    return this
+  }
+
+  get visible() {
+    return unwrap(this.state.visible) ?? true
+  }
+
+  show(): this {
+    if (this.visible) return this
+    this.state.visible = true
+    return this
+  }
+
+  hide(): this {
+    if (!this.visible) return this
+    this.state.visible = false
+    return this
+  }
+
+  toggle(): this {
+    this.state.visible = !this.visible
     return this
   }
 }
