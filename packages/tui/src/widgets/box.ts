@@ -2,7 +2,6 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { State } from "../core/state.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { RowItem } from "../layout/flex.ts"
-import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
@@ -19,9 +18,18 @@ export type Padding =
 export interface BoxStyle extends Style {
   flexDirection?: "row" | "column"
   gap?: number
-  height?: Size
-  minHeight?: Size
-  maxHeight?: Size
+  /** Fixed outer height in rows. When unset, the box's height emerges
+   *  naturally from its content + padding + border. When set, the
+   *  content area is truncated or padded with blank rows to land at
+   *  exactly this many rows of *outer* height. Pair with
+   *  `verticalAlign` to control which edge is anchored. */
+  height?: number
+  /** Anchor for the content when `height` truncates or extends.
+   *  `"top"` (default) keeps the top edge: extra rows added at the
+   *  bottom, overflow truncated from the bottom. `"bottom"` keeps the
+   *  bottom edge: extra rows prepended, overflow truncated from the
+   *  top. Other CSS-like values (`middle`) are not implemented. */
+  verticalAlign?: "top" | "bottom"
   padding?: Padding
   border?: BorderSpec
   borderTitle?: string
@@ -97,6 +105,21 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     const top = Array.from({ length: padT }, () => blank)
     const bot = Array.from({ length: padB }, () => blank)
     let rows = [...top, ...contentRows, ...bot]
+
+    // Fixed-height fit. The `height` field is the outer dimension —
+    // border takes its 2 rows out before we measure against the
+    // content area; padding is already baked into `rows`. `verticalAlign`
+    // decides which end gets clipped (when too tall) or padded (when
+    // too short). Default `"top"` matches the natural reading flow.
+    if (style.height !== undefined) {
+      const innerH = Math.max(0, style.height - (hasBorder ? 2 : 0))
+      if (rows.length > innerH) {
+        rows = style.verticalAlign === "bottom" ? rows.slice(-innerH) : rows.slice(0, innerH)
+      } else if (rows.length < innerH) {
+        const filler = Array.from({ length: innerH - rows.length }, () => blank)
+        rows = style.verticalAlign === "bottom" ? [...filler, ...rows] : [...rows, ...filler]
+      }
+    }
 
     if (bchars) {
       rows = drawBorder(rows, bchars, {

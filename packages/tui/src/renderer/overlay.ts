@@ -108,9 +108,10 @@ export class OverlaySurface extends Surface {
     const ctx = this.deps.getCtx()
     await Promise.all(
       this.active.map(async (o) => {
-        // Use the overlay's natural width if it doesn't set one (box
-        // handles `fill` vs numeric); we pass ctx unchanged and let the
-        // box layout decide how wide it wants to be against `ctx.width`.
+        // Width and height are honoured by the box layout itself
+        // (`width: "fit" | number` and the `height` + `verticalAlign`
+        // pair on `BoxStyle`). We pass ctx unchanged and trust the
+        // overlay's own state to size correctly.
         const rows = await o.render(ctx)
         painted.push({ rows, x: o.state.x, y: o.state.y })
       })
