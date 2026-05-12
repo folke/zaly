@@ -1,13 +1,14 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Reactive } from "../core/reactive.ts"
+import type { Accessor, Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
+import type { MarkdownCtx } from "../markdown/renderer.ts"
 import type { MdOptions } from "../markdown/types.ts"
 import type { Image } from "./image.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
-import { unwrap } from "../core/reactive.ts"
+import { createAsync, createStore, unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
 import { MarkdownRenderer } from "../markdown/renderer.ts"
 
@@ -36,24 +37,44 @@ export class Markdown extends Node<MarkdownState> {
   readonly images = new Map<string, Image>()
 
   #renderer: MarkdownRenderer
+  /** Reactive struct mirroring `MarkdownCtx`. Per-field signals so a
+   *  width change re-fires the highlight without theme/transmit also
+   *  notifying, and value-equality short-circuits no-op writes. */
+  #ctx = createStore<MarkdownCtx>({
+    // Sentinel — `0` gates the createAsync below until `_render` fills
+    // in the real ctx on first render.
+    width: 0,
+    // Other fields filled by `_render`. They start as `undefined` and
+    // are read via the proxy as `undefined` until set.
+  } as unknown as MarkdownCtx)
+  #result: Accessor<string>
 
   constructor(state: State<MarkdownState>) {
     super(state)
     this.#renderer = new MarkdownRenderer({ ...state.options, parent: this })
-  }
-
-  async #render(ctx: RenderCtx): Promise<string> {
-    const source = unwrap(this.state.content)
-    return !hasColors
-      ? source
-      : this.#renderer.render(source, {
-          ...ctx,
-          highlight: this.state.syntax ?? true,
-        })
+    this.#result = createAsync(
+      async () => {
+        const source = unwrap(this.state.content) // tracked
+        // Per-field reads on the proxy track. Re-fires when any of:
+        // width / style / transmit / version / highlight flip value.
+        if (!hasColors || this.#ctx.width === 0) return source
+        return this.#renderer.render(source, this.#ctx)
+      },
+      { initialValue: unwrap(state.content) }
+    )
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
-    return formatText(await this.#render(ctx), {
+    // Bulk update; each underlying signal is `value === resolved`-gated,
+    // so unchanged fields don't notify the createAsync effect.
+    this.#ctx.update({
+      highlight: this.state.syntax ?? true,
+      style: ctx.style,
+      transmit: ctx.transmit,
+      version: ctx.version,
+      width: ctx.width,
+    })
+    return formatText(this.#result(), {
       width: ctx.width,
       wrap: this.state.wrap,
     })
