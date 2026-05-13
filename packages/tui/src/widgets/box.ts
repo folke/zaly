@@ -5,6 +5,7 @@ import type { RowItem } from "../layout/flex.ts"
 import type { Style } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
+import { unwrap } from "../core/reactive.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { allocateRow, isFixedWidth, padRow, stackColumn, zipRow } from "../layout/flex.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
@@ -356,7 +357,7 @@ export function box(style: State<BoxStyle>, ...children: Child[]): Box {
  * instead of collapsing into a single slot.
  */
 function layoutNodes(children: readonly Node[]): readonly Node[] {
-  return children.flatMap((c) => c.layoutNodes)
+  return children.flatMap((c) => c.layoutNodes).filter((c) => unwrap(c.state.visible) ?? true)
 }
 
 function resolvePadding(p: Padding | undefined): [t: number, r: number, b: number, l: number] {
