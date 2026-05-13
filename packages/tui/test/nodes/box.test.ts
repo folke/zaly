@@ -91,6 +91,15 @@ describe("Box — column layout (default)", () => {
     b.add(new Text({ content: "b" }))
     expect(await b.render(ctx(5))).toEqual(["a    ", "     ", "b    "])
   })
+
+  test("visible:false children do not affect fit-width layout", async () => {
+    const b = new Box({ width: "fit" })
+    b.add(new Text({ content: "wide", visible: false }))
+    b.add(new Text({ content: "x" }))
+
+    expect(b.getLayout(ctx(10))).toEqual({ minWidth: 1, width: 1 })
+    expect(await b.render(ctx(10))).toEqual(["x"])
+  })
 })
 
 describe("Box — padding", () => {
@@ -214,6 +223,16 @@ describe("Box — row layout", () => {
     b.add(new Text({ content: "b", width: 3 }))
     // outer=10, fixed+gap = 3+2+3 = 8, 2 trailing slack cells pad the row.
     expect(await b.render(ctx(10))).toEqual(["a    b    "])
+  })
+
+  test("visible:false children do not consume row width or gaps", async () => {
+    const b = new Box({ flexDirection: "row", gap: 1 })
+    b.add(new Text({ content: "a", width: 1 }))
+    b.add(new Text({ content: "hidden", visible: false, width: 6 }))
+    b.add(new Text({ content: "b", width: 1 }))
+
+    expect(b.getLayout(ctx(10))).toEqual({ minWidth: 3, width: 3 })
+    expect(await b.render(ctx(10))).toEqual(["a b       "])
   })
 
   test("different heights: shorter child padded with blanks", async () => {
