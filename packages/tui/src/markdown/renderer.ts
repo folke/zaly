@@ -55,12 +55,15 @@ export class MarkdownRenderer {
 
     let rendered = this.#render(source, callbacks, this.#opts)
     if (image) rendered = await image.resolve(ctx, rendered)
+    return this.normalizeEol(source, rendered)
+  }
 
-    // Mirror the source's trailing newlines: the renderer adds its own
-    // padding after blocks (`\n\n` after paragraphs, etc.) which would
-    // leave stray blank rows. Normalizing to what the caller typed keeps
-    // single-line inputs compact and preserves explicit spacing when
-    // they asked for it.
+  /** Mirror the source's trailing newlines: the renderer adds its own
+  /* padding after blocks (`\n\n` after paragraphs, etc.) which would
+  /* leave stray blank rows. Normalizing to what the caller typed keeps
+  /* single-line inputs compact and preserves explicit spacing when
+  /* they asked for it. */
+  normalizeEol(source: string, rendered: string): string {
     rendered = rendered.replace(/\n\n+/g, "\n\n")
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
     return rendered.replace(/\n+$/, trailing)

@@ -57,7 +57,7 @@ export class Markdown extends Node<MarkdownState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const source = unwrap(this.state.content) // tracked
     const formatted = !hasColors
-      ? source
+      ? this.#renderer.normalizeEol(source, source)
       : await this.#renderer.render(source, { ...ctx, highlighter: this.#highlighter() })
     const ret = formatText(formatted, {
       width: ctx.width,
