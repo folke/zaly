@@ -301,12 +301,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this
   }
 
-  omitFromState<K extends keyof State<T>>(...keys: K[]): Omit<State<T>, K> {
-    const result = { ...this.#state } as Omit<State<T>, K>
-    for (const k of keys) delete (result as State<T>)[k]
-    return result
-  }
-
   mount(ctx: MountCtx): this {
     if (this.#ctx?.surface === ctx.surface) return this
     if (this.#ctx) {
