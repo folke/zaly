@@ -162,10 +162,12 @@ class Shiki {
     const context = useContext(RenderContext)
     return createAsync(async () => {
       if (!hasColors) return
+      let langs = lang() ?? []
+      langs = Array.isArray(langs) ? langs : [langs]
+      if (langs.length === 0) return
       const theme = context?.style().theme.shiki
-      const status = this.status(lang() ?? [], theme)
-      if (!status.loaded && status.missing.langs.length)
-        await this.load(status.missing.langs, status.missing.themes)
+      const status = this.status(langs, theme)
+      if (!status.loaded) await this.load(status.missing.langs, status.missing.themes)
       return this.highlighter(theme)
     })
   }
