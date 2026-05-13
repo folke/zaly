@@ -2,11 +2,11 @@ import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
-import type { Ref } from "./reactive.ts"
+import type { Ref, SignalStore } from "./reactive.ts"
 import type { Layout, State } from "./state.ts"
 
 import { Emitter } from "@zaly/shared"
-import { inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
+import { createStore, inRenderContextOf, unwrap, withActiveNode } from "./reactive.ts"
 
 /** Minimum event map every node carries. Custom event maps intersect
  *  this with their own events via `&`. */
@@ -24,14 +24,21 @@ export type BaseEvents = {
 
 /**
  * Public Node handle. Calling `render(ctx)` returns the node's rows from the
- * per-node cache, recomputing only if state has changed since the last call.
+ * per-node cache, recomputing only if state read inside `_render` has changed
+ * since the last call.
  *
  * Concrete subclasses implement the protected `_render(ctx)` hook; the public
  * `render` is the caching wrapper around it.
  *
- * State is a shallow Proxy: `n.state.field = value` auto-invalidates. Writes
- * through nested objects/arrays (`n.state.padding[0] = 1`) do NOT — reassign
- * the whole field instead.
+ * State is a `createStore` proxy: reads inside `_render` track per-field;
+ * mutating a read field invalidates this node. Three write forms:
+ *
+ *   - `n.state.field = value`               (direct assignment)
+ *   - `n.state.set({ field: value, ... })`  (patch — partial merge)
+ *   - `n.state.set(current => ({ ... }))`   (updater — receives untracked current)
+ *
+ * Writes through nested objects/arrays (`n.state.padding[0] = 1`) do NOT —
+ * reassign the whole field instead.
  */
 export abstract class Node<T extends object = object, E extends {} = {}> extends Emitter<
   BaseEvents,
@@ -48,8 +55,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
    *  cache miss and re-renders against the latest state. */
   #invalidations = 0
   readonly #children: Node[] = []
-  readonly #state: State<T>
-  readonly state: State<T>
+  #state: SignalStore<T>
   #ctx?: MountCtx
   #id?: string
   actions?: ActionMap
@@ -58,16 +64,18 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   constructor(state: State<T>, ...children: Node[]) {
     super()
-    this.#state = state
-    this.state = new Proxy(state, {
-      set: (target, key, value) => {
-        if (Reflect.get(target, key) === value) return true
-        Reflect.set(target, key, value)
-        this.invalidate()
-        return true
-      },
-    })
+    // `createStore` gives us per-field reactivity for free: reads
+    // inside `_render` subscribe via the rendering Node's tracking
+    // ctx, so mutating a read field invalidates exactly this node.
+    // Fields nobody reads never allocate a signal — mutation is just
+    // a state update with no cascade. Finer-grained than the old
+    // "any write invalidates everything" Proxy.
+    this.#state = createStore(state)
     children.forEach((c) => this.add(c))
+  }
+
+  get state(): SignalStore<T> & State<T> {
+    return this.#state
   }
 
   get children(): readonly Node[] {
@@ -142,16 +150,10 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   }
 
   setState(patch: Partial<State<T>>): this {
-    let changed = false
-    const target = this.#state as Record<string, unknown>
-    for (const key of Object.keys(patch)) {
-      const next = (patch as Record<string, unknown>)[key]
-      if (target[key] !== next) {
-        target[key] = next
-        changed = true
-      }
-    }
-    if (changed) this.invalidate()
+    // Thin compat shim — `this.state.set(patch)` does the same
+    // diff-and-notify work per field. Will be removed once callers
+    // migrate to `this.state.set` directly.
+    this.state.set(patch)
     return this
   }
 
@@ -308,6 +310,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
         `Node is already mounted on "${this.#ctx.surface}" (requested "${ctx.surface}"). Unmount first if you meant to move it.`
       )
     }
+    // Make sure state.visible is tracked and will trigger invalidate
+    withActiveNode(this, () => unwrap(this.state.visible))
     this.#ctx = ctx
     this.#registerActionMeta(ctx)
     this.emit("mount")

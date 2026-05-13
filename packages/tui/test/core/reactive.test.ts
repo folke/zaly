@@ -199,7 +199,7 @@ describe("createStore", () => {
     expect(s.b).toBe("hi")
   })
 
-  test("update only fires effects for fields that changed", () => {
+  test("patch form only fires effects for fields that changed", () => {
     const s = createStore<{ a: number; b: number }>({ a: 1, b: 2 })
     let aReads = 0
     let bReads = 0
@@ -213,22 +213,55 @@ describe("createStore", () => {
     })
     expect(aReads).toBe(1)
     expect(bReads).toBe(1)
-    s.update({ a: 99, b: 2 }) // b unchanged
+    s.set({ a: 99, b: 2 }) // b unchanged
     expect(aReads).toBe(2)
     expect(bReads).toBe(1) // no notify on equal value
-    s.update({ a: 99 }) // a unchanged
+    s.set({ a: 99 }) // a unchanged
     expect(aReads).toBe(2)
     expect(bReads).toBe(1)
   })
 
-  test("store-typed function fields don't get invoked as updaters", () => {
+  test("assignment form works the same as a patch", () => {
+    const s = createStore<{ a: number; b: number }>({ a: 1, b: 2 })
+    let runs = 0
+    effect(() => {
+      void s.a
+      runs++
+    })
+    expect(runs).toBe(1)
+    s.a = 5
+    expect(runs).toBe(2)
+    expect(s.a).toBe(5)
+    s.a = 5 // no-op (value equality)
+    expect(runs).toBe(2)
+  })
+
+  test("updater form receives untracked current state", () => {
+    const s = createStore<{ a: number; b: number }>({ a: 1, b: 2 })
+    let runs = 0
+    effect(() => {
+      // Only read `a` so this effect is subscribed solely to `a`.
+      void s.a
+      runs++
+    })
+    expect(runs).toBe(1)
+    // The updater reads `b` from `current`, but `current` is the raw
+    // state object — no tracking — so this effect must NOT re-fire on
+    // `b` changes initiated by it.
+    s.set((c) => ({ a: c.a + c.b }))
+    expect(s.a).toBe(3)
+    expect(runs).toBe(2) // only because `a` itself was set
+    s.set((c) => ({ b: c.b + 1 }))
+    expect(s.b).toBe(3)
+    expect(runs).toBe(2) // `a` unchanged, no extra fire
+  })
+
+  test("function-typed fields don't get invoked as updaters", () => {
     type Ctx = { fn: () => string }
     const s = createStore<Ctx>({ fn: () => "first" })
     // oxlint-disable-next-line unicorn/consistent-function-scoping
     const replacement = (): string => "second"
-    s.set("fn", replacement)
-    // The stored value must be the function itself, not the result of
-    // invoking it. Spread also exposes it correctly.
+    s.set({ fn: replacement })
     expect(s.fn).toBe(replacement)
     expect(s.fn()).toBe("second")
     expect({ ...s }.fn).toBe(replacement)
@@ -236,12 +269,9 @@ describe("createStore", () => {
 
   test("spread yields the current values of every field", () => {
     const s = createStore<{ a: number; b: string }>({ a: 1, b: "hi" })
-    s.update({ a: 7, b: "there" })
+    s.set({ a: 7, b: "there" })
     const plain = { ...s }
     expect(plain).toEqual({ a: 7, b: "there" })
-    // `set` / `update` must not leak into the spread payload.
-    expect("set" in plain).toBe(false)
-    expect("update" in plain).toBe(false)
   })
 
   test("spread inside a tracked scope subscribes per spread field", () => {
@@ -253,7 +283,7 @@ describe("createStore", () => {
       runs++
     })
     expect(snapshot).toEqual({ a: 1, b: "hi" })
-    s.set("a", 2)
+    s.a = 2
     expect(runs).toBe(2)
     expect(snapshot).toEqual({ a: 2, b: "hi" })
   })

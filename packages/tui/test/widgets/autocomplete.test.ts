@@ -14,6 +14,7 @@ const ctx: RenderCtx = createCtx({ theme, width: 40 })
 describe("autocomplete", () => {
   test("renders nothing when no trigger matches", async () => {
     const i = input({ value: "hello" })
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
@@ -29,6 +30,7 @@ describe("autocomplete", () => {
 
   test("detects trigger and calls complete with query", async () => {
     const i = input({})
+    await i.render(ctx)
     const complete = vi.fn(() => [{ value: "/help" }, { value: "/hello" }])
     const ac = autocomplete({
       input: i,
@@ -48,6 +50,7 @@ describe("autocomplete", () => {
 
   test("select replaces trigger + query in input with item.value", async () => {
     const i = input({})
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
@@ -66,6 +69,7 @@ describe("autocomplete", () => {
 
   test("complete event fires with source name + item", async () => {
     const i = input({})
+    await i.render(ctx)
     const cb = vi.fn()
     const item: MenuItem = { value: "/quit" }
     const ac = autocomplete({
@@ -83,6 +87,7 @@ describe("autocomplete", () => {
 
   test("cancel hides the menu until a new trigger reopens it", async () => {
     const i = input({})
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
@@ -103,6 +108,7 @@ describe("autocomplete", () => {
 
   test("trigger regex on word-boundary (@mention) works mid-text", async () => {
     const i = input({})
+    await i.render(ctx)
     const complete = vi.fn(() => [{ value: "@bob" }])
     const ac = autocomplete({
       input: i,
@@ -119,6 +125,7 @@ describe("autocomplete", () => {
 
   test("first matching source wins when multiple could apply", async () => {
     const i = input({})
+    await i.render(ctx)
     const slashComplete = vi.fn(() => [{ value: "/slash" }])
     const otherComplete = vi.fn(() => [{ value: "/other" }])
     autocomplete({
@@ -138,6 +145,7 @@ describe("autocomplete", () => {
 
   test("routes up/down/enter/esc to the menu while open", async () => {
     const i = input({})
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
@@ -182,6 +190,7 @@ describe("autocomplete", () => {
 
   test("accept returning undefined clears the trigger+query range (side-effect source)", async () => {
     const i = input({})
+    await i.render(ctx)
     const onAccept = vi.fn(() => undefined)
     const ac = autocomplete({
       input: i,
@@ -206,6 +215,7 @@ describe("autocomplete", () => {
 
   test("accept returning a string replaces the trigger+query range", async () => {
     const i = input({})
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
@@ -226,6 +236,7 @@ describe("autocomplete", () => {
 
   test("closes when trigger no longer matches", async () => {
     const i = input({})
+    await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {

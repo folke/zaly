@@ -28,11 +28,9 @@ describe("NodeBase", () => {
     expect(n.state.count).toBe(3)
   })
 
-  test("fresh node still emits on state mutation so surfaces can pick up first render", async () => {
-    // Emit is unconditional — surfaces (Stream, UI) subscribe before
-    // the first render, and need to be told that a not-yet-rendered
-    // node wants a flush. They dedupe internally.
+  test("updating a Node's state triggers invalidate", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
+    await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.state.text = "bye"
@@ -104,13 +102,13 @@ describe("NodeBase", () => {
     expect(rows2).toEqual(["hi:0:20"])
   })
 
-  test("setState batches multiple fields into one invalidate", async () => {
+  test("setState invalidates on every field change", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
     await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
     n.setState({ count: 10, text: "new" })
-    expect(fn).toHaveBeenCalledTimes(1)
+    expect(fn).toHaveBeenCalledTimes(2)
     expect(n.state.text).toBe("new")
     expect(n.state.count).toBe(10)
   })
