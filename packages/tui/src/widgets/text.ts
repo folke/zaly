@@ -35,14 +35,11 @@ export interface TextStyle extends Style {
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
     const content = this.content(ctx)
-
-    const rows = formatText(content, {
+    return formatText(content, {
+      style: ctx.style.add(this.state),
       width: ctx.width,
       wrap: this.state.wrap,
     })
-
-    const style = ctx.style.add(this.state)
-    return rows.map((row) => style(row))
   }
 
   content(ctx: RenderCtx): string {

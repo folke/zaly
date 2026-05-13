@@ -7,7 +7,7 @@ import type { Size } from "../layout/size.ts"
 
 import { Node } from "../core/node.ts"
 import { clipboard } from "../input/clipboard.ts"
-import { Text } from "./text.ts"
+import { formatText } from "../layout/text.ts"
 
 export interface InputState extends StyleState {
   /** Current text content. May include `\n` for multi-line input. */
@@ -88,7 +88,6 @@ export class Input extends Node<InputState, InputEvents> {
 
   override readonly type = Input.type
   #focused = false
-  #text: Text
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -236,15 +235,6 @@ export class Input extends Node<InputState, InputEvents> {
       this.#focused = false
       this.invalidate()
     })
-    // Drop Input-only control fields before handing state to the
-    // child Text. Without this, `focus: true` would autofocus the
-    // Text instead of the Input on mount (children mount after their
-    // parent, so the Text's autofocus would override the Input's).
-    this.#text = new Text({
-      ...this.omitFromState("cursor", "placeholder", "value", "visible"),
-      content: "",
-    })
-    this.add(this.#text)
   }
 
   // Fallback path for anything the router couldn't resolve to a named
@@ -301,14 +291,11 @@ export class Input extends Node<InputState, InputEvents> {
       content = value
     }
 
-    // Forward the non-content InputState fields that Text understands
-    // (bg/fg/attrs via Style, plus width). Keep `wrap: "word"` as the
-    // default for a pleasant chat-style input.
-    this.#text.setState({
-      ...this.omitFromState("cursor", "placeholder", "value", "visible"),
-      content,
+    return formatText(content, {
+      style: ctx.style.add(this.state),
+      width: ctx.width,
+      wrap: "none",
     })
-    return this.#text.render(ctx)
   }
 }
 

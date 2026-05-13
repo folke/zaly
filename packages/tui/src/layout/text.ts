@@ -8,10 +8,13 @@ export type WrapMode = "word" | "char" | "none"
 
 const ELLIPSIS = "…"
 
-export function formatText(text: string, opts: { wrap?: WrapMode; width: number }): string[] {
+export function formatText(
+  text: string,
+  opts: { wrap?: WrapMode; width: number; style?: StyleBuilder }
+): string[] {
   const mode = opts.wrap ?? "word"
   text = mode === "none" ? text : wrapAnsi(text, opts.width, { mode })
-  return splitAnsi(text)
+  return splitAnsi(text).map((line) => (opts.style ? opts.style(line) : line))
 }
 
 export function formatLines(
