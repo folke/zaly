@@ -1,14 +1,16 @@
 import type { Agent } from "@zaly/agent"
 import type { StreamEvent, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Renderer, Setter } from "@zaly/tui"
+import type { Renderer, Setter, Signal } from "@zaly/tui"
+import type { ToolCallProps } from "../widgets/tool.ts"
 
 import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
-import { toolCall } from "../widgets/tool.ts"
+import { toolCalls } from "../widgets/tool.ts"
 
-interface ActiveTool {
-  setResult: (next: ToolResult | undefined) => void
+interface ActiveTools {
+  done: Signal<boolean>
+  results: Map<string, Setter<ToolResult | undefined>>
 }
 
 interface ActiveWidget {
@@ -27,7 +29,7 @@ interface ActiveWidget {
  */
 export function bindStream(renderer: Renderer, agent: Agent): () => void {
   let active: ActiveWidget | undefined
-  const tools = new Map<string, ActiveTool>()
+  let tools: ActiveTools | undefined
 
   const update = (type: "text" | "reasoning", delta: string): void => {
     if (active?.type !== type) active = undefined
@@ -49,30 +51,38 @@ export function bindStream(renderer: Renderer, agent: Agent): () => void {
     }
   }
 
-  const onCall = (e: { call: ToolCallPart }): void => {
+  const onCalls = (e: { calls: ToolCallPart[] }): void => {
     active = undefined
-    const [result, setResult] = signal<ToolResult | undefined>(undefined)
-    renderer.stream.append(() => toolCall({ call: e.call, result }))
-    tools.set(e.call.id, { setResult })
+    const done = signal(false)
+    tools = { done, results: new Map() }
+    const children: ToolCallProps[] = []
+
+    for (const call of e.calls) {
+      const [result, setResult] = signal<ToolResult | undefined>(undefined)
+      tools.results.set(call.id, setResult)
+      children.push({ call, result })
+    }
+    renderer.stream.append(() => toolCalls({ calls: children, done: done.get }))
   }
 
   const onResult = (e: { call: ToolCallPart; result: ToolResult }): void => {
-    tools.get(e.call.id)?.setResult(e.result)
-    tools.delete(e.call.id)
+    tools?.results.get(e.call.id)?.(e.result)
   }
 
   const onStep = (): void => {
     active = undefined
+    tools?.done.set(true)
+    tools = undefined
   }
 
   agent.on("stream-event", onStream)
-  agent.on("tool-call", onCall)
+  agent.on("tool-calls", onCalls)
   agent.on("tool-result", onResult)
   agent.on("step-end", onStep)
 
   return () => {
     agent.off("stream-event", onStream)
-    agent.off("tool-call", onCall)
+    agent.off("tool-calls", onCalls)
     agent.off("tool-result", onResult)
     agent.off("step-end", onStep)
   }

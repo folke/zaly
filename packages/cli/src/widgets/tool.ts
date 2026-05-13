@@ -3,9 +3,16 @@ import type { Accessor } from "@zaly/tui"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
-import { box, inspect, memo, show, text, truncateAnsi, unwrap } from "@zaly/tui"
+import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui"
 import { bubble } from "./bubble.ts"
 import { toolResult } from "./tools/registry.ts"
+
+export type ToolCallProps = {
+  call: ToolCallPart
+  result: Accessor<ToolResult | undefined>
+  summary?: Accessor<boolean>
+}
+
 /**
  * Tool-call block: name + intent on top, params preview, then a status
  * line that flips from running to ✓/✗ once the result arrives. The
@@ -17,10 +24,7 @@ import { toolResult } from "./tools/registry.ts"
  * the call is in flight and the resolved `ToolResult` once it completes.
  * The status icon and the result body update automatically.
  */
-export const toolCall = (props: {
-  call: ToolCallPart
-  result: Accessor<ToolResult | undefined>
-}) => {
+export const toolCall = widget((props: ToolCallProps) => {
   const { call } = props
   const { description: desc, ...params } =
     safeParseToolParams<Tool<{ description: string } & Record<string, unknown>>>(call.params) ?? {}
@@ -30,6 +34,10 @@ export const toolCall = (props: {
     if (r === undefined) return "tool_pending"
     return r.isError ? "tool_error" : "tool_success"
   })
+
+  const isError = memo(() => props.result()?.isError ?? false)
+
+  const full = memo(() => !(unwrap(props.summary) ?? false))
 
   return bubble(
     { type: status },
@@ -47,20 +55,24 @@ export const toolCall = (props: {
         return `${style.primary.bold(call.name)}(${truncateAnsi(json, Math.min(80, width))})`
       }),
       // Optional description, dimmed
+      text(({ style }) => style.dim(desc ?? ""), { visible: desc !== undefined }),
       show(
-        { when: desc !== undefined },
-        text(({ style }) => style.dim(desc ?? ""))
-      ),
-      // Result body, once it arrives
-      toolResult({ call: props.call, params, result: props.result }),
-      show(
-        { when: memo(() => props.result()?.isError) },
-        text(({ style }) =>
-          style.error(
-            `${props.result()?.error?.code}: ${props.result()?.error?.message ?? "Unknown error"}`
-          )
+        { when: full },
+        // Result body, once it arrives
+        toolResult({ call: props.call, params, result: props.result }),
+        text(
+          ({ style }) =>
+            style.error(
+              `${props.result()?.error?.code}: ${props.result()?.error?.message ?? "Unknown error"}`
+            ),
+          { visible: isError }
         )
       )
     )
   )
-}
+})
+
+export const toolCalls = widget((props: { calls: ToolCallProps[]; done: Accessor<boolean> }) => {
+  const pending = memo(() => !props.done() && props.calls.some((c) => c.result() === undefined))
+  return box({}, ...props.calls.map((call) => toolCall({ ...call, summary: pending })))
+})
