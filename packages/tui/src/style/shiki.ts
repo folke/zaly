@@ -6,6 +6,9 @@ import type {
 } from "shiki/types"
 import type { AnsiStyle, HexColor } from "./types.ts"
 
+import { hasColors } from "@zaly/shared/env"
+import { RenderContext } from "../core/ctx.ts"
+import { createAsync, useContext } from "../core/reactive.ts"
 // oxlint-disable-next-line no-restricted-imports
 import { isShikiLang, isShikiTheme } from "../schemas/index.ts"
 import { openAnsi, RESET } from "./ansi.ts"
@@ -15,7 +18,7 @@ export type CodeToAnsiOptions = {
   langs: string[]
 }
 
-export type AnsiHighlighter = (code: string, lang: string) => string
+export type AnsiHighlighter = (code: string, lang?: string) => string
 
 export type ShikiStatus =
   | { loaded: true }
@@ -141,7 +144,7 @@ class Shiki {
   }
 
   highlighter(theme?: ShikiTheme): AnsiHighlighter {
-    return (code: string, lang: string) => this.highlight(code, lang, theme)
+    return (code: string, lang?: string) => (lang ? this.highlight(code, lang, theme) : code)
   }
 
   isLang(lang: string): lang is ShikiLanguage {
@@ -150,6 +153,21 @@ class Shiki {
 
   isTheme(theme: string): theme is ShikiTheme {
     return isShikiTheme(theme)
+  }
+
+  /** Must be called from inside a widget body (or any scope under the
+   *  Renderer's root Owner) — uses `useContext(RenderContext)` to read
+   *  the current theme. Outside such scope, falls back to default theme. */
+  createLoader(lang: () => string | string[] | undefined) {
+    const context = useContext(RenderContext)
+    return createAsync(async () => {
+      if (!hasColors) return
+      const theme = context?.style().theme.shiki
+      const status = this.status(lang() ?? [], theme)
+      if (!status.loaded && status.missing.langs.length)
+        await this.load(status.missing.langs, status.missing.themes)
+      return this.highlighter(theme)
+    })
   }
 }
 

@@ -7,12 +7,12 @@ import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { Image } from "./image.ts"
 
 import { hasColors } from "@zaly/shared/env"
-import { RenderContext } from "../core/ctx.ts"
 import { Node } from "../core/node.ts"
-import { createAsync, unwrap, useContext } from "../core/reactive.ts"
+import { memo, unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
 import { shikiCodeLangs } from "../markdown/code.ts"
 import { MarkdownRenderer } from "../markdown/renderer.ts"
+import { shiki } from "../style/shiki.ts"
 
 export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
@@ -39,29 +39,17 @@ export class Markdown extends Node<MarkdownState> {
   readonly images = new Map<string, Image>()
 
   #renderer: MarkdownRenderer
-  #highlighter: Accessor<AnsiHighlighter | boolean>
+  #highlighter: Accessor<AnsiHighlighter | undefined>
 
   constructor(state: State<MarkdownState>) {
     super(state)
     this.#renderer = new MarkdownRenderer({ ...state.options, parent: this })
 
-    const context = useContext(RenderContext)
-
-    this.#highlighter = createAsync(
-      async () => {
-        const source = unwrap(this.state.content) // tracked
-        // Per-field reads on the proxy track. Re-fires when any of:
-        // width / style / transmit / version / highlight flip value.
-        if (!hasColors || this.state.syntax === false) return false
-        const langs = shikiCodeLangs(source)
-        if (langs.length === 0) return false
-        const { shiki } = await import("../style/shiki.ts")
-        const theme = context?.theme().shiki
-        await shiki.load(langs, theme)
-        return shiki.highlighter(theme)
-      },
-      { initialValue: false }
+    const langs = memo(() =>
+      this.state.syntax === false ? [] : shikiCodeLangs(unwrap(this.state.content))
     )
+
+    this.#highlighter = shiki.createLoader(() => langs())
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {

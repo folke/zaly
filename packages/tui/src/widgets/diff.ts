@@ -1,15 +1,17 @@
-// oxlint-disable no-nested-ternary
-// oxlint-disable typescript/no-unnecessary-condition
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Reactive } from "../core/reactive.ts"
+import type { Accessor, Reactive } from "../core/reactive.ts"
 import type { Layout } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
+import type { AnsiHighlighter } from "../style/shiki.ts"
 
 import { basename, extname } from "pathe"
+// oxlint-disable no-nested-ternary
+// oxlint-disable typescript/no-unnecessary-condition
 import { Node } from "../core/node.ts"
-import { unwrap } from "../core/reactive.ts"
+import { memo, unwrap } from "../core/reactive.ts"
 import { calcLayout, countLines } from "../layout/text.ts"
 import { splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
+import { shiki } from "../style/shiki.ts"
 
 export interface DiffState {
   /** Pre-state file content. Plain string or reactive accessor —
@@ -30,6 +32,8 @@ export interface DiffState {
   wrap?: WrapMode
 }
 
+type DiffHighlighter = (code: string) => string
+
 /**
  * Show a unified diff between two file contents with syntax-highlighted
  * rows. Added rows carry a green backdrop and `+` prefix; removed rows
@@ -42,11 +46,28 @@ export interface DiffState {
  * don't get truncated by the hunk window.
  */
 export class Diff extends Node<DiffState> {
+  #highlighter: Accessor<AnsiHighlighter | undefined>
+  #lang: Accessor<string | undefined>
+
+  constructor(state: DiffState) {
+    super({ wrap: "word", ...state })
+
+    this.#lang = memo(() => {
+      const path = unwrap(this.state.path)
+      return this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
+    })
+
+    this.#highlighter = shiki.createLoader(() => this.#lang())
+  }
+
   protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const path = this.state.path === undefined ? undefined : unwrap(this.state.path)
-    const lang = this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
     this.state.wrap ??= "word"
-    return await buildDiffRows(ctx, this.state, lang)
+    const hl = this.#highlighter()
+    return await buildDiffRows(
+      ctx,
+      this.state,
+      hl ? (code: string) => hl(code, this.#lang()) : undefined
+    )
   }
 
   override layout(): Layout {
@@ -90,7 +111,7 @@ type DiffRow =
 async function buildDiffRows(
   ctx: RenderCtx,
   state: DiffState,
-  lang: string | undefined
+  highlight?: DiffHighlighter
 ): Promise<string[]> {
   const context = state.context ?? 3
   // Normalize line endings on both sides — a CRLF-vs-LF mismatch would
@@ -106,7 +127,9 @@ async function buildDiffRows(
   const { diffArrays } = await import("diff")
   const segments = diffArrays(origLines, modLines)
 
-  const { origHi, editedHi: modHi } = await highlightPair(ctx, lang, origLines, modLines)
+  const { origHi, editedHi: modHi } = highlight
+    ? await highlightPair(highlight, origLines, modLines)
+    : { editedHi: modLines, origHi: origLines }
 
   // Annotate each line in the diff with its kind + (orig, mod) indices.
   // The flattened list is the row-order the diff would print without
@@ -175,19 +198,13 @@ async function buildDiffRows(
 }
 
 async function highlightPair(
-  ctx: RenderCtx,
-  lang: string | undefined,
+  highlight: DiffHighlighter,
   origLines: string[],
   modLines: string[]
 ): Promise<{ origHi: string[]; editedHi: string[] }> {
-  const { shiki } = await import("../style/shiki.ts")
-  if (lang === undefined || lang === "" || !shiki.isLang(lang)) {
-    return { editedHi: modLines, origHi: origLines }
-  }
   try {
-    await shiki.load(lang, ctx.style.theme.shiki)
     const splitHi = (src: string[]): string[] => {
-      const out = shiki.highlight(src.join("\n"), lang, ctx.style.theme.shiki)
+      const out = highlight(src.join("\n"))
       // Shiki appends a trailing "\n"; drop it so split yields the same
       // number of lines as the input.
       return out.replace(/\n$/, "").split("\n")

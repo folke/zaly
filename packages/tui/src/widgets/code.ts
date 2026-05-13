@@ -1,13 +1,12 @@
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/types.ts"
-import type { Theme } from "../themes/types.ts"
 
-import { hasColors } from "@zaly/shared/env"
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
-import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
+import { memo, unwrap, useContext } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
+import { shiki } from "../style/shiki.ts"
 import { box } from "./box.ts"
 import { show } from "./show.ts"
 import { text } from "./text.ts"
@@ -65,17 +64,16 @@ export const code = widget((props: State<CodeState>) => {
 
   const context = useContext(RenderContext)
 
+  const highlighter = shiki.createLoader(() => (syntax && lang ? [lang] : []))
+
   const title = memo(() => unwrap(props.title) ?? path)
-  const body = createAsync(
-    async () => {
-      const source = unwrap(props.code) // tracked
-      if (!hasColors) return source
-      const t = context?.style().theme
-      if (!syntax || !lang || t === undefined) return source
-      return await highlightSource(source, lang, t)
-    },
-    { initialValue: unwrap(props.code) }
-  )
+
+  const body = memo(() => {
+    const source = unwrap(props.code) // tracked
+    const hl = highlighter()
+    const out = hl ? hl(source.replace(/\n+$/, ""), lang) : source
+    return out.replace(/\n+$/, "")
+  })
 
   const formatted = memo(() =>
     formatLines(body(), {
@@ -102,14 +100,3 @@ export const code = widget((props: State<CodeState>) => {
     text(formatted, { wrap: "none" })
   )
 })
-
-async function highlightSource(source: string, lang: string, theme?: Theme): Promise<string> {
-  try {
-    const { shiki } = await import("../style/shiki.ts")
-    await shiki.load([lang], theme?.shiki)
-    const out = shiki.highlight(source.replace(/\n+$/, ""), lang, theme?.shiki)
-    return out.replace(/\n+$/, "")
-  } catch {
-    return source
-  }
-}
