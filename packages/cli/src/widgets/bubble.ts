@@ -1,6 +1,6 @@
 import type { AnyStyle, Node, Reactive } from "@zaly/tui"
 
-import { box, text, unwrap, widget } from "@zaly/tui"
+import { box, memo, text, unwrap, widget } from "@zaly/tui"
 
 type Bubble = {
   icon: string
@@ -25,13 +25,13 @@ export type BubbleProps = {
 }
 
 export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) => {
-  const b = bubbles[unwrap(props.type)] as Bubble
-  const tvpad = b.highlight ? 1 : 0
+  const b = memo(() => bubbles[unwrap(props.type)] as Bubble)
+  const tvpad = b().highlight ? 1 : 0
   return box(
     { padding: [1, 0, 0, 0], width: "fill" },
     box(
-      { flexDirection: "row", padding: [tvpad, 0, tvpad, 1], style: b.highlight, width: "fill" },
-      text(({ style }) => style.add(b.style)(b.icon)),
+      { flexDirection: "row", padding: [tvpad, 0, tvpad, 1], style: b().highlight, width: "fill" },
+      text(({ style }) => style.add(b().style)(b().icon)),
       box({ flexDirection: "column", padding: [0, 1], style: props.style }, ...children)
     )
   )
