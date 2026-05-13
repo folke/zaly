@@ -12,7 +12,7 @@ const bubbles = {
   assistant: { icon: "●", style: "white" },
   reasoning: { icon: "∴", style: "quiet" },
   tool_error: { icon: "●", style: "error" },
-  tool_pending: { icon: "●", style: "muted" },
+  tool_pending: { icon: "●", style: "info" },
   tool_success: { icon: "●", style: "success" },
   user: { highlight: "highlight", icon: "●", style: "primary" },
 } as const satisfies Record<string, Bubble>
