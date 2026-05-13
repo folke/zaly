@@ -4,8 +4,8 @@
 
 ```ts
 
-import { BundledLanguage } from 'shiki';
-import { BundledTheme } from 'shiki';
+import { BundledLanguage } from 'shiki/types';
+import { BundledTheme } from 'shiki/types';
 import { Dirent } from 'node:fs';
 import { Emitter } from '@zaly/shared';
 import { InspectOptions as InspectOptions_2 } from 'node:util';
@@ -22,6 +22,50 @@ export type Accessor<T> = (() => T) & {
 export type ActionCompletionItem = ActionInfo & {
     id: string;
 };
+
+// @public
+export interface ActionCtx {
+    readonly id: string;
+    readonly key?: RoutedKey;
+    readonly node?: Node;
+    readonly source: "key" | "programmatic" | (string & {});
+    readonly target?: Node;
+}
+
+// @public
+export interface ActionInfo {
+    // (undocumented)
+    desc?: string;
+    // (undocumented)
+    fn?: (ctx: ActionCtx) => void;
+    // (undocumented)
+    hidden?: boolean;
+    // (undocumented)
+    keys?: readonly KeyPattern[];
+    // (undocumented)
+    name?: string;
+}
+
+// @public
+export type ActionMap = Record<string, NodeAction>;
+
+// @public
+export class Actions {
+    buildKeymap(): Map<string, string[]>;
+    dispatch(id: string, partial?: Partial<ActionCtx>): boolean;
+    // (undocumented)
+    get(id: string): ActionInfo | undefined;
+    list(): (readonly [id: string, info: ActionInfo])[];
+    onChange(fn: ActionsListener): () => void;
+    register(entries: Record<string, ActionInfo>, opts?: {
+        extend?: boolean;
+    }): () => void;
+    setTargetResolver(fn: () => Node | undefined): void;
+    unregister(...ids: string[]): void;
+}
+
+// @public
+export type ActionsListener = () => void;
 
 // @public
 export function actionsSource(opts: ActionsSourceOptions): CompletionSource<ActionCompletionItem>;
@@ -96,7 +140,7 @@ export interface AutocompleteEvents extends BaseEvents {
 
 // @public (undocumented)
 export interface AutocompleteOptions {
-    input: Input | string;
+    input: Input | Ref<Input>;
     maxHeight?: number;
     // (undocumented)
     sources: Record<string, CompletionSource<any>>;
@@ -110,7 +154,6 @@ export type BaseEvents = {
     invalidate: {};
     mount: {};
     unmount: {};
-    render: {};
     focus: {};
     blur: {};
     key: {
@@ -128,7 +171,7 @@ export type BaseEvents = {
 };
 
 // @public (undocumented)
-export class Box extends Node<BoxStyle> {
+export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     layout(ctx: RenderCtx): {
         minWidth: number;
         width: number;
@@ -153,18 +196,17 @@ export interface BoxStyle extends Style {
     flexDirection?: "row" | "column";
     // (undocumented)
     gap?: number;
-    // (undocumented)
-    height?: Size;
-    // (undocumented)
-    maxHeight?: Size;
-    // (undocumented)
-    minHeight?: Size;
+    height?: number;
     // (undocumented)
     padding?: Padding;
+    verticalAlign?: "top" | "bottom";
 }
 
 // @public
 export type BrightAnsiColorName = `bright${Capitalize<AnsiColorName>}`;
+
+// @public
+export type BuiltinAction = keyof (Input["actions"] & Menu["actions"] & Renderer["globalActions"]);
 
 // @public (undocumented)
 export function calcLayout(text: string, opts?: {
@@ -172,7 +214,7 @@ export function calcLayout(text: string, opts?: {
 }): Layout;
 
 // @public
-export const code: (state: State<CodeState>) => WidgetNode<CodeState, Box>;
+export const code: (props: State<CodeState>, ...children: never[]) => Box<{}>;
 
 // @public (undocumented)
 export interface CodeState {
@@ -238,6 +280,9 @@ export function createAsync<T>(fn: (prev: T | undefined) => Promise<T>, opts?: {
 }): Accessor<T | undefined>;
 
 // @public (undocumented)
+export function createContext<T>(): Context<T | undefined>;
+
+// @public (undocumented)
 export function createContext<T>(defaultValue: T): Context<T>;
 
 // @internal
@@ -246,13 +291,37 @@ export function createCtx(opts?: Partial<RenderCtx> & {
 }): RenderCtx;
 
 // @public
-export function createRenderEffect(fn: () => void): void;
+export function createNode<T extends Node>(fn: () => T): T;
+
+// @public (undocumented)
+export function createRef<T>(): Ref<T>;
+
+// @public
+export function createRender(node: Node, ctx: RenderCtx & {
+    boundary: SuspenseBoundary;
+}): Promise<string[]>;
+
+// @public (undocumented)
+export function createRender(node: () => Node, ctx?: RenderCtx): Promise<string[]>;
 
 // @public
 export function createRenderer(opts?: RendererOptions): Renderer;
 
 // @public
+export function createRoot<T>(fn: (dispose: () => void) => T): T;
+
+// @public (undocumented)
+export function createStore<T extends object>(initial: T): SignalStore<T>;
+
+// @internal
+export function createSuspenseBoundary(parent?: SuspenseBoundary): SuspenseBoundary;
+
+// @public
+export const defaultActions: Record<BuiltinAction, ActionInfo>;
+
+// @public
 export class Diff extends Node<DiffState> {
+    constructor(state: DiffState);
     // (undocumented)
     layout(): Layout;
     // (undocumented)
@@ -312,6 +381,7 @@ export function formatLines(text: string | string[], opts?: {
 export function formatText(text: string, opts: {
     wrap?: WrapMode;
     width: number;
+    style?: StyleBuilder;
 }): string[];
 
 // @public
@@ -499,6 +569,7 @@ export interface LayoutState {
 
 // @public (undocumented)
 export class Log extends Node<LogState> {
+    constructor(state: LogState);
     // (undocumented)
     protected _render(ctx: RenderCtx): Promise<string[]>;
 }
@@ -573,7 +644,7 @@ export interface LoggerOptions extends InspectOptions {
 // @public
 export interface LoggerStream {
     // (undocumented)
-    append(node: Node): unknown;
+    append(node: () => Node): unknown;
 }
 
 // @public (undocumented)
@@ -620,7 +691,7 @@ export function markdown(state: State<MarkdownState>): Markdown;
 
 // @public (undocumented)
 export type MarkdownCtx = RenderCtx & {
-    highlight?: AnsiHighlighter | boolean;
+    highlighter?: AnsiHighlighter | boolean;
     images?: boolean;
 };
 
@@ -632,6 +703,7 @@ export type MarkdownOptions = MdOptions & {
 // @public (undocumented)
 export class MarkdownRenderer {
     constructor(opts?: MarkdownOptions);
+    normalizeEol(source: string, rendered: string): string;
     // (undocumented)
     render(source: string, ctx: MarkdownCtx): Promise<string>;
 }
@@ -746,8 +818,8 @@ export interface MountCtx {
         readonly blur: () => void;
     };
     readonly overlay: {
-        readonly open: (o: Overlay) => void;
-        readonly close: (o: Overlay) => void;
+        readonly add: (o: () => Overlay) => void;
+        readonly remove: (o: Overlay) => void;
     };
     readonly surface: SurfaceType;
 }
@@ -765,12 +837,11 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // (undocumented)
     clear(): this;
     get ctx(): MountCtx | undefined;
-    drain(opts?: {
-        full?: boolean;
-    }): Promise<void>;
     focus(): this;
     // (undocumented)
     getLayout(ctx: RenderCtx): Layout | undefined;
+    // (undocumented)
+    hide(): this;
     id(): string | undefined;
     // (undocumented)
     id(value: string): this;
@@ -786,13 +857,9 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // (undocumented)
     get mounted(): boolean;
     // (undocumented)
-    omitFromState<K extends keyof State<T>>(...keys: K[]): Omit<State<T>, K>;
-    protected onUnmount(): void;
-    // (undocumented)
     get parent(): Node | undefined;
-    pending(opts?: {
-        full?: boolean;
-    }): Promise<unknown>[];
+    // (undocumented)
+    ref(ref?: Ref<this>): this;
     // (undocumented)
     remove(child: Node): this;
     // (undocumented)
@@ -802,43 +869,47 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // (undocumented)
     setState(patch: Partial<State<T>>): this;
     // (undocumented)
-    protected setup(): void;
+    show(): this;
     // (undocumented)
     splice(start: number, deleteCount: number, ...items: Node[]): this;
     // (undocumented)
-    readonly state: State<T>;
+    get state(): SignalStore<T> & State<T>;
     // (undocumented)
     get surface(): SurfaceType | undefined;
-    track(p: Promise<unknown>): void;
+    // (undocumented)
+    toggle(): this;
     // (undocumented)
     type?: string;
     // (undocumented)
     unmount(): this;
     // (undocumented)
-    with<R>(fn: () => R, ctx?: RenderCtx): R;
+    get visible(): boolean;
+    // (undocumented)
+    with<R>(fn: () => R): R;
 }
+
+// @public
+export type NodeAction = ((ctx: ActionCtx) => void) | (ActionInfo & {
+    fn: (ctx: ActionCtx) => void;
+});
 
 // @public
 export type NodeVisitor = (node: Node) => void | "stop";
 
+// @public
+export function onCleanup(fn: () => void): void;
+
 // @public (undocumented)
 export function openAnsi(style: AnsiStyle): string;
 
-// @public
-export class Overlay extends Box {
-    close(): this;
-    readonly state: State<OverlayState>;
-    // (undocumented)
-    static readonly type = "overlay";
-    // (undocumented)
-    readonly type = "overlay";
-}
+// @public (undocumented)
+export type Overlay = Box<OverlayState>;
 
 // @public (undocumented)
-export function overlay(state: State<OverlayState>, ...children: Child[]): Overlay;
+export function overlay(state: State<OverlayState & BoxStyle>, ...children: Child[]): Overlay;
 
 // @public (undocumented)
-export interface OverlayState extends BoxStyle {
+export interface OverlayState {
     x: number;
     y: number;
     zIndex?: number;
@@ -848,14 +919,33 @@ export interface OverlayState extends BoxStyle {
 export class OverlaySurface extends Surface {
     constructor(deps: OverlayDeps);
     get active(): readonly Overlay[];
+    add<O extends Overlay>(overlay: () => O): O;
+    // (undocumented)
     close(overlay: Overlay): this;
     // (undocumented)
     protected mountAll(ctx: MountCtx): void;
     get nodes(): readonly Node[];
-    open(overlay: Overlay): this;
+    // (undocumented)
+    open(overlay: () => Overlay): Overlay;
+    // (undocumented)
+    remove(overlay: Overlay): this;
     render(sync?: (fn: () => void) => void): Promise<void>;
     // (undocumented)
     protected unmountAll(): void;
+}
+
+// @internal
+export class Owner {
+    constructor(parent?: Owner);
+    addCleanup(fn: () => void): void;
+    get contexts(): ReadonlyMap<symbol, unknown> | undefined;
+    dispose(): void;
+    // (undocumented)
+    get disposed(): boolean;
+    // (undocumented)
+    parent?: Owner;
+    // (undocumented)
+    setContext(id: symbol, value: unknown): void;
 }
 
 // @public (undocumented)
@@ -885,6 +975,12 @@ export interface ProgressState {
     width?: Size;
 }
 
+// @public (undocumented)
+export type Props = Record<string, any>;
+
+// @public
+export function provideContext<T>(ctx: Context<T>, value: T): void;
+
 // @public
 export function rank<T>(items: Iterable<T>, score: (item: T) => number, limit?: number): T[];
 
@@ -894,12 +990,22 @@ export type Reactive<T> = T | Accessor<T>;
 // @internal
 export function reapplyStyle(s: string, escape: string): string;
 
+// @public (undocumented)
+export type Ref<T> = (() => T) & {
+    value: T;
+};
+
+// @public (undocumented)
+export const RenderContext: Context<RenderContextValue | undefined>;
+
 // @public
-export const RenderContext: Context<RenderCtx | undefined>;
+export type RenderContextValue = {
+    theme: Accessor<Theme>; /** Theme-bound chainable style builder. Derived memo over `theme`. */
+    style: Accessor<StyleBuilder>;
+};
 
 // @public
 export interface RenderCtx {
-    async?: boolean;
     // (undocumented)
     style: StyleBuilder;
     readonly transmit: (seq: string) => void;
@@ -931,6 +1037,7 @@ export class Renderer {
     readonly overlay: OverlaySurface;
     render(): Promise<void>;
     get running(): boolean;
+    setTheme(theme: Theme): void;
     // (undocumented)
     start(): void;
     // (undocumented)
@@ -1008,6 +1115,11 @@ export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>] & {
 export function signal<T>(initial: T): Signal<T>;
 
 // @public
+export type SignalStore<T extends object> = T & {
+    set(patch: Partial<T> | ((current: T) => Partial<T>)): void;
+};
+
+// @public
 export function sliceAnsi(s: string, start: number, end?: number): string;
 
 // @public
@@ -1021,7 +1133,7 @@ export class Spinner extends Node<SpinnerState> {
 }
 
 // @public
-export function spinner(state?: SpinnerState): Spinner;
+export function spinner(state?: State<SpinnerState>): Spinner;
 
 // @internal
 export const spinnerFrames: {
@@ -1034,7 +1146,7 @@ export const spinnerFrames: {
 
 // @public (undocumented)
 export interface SpinnerState {
-    color?: Color;
+    color?: Reactive<AnyStyle>;
     frames?: SpinnerStyle | readonly string[];
     running?: Reactive<boolean>;
     speed?: number;
@@ -1051,8 +1163,8 @@ export type State<T extends object = object> = T & BaseState;
 
 // @public
 export class Stream extends Surface {
-    constructor(terminal: Terminal, getCtx: () => RenderCtx, opts?: Partial<StreamOptions>);
-    append(node: Node): this;
+    constructor(terminal: Terminal, getCtx: () => RenderCtx, rootOwner: Owner, opts?: Partial<StreamOptions>);
+    append<N extends Node>(node: () => N): N;
     commit(opts?: {
         keep?: number;
         render?: boolean;
@@ -1103,6 +1215,17 @@ export type StyleState = Style;
 
 // @public (undocumented)
 export type SurfaceType = "stream" | "ui" | "overlay";
+
+// @public
+export type SuspenseBoundary = {
+    increment(): void;
+    decrement(): void;
+    active(): boolean;
+    whenIdle(): Promise<void>;
+};
+
+// @public
+export const SuspenseContext: Context<SuspenseBoundary | undefined>;
 
 // @internal (undocumented)
 export class Terminal {
@@ -1235,8 +1358,8 @@ export const truncateAnsi: (s: string, maxLength: number, ellipsis?: string) => 
 
 // @public (undocumented)
 export class UI extends Surface {
-    constructor(terminal: Terminal, getCtx: () => RenderCtx, opts?: UIOptions);
-    add(child: Parameters<Box["add"]>[0]): this;
+    constructor(terminal: Terminal, getCtx: () => RenderCtx, rootOwner: Owner, opts?: UIOptions);
+    add<N extends Node>(child: () => N): N;
     get height(): number;
     invalidate(): void;
     // (undocumented)
@@ -1257,40 +1380,25 @@ export function untrack<T>(fn: () => T): T;
 export function unwrap<T>(v: Reactive<T>): T;
 
 // @internal
-export function useActiveNode(): Node | undefined;
+export function useActiveOwner(): Owner | undefined;
 
 // @public
 export function useContext<T>(ctx: Context<T>): T;
 
 // @public
-export type Widget<S, N extends Node = Node> = (props: S) => N;
+export type Widget<P extends Props = {}, N extends Node = Node, C extends Node = never> = {} extends P ? (props?: P, ...children: C[]) => N : (props: P, ...children: C[]) => N;
+
+// @public
+export function widget<S extends Props, N extends Node = Node, C extends Node = never>(fn: Widget<S, N, C>): Widget<S, N, C>;
 
 // @public (undocumented)
-export function widget<S extends object, N extends Node = Node>(fn: (props: State<S>) => N): (...args: WidgetArgs<State<S>>) => WidgetNode<S, N>;
-
-// @public (undocumented)
-export class WidgetNode<S extends object, C extends Node = Node> extends Node<S> {
-    constructor(fn: (props: S) => C, props: State<S>);
-    // (undocumented)
-    get child(): C;
-    // (undocumented)
-    layout(ctx: RenderCtx): Layout | undefined;
-    // (undocumented)
-    _render(ctx: RenderCtx): Promise<string[]>;
-    // (undocumented)
-    setup(): void;
-}
-
-// @public (undocumented)
-export type WidgetState<T extends object = object> = State<T> & {
-    children?: readonly Node[];
-};
+export type WidgetFactory<S extends Props = {}, N extends Node = Node, C extends Node = never> = (fn: Widget<S, N, C>) => Widget<S, N, C>;
 
 // @internal
 export function withActiveNode<T>(node: Node, fn: () => T): T;
 
-// @public
-export function withContext<T, R>(ctx: Context<T>, value: T, fn: () => R): R;
+// @internal
+export function withOwner<T>(owner: Owner, fn: () => T): T;
 
 // @public
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string;

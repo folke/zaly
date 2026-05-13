@@ -95,6 +95,9 @@ export type AgentEvents = {
     "tool-call": {
         call: ToolCallPart;
     };
+    "tool-calls": {
+        calls: ToolCallPart[];
+    };
     "tool-result": {
         call: ToolCallPart;
         result: ToolResult;
@@ -592,6 +595,18 @@ export type WriteTool = typeof writeTool;
 // @public (undocumented)
 export type WriteToolMeta = FileMeta & {
     original?: string;
+};
+
+// @public (undocumented)
+export const zalyPaths: {
+    readonly cache: string;
+    readonly config: string;
+    readonly logs: string;
+    readonly memory: string;
+    readonly root: string;
+    readonly sessions: string;
+    readonly state: string;
+    readonly tmp: string;
 };
 
 // (No @packageDocumentation comment for this package)

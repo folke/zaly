@@ -5,7 +5,7 @@
 ```ts
 
 import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
-import { BundledTheme } from 'shiki';
+import { BundledTheme } from 'shiki/types';
 
 // @public (undocumented)
 export type AnyTheme = BuiltinTheme | (string & {});
