@@ -294,7 +294,7 @@ export class Input extends Node<InputState, InputEvents> {
     return formatText(content, {
       style: ctx.style.add(this.state),
       width: ctx.width,
-      wrap: "none",
+      wrap: "word",
     })
   }
 }
