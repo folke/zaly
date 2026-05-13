@@ -123,9 +123,13 @@ export class UI extends Surface {
 
       // Resize the reserved bottom to match the new footer height.
       // Reissues DECSTBM — the stream surface sees a different
-      // `scrollBottom` on its next flush.
+      // `scrollBottom` on its next flush. The accompanying
+      // `scrollUp` / `scrollDown` shifts real on-screen rows, so the
+      // stream's `#rows` mirror is positionally stale. Emit
+      // `dirty-stream`; the Renderer routes it to `stream.invalidate()`.
       if (nextHeight !== this.terminal.reserveBottom) {
         this.terminal.setReserveBottom(nextHeight)
+        this.emit("dirty-stream")
       }
 
       // Shrink: after enlarging the scroll region, scroll its contents

@@ -4,15 +4,24 @@ import type { Node } from "../core/node.ts"
 import { Emitter } from "@zaly/shared"
 
 /**
- * Events emitted by every renderer surface. `dirty` signals that a new
- * paint is needed; the Renderer subscribes and schedules a tick. Each
- * surface subclass may extend this with its own events, but `dirty` is
- * the universal channel every surface fires through.
+ * Events emitted by every renderer surface.
+ *
+ *   - `dirty` — "I need a paint." Renderer subscribes and schedules a tick.
+ *   - `dirty-stream` / `dirty-ui` — cross-surface invalidation request.
+ *     A surface emits these when its actions invalidate a peer (e.g. UI
+ *     shrinking the footer reservation shifts on-screen stream rows; the
+ *     stream's `#rows` mirror is now positionally stale and needs a
+ *     repaint). The Renderer routes each event to the named surface's
+ *     `invalidate()`. Keeps surfaces from holding direct refs to peers.
+ *
+ * Subclasses may extend with their own events via `Surface<E>`.
  *
  * @internal
  */
 export type SurfaceEvents = {
   dirty: {}
+  "dirty-stream": {}
+  "dirty-ui": {}
 }
 
 /**
@@ -35,7 +44,7 @@ export type SurfaceEvents = {
  *
  * @internal
  */
-export abstract class Surface extends Emitter<SurfaceEvents> {
+export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvents, E> {
   #running = false
   #mountCtx?: MountCtx
 

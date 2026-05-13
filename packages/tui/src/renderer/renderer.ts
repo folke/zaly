@@ -137,13 +137,20 @@ export class Renderer {
 
     this.ui = new UI(this.terminal, getCtx, this.#rootOwner, uiOpts)
     this.stream = new Stream(this.terminal, getCtx, this.#rootOwner)
+    // Wire cross-surface coordination: when UI's footer height changes
+    // it has already issued a `scrollUp`/`scrollDown`, shifting real
+    // on-screen rows. Stream's `#rows` mirror needs a full repaint to
+    // re-anchor; explicit invalidate matches the new "surfaces signal
+    // each other through events" contract.
+    this.ui.on("dirty-stream", () => this.stream.invalidate())
     this.overlay = new OverlaySurface({
       getCtx,
       rootOwner: this.#rootOwner,
       stream: this.stream,
       terminal: this.terminal,
-      ui: this.ui,
     })
+    this.overlay.on("dirty-ui", () => this.ui.invalidate())
+    this.overlay.on("dirty-stream", () => this.stream.invalidate())
     this.input = new InputRouter()
     this.logger = new Logger(opts.logger)
     this.logger.attach(this.stream)

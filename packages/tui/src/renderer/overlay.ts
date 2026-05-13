@@ -4,7 +4,6 @@ import type { Owner } from "../core/reactive.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Stream } from "./stream.ts"
 import type { Terminal } from "./terminal.ts"
-import type { UI } from "./ui.ts"
 
 import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
@@ -14,7 +13,6 @@ export interface OverlayDeps {
   getCtx: () => RenderCtx
   rootOwner: Owner
   stream: Stream
-  ui: UI
 }
 
 /**
@@ -66,7 +64,9 @@ export class OverlaySurface extends Surface {
     if (overlay.mounted) overlay.unmount()
     this.#overlays.splice(i, 1)
     overlay.off("invalidate", this.onDirty)
-    this.deps.ui.invalidate()
+    // Footer was masked beneath this overlay; ask UI to repaint so the
+    // rows are re-emitted under us. Routed through the Renderer.
+    this.emit("dirty-ui")
     this.emit("dirty")
     return this
   }
