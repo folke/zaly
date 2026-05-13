@@ -44,21 +44,23 @@ export async function createRender(
   })
 }
 
-/** Render + loop until the boundary settles. `wasActive` forces one
- *  re-render when the boundary was active at start but drained during
- *  the first compute (so `s.rows` reflects the resolved value, not the
- *  initial render before settlement). */
+/** Wait for any pending work first, then render. On warm caches the
+ *  initial `whenIdle` resolves on the same microtask tick — no real
+ *  wait — and we render exactly once with final values. On cold the
+ *  wait blocks until `createAsync` settles. The follow-up `while`
+ *  catches the in-render case: a `_render` that fires a fresh
+ *  `createAsync` (signal write subscribes a new effect) bumps the
+ *  boundary back above zero, requiring another pass. */
 async function renderWithDrain(
   node: Node,
   boundary: SuspenseBoundary,
   ctx: RenderCtx
 ): Promise<string[]> {
-  let wasActive = boundary.active()
+  if (boundary.active()) await boundary.whenIdle()
   let rows = await node.render(ctx)
-  while (wasActive || boundary.active()) {
+  while (boundary.active()) {
     await boundary.whenIdle()
     rows = await node.render(ctx)
-    wasActive = false
   }
   return rows
 }

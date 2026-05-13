@@ -10,7 +10,7 @@ import { userMessage } from "../widgets/user.ts"
 
 export async function replay(messages: readonly Message[], renderer: Renderer) {
   const nodes = [...toWidgets(messages)]
-  const len = 5
+  const len = 8
   const tail = nodes.splice(-len, len)
 
   const over = renderer.overlay
