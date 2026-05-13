@@ -52,7 +52,15 @@ export const toolCall = (props: {
         text(({ style }) => style.dim(desc ?? ""))
       ),
       // Result body, once it arrives
-      toolResult({ call: props.call, params, result: props.result })
+      toolResult({ call: props.call, params, result: props.result }),
+      show(
+        { when: memo(() => props.result()?.isError) },
+        text(({ style }) =>
+          style.error(
+            `${props.result()?.error?.code}: ${props.result()?.error?.message ?? "Unknown error"}`
+          )
+        )
+      )
     )
   )
 }
