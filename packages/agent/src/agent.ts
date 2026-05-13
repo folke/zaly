@@ -613,6 +613,7 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #runTools(calls: ToolCallPart[]) {
     this.#setStatus("running-tools")
+    this.emit("tool-calls", { calls })
     for (const call of calls) this.emit("tool-call", { call })
 
     // The whole batch — including streamable promotion, parallel chains,

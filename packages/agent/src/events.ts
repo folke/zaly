@@ -35,6 +35,7 @@ export type AgentEvents = {
   status: { status: AgentStatus }
   "stream-event": { event: StreamEvent }
   "tool-call": { call: ToolCallPart }
+  "tool-calls": { calls: ToolCallPart[] }
   "tool-result": { call: ToolCallPart; result: ToolResult }
   "step-end": { outcome: StepKind }
   stop: { reason: AgentStopReason; usage: TokenCount }
