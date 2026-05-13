@@ -426,6 +426,23 @@ describe("markdown() factory", () => {
     m.state.content = "b"
     expect(invalidated).toBeGreaterThan(0)
   })
+
+  test("streaming growth does not shrink rendered row count", async () => {
+    const m = markdown({
+      content: "a",
+      options: {
+        render: (source) => (source === "a" ? "one\ntwo\nthree" : "one"),
+      },
+      syntax: false,
+    })
+
+    const first = await m.render({ ...ctx(20), version: 1 })
+    m.state.content = "ab"
+    const second = await m.render({ ...ctx(20), version: 2 })
+
+    expect(first).toHaveLength(3)
+    expect(second).toEqual(["one", "", ""])
+  })
 })
 
 describe("markdown — images", () => {
