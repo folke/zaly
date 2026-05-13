@@ -8,7 +8,6 @@ import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
 import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
-import { createAnsiHighlighter, isLang } from "../style/shiki.ts"
 import { box } from "./box.ts"
 import { show } from "./show.ts"
 import { text } from "./text.ts"
@@ -105,13 +104,10 @@ export const code = widget((props: State<CodeState>) => {
 })
 
 async function highlightSource(source: string, lang: string, theme?: Theme): Promise<string> {
-  if (!(await isLang(lang))) return source
   try {
-    const highlighter = await createAnsiHighlighter({
-      langs: [lang],
-      theme: theme?.shiki,
-    })
-    const out = highlighter(source.replace(/\n+$/, ""), lang)
+    const { shiki } = await import("../style/shiki.ts")
+    await shiki.load([lang], theme?.shiki)
+    const out = shiki.highlight(source.replace(/\n+$/, ""), lang, theme?.shiki)
     return out.replace(/\n+$/, "")
   } catch {
     return source

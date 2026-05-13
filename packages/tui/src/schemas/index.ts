@@ -5,3 +5,5 @@
 // relative imports inside the `schemas/` dir are unaffected.
 
 export { validateTheme } from "./gen/theme.config.ts"
+export { isShikiLang } from "./gen/shiki.ts"
+export { isShikiTheme } from "./gen/shiki.ts"

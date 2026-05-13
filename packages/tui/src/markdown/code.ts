@@ -1,21 +1,9 @@
-import type { AnsiHighlighter, ShikiTheme } from "../style/shiki.ts"
+import type { AnsiHighlighter, ShikiLanguage } from "../style/shiki.ts"
 import type { MarkdownCbCtx } from "./callbacks.ts"
 import type { MdCallbacks } from "./types.ts"
 
 import { splitAnsi, stringWidth } from "../style/ansi.ts"
-
-// Pre-load any fenced-block languages we see in the source. Once this
-// resolves, the code callback (sync) can call `codeToAnsi` safely —
-// `createAnsiHighlighter` is idempotent + returns the shared singleton.
-export async function createCodeHighlighter(content: string, theme?: ShikiTheme) {
-  const langs = collectFenceLanguages(content).filter(Boolean)
-  // Only load when needed
-  if (langs.length > 0) {
-    const { createAnsiHighlighter } = await import("../style/shiki.ts")
-    return await createAnsiHighlighter({ langs, theme })
-  }
-  return undefined
-}
+import { shiki } from "../style/shiki.ts"
 
 /**
  * Build the `code` callback. The returned closure captures ctx/style/highlighter
@@ -92,11 +80,11 @@ function tryHighlight(
  * are deduped. Unknown-to-shiki names pass through and get filtered out by
  * `createAnsiHighlighter`.
  */
-function collectFenceLanguages(md: string): string[] {
+export function shikiCodeLangs(md: string): ShikiLanguage[] {
   const langs = new Set<string>()
   for (const m of md.matchAll(/^\s*`{3,}([^\n]+)$/gm)) {
     const lang = m[1].trim().split(/\s/)[0]
     if (lang !== "") langs.add(lang)
   }
-  return [...langs]
+  return [...langs].filter((l) => shiki.isLang(l))
 }

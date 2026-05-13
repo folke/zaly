@@ -1,7 +1,14 @@
-import type { BundledLanguage, BundledTheme, HighlighterCore, LanguageInput } from "shiki"
-import type { HexColor } from "./types.ts"
+import type {
+  BundledLanguage,
+  BundledTheme,
+  DynamicImportLanguageRegistration,
+  HighlighterCore,
+} from "shiki/types"
+import type { AnsiStyle, HexColor } from "./types.ts"
 
-import { ansiColor, RESET } from "./ansi.ts"
+// oxlint-disable-next-line no-restricted-imports
+import { isShikiLang, isShikiTheme } from "../schemas/index.ts"
+import { openAnsi, RESET } from "./ansi.ts"
 
 export type CodeToAnsiOptions = {
   theme?: T
@@ -10,6 +17,10 @@ export type CodeToAnsiOptions = {
 
 export type AnsiHighlighter = (code: string, lang: string) => string
 
+export type ShikiStatus =
+  | { loaded: true }
+  | { loaded: false; missing: { langs: string[]; themes: string[] } }
+
 type L = BundledLanguage
 type T = BundledTheme
 
@@ -17,14 +28,6 @@ export type ShikiTheme = T
 export type ShikiLanguage = L
 
 const THEME: T = "tokyo-night"
-
-// Shiki + its engines + the bundled-language registry are heavy ESM
-// graphs (~30ms of module-load on a warm cache). We never need any of
-// them until the first markdown code block is highlighted, so everything
-// lives behind dynamic imports and a singleton guard.
-let H: HighlighterCore | undefined
-let loading: Promise<HighlighterCore> | undefined
-let bundledLangs: Record<string, () => LanguageInput> | undefined
 
 // See: https://github.com/shikijs/vscode-textmate/blob/19dc9b889aa47df91027e857cdad518760b5a026/src/theme.ts#L326
 const enum FontStyle {
@@ -36,104 +39,123 @@ const enum FontStyle {
   Strikethrough = 8,
 }
 
-function attr(text: string, code: number): string {
-  return `\x1b[${code}m${text}${RESET}`
-}
-const pc = {
-  bold: (t: string) => attr(t, 1),
-  italic: (t: string) => attr(t, 3),
-  strikethrough: (t: string) => attr(t, 9),
-  underline: (t: string) => attr(t, 4),
-}
+class Shiki {
+  #highlighter?: HighlighterCore
+  #loading?: Promise<void>
+  #highligterPromise?: Promise<HighlighterCore>
+  #bundledLangs?: Promise<Record<BundledLanguage, DynamicImportLanguageRegistration>>
+  #langs = { loaded: new Set<L>(), wanted: new Set<L>() }
+  #themes = { loaded: new Set<T>(), wanted: new Set<T>() }
 
-function hexToAnsi(text: string, hex: string, _type: "dark" | "light"): string {
-  const params = ansiColor(hex as HexColor, "fg")
-  if (params === undefined) return text
-  return `\x1b[${params}m${text}${RESET}`
-}
+  status(langs: string | string[], themes?: string | string[]): ShikiStatus {
+    themes ??= []
+    themes = Array.isArray(themes) ? themes : [themes]
+    themes = themes.length > 0 ? themes : [THEME]
+    langs = Array.isArray(langs) ? langs : [langs]
+    langs = langs.filter(isShikiLang).filter((l) => !this.#langs.loaded.has(l))
+    themes = themes.filter(isShikiTheme).filter((t) => !this.#themes.loaded.has(t))
+    return { loaded: langs.length === 0 && themes.length === 0, missing: { langs, themes } }
+  }
 
-async function getSingleton(): Promise<HighlighterCore> {
-  if (H) return H
-  const [{ createHighlighterCore }, { createOnigurumaEngine }, langsMod] = await Promise.all([
-    import("shiki/core"),
-    import("shiki/engine/oniguruma"),
-    import("shiki/langs.mjs"),
-  ])
-  bundledLangs = langsMod.bundledLanguages as Record<string, () => LanguageInput>
-  H = await createHighlighterCore({
-    engine: await createOnigurumaEngine(import("shiki/wasm")),
-    langs: [],
-    themes: [],
-    warnings: false,
-  })
-  return H
-}
+  async load(langs: string | string[], themes?: string | string[]) {
+    const status = this.status(langs, themes)
+    if (status.loaded) return
 
-export async function createAnsiHighlighter(opts: CodeToAnsiOptions): Promise<AnsiHighlighter> {
-  const o = { ...opts, theme: opts.theme ?? THEME }
-  // Chain synchronously — no `await` before this assignment. That way any
-  // caller arriving in the meantime sees the just-appended promise and
-  // queues behind it, instead of both racing through the same "nothing in
-  // flight" window and double-loading.
-  loading = (loading ?? Promise.resolve()).then(() => load(o))
-  const highlighter = await loading
-  // Capture the set of langs the highlighter actually has loaded, so the
-  // returned sync closure can filter unknown langs without re-checking a
-  // dynamic module import.
-  const loadedLangs = new Set(highlighter.getLoadedLanguages())
-  return (code: string, lang: string) => {
-    if (!loadedLangs.has(lang)) return code
+    for (const l of status.missing.langs) this.#langs.wanted.add(l as L)
+    for (const t of status.missing.themes) this.#themes.wanted.add(t as T)
+
+    const highlighter = (this.#highlighter ??= await this.#loadHighlighter())
+    const bundled = await (this.#bundledLangs ??= import("shiki/langs").then(
+      (m) => m.bundledLanguages
+    ))
+    if (this.status(langs, themes).loaded) return
+
+    const load = async () => {
+      const loadLangs = [...this.#langs.wanted]
+        .filter((l) => !this.#langs.loaded.has(l))
+        .map((l) => bundled[l]())
+
+      const loadThemes = [...this.#themes.wanted]
+        .filter((t) => !this.#themes.loaded.has(t))
+        .map((t) => import(`shiki/themes/${t}.mjs`))
+
+      if (loadLangs.length === 0 && loadThemes.length === 0) return
+
+      await Promise.all([...loadLangs, ...loadThemes])
+
+      if (loadLangs.length > 0) await highlighter.loadLanguage(...loadLangs)
+      if (loadThemes.length > 0) await highlighter.loadTheme(...loadThemes)
+
+      for (const l of highlighter.getLoadedLanguages()) this.#langs.loaded.add(l as L)
+      for (const t of highlighter.getLoadedThemes()) this.#themes.loaded.add(t as T)
+    }
+
+    this.#loading = (this.#loading ?? Promise.resolve()).then(load, load)
+    await this.#loading
+  }
+
+  async #loadHighlighter() {
+    this.#highligterPromise ??= (async () => {
+      const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
+        import("shiki/core"),
+        import("shiki/engine/oniguruma"),
+      ])
+      return createHighlighterCore({
+        engine: await createOnigurumaEngine(import("shiki/wasm")),
+        langs: [],
+        themes: [],
+        warnings: false,
+      })
+    })()
+    return await this.#highligterPromise
+  }
+
+  highlight(code: string, lang: string, theme = THEME) {
+    if (!this.#highlighter) throw new Error("Highlighter not loaded")
+    if (!this.#themes.loaded.has(theme)) throw new Error(`Theme ${theme} not loaded`)
+
+    if (!this.#langs.loaded.has(lang as L)) return code
+
+    const t = this.#highlighter.getTheme(theme)
     let output = ""
-    const lines = highlighter.codeToTokensBase(code, { lang: lang as L })
-    const theme = highlighter.getTheme(o.theme)
+    const lines = this.#highlighter.codeToTokensBase(code, { lang: lang as L })
 
     for (const line of lines) {
       for (const token of line) {
-        let text = token.content
-        const color = token.color ?? theme.fg
-        if (color) text = hexToAnsi(text, color, theme.type)
-        if (token.fontStyle) {
-          if (token.fontStyle & FontStyle.Bold) text = pc.bold(text)
-          if (token.fontStyle & FontStyle.Italic) text = pc.italic(text)
-          if (token.fontStyle & FontStyle.Underline) text = pc.underline(text)
-          if (token.fontStyle & FontStyle.Strikethrough) text = pc.strikethrough(text)
+        const text = token.content
+        const style: AnsiStyle = {
+          bg: token.bgColor as HexColor | undefined,
+          fg: (token.color ?? t.fg) as HexColor | undefined,
         }
-        output += text
+        if (token.fontStyle) {
+          if (token.fontStyle & FontStyle.Bold) style.bold = true
+          if (token.fontStyle & FontStyle.Italic) style.italic = true
+          if (token.fontStyle & FontStyle.Underline) style.underline = true
+          if (token.fontStyle & FontStyle.Strikethrough) style.strikethrough = true
+        }
+        output += openAnsi(style) + text + RESET
       }
       output += "\n"
     }
     return output
   }
+
+  highlighter(theme?: ShikiTheme): AnsiHighlighter {
+    return (code: string, lang: string) => this.highlight(code, lang, theme)
+  }
+
+  isLang(lang: string): lang is ShikiLanguage {
+    return isShikiLang(lang)
+  }
+
+  isTheme(theme: string): theme is ShikiTheme {
+    return isShikiTheme(theme)
+  }
 }
 
-async function load(opts: Required<CodeToAnsiOptions>): Promise<HighlighterCore> {
-  const highlighter = await getSingleton()
-  // `bundledLangs` is guaranteed populated after `getSingleton`.
-  const langs = bundledLangs!
-
-  const loadedLangs = new Set(highlighter.getLoadedLanguages())
-  const toLoad = opts.langs.filter((l) => !loadedLangs.has(l) && l in langs).map((l) => langs[l]())
-
-  const loadedThemes = new Set(highlighter.getLoadedThemes())
-  const theme = loadedThemes.has(opts.theme) ? undefined : import(`shiki/themes/${opts.theme}.mjs`)
-
-  if (toLoad.length === 0 && !theme) return highlighter
-
-  await Promise.all([...toLoad, theme])
-  if (toLoad.length > 0) await highlighter.loadLanguage(...toLoad)
-  if (theme) await highlighter.loadTheme(theme)
-  return highlighter
-}
+export const shiki = new Shiki()
 
 export async function codeToAnsi(code: string, lang: string, theme: T = THEME): Promise<string> {
-  const highlight = await createAnsiHighlighter({ langs: [lang], theme })
-  return highlight(code, lang)
-}
-
-export async function isLang(lang: string): Promise<boolean> {
-  if (!bundledLangs) {
-    const mod = await import("shiki/langs.mjs")
-    bundledLangs = mod.bundledLanguages as Record<string, () => LanguageInput>
-  }
-  return lang in bundledLangs
+  await shiki.load([lang], [theme])
+  return shiki.highlight(code, lang, theme)
 }

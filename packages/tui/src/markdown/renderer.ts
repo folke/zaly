@@ -5,7 +5,7 @@ import type { Image } from "../widgets/image.ts"
 import type { MdOptions, RenderMarkdown } from "./types.ts"
 
 import { createCallbacks } from "./callbacks.ts"
-import { createCodeHighlighter } from "./code.ts"
+import { shikiCodeLangs } from "./code.ts"
 import { createImageCallback } from "./image.ts"
 
 export type MarkdownOptions = MdOptions & {
@@ -13,7 +13,7 @@ export type MarkdownOptions = MdOptions & {
 }
 
 export type MarkdownCtx = RenderCtx & {
-  highlight?: AnsiHighlighter | boolean
+  highlighter?: AnsiHighlighter | boolean
   images?: boolean
 }
 
@@ -67,8 +67,14 @@ export class MarkdownRenderer {
   }
 
   async #highlighter(source: string, ctx: MarkdownCtx) {
-    if (ctx.highlight === false) return
-    if (ctx.highlight === true) return await createCodeHighlighter(source, ctx.style.theme.shiki)
-    return ctx.highlight
+    if (ctx.highlighter === false) return
+    if (ctx.highlighter === true) {
+      const { shiki } = await import("../style/shiki.ts")
+      const langs = shikiCodeLangs(source)
+      const theme = ctx.style.theme.shiki
+      await shiki.load(langs, theme)
+      return shiki.highlighter(theme)
+    }
+    return ctx.highlighter
   }
 }

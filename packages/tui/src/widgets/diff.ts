@@ -10,7 +10,6 @@ import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { calcLayout, countLines } from "../layout/text.ts"
 import { splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
-import { createAnsiHighlighter } from "../style/shiki.ts"
 
 export interface DiffState {
   /** Pre-state file content. Plain string or reactive accessor —
@@ -181,16 +180,14 @@ async function highlightPair(
   origLines: string[],
   modLines: string[]
 ): Promise<{ origHi: string[]; editedHi: string[] }> {
-  if (lang === undefined || lang === "") {
+  const { shiki } = await import("../style/shiki.ts")
+  if (lang === undefined || lang === "" || !shiki.isLang(lang)) {
     return { editedHi: modLines, origHi: origLines }
   }
   try {
-    const highlight = await createAnsiHighlighter({
-      langs: [lang],
-      theme: ctx.style.theme.shiki,
-    })
+    await shiki.load(lang, ctx.style.theme.shiki)
     const splitHi = (src: string[]): string[] => {
-      const out = highlight(src.join("\n"), lang)
+      const out = shiki.highlight(src.join("\n"), lang, ctx.style.theme.shiki)
       // Shiki appends a trailing "\n"; drop it so split yields the same
       // number of lines as the input.
       return out.replace(/\n$/, "").split("\n")
