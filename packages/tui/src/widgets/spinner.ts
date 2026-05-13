@@ -1,6 +1,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
-import type { Color } from "../style/types.ts"
+import type { State } from "../core/state.ts"
+import type { AnyStyle } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { untrack, unwrap } from "../core/reactive.ts"
@@ -26,7 +27,7 @@ export interface SpinnerState {
   /** Milliseconds per frame. Defaults to 80. */
   speed?: number
   /** Foreground theme slot or explicit color. Defaults to `primary`. */
-  color?: Color
+  color?: Reactive<AnyStyle>
   /** Whether the animation is ticking. Defaults to `true`. Accepts a
    *  signal accessor so callers can drive the spinner from shared
    *  reactive state. Setting `false` stops the interval; setting
@@ -122,7 +123,7 @@ export class Spinner extends Node<SpinnerState> {
     // width so stops after a short frame still hold full space.
     if (!unwrap(this.state.running ?? true)) return [" ".repeat(stringWidth(frame))]
     const color = this.state.color ?? "primary"
-    return [ctx.style.fg(color)(frame)]
+    return [ctx.style.add(unwrap(color))(frame)]
   }
 }
 
@@ -130,6 +131,6 @@ export class Spinner extends Node<SpinnerState> {
  * Factory for `Spinner`. All options are optional — a bare `spinner()`
  * gives you the braille `dots` set at 80ms in the theme's `primary` color.
  */
-export function spinner(state: SpinnerState = {}): Spinner {
+export function spinner(state: State<SpinnerState> = {}): Spinner {
   return new Spinner(state)
 }
