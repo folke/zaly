@@ -1,57 +1,64 @@
-import type { Node } from "./node.ts"
 import type { RenderCtx } from "./ctx.ts"
+// oxlint-disable no-await-in-loop
+import type { Node } from "./node.ts"
+import type { SuspenseBoundary } from "./reactive.ts"
 
 import { createCtx } from "./ctx.ts"
-import {
-  createRoot,
-  createSuspenseBoundary,
-  provideContext,
-  SuspenseContext,
-} from "./reactive.ts"
+import { createRoot, createSuspenseBoundary, provideContext, SuspenseContext } from "./reactive.ts"
 
 /**
- * Construct + render a Node, draining any `createAsync` calls inside it
- * before returning. Useful in tests, benches, headless scripts — any
- * caller that doesn't have a `Stream` surface to install a Suspense
- * boundary on their behalf.
+ * Render a Node, draining `createAsync` work in its subtree before
+ * returning final rows. Two shapes:
  *
- * The factory shape is required (not a pre-built Node): `createAsync`
- * captures `useContext(SuspenseContext)` at construction time, so a
- * boundary installed *after* the Node was built wouldn't reach it. We
- * provide the boundary inside a fresh `createRoot`, then run the
- * factory in that scope — every descendant `createAsync` sees the
- * boundary and increments/decrements through it.
+ *   - `createRender(() => node, ctx?)` — factory form. Creates a fresh
+ *     `SuspenseBoundary` inside a new `createRoot` and runs the
+ *     factory in that scope so descendants find the boundary via
+ *     `useContext(SuspenseContext)`. For tests, benches, REPL.
  *
- * `ctx` defaults to `createCtx()` so trivial callers (smoke tests,
- * REPL one-liners) don't have to construct one. Pass an explicit ctx
- * when you need a specific width or theme.
+ *   - `createRender(node, { ...ctx, boundary })` — pre-built Node
+ *     with a caller-provided boundary. Used by `Stream.render`: the
+ *     boundary was installed at `append` time, so we just render +
+ *     drain without a new root scope.
+ *
+ * `ctx` defaults to `createCtx()` in the factory form.
  *
  * ```ts
  * const rows = await createRender(() => markdown("**hi**"))
- * const rows = await createRender(() => code({ code, lang }), createCtx({ width: 80 }))
  * ```
  */
 export async function createRender(
-  factory: () => Node,
-  ctx: RenderCtx = createCtx()
+  node: Node,
+  ctx: RenderCtx & { boundary: SuspenseBoundary }
+): Promise<string[]>
+export async function createRender(node: () => Node, ctx?: RenderCtx): Promise<string[]>
+export async function createRender(
+  node: Node | (() => Node),
+  ctx: RenderCtx & { boundary?: SuspenseBoundary } = createCtx()
 ): Promise<string[]> {
+  if (ctx.boundary) return renderWithDrain(node as Node, ctx.boundary, ctx)
   const boundary = createSuspenseBoundary()
+  const nodeFn = node as () => Node
   return createRoot(async () => {
     provideContext(SuspenseContext, boundary)
-    const node = factory()
-    // Same drain pattern as `Stream.render`: drain at least once if
-    // anything was pending at construction, then loop while any
-    // further async fires during re-render. Re-rendering is cheap on
-    // unchanged subtrees thanks to the per-Node cache.
-    let rows = await node.render(ctx)
-    let wasActive = boundary.active()
-    while (wasActive || boundary.active()) {
-      // oxlint-disable-next-line no-await-in-loop
-      await boundary.whenIdle()
-      // oxlint-disable-next-line no-await-in-loop
-      rows = await node.render(ctx)
-      wasActive = false
-    }
-    return rows
+    return renderWithDrain(nodeFn(), boundary, ctx)
   })
+}
+
+/** Render + loop until the boundary settles. `wasActive` forces one
+ *  re-render when the boundary was active at start but drained during
+ *  the first compute (so `s.rows` reflects the resolved value, not the
+ *  initial render before settlement). */
+async function renderWithDrain(
+  node: Node,
+  boundary: SuspenseBoundary,
+  ctx: RenderCtx
+): Promise<string[]> {
+  let wasActive = boundary.active()
+  let rows = await node.render(ctx)
+  while (wasActive || boundary.active()) {
+    await boundary.whenIdle()
+    rows = await node.render(ctx)
+    wasActive = false
+  }
+  return rows
 }

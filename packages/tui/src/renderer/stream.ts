@@ -10,15 +10,17 @@ import {
   SuspenseContext,
   withOwner,
 } from "../core/reactive.ts"
+import { createRender } from "../core/render.ts"
 import { Surface } from "./surface.ts"
 
 type RenderState = {
   node: Node
-  /** Per-state Suspense boundary. Installed at `append` time inside the
-   *  Owner scope of the appended subtree, so `createAsync` calls inside
-   *  the tree find it via `useContext(SuspenseContext)`. Stream's render
-   *  loop awaits `whenIdle()` between compute and paint so rows promoted
-   *  to scrollback always reflect resolved async values. */
+  /** Per-state Suspense boundary. Installed at `append` time inside
+   *  the appended subtree's Owner scope, so descendant `createAsync`
+   *  calls find it via `useContext(SuspenseContext)`. Passed to
+   *  `createRender` on each render pass — its drain loop awaits
+   *  `whenIdle()` so rows promoted to scrollback reflect resolved
+   *  async values. */
   boundary: SuspenseBoundary
   /** Undefined until the first render pass populates it. */
   rows?: string[]
@@ -86,11 +88,11 @@ export class Stream extends Surface {
    * returned Node. The Owner disposes when the Node unmounts.
    */
   append<N extends Node>(node: () => N): N {
-    // Each appended subtree gets its own Suspense boundary so the render
-    // loop can wait for `createAsync` work below it to settle before
-    // committing rows to scrollback. The boundary is provided inside
-    // the new Owner scope so `useContext(SuspenseContext)` walks from
-    // descendants find it.
+    // Each appended subtree gets its own Suspense boundary so
+    // `createRender` (called per state during render) can drain
+    // pending `createAsync` work before its rows commit to scrollback.
+    // The boundary is provided inside the new Owner scope so
+    // descendants find it via `useContext(SuspenseContext)`.
     const boundary = createSuspenseBoundary()
     const resolved = withOwner(this.rootOwner, () =>
       createNode(() => {
@@ -130,61 +132,22 @@ export class Stream extends Surface {
     const run = sync ?? ((fn) => this.terminal.sync(fn))
     // Snapshot in case new appends land mid-render.
     const states = [...this.#state]
-
-    // Re-render only live states, any state we haven't rendered yet
-    // (e.g. two appends in the same tick — the first became non-live
-    // when the second arrived, but it still needs an initial render),
-    // or frozen states whose cached rows are from an older ctx version
-    // (resize / theme swap).
     const ctx = this.getCtx()
-    // Two races force at-least-one drain iteration:
-    //
-    //   A) Boundary was active at start, then settled during the
-    //      compute pass (its `.then` / `.finally` fired during compute's
-    //      own awaits). Without `wasActive`, the `while` check below
-    //      would see `active() === false` and skip drain — but
-    //      `setValue` already cleared each node's cache, and `s.rows`
-    //      was set from the initial-value render. We'd paint stale.
-    //   B) Boundary was idle at start, then turned active *during*
-    //      compute (e.g. Markdown's `_render` sets a tracked signal
-    //      that re-fires `createAsync`, incrementing the boundary
-    //      while inside `_render`). `wasActive` alone wouldn't catch
-    //      this — we check `active()` post-compute too.
-    //
-    // Net rule: drain at least once if we were active at start OR if
-    // anything became active during compute. Inside the loop, keep
-    // going while any boundary is still active.
-    let wasActive = states.some((s) => s.boundary.active())
-    // First pass: only re-render states that actually need it — live
-    // tail, never-rendered, or stale-cache (resize / theme swap). Non-
-    // live states with valid cached rows skip work.
+
+    // Per-state render + drain. Each state owns its boundary;
+    // `createRender` blocks until that state's `createAsync` work has
+    // settled, so `s.rows` is always the final resolved output. Drains
+    // are independent — `Promise.all` waits for the slowest. We skip
+    // states whose cached rows are still valid: only re-render when
+    // live, never-rendered, or stale-cache (resize / theme swap).
     await Promise.all(
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
-          s.rows = await s.node.render(ctx)
+          s.rows = await createRender(s.node, { ...ctx, boundary: s.boundary })
           s.version = ctx.version
         }
       })
     )
-
-    // Drain phase. Re-render every state unconditionally — `createAsync`
-    // resolutions can land against already-frozen states (e.g. a replay
-    // node that became non-live before its highlight finished). The
-    // Node-internal cache makes unchanged renders a no-op.
-    while (wasActive || states.some((s) => s.boundary.active())) {
-      // oxlint-disable-next-line no-await-in-loop
-      await Promise.all(states.filter((s) => s.boundary.active()).map((s) => s.boundary.whenIdle()))
-      // oxlint-disable-next-line no-await-in-loop
-      await Promise.all(
-        states.map(async (s) => {
-          s.rows = await s.node.render(ctx)
-          s.version = ctx.version
-        })
-      )
-      // `wasActive` only forces ONE extra iteration to cover race A.
-      // Subsequent iterations are governed by the post-compute check.
-      wasActive = false
-    }
 
     const allRows: string[] = []
     for (const s of states) if (s.rows) allRows.push(...s.rows)
