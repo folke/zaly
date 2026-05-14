@@ -40,8 +40,6 @@ export class Markdown extends Node<MarkdownState> {
 
   #renderer: MarkdownRenderer
   #highlighter: Accessor<AnsiHighlighter | undefined>
-  #lastSource?: string
-  #lastRows?: string[]
 
   constructor(state: State<MarkdownState>) {
     super(state)
@@ -59,22 +57,10 @@ export class Markdown extends Node<MarkdownState> {
     const formatted = !hasColors
       ? this.#renderer.normalizeEol(source, source)
       : await this.#renderer.render(source, { ...ctx, highlighter: this.#highlighter() })
-    const ret = formatText(formatted, {
+    return formatText(formatted, {
       width: ctx.width,
       wrap: this.state.wrap,
     })
-
-    // When streaming updates, make sure we never shrink the rendered rows to prevent flickering.
-    if (
-      source.startsWith(this.#lastSource ?? "") &&
-      this.#lastRows &&
-      this.#lastRows.length > ret.length
-    ) {
-      ret.push(...Array.from({ length: this.#lastRows.length - ret.length }, () => ""))
-    }
-    this.#lastSource = source
-    this.#lastRows = [...ret]
-    return ret
   }
 
   override layout() {
