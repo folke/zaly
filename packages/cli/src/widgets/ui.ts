@@ -22,6 +22,11 @@ export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<I
     box(
       { flexDirection: "column", padding: [0, 1], style: "ui" },
       statusline(props.state),
+      box(
+        { flexDirection: "row", gap: 1 },
+        text(({ style }) => style.primary("❯"), { width: 1 }),
+        input({ placeholder: "Ask zaly anything…" }).ref(props.composer).focus()
+      ),
       autocomplete({
         input: props.composer,
         maxHeight: 8,
@@ -29,11 +34,6 @@ export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<I
           file: filesSource(),
           slash: actionsSource({ actions: props.actions }),
         },
-      }),
-      box(
-        { flexDirection: "row", gap: 1 },
-        text(({ style }) => style.primary("❯"), { width: 1 }),
-        input({ placeholder: "Ask zaly anything…" }).ref(props.composer).focus()
-      )
+      })
     )
   )

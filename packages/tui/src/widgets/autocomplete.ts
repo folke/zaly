@@ -143,7 +143,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     this.menu = new Menu({
       items: [] as MenuItem[],
       maxHeight: opts.maxHeight ?? 8,
-      sticky: true,
+      sticky: false,
     })
     this.add(this.menu)
 
