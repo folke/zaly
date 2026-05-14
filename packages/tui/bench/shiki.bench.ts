@@ -24,7 +24,7 @@
  */
 
 import { barplot, bench, do_not_optimize, summary } from "mitata"
-import { isShikiLang } from "../src/schemas/index.ts"
+import { isShikiLang } from "../src/schemas/gen/shiki.ts"
 import { shiki } from "../src/style/shiki.ts"
 
 // Fixtures — small/medium/large code blocks across the langs that

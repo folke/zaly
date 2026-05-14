@@ -70,16 +70,16 @@
     "diff": "^9.0.0",
     "marked": "^18.0.3",
     "pathe": "^2.0.3",
-    "shiki": "^4.0.2",
-    "slice-ansi": "^9.0.0",
-    "string-width": "^8.2.1",
-    "typia": "^12.1.1",
-    "wrap-ansi": "^10.0.0"
+    "shiki": "^4.0.2"
   },
   "devDependencies": {
+    "slice-ansi": "^9.0.0",
+    "string-width": "^8.2.1",
+    "wrap-ansi": "^10.0.0",
     "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "typia": "^12.1.1"
   },
   "engines": {
     "bun": ">=1.2",
@@ -90,13 +90,13 @@
     "ansi-styles": "6.2.3",
     "get-east-asian-width": "1.5.0",
     "is-fullwidth-code-point": "5.1.0",
-    "pathe": "2.0.3",
     "slice-ansi": "9.0.0",
     "string-width": [
       "8.2.0",
       "8.2.1"
     ],
     "strip-ansi": "7.2.0",
+    "typia": "12.1.1",
     "wrap-ansi": "10.0.0"
   }
 }

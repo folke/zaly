@@ -35,7 +35,7 @@ function restrictedImports(opts: { allowIndex?: boolean } = {}) {
       ),
       ...restrictedImport(
         "regex",
-        "schemas/(tpl|gen)/",
+        "schemas/tpl/",
         "Don't import generated schema files; use the public `schemas/index.ts` exports."
       ),
       ...(!opts.allowIndex

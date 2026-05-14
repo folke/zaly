@@ -77,7 +77,7 @@ function resolveTheme(theme: unknown): Theme {
 async function loadThemeFile(path: string): Promise<Theme> {
   const raw = withError(() => readFileSync(path, "utf8"), `Failed to read theme file at ${path}`)
   const data = withError(() => JSON.parse(raw), `Failed to parse theme JSON at ${path}`)
-  const { validateTheme } = await import("../schemas/index.ts")
+  const { validateTheme } = await import("../schemas/gen/theme.config.ts")
   return resolveTheme(validateTheme(data))
 }
 

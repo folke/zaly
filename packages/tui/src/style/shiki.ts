@@ -9,8 +9,7 @@ import type { AnsiStyle, HexColor } from "./types.ts"
 import { hasColors } from "@zaly/shared/env"
 import { RenderContext } from "../core/ctx.ts"
 import { createAsync, useContext } from "../core/reactive.ts"
-// oxlint-disable-next-line no-restricted-imports
-import { isShikiLang, isShikiTheme } from "../schemas/index.ts"
+import { isShikiLang, isShikiTheme } from "../schemas/gen/shiki.ts"
 import { openAnsi, RESET } from "./ansi.ts"
 
 export type CodeToAnsiOptions = {

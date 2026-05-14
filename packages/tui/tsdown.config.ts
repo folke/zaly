@@ -7,6 +7,17 @@ export default defineConfig({
     // both external lets the main bundle stay lean and defers marked until
     // `await import("#md")` actually runs.
     neverBundle: ["#ansi", "#md"],
+    onlyBundle: [
+      "slice-ansi",
+      "string-width",
+      "wrap-ansi",
+      "ansi-styles",
+      "get-east-asian-width",
+      "is-fullwidth-code-point",
+      "ansi-regex",
+      "strip-ansi",
+      "typia",
+    ],
   },
   entry: {
     index: "src/index.ts",
