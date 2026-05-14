@@ -1,15 +1,8 @@
-import type {
-  AssistantMessage,
-  Message,
-  Model,
-  ModelStreamOptions,
-  StreamEvent,
-  TokenCount,
-} from "@zaly/ai"
+import type { Message, ModelStreamOptions, StreamEvent, TokenCount } from "@zaly/ai"
 import type { AgentStopReason } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
-import { collect } from "@zaly/ai"
+import { Model } from "@zaly/ai"
 import { Agent } from "../src/agent.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
@@ -36,35 +29,22 @@ const mockSpec = {
  *  `onEvent` / `onUpdate` callbacks the agent passes in. Stamps the
  *  meta the way `Model.stream` would so the agent sees the same shape
  *  in tests as in production. */
-async function fakeStream(
-  modelId: string,
-  events: StreamEvent[],
-  opts: ModelStreamOptions = {}
-): Promise<AssistantMessage> {
-  async function* iter(): AsyncIterable<StreamEvent> {
-    for (const ev of events) yield ev
-  }
-  const ret = await collect(iter(), opts)
-  return {
-    ...ret.message,
-    meta: {
-      finishReason: ret.finishReason,
-      modelId,
-      usage: ret.usage,
-    },
-  } as AssistantMessage
+async function* fakeStream(events: StreamEvent[]): AsyncIterable<StreamEvent> {
+  for (const ev of events) yield ev
 }
 
 export function mockModel(scripts: StreamEvent[][]): Model {
   let turn = 0
-  return {
+  return new Model({
     id: "mock/x",
     spec: mockSpec,
-    provider: {} as Model["provider"],
-    stream(_ctx: never, opts: ModelStreamOptions = {}) {
-      return fakeStream("mock/x", scripts[turn++], opts)
-    },
-  } as unknown as Model
+    provider: {
+      stream: (_ctx: never, _opts: ModelStreamOptions = {}) => {
+        const events = scripts[turn++]
+        return fakeStream(events)
+      },
+    } as Model["provider"],
+  })
 }
 
 /** Build a `Model` whose `stream` blocks until `release(events)` is
@@ -81,15 +61,16 @@ export function pendingModel(): {
     get pending() {
       return waiting.length
     },
-    model: {
+    model: new Model({
       id: "mock/x",
       spec: mockSpec,
-      provider: {} as Model["provider"],
-      async stream(_ctx: never, opts: ModelStreamOptions = {}) {
-        const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
-        return fakeStream("mock/x", events, opts)
-      },
-    } as unknown as Model,
+      provider: {
+        async *stream(_ctx: never, _opts: ModelStreamOptions = {}): AsyncIterable<StreamEvent> {
+          const events = await new Promise<StreamEvent[]>((res) => waiting.push(res))
+          return yield* fakeStream(events)
+        },
+      } as Model["provider"],
+    }),
     release(events: StreamEvent[]): void {
       const next = waiting.shift()
       if (!next) throw new Error("pendingModel.release: no pending stream")
