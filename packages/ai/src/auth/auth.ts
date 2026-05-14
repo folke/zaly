@@ -21,6 +21,7 @@ import { createRegistry } from "@zaly/shared/registry"
 export interface AuthCredentials {
   apiKey?: string
   headers?: Record<string, string>
+  accountId?: string
 }
 
 /** Resolves credentials for a given model. Returning `undefined`
@@ -32,6 +33,26 @@ export interface AuthProvider {
   getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>
 }
 
+export interface OAuthOptions {
+  /** Called once the authorize URL is ready. The CLI/TUI should open
+   *  this in a browser (or print it) and surface `instructions`. */
+  onAuthUrl: (info: { url: string; instructions: string }) => void | Promise<void>
+  /** Optional progress messages — connection bound, browser callback
+   *  received, token exchange in flight, etc. */
+  onProgress?: (message: string) => void | Promise<void>
+  /** Optional manual paste fallback — used when the local callback
+   *  server fails to bind, or as a parallel race against the browser
+   *  redirect. Resolves with what the user pasted (a code, a URL with
+   *  `?code=`, or a `code#state` fragment). */
+  onManualCodeInput?: () => Promise<string>
+  /** Abort the in-flight login. Closes the local server and rejects. */
+  signal?: AbortSignal
+}
+
+export interface OAuthProvider extends AuthProvider {
+  login(opts?: OAuthOptions): Promise<AuthCredentials>
+}
+
 /** Built-in adapter families. Keyed by adapter name so `keyof` gives
  *  the `BuiltinProvider` union for free. `satisfies` preserves literal
  *  keys — widening to `Record<string, ProviderLoader>` would erase
@@ -39,12 +60,12 @@ export interface AuthProvider {
 const authProviders = {
   codex: () => import("./openai-codex.ts").then((m) => m.codexAuth),
   env: () => import("./env.ts").then((m) => m.envAuth),
-} as const satisfies Record<string, () => Promise<AuthProvider>>
+} as const
 
 export type BuiltinAuthProvider = keyof typeof authProviders
 export type AnyAuthProvider = BuiltinAuthProvider | (string & {})
 
-export const providerRegistry = createRegistry<Promise<AuthProvider>>("auth").from(authProviders)
+export const authRegistry = createRegistry<Promise<AuthProvider>>("auth").from(authProviders)
 
 /** Compose multiple auth providers into one. Tried in order; the
  *  first to return credentials wins. Useful for "try my Codex session,
@@ -60,9 +81,7 @@ export function chainAuth(...providers: (AuthProvider | AnyAuthProvider)[]): Aut
   return {
     async getAuth(model) {
       resolved ??= await Promise.all(
-        providers.map((p) =>
-          typeof p === "string" ? providerRegistry.load(p) : Promise.resolve(p)
-        )
+        providers.map((p) => (typeof p === "string" ? authRegistry.load(p) : Promise.resolve(p)))
       )
       for (const p of resolved) {
         // Intentionally sequential: first-wins semantics. Running in
@@ -91,7 +110,7 @@ export async function authenticate(
   model: ModelSpec,
   auth?: AuthProvider
 ): Promise<AuthCredentials | undefined> {
-  auth ??= chainAuth(...providerRegistry.keys())
+  auth ??= chainAuth(...authRegistry.keys())
   return auth.getAuth(model)
 }
 

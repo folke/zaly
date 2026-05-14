@@ -42,12 +42,12 @@
   "dependencies": {
     "@zaly/ai": "workspace:*",
     "@zaly/shared": "workspace:*",
-    "ignore": "^7.0.5",
-    "jsonpath-plus": "^10.4.0",
-    "pathe": "^2.0.3",
-    "shell-quote": "^1.8.3"
+    "pathe": "^2.0.3"
   },
   "devDependencies": {
+    "jsonpath-plus": "^10.4.0",
+    "ignore": "^7.0.5",
+    "shell-quote": "^1.8.3",
     "@types/shell-quote": "^1.7.5"
   },
   "peerDependencies": {
@@ -58,6 +58,8 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "pathe": "2.0.3"
+    "ignore": "7.0.5",
+    "jsonpath-plus": "10.4.0",
+    "shell-quote": "1.8.3"
   }
 }

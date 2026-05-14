@@ -91,8 +91,10 @@ export function registerAgentActions(opts: {
  *  copy manually. */
 async function runCodexLogin(): Promise<void> {
   process.stdout.write("[login] starting OpenAI Codex (ChatGPT) authorization…\n")
-  const { loginCodex } = await import("@zaly/ai")
-  const creds = await loginCodex({
+  const { authRegistry } = await import("@zaly/ai")
+  const codexAuth = await authRegistry.load("codex")
+
+  const creds = await codexAuth.login({
     onAuthUrl: ({ url }) => {
       process.stdout.write(
         `[login] open this URL in your browser if it doesn't open automatically:\n  ${url}\n`

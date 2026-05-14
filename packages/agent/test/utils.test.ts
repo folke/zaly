@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { addUsage, summarizeOutput } from "../src/utils/index.ts"
+import { summarizeOutput } from "../src/utils/output.ts"
+import { addUsage } from "../src/utils/usage.ts"
 
 describe("summarizeOutput", () => {
   test("empty input → empty result", () => {

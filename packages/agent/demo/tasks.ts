@@ -18,7 +18,7 @@ import type { Message, ToolCallPart, ToolContext, ToolResultPart } from "@zaly/a
 import type { TaskInfo, TaskMeta } from "../src/tasks.ts"
 
 import { stringifyContent, transformMeta } from "@zaly/ai"
-import { Tasks, taskCompletionMessage, taskInfoPart } from "../src/index.ts"
+import { taskCompletionMessage, taskInfoPart, Tasks } from "../src/tasks.ts"
 import { bashTool } from "../src/tools/bash.ts"
 import { taskListTool, taskPollTool, taskStopTool } from "../src/tools/tasks.ts"
 import { uuidv7 } from "../src/utils/uuid.ts"

@@ -16,7 +16,7 @@
  */
 
 import type { ModelSpec } from "../types.ts"
-import type { AuthProvider, AuthCredentials } from "./auth.ts"
+import type { AuthCredentials, OAuthOptions, OAuthProvider } from "./auth.ts"
 
 import { normPath } from "@zaly/shared"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
@@ -47,7 +47,7 @@ const STORAGE_PATH = normPath(
 /** Persisted credential record. `accountId` is denormalised from the
  *  access-token JWT for convenience — codex requires it in the
  *  `chatgpt-account-id` header on every request. */
-export interface CodexCredentials {
+export interface CodexCredentials extends AuthCredentials {
   access: string
   refresh: string
   /** Wall-clock ms epoch the access token expires at. */
@@ -165,21 +165,7 @@ async function writeCodexCredentials(creds: CodexCredentials): Promise<void> {
 
 // ── Login flow ──────────────────────────────────────────────────────────
 
-export interface CodexLoginCallbacks {
-  /** Called once the authorize URL is ready. The CLI/TUI should open
-   *  this in a browser (or print it) and surface `instructions`. */
-  onAuthUrl: (info: { url: string; instructions: string }) => void | Promise<void>
-  /** Optional progress messages — connection bound, browser callback
-   *  received, token exchange in flight, etc. */
-  onProgress?: (message: string) => void | Promise<void>
-  /** Optional manual paste fallback — used when the local callback
-   *  server fails to bind, or as a parallel race against the browser
-   *  redirect. Resolves with what the user pasted (a code, a URL with
-   *  `?code=`, or a `code#state` fragment). */
-  onManualCodeInput?: () => Promise<string>
-  /** Abort the in-flight login. Closes the local server and rejects. */
-  signal?: AbortSignal
-}
+type CodexLoginCallbacks = OAuthOptions
 
 /** Drive the full PKCE login flow. Persists creds on success and
  *  returns them. Caller supplies UI callbacks for opening the browser
@@ -419,11 +405,16 @@ function buildCodexHeaders(creds: CodexCredentials): Record<string, string> {
 /** Auth provider for the synthetic `openai-codex` provider id. Returns
  *  `undefined` for every other model so it composes cleanly via
  *  `chainAuth(codexAuth, envAuth)`. */
-export const codexAuth: AuthProvider = {
+export const codexAuth: OAuthProvider = {
   async getAuth(model: ModelSpec): Promise<AuthCredentials | undefined> {
     if (model.providerInfo?.id !== "openai-codex") return undefined
     const creds = await getCodexCredentials()
     if (creds === undefined) return undefined
+    return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
+  },
+  async login(opts?: OAuthOptions): Promise<AuthCredentials> {
+    if (!opts) throw new Error("Login options are required for codexAuth.login")
+    const creds = await loginCodex(opts)
     return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
   },
 }
