@@ -46,17 +46,20 @@
   "dependencies": {
     "@zaly/agent": "workspace:*",
     "@zaly/ai": "workspace:*",
-    "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*",
-    "citty": "^0.2.2",
-    "pathe": "^2.0.3",
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@zaly/shared": "workspace:*",
+    "citty": "^0.2.2",
+    "pathe": "^2.0.3"
   },
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
   },
   "inlinedDependencies": {
+    "citty": "0.2.2",
     "pathe": "2.0.3"
   },
   "trustedDependencies": [

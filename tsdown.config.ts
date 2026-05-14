@@ -43,7 +43,7 @@ export default defineConfig({
   attw: { profile: "esm-only" }, // doesn't resolve publishConfig, so disable
   clean: true,
   deps: {
-    alwaysBundle: ["slice-ansi", "string-width", "wrap-ansi", "pathe"],
+    //alwaysBundle: ["slice-ansi", "string-width", "wrap-ansi", "pathe"],
   },
   entry: {},
   dts: {
