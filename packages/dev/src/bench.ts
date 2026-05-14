@@ -55,11 +55,12 @@ export async function runMitata(opts: { dirs: string[]; pattern?: string }): Pro
 
 function importSpecs(pkgDir: string): string[] {
   const pkg = readPkg(pkgDir)
-  const specs: string[] = []
+  let specs: string[] = []
   for (const dep of Object.keys(pkg.dependencies ?? {})) specs.push(dep)
   for (const dep of Object.keys(pkg.optionalDependencies ?? {})) specs.push(dep)
   for (const dep of Object.keys(pkg.peerDependencies ?? {})) specs.push(dep)
   for (const dep of Object.keys(pkg.devDependencies ?? {})) specs.push(dep)
+  specs = specs.filter((s) => !s.startsWith("@types/"))
   if (pkg.name) {
     for (const sub of Object.keys(pkg.exports ?? {})) {
       if (sub === "./package.json") continue
