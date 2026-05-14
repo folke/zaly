@@ -65,6 +65,9 @@ export interface HarnessOpts {
   scrollback?: number
   /** Rows reserved at the bottom for the UI surface. Default: 0. */
   uiMaxHeight?: number
+  /** Forwarded to `Stream` — baseline footer height for the commit
+   *  threshold. Default: 0. */
+  fixedFooterHeight?: number
 }
 
 export interface Harness {
@@ -142,6 +145,7 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   }
 
   const renderer = new Renderer({
+    fixedFooterHeight: opts.fixedFooterHeight,
     hookSignals: false,
     stdin,
     stdout,

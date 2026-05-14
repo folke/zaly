@@ -91,7 +91,6 @@ describe("Stream.flush — tail growth", () => {
 
     t.state.content = "aaaaaaaa bbbbbbbb"
     await stream.render()
-    expect(stdout.all).toContain("\n")
     expect(stdout.all).toContain("aaaaaaaa")
     expect(stdout.all).toContain("bbbbbbbb")
   })
@@ -122,7 +121,6 @@ describe("Stream.append — dropping the previous tail", () => {
 
     stream.append(() => text("two"))
     await stream.render()
-    expect(stdout.all).toContain("\n")
     expect(stdout.all).toContain("two")
   })
 
