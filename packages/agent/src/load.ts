@@ -50,13 +50,12 @@ export class AgentContext {
     this.#started = true
     await Promise.all([
       this.loadSession(),
-      this.loadTools(),
+      this.loadTools().then(() => this.loadSwarm()),
       this.loadPrompt(),
       this.loadSkills(),
       this.loadNotifier(),
       this.loadMasker(),
       this.loadPermissions(),
-      this.loadSwarm(),
     ])
 
     if (this.#agent) this.attach()
