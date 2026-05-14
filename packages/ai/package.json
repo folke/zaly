@@ -31,7 +31,9 @@
     "test": "z test"
   },
   "dependencies": {
-    "@zaly/shared": "workspace:*",
+    "@zaly/shared": "workspace:*"
+  },
+  "devDependencies": {
     "jsonrepair": "^3.14.0"
   },
   "peerDependencies": {
@@ -40,5 +42,8 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
+  },
+  "inlinedDependencies": {
+    "jsonrepair": "3.14.0"
   }
 }
