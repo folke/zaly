@@ -124,7 +124,7 @@ export interface StepResult {
 
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
-  model: Model
+  model?: Model
   /** Initial working directory for the agent and its tools.
    * Defaults to the process's current directory at load time.
    */
@@ -146,17 +146,10 @@ export interface AgentOptions extends CollectOptions {
    *  `messages`, `prompt`, and `tools` — those have dedicated
    *  top-level fields here. */
   request?: StreamOptions
-  /** Session for the conversation. Two flavours:
-   *    - `SessionOptions` (the common case) — `Agent.load` constructs
-   *      the session for you via `Session.load(opts)`. Pass
-   *      `{ path: "..." }` to persist; omit for in-memory.
-   *    - A pre-built `Session` instance — useful when sharing one
-   *      session across multiple Agents (model swaps) or when an
-   *      external loader (e.g. the Claude session importer) returns one.
-   *
+  /** Session for the conversation.
    *  When omitted, a fresh in-memory Session is created. Either way,
    *  `messages` (if any) are appended to it. */
-  session?: Omit<SessionOptions, "cwd"> | Session
+  session?: Session | SessionOptions
   /** Initial messages appended to the session at construction. Useful
    *  for seeding a fresh conversation or for prepending fixed context
    *  to an existing session. */
@@ -223,7 +216,7 @@ export interface AgentOptions extends CollectOptions {
    *
    *  Default on. Pass `false` to disable, or a `MaskOptions` object to
    *  tune `tools` / `keepRecent`. */
-  masking?: boolean | MaskOptions
+  mask?: boolean | MaskOptions
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Resolver for `ask` permission verdicts. The agent invokes this

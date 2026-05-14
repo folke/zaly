@@ -1,6 +1,6 @@
-import type { MetaPart, Streamable, TextPart, ToolResult, ToolContext } from "@zaly/ai"
+import type { MetaPart, Streamable, TextPart, ToolContext, ToolResult } from "@zaly/ai"
 
-import { defineTool, stringifyContent, AiError } from "@zaly/ai"
+import { AiError, defineTool, stringifyContent } from "@zaly/ai"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
@@ -89,13 +89,14 @@ export const subagentTool = defineTool({
     const id = uuidv7()
     const sessionPath = join(tmpdir(), `zaly-subagent-${id}.jsonl`)
     const startedAt = Date.now()
+    const { Session } = await import("../session/session.ts")
 
     // `parent.child(...)` handles all the inheritance — cwd, model,
     // permissions, depth + 1, tool list (incl. the loaded skill tool),
     // and the `subagent`-tool filtering at the depth cap.
     const child = await parent.child({
       prompt: [args.prompt],
-      session: { path: sessionPath },
+      session: await Session.load({ cwd: parent.cwd, path: sessionPath }),
     })
     const depth = child.depth
 

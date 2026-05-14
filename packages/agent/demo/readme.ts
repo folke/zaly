@@ -1,6 +1,6 @@
-import { Agent } from "@zaly/agent"
 import { defineTool, loadModel } from "@zaly/ai"
 import { Type } from "typebox"
+import { createAgent } from "../src/load.ts"
 
 const multiply = defineTool({
   name: "multiply",
@@ -11,7 +11,7 @@ const multiply = defineTool({
 
 const model = await loadModel("openai/gpt-4o-mini")
 
-const agent = await Agent.load({
+const agent = await createAgent({
   model,
   tools: [multiply],
 })

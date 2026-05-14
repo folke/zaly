@@ -43,6 +43,12 @@ async function mockAgent(
     get model() {
       return { id: opts.modelId ?? "anthropic/claude-sonnet-4-6" }
     },
+    // No-op event subscription — the notifier's `attach` wires a
+    // `step-start` listener; these tests drive `check()` directly so
+    // we don't need the event to actually fire.
+    on() {
+      return agent
+    },
   } as unknown as Agent
   return {
     agent,
@@ -70,6 +76,9 @@ describe("Notifier — event-driven lifecycle", () => {
       notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
       pressure: { level: 0, limit: 100_000, ratio: 0, used: 0 },
       model: { id: "x" },
+      on() {
+        return agent
+      },
     } as unknown as Agent
     new Notifier().attach(agent)
     await session.start()
@@ -99,6 +108,9 @@ describe("Notifier — event-driven lifecycle", () => {
       notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
       pressure: { level: 0, limit: 100_000, ratio: 0, used: 0 },
       model: { id: "x" },
+      on() {
+        return agent
+      },
     } as unknown as Agent
     new Notifier().attach(agent)
 
@@ -120,12 +132,15 @@ describe("Notifier — event-driven lifecycle", () => {
         return pressure
       },
       model: { id: "x" },
+      on() {
+        return agent
+      },
     } as unknown as Agent
     const notifier = new Notifier()
     notifier.attach(agent)
     // Prime the notifier's pressure tracking by calling check() — should
     // record the current level so we can verify it gets reset on compact.
-    notifier.check({ agent })
+    notifier.check(agent)
     notifications.length = 0 // ignore any check()-driven notifications
 
     await session.compact({
@@ -145,11 +160,11 @@ describe("Notifier — event-driven lifecycle", () => {
     // pressure to 0 and verify the notifier doesn't think we already
     // notified about the previous level.
     pressure = { level: 0, limit: 100, ratio: 0.1, used: 10 }
-    notifier.check({ agent })
+    notifier.check(agent)
     // Now climb back up — should re-fire context-pressure since the reset
     // means the previous "level 2" notification doesn't suppress us.
     pressure = { level: 1, limit: 100, ratio: 0.8, used: 80 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(findTag(notifications, "context-pressure")).toBeDefined()
   })
 
@@ -188,7 +203,7 @@ describe("Notifier — check() polling", () => {
     const { agent, notifications } = await mockAgent()
     new Notifier().attach(agent)
     notifications.length = 0 // ignore session-start fired during mockAgent setup
-    new Notifier().check({ agent })
+    new Notifier().check(agent)
     expect(notifications).toEqual([])
   })
 
@@ -198,10 +213,10 @@ describe("Notifier — check() polling", () => {
     notifier.attach(agent)
     notifications.length = 0
     // Prime lastStep
-    notifier.check({ agent })
+    notifier.check(agent)
     // Wait beyond threshold (use a deliberately short idle to keep test fast)
     await new Promise((r) => setTimeout(r, 1100))
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(findTag(notifications, "user-returned")).toBeDefined()
   })
 
@@ -210,9 +225,9 @@ describe("Notifier — check() polling", () => {
     const notifier = new Notifier({ idle: 3600, periodic: 1 }) // 1 second periodic
     notifier.attach(agent)
     notifications.length = 0
-    notifier.check({ agent })
+    notifier.check(agent)
     await new Promise((r) => setTimeout(r, 1100))
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(findTag(notifications, "time")).toBeDefined()
   })
 
@@ -228,6 +243,9 @@ describe("Notifier — check() polling", () => {
         return pressure
       },
       model: { id: "x" },
+      on() {
+        return agent
+      },
     } as unknown as Agent
     const notifier = new Notifier()
     notifier.attach(agent)
@@ -235,27 +253,27 @@ describe("Notifier — check() polling", () => {
 
     // Climb to level 1
     pressure = { level: 1, limit: 100_000, ratio: 0.78, used: 78_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(notifications.filter((n) => n.tag === "context-pressure")).toHaveLength(1)
 
     // Same level — should not re-fire
     pressure = { level: 1, limit: 100_000, ratio: 0.8, used: 80_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(notifications.filter((n) => n.tag === "context-pressure")).toHaveLength(1)
 
     // Climb to level 2 — fires again
     pressure = { level: 2, limit: 100_000, ratio: 0.86, used: 86_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(notifications.filter((n) => n.tag === "context-pressure")).toHaveLength(2)
 
     // Drop to 0 — resets the suppression
     pressure = { level: 0, limit: 100_000, ratio: 0.1, used: 10_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(notifications.filter((n) => n.tag === "context-pressure")).toHaveLength(2)
 
     // Climb back to level 1 — fires again because reset cleared suppression
     pressure = { level: 1, limit: 100_000, ratio: 0.78, used: 78_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     expect(notifications.filter((n) => n.tag === "context-pressure")).toHaveLength(3)
   })
 
@@ -271,13 +289,16 @@ describe("Notifier — check() polling", () => {
         return pressure
       },
       model: { id: "x" },
+      on() {
+        return agent
+      },
     } as unknown as Agent
     const notifier = new Notifier()
     notifier.attach(agent)
     notifications.length = 0
 
     pressure = { level: 1, limit: 200_000, ratio: 0.78, used: 156_000 }
-    notifier.check({ agent })
+    notifier.check(agent)
     const note = findTag(notifications, "context-pressure")
     expect(note?.data).toEqual({ limit: 200_000, pct: 78, used: 156_000 })
   })

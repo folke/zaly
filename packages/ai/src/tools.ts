@@ -67,15 +67,6 @@ export function defineTool<
   } as Tool<Static<Params>, Static<Result>, Meta>
 }
 
-/** Validate raw tool arguments. JSON-string inputs are decoded
- *  internally by the validator; the result is run through
- *  schema coercion + strict check. Throws `AiError` on parse or
- *  validation failure — callers wrap with `toErrorResult` to land
- *  back on a `ToolResult`. */
-export async function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): Promise<I> {
-  return tool.validator.validateParams(rawArgs)
-}
-
 export function pairedToolIds(messages: readonly Message[]) {
   const valid = new Set<string>()
   const callIds = new Set<string>()
@@ -207,7 +198,7 @@ export async function runTool<I, O>(
 
   let params: I
   try {
-    params = await validateToolParams(tool, rawArgs)
+    params = await tool.validator.validateParams(rawArgs)
   } catch (error) {
     return toErrorResult(error)
   }

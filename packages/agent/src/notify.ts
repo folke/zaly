@@ -26,6 +26,7 @@ export class Notifier {
   }
 
   attach(agent: Agent) {
+    agent.on("step-start", () => this.check(agent))
     agent.session
       .on("compact", ({ node }) => {
         this.#pressureLevel = 0
@@ -57,9 +58,7 @@ export class Notifier {
     return timeInfo(now)
   }
 
-  check(ctx: NotifyContext) {
-    const { agent } = ctx
-
+  check(agent: Agent) {
     const now = Date.now()
     const lastInfo = this.#lastStep ? timeInfo(this.#lastStep) : undefined
 

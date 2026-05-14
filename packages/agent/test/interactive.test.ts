@@ -293,7 +293,7 @@ describe("Agent — mutable prompt + tools", () => {
     await agent.run()
     expect(lastPrompt).toEqual(["original"])
 
-    agent.prompt = ["updated"]
+    agent.ctx.prompt = ["updated"]
     agent.send({ content: "again", role: "user" })
     await agent.run()
     expect(lastPrompt).toEqual(["updated"])
@@ -314,10 +314,11 @@ describe("Agent — mutable prompt + tools", () => {
         ],
         okStop(),
       ]),
+      skills: false,
       tools: [Add],
     })
     // Swap the available set before the call lands so "sub" can dispatch.
-    agent.tools = [Sub]
+    agent.ctx.tools = [Sub]
     expect(agent.tools.map((t) => t.name)).toEqual(["sub"])
     agent.send({ content: "go", role: "user" })
     await agent.run()

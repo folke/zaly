@@ -1,9 +1,10 @@
 import type { Message, ModelStreamOptions, StreamEvent, TokenCount } from "@zaly/ai"
+import type { Agent } from "../src/agent.ts"
 import type { AgentStopReason } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
-import { Agent } from "../src/agent.ts"
+import { createAgent } from "../src/load.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
 
@@ -106,9 +107,16 @@ export function throwingModel(message: string): Model {
  *  notifier by default so injected `<session-started>` / `<time>` /
  *  `<context-pressure>` / etc. messages don't pollute test assertions
  *  about conversation contents. Tests that *want* notifications can
- *  pass `notify: true` (or a `NotifyOptions` object) explicitly. */
+ *  pass `notify: true` (or a `NotifyOptions` object) explicitly.
+ *
+ *  Eagerly starts the agent — tests typically inspect agent state
+ *  (tools, prompt, skills, session) right after construction, so we
+ *  pay the start cost upfront. Production callers (cli) drive
+ *  start() themselves to control event-subscription timing. */
 export async function loadAgent(opts: AgentOptions): Promise<Agent> {
-  return Agent.load({ notify: false, ...opts })
+  const agent = await createAgent({ notify: false, ...opts })
+  await agent.start()
+  return agent
 }
 
 export async function runAgent(

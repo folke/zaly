@@ -11,7 +11,7 @@ import type {
   Streamable as TStreamable,
 } from "@zaly/ai"
 
-import { toErrorResult, isStreamable, runTool, stringifyContent, AiError } from "@zaly/ai"
+import { AiError, isStreamable, runTool, stringifyContent, toErrorResult } from "@zaly/ai"
 import { Emitter, safeStringify } from "@zaly/shared"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -45,8 +45,6 @@ export type TaskInfo = {
   | { status: "pending"; waitingFor: string; elapsedMs: number }
   | { status: "done"; durationMs: number; result: ToolResult }
 )
-
-export type TaskTool = Tool | (() => Tool | undefined)
 
 /** A `TaskInfo` known to be in the `done` state. `task-done` event
  *  payloads use this so listeners get `result` and `durationMs` typed
@@ -136,8 +134,9 @@ interface InternalTask {
  */
 export class Tasks extends Emitter<TasksEvents> {
   readonly #map = new Map<string, InternalTask>()
-  #tools: TaskTool[] = []
   graceMs = DEFAULT_GRACE_MS
+
+  #tools: (() => readonly Tool[]) | Tool[] = []
 
   /** Heartbeat interval in ms. When set, fires `heartbeat` events while
    *  at least one task is pending or running. Self-managing: starts on
@@ -152,16 +151,6 @@ export class Tasks extends Emitter<TasksEvents> {
   set heartbeatMs(value: number | undefined) {
     this.#heartbeatMs = value
     this.#syncHeartbeat()
-  }
-
-  // ── Tool registry ───────────────────────────────────────────────────
-
-  get tools(): readonly Tool[] {
-    return this.#tools.map((t) => (typeof t === "function" ? t() : t)).filter((t): t is Tool => !!t)
-  }
-
-  set tools(next: TaskTool[]) {
-    this.#tools = next
   }
 
   // ── Public registry surface ─────────────────────────────────────────
@@ -188,6 +177,14 @@ export class Tasks extends Emitter<TasksEvents> {
   /** Snapshot of every task in the registry — running, pending, and done. */
   info(): readonly TaskInfo[] {
     return [...this.#map.values()].map(toTaskInfo)
+  }
+
+  get tools(): readonly Tool[] {
+    return typeof this.#tools === "function" ? this.#tools() : this.#tools
+  }
+
+  set tools(tools: (() => readonly Tool[]) | Tool[]) {
+    this.#tools = tools
   }
 
   /** Non-consuming check: does the underlying streamable have output
@@ -330,22 +327,18 @@ export class Tasks extends Emitter<TasksEvents> {
    * produced these calls, so freshness checks can scan back through
    * prior tool results.
    */
-  async run(
-    calls: readonly ToolCallPart[],
-    ctxBase: ToolContext,
-    opts: { extraTools?: readonly Tool[] } = {}
-  ): Promise<ToolResultPart[]> {
+  async run(calls: readonly ToolCallPart[], ctx: ToolContext): Promise<ToolResultPart[]> {
     const round = Symbol("round")
     const tasks: InternalTask[] = []
     let chainHead: string | undefined
-    const extra = opts.extraTools ?? []
+
+    const tools = this.tools
 
     for (const call of calls) {
       // Look up in user-managed tools first, fall back to caller-supplied
       // extras (skill tool, future system tools). Keeps Tasks's own
       // tool registry decoupled from agent-level extras.
-      const tool =
-        this.tools.find((t) => t.name === call.name) ?? extra.find((t) => t.name === call.name)
+      const tool = tools.find((t) => t.name === call.name)
       if (!tool) {
         tasks.push(this.#startSyncResult(call, unknownToolResult(call.name), round))
         continue
@@ -355,12 +348,14 @@ export class Tasks extends Emitter<TasksEvents> {
 
       if (chainHead && !parallel) {
         // Queue behind the chain head — won't start until that finishes.
-        tasks.push(this.#registerPending({ call, ctxBase, round, tool, waitingFor: chainHead }))
+        tasks.push(
+          this.#registerPending({ call, ctxBase: ctx, round, tool, waitingFor: chainHead })
+        )
         chainHead = tasks[tasks.length - 1].id
         continue
       }
 
-      const task = this.#start({ call, ctxBase, round, tool })
+      const task = this.#start({ call, ctxBase: ctx, round, tool })
       tasks.push(task)
       // If this call promoted to a long-running task and `parallel: false`,
       // subsequent serial calls chain behind it.
@@ -370,10 +365,10 @@ export class Tasks extends Emitter<TasksEvents> {
     // Race: every task done, OR grace expires, OR ctx.signal aborts.
     const allDone = Promise.all(tasks.map((t) => t.donePromise))
     const grace = sleep(this.graceMs)
-    const aborted = ctxBase.signal
+    const aborted = ctx.signal
       ? new Promise<void>((resolve) => {
-          if (ctxBase.signal!.aborted) resolve()
-          else ctxBase.signal!.addEventListener("abort", () => resolve(), { once: true })
+          if (ctx.signal!.aborted) resolve()
+          else ctx.signal!.addEventListener("abort", () => resolve(), { once: true })
         })
       : new Promise<void>(() => undefined) // never resolves
     await Promise.race([allDone, grace, aborted])

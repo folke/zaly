@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
+import { createAgent } from "../src/load.ts"
 import { Skills } from "../src/skills.ts"
 
 let cwd: string
@@ -275,10 +276,10 @@ describe("Skills — Agent integration", () => {
   })
 
   test("Agent.skills is defined by default but tool is undefined when no skills exist", async () => {
-    const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
     process.env.HOME = join(cwd, "no-such-home")
-    const agent = await Agent.load({ cwd, model: mockModel([]) })
+    const agent = await createAgent({ cwd, model: mockModel([]) })
+    await agent.start()
     expect(agent.skills).toBeDefined()
     expect(agent.skills?.tool).toBeUndefined() // catalog is empty
   })
@@ -290,10 +291,10 @@ describe("Skills — Agent integration", () => {
       meta: { description: "x", name: "x" },
       scope: "project",
     })
-    const { Agent } = await import("../src/agent.ts")
     const { mockModel } = await import("./helpers.ts")
     process.env.HOME = join(cwd, "no-such-home")
-    const agent = await Agent.load({ cwd, model: mockModel([]) })
+    const agent = await createAgent({ cwd, model: mockModel([]) })
+    await agent.start()
     expect(agent.skills?.tool).toBeDefined()
     expect(agent.skills?.catalog.has("x")).toBe(true)
   })

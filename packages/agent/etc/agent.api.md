@@ -25,16 +25,15 @@ import { ToolResult } from '@zaly/ai';
 import { ToolResultPart } from '@zaly/ai';
 
 // @public
-export function addUsage(a: TokenCount, b: TokenCount): TokenCount;
-
-// @public
 export class Agent extends Emitter<AgentEvents> {
-    protected constructor(opts: AgentInit);
+    constructor(ctx: AgentContext);
     abort(): void;
     child(overrides?: Partial<AgentOptions>): Promise<Agent>;
     // (undocumented)
     compact(): Promise<void>;
     get contextSize(): number;
+    // (undocumented)
+    get ctx(): AgentContext;
     // (undocumented)
     get cwd(): string;
     readonly depth: number;
@@ -44,9 +43,9 @@ export class Agent extends Emitter<AgentEvents> {
     get lastError(): Error | undefined;
     // (undocumented)
     get lastStopReason(): AgentStopReason | undefined;
-    static load(opts: AgentOptions): Promise<Agent>;
     readonly maxDepth: number;
     get messages(): readonly Message[];
+    // (undocumented)
     get model(): Model;
     // (undocumented)
     notify(meta: Omit<MetaPart, "type">): void;
@@ -59,8 +58,8 @@ export class Agent extends Emitter<AgentEvents> {
     get permissions(): PermissionManager;
     // (undocumented)
     get pressure(): ContextPressure;
-    get prompt(): string[] | undefined;
-    set prompt(value: string[] | undefined);
+    // (undocumented)
+    get prompt(): string[];
     run(): Promise<AgentStopReason>;
     scheduleWakeup(opts: {
         delayMs: number;
@@ -68,7 +67,8 @@ export class Agent extends Emitter<AgentEvents> {
     }): string;
     send(message: Message<"user" | "system">): void;
     // (undocumented)
-    readonly session: Session;
+    get session(): Session;
+    // (undocumented)
     get skills(): Skills | undefined;
     // (undocumented)
     get status(): AgentStatus;
@@ -77,11 +77,47 @@ export class Agent extends Emitter<AgentEvents> {
     get steps(): number;
     get swarm(): Swarm | undefined;
     get tasks(): Tasks;
-    get tools(): readonly Tool[];
-    set tools(next: Tool[]);
+    // (undocumented)
+    get tools(): _$_zaly_ai0.Tool<unknown, unknown, object>[];
     get totalUsage(): TokenCount;
     get usage(): TokenCount;
     waitIdle(): Promise<AgentStatus>;
+}
+
+// @public (undocumented)
+export class AgentContext {
+    constructor(opts: AgentOptions);
+    // (undocumented)
+    assert(k: string, v: unknown): asserts v;
+    // (undocumented)
+    get cwd(): string;
+    // (undocumented)
+    load(): Promise<void>;
+    // (undocumented)
+    loadPrompt(opts?: AgentOptions["prompt"]): Promise<string[]>;
+    // (undocumented)
+    loadSession(opts?: AgentOptions["session"]): Promise<Session>;
+    // (undocumented)
+    loadSkills(opts?: AgentOptions["skills"]): Promise<Skills | undefined>;
+    // (undocumented)
+    loadTools(opts?: AgentOptions["tools"]): Promise<Tool[]>;
+    // (undocumented)
+    get model(): Model;
+    set model(m: Model);
+    // (undocumented)
+    get opts(): AgentOptions;
+    set prompt(prompt: string[]);
+    // (undocumented)
+    get prompt(): string[];
+    // (undocumented)
+    get session(): Session;
+    set session(s: Session);
+    // (undocumented)
+    get skills(): Skills | undefined;
+    set skills(s: Skills | undefined);
+    set tools(tools: Tool[]);
+    // (undocumented)
+    get tools(): Tool[];
 }
 
 // @public
@@ -138,14 +174,14 @@ export interface AgentOptions extends CollectOptions {
     maxDepth?: number;
     messages?: Message[];
     // (undocumented)
-    model: Model;
+    model?: Model;
     notify?: boolean | NotifyOptions;
     permissions?: Omit<PermissionOptions, "cwd"> | PermissionManager;
     prompt?: (string | {
         use: AnyPrompt;
     })[];
     request?: StreamOptions;
-    session?: Omit<SessionOptions, "cwd"> | Session;
+    session?: Session | SessionOptions;
     skills?: boolean | Skills;
     stop?: StopOptions;
     swarm?: Swarm;
@@ -190,6 +226,14 @@ export interface ContextPressure {
     used: number;
 }
 
+// @public (undocumented)
+export function createAgent(opts: AgentOptions): Promise<Agent>;
+
+// @public (undocumented)
+export function createAgentContext(opts: AgentOptions & {
+    load?: boolean;
+}): Promise<AgentContext>;
+
 // @public
 export type DoneTaskInfo = Extract<TaskInfo, {
     status: "done";
@@ -211,34 +255,6 @@ export const handlerRegistry: _$_zaly_shared_registry0.Registry<PermissionHandle
     readonly tool: () => PermissionHandler<"tool">;
     readonly write: () => PermissionHandler<"read" | "write">;
 }>;
-
-// @public
-export class Masker {
-    constructor(opts?: MaskOptions);
-    apply(messages: readonly Message[], pressure: ContextPressure): Message[];
-    // (undocumented)
-    get files(): Map<string, FileState>;
-    get stamped(): number;
-}
-
-// @public
-export type MaskOptions = {
-    tools?: ToolRule[] | false;
-    files?: {
-        read?: number;
-        write?: number;
-        edit?: number;
-    } | false;
-    attachments?: MaskRule | false;
-    minChars?: number;
-};
-
-// @public
-export type MaskRule = {
-    keep?: number;
-    maxTurns?: number;
-    maxAge?: number;
-};
 
 // @public (undocumented)
 export interface PermissionContext<T extends string> {
@@ -332,14 +348,6 @@ export type ReadToolMeta = FileMeta & {
 };
 
 // @public (undocumented)
-export type ResolvedMaskOptions = {
-    tools: Exclude<MaskOptions["tools"], false>;
-    files: Exclude<MaskOptions["files"], false>;
-    attachments: Exclude<MaskOptions["attachments"], false>;
-    minChars: number;
-};
-
-// @public (undocumented)
 export type Rule<T extends string = string> = {
     scope: T;
     pattern: string;
@@ -405,22 +413,6 @@ export type Suggestion = {
     description?: string;
 };
 
-// @public (undocumented)
-export interface SummarizedOutput {
-    // (undocumented)
-    logPath?: string;
-    text: string;
-    totalLines: number;
-    truncated: boolean;
-}
-
-// @public
-export function summarizeOutput(data: Buffer | string, opts?: {
-    logPath?: string | (() => string | undefined);
-    head?: number;
-    tail?: number;
-}): SummarizedOutput;
-
 // @public
 export function taskCompletionMessage(task: DoneTaskInfo): Message<"system">;
 
@@ -477,13 +469,11 @@ export class Tasks extends Emitter<TasksEvents> {
         running: boolean;
     };
     remove(id: string): boolean;
-    run(calls: readonly ToolCallPart[], ctxBase: ToolContext, opts?: {
-        extraTools?: readonly Tool[];
-    }): Promise<ToolResultPart[]>;
+    run(calls: readonly ToolCallPart[], ctx: ToolContext): Promise<ToolResultPart[]>;
     running(): readonly TaskInfo[];
     // (undocumented)
     get tools(): readonly Tool[];
-    set tools(next: TaskTool[]);
+    set tools(tools: (() => readonly Tool[]) | Tool[]);
 }
 
 // @public
@@ -504,9 +494,6 @@ export type TasksEvents = {
 
 // @public
 export type TaskStatus = "pending" | "running" | "done";
-
-// @public (undocumented)
-export type TaskTool = Tool | (() => Tool | undefined);
 
 // @public
 export interface ToolInit {
@@ -576,15 +563,6 @@ export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknow
         content: string;
     }, unknown, WriteToolMeta>>;
 }>;
-
-// @public
-export type ToolRule = MaskRule & {
-    tool: AnyTool | "*";
-    key: "name" | "params" | ((params: Record<string, unknown>) => string | undefined);
-};
-
-// @public
-export function uuidv7(): string;
 
 // @public
 export type Verdict = "allow" | "deny" | "ask";

@@ -6,26 +6,19 @@ import type {
   Model,
   ModelStreamOptions,
   TokenCount,
-  Tool,
   ToolCallPart,
   ToolContext,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
-import type { AgentInit, AgentOptions, ContextPressure, StepResult } from "./types.ts"
+import type { AgentContext } from "./load.ts"
+import type { Session } from "./session/session.ts"
+import type { AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
-import { AiError, isContextOverflow, validateToolParams } from "@zaly/ai"
-import { Emitter, normPath, toError } from "@zaly/shared"
-import { Masker } from "./masker.ts"
-import { Notifier } from "./notify.ts"
-import { PermissionManager } from "./permissions/manager.ts"
-import { promptRegistry } from "./prompt/registry.ts"
-import { Session } from "./session/session.ts"
-import { Skills } from "./skills.ts"
+import { AiError, isContextOverflow } from "@zaly/ai"
+import { Emitter, toError } from "@zaly/shared"
 import { StopPolicy } from "./stop.ts"
-import { Swarm } from "./swarm.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
-import { toolRegistry } from "./tools/registry.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
 const PRESSURE_LEVELS = [0.75, 0.85, 0.95] as const
@@ -48,28 +41,21 @@ const PRESSURE_LEVELS = [0.75, 0.85, 0.95] as const
  * `runAgent` in the test helpers.
  */
 export class Agent extends Emitter<AgentEvents> {
-  readonly #opts: AgentInit
-  readonly #masker?: Masker
-  readonly #notifier?: Notifier
-  readonly #permissions: PermissionManager
-  readonly #skills?: Skills
+  readonly #opts: AgentOptions
+  readonly #ctx: AgentContext
   readonly #stopPolicy: StopPolicy
-  readonly #swarm: Swarm
   readonly #tasks: Tasks
-  readonly session: Session
   /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
    *  `parent.depth + 1` when constructing their child. */
   readonly depth: number
   /** Cap on `depth` — see `AgentOptions.maxDepth`. */
   readonly maxDepth: number
 
-  #prompt?: string[]
   #parent?: Agent
 
   #injectQueue: Message[] = []
   #sendQueue: Message[] = []
   #notifyQueue: MetaPart[] = []
-  #cwd: string
 
   #status: AgentStatus = "idle"
   #abortController?: AbortController
@@ -93,14 +79,13 @@ export class Agent extends Emitter<AgentEvents> {
    *  future warm-ups). The constructor is `protected` so test doubles /
    *  subclasses can still call `super(init)` directly; they're
    *  responsible for providing a pre-built `Session` on `init.session`. */
-  protected constructor(opts: AgentInit) {
+  public constructor(ctx: AgentContext) {
     super()
-    this.#opts = opts
-    this.#cwd = opts.cwd
-    this.#prompt = (opts.prompt ?? []).map((p) => p.trim()).filter((p) => p !== "")
+    const opts = ctx.opts
+    this.#ctx = ctx
+    this.#opts = ctx.opts
     this.depth = opts.depth ?? 0
     this.maxDepth = opts.maxDepth ?? 2
-    this.session = opts.session
 
     // Note: session.update() + initial messages are committed
     // asynchronously from `Agent.load`, NOT here. Constructors can't
@@ -109,7 +94,7 @@ export class Agent extends Emitter<AgentEvents> {
     // the first node fires.
 
     this.#tasks = new Tasks()
-    this.#tasks.tools = [...(opts.tools ?? []), () => this.#skills?.tool]
+    this.#tasks.tools = () => this.tools
     this.#tasks.heartbeatMs = opts.heartbeatMs
     // Post-round task completions inject a system message into the next
     // step, surfacing the result to the model. Round-internal completions
@@ -130,78 +115,10 @@ export class Agent extends Emitter<AgentEvents> {
 
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
-    // `permissions` accepts either a `PermissionManager` instance (for
-    // sharing across nested agents — subagents reuse the parent's) or
-    // `PermissionOptions` (the common case: construct a fresh manager).
-    this.#permissions =
-      opts.permissions instanceof PermissionManager
-        ? opts.permissions
-        : new PermissionManager({ ...opts.permissions, cwd: this.#cwd })
-    this.#skills = opts.skills
-    this.#swarm = opts.swarm ?? new Swarm()
-    // Notifier defaults to enabled with sensible thresholds. `false`
-    // turns it off (tests usually pass this so injected notifications
-    // don't show up in conversation expectations); a `NotifyOptions`
-    // object tunes thresholds while keeping it active.
-    if (opts.notify !== false) {
-      this.#notifier = new Notifier(typeof opts.notify === "object" ? opts.notify : {})
-      this.#notifier.attach(this)
-    }
-    // Masking is on by default — `false` disables; `MaskOptions` tunes;
-    // `true` / undefined → default policy.
-    if (opts.masking !== false) {
-      this.#masker = new Masker(typeof opts.masking === "object" ? opts.masking : {})
-    }
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
     }
-  }
-
-  /** Recommended one-step path to a ready agent. Constructs the agent,
-   *  then runs any async setup the harness expects to be done before
-   *  the first `run()` (currently: skills discovery; future: MCP server
-   *  registration, model availability checks, …).
-   *
-   *  Tests / harnesses that want a synchronous build can subclass and
-   *  call the protected constructor, or skip the async setup with
-   *  `skills: false` and equivalent flags. */
-  static async load(opts: AgentOptions): Promise<Agent> {
-    // Resolve `session: SessionOptions | Session` → a built `Session`.
-    // Pre-built instances pass through (Claude loader, multi-agent
-    // sharing); options get hydrated from disk + writer-attached.
-    const cwd = normPath(opts.cwd)
-    const session =
-      opts.session instanceof Session ? opts.session : await Session.load({ ...opts.session, cwd })
-    let skills: Skills | undefined
-    if (opts.skills === false) skills = undefined
-    else if (opts.skills instanceof Skills) skills = opts.skills
-    else skills = await Skills.load({ cwd })
-    const toolInit = { cwd, model: opts.model }
-    const tools: Tool[] = await Promise.all(
-      (opts.tools ?? []).map((t) =>
-        Promise.resolve(typeof t === "string" ? toolRegistry.load(t, toolInit) : t)
-      )
-    )
-    const promptCtx = { cwd, model: opts.model }
-    const prompts = opts.prompt ?? [
-      { use: "agent" },
-      { use: "env" },
-      { use: "model" },
-      { use: "AGENTS.md" },
-      { use: "MEMORY.md" },
-    ]
-    const prompt = await Promise.all(
-      prompts.map(async (p) => (typeof p === "string" ? p : promptRegistry.load(p.use, promptCtx)))
-    )
-    const init: AgentInit = { ...opts, cwd, prompt, session, skills, tools }
-    const agent = new Agent(init)
-    // Defer session writes until after construction so subscribers
-    // attaching after `Agent.load()` returns catch the start/resume +
-    // initial-message events.
-    await session.update({ cwd, modelId: opts.model.id, prompt: agent.#prompt })
-    for (const m of opts.messages ?? []) await session.add(m)
-    return agent
   }
 
   /** Spawn a child agent that inherits this agent's runtime defaults —
@@ -226,10 +143,12 @@ export class Agent extends Emitter<AgentEvents> {
     // the catalog is shared.
     let tools = [...this.tools].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
-    const ret = await Agent.load({
-      cwd: this.#cwd,
+    const { createAgent } = await import("./load.ts")
+
+    const ret = await createAgent({
+      cwd: this.cwd,
       depth: childDepth,
-      masking: this.#opts.masking,
+      mask: this.#opts.mask,
       maxDepth: this.maxDepth,
       model: this.model,
       // Inherit the parent's `notify` setting so test roots that
@@ -238,17 +157,21 @@ export class Agent extends Emitter<AgentEvents> {
       // session-started / time / etc. injections that the harness
       // explicitly opted out of.
       notify: this.#opts.notify,
-      permissions: this.#permissions,
-      skills: this.#skills ?? false, // shared catalog; child doesn't reload
+      permissions: this.ctx.permissions,
+      skills: this.#ctx.skills ?? false, // shared catalog; child doesn't reload
       // Propagate the swarm so the child + every grandchild address
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
       // tree (rare).
-      swarm: this.#swarm,
+      swarm: this.#ctx.swarm,
       tools,
       ...overrides,
     })
     ret.#parent = this
+    // Children are spawned ready — subagent dispatch typically calls
+    // `.send()` immediately after, and inspecting `child.tools` /
+    // `child.prompt` before sending should just work.
+    await ret.start()
     return ret
   }
 
@@ -258,12 +181,27 @@ export class Agent extends Emitter<AgentEvents> {
   get messages(): readonly Message[] {
     return this.session.messages
   }
+
   get status(): AgentStatus {
     return this.#status
   }
+
   get cwd(): string {
-    return this.#cwd
+    return this.#ctx.cwd
   }
+
+  get model(): Model {
+    return this.#ctx.model
+  }
+
+  get session(): Session {
+    return this.#ctx.session
+  }
+
+  get skills() {
+    return this.#ctx.skills
+  }
+
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
   get usage(): TokenCount {
@@ -307,53 +245,21 @@ export class Agent extends Emitter<AgentEvents> {
   get steps(): number {
     return this.#stopPolicy.steps
   }
-  /** Durable system prompt sent on every step. Mutable: assign to
-   *  swap behaviour mid-conversation; the change applies on the next
-   *  step (the in-flight stream keeps its original prompt). */
-  get prompt(): string[] | undefined {
-    return this.#prompt
-  }
-  set prompt(value: string[] | undefined) {
-    this.#prompt = value
-  }
 
   get parent(): Agent | undefined {
     return this.#parent
   }
 
-  /** Tools the model may call. Mutable: assign to swap the available
-   *  set mid-conversation; the new set applies on the next step.
-   *  Storage lives on the `Tasks` registry — same instance the agent
-   *  uses to dispatch and bookkeep long-running work. */
-  get tools(): readonly Tool[] {
-    return this.#tasks.tools
-  }
-  set tools(next: Tool[]) {
-    this.#tasks.tools = next
+  get tools() {
+    return this.#ctx.tools
   }
 
-  /** The model this agent is running on. Read-only — swap by constructing
-   *  a new agent (or wiring a custom dispatch into the underlying
-   *  `Provider`). Subagents pull this off the parent at spawn time. */
-  get model(): Model {
-    return this.#opts.model
+  get prompt() {
+    return this.#ctx.prompt
   }
 
-  /** Skills registry for this agent. `undefined` when constructed with
-   *  `skills: false`. The TUI uses this for `/skill` autocomplete; the
-   *  agent itself appends `skills.tool` to the model's tool list each
-   *  step so a loaded catalog is automatically reachable. Call
-   *  `agent.skills?.load()` to populate; re-call to pick up newly
-   *  installed skills mid-session. */
-  get skills(): Skills | undefined {
-    return this.#skills
-  }
-
-  /** Swarm registry this agent belongs to. `undefined` for standalone
-   *  agents. Children inherit this via `Agent.child(...)`. The TUI
-   *  reads it for `/agents` listings; tools read it via `ctx.swarm`. */
-  get swarm(): Swarm | undefined {
-    return this.#swarm
+  get ctx(): AgentContext {
+    return this.#ctx
   }
 
   /** Long-running task registry — exposed for the TUI / introspection
@@ -361,10 +267,6 @@ export class Agent extends Emitter<AgentEvents> {
    *  prefer the agent's higher-level surface. */
   get tasks(): Tasks {
     return this.#tasks
-  }
-
-  get permissions(): PermissionManager {
-    return this.#permissions
   }
 
   // ── Input ────────────────────────────────────────────────────────────
@@ -476,18 +378,13 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#running
   }
 
-  get #masked(): readonly Message[] {
-    if (!this.#masker) return this.session.messages
-    return this.#masker.apply(this.session.messages, this.pressure)
-  }
-
   async #collect() {
     this.#abortController = new AbortController()
-    return this.#opts.model.stream(
+    return this.model.stream(
       {
-        messages: [...this.#masked],
-        prompt: this.#prompt,
-        tools: [...this.tools],
+        messages: [...this.ctx.streamMessages],
+        prompt: this.prompt,
+        tools: this.tools,
       },
       this.#streamOpts()
     )
@@ -517,7 +414,6 @@ export class Agent extends Emitter<AgentEvents> {
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
     if (this.#shouldAutoCompact()) await this.compact()
-    this.#notifier?.check({ agent: this })
     // Drain the notify queue into the inject queue as a single system message
     if (this.#notifyQueue.length > 0) {
       this.#injectQueue.push({
@@ -585,11 +481,12 @@ export class Agent extends Emitter<AgentEvents> {
   async #parseToolCalls(message: Message): Promise<ToolCallPart[]> {
     if (typeof message.content === "string") return []
     const calls = message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
+    const tools = this.tools
     for (const call of calls) {
-      const tool = this.tools.find((t) => t.name === call.name)
+      const tool = tools.find((t) => t.name === call.name)
       if (!tool) continue
       try {
-        call.params = (await validateToolParams(tool, call.params)) ?? call.params
+        call.params = (await tool.validator.validateParams(call.params)) ?? call.params
       } catch {}
     }
     return calls
@@ -621,10 +518,7 @@ export class Agent extends Emitter<AgentEvents> {
     // What lands back here is a 1:1 array of result parts ready to commit.
     // The skill tool (when active) is passed via `extraTools` so dispatch
     // can resolve `name: "skill"` calls without polluting `tasks.tools`.
-    const skill = this.#skills?.tool
-    const resultParts = await this.#tasks.run(calls, this.#toolContext(), {
-      extraTools: skill ? [skill] : [],
-    })
+    const resultParts = await this.#tasks.run(calls, this.#toolContext())
 
     for (let i = 0; i < calls.length; i++) {
       const part = resultParts[i]
@@ -676,19 +570,27 @@ export class Agent extends Emitter<AgentEvents> {
     this.#abortController?.abort()
   }
 
+  async start() {
+    if (this.ctx.started) return
+    await this.ctx.start()
+    this.emit("start")
+  }
+
   // ── Internals ────────────────────────────────────────────────────────
 
   async #loop(): Promise<AgentStopReason> {
+    if (!this.ctx.started) await this.start()
     // Reset per-run counters (steps, consecutive errors, call history).
     // Token totals stay sticky across resets — they're billing-style
     // displays, not per-turn caps.
     this.#stopPolicy.reset()
 
-    for (;;) {
+    for (let step = 1; ; step++) {
       if (this.#pauseRequested) return this.#stop("paused")
 
+      this.emit("step-start", { step })
       const outcome = await this.step()
-      this.emit("step-end", { outcome: outcome.kind })
+      this.emit("step-end", { outcome: outcome.kind, step })
 
       if (outcome.kind === "error") {
         this.#lastError = outcome.error
@@ -742,12 +644,12 @@ export class Agent extends Emitter<AgentEvents> {
   #toolContext(): ToolContext {
     return {
       agent: this,
-      cwd: this.#cwd,
+      cwd: this.cwd,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
-      perms: this.#permissions,
+      perms: this.ctx.permissions,
       signal: this.#abortController?.signal,
-      swarm: this.#swarm,
+      swarm: this.#ctx.swarm,
       tasks: this.#tasks,
     }
   }
@@ -757,7 +659,7 @@ export class Agent extends Emitter<AgentEvents> {
    *  `ask` to `AgentOptions.allow` (treating it as `deny` when no
    *  callback is configured). */
   async #need(scope: string, input: string): Promise<void> {
-    const r = this.#permissions.validate(scope, input)
+    const r = this.ctx.permissions.validate(scope, input)
     if (r.verdict === "allow") return
     if (r.verdict === "ask" && this.#opts.allow) {
       const ok = await this.#opts.allow({

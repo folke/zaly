@@ -33,10 +33,12 @@ export type StepKind = "natural" | "tool-calls" | "context-overflow" | "error"
  *  live on the `Session`, not here — subscribe via `agent.session.on(…)`. */
 export type AgentEvents = {
   status: { status: AgentStatus }
+  start: {}
   "stream-event": { event: StreamEvent }
   "tool-call": { call: ToolCallPart }
   "tool-calls": { calls: ToolCallPart[] }
   "tool-result": { call: ToolCallPart; result: ToolResult }
-  "step-end": { outcome: StepKind }
+  "step-start": { step: number }
+  "step-end": { step: number; outcome: StepKind }
   stop: { reason: AgentStopReason; usage: TokenCount }
 }

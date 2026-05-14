@@ -6,8 +6,11 @@ import { Swarm } from "../src/swarm.ts"
 import { agentSendTool, agentSpawnTool } from "../src/tools/swarm.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
-const buildRoot = async (swarm?: Swarm): Promise<Agent> =>
-  loadAgent({ model: mockModel([]), skills: false, swarm })
+const buildRoot = async (swarm?: Swarm): Promise<Agent> => {
+  const ret = await loadAgent({ model: mockModel([]), skills: false, swarm })
+  await ret.start()
+  return ret
+}
 
 describe("agent_spawn tool", () => {
   test("spawns + registers a subagent in the swarm", async () => {
@@ -103,11 +106,11 @@ describe("Agent.swarm propagation", () => {
   test("Agent.child inherits the parent's swarm", async () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
-    expect(root.swarm).toBe(swarm)
+    expect(root.ctx.swarm).toBe(swarm)
     const child = await root.child({})
-    expect(child.swarm).toBe(swarm)
+    expect(child.ctx.swarm).toBe(swarm)
     const grand = await child.child({})
-    expect(grand.swarm).toBe(swarm)
+    expect(grand.ctx.swarm).toBe(swarm)
   })
 
   test("ctx.swarm wired through #toolContext (via real run)", async () => {
@@ -122,6 +125,6 @@ describe("Agent.swarm propagation", () => {
     // Direct call via the tool with a hand-built ctx already covers
     // the wiring (agentSpawnTool reads ctx.swarm). The real-loop
     // exercise lives in the higher-level integration tests.
-    expect(root.swarm).toBe(swarm)
+    expect(root.ctx.swarm).toBe(swarm)
   })
 })

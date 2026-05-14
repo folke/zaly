@@ -30,7 +30,7 @@ const DEFAULT_TOOLS = [
  * because the session has to be loaded async first.
  */
 export async function buildAgent(config: Config, preloaded: LoadedSession): Promise<Agent> {
-  const { Agent } = await import("@zaly/agent")
+  const { createAgent } = await import("@zaly/agent")
   const { loadModel } = await import("@zaly/ai")
   const { resolveModelId } = await import("./model.ts")
   const modelId = await resolveModelId(config, preloaded)
@@ -39,7 +39,7 @@ export async function buildAgent(config: Config, preloaded: LoadedSession): Prom
   const tools = config.tools ?? [...DEFAULT_TOOLS]
   const reasoning = config.reasoning ? { effort: config.reasoning } : undefined
 
-  return Agent.load({
+  return createAgent({
     messages: preloaded.messages,
     model,
     permissions: config.yolo ? { preset: "yolo" } : undefined,
