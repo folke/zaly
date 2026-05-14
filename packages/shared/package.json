@@ -55,8 +55,10 @@
     "test": "z test"
   },
   "dependencies": {
-    "image-meta": "^0.2.2",
     "pathe": "^2.0.3"
+  },
+  "devDependencies": {
+    "image-meta": "^0.2.2"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"
@@ -66,6 +68,6 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "pathe": "2.0.3"
+    "image-meta": "0.2.2"
   }
 }
