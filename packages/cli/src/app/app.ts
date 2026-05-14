@@ -60,7 +60,14 @@ export class App {
 
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
-    this.#renderer = createRenderer({ theme: this.#theme })
+    this.#renderer = createRenderer({
+      // Steady-state footer = input bar (1 row + 1 spacer/border row).
+      // Stream commits to scrollback at `terminal.rows - 2`, so scrollback
+      // is contiguous with the visible region as long as autocomplete and
+      // other transient widgets stay closed.
+      fixedFooterHeight: 3,
+      theme: this.#theme,
+    })
     this.#renderer.logger.install()
     this.#log = this.#renderer.log
 
