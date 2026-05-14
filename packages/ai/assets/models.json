@@ -22465,6 +22465,82 @@
       "provider": "openai",
       "baseUrl": "https://api.fireworks.ai/inference/v1/"
     },
+    "ambient/zai-org/GLM-5.1-FP8": {
+      "id": "zai-org/GLM-5.1-FP8",
+      "name": "GLM-5.1",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-27",
+      "last_updated": "2026-03-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 202752,
+        "output": 131072
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.ambient.xyz/v1"
+    },
+    "ambient/moonshotai/kimi-k2.6": {
+      "id": "moonshotai/kimi-k2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0.95,
+        "output": 4,
+        "cache_read": 0.2,
+        "cache_write": 0
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.ambient.xyz/v1"
+    },
     "kimi-for-coding/k2p6": {
       "id": "k2p6",
       "name": "Kimi K2.6",
@@ -64542,6 +64618,40 @@
       "provider": "openai",
       "baseUrl": "https://api.cohere.com/compatibility/v1"
     },
+    "xpersona/xpersona-frieren-coder": {
+      "id": "xpersona-frieren-coder",
+      "name": "Xpersona Frieren Coder",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-05-01",
+      "last_updated": "2026-05-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 128000,
+        "output": 16384
+      },
+      "cost": {
+        "input": 1.5,
+        "output": 6,
+        "reasoning": 6,
+        "cache_read": 0.15
+      },
+      "maxTokens": 16384,
+      "provider": "openai",
+      "baseUrl": "https://xpersona.co/v1"
+    },
     "cloudferro-sherlock/meta-llama/Llama-3.3-70B-Instruct": {
       "id": "meta-llama/Llama-3.3-70B-Instruct",
       "name": "Llama 3.3 70B Instruct",
@@ -96314,6 +96424,16 @@
       "name": "Fireworks AI",
       "doc": "https://fireworks.ai/docs/"
     },
+    "ambient": {
+      "id": "ambient",
+      "env": [
+        "AMBIENT_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.ambient.xyz/v1",
+      "name": "Ambient",
+      "doc": "https://ambient.xyz"
+    },
     "kimi-for-coding": {
       "id": "kimi-for-coding",
       "env": [
@@ -96764,6 +96884,16 @@
       "name": "Cohere",
       "doc": "https://docs.cohere.com/docs/models",
       "api": "https://api.cohere.com/compatibility/v1"
+    },
+    "xpersona": {
+      "id": "xpersona",
+      "env": [
+        "XPERSONA_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://xpersona.co/v1",
+      "name": "Xpersona",
+      "doc": "https://xpersona.co/docs"
     },
     "cloudferro-sherlock": {
       "id": "cloudferro-sherlock",
