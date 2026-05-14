@@ -109,39 +109,17 @@ export class UI extends Surface {
     const nextHeight = rows.length
 
     run(() => {
-      // Grow: before shrinking the scroll region, scroll its existing
-      // contents up by the growth amount. That way any rows the stream
-      // had painted at the bottom of the scroll region ride upward
-      // (their topmost rows sliding into scrollback) rather than being
-      // overwritten when the footer paints onto the rows that used to
-      // be scroll region. SU runs first so it operates on the OLD,
-      // still-larger region.
-      if (nextHeight > prevHeight) {
-        const growth = nextHeight - prevHeight
-        this.terminal.write(this.terminal.scrollUp(growth))
-      }
-
       // Resize the reserved bottom to match the new footer height.
-      // Reissues DECSTBM — the stream surface sees a different
-      // `scrollBottom` on its next flush. The accompanying
-      // `scrollUp` / `scrollDown` shifts real on-screen rows, so the
-      // stream's `#rows` mirror is positionally stale. Emit
-      // `dirty-stream`; the Renderer routes it to `stream.invalidate()`.
+      // Reissues DECSTBM — stream's next flush sees a different
+      // `scrollBottom` and re-slices its virtual buffer to fit. No
+      // proactive scrollUp/scrollDown: stream owns its bottom-anchored
+      // layout entirely, and the `dirty-stream` event tells it to
+      // repaint at the new positions. Footer-grow no longer commits
+      // stream rows to scrollback — they stay addressable, ready to
+      // reappear when the footer shrinks back.
       if (nextHeight !== this.terminal.reserveBottom) {
         this.terminal.setReserveBottom(nextHeight)
         this.emit("dirty-stream")
-      }
-
-      // Shrink: after enlarging the scroll region, scroll its contents
-      // down by the shrink amount. Stream content that was bottom-
-      // anchored to the old (smaller) region shifts down so it stays
-      // anchored to the new one. The previously-footer rows sitting at
-      // the top of the newly-enlarged region fall off the bottom as
-      // part of that scroll — which is exactly what we want, since
-      // they held stale footer text. Top `shrink` rows become blank.
-      if (prevHeight > nextHeight) {
-        const shrink = prevHeight - nextHeight
-        this.terminal.write(this.terminal.scrollDown(shrink))
       }
 
       // Paint (or re-paint) each footer row. The footer starts at

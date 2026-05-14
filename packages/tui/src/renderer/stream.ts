@@ -37,6 +37,18 @@ type RenderState = {
 
 export type StreamOptions = {
   maxLive: number
+  /** Baseline ("steady state") footer height in rows. The commit-to-
+   *  scrollback threshold uses `terminal.rows - fixedFooterHeight`
+   *  instead of `terminal.rows`. With this set to the natural footer
+   *  size (e.g. 2 for an input bar), scrollback is exactly contiguous
+   *  with the visible region in steady state — no rows hidden behind
+   *  the footer. Footer growth past this size (autocomplete) still
+   *  hides rows temporarily; they reappear when the footer returns
+   *  to baseline.
+   *
+   *  Default `0`: commit at full `terminal.rows` (old behavior).
+   */
+  fixedFooterHeight: number
 }
 
 /**
@@ -60,12 +72,27 @@ export class Stream extends Surface {
   #state: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
-  /** Absolute rows outside `#rows` that need clearing on the next
-   *  render — populated by `markStale` when an overlay paints at a row
-   *  above the stream's tracked region. Cleared at the top of the paint
-   *  closure, before Phase 1/2, so any `\n`-scroll that follows promotes
-   *  blanks (not overlay bytes) into scrollback. */
-  readonly #staleRows = new Set<number>()
+  /** Bottom row of the live region the last time we painted. Used to
+   *  compute where `#rows` actually live on screen when the footer
+   *  resizes between renders (scrollBottom moves). Without this we'd
+   *  derive `oldTopRow` from the *current* scrollBottom, which is wrong
+   *  after a footer grow/shrink. */
+  #prevBottom: number | undefined
+  /** Absolute rows the stream paint should treat as "screen doesn't
+   *  match our mirror." Populated by `markStale` when another surface
+   *  (overlay) writes into the scroll region. The render handles each
+   *  stale row one of two ways:
+   *
+   *    - If above the visible paint area: explicit `clearLine` write
+   *      before any `\n`-scroll, so overlay bytes never get promoted
+   *      into scrollback.
+   *    - If inside the visible paint area: forced as a "diff miss" in
+   *      the visible paint loop so the row gets rewritten with correct
+   *      stream content, regardless of whether `oldVisible[k]` claims
+   *      it already matches.
+   *
+   *  Cleared at end of each render. */
+  readonly #stale = new Set<number>()
   #opts: StreamOptions
 
   constructor(
@@ -75,7 +102,10 @@ export class Stream extends Surface {
     opts: Partial<StreamOptions> = {}
   ) {
     super()
-    this.#opts = { maxLive: 3, ...opts }
+    this.#opts = {
+      fixedFooterHeight: opts.fixedFooterHeight ?? 0,
+      maxLive: opts.maxLive ?? 3,
+    }
   }
 
   /**
@@ -143,7 +173,9 @@ export class Stream extends Surface {
     await Promise.all(
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
+          const len = s.rows?.length ?? 0
           s.rows = await createRender(s.node, { ...ctx, boundary: s.boundary })
+          if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
           s.version = ctx.version
         }
       })
@@ -152,81 +184,123 @@ export class Stream extends Surface {
     const allRows: string[] = []
     for (const s of states) if (s.rows) allRows.push(...s.rows)
 
-    const height = this.liveHeight
+    const liveHeight = this.liveHeight
     const bottom = this.terminal.scrollBottom
+    const terminalRows = this.terminal.rows
     const oldCC = this.#scrollbackCount
     const oldVisible = this.#rows
-    const oldTopRow = bottom - oldVisible.length + 1
-    const oldVisibleEndIdx = oldCC + oldVisible.length
+    const oldBottom = this.#prevBottom ?? bottom
+    const oldTopRow = oldBottom - oldVisible.length + 1
 
-    const newCC = Math.max(oldCC, allRows.length - height)
-    const newVisible = allRows.slice(newCC)
+    // Commit threshold = the *full terminal minus the baseline footer
+    // height*. Steady state (footer == fixedFooterHeight) keeps
+    // scrollback exactly contiguous with the visible region — no
+    // hidden rows. Footer growth above baseline (autocomplete) still
+    // hides rows temporarily but they're recoverable when the footer
+    // shrinks back. `fixedFooterHeight = 0` reduces to "commit at the
+    // full terminal" (old behavior).
+    const commitThreshold = Math.max(1, terminalRows - this.#opts.fixedFooterHeight)
+    const newCC = Math.max(oldCC, allRows.length - commitThreshold)
+    const commitCount = newCC - oldCC
+    // Bottom-anchored slice of (post-commit) addressable: the rows
+    // that actually paint in the scroll region.
+    const newVisible = allRows.slice(newCC).slice(-liveHeight)
     const newTopRow = bottom - newVisible.length + 1
-
-    // Tail shrank below the old visible extent. Treated as a separate
-    // path because the bottom-anchored layout needs to move content
-    // upward (or equivalently, clear stale rows above the new top and
-    // rewrite in place). We never scroll into scrollback on shrink.
-    const isShrink = allRows.length < oldVisibleEndIdx
 
     // Snapshot + clear now so the paint closure (possibly deferred via
     // the Renderer's capture) doesn't race with new `markStale` calls.
-    const staleRows = [...this.#staleRows]
-    this.#staleRows.clear()
+    const stale = new Set(this.#stale)
+    this.#stale.clear()
+
+    // Diff check: does screen position `row` already hold `expected`?
+    //   - `row`: target absolute screen row.
+    //   - `shift`: how many `\n`-commits have happened in this frame
+    //     before this check (0 for the pre-commit pass, `commitCount`
+    //     for the post-commit visible paint). Pre-shift, this position
+    //     held content from row `row + shift`.
+    // Skipped on layout shift (`oldBottom !== bottom`), stale rows,
+    // and out-of-range `oldVisible` indices.
+    const screenAlreadyMatches = (row: number, expected: string, shift: number): boolean => {
+      if (oldBottom !== bottom) return false
+      const preShiftRow = row + shift
+      if (stale.has(preShiftRow)) return false
+      const oldIdx = preShiftRow - oldTopRow
+      if (oldIdx < 0 || oldIdx >= oldVisible.length) return false
+      return oldVisible[oldIdx] === expected
+    }
 
     run(() => {
-      // Clear any rows outside the tracked region that picked up bytes
-      // from another surface (overlay). Must happen before any \n-scroll
-      // so the promoted scrollback rows are blank, not ghost content.
-      for (const r of staleRows) {
+      // Stale-clear: rows in `#stale` that aren't covered by the
+      // visible paint loop below. Inside-visible rows are handled by
+      // the diff (force-write via `stale.has`). Anything above the new
+      // visible paint area still has overlay bytes and would otherwise
+      // be \n'd into scrollback during a commit — clear first.
+      for (const r of stale) {
+        if (r < 1 || r > bottom) continue
+        if (r >= newTopRow && r <= bottom) continue
         this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
       }
 
-      if (isShrink) {
-        // Clear the rows that were above newVisible's new (higher) top.
-        for (let r = oldTopRow; r < newTopRow; r++) {
-          this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+      // Commit `commitCount` rows to scrollback. Paint each batch of
+      // to-be-committed rows at the top of the scroll region, then
+      // \n them off. Batched because the scroll region only has
+      // `liveHeight` rows — a single render that crosses the threshold
+      // by more than `liveHeight` (e.g. a freshly-mounted node taller
+      // than the live region) needs multiple paint/scroll passes.
+      //
+      // The paint-before-\n positioning ensures the row that lands in
+      // scrollback is the one we actually want (`allRows[oldCC + i]`),
+      // independent of what the previous render painted there. The
+      // first batch's writes can be skipped when the row already holds
+      // the right bytes (steady-state streaming case — the row was the
+      // top of the previous frame's bottom-anchored visible).
+      let i = 0
+      while (i < commitCount) {
+        const batch = Math.min(commitCount - i, liveHeight)
+        for (let j = 0; j < batch; j++) {
+          const row = 1 + j
+          const content = allRows[oldCC + i + j]
+          // Diff only the first batch — subsequent batches start from
+          // post-`\n` state which `oldVisible` doesn't model.
+          if (i === 0 && screenAlreadyMatches(row, content, 0)) continue
+          this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
         }
-        // Rewrite the visible window — cheap enough since we only do
-        // this when the tail shrinks, and we skip unchanged rows.
-        for (let k = 0; k < newVisible.length; k++) {
-          const oldK = k + (oldVisible.length - newVisible.length)
-          if (oldVisible[oldK] === newVisible[k]) continue
-          this.terminal.write(
-            this.terminal.moveTo(newTopRow + k, 1) + this.terminal.clearLine() + newVisible[k]
-          )
-        }
-      } else {
-        // --- Mutations: rewrite rows whose allRows content changed ---
-        // At this point the viewport still holds `oldVisible`; rewrite
-        // in place at old positions. Any row we rewrite that ends up
-        // scrolling into scrollback during the growth phase will carry
-        // the updated content with it.
-        for (let k = 0; k < oldVisible.length; k++) {
-          const idx = oldCC + k
-          const newContent = allRows[idx]
-          if (oldVisible[k] === newContent) continue
-          this.terminal.write(
-            this.terminal.moveTo(oldTopRow + k, 1) + this.terminal.clearLine() + newContent
-          )
-        }
+        this.terminal.write(this.terminal.moveTo(bottom, 1))
+        for (let j = 0; j < batch; j++) this.terminal.write("\n")
+        i += batch
+      }
 
-        // --- Growth: append new rows with \n-at-scrollBottom pattern ---
-        // The `\n` promotes the region's current top row into scrollback
-        // (works uniformly on xterm.js / ghostty-web / real terminals
-        // as long as scrollTop is row 1). `\r` resets column so the
-        // next payload starts at col 1; `clearLine` wipes any trailing
-        // cells the previous write left after a shorter row.
-        if (allRows.length > oldVisibleEndIdx) {
-          this.terminal.write(this.terminal.moveTo(bottom, 1))
-          for (let i = oldVisibleEndIdx; i < allRows.length; i++) {
-            this.terminal.write(`\n\r${this.terminal.clearLine()}${allRows[i]}`)
-          }
-        }
+      // Clear rows that should be blank above the visible paint area.
+      // Two cases:
+      //   (a) Layout shift (footer resized): rows that were stream's
+      //       previous paint area but aren't in the new one need
+      //       clearing.
+      //   (b) After commits, content from rows above the prev visible
+      //       region may have been `\n`-shifted into rows 1..newTopRow-1
+      //       (because the `\n` shifts the *entire* scroll region, not
+      //       just our paint area). Clear those so they don't carry
+      //       ghost content into the area above stream's bottom-anchor.
+      const clearTop = oldBottom !== bottom ? Math.max(1, Math.min(oldTopRow, newTopRow)) : 1
+      for (let r = clearTop; r < newTopRow; r++) {
+        if (r < 1 || r > bottom) continue
+        this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+      }
+
+      // Paint the visible region. Each row checks against `oldVisible`
+      // shifted up by `commitCount` (post-`\n` state). In the streaming
+      // case (commitCount = 1, region full, newTopRow == oldTopRow)
+      // this skips every write except the last.
+      for (let k = 0; k < newVisible.length; k++) {
+        const row = newTopRow + k
+        if (screenAlreadyMatches(row, newVisible[k], commitCount)) continue
+        this.terminal.write(
+          this.terminal.moveTo(row, 1) + this.terminal.clearLine() + newVisible[k]
+        )
       }
     })
 
     this.#rows = newVisible
+    this.#prevBottom = bottom
 
     // Drop states whose rows have entirely entered scrollback. Any
     // dropped rows leave `allRows` too on the next tick, so decrement
@@ -269,15 +343,13 @@ export class Stream extends Surface {
 
   /**
    * Force a full repaint of the currently-visible stream rows on the
-   * next render. Replaces each cached row with `""` so Phase 1's diff
-   * sees every slot as changed and rewrites it in place — *without*
-   * shrinking the array. Emptying it entirely would fool the growth
-   * path into treating already-visible rows as fresh appends and
-   * re-scrolling them through `\n`-at-scrollBottom, duplicating
-   * on-screen content.
+   * next render. Marks each currently-painted row as stale so the
+   * diff is forced to rewrite it. We don't shrink `#rows` — the
+   * tracked length feeds the diff's bottom-anchored mapping.
    */
   invalidate(): void {
-    this.#rows = this.#rows.map(() => "")
+    const top = (this.#prevBottom ?? this.terminal.scrollBottom) - this.#rows.length + 1
+    for (let i = 0; i < this.#rows.length; i++) this.#stale.add(top + i)
     this.emit("dirty")
   }
 
@@ -300,46 +372,38 @@ export class Stream extends Surface {
   onResize(): void {
     this.#rows = []
     this.#scrollbackCount = 0
-    this.#staleRows.clear()
+    this.#stale.clear()
+    this.#prevBottom = undefined
     this.emit("dirty")
   }
 
   /**
-   * Mark a range of absolute rows (inclusive) as stale — the next
-   * render must clear them before any `\n`-at-scrollBottom scroll, so
-   * overlay bytes never get promoted into scrollback or ghost-shifted
-   * above their absolute position.
+   * Mark a range of absolute rows (inclusive) as stale. The next
+   * render's diff treats them as "screen doesn't match our mirror"
+   * and forces a rewrite (inside the visible region) or explicit
+   * clear (above the visible region, before any `\n`-scroll).
    *
-   *   - Rows inside `#rows`: their cached entry becomes `""`, so the
-   *     diff sees a mismatch and Phase 1 rewrites them with real
-   *     stream content.
-   *   - Rows outside (above) the tracked region: added to `#staleRows`
-   *     and force-cleared (via `clearLine`) at the top of the next
-   *     render's paint closure.
+   * Typical caller: the overlay surface when an overlay paints over
+   * rows the stream "owns" — those rows now have overlay bytes, not
+   * stream bytes, and need rewriting on overlay close.
    *
    * No `"dirty"` emit — callers own their own scheduling.
    */
   markStale(fromRow: number, toRow: number): void {
-    const top = this.terminal.scrollBottom - this.#rows.length + 1
     const bottom = this.terminal.scrollBottom
-    const copy = [...this.#rows]
-    let changed = false
     for (let r = fromRow; r <= toRow; r++) {
-      const idx = r - top
-      if (idx >= 0 && idx < copy.length) {
-        copy[idx] = ""
-        changed = true
-      } else if (r >= 1 && r <= bottom) {
-        // Outside the tracked region but still inside the scroll
-        // region — stream doesn't "own" these rows but `\n` will
-        // scroll them, so pre-clear.
-        this.#staleRows.add(r)
-      }
+      if (r >= 1 && r <= bottom) this.#stale.add(r)
     }
-    if (changed) this.#rows = copy
   }
 
   protected mountAll(ctx: MountCtx): void {
+    // Mark every row in the current scroll region as stale on start.
+    // Pre-zaly content sitting in the terminal would otherwise stay on
+    // screen above stream's bottom-anchored paint, and — worse — get
+    // `\n`-promoted into scrollback once the stream grows past the
+    // commit threshold. Marking stale forces an explicit clear (above
+    // the visible paint area) or a diff miss (inside).
+    for (let r = 1; r <= this.terminal.scrollBottom; r++) this.#stale.add(r)
     for (const s of this.#state) {
       if (!s.node.mounted) s.node.mount(ctx)
     }

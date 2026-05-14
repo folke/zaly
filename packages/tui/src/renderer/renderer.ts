@@ -26,6 +26,15 @@ export interface RendererOptions {
   theme?: Theme
   /** Upper bound on footer height (default: viewport / 3). */
   uiMaxHeight?: number
+  /** Baseline footer height in rows — the size the footer occupies in
+   *  "steady state" (no autocomplete, no transient widget growth).
+   *  Stream uses `terminal.rows - fixedFooterHeight` as its commit
+   *  threshold, so scrollback ends exactly at the visible region's top
+   *  edge whenever the footer is at this size. Default `0` (commit at
+   *  the full terminal — preserves pre-existing behavior). Set to
+   *  match your app's persistent footer (e.g. 2 for a single-line
+   *  input with a one-line border). */
+  fixedFooterHeight?: number
   /** Register SIGINT/SIGTERM cleanup (default: true). Disable in tests. */
   hookSignals?: boolean
   /** Options for the built-in `logger` (and its callable `log` accessor). */
@@ -136,7 +145,9 @@ export class Renderer {
     })
 
     this.ui = new UI(this.terminal, getCtx, this.#rootOwner, uiOpts)
-    this.stream = new Stream(this.terminal, getCtx, this.#rootOwner)
+    this.stream = new Stream(this.terminal, getCtx, this.#rootOwner, {
+      fixedFooterHeight: opts.fixedFooterHeight,
+    })
     // Wire cross-surface coordination: when UI's footer height changes
     // it has already issued a `scrollUp`/`scrollDown`, shifting real
     // on-screen rows. Stream's `#rows` mirror needs a full repaint to
