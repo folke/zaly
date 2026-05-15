@@ -63,9 +63,12 @@ class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
    *  removes the entry if it's still ours, so a later replacement
    *  isn't accidentally undone. */
   register(name: string, loader: L): () => void {
+    const prev = this.#entries.get(name)
     this.#entries.set(name, loader)
     return () => {
-      if (this.#entries.get(name) === loader) this.#entries.delete(name)
+      if (this.#entries.get(name) !== loader) return
+      if (prev !== undefined) this.#entries.set(name, prev)
+      else this.#entries.delete(name)
     }
   }
 
