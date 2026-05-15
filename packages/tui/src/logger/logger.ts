@@ -4,8 +4,7 @@ import type { InspectOptions } from "./inspect.ts"
 import type { LogApi, LogFn, LogLevel } from "./levels.ts"
 
 import { log } from "../widgets/log.ts"
-import { markdown } from "../widgets/markdown.ts"
-import { inspect, isMarkdown } from "./inspect.ts"
+import { inspect } from "./inspect.ts"
 import { LOG_LEVELS, LoggerBase, shouldLog } from "./levels.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
@@ -99,10 +98,8 @@ export class Logger extends LoggerBase {
 
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const str = inspect(msg, this.#opts)
-    const useMd = (this.#opts.markdown ?? true) && isMarkdown(str)
-    const content = useMd ? markdown(str) : str
     const overrides = this.#opts.styles?.[level] ?? {}
-    return log({ content, level, ...overrides })
+    return log({ content: str, level, markdown: this.#opts.markdown, ...overrides })
   }
 
   /** String path for the no-stream fallback — builds a plain inspected

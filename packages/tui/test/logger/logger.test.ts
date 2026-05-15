@@ -2,8 +2,8 @@ import type { Node } from "../../src/core/node.ts"
 
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { Logger } from "../../src/logger/logger.ts"
-import { Markdown } from "../../src/widgets/markdown.ts"
 import { Log } from "../../src/widgets/log.ts"
+import { Markdown } from "../../src/widgets/markdown.ts"
 import { Text } from "../../src/widgets/text.ts"
 
 const fakeStream = () => {
@@ -35,7 +35,7 @@ describe("Logger — stream attached", () => {
     logger.attach(s)
     logger.info("**bold** text")
     const node = s.nodes[0] as Log
-    expect(node.state.content).toBeInstanceOf(Markdown)
+    expect(node.children[0]).toBeInstanceOf(Markdown)
   })
 
   test("plain string body wraps in Text (via log widget's string path)", () => {

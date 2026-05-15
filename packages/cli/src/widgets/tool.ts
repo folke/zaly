@@ -3,7 +3,8 @@ import type { Accessor } from "@zaly/tui"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
-import { box, inspect, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui"
+import { box, memo, show, text, truncateAnsi, unwrap, widget } from "@zaly/tui"
+import { inspect } from "@zaly/tui/logger"
 import { bubble } from "./bubble.ts"
 import { toolResult } from "./tools/registry.ts"
 

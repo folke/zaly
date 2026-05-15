@@ -1,4 +1,4 @@
-import type { RenderMarkdown } from "@zaly/tui"
+import type { RenderMarkdown } from "@zaly/tui/markdown"
 
 import { box, createCtx, markdown } from "@zaly/tui"
 import { dirname, resolve } from "node:path"

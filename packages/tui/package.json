@@ -27,9 +27,21 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
+    "./logger": {
+      "bun": "./src/logger/index.ts",
+      "default": "./dist/logger.mjs"
+    },
+    "./markdown": {
+      "bun": "./src/markdown/index.ts",
+      "default": "./dist/markdown.mjs"
+    },
     "./themes": {
       "bun": "./src/themes/registry.ts",
       "default": "./dist/themes.mjs"
+    },
+    "./widgets": {
+      "bun": "./src/widgets/index.ts",
+      "default": "./dist/widgets.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -37,7 +49,10 @@
     "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
+      "./logger": "./dist/logger.mjs",
+      "./markdown": "./dist/markdown.mjs",
       "./themes": "./dist/themes.mjs",
+      "./widgets": "./dist/widgets.mjs",
       "./package.json": "./package.json"
     },
     "imports": {

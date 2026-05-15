@@ -1,28 +1,30 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { LogLevel } from "../logger/levels.ts"
 import type { Color } from "../style/types.ts"
-import type { TextContent } from "./text.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { Node, isNode } from "../core/node.ts"
+import { isMarkdown } from "../logger/inspect.ts"
 import { stringWidth } from "../style/ansi.ts"
+import { markdown } from "./markdown.ts"
 import { text as textFactory } from "./text.ts"
 
 export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text"
 
 export interface LogState {
   level: LogLevel
-  content: Node | TextContent
+  content: Node | string
   /** Rendering of the per-level prefix chunk. Defaults by level. */
   style?: LogStyle
   /** Single-glyph icon for `icon` / `prompt` styles. */
   icon?: string
   /** Theme slot or color name used to tint the prefix. */
   color?: Color
-  /** Optional fg applied to a string body. Ignored when `content` is a Node. */
-  textColor?: Color
   /** Extra plain text prepended to the auto prefix (unstyled). */
   prefix?: string
+  /** Theme slot or color name for the body text. Defaults by level, except */
+  textColor?: Color
+  markdown?: boolean
 }
 
 interface LevelDefaults {
@@ -55,9 +57,18 @@ const noColorStyles: Record<LogStyle, LogStyle> = {
 }
 
 export class Log extends Node<LogState> {
+  #child: Node
+
   constructor(state: LogState) {
     super(state)
-    if (isNode(state.content)) this.add(state.content)
+    let child: Node
+
+    if (isNode(state.content)) child = state.content
+    else if ((state.markdown ?? true) && isMarkdown(state.content)) child = markdown(state.content)
+    else child = textFactory(state.content)
+
+    this.#child = child
+    this.add(this.#child)
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
@@ -89,11 +100,11 @@ export class Log extends Node<LogState> {
     const bodyOffset = prefixWidth === 0 ? 0 : prefixWidth + 1
     const bodyWidth = Math.max(1, ctx.width - bodyOffset)
 
-    const body: Node = isNode(s.content)
-      ? s.content
-      : textFactory(s.content, textColor ? { fg: textColor } : {})
-
-    const bodyRows = await body.render({ ...ctx, width: bodyWidth })
+    const bodyRows = await this.#child.render({
+      ...ctx,
+      style: textColor ? ctx.style.fg(textColor) : ctx.style,
+      width: bodyWidth,
+    })
 
     if (bodyOffset === 0) return bodyRows
 

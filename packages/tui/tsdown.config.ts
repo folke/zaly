@@ -26,6 +26,8 @@ export default defineConfig({
     "ansi.bun": "src/runtime/ansi.bun.ts",
     "md.bun": "src/runtime/md.bun.ts",
     themes: "src/themes/registry.ts",
+    logger: "src/logger/index.ts",
+    markdown: "src/markdown/index.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

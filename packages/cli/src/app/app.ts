@@ -1,6 +1,6 @@
 import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
-import type { Input, LogCallable, Renderer, Theme } from "@zaly/tui"
+import type { Input, Renderer, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Config } from "../config.ts"
 
@@ -32,7 +32,6 @@ export class App {
   #theme!: Theme
   #renderer!: Renderer
   #input!: Input
-  #log!: LogCallable
 
   #agent?: Agent
   #disposeAgentSignals?: () => void
@@ -58,6 +57,10 @@ export class App {
     return app
   }
 
+  get log() {
+    return this.#renderer.log
+  }
+
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
     this.#renderer = await createRenderer({
@@ -69,7 +72,6 @@ export class App {
       theme: this.#theme,
     })
     this.#renderer.logger.install()
-    this.#log = this.#renderer.log
 
     const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
 
@@ -109,7 +111,7 @@ export class App {
 
     this.#input.on("attach", ({ attachment: att }, self) => {
       if (!this.#agent) return
-      void this.#attachments.stage(att, self, this.#agent, this.#log)
+      void this.#attachments.stage(att, self, this.#agent)
     })
   }
 

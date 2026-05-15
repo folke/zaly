@@ -1,6 +1,6 @@
 import type { Agent } from "@zaly/agent"
 import type { Attachment } from "@zaly/ai"
-import type { Input, LogCallable } from "@zaly/tui"
+import type { Input } from "@zaly/tui"
 
 import { readFile } from "node:fs/promises"
 
@@ -41,8 +41,7 @@ export class AttachmentBuffer {
   async stage(
     att: { kind: "image" | "file"; path: string; type: string },
     input: Input,
-    agent: Agent,
-    log: LogCallable
+    agent: Agent
   ): Promise<void> {
     const isImage = att.kind === "image" || att.type.startsWith("image/")
     const isPdf =
@@ -54,14 +53,14 @@ export class AttachmentBuffer {
       const { fileDetect } = await import("@zaly/shared/detect")
       const detected = await fileDetect(att.path)
       if (detected?.type !== "image") {
-        log.error(`couldn't read image \`${att.path}\``)
+        console.error(`couldn't read image \`${att.path}\``)
         return insertAtCursor(input, att.path)
       }
       const { imageConvert, imageInfo } = await import("@zaly/shared/image")
       const info = await imageInfo(detected)
       const ready = await imageConvert(info, ["png", "jpeg", "webp"])
       if (!ready) {
-        log.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)
+        console.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)
         return insertAtCursor(input, att.path)
       }
       const idx = ++this.#counter
@@ -73,7 +72,7 @@ export class AttachmentBuffer {
     if (isPdf && agent.model.canAttach("pdf")) {
       const { toPdfPart } = await import("@zaly/ai")
       const data = await readFile(att.path).catch((error: unknown) => {
-        log.error(`couldn't read **PDF** \`${att.path}\`: ${(error as Error).message}`)
+        console.error(`couldn't read **PDF** \`${att.path}\`: ${(error as Error).message}`)
         return undefined
       })
       if (!data) return insertAtCursor(input, att.path)
