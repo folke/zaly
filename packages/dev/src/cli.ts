@@ -64,11 +64,17 @@ const main = defineCommand({
         name: "build",
         description: "Build the current package (or all when run from root)",
       },
-      run: async () => {
+      args: {
+        scripts: {
+          type: "boolean",
+          description: "Also run `build:*` scripts before tsdown",
+          default: true,
+        },
+      },
+      run: async ({ args }) => {
         const pkg = currentPackage()
-        await runScripts("build:*", pkg)
-        const args = ["tsdown", "--cwd", root, ...(pkg ? ["--filter", pkg] : [])]
-        await exec(args)
+        if (args.scripts) await runScripts("build:*", pkg)
+        await exec(["tsdown", "--cwd", root, ...(pkg ? ["--filter", pkg] : [])])
       },
     }),
     test: defineCommand({
