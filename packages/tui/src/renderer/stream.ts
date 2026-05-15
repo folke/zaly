@@ -174,7 +174,9 @@ export class Stream extends Surface {
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
           const len = s.rows?.length ?? 0
-          s.rows = await createRender(s.node, { ...ctx, boundary: s.boundary })
+          s.rows = s.live
+            ? await s.node.render(ctx)
+            : await createRender(s.node, { ...ctx, boundary: s.boundary })
           if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
           s.version = ctx.version
         }
