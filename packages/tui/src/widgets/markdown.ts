@@ -2,6 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Accessor, Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
+import type { MarkdownRenderer } from "../markdown/renderer.ts"
 import type { MdOptions } from "../markdown/types.ts"
 import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { Image } from "./image.ts"
@@ -10,9 +11,7 @@ import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
 import { memo, unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
-import { shikiCodeLangs } from "../markdown/code.ts"
-import { MarkdownRenderer } from "../markdown/renderer.ts"
-import { shiki } from "../style/shiki.ts"
+import { shiki, markdownCodeLangs } from "../style/shiki.ts"
 
 export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
@@ -38,21 +37,24 @@ export class Markdown extends Node<MarkdownState> {
   // move/resize of the existing placement.
   readonly images = new Map<string, Image>()
 
-  #renderer: MarkdownRenderer
+  #renderer?: MarkdownRenderer
   #highlighter: Accessor<AnsiHighlighter | undefined>
 
   constructor(state: State<MarkdownState>) {
     super(state)
-    this.#renderer = new MarkdownRenderer({ ...state.options, parent: this })
 
     const langs = memo(() =>
-      this.state.syntax === false ? [] : shikiCodeLangs(unwrap(this.state.content))
+      this.state.syntax === false ? [] : markdownCodeLangs(unwrap(this.state.content))
     )
 
     this.#highlighter = shiki.createLoader(() => langs())
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
+    if (!this.#renderer) {
+      const { MarkdownRenderer } = await import("../markdown/renderer.ts")
+      this.#renderer = new MarkdownRenderer({ ...this.state.options, parent: this })
+    }
     const source = unwrap(this.state.content) // tracked
     const formatted = !hasColors
       ? this.#renderer.normalizeEol(source, source)

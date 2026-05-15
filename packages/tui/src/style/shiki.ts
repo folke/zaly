@@ -178,3 +178,18 @@ export async function codeToAnsi(code: string, lang: string, theme: T = THEME): 
   await shiki.load([lang], [theme])
   return shiki.highlight(code, lang, theme)
 }
+
+/**
+ * Collect all fenced-block languages from a markdown source. First
+ * whitespace-delimited token of each info-string is the language; duplicates
+ * are deduped. Unknown-to-shiki names pass through and get filtered out by
+ * `createAnsiHighlighter`.
+ */
+export function markdownCodeLangs(md: string): ShikiLanguage[] {
+  const langs = new Set<string>()
+  for (const m of md.matchAll(/^\s*`{3,}([^\n]+)$/gm)) {
+    const lang = m[1].trim().split(/\s/)[0]
+    if (lang !== "") langs.add(lang)
+  }
+  return [...langs].filter((l) => shiki.isLang(l))
+}

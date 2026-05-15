@@ -73,11 +73,8 @@ export class MarkdownRenderer {
   async #highlighter(source: string, ctx: MarkdownCtx) {
     if (ctx.highlighter === false) return
     if (ctx.highlighter === true) {
-      const [{ shiki }, { shikiCodeLangs }] = await Promise.all([
-        import("../style/shiki.ts"),
-        import("./code.ts"),
-      ])
-      const langs = shikiCodeLangs(source)
+      const { shiki, markdownCodeLangs } = await import("../style/shiki.ts")
+      const langs = markdownCodeLangs(source)
       const theme = ctx.style.theme.shiki
       await shiki.load(langs, theme)
       return shiki.highlighter(theme)
