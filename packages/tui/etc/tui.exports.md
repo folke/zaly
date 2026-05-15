@@ -1,33 +1,12 @@
-# @zaly/tui (197)
+# @zaly/tui (179)
 
-## Classes (24)
+## Classes (3)
 
-- Actions
-- Autocomplete
-- Box
-- Diff
-- Image
-- Input
-- InputRouter
-- Log
-- Logger
-- LoggerBase
-- Markdown
 - MarkdownRenderer
-- Menu
 - Node
-- OverlaySurface
 - Owner
-- Progress
-- Renderer
-- Show
-- Spinner
-- Stream
-- Terminal
-- Text
-- UI
 
-## Functions (70)
+## Functions (65)
 
 - actionsSource
 - ansiColor
@@ -58,14 +37,10 @@
 - image
 - inRenderContextOf
 - input
-- inspect
 - isAccessor
 - isHexColor
-- isLogLevel
-- isMarkdown
 - isNode
 - log
-- makeLog
 - markdown
 - memo
 - menu
@@ -78,7 +53,6 @@
 - rank
 - reapplyStyle
 - resetImageTransmitCache
-- shouldLog
 - show
 - signal
 - sliceAnsi
@@ -100,16 +74,39 @@
 - withOwner
 - wrapAnsi
 
-## Constants (6)
+## Constants (4)
 
-- LOG_LEVELS
 - RESET
 - RenderContext
 - SuspenseContext
-- defaultActions
 - spinnerFrames
 
-## Types (97)
+## Types Classes (18)
+
+- Actions
+- Autocomplete
+- Box
+- Diff
+- Image
+- Input
+- Log
+- Markdown
+- Menu
+- OverlaySurface
+- Progress
+- Renderer
+- Show
+- Spinner
+- Stream
+- Terminal
+- Text
+- UI
+
+## Types Constants (1)
+
+- defaultActions
+
+## Types (88)
 
 - AcceptFn
 - Accessor
@@ -148,19 +145,10 @@
 - InputAttachment
 - InputEvents
 - InputState
-- InspectOptions
 - Layout
 - LayoutState
-- LogApi
-- LogCallable
-- LogEntryFactory
-- LogFn
-- LogLevel
 - LogState
 - LogStyle
-- LogStyleOverride
-- LoggerOptions
-- LoggerStream
 - MarkdownCtx
 - MarkdownOptions
 - MarkdownState

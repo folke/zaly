@@ -6,14 +6,13 @@
 - ContentTransform
 - Model
 
-## Functions (49)
+## Functions (48)
 
 - addModels
 - attachmentToMeta
 - authenticate
 - builtinProviders
 - chainAuth
-- collect
 - compressImages
 - createTransform
 - defineTool
@@ -61,6 +60,10 @@
 ## Constants (1)
 
 - authRegistry
+
+## Types Functions (1)
+
+- collect
 
 ## Types (63)
 

@@ -122,11 +122,9 @@ const main = defineCommand({
           description: "Bench cold imports (deps + exports) via hyperfine",
           default: false,
         },
-        runtime: {
-          type: "enum",
-          enum: ["bun", "node"],
-          description: "Runtime to use for import benchmarks",
-          default: "bun",
+        node: {
+          type: "boolean",
+          description: "Use the node runtime instead of bun for imports benchmark",
         },
       },
       run: async ({ args }) => {
@@ -136,7 +134,7 @@ const main = defineCommand({
           return cwd === root ? allPackageDirs() : [cwd]
         })()
         if (args.imports) {
-          await runImports({ pkgDirs, exec }, args.runtime)
+          await runImports({ pkgDirs, exec }, args.node ? "node" : "bun")
           return
         }
         const dirs = pkgDirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
@@ -173,10 +171,19 @@ const main = defineCommand({
           description: "Fail if reports drifted (CI mode)",
           default: process.env.CI === "true",
         },
+        node: {
+          type: "boolean",
+          description: "Use the node runtime instead of bun for imports benchmark",
+        },
       },
       run: async ({ args }) => {
         const { runExports } = await import("./exports.ts")
-        const ok = runExports({ root, slug: currentSlug(), check: args.check })
+        const ok = await runExports({
+          root,
+          slug: currentSlug(),
+          check: args.check,
+          runtime: args.node ? "node" : "bun",
+        })
         if (!ok) process.exit(1)
       },
     }),

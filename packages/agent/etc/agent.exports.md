@@ -1,25 +1,31 @@
 # @zaly/agent (50)
 
-## Classes (5)
+## Classes (1)
 
-- Agent
-- AgentContext
 - PermissionManager
-- StopPolicy
-- Tasks
 
-## Functions (4)
+## Functions (1)
 
 - createAgent
-- createAgentContext
-- taskCompletionMessage
-- taskInfoPart
 
 ## Constants (3)
 
 - handlerRegistry
 - toolRegistry
 - zalyPaths
+
+## Types Classes (4)
+
+- Agent
+- AgentContext
+- StopPolicy
+- Tasks
+
+## Types Functions (3)
+
+- createAgentContext
+- taskCompletionMessage
+- taskInfoPart
 
 ## Types (38)
 
