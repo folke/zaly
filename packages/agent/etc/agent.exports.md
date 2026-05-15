@@ -1,9 +1,5 @@
 # @zaly/agent (50)
 
-## Classes (1)
-
-- PermissionManager
-
 ## Functions (1)
 
 - createAgent
@@ -14,10 +10,11 @@
 - toolRegistry
 - zalyPaths
 
-## Types Classes (4)
+## Types Classes (5)
 
 - Agent
 - AgentContext
+- PermissionManager
 - StopPolicy
 - Tasks
 

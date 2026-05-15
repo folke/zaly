@@ -2,7 +2,7 @@ import type { PermissionOptions } from "../src/permissions/index.ts"
 
 import { describe, expect, test } from "vitest"
 import { isSensitiveFile } from "../src/permissions/handlers/files.ts"
-import { PermissionManager } from "../src/permissions/index.ts"
+import { PermissionManager } from "../src/permissions/manager.ts"
 import { permissionPresets } from "../src/permissions/presets.ts"
 
 const cwd = "/home/folke/projects/zaly"

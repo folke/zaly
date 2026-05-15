@@ -4,11 +4,10 @@
 
 ```ts
 
-import { BundledLanguage } from 'shiki/types';
 import { BundledTheme } from 'shiki/types';
 import { Dirent } from 'node:fs';
 import { Emitter } from '@zaly/shared';
-import { InspectOptions as InspectOptions_2 } from 'node:util';
+import { InspectOptions } from 'node:util';
 
 // @public
 export type AcceptFn<T> = (item: T, query: string) => string | undefined;
@@ -79,9 +78,6 @@ export interface ActionsSourceOptions {
 
 // @public (undocumented)
 export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inherit";
-
-// @public (undocumented)
-export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined;
 
 // @public
 export type AnsiColorName = "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "gray" | "grey";
@@ -285,10 +281,10 @@ export function createContext<T>(): Context<T | undefined>;
 // @public (undocumented)
 export function createContext<T>(defaultValue: T): Context<T>;
 
-// @internal
+// @public (undocumented)
 export function createCtx(opts?: Partial<RenderCtx> & {
     theme?: Theme;
-}): RenderCtx;
+}): Promise<RenderCtx>;
 
 // @public
 export function createNode<T extends Node>(fn: () => T): T;
@@ -424,13 +420,7 @@ export interface GithubSourceOptions {
 export type GithubState = "open" | "closed" | "all";
 
 // @public
-export function hasAnsi(text: string): boolean;
-
-// @public
 export type HexColor = `#${string}`;
-
-// @internal
-export function hyperlink(url: string, text: string): string;
 
 // @public (undocumented)
 export class Image extends Node<ImageState> {
@@ -518,26 +508,8 @@ export interface InputState extends StyleState {
 // @internal
 export function inRenderContextOf(node: Node): boolean;
 
-// @public
-export function inspect(msg: unknown[], opts?: InspectOptions): string;
-
-// @public (undocumented)
-export interface InspectOptions {
-    inspect?: InspectOptions_2;
-    stacktrace?: boolean;
-}
-
 // @internal
 export function isAccessor<T>(v: unknown): v is Accessor<T>;
-
-// @public (undocumented)
-export function isHexColor(s: string): s is HexColor;
-
-// @public (undocumented)
-export function isLogLevel(level: string): level is LogLevel;
-
-// @public
-export function isMarkdown(s: string): boolean;
 
 // @internal
 export function isNode(x: unknown): x is Node;
@@ -567,86 +539,15 @@ export class Log extends Node<LogState> {
 export function log(state: LogState): Log;
 
 // @public (undocumented)
-export const LOG_LEVELS: readonly ["trace", "debug", "log", "info", "success", "cancel", "warn", "error", "fatal"];
-
-// @public
-export type LogApi<T = void> = Record<LogLevel, LogFn<T>>;
-
-// @public
-export type LogCallable = LogFn & LogApi & Pick<Logger, "attach" | "detach" | "install" | "uninstall">;
-
-// @public (undocumented)
-export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node;
-
-// @public (undocumented)
-export type LogFn<T = void> = (...msg: unknown[]) => T;
-
-// @public (undocumented)
-export class Logger extends LoggerBase {
-    constructor(opts?: LoggerOptions);
-    // (undocumented)
-    attach(stream: LoggerStream): this;
-    // (undocumented)
-    detach(): this;
-    // (undocumented)
-    install(): this;
-    // (undocumented)
-    protected _log(level: LogLevel, ...msg: unknown[]): void;
-    // (undocumented)
-    uninstall(): this;
-}
-
-// @public (undocumented)
-export abstract class LoggerBase<T = void> implements LogApi<T> {
-    constructor();
-    // (undocumented)
-    cancel: LogFn<T>;
-    // (undocumented)
-    debug: LogFn<T>;
-    // (undocumented)
-    error: LogFn<T>;
-    // (undocumented)
-    fatal: LogFn<T>;
-    // (undocumented)
-    info: LogFn<T>;
-    // (undocumented)
-    log: LogFn<T>;
-    // (undocumented)
-    protected abstract _log(level: LogLevel, ...msg: unknown[]): T;
-    // (undocumented)
-    success: LogFn<T>;
-    // (undocumented)
-    trace: LogFn<T>;
-    // (undocumented)
-    warn: LogFn<T>;
-}
-
-// @public (undocumented)
-export interface LoggerOptions extends InspectOptions {
-    factory?: LogEntryFactory;
-    markdown?: boolean;
-    minLevel?: LogLevel;
-    styles?: Partial<Record<LogLevel, LogStyleOverride>>;
-    write?: (text: string, kind: "stdout" | "stderr") => void;
-}
-
-// @public
-export interface LoggerStream {
-    // (undocumented)
-    append(node: () => Node): unknown;
-}
-
-// @public (undocumented)
-export type LogLevel = (typeof LOG_LEVELS)[number];
-
-// @public (undocumented)
 export interface LogState {
     color?: Color;
     // (undocumented)
-    content: Node | TextContent;
+    content: Node | string;
     icon?: string;
     // (undocumented)
     level: LogLevel;
+    // (undocumented)
+    markdown?: boolean;
     prefix?: string;
     style?: LogStyle;
     textColor?: Color;
@@ -654,12 +555,6 @@ export interface LogState {
 
 // @public (undocumented)
 export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text";
-
-// @public (undocumented)
-export type LogStyleOverride = Omit<LogState, "level" | "content">;
-
-// @public
-export function makeLog(logger: Logger): LogCallable;
 
 // @public (undocumented)
 export class Markdown extends Node<MarkdownState> {
@@ -679,25 +574,6 @@ export function markdown(content: Reactive<string>, style?: Omit<State<MarkdownS
 export function markdown(state: State<MarkdownState>): Markdown;
 
 // @public (undocumented)
-export type MarkdownCtx = RenderCtx & {
-    highlighter?: AnsiHighlighter | boolean;
-    images?: boolean;
-};
-
-// @public (undocumented)
-export type MarkdownOptions = MdOptions & {
-    parent?: Node;
-};
-
-// @public (undocumented)
-export class MarkdownRenderer {
-    constructor(opts?: MarkdownOptions);
-    normalizeEol(source: string, rendered: string): string;
-    // (undocumented)
-    render(source: string, ctx: MarkdownCtx): Promise<string>;
-}
-
-// @public (undocumented)
 export interface MarkdownState {
     content: Reactive<string>;
     options?: MdOptions;
@@ -708,33 +584,6 @@ export interface MarkdownState {
 
 // @public
 export type Matcher = (s: string) => number;
-
-// @public
-export interface MdOptions {
-    autolinks?: boolean | {
-        url?: boolean;
-        www?: boolean;
-        email?: boolean;
-    };
-    collapseWhitespace?: boolean;
-    hardSoftBreaks?: boolean;
-    headings?: boolean | {
-        ids?: boolean;
-        autolink?: boolean;
-    };
-    latexMath?: boolean;
-    noHtmlBlocks?: boolean;
-    noHtmlSpans?: boolean;
-    noIndentedCodeBlocks?: boolean;
-    permissiveAtxHeaders?: boolean;
-    render?: RenderMarkdown;
-    strikethrough?: boolean;
-    tables?: boolean;
-    tagFilter?: boolean;
-    tasklists?: boolean;
-    underline?: boolean;
-    wikiLinks?: boolean;
-}
 
 // @public
 export function memo<T>(fn: () => T): Accessor<T>;
@@ -889,9 +738,6 @@ export type NodeVisitor = (node: Node) => void | "stop";
 export function onCleanup(fn: () => void): void;
 
 // @public (undocumented)
-export function openAnsi(style: AnsiStyle): string;
-
-// @public (undocumented)
 export type Overlay = Box<OverlayState>;
 
 // @public (undocumented)
@@ -941,9 +787,6 @@ export class Owner {
 export type Padding = number | readonly [v: number, h: number] | readonly [t: number, r: number, b: number, l: number];
 
 // @public (undocumented)
-export function parseHex(hex: string): RGB;
-
-// @public (undocumented)
 export class Progress extends Node<ProgressState> {
     // (undocumented)
     protected _render(ctx: RenderCtx): string[];
@@ -976,9 +819,6 @@ export function rank<T>(items: Iterable<T>, score: (item: T) => number, limit?: 
 // @public
 export type Reactive<T> = T | Accessor<T>;
 
-// @internal
-export function reapplyStyle(s: string, escape: string): string;
-
 // @public (undocumented)
 export type Ref<T> = (() => T) & {
     value: T;
@@ -986,12 +826,6 @@ export type Ref<T> = (() => T) & {
 
 // @public (undocumented)
 export const RenderContext: Context<RenderContextValue | undefined>;
-
-// @public
-export type RenderContextValue = {
-    theme: Accessor<Theme>; /** Theme-bound chainable style builder. Derived memo over `theme`. */
-    style: Accessor<StyleBuilder>;
-};
 
 // @public
 export interface RenderCtx {
@@ -1054,12 +888,6 @@ export interface RendererOptions {
     uiMaxHeight?: number;
 }
 
-// @public
-export type RenderMarkdown = (input: string, callbacks: MdCallbacks, opts?: MdOptions) => string;
-
-// @internal (undocumented)
-export const RESET = "\u001B[0m";
-
 // @internal
 export function resetImageTransmitCache(): void;
 
@@ -1070,15 +898,6 @@ export type RGB = [r: number, g: number, b: number];
 export type Setter<T> = ((next: T | ((prev: T) => T)) => void) & {
     readonly [REACTIVE]: "set";
 };
-
-// @public (undocumented)
-export type ShikiLanguage = L;
-
-// @public (undocumented)
-export type ShikiTheme = T;
-
-// @public (undocumented)
-export function shouldLog(level: string, minLevel?: LogLevel): boolean;
 
 // @public
 export class Show extends Node<ShowState> {
@@ -1108,9 +927,6 @@ export function signal<T>(initial: T): Signal<T>;
 export type SignalStore<T extends object> = T & {
     set(patch: Partial<T> | ((current: T) => Partial<T>)): void;
 };
-
-// @public
-export function sliceAnsi(s: string, start: number, end?: number): string;
 
 // @public
 export class Spinner extends Node<SpinnerState> {
@@ -1145,9 +961,6 @@ export interface SpinnerState {
 // @public (undocumented)
 export type SpinnerStyle = keyof typeof spinnerFrames;
 
-// @public
-export function splitAnsi(s: string): string[];
-
 // @public (undocumented)
 export type State<T extends object = object> = T & BaseState;
 
@@ -1174,31 +987,11 @@ export class Stream extends Surface {
 }
 
 // @public
-export function stringWidth(s: string): number;
-
-// @public
-export function stripAnsi(s: string): string;
-
-// @public
 export type Style = Omit<AnsiStyle, "fg" | "bg"> & {
     fg?: Color;
     bg?: Color;
     style?: AnyStyle;
 };
-
-// @public
-export function style(theme?: Theme): StyleBuilder;
-
-// @public (undocumented)
-export type StyleBuilder = {
-    theme: Theme;
-    (text: string): string;
-    fg(color: Color): StyleBuilder;
-    bg(color: Color): StyleBuilder;
-    add(slot?: AnyThemeKey | Style): StyleBuilder;
-    lighten(n: number): StyleBuilder;
-    darken(n: number): StyleBuilder;
-} & { readonly [K in AttrName | FgChainKey | BgChainKey | FgExtractKey]: StyleBuilder };
 
 // @public
 export type StyleState = Style;
@@ -1338,15 +1131,6 @@ export type ThemeValue = Color | Style;
 export function toAccessor<T>(value: T): Accessor<T>;
 
 // @public (undocumented)
-export function toHex(c: RGB): HexColor;
-
-// @public (undocumented)
-export function toHex(r: number, g: number, b: number): HexColor;
-
-// @public (undocumented)
-export const truncateAnsi: (s: string, maxLength: number, ellipsis?: string) => string;
-
-// @public (undocumented)
 export class UI extends Surface {
     constructor(terminal: Terminal, getCtx: () => RenderCtx, rootOwner: Owner, opts?: UIOptions);
     add<N extends Node>(child: () => N): N;
@@ -1390,17 +1174,8 @@ export function withActiveNode<T>(node: Node, fn: () => T): T;
 // @internal
 export function withOwner<T>(owner: Owner, fn: () => T): T;
 
-// @public
-export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string;
-
 // @public (undocumented)
 export type WrapMode = "word" | "char" | "none";
-
-// @public
-export interface WrapOpts {
-    // (undocumented)
-    mode?: "word" | "char";
-}
 
 // (No @packageDocumentation comment for this package)
 

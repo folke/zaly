@@ -13,7 +13,7 @@ import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { toolHandler } from "../src/permissions/handlers/tool.ts"
-import { PermissionManager } from "../src/permissions/index.ts"
+import { PermissionManager } from "../src/permissions/manager.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
 const noopTool: Tool = defineTool({

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { matchRule } from "../src/permissions/handlers/bash.ts"
-import { PermissionManager } from "../src/permissions/index.ts"
+import { PermissionManager } from "../src/permissions/manager.ts"
 import { parseBash } from "../src/utils/bash/parser.ts"
 
 const cwd = "/home/folke/projects/zaly"
