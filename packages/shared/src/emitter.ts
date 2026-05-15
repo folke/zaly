@@ -5,7 +5,7 @@
  *  (use `{}` for events that carry no data). No discriminator required
  *  on the payload — the name IS the discriminator, supplied at
  *  emit/listen time. */
-export type EventMap = Record<string, Record<string, unknown>>
+export type EventMap = Record<string, Record<string, unknown> | { signal?: AbortSignal }>
 
 /** Conditional rest params for `emit`: when the payload type has no
  *  keys (declared as `{}`), the second arg can be omitted —
@@ -17,7 +17,16 @@ type EmitArgs<E> = keyof E extends never ? [] : [event: E]
  *  instance (typed as `Self`, the polymorphic `this` of the class) so
  *  handlers can chain, mutate, or unsubscribe without closing over a
  *  separate reference. */
-export type Listener<E, Self, R extends void | Promise<void> = void> = (event: E, self: Self) => R
+export type Listener<E, Self, R extends void | Promise<void> = void> = (
+  event: E,
+  self: Self,
+  ctx: ListenerCtx
+) => R
+
+export type ListenerCtx = {
+  signal: AbortSignal
+  abort(reason?: unknown): void
+}
 
 /** Per-key event envelope — the payload plus its discriminator. This is
  *  the shape every listener receives, both typed and wildcard. */
@@ -65,9 +74,9 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
   }
 
   once<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
-    const wrapped = ((event, self) => {
+    const wrapped = ((event, self, ctx) => {
       this.off(type, fn)
-      return fn(event as EventOf<T, K>, self as this)
+      return fn(event as EventOf<T, K>, self as this, ctx)
     }) as AnyListener<R>
     this.#wrappers.set(fn as AnyListener<R>, wrapped)
     return this.#add(type, wrapped)
@@ -112,32 +121,55 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
     if (all.length === 0 && typed.length === 0) return undefined as R
 
     const event = { type, ...((args[0] ?? {}) as T[K]) } as EventOf<T, K>
+    const outer = (event as { signal?: AbortSignal }).signal
     const todo = [...all, ...typed]
+
+    let a: AbortController | undefined
+    let combined: AbortSignal | undefined
+    const ctx: ListenerCtx = {
+      abort(reason) {
+        ;(a ??= new AbortController()).abort(reason)
+      },
+      get signal() {
+        a ??= new AbortController()
+        // Merge with outer once; subsequent reads reuse the same combined
+        // signal so listeners can dedupe with strict equality if they want.
+        combined ??= outer ? AbortSignal.any([outer, a.signal]) : a.signal
+        return combined
+      },
+    }
+
+    // True when either the outer caller-supplied signal or the chain's
+    // own controller has aborted. The chain-side check is gated on `a`
+    // existing so a no-touch emit never allocates a controller.
+    const aborted = (): boolean => outer?.aborted === true || a?.signal.aborted === true
+
+    // Call one listener, funnelling any sync throw to onEmitError.
+    // Returns the listener's result (possibly a Promise) or undefined
+    // when the call threw synchronously.
+    const call = (i: number): unknown => {
+      try {
+        return todo[i](event as unknown, this as unknown, ctx)
+      } catch (error) {
+        this.onEmitError?.(error)
+      }
+    }
 
     // Run sync listeners in line until we hit an async one. From there,
     // await sequentially. For sync-only emitters, listeners never return
     // Promises, so the async branch never triggers — zero overhead.
     for (let i = 0; i < todo.length; i++) {
-      let r: unknown
-      try {
-        r = todo[i](event as unknown, this as unknown)
-      } catch (error) {
-        this.onEmitError?.(error)
-        continue
-      }
+      if (aborted()) break
+      const r = call(i)
       if (r instanceof Promise) {
-        const rest = todo.slice(i + 1)
         return (async () => {
           await r.catch((error) => this.onEmitError?.(error))
-          for (const fn of rest) {
-            try {
-              const next = fn(event as unknown, this as unknown)
-              if (next instanceof Promise)
-                // oxlint-disable-next-line no-await-in-loop
-                await next.catch((error) => this.onEmitError?.(error))
-            } catch (error) {
-              this.onEmitError?.(error)
-            }
+          for (let j = i + 1; j < todo.length; j++) {
+            if (aborted()) break
+            const next = call(j)
+            if (next instanceof Promise)
+              // oxlint-disable-next-line no-await-in-loop
+              await next.catch((error) => this.onEmitError?.(error))
           }
         })() as R
       }
