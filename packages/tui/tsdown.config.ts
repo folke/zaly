@@ -28,6 +28,8 @@ export default defineConfig({
     themes: "src/themes/registry.ts",
     logger: "src/logger/index.ts",
     markdown: "src/markdown/index.ts",
+    style: "src/style/index.ts",
+    ansi: "src/style/ansi.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

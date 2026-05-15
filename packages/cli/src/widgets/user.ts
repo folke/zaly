@@ -2,7 +2,8 @@ import type { Attachment, FilePart } from "@zaly/ai"
 import type { Node } from "@zaly/tui"
 
 import { prettyPath } from "@zaly/shared"
-import { box, hyperlink, image, text, widget } from "@zaly/tui"
+import { box, image, text, widget } from "@zaly/tui"
+import { hyperlink } from "@zaly/tui/ansi"
 import { bubble } from "./bubble.ts"
 
 /** Single user-turn bubble. Plain text plus optional attachments —

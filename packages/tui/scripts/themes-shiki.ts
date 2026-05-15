@@ -21,7 +21,7 @@ import { writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { bundledThemes, normalizeTheme } from "shiki"
-import { parseHex, toHex } from "../src/index.ts"
+import { parseHex, toHex } from "../src/style/color.ts"
 
 /** Which Shiki themes we want to ship as first-class TUI themes.
  *  Order here defines the write order; no functional meaning. */
