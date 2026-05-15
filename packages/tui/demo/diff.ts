@@ -46,7 +46,7 @@ export function greet(name: string): string {
 }
 `.replace(/\n$/, "")
 
-const ctx = createCtx({ width: 100 })
+const ctx = await createCtx({ width: 100 })
 
 const heading = (s: string) => text(({ style }) => style.primary(s))
 

@@ -36,10 +36,10 @@ for (let i = 0; i < names.length; i += CHUNK) {
           .join("\n")
       )
     )
-    const panelRows = await panel.render(createCtx({ theme, width: PANEL_WIDTH }))
+    const panelRows = await panel.render(await createCtx({ theme, width: PANEL_WIDTH }))
     row.add(text(panelRows.join("\n")))
   }
-  const rows = await row.render(createCtx({ width: (PANEL_WIDTH + 1) * CHUNK }))
+  const rows = await row.render(await createCtx({ width: (PANEL_WIDTH + 1) * CHUNK }))
   console.log(rows.join("\n"))
   console.log()
 }

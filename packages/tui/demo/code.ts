@@ -38,7 +38,7 @@ done`,
 ]
 
 const theme = await loadTheme("catppuccin-mocha")
-const ctx = createCtx({ theme, width: 80 })
+const ctx = await createCtx({ theme, width: 80 })
 
 const column = (sample: (typeof samples)[number]) =>
   box({ flexDirection: "column", padding: [0, 0, 1, 0] }, code(sample))

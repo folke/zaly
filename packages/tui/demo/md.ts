@@ -84,7 +84,7 @@ const app = box(
   column("renderMarkdown (marked)", markedRenderer)
 )
 
-const ctx = createCtx({ width: 200 })
+const ctx = await createCtx({ width: 200 })
 const rendered = await app.render(ctx)
 
 console.log(rendered.join("\n"))

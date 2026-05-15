@@ -55,7 +55,7 @@ export class Cli extends Logger {
   }
 
   async #append(node: () => Node): Promise<void> {
-    this.#ctx ??= createCtx({ theme: await this.loadTheme() })
+    this.#ctx ??= await createCtx({ theme: await this.loadTheme() })
     const rows = await createRender(node, this.#ctx)
     process.stdout.write(`${rows.join("\n")}\n`)
   }
