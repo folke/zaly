@@ -1,17 +1,12 @@
-# @zaly/tui (196)
+# @zaly/tui (153)
 
-## Classes (5)
+## Classes (1)
 
-- Logger
-- LoggerBase
-- MarkdownRenderer
-- Node
 - Owner
 
-## Functions (70)
+## Functions (49)
 
 - actionsSource
-- ansiColor
 - autocomplete
 - box
 - calcLayout
@@ -34,44 +29,25 @@
 - formatText
 - fuzzyScore
 - githubSource
-- hasAnsi
-- hyperlink
 - image
 - inRenderContextOf
 - input
-- inspect
 - isAccessor
-- isHexColor
-- isLogLevel
-- isMarkdown
-- isNode
 - log
-- makeLog
 - markdown
 - memo
 - menu
 - onCleanup
-- openAnsi
 - overlay
-- parseHex
 - progress
 - provideContext
 - rank
-- reapplyStyle
 - resetImageTransmitCache
-- shouldLog
 - show
 - signal
-- sliceAnsi
 - spinner
-- splitAnsi
-- stringWidth
-- stripAnsi
-- style
 - text
 - toAccessor
-- toHex
-- truncateAnsi
 - untrack
 - unwrap
 - useActiveOwner
@@ -79,17 +55,14 @@
 - widget
 - withActiveNode
 - withOwner
-- wrapAnsi
 
-## Constants (5)
+## Constants (3)
 
-- LOG_LEVELS
-- RESET
 - RenderContext
 - SuspenseContext
 - spinnerFrames
 
-## Types Classes (18)
+## Types Classes (19)
 
 - Actions
 - Autocomplete
@@ -100,6 +73,7 @@
 - Log
 - Markdown
 - Menu
+- Node
 - OverlaySurface
 - Progress
 - Renderer
@@ -110,11 +84,15 @@
 - Text
 - UI
 
+## Types Functions (1)
+
+- isNode
+
 ## Types Constants (1)
 
 - defaultActions
 
-## Types (97)
+## Types (79)
 
 - AcceptFn
 - Accessor
@@ -153,24 +131,12 @@
 - InputAttachment
 - InputEvents
 - InputState
-- InspectOptions
 - Layout
 - LayoutState
-- LogApi
-- LogCallable
-- LogEntryFactory
-- LogFn
-- LogLevel
 - LogState
 - LogStyle
-- LogStyleOverride
-- LoggerOptions
-- LoggerStream
-- MarkdownCtx
-- MarkdownOptions
 - MarkdownState
 - Matcher
-- MdOptions
 - MenuEvents
 - MenuItem
 - MenuRender
@@ -186,13 +152,9 @@
 - RGB
 - Reactive
 - Ref
-- RenderContextValue
 - RenderCtx
-- RenderMarkdown
 - RendererOptions
 - Setter
-- ShikiLanguage
-- ShikiTheme
 - ShowState
 - Signal
 - SignalStore
@@ -200,7 +162,6 @@
 - SpinnerStyle
 - State
 - Style
-- StyleBuilder
 - StyleState
 - SurfaceType
 - SuspenseBoundary
@@ -212,4 +173,3 @@
 - Widget
 - WidgetFactory
 - WrapMode
-- WrapOpts
