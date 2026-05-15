@@ -1,3 +1,5 @@
+// oxlint-disable no-await-in-loop
+// oxlint-disable unicorn/prefer-ternary
 // oxlint-disable sort-keys
 
 import { defineCommand, runCommand, runMain, showUsage } from "citty"
@@ -32,6 +34,13 @@ function allPackageDirs(): string[] {
     .filter((d) => d.isDirectory() && existsSync(join(pkgsRoot, d.name, "package.json")))
     .map((d) => join(pkgsRoot, d.name))
     .toSorted()
+}
+
+function pkgDirs(opts: { root?: boolean } = {}): string[] {
+  const slug = currentSlug()
+  const ret = slug ? [join(root, "packages", slug)] : allPackageDirs()
+  if (!slug && opts.root) ret.unshift(root)
+  return ret
 }
 
 async function exec(cmd: string[], cwd: string = process.cwd()): Promise<void> {
@@ -77,6 +86,19 @@ const main = defineCommand({
         await exec(["tsdown", "--cwd", root, ...(pkg ? ["--filter", pkg] : [])])
       },
     }),
+    update: defineCommand({
+      meta: {
+        name: "update",
+        alias: ["up"],
+        description: "Update the current package (or all when run from root)",
+      },
+      run: async () => {
+        for (const dir of pkgDirs()) {
+          console.log(`Updating ${dir}...`)
+          await exec(["bun", "update", "--cwd", dir, "--latest"])
+        }
+      },
+    }),
     test: defineCommand({
       meta: {
         name: "test",
@@ -88,11 +110,10 @@ const main = defineCommand({
       run: async ({ args, rawArgs }) => {
         const pkg = currentPackage()
         const extras = rawArgs.filter((a) => a !== "--bun")
+        if (args.bun) await exec(["bun", "test"])
         if (pkg) {
-          if (args.bun) await exec(["bun", "test"])
           await exec(["vitest", "-r", root, "--project", pkg, "run", ...extras])
         } else {
-          if (args.bun) await exec(["bun", "test", "--no-env-file"], root)
           await exec(["vitest", "run", ...extras], root)
         }
       },
@@ -135,15 +156,12 @@ const main = defineCommand({
       },
       run: async ({ args }) => {
         const { runMitata, runImports } = await import("./bench.ts")
-        const pkgDirs = (() => {
-          const cwd = process.cwd()
-          return cwd === root ? allPackageDirs() : [cwd]
-        })()
+        const pdirs = pkgDirs()
         if (args.imports) {
-          await runImports({ pkgDirs, exec }, args.node ? "node" : "bun")
+          await runImports({ pkgDirs: pdirs, exec }, args.node ? "node" : "bun")
           return
         }
-        const dirs = pkgDirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
+        const dirs = pdirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
         const ok = await runMitata({ dirs, pattern: args.pattern })
         if (!ok) process.exit(1)
       },
