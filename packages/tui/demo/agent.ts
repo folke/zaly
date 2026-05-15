@@ -25,7 +25,7 @@ import {
  *   - signal-driven footer updates, streamed markdown replies
  */
 
-const renderer = createRenderer()
+const renderer = await createRenderer()
 
 const [busy, setBusy] = signal(false)
 const [status, setStatus] = signal("ready")

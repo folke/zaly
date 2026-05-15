@@ -22,7 +22,7 @@ import {
  *   ctrl-c   quit  (default binding)
  */
 
-const renderer = createRenderer()
+const renderer = await createRenderer()
 
 const [status, setStatus] = signal("ready")
 const [progressValue, setProgressValue] = signal(0)

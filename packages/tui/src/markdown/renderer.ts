@@ -4,10 +4,6 @@ import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { Image } from "../widgets/image.ts"
 import type { MdOptions, RenderMarkdown } from "./types.ts"
 
-import { createCallbacks } from "./callbacks.ts"
-import { shikiCodeLangs } from "./code.ts"
-import { createImageCallback } from "./image.ts"
-
 export type MarkdownOptions = MdOptions & {
   parent?: Node
 }
@@ -31,6 +27,11 @@ export class MarkdownRenderer {
   async render(source: string, ctx: MarkdownCtx): Promise<string> {
     // oxlint-disable-next-line unicorn/no-await-expression-member
     this.#render ??= this.#opts.render ?? (await import("#md")).renderMarkdown
+
+    const [{ createCallbacks }, { createImageCallback }] = await Promise.all([
+      import("./callbacks.ts"),
+      import("./image.ts"),
+    ])
 
     const callbacks = createCallbacks({
       ...ctx,
@@ -72,7 +73,10 @@ export class MarkdownRenderer {
   async #highlighter(source: string, ctx: MarkdownCtx) {
     if (ctx.highlighter === false) return
     if (ctx.highlighter === true) {
-      const { shiki } = await import("../style/shiki.ts")
+      const [{ shiki }, { shikiCodeLangs }] = await Promise.all([
+        import("../style/shiki.ts"),
+        import("./code.ts"),
+      ])
       const langs = shikiCodeLangs(source)
       const theme = ctx.style.theme.shiki
       await shiki.load(langs, theme)

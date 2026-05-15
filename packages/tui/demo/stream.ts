@@ -70,7 +70,7 @@ That's enough for the first agent demo. Let's wire input next.
 `,
 ]
 
-const renderer = createRenderer()
+const renderer = await createRenderer()
 
 const [status, setStatus] = signal("streaming")
 const [progressValue, setProgressValue] = signal(0)

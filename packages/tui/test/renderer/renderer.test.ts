@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest"
 import { box, createRenderer, input, text } from "../../src/index.ts"
 import { MockReader, MockWriter } from "./mock.ts"
 
-function renderer() {
+async function renderer() {
   return createRenderer({
     hookSignals: false,
     stdin: new MockReader(),
@@ -13,29 +13,29 @@ function renderer() {
 }
 
 describe("renderer.getNode — lookup by id", () => {
-  test("finds a node tagged with id anywhere in the UI tree", () => {
-    const r = renderer()
+  test("finds a node tagged with id anywhere in the UI tree", async () => {
+    const r = await renderer()
     const a = input().id("editor")
     r.ui.root.add(box({}, a))
     expect(r.getNode("editor")).toBe(a)
   })
 
-  test("finds a node tagged with id attached to the stream", () => {
-    const r = renderer()
+  test("finds a node tagged with id attached to the stream", async () => {
+    const r = await renderer()
     const t = text("hi").id("greeting")
     r.stream.append(() => t)
     expect(r.getNode("greeting")).toBe(t)
   })
 
-  test("returns undefined when nothing matches", () => {
-    const r = renderer()
+  test("returns undefined when nothing matches", async () => {
+    const r = await renderer()
     expect(r.getNode("nope")).toBeUndefined()
   })
 })
 
 describe("renderer.findNode — filter by type or predicate", () => {
-  test("string argument matches node.type", () => {
-    const r = renderer()
+  test("string argument matches node.type", async () => {
+    const r = await renderer()
     const a = input()
     const b = input()
     r.ui.root.add(box({}, a, box({}, b)))
@@ -45,8 +45,8 @@ describe("renderer.findNode — filter by type or predicate", () => {
     expect(found).toContain(b)
   })
 
-  test("predicate receives every node and collects matches", () => {
-    const r = renderer()
+  test("predicate receives every node and collects matches", async () => {
+    const r = await renderer()
     const a = input().id("editor")
     const t = text("label")
     r.ui.root.add(box({}, t, a))
@@ -56,16 +56,16 @@ describe("renderer.findNode — filter by type or predicate", () => {
     expect(withId).toEqual([a])
   })
 
-  test("returns empty array when nothing matches", () => {
-    const r = renderer()
+  test("returns empty array when nothing matches", async () => {
+    const r = await renderer()
     r.ui.root.add(box({}, text("x")))
     expect(r.findNode("input")).toEqual([])
   })
 })
 
 describe("renderer.walk — tree traversal", () => {
-  test("visits every node in the UI tree depth-first, parents before children", () => {
-    const r = renderer()
+  test("visits every node in the UI tree depth-first, parents before children", async () => {
+    const r = await renderer()
     const a = text("a")
     const b = text("b")
     const nested = box({}, a, b)
@@ -82,8 +82,8 @@ describe("renderer.walk — tree traversal", () => {
     expect(seen).toContain(b)
   })
 
-  test('returning "stop" halts traversal', () => {
-    const r = renderer()
+  test('returning "stop" halts traversal', async () => {
+    const r = await renderer()
     const a = text("a")
     const b = text("b")
     r.ui.root.add(box({}, a, b))
@@ -95,8 +95,8 @@ describe("renderer.walk — tree traversal", () => {
     expect(seen).toHaveLength(2)
   })
 
-  test("walks stream-attached nodes too", () => {
-    const r = renderer()
+  test("walks stream-attached nodes too", async () => {
+    const r = await renderer()
     const t = text("stream-side")
     r.stream.append(() => t)
     const seen: Node[] = []

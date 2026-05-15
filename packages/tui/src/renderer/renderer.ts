@@ -483,8 +483,3 @@ export class Renderer {
     this.#escTimer.unref()
   }
 }
-
-/** Factory shorthand for `new Renderer(opts)`. */
-export function createRenderer(opts: RendererOptions = {}): Renderer {
-  return new Renderer(opts)
-}

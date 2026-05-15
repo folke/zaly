@@ -28,7 +28,7 @@ import {
  * dispatch when slash commands are picked.
  */
 
-const renderer = createRenderer()
+const renderer = await createRenderer()
 
 const { log } = renderer
 

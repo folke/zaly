@@ -17,7 +17,7 @@ import { box, createRenderer, spinner, text } from "../src/index.ts"
  *     the logger and land in the stream like any other entry.
  */
 
-const renderer = createRenderer({ logger: { minLevel: "trace" } })
+const renderer = await createRenderer({ logger: { minLevel: "trace" } })
 
 renderer.ui.add(() =>
   box(

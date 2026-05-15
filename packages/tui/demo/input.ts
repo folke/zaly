@@ -11,7 +11,7 @@ import { box, createRenderer, image, input, markdown, text } from "../src/index.
  *     terminals, alt-text otherwise).
  */
 
-const renderer = createRenderer()
+const renderer = await createRenderer()
 
 renderer.ui.add(() =>
   box(

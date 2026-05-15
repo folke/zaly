@@ -1,6 +1,6 @@
 import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
-import type { Input, LogCallable, Theme } from "@zaly/tui"
+import type { Input, LogCallable, Renderer, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Config } from "../config.ts"
 
@@ -30,7 +30,7 @@ import { submit } from "./submit.ts"
 export class App {
   readonly #config: Config
   #theme!: Theme
-  #renderer!: ReturnType<typeof createRenderer>
+  #renderer!: Renderer
   #input!: Input
   #log!: LogCallable
 
@@ -60,7 +60,7 @@ export class App {
 
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
-    this.#renderer = createRenderer({
+    this.#renderer = await createRenderer({
       // Steady-state footer = input bar (1 row + 1 spacer/border row).
       // Stream commits to scrollback at `terminal.rows - 2`, so scrollback
       // is contiguous with the visible region as long as autocomplete and
