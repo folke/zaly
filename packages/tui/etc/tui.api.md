@@ -305,7 +305,7 @@ export function createRender(node: Node, ctx: RenderCtx & {
 export function createRender(node: () => Node, ctx?: RenderCtx): Promise<string[]>;
 
 // @public
-export function createRenderer(opts?: RendererOptions): Renderer;
+export function createRenderer(opts?: RendererOptions): Promise<Renderer>;
 
 // @public
 export function createRoot<T>(fn: (dispose: () => void) => T): T;
@@ -506,17 +506,6 @@ export type InputEvents = BaseEvents & {
         attachment: InputAttachment;
     };
 };
-
-// @public
-export class InputRouter {
-    bind(pattern: KeyPatterns, handler: KeyHandler): () => void;
-    dispatch(ev: InputEvent): boolean;
-    focus(node: Node | undefined): void;
-    get focused(): Node | undefined;
-    setActions(actions: Actions): void;
-    setKeymap(keymap: Record<string, KeymapEntry | readonly KeymapEntry[]>): void;
-    setKeymapIndex(map: Map<string, KeymapEntry[]>): void;
-}
 
 // @public (undocumented)
 export interface InputState extends StyleState {
