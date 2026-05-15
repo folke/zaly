@@ -1,8 +1,9 @@
 import { readdirSync } from "node:fs"
+import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
-const pkgDir = fileURLToPath(import.meta.resolve("./packages"))
+const pkgDir = join(fileURLToPath(import.meta.url), "../packages")
 const packages = readdirSync(pkgDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name)

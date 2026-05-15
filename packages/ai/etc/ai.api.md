@@ -54,6 +54,8 @@ export type AudioPart = FilePart<"audio", "audio/mpeg" | "audio/wav">;
 // @public
 export interface AuthCredentials {
     // (undocumented)
+    accountId?: string;
+    // (undocumented)
     apiKey?: string;
     // (undocumented)
     headers?: Record<string, string>;
@@ -69,6 +71,12 @@ export interface AuthProvider {
 }
 
 // @public (undocumented)
+export const authRegistry: _$_zaly_shared_registry0.Registry<Promise<AuthProvider>, void, {
+    readonly codex: () => Promise<OAuthProvider>;
+    readonly env: () => Promise<AuthProvider>;
+}>;
+
+// @public (undocumented)
 export type BuiltinAuthProvider = keyof typeof authProviders;
 
 // @public
@@ -76,31 +84,6 @@ export function builtinProviders(): Promise<Readonly<Record<string, Omit<Provide
 
 // @public
 export function chainAuth(...providers: (AuthProvider | AnyAuthProvider)[]): AuthProvider;
-
-// @public
-export const codexAuth: AuthProvider;
-
-// @public
-export interface CodexCredentials {
-    // (undocumented)
-    access: string;
-    // (undocumented)
-    accountId: string;
-    expires: number;
-    // (undocumented)
-    refresh: string;
-}
-
-// @public (undocumented)
-export interface CodexLoginCallbacks {
-    onAuthUrl: (info: {
-        url: string;
-        instructions: string;
-    }) => void | Promise<void>;
-    onManualCodeInput?: () => Promise<string>;
-    onProgress?: (message: string) => void | Promise<void>;
-    signal?: AbortSignal;
-}
 
 // @public
 export function collect(stream: AsyncIterable<StreamEvent>, opts?: CollectOptions): Promise<{
@@ -347,9 +330,6 @@ export function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec
 export function loadModel(source: string | ModelSpec, overrides?: Partial<ModelSpec>, auth?: AuthProvider): Promise<Model>;
 
 // @public
-export function loginCodex(callbacks: CodexLoginCallbacks): Promise<CodexCredentials>;
-
-// @public
 export type Message<T extends MessageBase["role"] = MessageBase["role"]> = Extract<MessageBase, {
     role: T;
 }>;
@@ -481,6 +461,23 @@ export interface ModelSpec extends ProviderOptions, Omit<ModelInfo, "provider"> 
 // @public (undocumented)
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions;
 
+// @public (undocumented)
+export interface OAuthOptions {
+    onAuthUrl: (info: {
+        url: string;
+        instructions: string;
+    }) => void | Promise<void>;
+    onManualCodeInput?: () => Promise<string>;
+    onProgress?: (message: string) => void | Promise<void>;
+    signal?: AbortSignal;
+}
+
+// @public (undocumented)
+export interface OAuthProvider extends AuthProvider {
+    // (undocumented)
+    login(opts?: OAuthOptions): Promise<AuthCredentials>;
+}
+
 // @public
 export interface OverflowCheck {
     contextLimit?: number;
@@ -545,12 +542,6 @@ export interface ProviderOptions {
     fetch?: FetchLike;
     headers?: Record<string, string>;
 }
-
-// @public (undocumented)
-export const providerRegistry: _$_zaly_shared_registry0.Registry<Promise<AuthProvider>, void, {
-    readonly codex: () => Promise<AuthProvider>;
-    readonly env: () => Promise<AuthProvider>;
-}>;
 
 // @public
 export interface ProviderRequest {
@@ -827,9 +818,6 @@ export interface Usage extends TokenCount {
     // (undocumented)
     cost?: TokenCount;
 }
-
-// @public
-export function validateToolParams<I>(tool: Tool<I>, rawArgs: unknown): Promise<I>;
 
 // @public (undocumented)
 export type VideoPart = FilePart<"video", "video/mp4" | "video/webm">;

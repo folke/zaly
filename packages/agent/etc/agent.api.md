@@ -55,8 +55,6 @@ export class Agent extends Emitter<AgentEvents> {
     get parent(): Agent | undefined;
     pause(): void;
     // (undocumented)
-    get permissions(): PermissionManager;
-    // (undocumented)
     get pressure(): ContextPressure;
     // (undocumented)
     get prompt(): string[];
@@ -71,11 +69,12 @@ export class Agent extends Emitter<AgentEvents> {
     // (undocumented)
     get skills(): Skills | undefined;
     // (undocumented)
+    start(): Promise<void>;
+    // (undocumented)
     get status(): AgentStatus;
     step(): Promise<StepResult>;
     // (undocumented)
     get steps(): number;
-    get swarm(): Swarm | undefined;
     get tasks(): Tasks;
     // (undocumented)
     get tools(): _$_zaly_ai0.Tool<unknown, unknown, object>[];
@@ -88,11 +87,14 @@ export class Agent extends Emitter<AgentEvents> {
 export class AgentContext {
     constructor(opts: AgentOptions);
     // (undocumented)
+    get agent(): Agent;
+    set agent(a: Agent);
+    // (undocumented)
     assert(k: string, v: unknown): asserts v;
     // (undocumented)
-    get cwd(): string;
+    attach(): void;
     // (undocumented)
-    load(): Promise<void>;
+    get cwd(): string;
     // (undocumented)
     loadPrompt(opts?: AgentOptions["prompt"]): Promise<string[]>;
     // (undocumented)
@@ -102,10 +104,16 @@ export class AgentContext {
     // (undocumented)
     loadTools(opts?: AgentOptions["tools"]): Promise<Tool[]>;
     // (undocumented)
+    get messages(): readonly Message[];
+    // (undocumented)
     get model(): Model;
     set model(m: Model);
     // (undocumented)
+    get notifier(): Notifier | undefined;
+    // (undocumented)
     get opts(): AgentOptions;
+    // (undocumented)
+    get permissions(): PermissionManager;
     set prompt(prompt: string[]);
     // (undocumented)
     get prompt(): string[];
@@ -115,6 +123,14 @@ export class AgentContext {
     // (undocumented)
     get skills(): Skills | undefined;
     set skills(s: Skills | undefined);
+    // (undocumented)
+    start(): Promise<void>;
+    // (undocumented)
+    get started(): boolean;
+    // (undocumented)
+    get streamMessages(): readonly Message[];
+    // (undocumented)
+    get swarm(): Swarm | undefined;
     set tools(tools: Tool[]);
     // (undocumented)
     get tools(): Tool[];
@@ -125,6 +141,7 @@ export type AgentEvents = {
     status: {
         status: AgentStatus;
     };
+    start: {};
     "stream-event": {
         event: StreamEvent;
     };
@@ -138,7 +155,11 @@ export type AgentEvents = {
         call: ToolCallPart;
         result: ToolResult;
     };
+    "step-start": {
+        step: number;
+    };
     "step-end": {
+        step: number;
         outcome: StepKind;
     };
     stop: {
@@ -170,7 +191,7 @@ export interface AgentOptions extends CollectOptions {
     cwd?: string;
     depth?: number;
     heartbeatMs?: number;
-    masking?: boolean | MaskOptions;
+    mask?: boolean | MaskOptions;
     maxDepth?: number;
     messages?: Message[];
     // (undocumented)

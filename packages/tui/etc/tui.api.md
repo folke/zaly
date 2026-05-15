@@ -1053,6 +1053,7 @@ export class Renderer {
 
 // @public (undocumented)
 export interface RendererOptions {
+    fixedFooterHeight?: number;
     hookSignals?: boolean;
     logger?: LoggerOptions;
     // (undocumented)
