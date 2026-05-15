@@ -17,7 +17,7 @@ import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal
 import { Ghostty } from "ghostty-web"
 import { readFile } from "node:fs/promises"
 import { createRequire } from "node:module"
-import { Renderer } from "../../src/renderer/index.ts"
+import { Renderer } from "../../src/renderer/renderer.ts"
 
 // Resolve the .wasm path relative to the ghostty-web package. Works
 // through Bun's symlinked node_modules layout too — `require.resolve`

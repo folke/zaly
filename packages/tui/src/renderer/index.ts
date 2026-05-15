@@ -1,7 +1,7 @@
-export * from "./renderer.ts"
+export type * from "./renderer.ts"
+export type { OverlaySurface } from "./overlay.ts"
+export type { Stream } from "./stream.ts"
+export type { Terminal } from "./terminal.ts"
+export type { UI } from "./ui.ts"
 
-export { OverlaySurface } from "./overlay.ts"
-export { Stream } from "./stream.ts"
-export { Terminal } from "./terminal.ts"
-export { UI } from "./ui.ts"
-export { InputRouter } from "../input/router.ts"
+export { createRenderer } from "./renderer.ts"

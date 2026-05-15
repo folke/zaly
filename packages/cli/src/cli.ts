@@ -3,7 +3,7 @@
 import type { Node, RenderCtx, Theme } from "@zaly/tui"
 import type { Config } from "./config.ts"
 
-import { createCtx, Logger, createRender } from "@zaly/tui"
+import { createCtx, createRender, Logger } from "@zaly/tui"
 import { defaultTheme, loadTheme } from "@zaly/tui/themes"
 import { defineCommand } from "citty"
 import { resolveConfig } from "./config.ts"

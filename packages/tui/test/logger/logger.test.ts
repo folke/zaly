@@ -1,8 +1,8 @@
 import type { Node } from "../../src/core/node.ts"
 
 import { afterEach, describe, expect, test, vi } from "vitest"
-import { Markdown } from "../../src/index.ts"
 import { Logger } from "../../src/logger/logger.ts"
+import { Markdown } from "../../src/widgets/markdown.ts"
 import { Log } from "../../src/widgets/log.ts"
 import { Text } from "../../src/widgets/text.ts"
 
