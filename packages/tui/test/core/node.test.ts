@@ -231,7 +231,7 @@ describe("Node.splice", () => {
     parent.remove(a)
     expect(parent.children).toEqual([])
     expect(a.parent).toBeUndefined()
-    expect(removed).toHaveBeenCalledWith({ child: a, type: "childremoved" }, expect.anything())
+    expect(removed).toHaveBeenCalledWith({ child: a, type: "childremoved" }, expect.anything(), expect.anything())
   })
 
   test("adding an existing child does not duplicate", () => {
@@ -277,8 +277,8 @@ describe("Node.splice", () => {
     expect(a.children).toEqual([])
     expect(b.children).toEqual([c])
     expect(c.parent).toBe(b)
-    expect(aRemoved).toHaveBeenCalledWith({ child: c, type: "childremoved" }, expect.anything())
-    expect(bAdded).toHaveBeenCalledWith({ child: c, type: "childadded" }, expect.anything())
+    expect(aRemoved).toHaveBeenCalledWith({ child: c, type: "childremoved" }, expect.anything(), expect.anything())
+    expect(bAdded).toHaveBeenCalledWith({ child: c, type: "childadded" }, expect.anything(), expect.anything())
   })
 
   test("splice insertion + deletion in a single call", () => {
@@ -296,8 +296,8 @@ describe("Node.splice", () => {
     expect(parent.children).toEqual([a, c])
     expect(b.parent).toBeUndefined()
     expect(c.parent).toBe(parent)
-    expect(removed).toHaveBeenCalledWith({ child: b, type: "childremoved" }, expect.anything())
-    expect(added).toHaveBeenCalledWith({ child: c, type: "childadded" }, expect.anything())
+    expect(removed).toHaveBeenCalledWith({ child: b, type: "childremoved" }, expect.anything(), expect.anything())
+    expect(added).toHaveBeenCalledWith({ child: c, type: "childadded" }, expect.anything(), expect.anything())
   })
 
   test("clear removes every child and fires childremoved for each", () => {

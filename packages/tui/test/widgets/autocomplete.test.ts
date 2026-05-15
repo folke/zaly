@@ -82,7 +82,11 @@ describe("autocomplete", () => {
     i.setState({ cursor: 1, value: "/" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
-    expect(cb).toHaveBeenCalledWith({ item, source: "slash", type: "complete" }, ac)
+    expect(cb).toHaveBeenCalledWith(
+      { item, source: "slash", type: "complete" },
+      ac,
+      expect.anything()
+    )
   })
 
   test("cancel hides the menu until a new trigger reopens it", async () => {

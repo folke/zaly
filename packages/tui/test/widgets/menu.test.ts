@@ -60,7 +60,7 @@ describe("menu", () => {
     m.on("select", fn)
     m.actions["menu.next"]()
     m.actions["menu.select"]()
-    expect(fn).toHaveBeenCalledWith({ item: items[1], type: "select" }, m)
+    expect(fn).toHaveBeenCalledWith({ item: items[1], type: "select" }, m, expect.anything())
   })
 
   test("cancel emits cancel", () => {
