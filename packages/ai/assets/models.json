@@ -11566,6 +11566,307 @@
       "provider": "openai",
       "baseUrl": "https://api.inference.wandb.ai/v1"
     },
+    "gmicloud/deepseek-ai/DeepSeek-V4-Flash": {
+      "id": "deepseek-ai/DeepSeek-V4-Flash",
+      "name": "DeepSeek V4 Flash",
+      "family": "deepseek-flash",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1048575,
+        "output": 384000
+      },
+      "cost": {
+        "input": 0.112,
+        "output": 0.224,
+        "cache_read": 0.022
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/deepseek-ai/DeepSeek-V4-Pro": {
+      "id": "deepseek-ai/DeepSeek-V4-Pro",
+      "name": "DeepSeek V4 Pro",
+      "family": "deepseek-thinking",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-05",
+      "release_date": "2026-04-24",
+      "last_updated": "2026-04-24",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1048576,
+        "output": 384000
+      },
+      "cost": {
+        "input": 1.392,
+        "output": 2.784,
+        "cache_read": 0.116
+      },
+      "maxTokens": 384000,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/moonshotai/Kimi-K2.6": {
+      "id": "moonshotai/Kimi-K2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 65536,
+        "output": 65536
+      },
+      "cost": {
+        "input": 0.855,
+        "output": 3.6,
+        "cache_read": 0.144
+      },
+      "maxTokens": 65536,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/zai-org/GLM-5.1-FP8": {
+      "id": "zai-org/GLM-5.1-FP8",
+      "name": "GLM-5.1",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-27",
+      "last_updated": "2026-03-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 202752,
+        "output": 131072
+      },
+      "cost": {
+        "input": 0.98,
+        "output": 3.08,
+        "cache_read": 0.182
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/zai-org/GLM-5-FP8": {
+      "id": "zai-org/GLM-5-FP8",
+      "name": "GLM-5",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-02-11",
+      "last_updated": "2026-02-11",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 202752,
+        "output": 131072
+      },
+      "cost": {
+        "input": 0.6,
+        "output": 1.92,
+        "cache_read": 0.12
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/anthropic/claude-sonnet-4.6": {
+      "id": "anthropic/claude-sonnet-4.6",
+      "name": "Claude Sonnet 4.6",
+      "family": "claude-sonnet",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-08-31",
+      "release_date": "2026-02-17",
+      "last_updated": "2026-03-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 409600,
+        "output": 64000
+      },
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cache_read": 0.3
+      },
+      "maxTokens": 64000,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/anthropic/claude-opus-4.6": {
+      "id": "anthropic/claude-opus-4.6",
+      "name": "Claude Opus 4.6",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-05-31",
+      "release_date": "2026-02-05",
+      "last_updated": "2026-03-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 409600,
+        "output": 128000
+      },
+      "cost": {
+        "input": 5,
+        "output": 25,
+        "cache_read": 0.5
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
+    "gmicloud/anthropic/claude-opus-4.7": {
+      "id": "anthropic/claude-opus-4.7",
+      "name": "Claude Opus 4.7",
+      "family": "claude-opus",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": false,
+      "knowledge": "2026-01-31",
+      "release_date": "2026-04-16",
+      "last_updated": "2026-04-16",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 409600,
+        "output": 128000
+      },
+      "experimental": {
+        "modes": {
+          "fast": {
+            "cost": {
+              "input": 30,
+              "output": 150,
+              "cache_read": 3,
+              "cache_write": 37.5
+            },
+            "provider": {
+              "body": {
+                "speed": "fast"
+              },
+              "headers": {
+                "anthropic-beta": "fast-mode-2026-02-01"
+              }
+            }
+          }
+        }
+      },
+      "cost": {
+        "input": 4.5,
+        "output": 22.5,
+        "cache_read": 0.45
+      },
+      "maxTokens": 128000,
+      "provider": "openai",
+      "baseUrl": "https://api.gmi-serving.com/v1"
+    },
     "ambient/moonshotai/kimi-k2.6": {
       "id": "moonshotai/kimi-k2.6",
       "name": "Kimi K2.6",
@@ -68870,6 +69171,101 @@
       "provider": "openai",
       "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4"
     },
+    "atomic-chat/Qwen3_5-9B-Q4_K_M": {
+      "id": "Qwen3_5-9B-Q4_K_M",
+      "name": "Qwen 3.5 9B (Q4_K_M)",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-05",
+      "last_updated": "2026-04-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 32768,
+        "output": 8192
+      },
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:1337/v1"
+    },
+    "atomic-chat/Meta-Llama-3_1-8B-Instruct-GGUF": {
+      "id": "Meta-Llama-3_1-8B-Instruct-GGUF",
+      "name": "Meta Llama 3.1 8B Instruct (GGUF)",
+      "family": "llama",
+      "attachment": false,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2024-07-23",
+      "last_updated": "2024-07-23",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 131072,
+        "output": 4096
+      },
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokens": 4096,
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:1337/v1"
+    },
+    "atomic-chat/Qwen3_5-9B-MLX-4bit": {
+      "id": "Qwen3_5-9B-MLX-4bit",
+      "name": "Qwen 3.5 9B (MLX 4-bit)",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": false,
+      "tool_call": true,
+      "temperature": true,
+      "release_date": "2026-03-05",
+      "last_updated": "2026-04-04",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 32768,
+        "output": 8192
+      },
+      "cost": {
+        "input": 0,
+        "output": 0
+      },
+      "maxTokens": 8192,
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:1337/v1"
+    },
     "github-models/cohere/cohere-command-r-plus": {
       "id": "cohere/cohere-command-r-plus",
       "name": "Cohere Command R+",
@@ -74804,6 +75200,44 @@
         "cache_write": 3.75
       },
       "maxTokens": 64000,
+      "provider": "anthropic",
+      "providerOverride": {
+        "npm": "@ai-sdk/anthropic"
+      },
+      "baseUrl": "https://opencode.ai/zen/v1"
+    },
+    "opencode/qwen3.6-plus-free": {
+      "id": "qwen3.6-plus-free",
+      "name": "Qwen3.6 Plus Free",
+      "family": "qwen-free",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "temperature": true,
+      "knowledge": "2025-04",
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 262144,
+        "output": 65536
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
+      },
+      "maxTokens": 65536,
       "provider": "anthropic",
       "providerOverride": {
         "npm": "@ai-sdk/anthropic"
@@ -88632,9 +89066,9 @@
       "tool_call": true,
       "structured_output": true,
       "temperature": false,
-      "knowledge": "2025-08-31",
+      "knowledge": "2025-12-30",
       "release_date": "2026-05-01",
-      "last_updated": "2026-05-13",
+      "last_updated": "2026-05-15",
       "modalities": {
         "input": [
           "text"
@@ -88645,8 +89079,8 @@
       },
       "open_weights": false,
       "limit": {
-        "context": 128000,
-        "output": 16384
+        "context": 400000,
+        "output": 128000
       },
       "cost": {
         "input": 1.5,
@@ -88654,7 +89088,7 @@
         "reasoning": 6,
         "cache_read": 0.15
       },
-      "maxTokens": 16384,
+      "maxTokens": 128000,
       "provider": "openai",
       "baseUrl": "https://xpersona.co/v1"
     },
@@ -93890,6 +94324,191 @@
       "provider": "openai",
       "baseUrl": "https://router.huggingface.co/v1"
     },
+    "umans-ai-coding-plan/umans-qwen3.6-35b-a3b": {
+      "id": "umans-qwen3.6-35b-a3b",
+      "name": "Qwen3.6 35B A3B",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "release_date": "2026-04-17",
+      "last_updated": "2026-04-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.code.umans.ai/v1"
+    },
+    "umans-ai-coding-plan/umans-glm-5.1": {
+      "id": "umans-glm-5.1",
+      "name": "GLM 5.1",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-03-27",
+      "last_updated": "2026-03-27",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": false,
+      "limit": {
+        "context": 204800,
+        "output": 131072
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 131072,
+      "provider": "openai",
+      "baseUrl": "https://api.code.umans.ai/v1"
+    },
+    "umans-ai-coding-plan/umans-coder": {
+      "id": "umans-coder",
+      "name": "Umans Coder",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.code.umans.ai/v1"
+    },
+    "umans-ai-coding-plan/umans-flash": {
+      "id": "umans-flash",
+      "name": "Umans Flash",
+      "family": "qwen",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": false,
+      "release_date": "2026-04-17",
+      "last_updated": "2026-04-17",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.code.umans.ai/v1"
+    },
+    "umans-ai-coding-plan/umans-kimi-k2.6": {
+      "id": "umans-kimi-k2.6",
+      "name": "Kimi K2.6",
+      "family": "kimi-k2.6",
+      "attachment": true,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-04-21",
+      "last_updated": "2026-04-21",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "maxTokens": 262144,
+      "provider": "openai",
+      "baseUrl": "https://api.code.umans.ai/v1"
+    },
     "tencent-tokenhub/hy3-preview": {
       "id": "hy3-preview",
       "name": "Hy3 preview",
@@ -97558,6 +98177,16 @@
       "name": "Weights & Biases",
       "doc": "https://docs.wandb.ai/guides/integrations/inference/"
     },
+    "gmicloud": {
+      "id": "gmicloud",
+      "env": [
+        "GMICLOUD_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.gmi-serving.com/v1",
+      "name": "GMI Cloud",
+      "doc": "https://docs.gmicloud.ai/inference-engine/api-reference/llm-api-reference"
+    },
     "ambient": {
       "id": "ambient",
       "env": [
@@ -97747,8 +98376,8 @@
       ],
       "npm": "@ai-sdk/anthropic",
       "api": "https://api.minimaxi.com/anthropic/v1",
-      "name": "MiniMax Coding Plan (minimaxi.com)",
-      "doc": "https://platform.minimaxi.com/docs/coding-plan/intro"
+      "name": "MiniMax Token Plan (minimaxi.com)",
+      "doc": "https://platform.minimaxi.com/docs/token-plan/intro"
     },
     "xiaomi-token-plan-ams": {
       "id": "xiaomi-token-plan-ams",
@@ -98099,6 +98728,16 @@
       "name": "Zhipu AI Coding Plan",
       "doc": "https://docs.bigmodel.cn/cn/coding-plan/overview"
     },
+    "atomic-chat": {
+      "id": "atomic-chat",
+      "env": [
+        "ATOMIC_CHAT_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "http://127.0.0.1:1337/v1",
+      "name": "Atomic Chat",
+      "doc": "https://atomic.chat"
+    },
     "github-models": {
       "id": "github-models",
       "env": [
@@ -98217,8 +98856,8 @@
       ],
       "npm": "@ai-sdk/anthropic",
       "api": "https://api.minimax.io/anthropic/v1",
-      "name": "MiniMax Coding Plan (minimax.io)",
-      "doc": "https://platform.minimax.io/docs/coding-plan/intro"
+      "name": "MiniMax Token Plan (minimax.io)",
+      "doc": "https://platform.minimax.io/docs/token-plan/intro"
     },
     "upstage": {
       "id": "upstage",
@@ -98429,6 +99068,16 @@
       "api": "https://router.huggingface.co/v1",
       "name": "Hugging Face",
       "doc": "https://huggingface.co/docs/inference-providers"
+    },
+    "umans-ai-coding-plan": {
+      "id": "umans-ai-coding-plan",
+      "env": [
+        "UMANS_AI_CODING_PLAN_API_KEY"
+      ],
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://api.code.umans.ai/v1",
+      "name": "Umans AI Coding Plan",
+      "doc": "https://app.umans.ai/offers/code/docs"
     },
     "tencent-tokenhub": {
       "id": "tencent-tokenhub",
