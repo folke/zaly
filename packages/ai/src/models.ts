@@ -54,6 +54,16 @@ export function addModels(models: Record<string, ModelSpec>): void {
   for (const [id, opts] of Object.entries(models)) customModels.set(id, opts)
 }
 
+export function registerModel(id: string, opts: ModelSpec): () => void {
+  const prev = customModels.get(id)
+  addModels({ [id]: opts })
+  return () => {
+    if (customModels.get(id) !== opts) return
+    else if (prev !== undefined) customModels.set(id, prev)
+    else customModels.delete(id)
+  }
+}
+
 /** Look up model options by id. Custom models win over built-ins.
  *  Built-in entries come pre-resolved from the generator — quirks,
  *  baseUrl, headers, maxTokens are all baked in; we just attach
