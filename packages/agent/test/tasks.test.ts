@@ -121,7 +121,7 @@ afterEach(() => {
 describe("Tasks.run — sync tool", () => {
   test("returns a result part 1:1 with the assistant call", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     const parts = await tasks.run([callOf("sync", { value: "hello" })], {})
     expect(parts).toHaveLength(1)
     expect(parts[0].id).toMatch(/^call-/)
@@ -139,7 +139,7 @@ describe("Tasks.run — sync tool", () => {
 
   test("validation failure surfaces as INVALID_INPUT error", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     const parts = await tasks.run([callOf("sync", {})], {})
     expect(parts[0].isError).toBe(true)
     expect(parts[0].error?.code).toBe("INVALID_INPUT")
@@ -147,7 +147,7 @@ describe("Tasks.run — sync tool", () => {
 
   test("thrown AiError is captured into the result", async () => {
     const tasks = new Tasks()
-    tasks.tools = [failTool]
+    tasks.$tools = [failTool]
     const parts = await tasks.run([callOf("fail")], {})
     expect(parts[0].isError).toBe(true)
     expect(parts[0].error?.code).toBe("BANG")
@@ -155,7 +155,7 @@ describe("Tasks.run — sync tool", () => {
 
   test("each part stamps meta.task.{id,status,type}", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     const parts = (await tasks.run([callOf("sync", { value: "x" })], {})) as ToolResultPart<
       string,
       TaskMeta
@@ -173,7 +173,7 @@ describe("Tasks.run — streamable within grace", () => {
     const tasks = new Tasks()
     tasks.graceMs = 5000
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
     tasks.all((event) => events.push(event))
@@ -195,7 +195,7 @@ describe("Tasks.run — streamable exceeds grace", () => {
     const tasks = new Tasks()
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
     tasks.all((event) => events.push(event))
@@ -219,7 +219,7 @@ describe("Tasks.run — streamable exceeds grace", () => {
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
     ctrl.setPartial("partial-output")
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const parts = await tasks.run([callOf("stream")], {})
     // Running placeholders are now structured: [partial text, <task> trailer].
@@ -242,7 +242,7 @@ describe("Tasks.run — chain", () => {
     tasks.graceMs = GRACE
     const a = makeStreamable()
     const b = makeStreamable()
-    tasks.tools = [
+    tasks.$tools = [
       streamableTool({ name: "first", parallel: false, produce: () => a.streamable }),
       streamableTool({ name: "second", parallel: false, produce: () => b.streamable }),
     ]
@@ -266,7 +266,7 @@ describe("Tasks.run — chain", () => {
     tasks.graceMs = GRACE
     const a = makeStreamable()
     const b = makeStreamable()
-    tasks.tools = [
+    tasks.$tools = [
       streamableTool({ name: "first", parallel: false, produce: () => a.streamable }),
       streamableTool({ name: "second", parallel: false, produce: () => b.streamable }),
     ]
@@ -292,7 +292,7 @@ describe("Tasks.run — chain", () => {
     const b = makeStreamable()
     // Force fail to be serial so the second call chains behind it.
     const serialFail: Tool = { ...failTool, parallel: false }
-    tasks.tools = [
+    tasks.$tools = [
       serialFail,
       streamableTool({ name: "after", parallel: false, produce: () => b.streamable }),
     ]
@@ -310,7 +310,7 @@ describe("Tasks.run — chain", () => {
     tasks.graceMs = GRACE
     const a = makeStreamable()
     const b = makeStreamable()
-    tasks.tools = [
+    tasks.$tools = [
       streamableTool({ name: "para", parallel: true, produce: () => a.streamable }),
       streamableTool({ name: "para2", parallel: true, produce: () => b.streamable }),
     ]
@@ -334,7 +334,7 @@ describe("Tasks.run — ctx.signal abort", () => {
     const tasks = new Tasks()
     tasks.graceMs = 60_000
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const ac = new AbortController()
     setTimeout(() => ac.abort(), 5)
@@ -350,7 +350,7 @@ describe("Tasks.run — ctx.signal abort", () => {
     const tasks = new Tasks()
     tasks.graceMs = 60_000
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const ac = new AbortController()
     ac.abort()
@@ -367,7 +367,7 @@ describe("Tasks — public registry", () => {
     const tasks = new Tasks()
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
     await tasks.run([callOf("stream")], {})
 
     expect(tasks.running()).toHaveLength(1)
@@ -386,7 +386,7 @@ describe("Tasks — public registry", () => {
 
   test("remove() drops a known task and emits task-removed", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     await tasks.run([callOf("sync", { value: "x" })], {})
     const id = tasks.finished()[0].id
 
@@ -406,7 +406,7 @@ describe("Tasks.pollOutput / hasNewOutput", () => {
 
   test("pollOutput on a done task → TASK_DONE", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     await tasks.run([callOf("sync", { value: "x" })], {})
     const id = tasks.finished()[0].id
     expect(() => tasks.pollOutput(id)).toThrow(/already completed/)
@@ -421,7 +421,7 @@ describe("Tasks.pollOutput / hasNewOutput", () => {
       params: Type.Object({}),
       call: () => new Promise<string>(() => undefined),
     })
-    tasks.tools = [neverDone]
+    tasks.$tools = [neverDone]
     await tasks.run([callOf("slow-sync")], {})
     const t = tasks.running()[0]
     expect(() => tasks.pollOutput(t.id)).toThrow(/no incremental output/)
@@ -432,7 +432,7 @@ describe("Tasks.pollOutput / hasNewOutput", () => {
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
     ctrl.setPartial("partial")
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
     await tasks.run([callOf("stream")], {})
     const id = tasks.running()[0].id
     const snap = tasks.pollOutput(id)
@@ -446,7 +446,7 @@ describe("Tasks.pollOutput / hasNewOutput", () => {
     const tasks = new Tasks()
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
     await tasks.run([callOf("stream")], {})
     const id = tasks.running()[0].id
 
@@ -467,7 +467,7 @@ describe("Tasks.abort / killAll", () => {
     const tasks = new Tasks()
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
     await tasks.run([callOf("stream")], {})
 
     const id = tasks.running()[0].id
@@ -487,7 +487,7 @@ describe("Tasks.abort / killAll", () => {
     tasks.graceMs = GRACE
     const a = makeStreamable()
     const b = makeStreamable()
-    tasks.tools = [
+    tasks.$tools = [
       streamableTool({ name: "first", parallel: false, produce: () => a.streamable }),
       streamableTool({ name: "second", parallel: false, produce: () => b.streamable }),
     ]
@@ -509,7 +509,7 @@ describe("Tasks.abort / killAll", () => {
     // Both serial so y queues as pending behind running x — exercises both
     // killAll branches: streamable.abort() for running, done(TASK_ABORTED)
     // for pending.
-    tasks.tools = [
+    tasks.$tools = [
       streamableTool({ name: "x", parallel: false, produce: () => a.streamable }),
       streamableTool({ name: "y", parallel: false, produce: () => b.streamable }),
     ]
@@ -526,7 +526,7 @@ describe("Tasks.abort / killAll", () => {
 describe("Tasks.done direct", () => {
   test("idempotent — calling done() twice is a no-op", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     await tasks.run([callOf("sync", { value: "x" })], {})
     const id = tasks.finished()[0].id
     expect(() => tasks.done(id, { content: "y", isError: false })).not.toThrow()
@@ -536,7 +536,7 @@ describe("Tasks.done direct", () => {
     const tasks = new Tasks()
     tasks.graceMs = GRACE
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
     tasks.all((event) => events.push(event))
@@ -560,7 +560,7 @@ describe("Tasks.heartbeatMs", () => {
     tasks.graceMs = GRACE
     tasks.heartbeatMs = 25
     const ctrl = makeStreamable()
-    tasks.tools = [streamableTool({ produce: () => ctrl.streamable })]
+    tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
     tasks.all((event) => events.push(event))
@@ -643,7 +643,7 @@ describe("taskCompletionMessage", () => {
 describe("descOfCall (via task desc)", () => {
   test("uses params.description when present", async () => {
     const tasks = new Tasks()
-    tasks.tools = [
+    tasks.$tools = [
       defineTool({
         name: "withdesc",
         parallel: true,
@@ -657,7 +657,7 @@ describe("descOfCall (via task desc)", () => {
 
   test("falls back to the tool name when no description param is set", async () => {
     const tasks = new Tasks()
-    tasks.tools = [syncTool]
+    tasks.$tools = [syncTool]
     await tasks.run([callOf("sync", { value: "x" })], {})
     expect(tasks.finished()[0].desc).toBe("sync")
   })

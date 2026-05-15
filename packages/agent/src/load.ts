@@ -3,6 +3,7 @@ import type { Agent } from "./agent.ts"
 import type { Masker } from "./masker.ts"
 import type { Notifier } from "./notify.ts"
 import type { PermissionManager } from "./permissions/manager.ts"
+import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
 import type { Skills } from "./skills.ts"
 import type { Swarm } from "./swarm.ts"
@@ -15,18 +16,12 @@ import { normPath } from "@zaly/shared"
 const isInstance = <T>(v: unknown): v is T =>
   typeof v === "object" && v !== null && Object.getPrototypeOf(v) !== Object.prototype
 
-function isTools(v: (AnyTool | Tool)[]): v is Tool[] {
-  return v.every((t) => typeof t !== "string")
-}
-
 export class AgentContext {
   #agent?: Agent
   #opts: AgentOptions
   #model?: Model
   #session?: Session
   #cwd: string
-  #tools?: Tool[]
-  #prompt?: string[]
   #skills?: Skills
   #started = false
   #notifier?: Notifier
@@ -34,10 +29,27 @@ export class AgentContext {
   #permissions?: PermissionManager
   #swarm?: Swarm
 
+  #prompt = new Map<string, string>()
+  #tools = new Map<string, Tool>()
+
+  $prompt: (string | { template: AnyPrompt })[]
+  $tools: (Tool | AnyTool)[]
+
   constructor(opts: AgentOptions) {
     this.#opts = opts
     this.#model = opts.model
     this.#cwd = normPath(opts.cwd)
+
+    this.$prompt = opts.prompt ?? [
+      { template: "agent" },
+      { template: "env" },
+      { template: "model" },
+      { template: "AGENTS.md" },
+      { template: "MEMORY.md" },
+    ]
+
+    this.$tools = opts.tools ?? []
+
     if (isInstance<Session>(opts.session)) this.#session = opts.session
   }
 
@@ -50,8 +62,7 @@ export class AgentContext {
     this.#started = true
     await Promise.all([
       this.loadSession(),
-      this.loadTools().then(() => this.loadSwarm()),
-      this.loadPrompt(),
+      this.loadSwarm(),
       this.loadSkills(),
       this.loadNotifier(),
       this.loadMasker(),
@@ -60,7 +71,11 @@ export class AgentContext {
 
     if (this.#agent) this.attach()
 
-    await this.session.update({ cwd: this.cwd, modelId: this.model.id, prompt: this.prompt })
+    await this.session.update({
+      cwd: this.cwd,
+      modelId: this.model.id,
+      prompt: await this.prompt(),
+    })
     // oxlint-disable-next-line no-await-in-loop
     for (const m of this.#opts.messages ?? []) await this.session.add(m)
   }
@@ -127,26 +142,6 @@ export class AgentContext {
     this.#model = m
   }
 
-  set tools(tools: Tool[]) {
-    this.#tools = tools
-  }
-
-  get tools(): Tool[] {
-    this.assert("tools", this.#tools)
-    const ret = [...this.#tools]
-    if (this.skills?.tool) ret.push(this.skills.tool)
-    return ret
-  }
-
-  set prompt(prompt: string[]) {
-    this.#prompt = prompt
-  }
-
-  get prompt(): string[] {
-    this.assert("prompt", this.#prompt)
-    return this.#prompt
-  }
-
   get notifier() {
     return this.#notifier
   }
@@ -160,39 +155,41 @@ export class AgentContext {
     return this.#swarm
   }
 
-  async loadTools(opts?: AgentOptions["tools"]): Promise<Tool[]> {
-    if (this.#tools && !opts) return this.tools
-    const spec = opts ?? this.#opts.tools ?? []
-    if (isTools(spec)) this.#tools = spec
-    else {
+  async tools(): Promise<Tool[]> {
+    const spec = this.$tools
+    const missing = spec
+      .filter((t): t is string => typeof t === "string")
+      .filter((t) => !this.#tools.has(t))
+    if (missing.length > 0) {
       const toolInit = { cwd: this.cwd, model: this.model }
       const { toolRegistry } = await import("./tools/registry.ts")
-      this.#tools = await Promise.all(
-        spec.map((t) => Promise.resolve(typeof t === "string" ? toolRegistry.load(t, toolInit) : t))
+      await Promise.all(
+        missing.map(async (t) => {
+          this.#tools.set(t, await toolRegistry.load(t, toolInit))
+        })
       )
     }
-    return this.tools
+    const ret = spec.map((t) => (typeof t === "string" ? this.#tools.get(t)! : t))
+    if (this.skills?.tool) ret.push(this.skills.tool)
+    return ret
   }
 
-  async loadPrompt(opts?: AgentOptions["prompt"]): Promise<string[]> {
-    if (this.#prompt && !opts) return this.prompt
-    const spec = opts ??
-      this.#opts.prompt ?? [
-        { use: "agent" },
-        { use: "env" },
-        { use: "model" },
-        { use: "AGENTS.md" },
-        { use: "MEMORY.md" },
-      ]
-    if (spec.every((p) => typeof p === "string")) return (this.#prompt = [...spec])
-    const promptCtx = { cwd: this.cwd, model: this.model }
-    const { promptRegistry } = await import("./prompt/registry.ts")
-    this.#prompt = await Promise.all(
-      spec.map((p) =>
-        Promise.resolve(typeof p === "string" ? p : promptRegistry.load(p.use, promptCtx))
+  async prompt(): Promise<string[]> {
+    const spec = this.$prompt
+    const missing = spec
+      .filter((p): p is { template: string } => typeof p === "object")
+      .map((p) => p.template)
+      .filter((p) => !this.#prompt.has(p))
+    if (missing.length > 0) {
+      const promptCtx = { cwd: this.cwd, model: this.model }
+      const { promptRegistry } = await import("./prompt/registry.ts")
+      await Promise.all(
+        missing.map(async (p) => {
+          this.#prompt.set(p, await promptRegistry.load(p, promptCtx))
+        })
       )
-    )
-    return this.#prompt
+    }
+    return spec.map((p) => (typeof p === "string" ? p : this.#prompt.get(p.template)!))
   }
 
   async loadSession(opts?: AgentOptions["session"]): Promise<Session> {
@@ -258,8 +255,9 @@ export class AgentContext {
   private async loadSwarm() {
     this.#swarm ??= this.#opts.swarm
     if (this.#swarm) return this.#swarm
-    const tools = new Set(["agent_send", "agent_spawn"])
-    if (this.tools.some((t) => tools.has(t.name))) {
+    const need = new Set(["agent_send", "agent_spawn"])
+    const tools = await this.tools()
+    if (tools.some((t) => need.has(t.name))) {
       const { Swarm } = await import("./swarm.ts")
       this.#swarm = new Swarm()
       return this.#swarm

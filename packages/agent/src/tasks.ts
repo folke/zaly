@@ -136,7 +136,7 @@ export class Tasks extends Emitter<TasksEvents> {
   readonly #map = new Map<string, InternalTask>()
   graceMs = DEFAULT_GRACE_MS
 
-  #tools: (() => readonly Tool[]) | Tool[] = []
+  #tools: (() => Promise<readonly Tool[]>) | Tool[] = []
 
   /** Heartbeat interval in ms. When set, fires `heartbeat` events while
    *  at least one task is pending or running. Self-managing: starts on
@@ -179,11 +179,11 @@ export class Tasks extends Emitter<TasksEvents> {
     return [...this.#map.values()].map(toTaskInfo)
   }
 
-  get tools(): readonly Tool[] {
+  async tools(): Promise<readonly Tool[]> {
     return typeof this.#tools === "function" ? this.#tools() : this.#tools
   }
 
-  set tools(tools: (() => readonly Tool[]) | Tool[]) {
+  set $tools(tools: (() => Promise<readonly Tool[]>) | Tool[]) {
     this.#tools = tools
   }
 
@@ -332,7 +332,7 @@ export class Tasks extends Emitter<TasksEvents> {
     const tasks: InternalTask[] = []
     let chainHead: string | undefined
 
-    const tools = this.tools
+    const tools = await this.tools()
 
     for (const call of calls) {
       // Look up in user-managed tools first, fall back to caller-supplied

@@ -293,11 +293,11 @@ describe("Agent — mutable prompt + tools", () => {
     await agent.run()
     expect(lastPrompt).toEqual(["original"])
 
-    agent.ctx.prompt = ["updated"]
+    agent.ctx.$prompt = ["updated"]
     agent.send({ content: "again", role: "user" })
     await agent.run()
     expect(lastPrompt).toEqual(["updated"])
-    expect(agent.prompt).toEqual(["updated"])
+    expect(await agent.prompt()).toEqual(["updated"])
   })
 
   test("tools setter rebuilds the dispatch table", async () => {
@@ -318,8 +318,9 @@ describe("Agent — mutable prompt + tools", () => {
       tools: [Add],
     })
     // Swap the available set before the call lands so "sub" can dispatch.
-    agent.ctx.tools = [Sub]
-    expect(agent.tools.map((t) => t.name)).toEqual(["sub"])
+    agent.ctx.$tools = [Sub]
+    const tools = await agent.tools()
+    expect(tools.map((t) => t.name)).toEqual(["sub"])
     agent.send({ content: "go", role: "user" })
     await agent.run()
     const toolMsg = agent.messages[2] as Message<"tool">

@@ -94,7 +94,7 @@ export class Agent extends Emitter<AgentEvents> {
     // the first node fires.
 
     this.#tasks = new Tasks()
-    this.#tasks.tools = () => this.tools
+    this.#tasks.$tools = async () => await this.tools()
     this.#tasks.heartbeatMs = opts.heartbeatMs
     // Post-round task completions inject a system message into the next
     // step, surfacing the result to the model. Round-internal completions
@@ -141,7 +141,8 @@ export class Agent extends Emitter<AgentEvents> {
     // Inherit the *effective* step tool list (includes the loaded
     // `skill` tool). The child opts out of its own skill scan since
     // the catalog is shared.
-    let tools = [...this.tools].filter((t) => t.name !== "skill")
+
+    let tools = [...(await this.tools())].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
     const { createAgent } = await import("./load.ts")
 
@@ -250,12 +251,12 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#parent
   }
 
-  get tools() {
-    return this.#ctx.tools
+  async tools() {
+    return this.#ctx.tools()
   }
 
-  get prompt() {
-    return this.#ctx.prompt
+  async prompt() {
+    return this.#ctx.prompt()
   }
 
   get ctx(): AgentContext {
@@ -383,8 +384,8 @@ export class Agent extends Emitter<AgentEvents> {
     return this.model.stream(
       {
         messages: [...this.ctx.streamMessages],
-        prompt: this.prompt,
-        tools: this.tools,
+        prompt: await this.prompt(),
+        tools: await this.tools(),
       },
       this.#streamOpts()
     )
@@ -481,7 +482,7 @@ export class Agent extends Emitter<AgentEvents> {
   async #parseToolCalls(message: Message): Promise<ToolCallPart[]> {
     if (typeof message.content === "string") return []
     const calls = message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
-    const tools = this.tools
+    const tools = await this.tools()
     for (const call of calls) {
       const tool = tools.find((t) => t.name === call.name)
       if (!tool) continue

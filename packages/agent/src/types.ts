@@ -159,7 +159,7 @@ export interface AgentOptions extends CollectOptions {
    *  this for "behave like X" instructions that don't change across
    *  the session. For mid-conversation steering, `send()` a
    *  `role: "system"` message instead. Mutable via `agent.prompt = …`. */
-  prompt?: (string | { use: AnyPrompt })[]
+  prompt?: (string | { template: AnyPrompt })[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number
   /** Nesting depth of this agent. `0` = top-level (user-facing).

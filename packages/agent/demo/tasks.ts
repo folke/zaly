@@ -83,7 +83,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("1. Fast bash — completes in-grace, model gets full result immediately")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 2000
 
   const parts = await tasks.run(
@@ -101,7 +101,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("2. Slow bash — promotes past grace; completion lands later as inject")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 500
 
   let completion: Message<"system"> | undefined
@@ -134,7 +134,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("3. Bash error — surfaces structured <error> tag")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 2000
 
   let completion: Message<"system"> | undefined
@@ -173,7 +173,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("4. Parallel chain — bash defaults to parallel:false")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 400
 
   const completions: Message<"system">[] = []
@@ -215,7 +215,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("5. Heartbeat — what the model sees during a long-running task")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 200
   tasks.heartbeatMs = 300
 
@@ -255,7 +255,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("6. task_list — what `task_list` returns to the model")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 200
 
   // Start one slow task, complete one fast task, leave one pending
@@ -280,7 +280,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   section("7. task_poll — incremental output, advances the cursor")
 
   const tasks = new Tasks()
-  tasks.tools = TOOLS
+  tasks.$tools = TOOLS
   tasks.graceMs = 200
 
   // Start a task that prints over time
