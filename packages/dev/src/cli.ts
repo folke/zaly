@@ -162,6 +162,24 @@ const main = defineCommand({
         if (!ok) process.exit(1)
       },
     }),
+    exports: defineCommand({
+      meta: {
+        name: "exports",
+        description: "Generate flat export reports (etc/<pkg>.exports.md)",
+      },
+      args: {
+        check: {
+          type: "boolean",
+          description: "Fail if reports drifted (CI mode)",
+          default: process.env.CI === "true",
+        },
+      },
+      run: async ({ args }) => {
+        const { runExports } = await import("./exports.ts")
+        const ok = runExports({ root, slug: currentSlug(), check: args.check })
+        if (!ok) process.exit(1)
+      },
+    }),
   },
 })
 

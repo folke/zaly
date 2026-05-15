@@ -11,6 +11,7 @@
     "@zaly/tui": "workspace:*",
     "citty": "^0.2.2",
     "mitata": "^1.0.34",
-    "pathe": "^2.0.3"
+    "pathe": "^2.0.3",
+    "ts-morph": "^28.0.0"
   }
 }
