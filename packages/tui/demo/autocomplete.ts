@@ -1,4 +1,4 @@
-import type { Input } from "../src/index.ts"
+import type { Input } from "@zaly/tui"
 
 import {
   actionsSource,
@@ -11,7 +11,7 @@ import {
   input,
   markdown,
   text,
-} from "../src/index.ts"
+} from "@zaly/tui"
 
 /**
  * Autocomplete demo wired to the built-in completion sources:
@@ -77,7 +77,7 @@ const chatInput = createRef<Input>()
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     text(
       ({ style }) =>
         `${style.primary("›")} ${style.dim("enter · / actions · @ files · # issues/prs · ctrl-c quit")}`

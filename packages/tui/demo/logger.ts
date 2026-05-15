@@ -1,4 +1,4 @@
-import { box, createRenderer, spinner, text } from "../src/index.ts"
+import { box, createRenderer, spinner, text } from "@zaly/tui"
 
 /**
  * Demo for the logger surface.
@@ -21,7 +21,7 @@ const renderer = await createRenderer({ logger: { minLevel: "trace" } })
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent" }),

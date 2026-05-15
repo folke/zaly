@@ -1,4 +1,4 @@
-import { box, createCtx, diff, text } from "../src/index.ts"
+import { box, createCtx, diff, text } from "@zaly/tui"
 
 const original = `import type { Config } from "./config.ts"
 

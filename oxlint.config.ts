@@ -1,6 +1,12 @@
 import { defineConfig } from "oxlint"
 
-function restrictedImport(kind: "name" | "regex", values: string | string[], message: string) {
+function restrictedImport(
+  kind: "name" | "regex",
+  values: string | string[],
+  message: string,
+  enabled = true
+) {
+  if (!enabled) return []
   const vv = Array.isArray(values) ? values : [values]
   return vv.map((value) => ({
     [kind]: value,
@@ -8,7 +14,9 @@ function restrictedImport(kind: "name" | "regex", values: string | string[], mes
   }))
 }
 
-function restrictedImports(opts: { allowIndex?: boolean } = {}) {
+function restrictedImports(
+  opts: { allowIndex?: boolean; allowSrc?: boolean; allowPath?: boolean } = {}
+) {
   return {
     paths: [
       ...restrictedImport(
@@ -19,33 +27,39 @@ function restrictedImports(opts: { allowIndex?: boolean } = {}) {
       ...restrictedImport(
         "name",
         ["node:path", "path"],
-        "Import from `pathe` instead — cross-platform path normalization."
+        "Import from `pathe` instead — cross-platform path normalization.",
+        !(opts.allowPath ?? false)
       ),
     ],
     patterns: [
-      ...restrictedImport(
+      restrictedImport(
         "regex",
         String.raw`marked\.[tj]s`,
         "Don't import the `marked` source directly; use `#md` so the bundler picks the runtime-appropriate renderer."
       ),
-      ...restrictedImport(
+      restrictedImport(
         "regex",
         String.raw`runtime/.*\.[tj]s`,
         "Don't import `runtime/*` source files directly; use the `#runtime` alias so Bun and Node resolve to the right impl."
       ),
-      ...restrictedImport(
+      restrictedImport(
         "regex",
         "schemas/tpl/",
         "Don't import generated schema files; use the public `schemas/index.ts` exports."
       ),
-      ...(!opts.allowIndex
-        ? restrictedImport(
-            "regex",
-            [String.raw`(^|/)index(\.ts)?$`],
-            "Inside a package, import from the actual source file. Barrels (`index.ts`) are reserved for external consumers"
-          )
-        : []),
-    ],
+      restrictedImport(
+        "regex",
+        [String.raw`(^|/)index(\.ts)?$`],
+        "Inside a package, import from the actual source file. Barrels (`index.ts`) are reserved for external consumers",
+        !(opts.allowIndex ?? false)
+      ),
+      restrictedImport(
+        "regex",
+        String.raw`^\.`,
+        "Don't import from `src/` files directly; use the public exports at the package root.",
+        !(opts.allowSrc ?? true)
+      ),
+    ].flat(),
   }
 }
 
@@ -138,6 +152,13 @@ export default defineConfig({
         "eslint/no-console": "off",
         "eslint/sort-keys": "off",
         "no-restricted-imports": "off",
+      },
+    },
+    {
+      files: ["demo/**/*.ts"],
+      rules: {
+        "sort-keys": ["warn", "asc", { caseSensitive: true, natural: false }],
+        "no-restricted-imports": ["error", restrictedImports({ allowSrc: false, allowPath: true })],
       },
     },
     {

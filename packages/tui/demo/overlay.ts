@@ -8,7 +8,7 @@ import {
   signal,
   spinner,
   text,
-} from "../src/index.ts"
+} from "@zaly/tui"
 
 /**
  * Overlay demo. Streams markdown into the scroll region while a help
@@ -30,7 +30,7 @@ const [spinning, setSpinning] = signal(true)
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent", running: spinning }),

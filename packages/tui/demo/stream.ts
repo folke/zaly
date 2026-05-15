@@ -1,4 +1,4 @@
-import { box, createRenderer, markdown, progress, signal, spinner, text } from "../src/index.ts"
+import { box, createRenderer, markdown, progress, signal, spinner, text } from "@zaly/tui"
 
 /**
  * Simulates an agent streaming markdown responses into the stream
@@ -78,7 +78,7 @@ const [spinning, setSpinning] = signal(true)
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent", running: spinning }),

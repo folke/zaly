@@ -13,7 +13,7 @@
  *   MODEL                 override the default id
  */
 
-import { listModels, loadModel } from "../src/index.ts"
+import { listModels, loadModel } from "@zaly/ai"
 
 const id = process.env.MODEL ?? "openrouter/minimax/minimax-m2.7"
 

@@ -1,5 +1,5 @@
-import { box, createCtx, text } from "../src/index.ts"
-import { loadTheme } from "../src/themes/registry.ts"
+import { box, createCtx, text } from "@zaly/tui"
+import { loadTheme } from "@zaly/tui/themes"
 
 async function demo(label: string, name: string): Promise<void> {
   const theme = await loadTheme(name)

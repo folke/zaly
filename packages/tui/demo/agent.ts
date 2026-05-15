@@ -11,7 +11,7 @@ import {
   signal,
   spinner,
   text,
-} from "../src/index.ts"
+} from "@zaly/tui"
 
 /**
  * Agent harness — a compact coding-assistant shell built on @zaly/tui.
@@ -79,20 +79,20 @@ renderer.overlay.add(() => help)
 // keys or dispatched programmatically.
 
 renderer.actions.register({
-  "app.plan": { name: "plan", desc: "draft a tiny plan", fn: () => dispatchReply("plan") },
-  "app.review": { name: "review", desc: "review the API shape", fn: () => dispatchReply("review") },
-  "app.ship": { name: "ship", desc: "write a release note", fn: () => dispatchReply("ship") },
-  "app.help": {
-    name: "help",
-    desc: "toggle help overlay",
-    keys: ["ctrl-h"],
-    fn: () => help.toggle(),
-  },
   "app.clear": {
-    name: "clear",
     desc: "clear the composer",
     fn: () => composer.setState({ cursor: 0, value: "" }),
+    name: "clear",
   },
+  "app.help": {
+    desc: "toggle help overlay",
+    fn: () => help.toggle(),
+    keys: ["ctrl-h"],
+    name: "help",
+  },
+  "app.plan": { desc: "draft a tiny plan", fn: () => dispatchReply("plan"), name: "plan" },
+  "app.review": { desc: "review the API shape", fn: () => dispatchReply("review"), name: "review" },
+  "app.ship": { desc: "write a release note", fn: () => dispatchReply("ship"), name: "ship" },
 })
 
 // ── Autocomplete ─────────────────────────────────────────────────────
@@ -101,8 +101,8 @@ const completions = autocomplete({
   input: composer,
   maxHeight: 8,
   sources: {
-    slash: actionsSource({ actions: renderer.actions }),
     file: filesSource(),
+    slash: actionsSource({ actions: renderer.actions }),
   },
 })
 
@@ -110,7 +110,7 @@ const completions = autocomplete({
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     box(
       { flexDirection: "row", gap: 1 },
       spinner({ color: "accent", running: busy }),
@@ -158,6 +158,11 @@ const toast = overlay(
 // ── Reply streaming ──────────────────────────────────────────────────
 
 const replies: Record<string, string> = {
+  fallback: `### Response
+
+If this were a real app, the agent would now inspect files, stream tool output, and revise this answer as results arrive.
+
+For the demo, the important part is that the response is just a **markdown node whose content grows over time**.`,
   plan: `### Tiny plan
 
 1. Keep the **footer** responsible for active interaction only.
@@ -184,11 +189,6 @@ The footer story here already feels pretty nice: state is local, interaction is 
 - synchronized output and careful scrollback behavior
 
 It is especially good at building coding-agent interfaces.`,
-  fallback: `### Response
-
-If this were a real app, the agent would now inspect files, stream tool output, and revise this answer as results arrive.
-
-For the demo, the important part is that the response is just a **markdown node whose content grows over time**.`,
 }
 
 function dispatchReply(kind: string): void {

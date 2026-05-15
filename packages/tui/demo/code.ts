@@ -1,5 +1,5 @@
-import { box, code, createCtx, text } from "../src/index.ts"
-import { loadTheme } from "../src/themes/registry.ts"
+import { box, code, createCtx, text } from "@zaly/tui"
+import { loadTheme } from "@zaly/tui/themes"
 
 const samples = [
   {

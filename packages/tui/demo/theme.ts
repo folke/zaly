@@ -1,5 +1,5 @@
 import { box, createCtx, text } from "@zaly/tui"
-import { loadTheme, themeRegistry } from "../src/themes/registry.ts"
+import { loadTheme, themeRegistry } from "@zaly/tui/themes"
 
 /**
  * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`
@@ -28,7 +28,7 @@ for (let i = 0; i < names.length; i += CHUNK) {
   for (const name of names.slice(i, i + CHUNK)) {
     const theme = await loadTheme(name)
     const panel = box(
-      { style: "ui", border: true, borderTitle: name, borderTitleStyle: theme.borderTitle },
+      { border: true, borderTitle: name, borderTitleStyle: theme.borderTitle, style: "ui" },
       text(({ style }) =>
         Object.keys(theme)
           .filter((k) => k !== "bg" && k !== "shiki")

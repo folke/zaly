@@ -1,5 +1,7 @@
+import { defineTool, AiError } from "@zaly/ai"
 import { Type } from "typebox"
-import { defineTool, AiError } from "../src/index.ts"
+
+// oxlint-disable sort-keys
 
 const tool = defineTool({
   name: "time",

@@ -1,4 +1,4 @@
-import { box, createRenderer, image, input, markdown, text } from "../src/index.ts"
+import { box, createRenderer, image, input, markdown, text } from "@zaly/tui"
 
 /**
  * Minimal echo chat. Type a message, press Enter — it's appended to the
@@ -15,7 +15,7 @@ const renderer = await createRenderer()
 
 renderer.ui.add(() =>
   box(
-    { style: "ui", flexDirection: "column", padding: [0, 1] },
+    { flexDirection: "column", padding: [0, 1], style: "ui" },
     text(
       ({ style }) =>
         `${style.primary("›")} ${style.dim("enter to send · ctrl-v to paste · ctrl-c to quit")}`

@@ -1,3 +1,4 @@
+// oxlint-disable no-restricted-imports
 /**
  * Tasks demo — shows what the model actually sees on the wire across
  * the long-running-task lifecycle.
