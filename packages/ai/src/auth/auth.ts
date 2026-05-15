@@ -57,15 +57,17 @@ export interface OAuthProvider extends AuthProvider {
  *  the `BuiltinProvider` union for free. `satisfies` preserves literal
  *  keys — widening to `Record<string, ProviderLoader>` would erase
  *  them and lose the typed autocomplete. */
+export type AuthLoader = () => Promise<AuthProvider>
+
 const authProviders = {
   codex: () => import("./openai-codex.ts").then((m) => m.codexAuth),
   env: () => import("./env.ts").then((m) => m.envAuth),
-} as const
+} as const satisfies Record<string, AuthLoader>
 
 export type BuiltinAuthProvider = keyof typeof authProviders
 export type AnyAuthProvider = BuiltinAuthProvider | (string & {})
 
-export const authRegistry = createRegistry<Promise<AuthProvider>>("auth").from(authProviders)
+export const authRegistry = createRegistry<AuthLoader>("auth").from(authProviders)
 
 /** Compose multiple auth providers into one. Tried in order; the
  *  first to return credentials wins. Useful for "try my Codex session,

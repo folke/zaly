@@ -14,15 +14,16 @@ import { defaults } from "./default.ts"
  *  — falls back to `defaults` only). */
 export type BuiltinTheme = BuiltinThemeName | "ansi"
 export type AnyTheme = BuiltinTheme | (string & {})
+export type ThemeLoader = () => Promise<Partial<Theme>>
 
 const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
 
 /**
  * Registry of built-in themes plus any registered at runtime. The
- * registry never awaits — `V = Promise<Theme>` so callers `await`
- * explicitly.
+ * registry never awaits — loaders return `Promise<Partial<Theme>>` so
+ * callers `await` explicitly.
  */
-export const themeRegistry = createRegistry<Promise<Partial<Theme>>>("theme").from(builtin)
+export const themeRegistry = createRegistry<ThemeLoader>("theme").from(builtin)
 themeRegistry.register("ansi", async () => defaults)
 
 /**

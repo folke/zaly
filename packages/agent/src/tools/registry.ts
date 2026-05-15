@@ -1,4 +1,5 @@
 import type { Model, Tool } from "@zaly/ai"
+import type { AnyKey } from "@zaly/shared/registry"
 
 import { createRegistry } from "@zaly/shared/registry"
 
@@ -10,6 +11,10 @@ export interface ToolInit {
   model: Model
   cwd: string
 }
+
+export type ToolLoader = (init: ToolInit) => Promise<Tool>
+export type BuiltinTool = keyof typeof builtin
+export type AnyTool = AnyKey<BuiltinTool>
 
 const builtin = {
   agent_send: () => import("./swarm.ts").then((m) => m.agentSendTool),
@@ -25,9 +30,6 @@ const builtin = {
   task_stop: () => import("./tasks.ts").then((m) => m.taskStopTool),
   wakeup: () => import("./wakeup.ts").then((m) => m.wakeupTool),
   write: () => import("./write.ts").then((m) => m.writeTool),
-} as const satisfies Record<string, (init: ToolInit) => Promise<Tool>>
+} as const satisfies Record<string, ToolLoader>
 
-export type BuiltinTool = keyof typeof builtin
-export type AnyTool = BuiltinTool | (string & {})
-
-export const toolRegistry = createRegistry<Promise<Tool>, ToolInit>("tool").from(builtin)
+export const toolRegistry = createRegistry<ToolLoader>("tool").from(builtin)

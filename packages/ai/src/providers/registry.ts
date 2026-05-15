@@ -21,6 +21,4 @@ const providers = {
 export type BuiltinProvider = keyof typeof providers
 export type AnyProvider = BuiltinProvider | (string & {})
 
-export const providerRegistry = createRegistry<Promise<Provider>, ProviderOptions>("provider").from(
-  providers
-)
+export const providerRegistry = createRegistry<ProviderLoader>("provider").from(providers)

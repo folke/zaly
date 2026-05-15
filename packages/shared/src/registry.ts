@@ -21,19 +21,19 @@
 //       narrow types so `load("bash")` returns `Tool<bash params>`
 //       rather than the union V
 
-export type Loader<V, O = void> = (opts: O) => V
-export type LoaderMap<V, O = void> = Record<string, Loader<V, O>>
-
-/** Pulls the resolved value out of a loader. */
-export type Resolved<L> = L extends Loader<infer V, infer _O> ? V : never
+export type Loader = (args?: any) => any
+export type LoaderMap<L extends Loader> = Record<string, L>
 
 /** When `O` is `void` the opts arg is omittable, so `load("bash")`
  *  works. Otherwise it's required: `load("anthropic", opts)`. */
-type LoadArgs<O> = [O] extends [void] ? [] : [opts: O]
+type LoadArgs<L extends Loader> = [Parameters<L>[0]] extends [void] ? [] : [opts: Parameters<L>[0]]
 
-export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> {
+type AnyRegKey<I extends LoaderMap<any>> = (keyof I & string) | (string & {})
+export type AnyKey<T extends string> = T | (string & {})
+
+class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
   readonly #label: string
-  readonly #entries = new Map<string, Loader<V, O>>()
+  readonly #entries = new Map<string, L>()
 
   constructor(label: string) {
     this.#label = label
@@ -44,15 +44,13 @@ export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> 
    *  any string for runtime-registered entries. The conditional return
    *  type narrows to the per-key loader's value when the name is a
    *  builtin, falls back to `V` otherwise. */
-  load<N extends (keyof I & string) | (string & {})>(
-    name: N,
-    ...args: LoadArgs<O>
-  ): N extends keyof I ? Resolved<I[N]> : V
+  load<N extends keyof I>(name: N, ...args: LoadArgs<L>): ReturnType<I[N]>
+  load(name: string, ...args: LoadArgs<L>): ReturnType<L>
   // Implementation signature — wider than the public overload so the
   // conditional return type compiles. Internal callers should go
   // through the typed signature.
-  load(name: string, ...args: LoadArgs<O>): unknown {
-    const opts = args[0] as O
+  load(name: string, ...args: LoadArgs<L>): unknown {
+    const opts = args[0] as LoadArgs<L>[0]
     const loader = this.#entries.get(name)
     if (!loader) {
       const known = [...this.#entries.keys()].toSorted().join(", ")
@@ -64,18 +62,18 @@ export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> 
   /** Add (or replace) a loader. Returns an unregister function — only
    *  removes the entry if it's still ours, so a later replacement
    *  isn't accidentally undone. */
-  register(name: string, loader: Loader<V, O>): () => void {
+  register(name: string, loader: L): () => void {
     this.#entries.set(name, loader)
     return () => {
       if (this.#entries.get(name) === loader) this.#entries.delete(name)
     }
   }
 
-  has(name: string): boolean {
+  has(name: AnyRegKey<I>): boolean {
     return this.#entries.has(name)
   }
 
-  keys(): string[] {
+  keys(): AnyRegKey<I>[] {
     return [...this.#entries.keys()]
   }
 
@@ -83,20 +81,20 @@ export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> 
    *  splitting this from `createRegistry` (so `E` is the only generic
    *  needing inference at this call site) is what preserves the
    *  per-key narrow types in `I`. */
-  from<const E extends LoaderMap<V, O>>(entries: E): Registry<V, O, E> {
+  from<const E extends LoaderMap<L>>(entries: E): Registry<L, E> {
     for (const [name, loader] of Object.entries(entries)) this.#entries.set(name, loader)
-    return this as Registry<V, O, E>
+    return this as Registry<L, E>
   }
 }
 
-/** Builder entry point — locks `V` (and optionally `O`) so the
+/** Builder entry point — locks the loader signature `L` so the
  *  subsequent `.from(builtin)` can infer `I` narrowly without competing
  *  generic defaults.
  *
  *  Usage:
- *    const tools = createRegistry<Promise<Tool>>("tool").from(builtin)
- *    const handlers = createRegistry<PermissionHandler>("scope").from(handlerMap)
- *    const provs = createRegistry<Promise<Provider>, ProviderOptions>("provider").from(providerMap) */
-export function createRegistry<V, O = void>(label: string): Registry<V, O> {
-  return new Registry<V, O>(label)
+ *    const tools = createRegistry<(init: ToolInit) => Promise<Tool>>("tool").from(builtin)
+ *    const handlers = createRegistry<() => PermissionHandler>("scope").from(handlerMap)
+ *    const provs = createRegistry<(opts: ProviderOptions) => Promise<Provider>>("provider").from(providerMap) */
+export function createRegistry<L extends Loader>(label: string): Registry<L> {
+  return new Registry<L>(label)
 }

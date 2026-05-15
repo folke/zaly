@@ -1,6 +1,7 @@
 import type { PermissionHandler } from "../src/permissions/types.ts"
 
 import { describe, expect, test } from "vitest"
+import { handlerRegistry } from "../src/permissions/index.ts"
 import { parseRules, PermissionManager } from "../src/permissions/manager.ts"
 
 const cwd = "/home/folke/projects/zaly"
@@ -68,7 +69,8 @@ describe("PermissionManager — rules", () => {
       validate: (input) =>
         input === "ok" ? { verdict: "allow" } : { reason: "no", verdict: "deny" },
     }
-    m.register("custom-test", () => handler)
+
+    handlerRegistry.register("custom-test", () => handler)
     expect(m.validate("custom-test", "ok").verdict).toBe("allow")
     expect(m.validate("custom-test", "bad").verdict).toBe("deny")
   })

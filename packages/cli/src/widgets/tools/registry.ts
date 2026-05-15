@@ -32,6 +32,7 @@ export interface ToolResultProps<T extends Tool = Tool> {
 }
 
 export type ToolResultRenderer<T extends Tool = Tool> = Widget<ToolResultProps<T>>
+export type ToolResultLoader = () => ToolResultRenderer
 
 // Loaders are thunks so the registry shape (`(opts) => V`) matches —
 // `void` opts, value is the renderer. This lets plugins register their
@@ -43,9 +44,9 @@ const builtin = {
   edit: () => editResult as ToolResultRenderer,
   read: () => readResult as ToolResultRenderer,
   write: () => writeResult as ToolResultRenderer,
-} as const satisfies Record<string, () => ToolResultRenderer>
+} as const satisfies Record<string, ToolResultLoader>
 
-const toolResultRegistry = createRegistry<ToolResultRenderer>("tool-result").from(builtin)
+const toolResultRegistry = createRegistry<ToolResultLoader>("tool-result").from(builtin)
 
 /** Dispatcher widget — picks a renderer by `call.name` and falls back
  *  to the generic default. Plugins extend the registry; this widget

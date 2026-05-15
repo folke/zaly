@@ -28,7 +28,7 @@ function genBuiltin(names: readonly string[]): string {
     )
     .join("\n")
 
-  return `${header}import type { LoaderMap } from "@zaly/shared/registry"
+  return `${header}import type { ThemeLoader } from "./registry.ts"
 import type { Theme } from "./types.ts"
 
 /**
@@ -38,15 +38,16 @@ import type { Theme } from "./types.ts"
  * code-split each \`import("…json")\` into its own chunk, so apps only
  * pull the theme they actually load.
  *
- * \`as const satisfies LoaderMap<…>\` keeps the keys narrow (so
- * \`BuiltinThemeName\` is a literal union) but lets the value type
- * widen to \`Partial<Theme>\` — themes have no per-key narrow types
- * worth preserving, and the satisfies clause means \`themes/index.ts\`
- * can pass this map straight to \`themeRegistry\` with no cast.
+ * \`as const satisfies Record<string, ThemeLoader>\` keeps the keys
+ * narrow (so \`BuiltinThemeName\` is a literal union) but lets the
+ * value type widen to \`Partial<Theme>\` — themes have no per-key
+ * narrow types worth preserving, and the satisfies clause means
+ * \`themes/index.ts\` can pass this map straight to \`themeRegistry\`
+ * with no cast.
  */
 export const builtin = {
 ${entries}
-} as const satisfies LoaderMap<Promise<Partial<Theme>>>
+} as const satisfies Record<string, ThemeLoader>
 
 export type BuiltinThemeName = keyof typeof builtin
 `

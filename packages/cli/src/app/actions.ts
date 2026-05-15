@@ -1,4 +1,5 @@
 import type { Agent } from "@zaly/agent"
+import type { OAuthProvider } from "@zaly/ai"
 import type { Input, Renderer } from "@zaly/tui"
 
 /**
@@ -92,7 +93,8 @@ export function registerAgentActions(opts: {
 async function runCodexLogin(): Promise<void> {
   process.stdout.write("[login] starting OpenAI Codex (ChatGPT) authorization…\n")
   const { authRegistry } = await import("@zaly/ai")
-  const codexAuth = await authRegistry.load("codex")
+
+  const codexAuth = (await authRegistry.load("codex")) as OAuthProvider
 
   const creds = await codexAuth.login({
     onAuthUrl: ({ url }) => {

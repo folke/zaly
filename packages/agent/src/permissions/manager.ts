@@ -50,9 +50,6 @@ export class PermissionManager {
     if (!this.#workspaces.includes(this.cwd)) this.#workspaces.unshift(this.cwd)
   }
 
-  /** Pass-through to the module-scoped handler registry. */
-  register = handlerRegistry.register.bind(handlerRegistry)
-
   // ── Workspaces ──────────────────────────────────────────────────────
 
   get workspaces(): readonly string[] {

@@ -5,12 +5,14 @@ import { bashHandler } from "./bash.ts"
 import { fileHandler } from "./files.ts"
 import { toolHandler } from "./tool.ts"
 
+export type HandlerLoader = () => PermissionHandler<string>
+
 const builtin = {
   bash: () => bashHandler,
   read: () => fileHandler,
   tool: () => toolHandler,
   write: () => fileHandler,
-} as const
+} as const satisfies Record<string, HandlerLoader>
 
 /** Open registry of permission scopes — declaration-merge to add your
  *  own. The keys give `ctx.need("…", input)` typed autocomplete and
@@ -49,4 +51,4 @@ export type BuiltinScope = keyof typeof builtin
 export type PermissionScope = keyof PermissionScopes
 export type AnyScope = PermissionScope | (string & {})
 
-export const handlerRegistry = createRegistry<PermissionHandler<string>>("scope").from(builtin)
+export const handlerRegistry = createRegistry<HandlerLoader>("scope").from(builtin)
