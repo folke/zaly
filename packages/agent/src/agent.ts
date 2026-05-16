@@ -567,8 +567,8 @@ export class Agent extends Emitter<AgentEvents> {
 
   /** Abort the in-flight stream immediately. The agent lands in
    *  `paused` with `lastError` set to an AbortError. */
-  abort(): void {
-    this.#abortController?.abort()
+  abort(reason?: string): void {
+    this.#abortController?.abort(reason)
   }
 
   async start() {
