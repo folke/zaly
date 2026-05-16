@@ -204,6 +204,10 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#ctx.skills
   }
 
+  get signal(): AbortSignal | undefined {
+    return this.#abortController?.signal
+  }
+
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
   get usage(): TokenCount {
