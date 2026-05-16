@@ -112,8 +112,8 @@ export const subagentTool = defineTool({
         textBuffer += event.delta
       }
     })
-    child.on("stop", ({ reason }) => {
-      stopReason = reason
+    child.on("stop", ({ kind }) => {
+      stopReason = kind
     })
 
     child.send({ content: args.task, role: "user" })
@@ -173,7 +173,7 @@ export const subagentTool = defineTool({
 
     return {
       abort: () => {
-        child.abort()
+        child.stop()
       },
       done: runDone.then(
         async () => {

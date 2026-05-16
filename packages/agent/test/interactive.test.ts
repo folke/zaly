@@ -1,6 +1,6 @@
 import type { Message, StreamEvent } from "@zaly/ai"
 import type { Envelope } from "@zaly/shared"
-import type { AgentEvents, AgentStopReason } from "../src/events.ts"
+import type { AgentEvents, AgentStopKind } from "../src/events.ts"
 
 import { defineTool } from "@zaly/ai"
 import { Type } from "typebox"
@@ -103,7 +103,7 @@ describe("Agent — pause / abort", () => {
 
     // First step ends with a tool call; loop will check pause flag before next step.
     while (m.pending === 0) await tick()
-    agent.pause()
+    agent.stop({ abort: false }) // pause without aborting (preserve in-flight stream)
     m.release([
       { params: { a: 1, b: 2 }, id: "c1", name: "add", type: "tool-call" },
       { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
@@ -128,7 +128,7 @@ describe("Agent — pause / abort", () => {
     const run = agent.run()
 
     while (m.pending === 0) await tick()
-    agent.abort()
+    agent.stop()
 
     // The aborted stream wins; we still need to release it so the awaiting
     // generator unblocks (the abort signal isn't observed by our mock).
@@ -136,7 +136,7 @@ describe("Agent — pause / abort", () => {
 
     expect(await run).toBe("aborted")
     expect(agent.status).toBe("paused")
-    expect(agent.lastError?.name).toBe("AbortError")
+    expect(agent.lastStop?.error?.name).toBe("AbortError")
   })
 })
 
@@ -337,9 +337,9 @@ describe("Agent — final-state APIs", () => {
         [{ finishReason: "stop", type: "finish", usage: { input: 7, output: 3 } }],
       ]),
     })
-    const reason: AgentStopReason = await agent.run()
+    const reason: AgentStopKind = await agent.run()
     expect(reason).toBe("natural")
-    expect(agent.lastStopReason).toBe("natural")
+    expect(agent.lastStop?.kind).toBe("natural")
     expect(agent.totalUsage).toEqual({ input: 7, output: 3 })
     expect(agent.contextSize).toBe(10)
   })

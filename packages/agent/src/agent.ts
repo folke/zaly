@@ -11,7 +11,7 @@ import type {
   ToolContext,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
-import type { AgentEvents, AgentStatus, AgentStopReason } from "./events.ts"
+import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
 import type { AgentContext } from "./load.ts"
 import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, StepResult } from "./types.ts"
@@ -60,8 +60,8 @@ export class Agent extends Emitter<AgentEvents> {
 
   #status: AgentStatus = "idle"
   #abortController?: AbortController
-  #pauseRequested = false
-  #running?: Promise<AgentStopReason>
+  #pauseRequested?: string
+  #running?: Promise<AgentStopKind>
 
   /** Pending future-injects scheduled via `scheduleWakeup`. Cleared
    *  whenever the loop becomes active for any reason — the scheduled
@@ -71,8 +71,7 @@ export class Agent extends Emitter<AgentEvents> {
    *  evaporate. */
   readonly #wakeups = new Map<string, { timer: ReturnType<typeof setTimeout>; hint?: string }>()
 
-  #lastError?: Error
-  #lastStopReason?: AgentStopReason
+  #lastStop?: AgentStop
 
   /** Synchronous, low-level constructor. Prefer `Agent.load(opts)` —
    *  it runs the same construction *plus* any async setup (resolving
@@ -242,12 +241,11 @@ export class Agent extends Emitter<AgentEvents> {
     const level = PRESSURE_LEVELS.findLast((t) => ratio >= t) ?? 0
     return { level, limit, ratio, used }
   }
-  get lastError(): Error | undefined {
-    return this.#lastError
+
+  get lastStop(): AgentStop | undefined {
+    return this.#lastStop
   }
-  get lastStopReason(): AgentStopReason | undefined {
-    return this.#lastStopReason
-  }
+
   get steps(): number {
     return this.#stopPolicy.steps
   }
@@ -370,10 +368,9 @@ export class Agent extends Emitter<AgentEvents> {
    *  Doubles as a resume from `paused` — drains queued messages and
    *  picks the loop back up. If a run is already in flight, returns
    *  the existing promise. */
-  run(): Promise<AgentStopReason> {
+  run(): Promise<AgentStopKind> {
     if (this.#running) return this.#running
-    this.#pauseRequested = false
-    this.#lastError = undefined
+    this.#pauseRequested = undefined
     this.#running = this.#loop().finally(() => {
       this.#running = undefined
     })
@@ -563,16 +560,14 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#status
   }
 
-  /** Pause after the current step completes. The loop exits with
-   *  `stopReason: "paused"`; queued messages are preserved. */
-  pause(): void {
-    this.#pauseRequested = true
-  }
-
-  /** Abort the in-flight stream immediately. The agent lands in
-   *  `paused` with `lastError` set to an AbortError. */
-  abort(reason?: string): void {
-    this.#abortController?.abort(reason)
+  /** Stop the loop with a custom reason.
+   * When `abort: true` (the default), also trigger the abort signal so any
+   * in-flight stream or tool calls can react to the stop.
+   * When `abort: false`, the agent still stops immediately, but any active
+   * stream or tool calls are left to run to completion */
+  stop(opts: { abort?: boolean; reason?: string } = {}): void {
+    this.#pauseRequested ??= opts.reason ?? "stop"
+    if (opts.abort ?? true) this.#abortController?.abort(opts.reason)
   }
 
   async start() {
@@ -583,7 +578,7 @@ export class Agent extends Emitter<AgentEvents> {
 
   // ── Internals ────────────────────────────────────────────────────────
 
-  async #loop(): Promise<AgentStopReason> {
+  async #loop(): Promise<AgentStopKind> {
     if (!this.ctx.started) await this.start()
     // Reset per-run counters (steps, consecutive errors, call history).
     // Token totals stay sticky across resets — they're billing-style
@@ -591,15 +586,16 @@ export class Agent extends Emitter<AgentEvents> {
     this.#stopPolicy.reset()
 
     for (let step = 1; ; step++) {
-      if (this.#pauseRequested) return this.#stop("paused")
+      if (this.#abortController?.signal.aborted)
+        return this.#stop("aborted", this.#abortController.signal.reason)
+      if (this.#pauseRequested !== undefined) return this.#stop("paused", this.#pauseRequested)
 
       this.emit("step-start", { step })
       const outcome = await this.step()
       this.emit("step-end", { outcome: outcome.kind, step })
 
       if (outcome.kind === "error") {
-        this.#lastError = outcome.error
-        return this.#stop(outcome.error?.name === "AbortError" ? "aborted" : "error")
+        return this.#stop(outcome.error?.name === "AbortError" ? "aborted" : "error", outcome.error)
       }
 
       if (outcome.kind === "natural") {
@@ -636,11 +632,19 @@ export class Agent extends Emitter<AgentEvents> {
     }
   }
 
-  #stop(reason: AgentStopReason): AgentStopReason {
-    this.#lastStopReason = reason
-    this.#setStatus(reason === "natural" ? "idle" : "paused")
-    this.emit("stop", { reason, usage: this.usage })
-    return reason
+  #stop(kind: AgentStopKind, reason?: unknown): AgentStopKind {
+    this.#lastStop = {
+      error: reason instanceof Error ? reason : undefined,
+      kind,
+      reason: reason === undefined ? undefined : toError(reason).message,
+    }
+    this.#setStatus(kind === "natural" ? "idle" : "paused")
+    this.emit("stop", {
+      status: this.#status,
+      usage: this.usage,
+      ...this.#lastStop,
+    })
+    return kind
   }
 
   /** Build the per-step `ToolContext` handed to each tool. The session

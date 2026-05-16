@@ -178,7 +178,7 @@ export class Swarm {
   stop(id: string): void {
     const entry = this.#entries.get(id)
     if (!entry) return
-    entry.agent.abort()
+    entry.agent.stop()
     this.#entries.delete(id)
     this.#byAgent.delete(entry.agent)
   }

@@ -9,7 +9,7 @@ export type AgentStatus = "idle" | "streaming" | "running-tools" | "compacting" 
 
 /** Reason the loop stopped this turn. Distinct from the provider's
  *  `finishReason` (which describes why one round-trip ended). */
-export type AgentStopReason =
+export type AgentStopKind =
   | "natural"
   | "max-steps"
   | "token-budget"
@@ -24,6 +24,12 @@ export type AgentStopReason =
  *  Returned from `step()` so custom drivers can interleave their own
  *  logic between steps. */
 export type StepKind = "natural" | "tool-calls" | "context-overflow" | "error"
+
+export type AgentStop = {
+  kind: AgentStopKind
+  reason?: string // human-readable; pulled from lastError.message or pauseRequested
+  error?: Error // present when kind is aborted/error
+}
 
 /** Events emitted by an `Agent` as the loop runs. Listeners fire
  *  synchronously; a throw inside a listener is caught and routed to
@@ -40,5 +46,8 @@ export type AgentEvents = {
   "tool-result": { call: ToolCallPart; result: ToolResult }
   "step-start": { step: number }
   "step-end": { step: number; outcome: StepKind }
-  stop: { reason: AgentStopReason; usage: TokenCount }
+  stop: AgentStop & {
+    usage: TokenCount
+    status: AgentStatus
+  }
 }

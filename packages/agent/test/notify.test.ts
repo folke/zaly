@@ -34,8 +34,12 @@ async function mockAgent(
     get session() {
       return session
     },
-    notify(meta: Omit<MetaPart, "type">) {
-      notifications.push(meta)
+    notify(type: string, data: unknown) {
+      notifications.push(
+        typeof data === "string" || Array.isArray(data)
+          ? { content: data as MetaPart["content"], tag: type }
+          : { data, tag: type }
+      )
     },
     get pressure() {
       return pressure
@@ -73,7 +77,12 @@ describe("Notifier — event-driven lifecycle", () => {
     const notifications: Omit<MetaPart, "type">[] = []
     const agent = {
       session,
-      notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
+      notify: (type: string, data: unknown) =>
+        notifications.push(
+          typeof data === "string" || Array.isArray(data)
+            ? { content: data as MetaPart["content"], tag: type }
+            : { data, tag: type }
+        ),
       pressure: { level: 0, limit: 100_000, ratio: 0, used: 0 },
       model: { id: "x" },
       on() {
@@ -105,7 +114,12 @@ describe("Notifier — event-driven lifecycle", () => {
     const notifications: Omit<MetaPart, "type">[] = []
     const agent = {
       session,
-      notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
+      notify: (type: string, data: unknown) =>
+        notifications.push(
+          typeof data === "string" || Array.isArray(data)
+            ? { content: data as MetaPart["content"], tag: type }
+            : { data, tag: type }
+        ),
       pressure: { level: 0, limit: 100_000, ratio: 0, used: 0 },
       model: { id: "x" },
       on() {
@@ -127,7 +141,12 @@ describe("Notifier — event-driven lifecycle", () => {
     let pressure: ContextPressure = { level: 2, limit: 100, ratio: 0.9, used: 90 }
     const agent = {
       session,
-      notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
+      notify: (type: string, data: unknown) =>
+        notifications.push(
+          typeof data === "string" || Array.isArray(data)
+            ? { content: data as MetaPart["content"], tag: type }
+            : { data, tag: type }
+        ),
       get pressure() {
         return pressure
       },
@@ -238,7 +257,12 @@ describe("Notifier — check() polling", () => {
     let pressure: ContextPressure = { level: 0, limit: 100_000, ratio: 0, used: 0 }
     const agent = {
       session,
-      notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
+      notify: (type: string, data: unknown) =>
+        notifications.push(
+          typeof data === "string" || Array.isArray(data)
+            ? { content: data as MetaPart["content"], tag: type }
+            : { data, tag: type }
+        ),
       get pressure() {
         return pressure
       },
@@ -284,7 +308,12 @@ describe("Notifier — check() polling", () => {
     let pressure: ContextPressure = { level: 0, limit: 100_000, ratio: 0, used: 0 }
     const agent = {
       session,
-      notify: (m: Omit<MetaPart, "type">) => notifications.push(m),
+      notify: (type: string, data: unknown) =>
+        notifications.push(
+          typeof data === "string" || Array.isArray(data)
+            ? { content: data as MetaPart["content"], tag: type }
+            : { data, tag: type }
+        ),
       get pressure() {
         return pressure
       },

@@ -1,6 +1,6 @@
 import type { Message, ModelStreamOptions, StreamEvent, TokenCount } from "@zaly/ai"
 import type { Agent } from "../src/agent.ts"
-import type { AgentStopReason } from "../src/events.ts"
+import type { AgentStopKind } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
@@ -127,7 +127,7 @@ export async function runAgent(
   usage: TokenCount
   /** Cumulative usage across the run. */
   totalUsage: TokenCount
-  stopReason: AgentStopReason
+  stopReason: AgentStopKind
   steps: number
   error?: Error
 }> {
@@ -135,7 +135,7 @@ export async function runAgent(
   if (opts.send) agent.send(opts.send)
   const stopReason = await agent.run()
   return {
-    error: agent.lastError,
+    error: agent.lastStop?.error,
     messages: [...agent.messages],
     steps: agent.steps,
     stopReason,

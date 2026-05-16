@@ -1,5 +1,6 @@
 import type { Message, Model, Tool } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
+import type { AgentStatus } from "./events.ts"
 import type { Masker } from "./masker.ts"
 import type { Notifier } from "./notify.ts"
 import type { PermissionManager } from "./permissions/manager.ts"
@@ -94,6 +95,10 @@ export class AgentContext {
     return this.#masker ? this.#masker.apply(ret, this.agent.pressure) : ret
   }
 
+  get status(): AgentStatus | undefined {
+    return this.#agent?.status
+  }
+
   get started() {
     return this.#started
   }
@@ -104,6 +109,10 @@ export class AgentContext {
 
   get cwd() {
     return this.#cwd
+  }
+
+  get signal() {
+    return this.#agent?.signal
   }
 
   get agent() {

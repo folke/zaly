@@ -1,6 +1,6 @@
 import type { TokenCount, ToolCallPart } from "@zaly/ai"
 import type { Emitter, Envelope } from "@zaly/shared"
-import type { AgentEvents, AgentStopReason } from "./events.ts"
+import type { AgentEvents, AgentStopKind } from "./events.ts"
 
 import { safeStringify } from "@zaly/shared"
 import { addUsage } from "./utils/usage.ts"
@@ -139,7 +139,7 @@ export class StopPolicy {
    *  `undefined` to continue. Order matters — `loop-detected` wins
    *  over `max-tool-errors` if both fire, since a model in a tight
    *  loop is the more pressing thing to surface. */
-  detect(): AgentStopReason | undefined {
+  detect(): AgentStopKind | undefined {
     if (this.#opts.maxSteps !== undefined && this.#steps >= this.#opts.maxSteps) {
       return "max-steps"
     }
