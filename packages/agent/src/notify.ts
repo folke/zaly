@@ -30,25 +30,26 @@ export class Notifier {
     agent.session
       .on("compact", ({ node }) => {
         this.#pressureLevel = 0
-        agent.notify({
-          data: { ...this.time(), messages_preserved: node.tail, trigger: node.trigger },
-          tag: "compacted",
+        agent.notify("compacted", {
+          ...this.time(),
+          messages_preserved: node.tail,
+          trigger: node.trigger,
         })
       })
       .on("session-resume", () => {
-        agent.notify({ data: this.time(), tag: "session-resume" })
+        agent.notify("session-resume", this.time())
       })
       .on("session-start", () => {
-        agent.notify({ data: this.time(), tag: "session-start" })
+        agent.notify("session-start", this.time())
       })
       .on("cwd", ({ cwd }) => {
-        agent.notify({ data: { cwd }, tag: "cwd-changed" })
+        agent.notify("cwd-changed", { cwd })
       })
       .on("meta", ({ changes, prev }) => {
         if (changes.modelId === undefined) return
-        agent.notify({
-          data: { current: changes.modelId, previous: prev.modelId },
-          tag: "model-changed",
+        agent.notify("model-changed", {
+          current: changes.modelId,
+          previous: prev.modelId,
         })
       })
   }
@@ -64,14 +65,14 @@ export class Notifier {
 
     this.#lastStep ??= now
     if (lastInfo && timeInfo(now).date !== lastInfo.date) {
-      agent.notify({ data: this.time(now), tag: "new-day" })
+      agent.notify("new-day", this.time(now))
     } else if (now - this.#lastStep > this.#opts.idle * 1000) {
-      agent.notify({
-        data: { idle: since(this.#lastStep, now), ...this.time(now) },
-        tag: "user-returned",
+      agent.notify("user-returned", {
+        idle: since(this.#lastStep, now),
+        ...this.time(now),
       })
     } else if (now - (this.#lastTime ?? now) > this.#opts.periodic * 1000) {
-      agent.notify({ data: this.time(now), tag: "time" })
+      agent.notify("time", this.time(now))
     }
     this.#lastTime = now
 
@@ -83,9 +84,10 @@ export class Notifier {
     // after compaction) so the cycle can fire again later.
     const pressure = agent.pressure
     if (pressure.level > this.#pressureLevel) {
-      agent.notify({
-        data: { limit: pressure.limit, pct: Math.round(pressure.ratio * 100), used: pressure.used },
-        tag: "context-pressure",
+      agent.notify("context-pressure", {
+        limit: pressure.limit,
+        pct: Math.round(pressure.ratio * 100),
+        used: pressure.used,
       })
       this.#pressureLevel = pressure.level
     } else if (pressure.level === 0) this.#pressureLevel = 0
