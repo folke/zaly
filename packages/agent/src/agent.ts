@@ -1,6 +1,7 @@
 // oxlint-disable no-await-in-loop
 import type {
   AssistantMessage,
+  Content,
   Message,
   MetaPart,
   Model,
@@ -298,16 +299,12 @@ export class Agent extends Emitter<AgentEvents> {
     }
   }
 
-  notify(meta: Omit<MetaPart, "type">): void
-  notify(msg: string, tag?: string): void
-  notify(metaOrMsg: Omit<MetaPart, "type"> | string, tag?: string): void {
-    if (typeof metaOrMsg === "string")
-      this.#notifyQueue.push({
-        content: [{ text: metaOrMsg, type: "text" }],
-        tag: tag ?? "notify",
-        type: "meta",
-      })
-    else this.#notifyQueue.push({ ...metaOrMsg, type: "meta" } as MetaPart)
+  notify(type: string, data: Content | Record<string, unknown>): void {
+    const meta: MetaPart =
+      typeof data === "string" || Array.isArray(data)
+        ? { content: data, tag: type, type: "meta" }
+        : { data, tag: type, type: "meta" }
+    this.#notifyQueue.push(meta)
   }
 
   /** Schedule a one-shot wake-up at `delayMs` from now. The agent will
