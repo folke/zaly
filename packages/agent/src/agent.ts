@@ -551,8 +551,11 @@ export class Agent extends Emitter<AgentEvents> {
    *  Errors from the loop are swallowed — callers read `agent.lastError`
    *  / `agent.lastStopReason` for diagnostics. The point of `waitIdle`
    *  is just to know "the loop is no longer driving." */
-  async waitIdle(): Promise<AgentStatus> {
-    if (this.#running) await this.#running.catch(() => undefined)
+  async waitIdle(timeout?: number): Promise<AgentStatus> {
+    if (!this.#running) return this.#status
+    const wait = [this.#running.catch(() => undefined)]
+    if (timeout !== undefined) wait.push(new Promise((resolve) => setTimeout(resolve, timeout)))
+    await Promise.race(wait)
     return this.#status
   }
 
