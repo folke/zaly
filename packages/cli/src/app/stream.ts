@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { StreamEvent, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { ToolResult } from "@zaly/ai"
 import type { Renderer, Setter, Signal } from "@zaly/tui"
 import type { ToolCallProps } from "../widgets/tool.ts"
 
@@ -24,10 +24,14 @@ interface ActiveWidget {
  * setters so results can flip them to ✓/✗.
  *
  * Historical replay is `app/replay.ts`'s job — this module only handles
- * the live event stream after the agent is wired up. Returns a dispose
- * function that detaches every handler.
+ * the live event stream after the agent is wired up. Pass an
+ * AbortSignal via `opts` to detach every handler in one shot.
  */
-export function bindStream(renderer: Renderer, agent: Agent): () => void {
+export function bindStream(
+  renderer: Renderer,
+  agent: Agent,
+  opts?: { signal?: AbortSignal }
+): void {
   let active: ActiveWidget | undefined
   let tools: ActiveTools | undefined
 
@@ -43,47 +47,47 @@ export function bindStream(renderer: Renderer, agent: Agent): () => void {
     active.setContent((prev) => prev + delta)
   }
 
-  const onStream = (e: { event: StreamEvent }): void => {
-    if (e.event.type === "reasoning-delta" && e.event.delta !== "") {
-      update("reasoning", e.event.delta)
-    } else if (e.event.type === "text-delta" && e.event.delta !== "") {
-      update("text", e.event.delta)
-    }
-  }
+  agent
+    .on(
+      "stream-event",
+      ({ event }) => {
+        if (event.type === "reasoning-delta" && event.delta !== "") {
+          update("reasoning", event.delta)
+        } else if (event.type === "text-delta" && event.delta !== "") {
+          update("text", event.delta)
+        }
+      },
+      opts
+    )
+    .on(
+      "tool-calls",
+      ({ calls }) => {
+        active = undefined
+        const done = signal(false)
+        tools = { done, results: new Map() }
+        const children: ToolCallProps[] = []
 
-  const onCalls = (e: { calls: ToolCallPart[] }): void => {
-    active = undefined
-    const done = signal(false)
-    tools = { done, results: new Map() }
-    const children: ToolCallProps[] = []
-
-    for (const call of e.calls) {
-      const [result, setResult] = signal<ToolResult | undefined>(undefined)
-      tools.results.set(call.id, setResult)
-      children.push({ call, result })
-    }
-    renderer.stream.append(() => toolCalls({ calls: children, done: done.get }))
-  }
-
-  const onResult = (e: { call: ToolCallPart; result: ToolResult }): void => {
-    tools?.results.get(e.call.id)?.(e.result)
-  }
-
-  const onStep = (): void => {
-    active = undefined
-    tools?.done.set(true)
-    tools = undefined
-  }
-
-  agent.on("stream-event", onStream)
-  agent.on("tool-calls", onCalls)
-  agent.on("tool-result", onResult)
-  agent.on("step-end", onStep)
-
-  return () => {
-    agent.off("stream-event", onStream)
-    agent.off("tool-calls", onCalls)
-    agent.off("tool-result", onResult)
-    agent.off("step-end", onStep)
-  }
+        for (const call of calls) {
+          const [result, setResult] = signal<ToolResult | undefined>(undefined)
+          tools.results.set(call.id, setResult)
+          children.push({ call, result })
+        }
+        renderer.stream.append(() => toolCalls({ calls: children, done: done.get }))
+      },
+      opts
+    )
+    .on(
+      "tool-result",
+      ({ call, result }) => tools?.results.get(call.id)?.(result),
+      opts
+    )
+    .on(
+      "step-end",
+      () => {
+        active = undefined
+        tools?.done.set(true)
+        tools = undefined
+      },
+      opts
+    )
 }

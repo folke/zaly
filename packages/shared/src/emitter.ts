@@ -24,8 +24,16 @@ export type Listener<E, Self, R extends void | Promise<void> = void> = (
 ) => R
 
 export type ListenerCtx = {
+  /** Signal that aborts when the current listener chain should stop */
   signal: AbortSignal
+  /** Abort the current listener chain with an optional reason */
   abort(reason?: unknown): void
+}
+
+export type ListenerOpts = {
+  /** Optional signal to tie the listener's lifetime to. When the signal
+   * aborts, the listener is removed as if by `off()`.*/
+  signal?: AbortSignal
 }
 
 /** Per-key event envelope — the payload plus its discriminator. This is
@@ -69,11 +77,29 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
   readonly #wrappers = new WeakMap<AnyListener<R>, AnyListener<R>>()
   onEmitError?: (error: unknown) => void
 
-  on<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
-    return this.#add(type, fn as AnyListener<R>)
+  #bindSignal(signal: AbortSignal | undefined, onAbort: () => void): boolean {
+    if (!signal) return true
+    if (signal.aborted) return false
+    signal.addEventListener("abort", onAbort, { once: true })
+    return true
   }
 
-  once<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
+  on<K extends keyof T & string>(
+    type: K,
+    fn: Listener<EventOf<T, K>, this, R>,
+    opts?: ListenerOpts
+  ): this {
+    if (!this.#bindSignal(opts?.signal, () => this.off(type, fn))) return this
+    this.#add(type, fn as AnyListener<R>)
+    return this
+  }
+
+  once<K extends keyof T & string>(
+    type: K,
+    fn: Listener<EventOf<T, K>, this, R>,
+    opts?: ListenerOpts
+  ): this {
+    if (!this.#bindSignal(opts?.signal, () => this.off(type, fn))) return this
     const wrapped = ((event, self, ctx) => {
       this.off(type, fn)
       return fn(event as EventOf<T, K>, self as this, ctx)
@@ -111,7 +137,8 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
    *  `{ type, ...payload }` envelope synthesized at dispatch time.
    *  Useful for logging, replay, or policy state machines that switch
    *  on `event.type`. */
-  all(fn: Listener<Envelope<T>, this, R>): this {
+  all(fn: Listener<Envelope<T>, this, R>, opts?: ListenerOpts): this {
+    if (!this.#bindSignal(opts?.signal, () => this.off(fn))) return this
     return this.#add("all", fn as AnyListener<R>)
   }
 

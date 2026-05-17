@@ -56,8 +56,8 @@ export interface AgentSignals {
 }
 
 /**
- * Wire an Agent to the App's UI signals. Returns a dispose function
- * that detaches every handler.
+ * Wire an Agent to the App's UI signals. Pass an AbortSignal via `opts`
+ * to detach every handler in one shot (e.g. on agent reset).
  *
  * `busy` and `status` are driven from the agent's authoritative state
  * machine (`agent.on("status")`), covering submit (`streaming`), tool
@@ -65,34 +65,39 @@ export interface AgentSignals {
  * (`paused`) uniformly. `usage` refreshes on `step-end` since
  * `agent.usage` reflects the last response by then.
  */
-export function wireAgent(agent: Agent, signals: AgentSignals): () => void {
-  const onStepEnd = (): void => {
-    signals.setUsage(agent.usage)
-  }
-  const onStatus = ({ status }: { status: string }): void => {
-    const busy = status !== "idle" && status !== "paused"
-    signals.setBusy(busy)
-    signals.setStatus(status === "idle" ? "ready" : status)
-  }
-  const onStop = ({ reason }: { reason: string }): void => {
-    if (reason !== "error") return
-    signals.setStatus("error")
-    const err = agent.lastStop?.error
-    if (err) console.error(`${err.name}: ${err.message}`)
-  }
-
-  agent.on("step-end", onStepEnd)
-  agent.on("status", onStatus)
-  agent.on("stop", onStop)
+export function wireAgent(
+  agent: Agent,
+  signals: AgentSignals,
+  opts?: { signal?: AbortSignal }
+): void {
+  agent
+    .on(
+      "step-end",
+      () => signals.setUsage(agent.usage),
+      opts
+    )
+    .on(
+      "status",
+      ({ status }) => {
+        const busy = status !== "idle" && status !== "paused"
+        signals.setBusy(busy)
+        signals.setStatus(status === "idle" ? "ready" : status)
+      },
+      opts
+    )
+    .on(
+      "stop",
+      ({ kind }) => {
+        if (kind !== "error") return
+        signals.setStatus("error")
+        const err = agent.lastStop?.error
+        if (err) console.error(`${err.name}: ${err.message}`)
+      },
+      opts
+    )
 
   // Seed usage from the tail of any resumed conversation.
   const last = agent.messages.at(-1)
   const usage = last?.role === "assistant" ? last.meta?.usage : undefined
   if (usage) signals.setUsage(usage)
-
-  return () => {
-    agent.off("step-end", onStepEnd)
-    agent.off("status", onStatus)
-    agent.off("stop", onStop)
-  }
 }

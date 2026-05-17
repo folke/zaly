@@ -34,8 +34,7 @@ export class App {
   #input!: Input
 
   #agent?: Agent
-  #disposeAgentSignals?: () => void
-  #disposeStream?: () => void
+  #agentLifetime?: AbortController
 
   readonly #busy = signal(true)
   readonly #status = signal("loading")
@@ -133,13 +132,20 @@ export class App {
     this.#agent = await buildAgent(this.#config, preloaded)
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
 
-    this.#disposeAgentSignals = wireAgent(this.#agent, {
-      setBusy: this.#busy.set,
-      setStatus: this.#status.set,
-      setUsage: this.#usage.set,
-    })
+    this.#agentLifetime = new AbortController()
+    const opts = { signal: this.#agentLifetime.signal }
 
-    this.#disposeStream = bindStream(this.#renderer, this.#agent)
+    wireAgent(
+      this.#agent,
+      {
+        setBusy: this.#busy.set,
+        setStatus: this.#status.set,
+        setUsage: this.#usage.set,
+      },
+      opts
+    )
+
+    bindStream(this.#renderer, this.#agent, opts)
 
     registerAgentActions({
       agent: this.#agent,
@@ -147,9 +153,13 @@ export class App {
       reset: () => this.#reset(),
     })
 
-    this.#agent.session.on("compact", () => {
-      this.#renderer.stream.append(() => compactionMarker())
-    })
+    this.#agent.session.on(
+      "compact",
+      () => {
+        this.#renderer.stream.append(() => compactionMarker())
+      },
+      opts
+    )
 
     // Hand control to the status signal — flip from "loading" to
     // whatever the agent's authoritative state is (almost always
@@ -160,19 +170,26 @@ export class App {
   }
 
   async #reset(): Promise<void> {
-    this.#disposeStream?.()
-    this.#disposeAgentSignals?.()
+    this.#agentLifetime?.abort()
     await this.#agent?.dispose()
     this.#agent = undefined
 
     const preloaded = await loadSession(this.#config)
     this.#agent = await buildAgent(this.#config, preloaded)
     this.#model.set(this.#agent.model.id)
-    this.#disposeAgentSignals = wireAgent(this.#agent, {
-      setBusy: this.#busy.set,
-      setStatus: this.#status.set,
-      setUsage: this.#usage.set,
-    })
-    this.#disposeStream = bindStream(this.#renderer, this.#agent)
+
+    this.#agentLifetime = new AbortController()
+    const opts = { signal: this.#agentLifetime.signal }
+
+    wireAgent(
+      this.#agent,
+      {
+        setBusy: this.#busy.set,
+        setStatus: this.#status.set,
+        setUsage: this.#usage.set,
+      },
+      opts
+    )
+    bindStream(this.#renderer, this.#agent, opts)
   }
 }
