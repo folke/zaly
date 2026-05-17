@@ -1,10 +1,11 @@
 import type { Ignore } from "ignore"
 import type { Dirent } from "node:fs"
 
-import { findUp, normPath, safeStat, toError } from "@zaly/shared"
 import { readFileSync } from "node:fs"
 import { readdir } from "node:fs/promises"
 import { join } from "pathe"
+import { normPath } from "./path.ts"
+import { findUp, safeStat, toError } from "./utils.ts"
 
 export type GlobSort = (a: Dirent, b: Dirent) => number
 
@@ -24,7 +25,7 @@ export type GlobOptions = {
   follow: boolean // follow symlinks
   hidden: boolean // include hidden files (those starting with a dot)
   ignore: boolean // respect ignore files
-  type?: "file" | "directory" // filter by type
+  type?: "file" | "dir" // filter by type
   empty: boolean // include empty directories
   depth: number // maximum depth to traverse
   ignoreFiles: string[] // names of ignore files to look for in each directory
@@ -131,7 +132,7 @@ export async function* glob(opts: Partial<GlobOptions> = {}): AsyncGenerator<str
 
     for (const child of children) {
       o.onVisit?.(child.rel)
-      if (o.ignore && ig?.ignores(child.rel)) continue
+      if (ig?.ignores(child.rel)) continue
       if (o.glob && !child.dir && !globIgnore.ignores(child.rel)) continue
       stack.push({ ...child, ignore: ig })
     }
@@ -153,7 +154,7 @@ export async function* glob(opts: Partial<GlobOptions> = {}): AsyncGenerator<str
       } else {
         for (const p of parents) yield p.rel
         parents.length = 0
-        if (o.type !== "directory") yield entry.rel
+        if (o.type !== "dir") yield entry.rel
       }
     } else if (!entry.dir) yield entry.rel
 

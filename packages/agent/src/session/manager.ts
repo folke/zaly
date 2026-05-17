@@ -1,7 +1,7 @@
 import { encodePath, normPath } from "@zaly/shared"
+import { glob } from "@zaly/shared/glob"
 import { stat, mkdir } from "node:fs/promises"
 import { basename, dirname } from "pathe"
-import { glob } from "../utils/glob.ts"
 import { zalyPaths } from "../utils/paths.ts"
 import { uuidv7 } from "../utils/uuid.ts"
 import { Session } from "./session.ts"

@@ -8,5 +8,6 @@ export default defineConfig({
     process: "src/process/index.ts",
     detect: "src/detect/index.ts",
     image: "src/image/index.ts",
+    glob: "src/glob.ts",
   },
 })

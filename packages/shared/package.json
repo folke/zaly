@@ -23,6 +23,10 @@
       "bun": "./src/env.ts",
       "default": "./dist/env.mjs"
     },
+    "./glob": {
+      "bun": "./src/glob.ts",
+      "default": "./dist/glob.mjs"
+    },
     "./image": {
       "bun": "./src/image/index.ts",
       "default": "./dist/image.mjs"
@@ -42,6 +46,7 @@
       ".": "./dist/index.mjs",
       "./detect": "./dist/detect.mjs",
       "./env": "./dist/env.mjs",
+      "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
@@ -58,6 +63,7 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
+    "ignore": "^7.0.5",
     "image-meta": "^0.2.2"
   },
   "optionalDependencies": {
@@ -68,6 +74,7 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
+    "ignore": "7.0.5",
     "image-meta": "0.2.2"
   }
 }

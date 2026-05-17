@@ -69,11 +69,6 @@ class BaseEmitter<T extends EventMap = EventMap, R extends void | Promise<void> 
   readonly #wrappers = new WeakMap<AnyListener<R>, AnyListener<R>>()
   onEmitError?: (error: unknown) => void
 
-  clear(): void {
-    this.#listeners.clear()
-    this.#listeners.set("all", [])
-  }
-
   on<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this, R>): this {
     return this.#add(type, fn as AnyListener<R>)
   }

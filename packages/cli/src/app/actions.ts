@@ -79,7 +79,7 @@ export function registerAgentActions(opts: {
     },
     "app.stop": {
       desc: "abort the current run",
-      fn: () => agent.abort(),
+      fn: () => agent.stop(),
       keys: ["ctrl-x"],
       name: "stop",
     },

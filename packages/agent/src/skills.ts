@@ -2,10 +2,10 @@ import type { MetaPart, TextPart, Tool } from "@zaly/ai"
 
 import { AiError, defineTool } from "@zaly/ai"
 import { normPath } from "@zaly/shared"
+import { glob } from "@zaly/shared/glob"
 import { readFile } from "node:fs/promises"
 import { dirname, join } from "pathe"
 import { Type } from "typebox"
-import { glob } from "./utils/glob.ts"
 import { findResource } from "./utils/resource.ts"
 
 /**

@@ -77,7 +77,7 @@ export function wireAgent(agent: Agent, signals: AgentSignals): () => void {
   const onStop = ({ reason }: { reason: string }): void => {
     if (reason !== "error") return
     signals.setStatus("error")
-    const err = agent.lastError
+    const err = agent.lastStop?.error
     if (err) console.error(`${err.name}: ${err.message}`)
   }
 
