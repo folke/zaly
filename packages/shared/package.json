@@ -68,8 +68,10 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
+    "@types/picomatch": "^4.0.3",
     "ignore": "^7.0.5",
-    "image-meta": "^0.2.2"
+    "image-meta": "^0.2.2",
+    "picomatch": "^4.0.4"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"

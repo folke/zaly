@@ -1,50 +1,35 @@
 import type { Ignore } from "ignore"
-import type { Dirent } from "node:fs"
 
 import { readFileSync } from "node:fs"
 import { readdir } from "node:fs/promises"
 import { join } from "pathe"
 import { normPath } from "./path.ts"
-import { findUp, safeStat, toError } from "./utils.ts"
-
-export type GlobSort = (a: Dirent, b: Dirent) => number
-
-const sorters = {
-  name: (a, b) => a.name.localeCompare(b.name),
-  none: () => 0,
-  type: (a, b) => {
-    if (a.isDirectory() && !b.isDirectory()) return -1
-    if (!a.isDirectory() && b.isDirectory()) return 1
-    return a.name.localeCompare(b.name)
-  },
-} satisfies Record<string, GlobSort>
+import { findUp, gitRoot, safeStat, toError } from "./utils.ts"
 
 export type GlobOptions = {
-  cwd: string | string[]
-  glob?: string | string[] // optional glob patterns to filter files (e.g. "*.js")
+  cwd: string
   follow: boolean // follow symlinks
-  hidden: boolean // include hidden files (those starting with a dot)
+  hidden: boolean // include dot files (those starting with a dot)
   ignore: boolean // respect ignore files
   type?: "file" | "dir" // filter by type
-  empty: boolean // include empty directories
   depth: number // maximum depth to traverse
   ignoreFiles: string[] // names of ignore files to look for in each directory
   exclude: string[] // additional ignore rules to apply globally
   onVisit?: (rel: string) => void
+  onMatch?: (rel: string) => void
   onError?: (path: string, error: Error) => void
-  sort?: GlobSort | keyof typeof sorters
+  signal?: AbortSignal
 }
 
 const defaults: GlobOptions = {
   cwd: ".",
   depth: Infinity,
-  empty: false,
   exclude: [".git", "node_modules/"],
   follow: false,
   hidden: false,
   ignore: true,
   ignoreFiles: [".gitignore", ".ignore"],
-  sort: "name",
+  type: "file",
 }
 
 type GlobEntry = {
@@ -77,35 +62,62 @@ class IgnoreTree {
   }
 }
 
-export async function* glob(opts: Partial<GlobOptions> = {}): AsyncGenerator<string> {
-  if (opts.depth && opts.depth < 1) return // fast path for zero results
+async function matcher(patterns: string[]) {
+  if (process.versions.bun) {
+    const { Glob } = await import("bun")
+    const globs = patterns.map((p) => new Glob(p))
+    return (path: string) => globs.some((g) => g.match(path))
+  }
+  const { default: picomatch } = await import("picomatch")
+  const isMatch = picomatch(patterns, { dot: true })
+  return (path: string) => isMatch(path)
+}
+
+const CONCURRENCY = 16
+
+function maxPatternDepth(patterns: readonly string[]): number {
+  if (patterns.length === 0) return Infinity // no patterns means we check all files
+  let max = 0
+  for (const p of patterns) {
+    if (p.startsWith("!")) continue // negations don't affect depth
+    if (p.includes("**")) return Infinity // globstar matches any depth
+    const depth = p.split("/").length
+    if (depth > max) max = depth
+  }
+  return max
+}
+
+export async function* glob(
+  pattern: string | readonly string[],
+  opts: Partial<GlobOptions> = {}
+): AsyncGenerator<string> {
+  if (opts.depth !== undefined && opts.depth < 1) return // fast path for zero results
 
   const { default: ignore } = await import("ignore")
   const o: GlobOptions = { ...defaults, ...opts }
-  if (Array.isArray(o.cwd)) {
-    for (const cwd of o.cwd) yield* glob({ ...o, cwd })
-    return
-  }
   const root = normPath(o.cwd)
   const ignoreFiles = new Set(o.ignoreFiles)
   const rootIgnore = ignore().add([...o.exclude, ...ignoreFiles])
-  const globIgnore = ignore().add(o.glob ?? [])
-  const sorter = (typeof o.sort === "string" ? sorters[o.sort] : o.sort) ?? sorters.name
-  const visited = new Set<string>()
 
+  const patterns = typeof pattern === "string" ? [pattern] : pattern
+  o.depth = Math.min(o.depth, maxPatternDepth(patterns))
+  const match = patterns.length > 0 ? await matcher([...patterns]) : () => true
+
+  const visited = new Set<string>()
+  const matches: string[] = []
+
+  const git = gitRoot(root)
   if (o.ignore)
     for (const igf of ignoreFiles) {
-      const igPath = findUp(root, igf, ".git")
+      const igPath = findUp(root, igf, git)
       if (igPath) rootIgnore.add(readFileSync(igPath, "utf8"))
     }
 
   async function ls(dir: GlobEntry) {
-    if (visited.has(dir.path)) return
-    visited.add(dir.path)
+    if (opts.signal?.aborted) return // skip if cancelled mid-flight
     let entries
     try {
-      const dirents = await readdir(dir.path, { withFileTypes: true })
-      entries = dirents.toSorted(sorter).toReversed()
+      entries = await readdir(dir.path, { withFileTypes: true })
     } catch (error) {
       return o.onError?.(dir.path, toError(error))
     }
@@ -133,32 +145,36 @@ export async function* glob(opts: Partial<GlobOptions> = {}): AsyncGenerator<str
     for (const child of children) {
       o.onVisit?.(child.rel)
       if (ig?.ignores(child.rel)) continue
-      if (o.glob && !child.dir && !globIgnore.ignores(child.rel)) continue
-      stack.push({ ...child, ignore: ig })
+      if (!child.dir && !match(child.rel)) continue
+
+      if (child.dir) {
+        if (visited.has(child.path)) continue
+        visited.add(child.path)
+        if (child.depth < o.depth) queue.push({ ...child, ignore: ig })
+      }
+
+      if (!o.type || o.type === (child.dir ? "dir" : "file")) {
+        matches.push(child.rel)
+        o.onMatch?.(child.rel)
+      }
     }
   }
 
-  const stack: GlobEntry[] = [
+  const queue: GlobEntry[] = [
     { depth: 0, dir: true, ignore: new IgnoreTree(rootIgnore), path: root, rel: "" },
   ]
-  const parents: GlobEntry[] = []
 
-  while (stack.length > 0) {
-    const entry = stack.pop()!
+  const inflight = new Set<Promise<void>>()
+  while (queue.length > 0 || inflight.size > 0) {
+    o.signal?.throwIfAborted()
 
-    if (o.type !== "file" && entry.depth !== 0) {
-      while (!o.empty && parents.length > 0 && parents[parents.length - 1].depth >= entry.depth)
-        parents.pop()
-      if (entry.dir && entry.depth < o.depth) {
-        parents.push(entry)
-      } else {
-        for (const p of parents) yield p.rel
-        parents.length = 0
-        if (o.type !== "dir") yield entry.rel
-      }
-    } else if (!entry.dir) yield entry.rel
-
+    while (inflight.size < CONCURRENCY && queue.length > 0) {
+      const p = ls(queue.pop()!).finally(() => inflight.delete(p))
+      inflight.add(p)
+    }
     // oxlint-disable-next-line no-await-in-loop
-    if (entry.dir && entry.depth < o.depth) await ls(entry)
+    await Promise.race(inflight)
+    yield* matches.splice(0) // yield and clear matches
   }
+  yield* matches.splice(0) // yield and clear matches
 }

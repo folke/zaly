@@ -18,6 +18,8 @@ export type Resource<T extends ResourceScope = ResourceScope> = {
 
 const AGENTS_DIR = ".agents"
 
+// FIXME: deprecated
+
 export function findResource<T extends ResourceScope = ResourceScope>(
   opts: ResourceOptions<T>
 ): Resource<T>[] {

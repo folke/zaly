@@ -69,7 +69,7 @@ export function findUp(root: string, name: string, stop?: string) {
   while (true) {
     const check = join(current, name)
     if (safeStat(check)) return check
-    if (stop && safeStat(join(current, stop))) return // reached stop directory without finding the file
+    if (stop && current === stop) return // reached stop directory without finding the file
     const next = dirname(current)
     if (next === current) break // reached filesystem root
     current = next

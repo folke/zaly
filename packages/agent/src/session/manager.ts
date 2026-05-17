@@ -32,10 +32,9 @@ export async function sessionList(opts: Partial<SessionScope> & { sort?: boolean
   if (!filter) pattern.push("*")
   pattern.push(opts.id ?? "*")
   pattern.push("session.jsonl")
-  const paths = glob({
+  const paths = glob(pattern.join("/"), {
     cwd: root,
     depth: pattern.length,
-    glob: pattern.join("/"), // format: {scope}/{id}/session.jsonl
     ignore: false,
     type: "file",
   })

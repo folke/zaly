@@ -75,6 +75,7 @@ export class Skills {
     this.catalog.clear()
     this.#tool = undefined
 
+    // FIXME:
     const dirs = findResource({
       cwd: this.cwd,
       rel: "skills",
@@ -174,12 +175,7 @@ async function scanScope(root: string, scope: SkillEntry["scope"]): Promise<Skil
   // Depth 3 covers `.agent/skills/<name>/SKILL.md` and one extra level
   // (`.agent/skills/<category>/<name>/SKILL.md`). Bumping further pays
   // I/O cost we don't need for the skill convention.
-  for await (const rel of glob({
-    cwd: root,
-    depth: 3,
-    glob: ["**/*.md"],
-    type: "file",
-  })) {
+  for await (const rel of glob("**/*.md", { cwd: root, depth: 3, type: "file" })) {
     if (!rel.endsWith("/SKILL.md") && rel !== "SKILL.md") continue
     const path = join(root, rel)
     const dir = dirname(path)
@@ -210,7 +206,7 @@ async function readBody(path: string): Promise<string> {
 
 async function listReferences(dir: string): Promise<string[]> {
   const out: string[] = []
-  for await (const rel of glob({ cwd: dir, depth: 4, type: "file" })) {
+  for await (const rel of glob("**", { cwd: dir, depth: 4, type: "file" })) {
     if (rel === "SKILL.md" || rel.endsWith("/SKILL.md")) continue
     out.push(rel)
     if (out.length >= 200) break
