@@ -31,6 +31,10 @@
       "bun": "./src/image/index.ts",
       "default": "./dist/image.mjs"
     },
+    "./paths": {
+      "bun": "./src/paths/index.ts",
+      "default": "./dist/paths.mjs"
+    },
     "./process": {
       "bun": "./src/process/index.ts",
       "default": "./dist/process.mjs"
@@ -48,6 +52,7 @@
       "./env": "./dist/env.mjs",
       "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
+      "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
       "./package.json": "./package.json"

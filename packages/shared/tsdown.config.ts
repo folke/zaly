@@ -9,5 +9,6 @@ export default defineConfig({
     detect: "src/detect/index.ts",
     image: "src/image/index.ts",
     glob: "src/glob.ts",
+    paths: "src/paths/index.ts",
   },
 })

@@ -14,9 +14,9 @@ import type {
 } from "./types.ts"
 
 import { Emitter, normPath } from "@zaly/shared"
+import { zalyPaths } from "@zaly/shared/paths"
 import { isDeepStrictEqual } from "node:util"
 import { join } from "pathe"
-import { zalyPaths } from "../utils/paths.ts"
 import { uuidv7 } from "../utils/uuid.ts"
 import { JsonlStore } from "./jsonl.ts"
 import { MemoryStore } from "./memory.ts"
@@ -73,7 +73,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     this.#store = opts.store
     this.#id = opts.id ?? uuidv7()
     this.#cwd = normPath(opts.cwd ?? process.cwd())
-    this.#dir = normPath(opts.dir ?? join(zalyPaths.tmp, "sessions"))
+    this.#dir = normPath(opts.dir ?? join(zalyPaths.env.tmp, "sessions"))
     this.#path = opts.path ? normPath(opts.path) : undefined
   }
 

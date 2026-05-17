@@ -1,4 +1,4 @@
-import { zalyPaths } from "@zaly/agent"
+import { zalyPaths } from "@zaly/shared/paths"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { dirname } from "pathe"
 
