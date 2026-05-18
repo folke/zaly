@@ -50,13 +50,18 @@ export const safeStat = safeFn(statSync)
  *  can layer additional transformations (omit fields, redact, etc.). */
 export function safeStringify(
   value: unknown,
-  replacer?: (key: string, value: unknown) => unknown
+  replacer?: (key: string, value: unknown) => unknown,
+  space?: string | number
 ): string {
   try {
-    return JSON.stringify(value, (k, v) => {
-      const coerced = typeof v === "bigint" ? v.toString() : v
-      return replacer ? replacer(k, coerced) : coerced
-    })
+    return JSON.stringify(
+      value,
+      (k, v) => {
+        const coerced = typeof v === "bigint" ? v.toString() : v
+        return replacer ? replacer(k, coerced) : coerced
+      },
+      space
+    )
   } catch {
     return String(value)
   }
