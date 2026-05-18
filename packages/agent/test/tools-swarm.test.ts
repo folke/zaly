@@ -18,7 +18,7 @@ describe("agent_spawn tool", () => {
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "the orchestrator", name: "root" })
 
-    const ctx: ToolContext = { agent: root, swarm }
+    const ctx: ToolContext = { agent: root, swarm: () => Promise.resolve(swarm) }
     const result = (await agentSpawnTool.call(
       { desc: "review", name: "reviewer", prompt: "you are a reviewer" },
       ctx
@@ -34,7 +34,7 @@ describe("agent_spawn tool", () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "x", name: "root" })
-    const ctx: ToolContext = { agent: root, swarm }
+    const ctx: ToolContext = { agent: root, swarm: () => Promise.resolve(swarm) }
     await agentSpawnTool.call({ desc: "x", name: "worker", prompt: "p" }, ctx)
     await agentSpawnTool.call({ desc: "x", name: "worker", prompt: "p" }, ctx)
     expect(swarm.get("worker-2")).toBeDefined()
@@ -44,7 +44,7 @@ describe("agent_spawn tool", () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "x", name: "root" })
-    const ctx: ToolContext = { agent: root, swarm }
+    const ctx: ToolContext = { agent: root, swarm: () => Promise.resolve(swarm) }
     await agentSpawnTool.call({ desc: "x", name: "w", prompt: "p", task: "do the thing" }, ctx)
     const child = swarm.get("w")!.agent
     const userMsg = child.messages.find((m) => m.role === "user")
@@ -54,7 +54,9 @@ describe("agent_spawn tool", () => {
   test("MISSING_TOOL_CONTEXT when agent is absent", async () => {
     const swarm = new Swarm()
     await expect(
-      agentSpawnTool.call({ desc: "x", name: "x", prompt: "p" }, { swarm } as ToolContext)
+      agentSpawnTool.call({ desc: "x", name: "x", prompt: "p" }, {
+        swarm: () => Promise.resolve(swarm),
+      } as ToolContext)
     ).rejects.toMatchObject({ code: "MISSING_TOOL_CONTEXT" })
   })
 
@@ -71,7 +73,7 @@ describe("agent_send tool", () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "x", name: "root" })
-    const ctx: ToolContext = { agent: root, swarm }
+    const ctx: ToolContext = { agent: root, swarm: () => Promise.resolve(swarm) }
     await agentSpawnTool.call({ desc: "x", name: "worker", prompt: "p" }, ctx)
 
     await agentSendTool.call({ content: "do this", to: "worker" }, ctx)
@@ -87,7 +89,7 @@ describe("agent_send tool", () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
     swarm.attach(root, { desc: "x", name: "root" })
-    const ctx: ToolContext = { agent: root, swarm }
+    const ctx: ToolContext = { agent: root, swarm: () => Promise.resolve(swarm) }
 
     await expect(agentSendTool.call({ content: "x", to: "ghost" }, ctx)).rejects.toMatchObject({
       code: "UNKNOWN_AGENT",
@@ -106,11 +108,11 @@ describe("Agent.swarm propagation", () => {
   test("Agent.child inherits the parent's swarm", async () => {
     const swarm = new Swarm()
     const root = await buildRoot(swarm)
-    expect(root.ctx.swarm).toBe(swarm)
+    expect(await root.ctx.swarm()).toBe(swarm)
     const child = await root.child({})
-    expect(child.ctx.swarm).toBe(swarm)
+    expect(await child.ctx.swarm()).toBe(swarm)
     const grand = await child.child({})
-    expect(grand.ctx.swarm).toBe(swarm)
+    expect(await grand.ctx.swarm()).toBe(swarm)
   })
 
   test("ctx.swarm wired through #toolContext (via real run)", async () => {
@@ -125,6 +127,6 @@ describe("Agent.swarm propagation", () => {
     // Direct call via the tool with a hand-built ctx already covers
     // the wiring (agentSpawnTool reads ctx.swarm). The real-loop
     // exercise lives in the higher-level integration tests.
-    expect(root.ctx.swarm).toBe(swarm)
+    expect(await root.ctx.swarm()).toBe(swarm)
   })
 })

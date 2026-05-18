@@ -73,7 +73,8 @@ export const agentSpawnTool = defineTool({
           "agent_spawn requires an Agent reference on the context (set up by the agent harness).",
       })
     }
-    if (!ctx.swarm) {
+    const swarm = await ctx.swarm?.()
+    if (!swarm) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message:
@@ -81,7 +82,7 @@ export const agentSpawnTool = defineTool({
           "`Agent.load({ swarm: new Swarm(), ... })` to enable subagent orchestration.",
       })
     }
-    const entry = await ctx.swarm.spawn(ctx.agent, {
+    const entry = await swarm.spawn(ctx.agent, {
       desc: args.desc,
       name: args.name,
       prompt: args.prompt,
@@ -122,24 +123,25 @@ export const agentSendTool = defineTool({
     }),
   }),
 
-  call(args, ctx): string {
+  async call(args, ctx): Promise<string> {
     if (!ctx.agent) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "agent_send requires an Agent reference on the context.",
       })
     }
-    if (!ctx.swarm) {
+    const swarm = await ctx.swarm?.()
+    if (!swarm) {
       throw new AiError({
         code: "MISSING_TOOL_CONTEXT",
         message: "agent_send requires a Swarm registry on the context.",
       })
     }
-    const target = ctx.swarm.get(args.to)
+    const target = swarm.get(args.to)
     if (!target) {
-      const known = ctx.swarm.entries
+      const known = swarm.entries
         .map((e) => e.name)
-        .filter((n) => n !== ctx.swarm?.find(ctx.agent!)?.name)
+        .filter((n) => n !== swarm.find(ctx.agent!)?.name)
       throw new AiError({
         code: "UNKNOWN_AGENT",
         data: { available: known, to: args.to },
@@ -149,7 +151,7 @@ export const agentSendTool = defineTool({
             : `no agent named "${args.to}". Available: ${known.join(", ")}.`,
       })
     }
-    ctx.swarm.send(ctx.agent, target.agent, args.content)
+    swarm.send(ctx.agent, target.agent, args.content)
     return `sent to ${target.name}.`
   },
 })

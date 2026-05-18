@@ -44,7 +44,7 @@ declare module "@zaly/ai" {
      *  that spawn or message subagents (`agent_spawn`, `agent_send`)
      *  read this. Absent on standalone agents and on test contexts
      *  that build a `ToolContext` by hand. */
-    swarm?: Swarm
+    swarm?: () => Promise<Swarm>
     /** Async permission check tools call before doing work. Resolves on
      *  `allow`, throws a `AiError(PERMISSION_DENIED)` on `deny`. For
      *  `ask` verdicts, the agent invokes `AgentOptions.allow` (when

@@ -164,7 +164,7 @@ export class Agent extends Emitter<AgentEvents> {
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
       // tree (rare).
-      swarm: this.#ctx.swarm,
+      swarm: await this.#ctx.swarm(),
       tools,
       ...overrides,
     })
@@ -659,7 +659,7 @@ export class Agent extends Emitter<AgentEvents> {
       need: (scope, input) => this.#need(scope, input),
       perms: this.ctx.permissions,
       signal: this.#abortController?.signal,
-      swarm: this.#ctx.swarm,
+      swarm: () => this.#ctx.swarm(),
       tasks: this.#tasks,
     }
   }

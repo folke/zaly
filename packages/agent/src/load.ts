@@ -65,7 +65,6 @@ export class AgentContext {
     this.#started = true
     await Promise.all([
       this.loadSession(),
-      this.loadSwarm(),
       this.loadSkills(),
       this.loadNotifier(),
       this.loadMasker(),
@@ -170,10 +169,6 @@ export class AgentContext {
     return this.#permissions
   }
 
-  get swarm() {
-    return this.#swarm
-  }
-
   async tools(): Promise<Tool[]> {
     const spec = this.$tools
     const missing = spec
@@ -271,16 +266,12 @@ export class AgentContext {
     return this.#permissions
   }
 
-  private async loadSwarm() {
+  async swarm() {
     this.#swarm ??= this.#opts.swarm
     if (this.#swarm) return this.#swarm
-    const need = new Set(["agent_send", "agent_spawn"])
-    const tools = await this.tools()
-    if (tools.some((t) => need.has(t.name))) {
-      const { Swarm } = await import("./swarm.ts")
-      this.#swarm = new Swarm()
-      return this.#swarm
-    }
+    const { Swarm } = await import("./swarm.ts")
+    this.#swarm = new Swarm()
+    return this.#swarm
   }
 }
 
