@@ -1,0 +1,49 @@
+{
+  "name": "@zaly/config",
+  "version": "0.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/folke/zaly.git"
+  },
+  "files": [
+    "assets/**/*",
+    "dist/**/*"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "z build",
+    "lint": "z lint",
+    "test": "z test"
+  },
+  "dependencies": {
+    "@zaly/shared": "workspace:*",
+    "pathe": "^2.0.3"
+  },
+  "devDependencies": {
+    "defu": "^6.1.4",
+    "typia": "^12.1.1"
+  },
+  "engines": {
+    "bun": ">=1.2",
+    "node": ">=24"
+  },
+  "inlinedDependencies": {
+    "defu": "6.1.7",
+    "typia": "12.1.1"
+  }
+}
