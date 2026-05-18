@@ -29,7 +29,7 @@ export async function generateJsonSchemas(root: string) {
   const schemaFiles = globSync(join(root, "src/schemas/gen/*.schema.ts"))
   if (schemaFiles.length === 0) return
   console.log("Generating JSON schemas...")
-  mkdirSync("assets/schemas", { recursive: true })
+  mkdirSync(join(root, "assets/schemas"), { recursive: true })
   for (const file of schemaFiles) {
     console.log(file)
     const mod = (await import(file)) as Record<string, unknown>

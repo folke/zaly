@@ -90,7 +90,6 @@ const main = defineCommand({
         if (args.typia) {
           const { compile, generateJsonSchemas, hasSchemas } = await import("./typia.ts")
           for (const dir of pkgDirs()) {
-            console.log(`Processing typia schemas in ${dir}...`)
             if (!hasSchemas(dir)) continue
             await compile(dir)
             await generateJsonSchemas(dir)
