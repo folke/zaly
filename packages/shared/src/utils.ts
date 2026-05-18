@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
 import { readFileSync, statSync } from "node:fs"
-import { readFile } from "node:fs/promises"
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "pathe"
 
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R
@@ -169,5 +169,20 @@ export async function withLock<T>(path: string, fn: () => Promise<T>): Promise<T
     return await fn()
   } finally {
     await release()
+  }
+}
+
+/** Write to `<path>.<pid>.<ts>.tmp` then rename — atomic on POSIX (rename
+ *  within same filesystem is a single syscall). Crashes mid-write leave
+ *  the original file intact; the tmp file is cleaned up on error. */
+export async function atomicWriteFile(path: string, data: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true })
+  const tmp = `${path}.${process.pid}.${Date.now()}.tmp`
+  try {
+    await writeFile(tmp, data, "utf8")
+    await rename(tmp, path)
+  } catch (error) {
+    await unlink(tmp).catch(() => undefined)
+    throw error
   }
 }
