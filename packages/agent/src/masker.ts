@@ -1,4 +1,5 @@
 import type { Attachment, Message, TextPart, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type { Agent } from "./agent.ts"
 import type { EditTool } from "./tools/edit.ts"
 import type { ReadTool } from "./tools/read.ts"
 import type { AnyTool } from "./tools/registry.ts"
@@ -122,6 +123,12 @@ export class Masker {
       minChars: opts.minChars ?? defaults.minChars,
       tools: opts.tools === false ? undefined : (opts.tools ?? defaults.tools),
     }
+  }
+
+  attach(agent: Agent) {
+    agent.on("context", async (ctx, a) => {
+      ctx.messages = this.apply(ctx.messages, a.pressure)
+    })
   }
 
   /** Number of messages with at least one stamped part. */

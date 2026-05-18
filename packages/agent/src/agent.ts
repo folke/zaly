@@ -2,6 +2,7 @@
 import type {
   AssistantMessage,
   Content,
+  Context,
   Message,
   MetaPart,
   Model,
@@ -51,6 +52,7 @@ export class Agent extends Emitter<AgentEvents> {
   readonly depth: number
   /** Cap on `depth` — see `AgentOptions.maxDepth`. */
   readonly maxDepth: number
+  #started = false
 
   #parent?: Agent
 
@@ -119,6 +121,7 @@ export class Agent extends Emitter<AgentEvents> {
       // oxlint-disable-next-line no-console
       console.error("Agent event handler threw an error", error)
     }
+    this.#ctx.attach(this)
   }
 
   /** Spawn a child agent that inherits this agent's runtime defaults —
@@ -158,8 +161,8 @@ export class Agent extends Emitter<AgentEvents> {
       // session-started / time / etc. injections that the harness
       // explicitly opted out of.
       notify: this.#opts.notify,
-      permissions: this.ctx.permissions,
-      skills: this.#ctx.skills, // shared catalog; child doesn't reload
+      permissions: await this.ctx.permissions(),
+      skills: await this.#ctx.skills(), // shared catalog; child doesn't reload
       // Propagate the swarm so the child + every grandchild address
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
@@ -197,10 +200,6 @@ export class Agent extends Emitter<AgentEvents> {
 
   get session(): Session {
     return this.#ctx.session
-  }
-
-  get skills() {
-    return this.#ctx.skills
   }
 
   get signal(): AbortSignal | undefined {
@@ -379,14 +378,13 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #collect() {
     this.#abortController = new AbortController()
-    return this.model.stream(
-      {
-        messages: [...this.ctx.streamMessages],
-        prompt: await this.prompt(),
-        tools: await this.tools(),
-      },
-      this.#streamOpts()
-    )
+    const context = {
+      messages: [...this.ctx.messages],
+      prompt: await this.prompt(),
+      tools: await this.tools(),
+    } satisfies Context
+    await this.emitSerial("context", context)
+    return this.model.stream(context, this.#streamOpts())
   }
 
   #shouldAutoCompact(): boolean {
@@ -518,7 +516,7 @@ export class Agent extends Emitter<AgentEvents> {
     // What lands back here is a 1:1 array of result parts ready to commit.
     // The skill tool (when active) is passed via `extraTools` so dispatch
     // can resolve `name: "skill"` calls without polluting `tasks.tools`.
-    const resultParts = await this.#tasks.run(calls, this.#toolContext())
+    const resultParts = await this.#tasks.run(calls, await this.#toolContext())
 
     for (let i = 0; i < calls.length; i++) {
       const part = resultParts[i]
@@ -572,15 +570,19 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   async start() {
-    if (this.ctx.started) return
-    await this.ctx.start()
-    void this.emit("start")
+    if (this.#started) return
+    this.#started = true
+    await this.emit("start")
+  }
+
+  get started() {
+    return this.#started
   }
 
   // ── Internals ────────────────────────────────────────────────────────
 
   async #loop(): Promise<AgentStopKind> {
-    if (!this.ctx.started) await this.start()
+    if (!this.#started) await this.start()
     // Reset per-run counters (steps, consecutive errors, call history).
     // Token totals stay sticky across resets — they're billing-style
     // displays, not per-turn caps.
@@ -651,13 +653,13 @@ export class Agent extends Emitter<AgentEvents> {
   /** Build the per-step `ToolContext` handed to each tool. The session
    *  cwd, an abort signal scoped to the in-flight stream, and the
    *  long-running spawn registry are all surfaced here. */
-  #toolContext(): ToolContext {
+  async #toolContext(): Promise<ToolContext> {
     return {
       agent: this,
       cwd: this.cwd,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
-      perms: this.ctx.permissions,
+      perms: await this.ctx.permissions(),
       signal: this.#abortController?.signal,
       swarm: () => this.#ctx.swarm(),
       tasks: this.#tasks,
@@ -669,7 +671,8 @@ export class Agent extends Emitter<AgentEvents> {
    *  `ask` to `AgentOptions.allow` (treating it as `deny` when no
    *  callback is configured). */
   async #need(scope: string, input: string): Promise<void> {
-    const r = this.ctx.permissions.validate(scope, input)
+    const perms = await this.ctx.permissions()
+    const r = perms.validate(scope, input)
     if (r.verdict === "allow") return
     if (r.verdict === "ask" && this.#opts.allow) {
       const ok = await this.#opts.allow({

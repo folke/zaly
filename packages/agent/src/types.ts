@@ -124,7 +124,11 @@ export interface StepResult {
 
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
-  model?: Model
+  model: Model
+  /** Session for the conversation.
+   *  When omitted, a fresh in-memory Session is created. Either way,
+   *  `messages` (if any) are appended to it. */
+  session?: Session | SessionOptions
   /** Initial working directory for the agent and its tools.
    * Defaults to the process's current directory at load time.
    */
@@ -146,10 +150,6 @@ export interface AgentOptions extends CollectOptions {
    *  `messages`, `prompt`, and `tools` — those have dedicated
    *  top-level fields here. */
   request?: StreamOptions
-  /** Session for the conversation.
-   *  When omitted, a fresh in-memory Session is created. Either way,
-   *  `messages` (if any) are appended to it. */
-  session?: Session | SessionOptions
   /** Initial messages appended to the session at construction. Useful
    *  for seeding a fresh conversation or for prepending fixed context
    *  to an existing session. */

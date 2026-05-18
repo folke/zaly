@@ -1,4 +1,4 @@
-import type { Message, Model, ReasoningEffort, Tool } from "@zaly/ai"
+import type { Model, ReasoningEffort, Tool } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { AgentStatus } from "./events.ts"
 import type { Masker } from "./masker.ts"
@@ -17,14 +17,15 @@ import { normPath } from "@zaly/shared"
 const isInstance = <T>(v: unknown): v is T =>
   typeof v === "object" && v !== null && Object.getPrototypeOf(v) !== Object.prototype
 
+type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
+
 export class AgentContext {
   #agent?: Agent
   #opts: AgentOptions
-  #model?: Model
-  #session?: Session
+  #model: Model
+  #session: Session
   #cwd: string
   #skills?: Skills
-  #started = false
   #notifier?: Notifier
   #masker?: Masker
   #permissions?: PermissionManager
@@ -37,11 +38,12 @@ export class AgentContext {
   $prompt: (string | { template: AnyPrompt })[]
   $tools: (Tool | AnyTool)[]
 
-  constructor(opts: AgentOptions) {
+  constructor(opts: AgentContextOpts) {
     this.#opts = opts
     this.#model = opts.model
     this.#cwd = normPath(opts.cwd)
     this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
+    this.#session = opts.session
 
     this.$prompt = opts.prompt ?? [
       { template: "agent" },
@@ -52,28 +54,15 @@ export class AgentContext {
     ]
 
     this.$tools = opts.tools ?? []
-
-    if (isInstance<Session>(opts.session)) this.#session = opts.session
   }
 
-  assert(k: string, v: unknown): asserts v {
-    if (v === undefined) throw new Error(`${k} not found in context`)
-  }
+  private async start() {
+    const [masker, notifier] = await Promise.all([this.masker(), this.notifier()])
 
-  async start() {
-    if (this.#started) return
-    this.#started = true
-    await Promise.all([
-      this.loadSession(),
-      this.loadSkills(),
-      this.loadNotifier(),
-      this.loadMasker(),
-      this.loadPermissions(),
-    ])
+    if (masker) masker.attach(this.agent)
+    if (notifier) notifier.attach(this.agent)
 
-    if (this.#agent) this.attach()
-
-    await this.session.update({
+    await this.session.start({
       cwd: this.cwd,
       modelId: this.model.id,
       reasoning: this.reasoning,
@@ -82,26 +71,19 @@ export class AgentContext {
     for (const m of this.#opts.messages ?? []) await this.session.add(m)
   }
 
-  attach() {
-    if (!this.started) throw new Error("agent not started yet")
-    this.#notifier?.attach(this.agent)
+  attach(agent: Agent) {
+    if (this.#agent === agent) return
+    if (this.#agent) throw new Error("agent already attached to context")
+    this.#agent = agent
+    agent.once("start", () => this.start())
   }
 
   get messages() {
     return this.session.messages
   }
 
-  get streamMessages(): readonly Message[] {
-    const ret = this.messages
-    return this.#masker ? this.#masker.apply(ret, this.agent.pressure) : ret
-  }
-
   get status(): AgentStatus | undefined {
     return this.#agent?.status
-  }
-
-  get started() {
-    return this.#started
   }
 
   get opts() {
@@ -117,21 +99,8 @@ export class AgentContext {
   }
 
   get agent() {
-    this.assert("agent", this.#agent)
+    if (!this.#agent) throw new Error("agent not attached to context")
     return this.#agent
-  }
-
-  set agent(a: Agent) {
-    this.#agent = a
-    if (this.started) this.attach()
-  }
-
-  get skills() {
-    return this.#skills
-  }
-
-  set skills(s: Skills | undefined) {
-    this.#skills = s
   }
 
   get reasoning() {
@@ -140,10 +109,10 @@ export class AgentContext {
 
   set reasoning(r: ReasoningEffort) {
     this.#reasoning = r
+    void this.#session.update({ reasoning: r })
   }
 
   get session(): Session {
-    this.assert("session", this.#session)
     return this.#session
   }
 
@@ -152,21 +121,12 @@ export class AgentContext {
   }
 
   get model(): Model {
-    this.assert("model", this.#model)
     return this.#model
   }
 
   set model(m: Model) {
     this.#model = m
-  }
-
-  get notifier() {
-    return this.#notifier
-  }
-
-  get permissions() {
-    this.assert("permissions", this.#permissions)
-    return this.#permissions
+    void this.#session.update({ modelId: m.id })
   }
 
   async tools(): Promise<Tool[]> {
@@ -184,7 +144,8 @@ export class AgentContext {
       )
     }
     const ret = spec.map((t) => (typeof t === "string" ? this.#tools.get(t)! : t))
-    if (this.skills?.tool) ret.push(this.skills.tool)
+    const skills = await this.skills()
+    if (skills?.tool) ret.push(skills.tool)
     return ret
   }
 
@@ -206,32 +167,29 @@ export class AgentContext {
     return spec.map((p) => (typeof p === "string" ? p : this.#prompt.get(p.template)!))
   }
 
-  async loadSession(opts?: AgentOptions["session"]): Promise<Session> {
-    if (this.#session && !opts) return this.#session
-    const spec = opts ?? this.#opts.session
-    if (isInstance<Session>(spec)) this.session = spec
-    else {
-      const { Session } = await import("./session/session.ts")
-      this.session = await Session.load({ ...spec })
-    }
-    return this.session
+  async swarm() {
+    this.#swarm ??= this.#opts.swarm
+    if (this.#swarm) return this.#swarm
+    const { Swarm } = await import("./swarm.ts")
+    this.#swarm = new Swarm()
+    return this.#swarm
   }
 
-  async loadSkills(opts?: AgentOptions["skills"]): Promise<Skills | undefined> {
-    if (this.#skills && opts === undefined) return this.#skills
-    const spec = opts ?? this.#opts.skills
+  async skills(): Promise<Skills | undefined> {
+    if (this.#skills) return this.#skills
+    const spec = this.#opts.skills
     if (spec === undefined) return
-    if (isInstance<Skills>(spec)) this.skills = spec
+    if (isInstance<Skills>(spec)) this.#skills = spec
     else {
       const { Skills } = await import("./skills.ts")
-      this.skills = await Skills.load(spec)
+      this.#skills = await Skills.load(spec)
     }
-    return this.skills
+    return this.#skills
   }
 
-  private async loadNotifier(opts?: AgentOptions["notify"]): Promise<Notifier | undefined> {
-    if (this.#notifier && opts === undefined) return this.#notifier
-    const spec = opts ?? this.#opts.notify ?? true
+  private async notifier(): Promise<Notifier | undefined> {
+    if (this.#notifier) return this.#notifier
+    const spec = this.#opts.notify ?? true
     if (spec === false) return
     if (isInstance<Notifier>(spec)) this.#notifier = spec
     else {
@@ -241,9 +199,9 @@ export class AgentContext {
     return this.#notifier
   }
 
-  private async loadMasker(opts?: AgentOptions["mask"]): Promise<Masker | undefined> {
-    if (this.#masker && opts === undefined) return this.#masker
-    const spec = opts ?? this.#opts.mask ?? false
+  private async masker(): Promise<Masker | undefined> {
+    if (this.#masker) return this.#masker
+    const spec = this.#opts.mask ?? false
     if (spec === false) return
     if (isInstance<Masker>(spec)) this.#masker = spec
     else {
@@ -253,11 +211,9 @@ export class AgentContext {
     return this.#masker
   }
 
-  private async loadPermissions(
-    opts?: AgentOptions["permissions"]
-  ): Promise<PermissionManager | undefined> {
-    if (this.#permissions && opts === undefined) return this.#permissions
-    const spec = opts ?? this.#opts.permissions ?? {}
+  async permissions(): Promise<PermissionManager> {
+    if (this.#permissions) return this.#permissions
+    const spec = this.#opts.permissions ?? {}
     if (isInstance<PermissionManager>(spec)) this.#permissions = spec
     else {
       const { PermissionManager } = await import("./permissions/manager.ts")
@@ -265,24 +221,22 @@ export class AgentContext {
     }
     return this.#permissions
   }
+}
 
-  async swarm() {
-    this.#swarm ??= this.#opts.swarm
-    if (this.#swarm) return this.#swarm
-    const { Swarm } = await import("./swarm.ts")
-    this.#swarm = new Swarm()
-    return this.#swarm
+async function loadSession(spec?: AgentOptions["session"]): Promise<Session> {
+  if (isInstance<Session>(spec)) return spec
+  else {
+    const { Session } = await import("./session/session.ts")
+    return await Session.load({ ...spec })
   }
 }
 
-export async function createAgentContext(
-  opts: AgentOptions & { load?: boolean }
-): Promise<AgentContext> {
-  return new AgentContext(opts)
+export async function createAgentContext(opts: AgentOptions): Promise<AgentContext> {
+  const session = await loadSession(opts.session)
+  return new AgentContext({ ...opts, session })
 }
 
 export async function createAgent(opts: AgentOptions): Promise<Agent> {
-  const ctx = await createAgentContext({ load: false, ...opts })
-  const [{ Agent }] = await Promise.all([import("./agent.ts"), ctx.loadSession()])
+  const [{ Agent }, ctx] = await Promise.all([import("./agent.ts"), createAgentContext(opts)])
   return new Agent(ctx)
 }

@@ -1,4 +1,4 @@
-import type { StreamEvent, TokenCount, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { Message, StreamEvent, TokenCount, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 
 // ── Agent event map ──────────────────────────────────────────────────────
 
@@ -50,4 +50,5 @@ export type AgentEvents = {
     usage: TokenCount
     status: AgentStatus
   }
+  context: { prompt: string[]; tools: Tool[]; messages: Message[] }
 }
