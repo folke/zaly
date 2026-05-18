@@ -126,7 +126,7 @@ describe("findUp / gitRoot", () => {
   test("stops at sentinel directory and returns undefined", () => {
     // .git lives at `dir`; with stop=".git", searching for an absent file
     // should bail at `dir` rather than ascending further.
-    expect(findUp(nested, "definitely-not-there.xyz", ".git")).toBeUndefined()
+    expect(findUp(nested, "definitely-not-there.xyz", { stop: ".git" })).toBeUndefined()
   })
   test("findUp matches directories, not just files", () => {
     expect(findUp(nested, ".git")).toBe(join(dir, ".git"))

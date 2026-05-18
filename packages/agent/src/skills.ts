@@ -75,7 +75,6 @@ export class Skills {
     this.catalog.clear()
     this.#tool = undefined
 
-    // FIXME:
     const dirs = findResource({
       cwd: this.cwd,
       rel: "skills",
