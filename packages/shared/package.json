@@ -65,10 +65,12 @@
     "test": "z test"
   },
   "dependencies": {
-    "pathe": "^2.0.3"
+    "pathe": "^2.0.3",
+    "proper-lockfile": "^4.1.2"
   },
   "devDependencies": {
     "@types/picomatch": "^4.0.3",
+    "@types/proper-lockfile": "^4.1.4",
     "ignore": "^7.0.5",
     "image-meta": "^0.2.2",
     "picomatch": "^4.0.4"
@@ -82,6 +84,7 @@
   },
   "inlinedDependencies": {
     "ignore": "7.0.5",
-    "image-meta": "0.2.2"
+    "image-meta": "0.2.2",
+    "picomatch": "4.0.4"
   }
 }
