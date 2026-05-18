@@ -19,35 +19,66 @@ import type { Theme } from "./types.ts"
  * with no cast.
  */
 export const builtin = {
-  "ayu-dark": () => import("../../assets/themes/ayu-dark.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-frappe": () => import("../../assets/themes/catppuccin-frappe.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-latte": () => import("../../assets/themes/catppuccin-latte.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-macchiato": () => import("../../assets/themes/catppuccin-macchiato.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-mocha": () => import("../../assets/themes/catppuccin-mocha.json").then((m) => m.default as Partial<Theme>),
-  "dracula": () => import("../../assets/themes/dracula.json").then((m) => m.default as Partial<Theme>),
-  "github-dark": () => import("../../assets/themes/github-dark.json").then((m) => m.default as Partial<Theme>),
-  "github-light": () => import("../../assets/themes/github-light.json").then((m) => m.default as Partial<Theme>),
-  "gruvbox-dark-medium": () => import("../../assets/themes/gruvbox-dark-medium.json").then((m) => m.default as Partial<Theme>),
-  "material-theme-palenight": () => import("../../assets/themes/material-theme-palenight.json").then((m) => m.default as Partial<Theme>),
-  "min-dark": () => import("../../assets/themes/min-dark.json").then((m) => m.default as Partial<Theme>),
-  "min-light": () => import("../../assets/themes/min-light.json").then((m) => m.default as Partial<Theme>),
-  "monokai": () => import("../../assets/themes/monokai.json").then((m) => m.default as Partial<Theme>),
-  "night-owl": () => import("../../assets/themes/night-owl.json").then((m) => m.default as Partial<Theme>),
-  "nord": () => import("../../assets/themes/nord.json").then((m) => m.default as Partial<Theme>),
-  "one-dark-pro": () => import("../../assets/themes/one-dark-pro.json").then((m) => m.default as Partial<Theme>),
-  "one-light": () => import("../../assets/themes/one-light.json").then((m) => m.default as Partial<Theme>),
-  "poimandres": () => import("../../assets/themes/poimandres.json").then((m) => m.default as Partial<Theme>),
-  "rose-pine": () => import("../../assets/themes/rose-pine.json").then((m) => m.default as Partial<Theme>),
-  "solarized-dark": () => import("../../assets/themes/solarized-dark.json").then((m) => m.default as Partial<Theme>),
-  "solarized-light": () => import("../../assets/themes/solarized-light.json").then((m) => m.default as Partial<Theme>),
-  "synthwave-84": () => import("../../assets/themes/synthwave-84.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-day": () => import("../../assets/themes/tokyonight-day.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-moon": () => import("../../assets/themes/tokyonight-moon.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-night": () => import("../../assets/themes/tokyonight-night.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-storm": () => import("../../assets/themes/tokyonight-storm.json").then((m) => m.default as Partial<Theme>),
-  "vesper": () => import("../../assets/themes/vesper.json").then((m) => m.default as Partial<Theme>),
-  "vitesse-dark": () => import("../../assets/themes/vitesse-dark.json").then((m) => m.default as Partial<Theme>),
-  "vitesse-light": () => import("../../assets/themes/vitesse-light.json").then((m) => m.default as Partial<Theme>),
+  "ayu-dark": () =>
+    import("../../assets/themes/ayu-dark.json").then((m) => m.default as Partial<Theme>),
+  "catppuccin-frappe": () =>
+    import("../../assets/themes/catppuccin-frappe.json").then((m) => m.default as Partial<Theme>),
+  "catppuccin-latte": () =>
+    import("../../assets/themes/catppuccin-latte.json").then((m) => m.default as Partial<Theme>),
+  "catppuccin-macchiato": () =>
+    import("../../assets/themes/catppuccin-macchiato.json").then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "catppuccin-mocha": () =>
+    import("../../assets/themes/catppuccin-mocha.json").then((m) => m.default as Partial<Theme>),
+  dracula: () =>
+    import("../../assets/themes/dracula.json").then((m) => m.default as Partial<Theme>),
+  "github-dark": () =>
+    import("../../assets/themes/github-dark.json").then((m) => m.default as Partial<Theme>),
+  "github-light": () =>
+    import("../../assets/themes/github-light.json").then((m) => m.default as Partial<Theme>),
+  "gruvbox-dark-medium": () =>
+    import("../../assets/themes/gruvbox-dark-medium.json").then((m) => m.default as Partial<Theme>),
+  "material-theme-palenight": () =>
+    import("../../assets/themes/material-theme-palenight.json").then(
+      (m) => m.default as Partial<Theme>
+    ),
+  "min-dark": () =>
+    import("../../assets/themes/min-dark.json").then((m) => m.default as Partial<Theme>),
+  "min-light": () =>
+    import("../../assets/themes/min-light.json").then((m) => m.default as Partial<Theme>),
+  monokai: () =>
+    import("../../assets/themes/monokai.json").then((m) => m.default as Partial<Theme>),
+  "night-owl": () =>
+    import("../../assets/themes/night-owl.json").then((m) => m.default as Partial<Theme>),
+  nord: () => import("../../assets/themes/nord.json").then((m) => m.default as Partial<Theme>),
+  "one-dark-pro": () =>
+    import("../../assets/themes/one-dark-pro.json").then((m) => m.default as Partial<Theme>),
+  "one-light": () =>
+    import("../../assets/themes/one-light.json").then((m) => m.default as Partial<Theme>),
+  poimandres: () =>
+    import("../../assets/themes/poimandres.json").then((m) => m.default as Partial<Theme>),
+  "rose-pine": () =>
+    import("../../assets/themes/rose-pine.json").then((m) => m.default as Partial<Theme>),
+  "solarized-dark": () =>
+    import("../../assets/themes/solarized-dark.json").then((m) => m.default as Partial<Theme>),
+  "solarized-light": () =>
+    import("../../assets/themes/solarized-light.json").then((m) => m.default as Partial<Theme>),
+  "synthwave-84": () =>
+    import("../../assets/themes/synthwave-84.json").then((m) => m.default as Partial<Theme>),
+  "tokyonight-day": () =>
+    import("../../assets/themes/tokyonight-day.json").then((m) => m.default as Partial<Theme>),
+  "tokyonight-moon": () =>
+    import("../../assets/themes/tokyonight-moon.json").then((m) => m.default as Partial<Theme>),
+  "tokyonight-night": () =>
+    import("../../assets/themes/tokyonight-night.json").then((m) => m.default as Partial<Theme>),
+  "tokyonight-storm": () =>
+    import("../../assets/themes/tokyonight-storm.json").then((m) => m.default as Partial<Theme>),
+  vesper: () => import("../../assets/themes/vesper.json").then((m) => m.default as Partial<Theme>),
+  "vitesse-dark": () =>
+    import("../../assets/themes/vitesse-dark.json").then((m) => m.default as Partial<Theme>),
+  "vitesse-light": () =>
+    import("../../assets/themes/vitesse-light.json").then((m) => m.default as Partial<Theme>),
 } as const satisfies Record<string, ThemeLoader>
 
 export type BuiltinThemeName = keyof typeof builtin

@@ -13,5 +13,9 @@
     "mitata": "^1.0.34",
     "pathe": "^2.0.3",
     "ts-morph": "^28.0.0"
+  },
+  "devDependencies": {
+    "@typia/transform": "^12.1.1",
+    "typia": "^12.1.1"
   }
 }

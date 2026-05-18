@@ -50,16 +50,6 @@
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public",
-    "exports": {
-      ".": "./dist/index.mjs",
-      "./ansi": "./dist/ansi.mjs",
-      "./logger": "./dist/logger.mjs",
-      "./markdown": "./dist/markdown.mjs",
-      "./style": "./dist/style.mjs",
-      "./themes": "./dist/themes.mjs",
-      "./package.json": "./package.json"
-    },
     "imports": {
       "#ansi": {
         "bun": "./dist/ansi.bun.mjs",
@@ -69,12 +59,21 @@
         "bun": "./dist/md.bun.mjs",
         "default": "./dist/md.node.mjs"
       }
-    }
+    },
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./ansi": "./dist/ansi.mjs",
+      "./logger": "./dist/logger.mjs",
+      "./markdown": "./dist/markdown.mjs",
+      "./style": "./dist/style.mjs",
+      "./themes": "./dist/themes.mjs",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
   },
   "scripts": {
     "bench": "z bench",
     "build": "z build",
-    "build:schemas": "bun scripts/schemas.ts",
     "build:themes-1-shiki": "bun scripts/themes-shiki.ts",
     "build:themes-2-tokyonight": "bun scripts/themes-tokyonight.ts",
     "build:themes-3-builtin": "bun scripts/themes-builtin.ts && oxfmt src/themes/builtin.ts",
@@ -93,13 +92,12 @@
     "shiki": "^4.0.2"
   },
   "devDependencies": {
-    "slice-ansi": "^9.0.0",
-    "string-width": "^8.2.1",
-    "wrap-ansi": "^10.0.0",
-    "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
     "sharp": "^0.34.5",
-    "typia": "^12.1.1"
+    "slice-ansi": "^9.0.0",
+    "string-width": "^8.2.1",
+    "typia": "^12.1.1",
+    "wrap-ansi": "^10.0.0"
   },
   "engines": {
     "bun": ">=1.2",
