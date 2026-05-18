@@ -1,7 +1,7 @@
 import type { Config } from "../config.ts"
 import type { LoadedSession } from "./session.ts"
 
-import { readState, writeState } from "../state.ts"
+import { loadState, updateState } from "@zaly/config"
 
 /** Hardcoded last-resort default. Used when there's no `--model`, no
  *  resumed session model, and no persisted `lastModel`. Will be
@@ -26,12 +26,12 @@ const FALLBACK_MODEL = "anthropic/claude-sonnet-4-6"
  */
 export async function resolveModelId(config: Config, loaded: LoadedSession): Promise<string> {
   if (config.model !== undefined) {
-    await writeState({ lastModel: config.model })
+    await rememberModel(config.model)
     return config.model
   }
   const sessionModel = loaded.session?.meta.modelId
   if (sessionModel !== undefined) return sessionModel
-  const state = await readState()
+  const state = await loadState()
   if (state.lastModel !== undefined) return state.lastModel
   return FALLBACK_MODEL
 }
@@ -40,5 +40,5 @@ export async function resolveModelId(config: Config, loaded: LoadedSession): Pro
  *  models mid-session via a future `/model` command. Distinct from
  *  `resolveModelId`'s implicit writes so the call site reads cleanly. */
 export async function rememberModel(modelId: string): Promise<void> {
-  await writeState({ lastModel: modelId })
+  await updateState({ lastModel: modelId })
 }

@@ -30,3 +30,7 @@ export type Config = {
   user: LoadedSettings<"user">
   project: LoadedSettings<"project">
 }
+
+export type State = {
+  lastModel?: string
+}
