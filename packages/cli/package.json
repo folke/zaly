@@ -27,7 +27,6 @@
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public",
     "bin": {
       "zaly": "./dist/zaly.mjs"
     },
@@ -35,7 +34,8 @@
       "./main": "./dist/main.mjs",
       "./zaly": "./dist/zaly.mjs",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "z build",
@@ -46,6 +46,9 @@
   "dependencies": {
     "@zaly/agent": "workspace:*",
     "@zaly/ai": "workspace:*",
+    "@zaly/config": "workspace:*",
+    "@zaly/plugin": "workspace:*",
+    "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*",
     "sharp": "^0.34.5"
   },
