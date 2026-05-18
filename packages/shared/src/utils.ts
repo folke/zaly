@@ -79,28 +79,31 @@ export type FindUpOpts<T extends boolean = boolean> = {
  */
 export function findUp(
   root: string,
-  name: string,
+  name: string | string[],
   opts?: Partial<FindUpOpts<false>>
 ): string | undefined
-export function findUp(root: string, name: string, opts: FindUpOpts<true>): string[]
+export function findUp(root: string, name: string | string[], opts: FindUpOpts<true>): string[]
 export function findUp(
   root: string,
-  name: string,
+  name: string | string[],
   opts: FindUpOpts = {}
 ): string | string[] | undefined {
   let current = resolve(root)
   const stop = new Set(
     (typeof opts.stop === "string" ? [opts.stop] : (opts.stop ?? [])).map((p) => resolve(p))
   )
+  const names = Array.isArray(name) ? name : [name]
   const ret: string[] = []
   // oxlint-disable-next-line typescript/no-unnecessary-condition
-  while (true) {
-    const check = join(current, name)
-    const s = safeStat(check)
-    const t = s?.isDirectory() ? "dir" : "file"
-    if (s && (!opts.type || opts.type === t)) {
-      ret.push(check)
-      if (!opts.all) break
+  main: while (true) {
+    for (const n of names) {
+      const check = join(current, n)
+      const s = safeStat(check)
+      const t = s?.isDirectory() ? "dir" : "file"
+      if (s && (!opts.type || opts.type === t)) {
+        ret.push(check)
+        if (!opts.all) break main
+      }
     }
     if (stop.has(current)) break // reached stop directory without finding the file
     const next = dirname(current)
