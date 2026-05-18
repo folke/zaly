@@ -156,3 +156,18 @@ export function since(from: number, to = Date.now()): string {
 export function clamp(num: number, min?: number, max?: number): number {
   return Math.min(max ?? num, Math.max(min ?? num, num))
 }
+
+export async function withLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
+  const lockfile = await import("proper-lockfile")
+  await mkdir(dirname(path), { recursive: true })
+  const release = await lockfile.lock(path, {
+    realpath: false,
+    retries: { factor: 1.5, minTimeout: 50, retries: 10 },
+    stale: 5000, // ignore locks older than 5s (crashed process)
+  })
+  try {
+    return await fn()
+  } finally {
+    await release()
+  }
+}
