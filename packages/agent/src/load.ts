@@ -215,11 +215,11 @@ export class AgentContext {
   async loadSkills(opts?: AgentOptions["skills"]): Promise<Skills | undefined> {
     if (this.#skills && opts === undefined) return this.#skills
     const spec = opts ?? this.#opts.skills
-    if (spec === false) return
+    if (spec === undefined) return
     if (isInstance<Skills>(spec)) this.skills = spec
     else {
       const { Skills } = await import("./skills.ts")
-      this.skills = await Skills.load({ cwd: this.cwd })
+      this.skills = await Skills.load(spec)
     }
     return this.skills
   }

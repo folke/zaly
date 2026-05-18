@@ -1,12 +1,10 @@
 import type { MetaPart, TextPart, Tool } from "@zaly/ai"
 
 import { AiError, defineTool } from "@zaly/ai"
-import { normPath } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { readFile } from "node:fs/promises"
-import { dirname, join } from "pathe"
+import { dirname } from "pathe"
 import { Type } from "typebox"
-import { findResource } from "./utils/resource.ts"
 
 /**
  * Agent Skills support — discovery, catalog, and the activation tool.
@@ -42,23 +40,19 @@ export interface SkillEntry {
    *  Used as the workspace anchor for permissions and as the root for
    *  resolving references. */
   dir: string
-  /** Where the skill was found — `project` shadows `user` on collisions. */
-  scope: "project" | "user"
 }
 
 export interface SkillsOptions {
-  /** Project root scanned for `${cwd}/.agent/skills/`. Defaults to
-   *  `process.cwd()`. */
-  cwd?: string
+  skills?: string[] // SKILL.md files from the user's global config or project config
 }
 
 export class Skills {
   readonly catalog = new Map<string, SkillEntry>()
-  readonly cwd: string
   #tool?: Tool
+  #opts: SkillsOptions
 
   protected constructor(opts: SkillsOptions = {}) {
-    this.cwd = normPath(opts.cwd)
+    this.#opts = opts
   }
 
   static async load(opts?: SkillsOptions): Promise<Skills> {
@@ -74,21 +68,23 @@ export class Skills {
   async reload(): Promise<void> {
     this.catalog.clear()
     this.#tool = undefined
+    const paths = this.#opts.skills ?? []
+    await Promise.all(paths.map(async (path) => await this.add(path)))
+  }
 
-    const dirs = findResource({
-      cwd: this.cwd,
-      rel: "skills",
-      scopes: ["user", "agent"],
-      type: "dir",
-    })
-
-    const skills = await Promise.all(
-      dirs.map((d) => scanScope(d.path, d.scope === "agent" ? "project" : "user"))
-    )
-
-    for (const skill of skills.flat()) {
-      this.catalog.set(skill.name, skill)
-    }
+  async add(path: string): Promise<void> {
+    if (!path.endsWith("SKILL.md")) return
+    const dir = dirname(path)
+    try {
+      const meta = await readMeta(path)
+      if (!meta.name || !meta.description) return
+      this.catalog.set(meta.name, {
+        description: meta.description,
+        dir,
+        name: meta.name,
+        path,
+      })
+    } catch {}
   }
 
   /** Skill base directories — pass each to `agent.permissions.addWorkspace`
@@ -147,7 +143,7 @@ export class Skills {
 
     return [
       {
-        data: { dir: skill.dir, name: skill.name, references, scope: skill.scope },
+        data: { dir: skill.dir, name: skill.name, references },
         tag: "skill",
         type: "meta",
       },
@@ -168,28 +164,6 @@ export class Skills {
 }
 
 // ── Discovery ──────────────────────────────────────────────────────────
-
-async function scanScope(root: string, scope: SkillEntry["scope"]): Promise<SkillEntry[]> {
-  const out: SkillEntry[] = []
-  // Depth 3 covers `.agent/skills/<name>/SKILL.md` and one extra level
-  // (`.agent/skills/<category>/<name>/SKILL.md`). Bumping further pays
-  // I/O cost we don't need for the skill convention.
-  for await (const rel of glob("**/*.md", { cwd: root, depth: 3, type: "file" })) {
-    if (!rel.endsWith("/SKILL.md") && rel !== "SKILL.md") continue
-    const path = join(root, rel)
-    const dir = dirname(path)
-    try {
-      const meta = await readMeta(path)
-      if (!meta.name || !meta.description) continue
-      out.push({ description: meta.description, dir, name: meta.name, path, scope })
-    } catch {
-      // Malformed YAML / missing fields — skip. A debug log here would
-      // be useful when we wire one up.
-      continue
-    }
-  }
-  return out
-}
 
 async function readMeta(path: string): Promise<{ name?: string; description?: string }> {
   const raw = await readFile(path, "utf8")
