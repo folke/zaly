@@ -109,7 +109,7 @@ export async function* glob(
   const git = gitRoot(root)
   if (o.ignore)
     for (const igf of ignoreFiles) {
-      const igPath = findUp(root, igf, git)
+      const igPath = findUp(root, igf, { stop: git })
       if (igPath) rootIgnore.add(readFileSync(igPath, "utf8"))
     }
 

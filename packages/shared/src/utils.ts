@@ -63,17 +63,51 @@ export function safeStringify(
   }
 }
 
-export function findUp(root: string, name: string, stop?: string) {
+export type FindUpOpts<T extends boolean = boolean> = {
+  stop?: string | string[]
+  all?: T
+  type?: "file" | "dir"
+}
+
+/**
+ * Walk up the directory tree from `root` looking for `name`.
+ *
+ * @param name  Basename of file/dir to find at each level.
+ * @param opts.stop  Inclusive boundary — walk stops after checking this directory.
+ *                   Pass a `gitRoot()` result to bound the walk to the project.
+ * @param opts.all   When true, returns all matches (closest first). Default returns first.
+ */
+export function findUp(
+  root: string,
+  name: string,
+  opts?: Partial<FindUpOpts<false>>
+): string | undefined
+export function findUp(root: string, name: string, opts: FindUpOpts<true>): string[]
+export function findUp(
+  root: string,
+  name: string,
+  opts: FindUpOpts = {}
+): string | string[] | undefined {
   let current = resolve(root)
+  const stop = new Set(
+    (typeof opts.stop === "string" ? [opts.stop] : (opts.stop ?? [])).map((p) => resolve(p))
+  )
+  const ret: string[] = []
   // oxlint-disable-next-line typescript/no-unnecessary-condition
   while (true) {
     const check = join(current, name)
-    if (safeStat(check)) return check
-    if (stop && current === stop) return // reached stop directory without finding the file
+    const s = safeStat(check)
+    const t = s?.isDirectory() ? "dir" : "file"
+    if (s && (!opts.type || opts.type === t)) {
+      ret.push(check)
+      if (!opts.all) break
+    }
+    if (stop.has(current)) break // reached stop directory without finding the file
     const next = dirname(current)
     if (next === current) break // reached filesystem root
     current = next
   }
+  return opts.all ? ret : ret[0]
 }
 
 export function gitRoot(path: string) {
