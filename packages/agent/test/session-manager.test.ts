@@ -63,7 +63,6 @@ describe("sessionCreate", () => {
     expect(session.id).toBeDefined()
     expect(session.dir).toContain(scope)
     expect(session.dir).toContain(session.id)
-    expect(session.path).toBe(join(session.dir, "session.jsonl"))
     await session.close()
   })
 
@@ -226,7 +225,7 @@ describe("sessionResume", () => {
     const resumed = await sessionResume({ scope })
     expect(resumed).toBeDefined()
     expect(resumed!.id).toBe(original.id)
-    expect(resumed!.meta.modelId).toBe("openai/gpt-4o")
+    expect(resumed!.settings.modelId).toBe("openai/gpt-4o")
     expect(resumed!.messages.map((m) => m.content)).toEqual(["hi", "hello"])
     await resumed?.close()
   })
@@ -249,7 +248,7 @@ describe("create + list + resume round-trip", () => {
     expect(found).toBeDefined()
     const reopened = await Session.load({ path: found!.path })
     expect(reopened.id).toBe(created.id)
-    expect(reopened.meta.modelId).toBe("anthropic/claude")
+    expect(reopened.settings.modelId).toBe("anthropic/claude")
     await reopened.close()
 
     // Resumable via sessionResume (only one session in this test scope)

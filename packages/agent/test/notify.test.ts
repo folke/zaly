@@ -212,7 +212,7 @@ describe("Notifier — event-driven lifecycle", () => {
   test("meta event without modelId change does NOT trigger 'model-changed'", async () => {
     const { agent, notifications, session } = await mockAgent()
     new Notifier().attach(agent)
-    await session.update({ prompt: ["be brief"] })
+    await session.update({ reasoning: "xhigh" })
     expect(findTag(notifications, "model-changed")).toBeUndefined()
   })
 })

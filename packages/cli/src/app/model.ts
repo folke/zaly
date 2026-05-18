@@ -29,7 +29,7 @@ export async function resolveModelId(config: Config, loaded: LoadedSession): Pro
     await rememberModel(config.model)
     return config.model
   }
-  const sessionModel = loaded.session?.meta.modelId
+  const sessionModel = loaded.session?.settings.modelId
   if (sessionModel !== undefined) return sessionModel
   const state = await loadState()
   if (state.lastModel !== undefined) return state.lastModel

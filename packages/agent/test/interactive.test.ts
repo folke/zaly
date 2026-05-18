@@ -314,7 +314,6 @@ describe("Agent — mutable prompt + tools", () => {
         ],
         okStop(),
       ]),
-      skills: false,
       tools: [Add],
     })
     // Swap the available set before the call lands so "sub" can dispatch.

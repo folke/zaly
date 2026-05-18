@@ -1,14 +1,14 @@
-import type { Message } from "@zaly/ai"
+import type { Message, ReasoningEffort } from "@zaly/ai"
 import type { SessionStore } from "./store.ts"
 
 // ── Records ──────────────────────────────────────────────────────────────
 
 /** A single node in the session DAG. Same shape on disk (JSONL) as in
- *  memory — what we persist *is* what we navigate. Meta lives ONLY on
- *  `session-meta` nodes as a full snapshot of the cumulative session
- *  meta at that point. Other node types are pure markers / payload —
- *  consumers reading "the meta as of node X" use `SessionNodeView`,
- *  which decorates raw nodes with cumulative meta computed by `Session`'s
+ *  memory — what we persist *is* what we navigate. Session settings live ONLY on
+ *  `session-settings` nodes as a full snapshot of the cumulative session
+ *  settings at that point. Other node types are pure markers / payload —
+ *  consumers reading "the settings as of node X" use `SessionNodeView`,
+ *  which decorates raw nodes with cumulative settings computed by `Session`'s
  *  chain-walk forward pass. */
 type SessionN = {
   uuid: string
@@ -19,7 +19,7 @@ type SessionN = {
 } & (
   | { type: "session-start" }
   | { type: "session-resume" }
-  | { type: "session-meta"; meta: PersistedMeta }
+  | { type: "session-settings"; settings: SessionSettings }
   | { type: "message"; message: Message }
   | {
       type: "compact"
@@ -47,34 +47,30 @@ export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<
   { type: T }
 >
 
-/** A `SessionNode` decorated with the cumulative meta as of that
+/** A `SessionNode` decorated with the cumulative settings as of that
  *  node's position in the chain. Returned by `Session.node()` and
- *  `Session#chain` — consumers always see a defined `meta`. */
-export type SessionNodeView = SessionNode & { meta: PersistedMeta }
+ *  `Session#chain` — consumers always see a defined `settings`. */
+export type SessionNodeView = SessionNode & { settings: SessionSettings }
 
 export type SessionView = {
   messages: Message[]
   nodes: Map<string, SessionNodeView>
-  meta: PersistedMeta
   compact?: SessionNode<"compact">
 }
 
-export type InternalMeta = {
+export type SessionSettings = {
   version?: number
   sessionId?: string
-}
-export type PersistedMeta = InternalMeta & SessionMeta
-
-/** Wire format == the in-memory shape. Storage backends round-trip
- *  `SessionNode` directly. Kept as an alias for legacy clarity / future
- *  divergence room. */
-export type PersistedNode = SessionNode
-
-export type SessionMeta = {
   cwd?: string
   modelId?: string
-  prompt?: string[]
+  reasoning?: ReasoningEffort
 }
+
+export type SessionUpdate = Omit<SessionSettings, "version" | "sessionId">
+
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
+
+export type PartialNode = DistributiveOmit<SessionNode, "parentUuid" | "uuid" | "ts">
 
 // ── Events ───────────────────────────────────────────────────────────────
 
@@ -84,8 +80,11 @@ export type SessionEvents = {
   node: { node: SessionNode }
   navigate: { head: string | undefined; messages: readonly Message[] }
   compact: { node: SessionNode<"compact"> }
-  cwd: { cwd: string }
-  meta: { meta: SessionMeta; prev: SessionMeta; changes: Partial<Omit<SessionMeta, "cwd">> }
+
+  cwd: { cwd: string; prev?: string }
+  model: { model: string; prev?: string }
+  reasoning: { effort: ReasoningEffort; prev?: ReasoningEffort }
+
   "session-start": {}
   "session-resume": {}
 }
@@ -94,7 +93,6 @@ export type SessionEvents = {
 
 export type SessionOptions<T extends SessionStore = SessionStore> = {
   id?: string
-  cwd?: string
   store?: T
   /** JSONL file to persist the session to. If the file exists, its
    *  records are read into the DAG before any `add()` calls; either way
@@ -117,5 +115,4 @@ export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions 
   /** Storage backend. Required — `Session.load()` picks the right
    *  store based on options; direct construction passes one explicitly. */
   store: T
-  meta?: PersistedMeta
 }

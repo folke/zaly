@@ -159,7 +159,7 @@ export class Agent extends Emitter<AgentEvents> {
       // explicitly opted out of.
       notify: this.#opts.notify,
       permissions: this.ctx.permissions,
-      skills: this.#ctx.skills ?? false, // shared catalog; child doesn't reload
+      skills: this.#ctx.skills, // shared catalog; child doesn't reload
       // Propagate the swarm so the child + every grandchild address
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
@@ -405,6 +405,7 @@ export class Agent extends Emitter<AgentEvents> {
         void this.#opts.onEvent?.(event)
       },
       onUpdate: this.#opts.onUpdate,
+      reasoning: { ...base.reasoning, effort: this.#ctx.reasoning },
       signal: this.#abortController?.signal,
     }
   }

@@ -7,7 +7,7 @@ import { agentSendTool, agentSpawnTool } from "../src/tools/swarm.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
 const buildRoot = async (swarm?: Swarm): Promise<Agent> => {
-  const ret = await loadAgent({ model: mockModel([]), skills: false, swarm })
+  const ret = await loadAgent({ model: mockModel([]), skills: undefined, swarm })
   await ret.start()
   return ret
 }

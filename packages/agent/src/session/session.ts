@@ -1,15 +1,15 @@
 import type { Message } from "@zaly/ai"
 import type { SessionStore } from "./store.ts"
 import type {
-  InternalMeta,
-  PersistedMeta,
+  PartialNode,
   SessionEvents,
   SessionInit,
   SessionMessage,
-  SessionMeta,
   SessionNode,
   SessionNodeView,
   SessionOptions,
+  SessionSettings,
+  SessionUpdate,
   SessionView,
 } from "./types.ts"
 
@@ -22,12 +22,6 @@ import { JsonlStore } from "./jsonl.ts"
 import { MemoryStore } from "./memory.ts"
 
 const VERSION = 1
-
-function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: SessionMeta } {
-  const { version, sessionId, ...session } = meta
-  const internal: InternalMeta = { sessionId, version }
-  return { internal, session }
-}
 
 /**
  * Conversation primitive. Owns a DAG of message + compaction + meta
@@ -61,20 +55,19 @@ function splitMeta(meta: PersistedMeta): { internal: InternalMeta; session: Sess
 export class Session<T extends SessionStore = SessionStore> extends Emitter<SessionEvents> {
   readonly #store: T
   #id: string
-  #cwd: string
   #dir: string
-  #path?: string
-  #view: SessionView = { messages: [], meta: {}, nodes: new Map() }
+  #settings: SessionSettings = {}
+  #view: SessionView = { messages: [], nodes: new Map() }
   #closed = false
   #started = false
+  #path?: string
 
   protected constructor(opts: SessionInit<T>) {
     super()
+    this.#path = opts.path
     this.#store = opts.store
     this.#id = opts.id ?? uuidv7()
-    this.#cwd = normPath(opts.cwd ?? process.cwd())
     this.#dir = normPath(opts.dir ?? join(zalyPaths.env.tmp, "sessions"))
-    this.#path = opts.path ? normPath(opts.path) : undefined
   }
 
   /** Recommended one-step path: pick the right store backend, hydrate
@@ -89,23 +82,20 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   static async load(opts: SessionOptions & { path: string }): Promise<Session<JsonlStore>>
   static async load(opts?: SessionOptions & {}): Promise<Session<MemoryStore>>
   static async load(opts: SessionOptions = {}): Promise<Session> {
-    const cwd = opts.cwd ?? process.cwd()
     const path = opts.path ? normPath(opts.path) : undefined
     const store: SessionStore =
       opts.store ?? (path ? await JsonlStore.load(path) : new MemoryStore())
-    const init: SessionInit = { ...opts, cwd, path, store }
+    const init: SessionInit = { ...opts, path, store }
     const ret = new Session(init)
     await ret.#rebuild()
     return ret
   }
 
   async #rebuild(): Promise<void> {
-    this.#view = await this.#chain()
-    this.#id = this.#view.meta.sessionId ?? this.#id
-    // Sync `#cwd` from the hydrated/active meta so a loaded session
-    // reflects the cwd it was originally operating under, not the
-    // process.cwd() of the loader.
-    if (this.#view.meta.cwd) this.#cwd = normPath(this.#view.meta.cwd)
+    const chain = await this.#chain()
+    this.#view = chain
+    this.#settings = chain.settings
+    this.#id = chain.settings.sessionId ?? this.#id
   }
 
   /** Lazily emits `session-start` on a fresh session or `session-resume`
@@ -115,12 +105,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     if (this.#started) return
     this.#started = true
     const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
-    await this.#commit({
-      parentUuid: this.#store.root?.uuid,
-      ts: Date.now(),
-      type,
-      uuid: uuidv7(),
-    })
+    await this.#commit({ type })
+    if (type === "session-start") await this.update({}) // writes {sessionId, version}
     this.emit(type)
   }
 
@@ -137,44 +123,31 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#id
   }
 
-  get path(): string | undefined {
-    return this.#path
-  }
-
   get dir(): string {
     return this.#dir
   }
 
-  get cwd(): string {
-    return this.#cwd
+  get path(): string | undefined {
+    return this.#path
   }
 
   /** Cumulative session meta as of the current head — derived from the
    *  most recent `session-meta` snapshot in the active chain. */
-  get meta(): SessionMeta {
-    return splitMeta(this.#view.meta).session
+  get settings(): SessionSettings {
+    return this.#settings
   }
 
-  async update(meta: SessionMeta, opts?: { force?: boolean }): Promise<string> {
-    return this.#commit(
-      {
-        meta,
-        parentUuid: this.#store.root?.uuid,
-        ts: Date.now(),
-        type: "session-meta",
-        uuid: uuidv7(),
-      },
-      opts
-    )
+  async update(settings: SessionUpdate, opts?: { force?: boolean }): Promise<string> {
+    return this.#commit({ settings, type: "session-settings" }, opts)
   }
 
   /** Explicitly mark the session as started — writes a `session-start`
    *  marker on a fresh session, `session-resume` on a hydrated one.
    *  Idempotent; subsequent calls are no-ops. Optional `meta` is
    *  applied via `update()` after the marker lands. */
-  async start(meta?: SessionMeta): Promise<string | undefined> {
+  async start(settings?: SessionUpdate): Promise<string | undefined> {
     await this.#autostart()
-    if (meta) await this.update(meta)
+    if (settings) return this.update(settings)
     return this.#store.root?.uuid
   }
 
@@ -219,21 +192,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   async add(message: Message): Promise<string> {
     const uuid = message.id ?? uuidv7()
     const ts = message.ts ?? Date.now()
-    const current = this.#view.meta.modelId
-
     const m = { ...message, id: uuid, ts }
-    if (m.role === "assistant" && m.meta) {
-      const { modelId, ...meta } = m.meta ?? {}
-      if (modelId && modelId !== current) await this.update({ modelId: m.meta.modelId })
-      m.meta = meta
-    }
-    return this.#commit({
-      message: m,
-      parentUuid: this.#store.root?.uuid,
-      ts,
-      type: "message",
-      uuid,
-    })
+    return this.#commit({ message: m, type: "message" })
   }
 
   /** Mark a compaction boundary. Subsequent `add()` calls land after
@@ -290,32 +250,30 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
 
   /** Atomically commit a node: register it in the store, update active
    *  messages, persist, and emit. Single chokepoint for all mutations. */
-  async #commit(node: SessionNode, opts: { force?: boolean } = {}): Promise<string> {
+  async #commit(n: PartialNode, opts: { force?: boolean } = {}): Promise<string> {
+    let node: SessionNode = {
+      ...n,
+      parentUuid: this.#store.root?.uuid,
+      ts: Date.now(),
+      uuid: uuidv7(),
+    }
+
     if (!this.#started && node.type !== "session-start" && node.type !== "session-resume") {
       await this.#autostart()
     }
     if (this.#closed) throw new Error("Session is closed")
 
-    // update cwd if needed
-    this.#cwd = node.type === "session-meta" && node.meta.cwd ? normPath(node.meta.cwd) : this.#cwd
-
-    const next: PersistedMeta = {
-      ...this.#view.meta,
-      ...(node.type === "session-meta" ? node.meta : {}),
-      cwd: this.#cwd,
+    const next: SessionSettings = {
+      ...this.#settings,
+      ...(node.type === "session-settings" ? node.settings : {}),
       sessionId: this.#id,
       version: VERSION,
     }
+    if (next.cwd) next.cwd = normPath(next.cwd)
 
-    if (node.type === "session-meta") {
-      if (!opts.force && isDeepStrictEqual(this.#view.meta, next)) return this.#store.root!.uuid
-      node = { ...node, meta: next }
-    } else if (
-      node.type !== "session-start" &&
-      node.type !== "session-resume" &&
-      !isDeepStrictEqual(this.#view.meta, next)
-    ) {
-      await this.update({})
+    if (node.type === "session-settings") {
+      if (!opts.force && isDeepStrictEqual(this.#settings, next)) return this.#store.root!.uuid
+      node = { ...node, settings: next }
     }
 
     node = { ...node, parentUuid: this.#store.root?.uuid }
@@ -323,14 +281,13 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
 
     // Decorate the new node with cumulative meta and append to the
     // active chain view
-    this.#view.nodes.set(node.uuid, { ...node, meta: next })
+    this.#view.nodes.set(node.uuid, { ...node, settings: next })
     if (node.type === "message") this.#view.messages.push(node.message)
 
     // cwd / meta event signaling
-    if (node.type === "session-meta") {
-      const prev = this.#view.meta
-      this.#cwd = normPath(next.cwd)
-      this.#view.meta = next
+    if (node.type === "session-settings") {
+      const prev = this.#settings
+      this.#settings = next
       this.#emitChanges(prev)
     }
 
@@ -338,18 +295,13 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return node.uuid
   }
 
-  #emitChanges(meta: PersistedMeta): void {
-    const prev = splitMeta(meta).session
-    const next = splitMeta(this.#view.meta).session
-    if (next.cwd !== undefined && next.cwd !== prev.cwd) this.emit("cwd", { cwd: next.cwd })
-    const changes: Partial<Omit<SessionMeta, "cwd">> = {}
-    for (const k of Object.keys(next) as (keyof SessionMeta)[]) {
-      if (k === "cwd") continue
-      if (!isDeepStrictEqual(next[k], prev[k])) {
-        ;(changes as Record<string, unknown>)[k] = next[k]
-      }
-    }
-    if (Object.keys(changes).length > 0) this.emit("meta", { changes, meta: next, prev })
+  #emitChanges(prev: SessionSettings): void {
+    const next = this.#settings
+    if (next.cwd && next.cwd !== prev.cwd) this.emit("cwd", { cwd: next.cwd, prev: prev.cwd })
+    if (next.modelId && next.modelId !== prev.modelId)
+      this.emit("model", { model: next.modelId, prev: prev.modelId })
+    if (next.reasoning && next.reasoning !== prev.reasoning)
+      this.emit("reasoning", { effort: next.reasoning, prev: prev.reasoning })
   }
 
   /** Walk `parentUuid` from the given node back toward the root,
@@ -363,7 +315,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
    *  Returns chronological order. */
   async #chain(
     opts: { active?: boolean; limit?: number; uuid?: string } = {}
-  ): Promise<SessionView> {
+  ): Promise<SessionView & { settings: SessionSettings }> {
     // Backward pass: collect raw nodes (new to old)
     const reverse: SessionNode[] = []
     let cursor = opts.uuid ?? this.#store.root?.uuid
@@ -389,17 +341,17 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     // Forward pass: decorate with cumulative meta. session-meta nodes
     // redefine the meta; everything else inherits the running snapshot.
     const nodes = new Map<string, SessionNodeView>()
-    let meta: PersistedMeta = {}
+    let settings: SessionSettings = {}
     for (const n of reverse.toReversed()) {
-      if (n.type === "session-meta") meta = n.meta
-      nodes.set(n.uuid, { ...n, meta })
+      if (n.type === "session-settings") settings = n.settings
+      nodes.set(n.uuid, { ...n, settings })
     }
 
     const messages: SessionMessage[] = []
     for (const n of messageNodes) {
       // add `id`, `ts` and `modelId` (if assistant turn) to the message
       const m = { ...n.message, id: n.uuid, ts: n.ts }
-      if (m.role === "assistant") m.meta = { ...m.meta, modelId: meta.modelId }
+      if (m.role === "assistant") m.meta = { ...m.meta, modelId: settings.modelId }
       n.message = m
       messages.push(m)
     }
@@ -409,8 +361,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       messages.push({ ...compact.summary, id: compact.uuid, ts: compact.ts })
       nodes.set(compact.uuid, {
         message: compact.summary,
-        meta: nodes.get(compact.uuid)?.meta ?? {},
         parentUuid: compact.parentUuid,
+        settings: nodes.get(compact.uuid)?.settings ?? {},
         ts: compact.ts,
         type: "message",
         uuid: compact.uuid,
@@ -420,8 +372,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return {
       compact,
       messages: messages.toReversed(),
-      meta,
       nodes,
+      settings,
     }
   }
 }

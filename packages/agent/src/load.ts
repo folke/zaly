@@ -1,4 +1,4 @@
-import type { Message, Model, Tool } from "@zaly/ai"
+import type { Message, Model, ReasoningEffort, Tool } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { AgentStatus } from "./events.ts"
 import type { Masker } from "./masker.ts"
@@ -29,6 +29,7 @@ export class AgentContext {
   #masker?: Masker
   #permissions?: PermissionManager
   #swarm?: Swarm
+  #reasoning: ReasoningEffort
 
   #prompt = new Map<string, string>()
   #tools = new Map<string, Tool>()
@@ -40,6 +41,7 @@ export class AgentContext {
     this.#opts = opts
     this.#model = opts.model
     this.#cwd = normPath(opts.cwd)
+    this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
 
     this.$prompt = opts.prompt ?? [
       { template: "agent" },
@@ -75,7 +77,7 @@ export class AgentContext {
     await this.session.update({
       cwd: this.cwd,
       modelId: this.model.id,
-      prompt: await this.prompt(),
+      reasoning: this.reasoning,
     })
     // oxlint-disable-next-line no-await-in-loop
     for (const m of this.#opts.messages ?? []) await this.session.add(m)
@@ -131,6 +133,14 @@ export class AgentContext {
 
   set skills(s: Skills | undefined) {
     this.#skills = s
+  }
+
+  get reasoning() {
+    return this.#reasoning
+  }
+
+  set reasoning(r: ReasoningEffort) {
+    this.#reasoning = r
   }
 
   get session(): Session {
@@ -207,7 +217,7 @@ export class AgentContext {
     if (isInstance<Session>(spec)) this.session = spec
     else {
       const { Session } = await import("./session/session.ts")
-      this.session = await Session.load({ cwd: this.cwd, ...spec })
+      this.session = await Session.load({ ...spec })
     }
     return this.session
   }

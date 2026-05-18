@@ -81,6 +81,8 @@ export interface Provider<T extends string = string> {
  *  for this turn; `"auto"` (default) lets the model decide. */
 export type ToolChoice = "auto" | "required" | "none" | { name: string }
 
+export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh"
+
 /** Reasoning / thinking configuration.
  *
  *  `effort` is the user-facing knob. Adapters translate to each
@@ -99,7 +101,7 @@ export type ToolChoice = "auto" | "required" | "none" | { name: string }
  *  count — power-user path for providers that accept a number
  *  (Anthropic `thinking.budget_tokens`, Google `thinkingBudget`). */
 export interface ReasoningOptions {
-  effort?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh"
+  effort?: ReasoningEffort
   budget?: number
 }
 

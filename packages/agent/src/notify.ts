@@ -45,12 +45,8 @@ export class Notifier {
       .on("cwd", ({ cwd }) => {
         agent.notify("cwd-changed", { cwd })
       })
-      .on("meta", ({ changes, prev }) => {
-        if (changes.modelId === undefined) return
-        agent.notify("model-changed", {
-          current: changes.modelId,
-          previous: prev.modelId,
-        })
+      .on("model", ({ model, prev }) => {
+        agent.notify("model-changed", { current: model, prev })
       })
   }
 

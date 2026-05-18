@@ -71,17 +71,15 @@ describe("Session — basics", () => {
 
   test("start({ modelId, prompt }) records the meta on the snapshot", async () => {
     const s = await newSession()
-    await s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
-    expect(s.meta.modelId).toBe("openai/gpt-4o")
-    expect(s.meta.prompt).toEqual(["be brief"])
+    await s.start({ modelId: "openai/gpt-4o" })
+    expect(s.settings.modelId).toBe("openai/gpt-4o")
     // session-start is the root marker; the meta lives on a session-meta
     // node committed right after by update().
     const nodes = await allNodes(s)
     expect(nodes[0].type).toBe("session-start")
-    expect(nodes[1].type).toBe("session-meta")
-    if (nodes[1].type !== "session-meta") throw new Error("expected session-meta")
-    expect(nodes[1].meta.modelId).toBe("openai/gpt-4o")
-    expect(nodes[1].meta.prompt).toEqual(["be brief"])
+    expect(nodes[1].type).toBe("session-settings")
+    if (nodes[1].type !== "session-settings") throw new Error("expected session-settings")
+    expect(nodes[1].settings.modelId).toBe("openai/gpt-4o")
   })
 
   test("start() on an already-started session is idempotent (no extra marker)", async () => {
@@ -94,7 +92,7 @@ describe("Session — basics", () => {
     await s.start({ modelId: "first" })
     const before = (await allNodes(s)).length
     await s.start({ modelId: "second" })
-    expect(s.meta.modelId).toBe("second")
+    expect(s.settings.modelId).toBe("second")
     // Only the meta-change session-meta landed — no fresh session-start
     // / session-resume marker.
     const after = (await allNodes(s)).length
@@ -146,9 +144,9 @@ describe("Session — meta snapshots", () => {
   test("update() merges into cumulative meta", async () => {
     const s = await startedSession()
     await s.update({ modelId: "openai/gpt-4o" })
-    expect(s.meta.modelId).toBe("openai/gpt-4o")
-    await s.update({ prompt: ["be brief"] })
-    expect(s.meta).toMatchObject({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
+    expect(s.settings.modelId).toBe("openai/gpt-4o")
+    await s.update({ reasoning: "xhigh" })
+    expect(s.settings).toMatchObject({ modelId: "openai/gpt-4o", reasoning: "xhigh" })
   })
 
   test("update() with no real change is a no-op (no new node)", async () => {
@@ -164,11 +162,11 @@ describe("Session — meta snapshots", () => {
   test("session.cwd updates when an incoming meta carries a new cwd", async () => {
     const s = await newSession()
     await s.start({ modelId: "x" })
-    const initialCwd = s.cwd
+    const initialCwd = s.settings.cwd
     await s.update({ cwd: "/new/path" })
-    expect(s.cwd).toBe("/new/path")
-    expect(s.cwd).not.toBe(initialCwd)
-    expect(s.meta.cwd).toBe("/new/path")
+    expect(s.settings.cwd).toBe("/new/path")
+    expect(s.settings.cwd).not.toBe(initialCwd)
+    expect(s.settings.cwd).toBe("/new/path")
   })
 
   test("emits 'cwd' event when cwd changes", async () => {
@@ -179,17 +177,6 @@ describe("Session — meta snapshots", () => {
     })
     await s.update({ cwd: "/elsewhere" })
     expect(captured).toBe("/elsewhere")
-  })
-
-  test("emits 'meta' event with only the changed keys", async () => {
-    const s = await startedSession()
-    await s.update({ modelId: "first" })
-    let captured: SessionEvents["meta"] | undefined
-    s.on("meta", (e) => {
-      captured = e
-    })
-    await s.update({ modelId: "second", prompt: ["new"] })
-    expect(captured?.changes).toEqual({ modelId: "second", prompt: ["new"] })
   })
 })
 
@@ -282,9 +269,9 @@ describe("Session — compact", () => {
     await compactStub(s, { tail: 0 })
     const nodes = await allNodes(s)
     const last = nodes.at(-1)
-    expect(last?.type).toBe("session-meta")
-    if (last?.type !== "session-meta") throw new Error("expected session-meta anchor")
-    expect(last.meta.modelId).toBe("openai/gpt-4o")
+    expect(last?.type).toBe("session-settings")
+    if (last?.type !== "session-settings") throw new Error("expected session-settings anchor")
+    expect(last.settings.modelId).toBe("openai/gpt-4o")
   })
 })
 
@@ -376,9 +363,9 @@ describe("Session — JSONL persistence", () => {
   test("writes one record per node and round-trips via load", async () => {
     const file = tmpPath("roundtrip")
     const s = await Session.load({ path: file })
-    await s.start({ modelId: "openai/gpt-4o", prompt: ["be brief"] })
+    await s.start({ modelId: "openai/gpt-4o", reasoning: "high" })
     await s.add(u("hi"))
-    await s.update({ modelId: "openai/gpt-4o", prompt: ["be more detailed"] })
+    await s.update({ modelId: "openai/gpt-4o", reasoning: "xhigh" })
     await s.add({ ...a("hello"), meta: { usage: { input: 5, output: 2 } } })
     await s.add(u("again"))
     await s.close()
@@ -386,8 +373,8 @@ describe("Session — JSONL persistence", () => {
     const loaded = await Session.load({ path: file })
     expect(loaded.head).toBe(s.head)
     expect(bare([...loaded.messages])).toEqual(bare([...s.messages]))
-    expect(loaded.meta.modelId).toBe("openai/gpt-4o")
-    expect(loaded.meta.prompt).toEqual(["be more detailed"])
+    expect(loaded.settings.modelId).toBe("openai/gpt-4o")
+    expect(loaded.settings.reasoning).toBe("xhigh")
     await loaded.close()
   })
 
@@ -440,7 +427,7 @@ describe("Session — JSONL persistence", () => {
 describe("Session — meta on disk", () => {
   test("session-meta nodes carry full snapshots; other types don't carry meta", async () => {
     const file = tmpPath("snapshot")
-    const s = await Session.load({ cwd: "/foo", path: file })
+    const s = await Session.load({ path: file })
     await s.start({ modelId: "openai/gpt-4o" })
     await s.add(u("hi"))
     await s.update({ modelId: "anthropic/claude" })
@@ -454,19 +441,19 @@ describe("Session — meta on disk", () => {
     expect(records[0].type).toBe("session-start")
     expect((records[0] as { meta?: unknown }).meta).toBeUndefined()
 
-    // session-meta carries full snapshot including internals
+    // session-settings carries full snapshot including internals
     const metas = records.filter(
-      (r): r is Extract<SessionNode, { type: "session-meta" }> => r.type === "session-meta"
+      (r): r is Extract<SessionNode, { type: "session-settings" }> => r.type === "session-settings"
     )
     expect(metas.length).toBeGreaterThan(0)
     for (const m of metas) {
-      expect(m.meta.cwd).toBe("/foo")
-      expect(m.meta.sessionId).toBe(s.id)
-      expect(m.meta.version).toBe(1)
+      expect(m.settings.cwd).toBe("/foo")
+      expect(m.settings.sessionId).toBe(s.id)
+      expect(m.settings.version).toBe(1)
     }
     // The latest session-meta carries the most recent modelId
     const latestMeta = metas.at(-1)
-    expect(latestMeta?.meta.modelId).toBe("anthropic/claude")
+    expect(latestMeta?.settings.modelId).toBe("anthropic/claude")
 
     // message records don't carry meta
     const messageRecord = records.find((r) => r.type === "message")
@@ -475,19 +462,18 @@ describe("Session — meta on disk", () => {
 
   test("cumulative meta is reconstructed on load from the latest session-meta", async () => {
     const file = tmpPath("cumulative")
-    const s = await Session.load({ cwd: "/foo", path: file })
+    const s = await Session.load({ path: file })
     await s.start({ modelId: "openai/gpt-4o" })
-    await s.update({ prompt: ["be brief"] })
+    await s.update({ reasoning: "high" })
     await s.update({ modelId: "anthropic/claude" })
     await s.close()
 
     const loaded = await Session.load({ path: file })
-    expect(loaded.meta).toMatchObject({
+    expect(loaded.settings).toMatchObject({
       cwd: "/foo",
       modelId: "anthropic/claude",
-      prompt: ["be brief"],
+      reasoning: "high",
     })
-    expect(loaded.cwd).toBe("/foo")
     await loaded.close()
   })
 })

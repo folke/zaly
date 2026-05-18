@@ -96,7 +96,7 @@ export const subagentTool = defineTool({
     // and the `subagent`-tool filtering at the depth cap.
     const child = await parent.child({
       prompt: [args.prompt],
-      session: await Session.load({ cwd: parent.cwd, path: sessionPath }),
+      session: await Session.load({ path: sessionPath }),
     })
     const depth = child.depth
 
