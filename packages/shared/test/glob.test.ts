@@ -80,10 +80,7 @@ describe("glob", () => {
     })
 
     test("`**/*.md` matches at any depth", async () => {
-      expect(await collect("**/*.md", { cwd: root })).toEqual([
-        "README.md",
-        "src/nested/README.md",
-      ])
+      expect(await collect("**/*.md", { cwd: root })).toEqual(["README.md", "src/nested/README.md"])
     })
 
     test("`**/*.ts` matches all TypeScript files", async () => {

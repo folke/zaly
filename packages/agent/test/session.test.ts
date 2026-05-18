@@ -65,8 +65,9 @@ describe("Session — basics", () => {
     const s = await newSession()
     await s.start()
     expect(s.head).toBeDefined()
-    expect(s.root?.type).toBe("session-start")
-    expect(s.root?.parentUuid).toBeUndefined()
+    const nodes = await allNodes(s)
+    expect(nodes[0].type).toBe("session-start")
+    expect(nodes[0].parentUuid).toBeUndefined()
   })
 
   test("start({ modelId, prompt }) records the meta on the snapshot", async () => {
@@ -428,7 +429,7 @@ describe("Session — meta on disk", () => {
   test("session-meta nodes carry full snapshots; other types don't carry meta", async () => {
     const file = tmpPath("snapshot")
     const s = await Session.load({ path: file })
-    await s.start({ modelId: "openai/gpt-4o" })
+    await s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
     await s.add(u("hi"))
     await s.update({ modelId: "anthropic/claude" })
     await s.close()
@@ -463,7 +464,7 @@ describe("Session — meta on disk", () => {
   test("cumulative meta is reconstructed on load from the latest session-meta", async () => {
     const file = tmpPath("cumulative")
     const s = await Session.load({ path: file })
-    await s.start({ modelId: "openai/gpt-4o" })
+    await s.start({ cwd: "/foo", modelId: "openai/gpt-4o" })
     await s.update({ reasoning: "high" })
     await s.update({ modelId: "anthropic/claude" })
     await s.close()

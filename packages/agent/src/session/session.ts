@@ -98,18 +98,6 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     this.#id = chain.settings.sessionId ?? this.#id
   }
 
-  /** Lazily emits `session-start` on a fresh session or `session-resume`
-   *  on a hydrated one. Called from `#commit` before the first non-marker
-   *  node lands so the start/resume marker always heads the chain. */
-  async #autostart(): Promise<void> {
-    if (this.#started) return
-    this.#started = true
-    const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
-    await this.#commit({ type })
-    if (type === "session-start") await this.update({}) // writes {sessionId, version}
-    this.emit(type)
-  }
-
   // ── Read ──────────────────────────────────────────────────────────────
 
   /** Active conversation — chain from current head back to the most
@@ -141,13 +129,24 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#commit({ settings, type: "session-settings" }, opts)
   }
 
+  /** Lazily emits `session-start` on a fresh session or `session-resume`
+   *  on a hydrated one. Called from `#commit` before the first non-marker
+   *  node lands so the start/resume marker always heads the chain. */
+  async #autostart(): Promise<void> {
+    if (!this.#started) await this.start()
+  }
+
   /** Explicitly mark the session as started — writes a `session-start`
    *  marker on a fresh session, `session-resume` on a hydrated one.
    *  Idempotent; subsequent calls are no-ops. Optional `meta` is
    *  applied via `update()` after the marker lands. */
   async start(settings?: SessionUpdate): Promise<string | undefined> {
-    await this.#autostart()
-    if (settings) return this.update(settings)
+    if (this.#started) return settings ? this.update(settings) : this.#store.root?.uuid
+    this.#started = true
+    const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
+    await this.#commit({ type })
+    this.emit(type)
+    await this.update(settings ?? {})
     return this.#store.root?.uuid
   }
 

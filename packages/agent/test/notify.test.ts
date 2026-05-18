@@ -205,7 +205,7 @@ describe("Notifier — event-driven lifecycle", () => {
     expect(change).toBeDefined()
     expect(change?.data).toEqual({
       current: "openai/gpt-5",
-      previous: "anthropic/claude-sonnet-4-6",
+      prev: "anthropic/claude-sonnet-4-6",
     })
   })
 

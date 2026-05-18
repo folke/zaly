@@ -91,8 +91,6 @@ export async function* glob(
   pattern: string | readonly string[],
   opts: Partial<GlobOptions> = {}
 ): AsyncGenerator<string> {
-  if (opts.depth !== undefined && opts.depth < 1) return // fast path for zero results
-
   const { default: ignore } = await import("ignore")
   const o: GlobOptions = { ...defaults, ...opts }
   const root = normPath(o.cwd)
