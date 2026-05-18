@@ -27,11 +27,12 @@ export async function readJson<T extends JsonObject = JsonObject>(path: string):
 export async function writeJson<T extends JsonObject = JsonObject>(
   path: string,
   data: T | ((prev?: T) => T)
-): Promise<void> {
-  await withLock(path, async () => {
+): Promise<T> {
+  return await withLock(path, async () => {
     const value = typeof data === "function" ? data(await safeReadJson<T>(path)) : data
     const text = safeStringify(value, undefined, 2)
     await atomicWriteFile(path, `${text}\n`)
+    return value
   })
 }
 
@@ -44,6 +45,6 @@ export async function safeReadJson<T extends JsonObject = JsonObject>(
 export async function safeWriteJson<T extends JsonObject = JsonObject>(
   path: string,
   data: T | ((prev?: T) => T)
-): Promise<void> {
+): Promise<T | undefined> {
   return writeJson(path, data).catch(() => undefined)
 }

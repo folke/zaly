@@ -7,7 +7,6 @@ import {
   findUp,
   gitRoot,
   hash,
-  safeAsyncFn,
   safeFn,
   safeReadFile,
   safeReadFileSync,
@@ -31,10 +30,10 @@ describe("safeFn", () => {
 
 describe("safeAsyncFn", () => {
   test("returns awaited value on success", async () => {
-    expect(await safeAsyncFn(async (x: number) => x * 2)(3)).toBe(6)
+    expect(await safeFn(async (x: number) => x * 2)(3)).toBe(6)
   })
   test("returns undefined on rejection", async () => {
-    expect(await safeAsyncFn(async () => Promise.reject(new Error("nope")))()).toBeUndefined()
+    expect(await safeFn(async () => Promise.reject(new Error("nope")))()).toBeUndefined()
   })
 })
 
