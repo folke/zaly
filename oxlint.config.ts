@@ -123,6 +123,7 @@ export default defineConfig({
     "typescript/consistent-return": "off",
     "typescript/consistent-type-definitions": "off", // 32
     "typescript/consistent-type-imports": ["error", { fixStyle: "separate-type-imports" }],
+    "typescript/no-deprecated": "error",
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
     "typescript/no-unnecessary-condition": "error",
