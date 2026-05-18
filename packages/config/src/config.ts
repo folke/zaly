@@ -2,19 +2,11 @@ import type { Config, Settings } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
 import { zalyPaths } from "@zaly/shared/paths"
-import { createDefu } from "defu"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
 import { ResourceManager } from "./resource/manager.ts"
 import { validateSettings } from "./schemas/gen/settings.ts"
-
-/** Works like `defu` but replaces arrays instead of merging them. */
-export const mergeSettings = createDefu((obj, key, value) => {
-  if (Array.isArray(obj[key]) && Array.isArray(value)) {
-    obj[key] = value
-    return true
-  }
-})
+import { merge } from "./utils.ts"
 
 function settingsPath(dir: string) {
   return normPath(dir, "settings.json")
@@ -28,9 +20,9 @@ export async function loadSettings(dir: string): Promise<Settings | undefined> {
   return validateSettings(data)
 }
 
-export async function updateSettings(dir: string, settings: Settings) {
+export async function updateSettings(dir: string, settings: Settings): Promise<Settings> {
   const path = settingsPath(dir)
-  await writeJson(path, (prev) => mergeSettings({}, settings, prev))
+  return await writeJson<Settings>(path, (prev) => merge({}, settings, prev))
 }
 
 export async function loadConfig(cwd?: string): Promise<Config> {
@@ -42,7 +34,7 @@ export async function loadConfig(cwd?: string): Promise<Config> {
 
   // oxlint-disable-next-line sort-keys
   const config: Omit<Config, "resources"> = {
-    settings: mergeSettings({}, projectSettings ?? {}, userSettings ?? {}),
+    settings: merge({}, projectSettings ?? {}, userSettings ?? {}),
     paths,
     user: {
       dir: zalyPaths.config,
