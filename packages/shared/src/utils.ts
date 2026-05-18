@@ -5,12 +5,16 @@ import { dirname, join, resolve } from "pathe"
 
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R
 
+type SafeReturn<T extends AnyFn> =
+  ReturnType<T> extends Promise<infer R> ? Promise<R | undefined> : ReturnType<T> | undefined
+
 export function safeFn<T extends AnyFn>(fn: T) {
-  return (...args: Parameters<T>): ReturnType<T> | undefined => {
+  return (...args: Parameters<T>): SafeReturn<T> => {
     try {
-      return fn(...args) as ReturnType<T>
+      const ret = fn(...args) as ReturnType<T>
+      return (ret instanceof Promise ? ret.catch(() => undefined) : ret) as SafeReturn<T>
     } catch {
-      return undefined
+      return undefined as SafeReturn<T>
     }
   }
 }
@@ -19,11 +23,6 @@ export function safeParseJson(v: unknown): unknown {
   try {
     return JSON.parse(String(v))
   } catch {}
-}
-
-export function safeAsyncFn<T extends AnyFn<any[], Promise<any>>>(fn: T) {
-  return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>> | undefined> =>
-    fn(...args).catch(() => undefined)
 }
 
 export function hash(content: string | Uint8Array, len = 16): string {
@@ -38,7 +37,7 @@ export function toError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err))
 }
 
-export const safeReadFile = safeAsyncFn((p: string) => readFile(p, "utf8"))
+export const safeReadFile = safeFn((p: string) => readFile(p, "utf8"))
 export const safeReadFileSync = safeFn((path: string) => readFileSync(path, "utf8"))
 export const safeStat = safeFn(statSync)
 
