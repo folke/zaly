@@ -44,7 +44,7 @@ export interface SkillEntry {
 
 export interface SkillsOptions {
   /** SKILL.md paths, sorted from highest to lowest precedence. */
-  skills?: string[]
+  paths?: string[]
 }
 
 export class Skills {
@@ -69,7 +69,7 @@ export class Skills {
   async reload(): Promise<void> {
     this.catalog.clear()
     this.#tool = undefined
-    const paths = this.#opts.skills ?? []
+    const paths = this.#opts.paths ?? []
     await Promise.all(paths.map(async (path) => await this.add(path)))
   }
 
