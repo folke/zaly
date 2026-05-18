@@ -619,8 +619,7 @@ export function createStore<T extends object>(initial: T): SignalStore<T> {
   const state = { ...initial }
   const sigs = {} as { [K in keyof T]?: Signal<T[K]> }
 
-  const ensure = <K extends keyof T>(key: K): Signal<T[K]> =>
-    (sigs[key] ??= signal(state[key]))
+  const ensure = <K extends keyof T>(key: K): Signal<T[K]> => (sigs[key] ??= signal(state[key]))
 
   const setKey = <K extends keyof T>(key: K, value: T[K]): void => {
     if (state[key] === value) return

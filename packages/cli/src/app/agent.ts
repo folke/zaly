@@ -71,11 +71,7 @@ export function wireAgent(
   opts?: { signal?: AbortSignal }
 ): void {
   agent
-    .on(
-      "step-end",
-      () => signals.setUsage(agent.usage),
-      opts
-    )
+    .on("step-end", () => signals.setUsage(agent.usage), opts)
     .on(
       "status",
       ({ status }) => {

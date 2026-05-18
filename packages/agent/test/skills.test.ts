@@ -78,7 +78,6 @@ describe("Skills — catalog", () => {
     const skills = await Skills.load({ paths: [path] })
     expect(skills.dirs).toContain(join(cwd, "x"))
   })
-
 })
 
 describe("Skills.tool — activation", () => {

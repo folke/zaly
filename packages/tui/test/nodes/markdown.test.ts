@@ -1,6 +1,6 @@
-import { renderMarkdown } from "#md"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
+import { renderMarkdown } from "#md"
 import { createCtx } from "../../src/core/ctx.ts"
 import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { createNode, markdown } from "../../src/index.ts"
@@ -426,7 +426,6 @@ describe("markdown() factory", () => {
     m.state.content = "b"
     expect(invalidated).toBeGreaterThan(0)
   })
-
 })
 
 describe("markdown — images", () => {

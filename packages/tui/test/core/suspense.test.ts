@@ -123,9 +123,7 @@ describe("createSuspenseBoundary", () => {
 
 describe("createAsync + SuspenseContext", () => {
   test("without a boundary, fires-and-forgets — accessor updates eventually", async () => {
-    const value = createRoot(() =>
-      createAsync(async () => "resolved", { initialValue: "initial" })
-    )
+    const value = createRoot(() => createAsync(async () => "resolved", { initialValue: "initial" }))
     expect(value()).toBe("initial")
     // Two microtask ticks: one for the .then, one for the .finally.
     await flush()
@@ -275,7 +273,9 @@ describe("createAsync + SuspenseContext", () => {
 /** Build a root scope, run `fn` inside it, and return both the result
  *  and the owner. Mirrors how Stream's `append` sets up an Owner around
  *  a widget body so consumers of `createAsync` find the boundary. */
-async function createRootSync<T>(fn: () => T): Promise<{ result: T; owner: { dispose: () => void } }> {
+async function createRootSync<T>(
+  fn: () => T
+): Promise<{ result: T; owner: { dispose: () => void } }> {
   // The owner is the active one inside `createRoot`; we capture it via
   // closure so callers can tear down deterministically between tests.
   let dispose = (): void => {}
@@ -394,12 +394,10 @@ describe("createAsync — Stream-style integration", () => {
     // boundaries to settle, re-render every state (Node-cache makes
     // unchanged renders cheap), loop while anything's active.
     while (states.some((s) => s.boundary.active())) {
-      await Promise.all(
-        states.filter((s) => s.boundary.active()).map((s) => s.boundary.whenIdle())
-      )
+      await Promise.all(states.filter((s) => s.boundary.active()).map((s) => s.boundary.whenIdle()))
       allRows = []
       for (const s of states) {
-          const rows = await s.node.render(ctx)
+        const rows = await s.node.render(ctx)
         allRows.push(...rows)
       }
     }

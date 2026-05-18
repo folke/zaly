@@ -35,7 +35,7 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
-    "defu": "^6.1.4",
+    "defu": "^6.1.7",
     "typia": "^12.1.1"
   },
   "engines": {

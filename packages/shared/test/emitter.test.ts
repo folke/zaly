@@ -9,8 +9,6 @@ type Events = {
   cancelable: { signal?: AbortSignal; touched?: boolean }
 }
 
-const next = () => new Promise<void>((r) => queueMicrotask(r))
-
 describe("Emitter — basics", () => {
   test("on/emit/off — typed payload", async () => {
     const e = new Emitter<Events>()
@@ -99,7 +97,7 @@ describe("Emitter — basics", () => {
 describe("Emitter — onAny", () => {
   test("onAny fires for every event with envelope", async () => {
     const e = new Emitter<Events>()
-    const seen: Array<{ type: string }> = []
+    const seen: { type: string }[] = []
     e.onAny((ev) => {
       seen.push({ type: ev.type })
     })
@@ -278,7 +276,7 @@ describe("Emitter — emitSerial", () => {
     })
     const ok = await e.emit("foo", { value: 1 })
     // Both listeners already kicked off in same microtask
-    expect(seen.sort()).toEqual(["a", "b"])
+    expect(seen.toSorted()).toEqual(["a", "b"])
     expect(ok).toBe(false)
   })
 })

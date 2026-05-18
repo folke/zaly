@@ -1,5 +1,5 @@
-import { renderMarkdown } from "#md"
 import { describe, expect, test } from "vitest"
+import { renderMarkdown } from "#md"
 import { encodeFenceInfoStrings, FENCE_MARKER } from "../src/markdown/utils.ts"
 
 // ── callback-ordering / structural fixtures ──────────────────────────────

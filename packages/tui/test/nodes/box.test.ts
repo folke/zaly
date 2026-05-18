@@ -29,7 +29,11 @@ describe("Box — children management", () => {
     const t = new Text({ content: "hi" })
     b.add(t)
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith({ child: t, type: "childadded" }, expect.anything(), expect.anything())
+    expect(fn).toHaveBeenCalledWith(
+      { child: t, type: "childadded" },
+      expect.anything(),
+      expect.anything()
+    )
   })
 
   test("remove emits childremoved and clears parent", async () => {
@@ -41,7 +45,11 @@ describe("Box — children management", () => {
     b.remove(t)
     expect(b.children).toEqual([])
     expect(t.parent).toBeUndefined()
-    expect(fn).toHaveBeenCalledWith({ child: t, type: "childremoved" }, expect.anything(), expect.anything())
+    expect(fn).toHaveBeenCalledWith(
+      { child: t, type: "childremoved" },
+      expect.anything(),
+      expect.anything()
+    )
   })
 
   test("remove ignores unknown child", async () => {

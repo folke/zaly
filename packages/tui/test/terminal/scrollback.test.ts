@@ -41,9 +41,7 @@ describe("Stream scrollback — fixedFooterHeight at baseline", () => {
     await h.flush()
 
     // Visible region (rows 0..7 in viewport) shows the bottom 8 stream rows.
-    expect(h.viewport().slice(0, 8)).toEqual([
-      "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12",
-    ])
+    expect(h.viewport().slice(0, 8)).toEqual(["s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"])
     // Footer occupies rows 8..9.
     expect(h.viewport()[8]).toContain("footer-r1")
     expect(h.viewport()[9]).toContain("footer-r2")
@@ -104,9 +102,7 @@ describe("Stream scrollback — footer grow/shrink (autocomplete-like)", () => {
       h.renderer.stream.append(() => text(`s${i}`))
     }
     await h.flush()
-    expect(h.viewport().slice(0, 8)).toEqual([
-      "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-    ])
+    expect(h.viewport().slice(0, 8)).toEqual(["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"])
     expect(h.scrollback().filter((r) => r !== "")).toEqual([])
 
     // Footer grows by 3 (autocomplete opens). liveHeight = 5.
@@ -139,9 +135,7 @@ describe("Stream scrollback — footer grow/shrink (autocomplete-like)", () => {
     // Shrink it back. The previously-hidden s1..s3 should return to view.
     h.renderer.ui.root.remove(grow)
     await h.flush()
-    expect(h.viewport().slice(0, 8)).toEqual([
-      "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-    ])
+    expect(h.viewport().slice(0, 8)).toEqual(["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"])
     // Scrollback never accumulated rows from the transition.
     expect(h.scrollback().filter((r) => r !== "")).toEqual([])
     h.dispose()
@@ -188,13 +182,9 @@ describe("Stream scrollback — overflow during footer growth", () => {
     // behind the autocomplete (s5..s7) reappear.
     h.renderer.ui.root.remove(grow)
     await h.flush()
-    expect(h.viewport().slice(0, 8)).toEqual([
-      "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12",
-    ])
+    expect(h.viewport().slice(0, 8)).toEqual(["s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"])
     // Scrollback unchanged.
-    expect(h.scrollback().filter((r) => r !== "")).toEqual([
-      "s1", "s2", "s3", "s4",
-    ])
+    expect(h.scrollback().filter((r) => r !== "")).toEqual(["s1", "s2", "s3", "s4"])
     h.dispose()
   })
 })
@@ -208,7 +198,13 @@ describe("Stream scrollback — large initial nodes", () => {
     await h.flush()
     expect(h.viewport()).toEqual(["r8", "r9", "r10", "r11", "r12"])
     expect(h.scrollback().filter((r) => r !== "")).toEqual([
-      "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "r7",
     ])
     h.dispose()
   })
@@ -221,12 +217,8 @@ describe("Stream scrollback — large initial nodes", () => {
     h.renderer.stream.append(() => text(lines.join("\n")))
     await h.flush()
     // liveHeight = 6 → visible = r7..r12.
-    expect(h.viewport().slice(0, 6)).toEqual([
-      "r7", "r8", "r9", "r10", "r11", "r12",
-    ])
-    expect(h.scrollback().filter((r) => r !== "")).toEqual([
-      "r1", "r2", "r3", "r4", "r5", "r6",
-    ])
+    expect(h.viewport().slice(0, 6)).toEqual(["r7", "r8", "r9", "r10", "r11", "r12"])
+    expect(h.scrollback().filter((r) => r !== "")).toEqual(["r1", "r2", "r3", "r4", "r5", "r6"])
     h.dispose()
   })
 })
@@ -247,7 +239,13 @@ describe("Stream scrollback — diff correctness with commit shift", () => {
     }
     expect(h.viewport().slice(0, 3)).toEqual(["r8", "r9", "r10"])
     expect(h.scrollback().filter((r) => r !== "")).toEqual([
-      "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "r7",
     ])
     h.dispose()
   })

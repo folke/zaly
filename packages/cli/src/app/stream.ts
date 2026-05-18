@@ -76,11 +76,7 @@ export function bindStream(
       },
       opts
     )
-    .on(
-      "tool-result",
-      ({ call, result }) => tools?.results.get(call.id)?.(result),
-      opts
-    )
+    .on("tool-result", ({ call, result }) => tools?.results.get(call.id)?.(result), opts)
     .on(
       "step-end",
       () => {

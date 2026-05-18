@@ -1,7 +1,7 @@
 import type { AnsiColor, AnsiStyle } from "./types.ts"
 
-import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
 import { hasColors } from "@zaly/shared/env"
+import { _sliceAnsi, _stringWidth, _wrapAnsi } from "#ansi"
 import { isHexColor, parseHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;

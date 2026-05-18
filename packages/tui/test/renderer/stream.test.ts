@@ -1,12 +1,7 @@
 // oxlint-disable unicorn/consistent-function-scoping
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import {
-  createAsync,
-  createRoot,
-  memo,
-  useActiveOwner,
-} from "../../src/core/reactive.ts"
+import { createAsync, createRoot, memo, useActiveOwner } from "../../src/core/reactive.ts"
 import { Stream } from "../../src/renderer/stream.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { text } from "../../src/widgets/text.ts"

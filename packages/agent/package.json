@@ -26,13 +26,13 @@
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./session": "./dist/session.mjs",
       "./session/claude": "./dist/session/claude.mjs",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "z build",
@@ -45,10 +45,10 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
-    "jsonpath-plus": "^10.4.0",
+    "@types/shell-quote": "^1.7.5",
     "ignore": "^7.0.5",
-    "shell-quote": "^1.8.3",
-    "@types/shell-quote": "^1.7.5"
+    "jsonpath-plus": "^10.4.0",
+    "shell-quote": "^1.8.3"
   },
   "peerDependencies": {
     "typebox": "^1.1.38"

@@ -18,11 +18,11 @@
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./package.json": "./package.json"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "z build",
