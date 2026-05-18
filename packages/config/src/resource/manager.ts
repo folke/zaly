@@ -3,22 +3,26 @@ import type { ResourceType } from "./resource.ts"
 
 import { ResourcePack, ResourcePaths, ResourceProvider } from "./resource.ts"
 
+/** Resources are sorted from highest to lowest precedence. */
 export class ResourceManager extends ResourceProvider {
   #providers: ResourceProvider[] = []
 
   constructor(opts: Omit<Config, "resources">) {
     super()
-    this.#add({ dotAgents: ["~/.agents"], ...opts.user })
     if (opts.project.settings)
       this.#add({
         dotAgents: opts.paths.dotAgents,
         ...opts.project,
       })
+    this.#add({ dotAgents: ["~/.agents"], ...opts.user })
   }
 
   #add(opts: LoadedSettings & { dotAgents?: string[] }) {
     const res = new ResourcePaths(opts)
     this.add(
+      res,
+      new ResourcePack(opts),
+      ...res.packs.values(),
       ...(opts.dotAgents ?? []).map(
         (dir) =>
           new ResourcePaths({
@@ -28,10 +32,7 @@ export class ResourceManager extends ResourceProvider {
             },
             type: opts.type,
           })
-      ),
-      ...res.packs.values(),
-      new ResourcePack(opts),
-      res
+      )
     )
   }
 

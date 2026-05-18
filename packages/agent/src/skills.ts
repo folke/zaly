@@ -43,7 +43,8 @@ export interface SkillEntry {
 }
 
 export interface SkillsOptions {
-  skills?: string[] // SKILL.md files from the user's global config or project config
+  /** SKILL.md paths, sorted from highest to lowest precedence. */
+  skills?: string[]
 }
 
 export class Skills {
@@ -77,7 +78,7 @@ export class Skills {
     const dir = dirname(path)
     try {
       const meta = await readMeta(path)
-      if (!meta.name || !meta.description) return
+      if (!meta.name || !meta.description || this.catalog.has(meta.name)) return
       this.catalog.set(meta.name, {
         description: meta.description,
         dir,
