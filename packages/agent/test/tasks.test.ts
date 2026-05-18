@@ -176,7 +176,7 @@ describe("Tasks.run — streamable within grace", () => {
     tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
 
     const runP = tasks.run([callOf("stream")], {})
     await flush()
@@ -198,7 +198,7 @@ describe("Tasks.run — streamable exceeds grace", () => {
     tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
 
     const parts = (await tasks.run([callOf("stream")], {})) as ToolResultPart<string, TaskMeta>[]
 
@@ -272,7 +272,7 @@ describe("Tasks.run — chain", () => {
     ]
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
 
     await tasks.run([callOf("first"), callOf("second")], {})
     a.finish({ content: "ok" })
@@ -391,7 +391,7 @@ describe("Tasks — public registry", () => {
     const id = tasks.finished()[0].id
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
     expect(tasks.remove(id)).toBe(true)
     expect(tasks.remove(id)).toBe(false)
     expect(events.some((e) => e.type === "task-removed")).toBe(true)
@@ -539,7 +539,7 @@ describe("Tasks.done direct", () => {
     tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
 
     await tasks.run([callOf("stream")], {})
     // After the round, ownership is released. Settling now fires task-done.
@@ -563,7 +563,7 @@ describe("Tasks.heartbeatMs", () => {
     tasks.$tools = [streamableTool({ produce: () => ctrl.streamable })]
 
     const events: Envelope<TasksEvents>[] = []
-    tasks.all((event) => events.push(event))
+    tasks.onAny((event) => events.push(event))
 
     await tasks.run([callOf("stream")], {})
     await sleep(80)

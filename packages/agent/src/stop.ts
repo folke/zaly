@@ -92,7 +92,7 @@ export class StopPolicy {
    *    // later:
    *    emitter.off(handler) */
   attach(emitter: Emitter<AgentEvents>): void {
-    emitter.all((event) => this.handle(event))
+    emitter.onAny((event) => this.handle(event))
   }
 
   /** Feed a single event into the policy. Public so custom drivers

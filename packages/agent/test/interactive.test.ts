@@ -186,7 +186,7 @@ describe("Agent — emitted events", () => {
       messages: [{ content: "go", role: "user" }],
       model: mockModel([okStop()]),
     })
-    agent.all((e) => seen.push(e.type))
+    agent.onAny((e) => seen.push(e.type))
     await agent.run()
 
     // Expect at least: streaming → stream-event → text-delta + finish → step-end → stop
