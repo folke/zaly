@@ -93,11 +93,13 @@
   },
   "devDependencies": {
     "ghostty-web": "^0.4.0",
-    "sharp": "^0.34.5",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.1",
     "typia": "^12.1.1",
     "wrap-ansi": "^10.0.0"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
   },
   "engines": {
     "bun": ">=1.2",
