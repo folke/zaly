@@ -158,7 +158,8 @@ class BaseEmitter<T extends EventMap = EventMap> {
     const todo = [...(this.#listeners.get(ANY) ?? []), ...(this.#listeners.get(type) ?? [])]
     if (!todo.length) return true
 
-    const event = { type, ...((args[0] ?? {}) as T[K]) } as EventOf<T, K>
+    const event = (args[0] ?? {}) as T[K] as EventOf<T, K>
+    event.type = type
     const outer = (event as { signal?: AbortSignal }).signal
     if (outer?.aborted) return false
 
