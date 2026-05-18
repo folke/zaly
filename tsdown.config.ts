@@ -44,6 +44,7 @@ export default defineConfig({
   clean: true,
   deps: {
     //alwaysBundle: ["slice-ansi", "string-width", "wrap-ansi", "pathe"],
+    neverBundle: ["bun"],
   },
   entry: {},
   dts: {
