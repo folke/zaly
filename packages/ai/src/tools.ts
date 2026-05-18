@@ -7,6 +7,7 @@ import type {
   ToolCallPart,
   ToolContext,
   ToolResult,
+  ToolResultPart,
 } from "./types.ts"
 
 import { safeParseJson } from "@zaly/shared"
@@ -92,6 +93,20 @@ export function* extractToolCalls<T extends string = string>(
     for (const p of m.content) {
       if (p.type === "tool-call" && (tools === undefined || tools.includes(p.name as T)))
         yield { call: p as ToolCallPart<T>, idx, message: m }
+    }
+  }
+}
+
+export function* extractToolResults<M extends object = object>(
+  messages: readonly Message[],
+  tools?: string[]
+): Generator<{ result: ToolResultPart<string, M>; idx: number; message: Message }> {
+  for (let idx = messages.length - 1; idx >= 0; idx--) {
+    const m = messages[idx]
+    if (m.role !== "tool") continue
+    for (const p of m.content) {
+      if (tools === undefined || tools.includes(p.name))
+        yield { idx, message: m, result: p as ToolResultPart<string, M> }
     }
   }
 }

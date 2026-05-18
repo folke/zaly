@@ -1,5 +1,8 @@
-import type { AnyPart, Message, Tool } from "@zaly/ai"
+import type { AnyPart, Message } from "@zaly/ai"
 import type { BashTool } from "../tools/bash.ts"
+import type { EditToolMeta } from "../tools/edit.ts"
+import type { ReadToolMeta } from "../tools/read.ts"
+import type { WriteToolMeta } from "../tools/write.ts"
 import type { CompactionContext } from "./compactions.ts"
 
 import {
@@ -7,13 +10,14 @@ import {
   ContentTransform,
   errorToMeta,
   extractToolCalls,
+  extractToolResults,
   metaToText,
   safeParseToolParams,
   sanitizeText,
   stringifyContent,
   toXml,
 } from "@zaly/ai"
-import { normPath, safeStringify, since } from "@zaly/shared"
+import { safeStringify, since } from "@zaly/shared"
 import { parseBash } from "../utils/bash/parser.ts"
 import { TOOLS } from "../utils/bash/tools.ts"
 
@@ -117,21 +121,16 @@ export async function extractFileUsage(
   ctx: CompactionContext,
   opts: ToolStatOptions = {}
 ): Promise<FileUsage[]> {
-  const { messages, session } = ctx
+  const { messages } = ctx
   opts = { minScore: 0.5, ...opts }
   const map = new Map<string, FileUsage>()
   const { turns, weights } = turnInfo(messages)
-  for (const { message: m, call: p, idx } of extractToolCalls(messages, [
-    "read",
-    "write",
-    "edit",
-  ])) {
-    const raw = safeParseToolParams<Tool<{ path: string }>>(p.params)?.path
-    if (!raw) continue
-    // eslint-disable-next-line no-await-in-loop
-    const node = await session.node(m.id)
-    const cwd = node?.meta.cwd
-    const path = normPath(cwd, raw)
+
+  for (const { message: m, result: p, idx } of extractToolResults<
+    EditToolMeta | ReadToolMeta | WriteToolMeta
+  >(messages, ["read", "write", "edit"])) {
+    const path = p.meta?.path
+    if (!path) continue
     const entry = map.get(path) ?? {
       count: 0,
       edits: 0,
@@ -146,7 +145,7 @@ export async function extractFileUsage(
     else if (p.name === "write") entry.writes++
     else entry.edits++
     entry.count++
-    entry.score += weights[idx] * KIND_WEIGHTS[p.name]
+    entry.score += weights[idx] * KIND_WEIGHTS[p.name as keyof typeof KIND_WEIGHTS]
     if (turns[idx] < entry.lastTurn) entry.lastTurn = turns[idx]
     if (m.ts && m.ts > entry.lastTs) entry.lastTs = m.ts
     map.set(path, entry)

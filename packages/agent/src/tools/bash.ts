@@ -1,4 +1,4 @@
-import type { MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
+import type { MetaOf, MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool } from "@zaly/ai"
 import { cleanTextTui, normPath, randomHash } from "@zaly/shared"
@@ -10,6 +10,7 @@ import { Type } from "typebox"
 import { summarizeOutput } from "../utils/output.ts"
 
 export type BashTool = typeof bashTool
+export type BashToolMeta = MetaOf<BashTool>
 
 /**
  * Run a bash command and capture its output.
