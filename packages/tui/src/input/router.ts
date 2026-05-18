@@ -92,8 +92,8 @@ export class InputRouter {
     if (this.#focused === node) return
     const prev = this.#focused
     this.#focused = node
-    if (prev !== undefined) prev.emit("blur")
-    if (node !== undefined) node.emit("focus")
+    if (prev !== undefined) void prev.emit("blur")
+    if (node !== undefined) void node.emit("focus")
   }
 
   /**
@@ -154,7 +154,7 @@ export class InputRouter {
     // Phase 1 — per-node key bubble. Most-local wins.
     const routed = makeRoutedKey(event)
     for (let node: Node | undefined = this.#focused; node !== undefined; node = node.parent) {
-      node.emit("key", { key: routed })
+      void node.emit("key", { key: routed })
       if (routed.stopped) return true
     }
 
@@ -186,7 +186,7 @@ export class InputRouter {
     const routed = makeRoutedPaste(text)
     let node = this.#focused
     while (node !== undefined) {
-      node.emit("paste", { paste: routed })
+      void node.emit("paste", { paste: routed })
       if (routed.stopped) return true
       node = node.parent
     }

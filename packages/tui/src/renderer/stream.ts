@@ -135,7 +135,7 @@ export class Stream extends Surface {
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
     this.commit({ keep: this.#opts.maxLive, render: false })
-    this.emit("dirty")
+    void this.emit("dirty")
     return resolved
   }
 
@@ -340,7 +340,7 @@ export class Stream extends Surface {
       this.#commit(s)
       changed = true
     }
-    if (changed && render) this.emit("dirty")
+    if (changed && render) void this.emit("dirty")
   }
 
   /**
@@ -352,7 +352,7 @@ export class Stream extends Surface {
   invalidate(): void {
     const top = (this.#prevBottom ?? this.terminal.scrollBottom) - this.#rows.length + 1
     for (let i = 0; i < this.#rows.length; i++) this.#stale.add(top + i)
-    this.emit("dirty")
+    void this.emit("dirty")
   }
 
   /**
@@ -376,7 +376,7 @@ export class Stream extends Surface {
     this.#scrollbackCount = 0
     this.#stale.clear()
     this.#prevBottom = undefined
-    this.emit("dirty")
+    void this.emit("dirty")
   }
 
   /**

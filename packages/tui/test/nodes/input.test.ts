@@ -218,35 +218,35 @@ describe("Input.actions — submit + newline", () => {
 describe("Input — printable-char fallback", () => {
   test("typing a char inserts at cursor and advances", () => {
     const n = input({ cursor: 1, value: "ab" })
-    n.emit("key", { key: key("x", { text: "x" }) })
+    void n.emit("key", { key: key("x", { text: "x" }) })
     expect(n.state.value).toBe("axb")
     expect(n.state.cursor).toBe(2)
   })
 
   test("space is inserted like any other char", () => {
     const n = input({ cursor: 2, value: "ab" })
-    n.emit("key", { key: key("space", { text: " " }) })
+    void n.emit("key", { key: key("space", { text: " " }) })
     expect(n.state.value).toBe("ab ")
     expect(n.state.cursor).toBe(3)
   })
 
   test("ctrl-modified keys are not inserted", () => {
     const n = input({ cursor: 1, value: "a" })
-    n.emit("key", { key: key("a", { ctrl: true, text: "a" }) })
+    void n.emit("key", { key: key("a", { ctrl: true, text: "a" }) })
     expect(n.state.value).toBe("a")
   })
 
   test("printable-char insertion calls stop() on the event", () => {
     const n = input({ cursor: 0, value: "" })
     const ev = key("a", { text: "a" })
-    n.emit("key", { key: ev })
+    void n.emit("key", { key: ev })
     expect(ev.stopped).toBe(true)
   })
 
   test("unhandled keys (no text, non-printable) don't call stop()", () => {
     const n = input()
     const ev = key("f7")
-    n.emit("key", { key: ev })
+    void n.emit("key", { key: ev })
     expect(ev.stopped).toBe(false)
   })
 })
@@ -254,7 +254,7 @@ describe("Input — printable-char fallback", () => {
 describe("Input — paste", () => {
   test("paste inserts the whole payload at the cursor", () => {
     const n = input({ cursor: 1, value: "ac" })
-    n.emit("paste", { paste: paste("BB") })
+    void n.emit("paste", { paste: paste("BB") })
     expect(n.state.value).toBe("aBBc")
     expect(n.state.cursor).toBe(3)
   })
@@ -314,7 +314,7 @@ describe("Input — render", () => {
 
   test("placeholder is shown even when focused (with cursor overlay)", async () => {
     const n = input({ placeholder: "type here" })
-    n.emit("focus")
+    void n.emit("focus")
     const rows = await n.render(ctx(20))
     expect(rows[0]).toContain("t")
     expect(rows[0]).toContain("ype here")
@@ -344,7 +344,7 @@ describe("Input — render", () => {
 
   test("cursor at end of a wrapped line renders without crashing", async () => {
     const n = input({ value: "hello world" })
-    n.emit("focus")
+    void n.emit("focus")
     const rows = await n.render(ctx(5))
     expect(rows.length).toBeGreaterThan(1)
     expect(rows.join("")).toContain("hello")

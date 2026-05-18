@@ -17,8 +17,8 @@ describe("Emitter", () => {
     e.on("status", (event) => {
       captured = event.status
     })
-    e.emit("message", { text: "ignored" })
-    e.emit("status", { status: "streaming" })
+    void e.emit("message", { text: "ignored" })
+    void e.emit("status", { status: "streaming" })
     expect(captured).toBe("streaming")
   })
 
@@ -28,7 +28,7 @@ describe("Emitter", () => {
     e.on("status", (_event, self) => {
       captured = self
     })
-    e.emit("status", { status: "idle" })
+    void e.emit("status", { status: "idle" })
     expect(captured).toBe(e)
   })
 
@@ -36,8 +36,8 @@ describe("Emitter", () => {
     let count = 0
     const e = new FakeEmitter()
     e.once("message", () => count++)
-    e.emit("message", { text: "a" })
-    e.emit("message", { text: "b" })
+    void e.emit("message", { text: "a" })
+    void e.emit("message", { text: "b" })
     expect(count).toBe(1)
   })
 
@@ -48,9 +48,9 @@ describe("Emitter", () => {
     }
     const e = new FakeEmitter()
     e.on("message", handler)
-    e.emit("message", { text: "a" })
+    void e.emit("message", { text: "a" })
     e.off("message", handler)
-    e.emit("message", { text: "b" })
+    void e.emit("message", { text: "b" })
     expect(count).toBe(1)
   })
 
@@ -63,7 +63,7 @@ describe("Emitter", () => {
       throw new Error("boom")
     })
     e.on("message", () => count++)
-    e.emit("message", { text: "a" })
+    void e.emit("message", { text: "a" })
     expect(count).toBe(1)
     expect(errors).toHaveLength(1)
     expect((errors[0] as Error).message).toBe("boom")

@@ -169,7 +169,7 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
     // Terminal listens via `process.on("SIGWINCH", ...)`, so poking
     // process's EventEmitter triggers the renderer's handler. The
     // handler emits `dirty` on the surfaces, which schedules a render.
-    process.emit("SIGWINCH")
+    void process.emit("SIGWINCH")
     await flush()
   }
 

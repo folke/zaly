@@ -351,7 +351,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
         value: value.slice(0, match.start) + accepted + tail,
       })
     }
-    this.emit("complete", { item, source: match.source })
+    void this.emit("complete", { item, source: match.source })
     this.#close()
   }
 
@@ -363,13 +363,13 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // popup before a fresh complete() lands).
     this.menu.setState({ items: [] })
     this.menu.resetHeight()
-    this.emit("close")
+    void this.emit("close")
   }
 
   #setVisible(v: boolean): void {
     const was = this.open
     this.state.visible = v
-    if (v && !was) this.emit("open")
+    if (v && !was) void this.emit("open")
   }
 
   protected _render(ctx: RenderCtx): string[] | Promise<string[]> {

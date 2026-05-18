@@ -119,7 +119,7 @@ export class UI extends Surface {
       // reappear when the footer shrinks back.
       if (nextHeight !== this.terminal.reserveBottom) {
         this.terminal.setReserveBottom(nextHeight)
-        this.emit("dirty-stream")
+        void this.emit("dirty-stream")
       }
 
       // Paint (or re-paint) each footer row. The footer starts at
@@ -145,7 +145,7 @@ export class UI extends Surface {
    */
   invalidate(): void {
     this.#rows = this.#rows.map(() => "")
-    this.emit("dirty")
+    void this.emit("dirty")
   }
 
   /**
@@ -157,7 +157,7 @@ export class UI extends Surface {
    */
   onResize(): void {
     this.#rows = []
-    this.emit("dirty")
+    void this.emit("dirty")
   }
 
   /** UI's tracked node set is just the footer root. */

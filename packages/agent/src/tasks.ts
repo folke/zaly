@@ -239,7 +239,7 @@ export class Tasks extends Emitter<TasksEvents> {
     const task = this.#map.get(id)
     if (!task) return false
     this.#map.delete(id)
-    this.emit("task-removed", { task: toTaskInfo(task) })
+    void this.emit("task-removed", { task: toTaskInfo(task) })
     return true
   }
 
@@ -255,7 +255,7 @@ export class Tasks extends Emitter<TasksEvents> {
     task.finishedAt = Date.now()
     task.resolveDone()
     if (!task.ownerRound) {
-      this.emit("task-done", { task: toTaskInfo(task) as DoneTaskInfo })
+      void this.emit("task-done", { task: toTaskInfo(task) as DoneTaskInfo })
     }
     this.#startReadyDependents(id, result)
     this.#syncHeartbeat()
@@ -304,7 +304,7 @@ export class Tasks extends Emitter<TasksEvents> {
     const want = hasActive && this.#heartbeatMs !== undefined
     if (want && !this.#heartbeatTimer) {
       this.#heartbeatTimer = setInterval(() => {
-        this.emit("heartbeat", { running: this.info().filter((t) => t.status !== "done") })
+        void this.emit("heartbeat", { running: this.info().filter((t) => t.status !== "done") })
       }, this.#heartbeatMs)
       this.#heartbeatTimer.unref()
     } else if (!want && this.#heartbeatTimer) {
@@ -424,7 +424,7 @@ export class Tasks extends Emitter<TasksEvents> {
       waitingFor: opts.waitingFor,
     }
     this.#map.set(task.id, task)
-    this.emit("task-added", { task: toTaskInfo(task) })
+    void this.emit("task-added", { task: toTaskInfo(task) })
     this.#syncHeartbeat()
     return task
   }

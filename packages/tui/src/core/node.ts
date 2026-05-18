@@ -184,7 +184,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // `_render` mutates a child mid-render and skips the writeback —
     // would silently fail to dirty its parent on the next mutation,
     // pinning the surface to the first render's output.)
-    this.emit("invalidate")
+    void this.emit("invalidate")
     this.parent?.invalidate()
     return this
   }
@@ -278,7 +278,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
     const removed = this.#children.splice(adjustedStart, deleteCount, ...filtered)
     for (const c of removed) {
-      this.emit("childremoved", { child: c })
+      void this.emit("childremoved", { child: c })
       if (c.mounted) c.unmount()
       if (c.parent === this) c.#parent = undefined
     }
@@ -291,7 +291,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
         c.parent.remove(c)
       }
       c.#parent = this
-      this.emit("childadded", { child: c })
+      void this.emit("childadded", { child: c })
       if (this.#ctx !== undefined) c.mount(this.#ctx)
     }
     this.invalidate()
@@ -314,7 +314,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     withActiveNode(this, () => unwrap(this.state.visible))
     this.#ctx = ctx
     this.#registerActionMeta(ctx)
-    this.emit("mount")
+    void this.emit("mount")
     for (const c of this.#children) c.mount(ctx)
     return this
   }
@@ -340,7 +340,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   unmount(): this {
     if (!this.#ctx) return this
     for (const c of this.#children) c.unmount()
-    this.emit("unmount")
+    void this.emit("unmount")
     this.#ctx = undefined
     return this
   }

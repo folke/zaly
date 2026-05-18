@@ -191,14 +191,14 @@ export class Input extends Node<InputState, InputEvents> {
         const content = await clipboard.read()
         if (!content) return
         if (content.kind === "image") {
-          this.emit("attach", {
+          void this.emit("attach", {
             attachment: { kind: "image", path: content.path, type: content.type },
           })
           return
         }
         if (content.kind === "files") {
           for (const path of content.paths) {
-            this.emit("attach", {
+            void this.emit("attach", {
               attachment: { kind: "file", path, type: guessMime(path) },
             })
           }
@@ -214,7 +214,7 @@ export class Input extends Node<InputState, InputEvents> {
       })()
     },
     "input.submit": (): void => {
-      this.emit("submit", { value: this.state.value ?? "" })
+      void this.emit("submit", { value: this.state.value ?? "" })
     },
   } satisfies ActionMap
 

@@ -54,7 +54,7 @@ export class OverlaySurface extends Surface {
     resolved.on("invalidate", this.onDirty)
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
-    if (resolved.visible) this.emit("dirty")
+    if (resolved.visible) void this.emit("dirty")
     return resolved
   }
 
@@ -66,8 +66,8 @@ export class OverlaySurface extends Surface {
     overlay.off("invalidate", this.onDirty)
     // Footer was masked beneath this overlay; ask UI to repaint so the
     // rows are re-emitted under us. Routed through the Renderer.
-    this.emit("dirty-ui")
-    this.emit("dirty")
+    void this.emit("dirty-ui")
+    void this.emit("dirty")
     return this
   }
 

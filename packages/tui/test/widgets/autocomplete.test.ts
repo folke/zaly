@@ -183,11 +183,11 @@ describe("autocomplete", () => {
     }
 
     expect(ac.menu.state.active).toBe(0)
-    i.emit("key", { key: keyEv("down") })
+    void i.emit("key", { key: keyEv("down") })
     expect(ac.menu.state.active).toBe(1)
-    i.emit("key", { key: keyEv("up") })
+    void i.emit("key", { key: keyEv("up") })
     expect(ac.menu.state.active).toBe(0)
-    i.emit("key", { key: keyEv("enter") })
+    void i.emit("key", { key: keyEv("enter") })
     expect(i.state.value).toBe("/a ")
     expect(ac.open).toBe(false)
   })

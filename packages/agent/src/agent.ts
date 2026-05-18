@@ -401,7 +401,7 @@ export class Agent extends Emitter<AgentEvents> {
     return {
       ...base,
       onEvent: (event) => {
-        this.emit("stream-event", { event })
+        void this.emit("stream-event", { event })
         void this.#opts.onEvent?.(event)
       },
       onUpdate: this.#opts.onUpdate,
@@ -510,8 +510,8 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #runTools(calls: ToolCallPart[]) {
     this.#setStatus("running-tools")
-    this.emit("tool-calls", { calls })
-    for (const call of calls) this.emit("tool-call", { call })
+    void this.emit("tool-calls", { calls })
+    for (const call of calls) void this.emit("tool-call", { call })
 
     // The whole batch — including streamable promotion, parallel chains,
     // grace timing, and ownerRound suppression — lives in Tasks.run().
@@ -522,7 +522,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     for (let i = 0; i < calls.length; i++) {
       const part = resultParts[i]
-      this.emit("tool-result", {
+      void this.emit("tool-result", {
         call: calls[i],
         result: {
           content: part.content,
@@ -574,7 +574,7 @@ export class Agent extends Emitter<AgentEvents> {
   async start() {
     if (this.ctx.started) return
     await this.ctx.start()
-    this.emit("start")
+    void this.emit("start")
   }
 
   // ── Internals ────────────────────────────────────────────────────────
@@ -591,9 +591,9 @@ export class Agent extends Emitter<AgentEvents> {
         return this.#stop("aborted", this.#abortController.signal.reason)
       if (this.#pauseRequested !== undefined) return this.#stop("paused", this.#pauseRequested)
 
-      this.emit("step-start", { step })
+      void this.emit("step-start", { step })
       const outcome = await this.step()
-      this.emit("step-end", { outcome: outcome.kind, step })
+      void this.emit("step-end", { outcome: outcome.kind, step })
 
       if (outcome.kind === "error") {
         return this.#stop(outcome.error?.name === "AbortError" ? "aborted" : "error", outcome.error)
@@ -640,7 +640,7 @@ export class Agent extends Emitter<AgentEvents> {
       reason: reason === undefined ? undefined : toError(reason).message,
     }
     this.#setStatus(kind === "natural" ? "idle" : "paused")
-    this.emit("stop", {
+    void this.emit("stop", {
       status: this.#status,
       usage: this.usage,
       ...this.#lastStop,
@@ -713,6 +713,6 @@ export class Agent extends Emitter<AgentEvents> {
       this.#cancelAllWakeups()
     }
     this.#status = status
-    this.emit("status", { status })
+    void this.emit("status", { status })
   }
 }

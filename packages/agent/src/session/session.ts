@@ -145,7 +145,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     this.#started = true
     const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
     await this.#commit({ type })
-    this.emit(type)
+    void this.emit(type)
     await this.update(settings ?? {})
     return this.#store.root?.uuid
   }
@@ -222,7 +222,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     const compactUuid = await this.#commit(node)
     await this.update({}, { force: true })
     await this.#rebuild()
-    this.emit("compact", { node })
+    void this.emit("compact", { node })
     return compactUuid
   }
 
@@ -290,17 +290,17 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       this.#emitChanges(prev)
     }
 
-    this.emit("node", { node })
+    void this.emit("node", { node })
     return node.uuid
   }
 
   #emitChanges(prev: SessionSettings): void {
     const next = this.#settings
-    if (next.cwd && next.cwd !== prev.cwd) this.emit("cwd", { cwd: next.cwd, prev: prev.cwd })
+    if (next.cwd && next.cwd !== prev.cwd) void this.emit("cwd", { cwd: next.cwd, prev: prev.cwd })
     if (next.modelId && next.modelId !== prev.modelId)
-      this.emit("model", { model: next.modelId, prev: prev.modelId })
+      void this.emit("model", { model: next.modelId, prev: prev.modelId })
     if (next.reasoning && next.reasoning !== prev.reasoning)
-      this.emit("reasoning", { effort: next.reasoning, prev: prev.reasoning })
+      void this.emit("reasoning", { effort: next.reasoning, prev: prev.reasoning })
   }
 
   /** Walk `parentUuid` from the given node back toward the root,

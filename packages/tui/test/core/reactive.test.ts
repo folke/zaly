@@ -81,7 +81,7 @@ describe("signal", () => {
     n.on("invalidate", fn)
     // Simulate a full lifetime end by emitting unmount — signal should
     // drop the subscription.
-    n.emit("unmount")
+    void n.emit("unmount")
     setS("b")
     expect(fn).not.toHaveBeenCalled()
   })

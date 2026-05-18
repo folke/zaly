@@ -53,7 +53,7 @@ export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvent
    *  to every node they track so any mutation anywhere in their
    *  subtree flows back to the renderer scheduler. */
   protected readonly onDirty = (): void => {
-    this.emit("dirty")
+    void this.emit("dirty")
   }
 
   /** `true` between `onStart()` and `onStop()`. Subclasses read this

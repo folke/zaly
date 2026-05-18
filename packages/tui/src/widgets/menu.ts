@@ -83,7 +83,7 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
 
   override actions = {
     "menu.cancel": (): void => {
-      this.emit("cancel")
+      void this.emit("cancel")
     },
     "menu.first": (): void => {
       if (this.#items().length === 0) return
@@ -108,7 +108,7 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
       const items = this.#items()
       if (items.length === 0) return
       const i = this.#active()
-      this.emit("select", { item: items[i] })
+      void this.emit("select", { item: items[i] })
     },
   } satisfies ActionMap
 
