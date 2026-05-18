@@ -1,5 +1,4 @@
 // oxlint-disable typescript/unified-signatures
-import type { BuiltinThemeName } from "./builtin.ts"
 import type { Theme } from "./types.ts"
 
 import { safeStat, withError } from "@zaly/shared"
@@ -12,7 +11,7 @@ import { defaults } from "./default.ts"
 
 /** Built-in theme names plus the synthetic `"ansi"` palette (no JSON
  *  — falls back to `defaults` only). */
-export type BuiltinTheme = BuiltinThemeName | "ansi"
+export type BuiltinTheme = keyof typeof builtin | "ansi"
 export type AnyTheme = BuiltinTheme | (string & {})
 export type ThemeLoader = () => Promise<Partial<Theme>>
 

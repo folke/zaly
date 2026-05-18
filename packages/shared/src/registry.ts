@@ -31,6 +31,8 @@ type LoadArgs<L extends Loader> = [Parameters<L>[0]] extends [void] ? [] : [opts
 type AnyRegKey<I extends LoaderMap<any>> = (keyof I & string) | (string & {})
 export type AnyKey<T extends string> = T | (string & {})
 
+export type { Registry }
+
 class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
   readonly #label: string
   readonly #entries = new Map<string, L>()

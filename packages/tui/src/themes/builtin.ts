@@ -80,5 +80,3 @@ export const builtin = {
   "vitesse-light": () =>
     import("../../assets/themes/vitesse-light.json").then((m) => m.default as Partial<Theme>),
 } as const satisfies Record<string, ThemeLoader>
-
-export type BuiltinThemeName = keyof typeof builtin

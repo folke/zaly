@@ -48,8 +48,6 @@ import type { Theme } from "./types.ts"
 export const builtin = {
 ${entries}
 } as const satisfies Record<string, ThemeLoader>
-
-export type BuiltinThemeName = keyof typeof builtin
 `
 }
 
