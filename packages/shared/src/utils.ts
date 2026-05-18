@@ -122,12 +122,21 @@ export function gitRoot(path: string) {
   return git ? dirname(git) : undefined
 }
 
+export function wrapError(msg: string, cause: unknown): Error {
+  const err = cause instanceof Error ? cause.message : String(cause)
+  return new Error(`${msg}: ${err}`, { cause })
+}
+
 export function withError<T>(fn: () => T, errorMsg: string): T {
   try {
-    return fn()
+    const ret = fn()
+    return ret instanceof Promise
+      ? (ret.catch((error) => {
+          throw wrapError(errorMsg, error)
+        }) as T)
+      : ret
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error)
-    throw new Error(`${errorMsg}: ${msg}`, { cause: error })
+    throw wrapError(errorMsg, error)
   }
 }
 
