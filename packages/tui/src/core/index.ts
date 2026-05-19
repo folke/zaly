@@ -1,5 +1,6 @@
 import type { Theme } from "../themes/types.ts"
 import type { RenderCtx } from "./ctx.ts"
+
 export type { RenderCtx, MountCtx } from "./ctx.ts"
 
 export type * from "./node.ts"

@@ -264,19 +264,19 @@ describe("Input — paste", () => {
 // Exercise a few common bindings via the full decoder-like event →
 // router → action pipeline so the composition stays honest.
 
-describe("Input — end-to-end via router + keymap", () => {
-  function mount(state = {}) {
-    const router = new InputRouter()
-    const actions = new Actions()
-    actions.setTargetResolver(() => router.focused)
-    router.setActions(actions)
-    actions.register(defaultActions)
-    const n = input(state)
-    router.focus(n)
-    router.setKeymapIndex(actions.buildKeymap())
-    return { n, router }
-  }
+function mount(state = {}) {
+  const router = new InputRouter()
+  const actions = new Actions()
+  actions.setTargetResolver(() => router.focused)
+  router.setActions(actions)
+  actions.register(defaultActions)
+  const n = input(state)
+  router.focus(n)
+  router.setKeymapIndex(actions.buildKeymap())
+  return { n, router }
+}
 
+describe("Input — end-to-end via router + keymap", () => {
   test("ctrl-a jumps to start of current line via keymap", () => {
     const { n, router } = mount({ cursor: 3, value: "hello" })
     router.dispatch({ event: key("a", { ctrl: true, text: "a" }), type: "key" })

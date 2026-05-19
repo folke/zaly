@@ -11,6 +11,22 @@ import { mockMountCtx } from "../renderer/mock.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
 
+function keyEv(name: string): RoutedKey {
+  const ev: RoutedKey = {
+    alt: false,
+    ctrl: false,
+    meta: false,
+    name,
+    pattern: name,
+    shift: false,
+    stop: () => {
+      ev.stopped = true
+    },
+    stopped: false,
+  }
+  return ev
+}
+
 describe("autocomplete", () => {
   test("renders nothing when no trigger matches", async () => {
     const i = input({ value: "hello" })
@@ -166,21 +182,6 @@ describe("autocomplete", () => {
     await Promise.resolve()
     expect(ac.open).toBe(true)
 
-    const keyEv = (name: string): RoutedKey => {
-      const ev: RoutedKey = {
-        alt: false,
-        ctrl: false,
-        meta: false,
-        name,
-        pattern: name,
-        shift: false,
-        stop: () => {
-          ev.stopped = true
-        },
-        stopped: false,
-      }
-      return ev
-    }
 
     expect(ac.menu.state.active).toBe(0)
     void i.emit("key", { key: keyEv("down") })

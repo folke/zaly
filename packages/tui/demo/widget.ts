@@ -1,12 +1,12 @@
 import { box, createCtx, text } from "@zaly/tui"
 import { loadTheme } from "@zaly/tui/themes"
 
+const status = (props: { level: "success" | "warn" | "error"; msg: string }) =>
+  text(({ style }) => `${style.bold[props.level](" ● ")}${style.dim(props.msg)}`)
+
 async function demo(label: string, name: string): Promise<void> {
   const theme = await loadTheme(name)
   const ctx = await createCtx({ theme })
-
-  const status = (props: { level: "success" | "warn" | "error"; msg: string }) =>
-    text(({ style }) => `${style.bold[props.level](" ● ")}${style.dim(props.msg)}`)
 
   const app = box(
     { gap: 1 },

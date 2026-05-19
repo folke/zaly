@@ -180,18 +180,18 @@ describe("read tool — error paths", () => {
   })
 })
 
-describe("trackFile / assertFresh", () => {
-  function withReadOf(path: string, mtime: number): Message<"tool"> {
-    const part: ToolResultPart = {
-      content: "",
-      id: "1",
-      meta: { kind: "read", mtime, path },
-      name: "read",
-      type: "tool-result",
-    }
-    return { content: [part], role: "tool" }
+function withReadOf(path: string, mtime: number): Message<"tool"> {
+  const part: ToolResultPart = {
+    content: "",
+    id: "1",
+    meta: { kind: "read", mtime, path },
+    name: "read",
+    type: "tool-result",
   }
+  return { content: [part], role: "tool" }
+}
 
+describe("trackFile / assertFresh", () => {
   test("assertFresh throws NOT_FOUND when the path doesn't exist", () => {
     const ctx: ToolContext = { messages: [] }
     expect(() => assertFresh(join(dir, "missing-fresh.txt"), ctx)).toThrow(AiError)

@@ -1,20 +1,19 @@
-import { encodePath, randomHash } from "@zaly/shared"
+import { randomHash } from "@zaly/shared"
 import { mkdtempSync } from "node:fs"
 import { rm, stat, utimes } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import {
-  projectScope,
   Session,
-  createSession,
   listSessions,
+  loadSession,
   resumeSession,
 } from "../src/session/index.ts"
 
 // Redirect ZALY_ROOT to a per-suite tmpdir so tests can never touch the
 // real ~/.zaly/. The whole tree gets nuked in afterAll regardless of
-// scope names, so we don't need per-test prefix tracking.
+// workspace names, so we don't need per-test prefix tracking.
 let testRoot: string
 let prevRoot: string | undefined
 
@@ -30,123 +29,92 @@ afterAll(async () => {
   await rm(testRoot, { force: true, recursive: true })
 })
 
-/** Generate a unique scope name per test so concurrent tests don't
+/** Generate a unique workspace path per test so concurrent tests don't
  *  collide within the suite. */
-function testScope(label: string): string {
-  return `${label}-${randomHash(6)}`
+function testWorkspace(label: string): string {
+  return join(testRoot, "ws", `${label}-${randomHash(6)}`)
 }
 
-describe("projectScope", () => {
-  test("encodes an absolute path into a single segment", () => {
-    expect(projectScope("/home/folke/projects/zaly")).toBe("+home+folke+projects+zaly")
-  })
-
-  test("round-trips through encodePath/decodePath", () => {
-    const cwd = "/home/folke/projects/zaly"
-    expect(projectScope(cwd)).toBe(encodePath(cwd))
-  })
-
-  test("defaults to process.cwd() when cwd is undefined", () => {
-    // Just confirm it returns *something* deterministic from the process.
-    const a = projectScope()
-    const b = projectScope()
-    expect(a).toBe(b)
-    expect(a.length).toBeGreaterThan(0)
-  })
-})
-
-describe("sessionCreate", () => {
-  test("derives dir/path/scope/id from cwd", async () => {
-    const scope = testScope("create")
-    const session = await createSession({ scope })
+describe("loadSession (create)", () => {
+  test("derives dir/path/workspace/id from workspace", async () => {
+    const workspace = testWorkspace("create")
+    const session = await loadSession({ workspace })
     expect(session).toBeInstanceOf(Session)
     expect(session.id).toBeDefined()
-    expect(session.dir).toContain(scope)
     expect(session.dir).toContain(session.id)
     await session.close()
   })
 
   test("uses provided id when given", async () => {
-    const scope = testScope("create-id")
+    const workspace = testWorkspace("create-id")
     const id = `pinned-${randomHash(6)}`
-    const session = await createSession({ id, scope })
+    const session = await loadSession({ id, workspace })
     expect(session.id).toBe(id)
     expect(session.dir.endsWith(`/${id}`)).toBe(true)
     await session.close()
   })
 
-  test("derives scope from cwd when scope not given", async () => {
-    const cwd = `/tmp/zaly-test-${randomHash(6)}`
-    const session = await createSession({ cwd })
-    expect(session.dir).toContain(encodePath(cwd))
+  test("defaults workspace to process.cwd() when not given", async () => {
+    const session = await loadSession()
+    expect(session.id).toBeDefined()
+    expect(session.dir).toContain(session.id)
     await session.close()
   })
 
   test("creates the session directory on disk", async () => {
-    const scope = testScope("dir-exists")
-    const session = await createSession({ scope })
+    const workspace = testWorkspace("dir-exists")
+    const session = await loadSession({ workspace })
     const dirStat = await stat(session.dir)
     expect(dirStat.isDirectory()).toBe(true)
     await session.close()
   })
 })
 
-describe("sessionList", () => {
-  test("returns empty array for a scope with no sessions", async () => {
-    const list = await listSessions({ scope: testScope("empty") })
+describe("listSessions", () => {
+  test("returns empty array for a workspace with no sessions", async () => {
+    const list = await listSessions({ filter: { workspace: testWorkspace("empty") } })
     expect(list).toEqual([])
   })
 
-  test("lists sessions created in a scope", async () => {
-    const scope = testScope("list")
-    const a = await createSession({ scope })
-    const b = await createSession({ scope })
+  test("lists sessions created in a workspace", async () => {
+    const workspace = testWorkspace("list")
+    const a = await loadSession({ workspace })
+    const b = await loadSession({ workspace })
     await a.start()
     await b.start()
     await a.close()
     await b.close()
 
-    const list = await listSessions({ scope })
+    const list = await listSessions({ filter: { workspace } })
     expect(list).toHaveLength(2)
     const ids = list.map((s) => s.id).toSorted()
     expect(ids).toEqual([a.id, b.id].toSorted())
     for (const s of list) {
-      expect(s.scope).toBe(scope)
+      expect(s.workspace).toBe(workspace)
       expect(s.path).toBe(join(s.dir, "session.jsonl"))
     }
   })
 
   test("filters by id when provided", async () => {
-    const scope = testScope("list-by-id")
-    const a = await createSession({ scope })
-    const b = await createSession({ scope })
+    const workspace = testWorkspace("list-by-id")
+    const a = await loadSession({ workspace })
+    const b = await loadSession({ workspace })
     await a.start()
     await b.start()
     await a.close()
     await b.close()
 
-    const list = await listSessions({ id: a.id, scope })
+    const list = await listSessions({ filter: { id: a.id, workspace } })
     expect(list).toHaveLength(1)
     expect(list[0].id).toBe(a.id)
   })
 
-  test("derives scope from cwd when given", async () => {
-    const cwd = `/tmp/zaly-test-${randomHash(6)}-${Date.now()}`
-    const session = await createSession({ cwd })
-    await session.start()
-    await session.close()
-
-    const list = await listSessions({ cwd })
-    expect(list.length).toBeGreaterThan(0)
-    expect(list.map((s) => s.id)).toContain(session.id)
-  })
-
   test("sort: true orders by mtime, newest first", async () => {
-    const scope = testScope("sort")
-    const a = await createSession({ scope })
+    const workspace = testWorkspace("sort")
+    const a = await loadSession({ workspace })
     await a.start()
     await a.close()
-    const b = await createSession({ scope })
+    const b = await loadSession({ workspace })
     await b.start()
     await b.close()
 
@@ -154,41 +122,37 @@ describe("sessionList", () => {
     const oldTime = Date.now() / 1000 - 60
     await utimes(b.path!, oldTime, oldTime)
 
-    const list = await listSessions({ scope, sort: true })
+    const list = await listSessions({ filter: { workspace }, sort: true })
     expect(list).toHaveLength(2)
     expect(list[0].id).toBe(a.id) // newest first
     expect(list[1].id).toBe(b.id)
     expect(list[0].mtime).toBeGreaterThan(list[1].mtime!)
   })
 
-  test("sort: true filters out sessions whose stat fails", async () => {
-    const scope = testScope("sort-missing")
-    const a = await createSession({ scope })
+  test("sort: true populates mtime on returned entries", async () => {
+    const workspace = testWorkspace("sort-mtime")
+    const a = await loadSession({ workspace })
     await a.start()
     await a.close()
-    // Delete the .jsonl but keep the dir so sessionList still finds it
-    // via the glob; the stat will then fail and the entry should be filtered.
-    // Actually the glob filters by file existence — to test the filter,
-    // we'd need a race. Skip the simulation; just verify normal sort returns
-    // entries with mtime defined.
-    const list = await listSessions({ scope, sort: true })
+
+    const list = await listSessions({ filter: { workspace }, sort: true })
     expect(list).toHaveLength(1)
     expect(list[0].mtime).toBeDefined()
   })
 })
 
-describe("sessionResume", () => {
+describe("resumeSession", () => {
   test("returns undefined when no sessions exist", async () => {
-    const result = await resumeSession({ scope: testScope("resume-empty") })
+    const result = await resumeSession({ workspace: testWorkspace("resume-empty") })
     expect(result).toBeUndefined()
   })
 
   test("returns the latest session by mtime", async () => {
-    const scope = testScope("resume")
-    const oldSession = await createSession({ scope })
+    const workspace = testWorkspace("resume")
+    const oldSession = await loadSession({ workspace })
     await oldSession.start()
     await oldSession.close()
-    const newSession = await createSession({ scope })
+    const newSession = await loadSession({ workspace })
     await newSession.start()
     await newSession.close()
 
@@ -196,33 +160,33 @@ describe("sessionResume", () => {
     const oldTime = Date.now() / 1000 - 60
     await utimes(oldSession.path!, oldTime, oldTime)
 
-    const resumed = await resumeSession({ scope })
+    const resumed = await resumeSession({ workspace })
     expect(resumed).toBeDefined()
     expect(resumed!.id).toBe(newSession.id)
     await resumed?.close()
   })
 
   test("returns single session without sorting overhead", async () => {
-    const scope = testScope("resume-single")
-    const only = await createSession({ scope })
+    const workspace = testWorkspace("resume-single")
+    const only = await loadSession({ workspace })
     await only.start()
     await only.close()
 
-    const resumed = await resumeSession({ scope })
+    const resumed = await resumeSession({ workspace })
     expect(resumed).toBeDefined()
     expect(resumed!.id).toBe(only.id)
     await resumed?.close()
   })
 
   test("hydrates the session's prior state", async () => {
-    const scope = testScope("resume-hydrate")
-    const original = await createSession({ scope })
+    const workspace = testWorkspace("resume-hydrate")
+    const original = await loadSession({ workspace })
     await original.start({ modelId: "openai/gpt-4o" })
     await original.add({ content: "hi", role: "user" })
     await original.add({ content: "hello", role: "assistant" })
     await original.close()
 
-    const resumed = await resumeSession({ scope })
+    const resumed = await resumeSession({ workspace })
     expect(resumed).toBeDefined()
     expect(resumed!.id).toBe(original.id)
     expect(resumed!.settings.modelId).toBe("openai/gpt-4o")
@@ -233,17 +197,17 @@ describe("sessionResume", () => {
 
 describe("create + list + resume round-trip", () => {
   test("created sessions show up in list and can be resumed", async () => {
-    const scope = testScope("roundtrip")
-    const created = await createSession({ scope })
+    const workspace = testWorkspace("roundtrip")
+    const created = await loadSession({ workspace })
     await created.start({ modelId: "anthropic/claude" })
     await created.add({ content: "test message", role: "user" })
     await created.close()
 
     // Visible in list
-    const listed = await listSessions({ scope })
+    const listed = await listSessions({ filter: { workspace } })
     expect(listed.map((s) => s.id)).toContain(created.id)
 
-    // Resumable by id
+    // Resumable by path
     const found = listed.find((s) => s.id === created.id)
     expect(found).toBeDefined()
     const reopened = await Session.load({ path: found!.path })
@@ -251,8 +215,8 @@ describe("create + list + resume round-trip", () => {
     expect(reopened.settings.modelId).toBe("anthropic/claude")
     await reopened.close()
 
-    // Resumable via sessionResume (only one session in this test scope)
-    const resumed = await resumeSession({ scope })
+    // Resumable via resumeSession (only one session in this test workspace)
+    const resumed = await resumeSession({ workspace })
     expect(resumed!.id).toBe(created.id)
     await resumed?.close()
   })

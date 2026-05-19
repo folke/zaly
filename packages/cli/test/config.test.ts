@@ -14,24 +14,6 @@ describe("resolveConfig", () => {
     expect(cfg.cwd).toBe("/tmp/zaly-test")
   })
 
-  test("--session wins over --resume when both are set", () => {
-    const cfg = resolveConfig({
-      ...baseArgs,
-      resume: true,
-      session: "abc123",
-    } as CliArgs)
-    expect(cfg.resume).toEqual({ kind: "explicit", value: "abc123" })
-  })
-
-  test("`--resume` (no value) resolves to latest", () => {
-    const cfg = resolveConfig({ ...baseArgs, resume: true } as CliArgs)
-    expect(cfg.resume).toEqual({ kind: "latest" })
-  })
-
-  test("no resume / session → none", () => {
-    expect(resolveConfig(baseArgs).resume).toEqual({ kind: "none" })
-  })
-
   test("--reasoning takes precedence; --thinking is the fallback alias", () => {
     expect(
       resolveConfig({ ...baseArgs, reasoning: "high", thinking: "low" } as CliArgs).reasoning
@@ -61,7 +43,7 @@ describe("resolveConfig", () => {
       // the static type and exercise the array path.
       const cfg = resolveConfig({
         ...baseArgs,
-        tools: ["read", "write,exec"],
+        tools: "read,write,exec",
       } as unknown as CliArgs)
       expect(cfg.tools).toEqual(["read", "write", "exec"])
     })
@@ -75,7 +57,7 @@ describe("resolveConfig", () => {
   test("api-key + model + theme pass through verbatim", () => {
     const cfg = resolveConfig({
       ...baseArgs,
-      "api-key": "sk-...",
+      apiKey: "sk-...",
       model: "claude-opus-4-7",
       theme: "tokyonight",
     } as unknown as CliArgs)

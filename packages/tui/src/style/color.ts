@@ -2,12 +2,14 @@ import type { HexColor, RGB } from "./types.ts"
 
 import { clamp } from "@zaly/shared"
 
+const hexByte = (n: number): string =>
+  clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0")
+
 export function toHex(c: RGB): HexColor
 export function toHex(r: number, g: number, b: number): HexColor
 export function toHex(x: number | RGB, y?: number, z?: number): HexColor {
   const [r, g, b] = Array.isArray(x) ? x : [x, y!, z!]
-  const h = (n: number): string => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0")
-  return `#${h(r)}${h(g)}${h(b)}`
+  return `#${hexByte(r)}${hexByte(g)}${hexByte(b)}`
 }
 
 export function parseHex(hex: string): RGB {
