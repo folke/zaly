@@ -1,7 +1,8 @@
 // oxlint-disable sort-keys
 
 import type { Node, RenderCtx, Theme } from "@zaly/tui"
-import type { Config } from "./config.ts"
+import type { CamelCase } from "scule"
+import type { Flags } from "./config.ts"
 
 import { createCtx, createRender } from "@zaly/tui"
 import { Logger } from "@zaly/tui/logger"
@@ -12,7 +13,10 @@ import { resolveConfig } from "./config.ts"
 // `CliArgs` is derived from the citty arg defs above so handlers can
 // read parsed flags type-safely without re-declaring the shape.
 type Setup = Extract<ReturnType<typeof mainCommand>["setup"], (...args: any[]) => any>
-export type CliArgs = Parameters<Setup>[0]["args"]
+type Args = Parameters<Setup>[0]["args"]
+export type CliArgs = {
+  [K in keyof Args as CamelCase<K & string>]: Args[K]
+}
 
 const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const
 
@@ -23,7 +27,7 @@ const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] a
  */
 export class Cli extends Logger {
   args!: CliArgs
-  #config?: Config
+  #config?: Flags
   #ctx?: RenderCtx
   #queue: Promise<unknown> = Promise.resolve()
   #theme?: Theme
@@ -60,7 +64,7 @@ export class Cli extends Logger {
     process.stdout.write(`${rows.join("\n")}\n`)
   }
 
-  get config(): Config {
+  get config(): Flags {
     return (this.#config ??= resolveConfig(this.args))
   }
 
@@ -103,13 +107,14 @@ export function mainCommand(cli: Cli) {
         type: "string",
         description: "Override API key for the selected provider",
       },
-      resume: {
+      new: {
+        alias: ["n"],
         type: "boolean",
-        description: "Resume the most recent session in the current scope",
+        description: "Start a new session instead of resuming the most recent one",
       },
       session: {
         type: "string",
-        description: "Session id, file path, or scope to load",
+        description: "Session id, file path, cwd or glob pattern to resume",
       },
       tools: {
         type: "string",
@@ -137,6 +142,7 @@ export function mainCommand(cli: Cli) {
       },
       yolo: {
         type: "boolean",
+        alias: ["y"],
         description: "Use the yolo permissions preset (allow everything)",
       },
       "print-config": {
@@ -145,9 +151,9 @@ export function mainCommand(cli: Cli) {
       },
     },
     async setup({ args }) {
-      cli.args = args
-      if (args["print-config"]) await cli.printConfig()
-      if (args.listThemes) await cli.listThemes()
+      cli.args = args as unknown as CliArgs
+      if (cli.args.printConfig) await cli.printConfig()
+      if (cli.args.listThemes) await cli.listThemes()
     },
     // Lazy subcommand loading — each module is only imported when its
     // command name appears on the cli. The factory pattern lets us hand

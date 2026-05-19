@@ -1,5 +1,5 @@
-import type { Config } from "../config.ts"
-import type { LoadedSession } from "./session.ts"
+import type { Session } from "@zaly/agent/session"
+import type { Flags } from "../config.ts"
 
 import { loadState, updateState } from "@zaly/config"
 
@@ -24,12 +24,12 @@ const FALLBACK_MODEL = "anthropic/claude-sonnet-4-6"
  * Async because step 3 hits disk. State writes are best-effort and
  * silent — losing the "last model" hint isn't worth a crash.
  */
-export async function resolveModelId(config: Config, loaded: LoadedSession): Promise<string> {
-  if (config.model !== undefined) {
-    await rememberModel(config.model)
-    return config.model
+export async function resolveModelId(flags: Flags, session: Session): Promise<string> {
+  if (flags.model !== undefined) {
+    await rememberModel(flags.model)
+    return flags.model
   }
-  const sessionModel = loaded.session?.settings.modelId
+  const sessionModel = session.settings.modelId
   if (sessionModel !== undefined) return sessionModel
   const state = await loadState()
   if (state.lastModel !== undefined) return state.lastModel

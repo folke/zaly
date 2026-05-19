@@ -2,7 +2,7 @@ import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
 import type { Input, Renderer, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
-import type { Config } from "../config.ts"
+import type { Flags } from "../config.ts"
 
 import { createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
@@ -28,7 +28,7 @@ import { submit } from "./submit.ts"
  * completes, so typing during load is fine but Enter is a no-op.
  */
 export class App {
-  readonly #config: Config
+  readonly #config: Flags
   #theme!: Theme
   #renderer!: Renderer
   #input!: Input
@@ -43,7 +43,7 @@ export class App {
 
   readonly #attachments = new AttachmentBuffer()
 
-  private constructor(config: Config) {
+  private constructor(config: Flags) {
     this.#config = config
   }
 
@@ -118,18 +118,16 @@ export class App {
    *  the agent (heavy). The user sees their conversation history
    *  before model resolution finishes. */
   async #initSessionAndAgent(): Promise<void> {
-    const preloaded = await loadSession(this.#config)
+    const session = await loadSession(this.#config)
 
     // Replay the tail of a resumed conversation. 50 messages ≈ several
     // recent exchanges; older history stays in the session and is sent
     // to the model on the next request, just not painted here.
-    const tail = preloaded.session
-      ? preloaded.session.messages.slice(-50)
-      : preloaded.messages.slice(-50)
+    const tail = session.messages.slice(-50)
 
     await replay(tail, this.#renderer)
 
-    this.#agent = await buildAgent(this.#config, preloaded)
+    this.#agent = await buildAgent(this.#config, session)
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
 
     this.#agentLifetime = new AbortController()

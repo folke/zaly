@@ -1,10 +1,11 @@
 // oxlint-disable sort-keys
 
-import type { ManagedSession } from "@zaly/agent/session"
+import type { SessionInfo } from "@zaly/agent/session"
 import type { ParsedArgs } from "citty"
 import type { Cli } from "../cli.ts"
 
-import { sessionList } from "@zaly/agent/session"
+import { listSessions, Session } from "@zaly/agent/session"
+import { stringifyContent } from "@zaly/ai"
 import { defineCommand } from "citty"
 import { rm } from "node:fs/promises"
 import { basename, dirname, isAbsolute } from "pathe"
@@ -87,8 +88,8 @@ export function sessionCommand(cli: Cli) {
 async function list(cli: Cli, args: ListArgs): Promise<void> {
   // Without `--all`, scope to the current cwd. With `--all`, omit the
   // filter so the manager walks every project scope.
-  const sessions = await sessionList({
-    cwd: args.all ? undefined : cli.config.cwd,
+  const sessions = await listSessions({
+    filter: args.all ? undefined : cli.config.cwd,
     sort: true,
   })
   const filtered = args.pattern
@@ -103,9 +104,15 @@ async function list(cli: Cli, args: ListArgs): Promise<void> {
     console.error(args.all ? "no sessions found" : "no sessions in this scope")
     return
   }
-  for (const s of filtered) {
+  const messages = await Promise.all(
+    filtered.map((s) => Session.lastMessage({ path: s.path }).catch(() => undefined))
+  )
+  for (let i = 0; i < filtered.length; i++) {
+    const s = filtered[i]
+    const m = messages[i]
+    const mt = m ? stringifyContent(m.content) : "—"
     const when = s.mtime ? new Date(s.mtime).toISOString() : "—"
-    console.log(`${when}\t${s.scope}\t${s.id}`)
+    console.log(`${when}\t${s.workspace}\t${s.id}\t${mt}`)
   }
 }
 
@@ -116,7 +123,7 @@ async function show(cli: Cli, args: RefArgs): Promise<void> {
     return
   }
   console.log(`id:    ${s.id}`)
-  console.log(`scope: ${s.scope}`)
+  console.log(`workspace: ${s.workspace}`)
   console.log(`path:  ${s.path}`)
   if (s.mtime !== undefined) {
     console.log(`mtime: ${new Date(s.mtime).toISOString()}`)
@@ -141,7 +148,7 @@ async function path(cli: Cli, args: RefArgs): Promise<void> {
 /** Polymorphic resolver: id (under current scope), path-to-jsonl, or
  *  path-to-session-dir. Errors out cleanly when the session can't be
  *  located. */
-async function resolve(cli: Cli, ref: string | undefined): Promise<ManagedSession> {
+async function resolve(cli: Cli, ref: string | undefined): Promise<SessionInfo> {
   if (!ref) {
     console.error("session id or path required")
     process.exit(1)
@@ -151,12 +158,13 @@ async function resolve(cli: Cli, ref: string | undefined): Promise<ManagedSessio
     const filePath = ref.endsWith(".jsonl") ? ref : `${ref.replace(/\/$/, "")}/session.jsonl`
     const dir = dirname(filePath)
     const id = basename(dir)
-    const scope = basename(dirname(dir))
-    return { dir, id, path: filePath, scope }
+    const workspace = basename(dirname(dir))
+    return { dir, id, path: filePath, workspace }
   }
   // Plain id — look up under current scope first, fall back to any scope.
-  const inScope = await sessionList({ cwd: cli.config.cwd, id: ref, sort: true })
-  const matches = inScope.length > 0 ? inScope : await sessionList({ id: ref, sort: true })
+  const inScope = await listSessions({ filter: { workspace: cli.config.cwd, id: ref }, sort: true })
+  const matches =
+    inScope.length > 0 ? inScope : await listSessions({ filter: { id: ref }, sort: true })
   if (matches.length === 0) {
     console.error(`no session found with id \`${ref}\``)
     process.exit(1)

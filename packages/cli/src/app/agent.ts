@@ -1,8 +1,8 @@
 import type { Agent } from "@zaly/agent"
+import type { Session } from "@zaly/agent/session"
 import type { Usage } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
-import type { Config } from "../config.ts"
-import type { LoadedSession } from "./session.ts"
+import type { Flags } from "../config.ts"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
@@ -29,22 +29,21 @@ const DEFAULT_TOOLS = [
  * model id is resolved against the session here (not in `resolveConfig`)
  * because the session has to be loaded async first.
  */
-export async function buildAgent(config: Config, preloaded: LoadedSession): Promise<Agent> {
+export async function buildAgent(config: Flags, session: Session): Promise<Agent> {
   const { createAgent } = await import("@zaly/agent")
   const { loadModel } = await import("@zaly/ai")
   const { resolveModelId } = await import("./model.ts")
-  const modelId = await resolveModelId(config, preloaded)
+  const modelId = await resolveModelId(config, session)
   const model = await loadModel(modelId, { apiKey: config.apiKey })
 
   const tools = config.tools ?? [...DEFAULT_TOOLS]
   const reasoning = config.reasoning ? { effort: config.reasoning } : undefined
 
   return createAgent({
-    messages: preloaded.messages,
     model,
     permissions: config.yolo ? { preset: "yolo" } : undefined,
     request: { reasoning },
-    session: preloaded.session,
+    session,
     tools,
   })
 }
