@@ -38,6 +38,9 @@ export function shouldLog(level: string, minLevel?: LogLevel): boolean {
 }
 
 export abstract class LoggerBase<T = void> implements LogApi<T> {
+  #installed = false
+  #saved: Partial<Record<LogLevel, LogFn>> = {}
+
   cancel!: LogFn<T>
   info!: LogFn<T>
   success!: LogFn<T>
@@ -55,4 +58,25 @@ export abstract class LoggerBase<T = void> implements LogApi<T> {
   }
 
   protected abstract _log(level: LogLevel, ...msg: unknown[]): T
+
+  install(): this {
+    if (this.#installed) return this
+    this.#installed = true
+    const c = console as unknown as Record<string, unknown>
+    for (const level of LOG_LEVELS) {
+      if (typeof c[level] !== "function") continue
+      this.#saved[level] = c[level] as LogFn
+      c[level] = this[level]
+    }
+    return this
+  }
+
+  uninstall(): this {
+    if (!this.#installed) return this
+    this.#installed = false
+    const c = console as unknown as Record<string, unknown>
+    for (const [level, fn] of Object.entries(this.#saved)) c[level] = fn
+    this.#saved = {}
+    return this
+  }
 }

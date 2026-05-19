@@ -5,7 +5,7 @@ import type { LogApi, LogFn, LogLevel } from "./levels.ts"
 
 import { log } from "../widgets/log.ts"
 import { inspect } from "./inspect.ts"
-import { LOG_LEVELS, LoggerBase, shouldLog } from "./levels.ts"
+import { LoggerBase, shouldLog } from "./levels.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
 export interface LoggerStream {
@@ -43,8 +43,6 @@ export class Logger extends LoggerBase {
   #stream?: LoggerStream
   #opts: LoggerOptions
   #factory: LogEntryFactory
-  #installed = false
-  #saved: Partial<Record<LogLevel, LogFn>> = {}
 
   constructor(opts: LoggerOptions = {}) {
     super()
@@ -59,31 +57,6 @@ export class Logger extends LoggerBase {
 
   detach(): this {
     this.#stream = undefined
-    return this
-  }
-
-  install(): this {
-    if (this.#installed) return this
-    this.#installed = true
-    const c = console as unknown as Partial<Record<LogLevel, LogFn>>
-    for (const level of LOG_LEVELS) {
-      const existing = c[level]
-      if (typeof existing !== "function") continue
-      this.#saved[level] = existing
-      c[level] = (...msg: unknown[]) => this._log(level, ...msg)
-    }
-    return this
-  }
-
-  uninstall(): this {
-    if (!this.#installed) return this
-    this.#installed = false
-    const c = console as unknown as Partial<Record<LogLevel, LogFn>>
-    for (const level of LOG_LEVELS) {
-      const saved = this.#saved[level]
-      if (saved) c[level] = saved
-    }
-    this.#saved = {}
     return this
   }
 
