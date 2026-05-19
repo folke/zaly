@@ -1,50 +1,77 @@
-import { encodePath, normPath } from "@zaly/shared"
+import { decodePath, encodePath, normPath, safeStatAsync } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { zalyPaths } from "@zaly/shared/paths"
-import { stat, mkdir } from "node:fs/promises"
-import { basename, dirname } from "pathe"
-import { uuidv7 } from "../utils/uuid.ts"
+import { mkdir, stat } from "node:fs/promises"
+import { basename, dirname, join, relative } from "pathe"
+import { isUuidv7Like, uuidv7 } from "../utils/uuid.ts"
 import { Session } from "./session.ts"
 
-export type ManagedSession = {
-  id: string
-  scope: string
+export type SessionInfo = {
+  /** uuidv7 session id. Absent for non-managed external paths until the
+   *  session is loaded — the file's session-start node carries the
+   *  authoritative id. */
+  id?: string
+  /** Absolute path to the session file. Typically within `zalyPaths.sessions`. */
   path: string
+  /** Data directory used for session artifacts */
   dir: string
-  cwd?: string
+  /** The session's workspace containing its .zaly/ resources */
+  workspace: string
+  /** Populated when listing with `sort: true` */
   mtime?: number
 }
 
-export type SessionScope = {
+export type SessionFilter = {
+  /** (partial) uuid for a session */
   id?: string
-  scope?: string
-  cwd?: string
-} & ({ scope: string } | { cwd: string }) // require at least one of scope or cwd
-
-export function projectScope(cwd?: string) {
-  return encodePath(normPath(cwd))
+  /** sessions with this workspace */
+  workspace?: string
+  /** glob pattern matching any workspace sessions */
+  pattern?: string
 }
 
-export async function sessionList(opts: Partial<SessionScope> & { sort?: boolean } = {}) {
-  const filter = opts.scope ?? (opts.cwd ? projectScope(opts.cwd) : undefined)
-  const root = normPath(`${zalyPaths.sessions}/${filter ?? ""}`)
+export type SessionListOpts = {
+  filter?: string | SessionFilter
+  sort?: boolean
+}
+
+async function toFilter(filter: string): Promise<SessionFilter> {
+  if (isUuidv7Like(filter)) return { id: filter }
+  const s = await safeStatAsync(filter)
+  if (s?.isDirectory()) return { workspace: filter }
+  return { pattern: filter }
+}
+
+function workspaceSlug(workspace?: string) {
+  return encodePath(normPath(workspace))
+}
+
+export async function listSessions(opts: SessionListOpts = {}) {
+  const filter = typeof opts.filter === "string" ? await toFilter(opts.filter) : (opts.filter ?? {})
+  let slug = filter.workspace ? workspaceSlug(filter.workspace) : undefined
+  slug ??= filter.pattern ? `*${filter.pattern}*` : undefined
+  slug ??= "*"
+  const isGlob = slug.includes("*")
+  const root = isGlob ? zalyPaths.sessions : join(zalyPaths.sessions, slug)
+
   const pattern: string[] = []
-  if (!filter) pattern.push("*")
-  pattern.push(opts.id ?? "*")
+  if (isGlob) pattern.push(slug)
+
+  if (filter.id) pattern.push(filter.id.length >= 36 ? filter.id.slice(0, 36) : `${filter.id}*`)
+  else pattern.push("*")
+
   pattern.push("session.jsonl")
+
   const paths = glob(pattern.join("/"), {
     cwd: root,
     depth: pattern.length,
     ignore: false,
     type: "file",
   })
-  const ret: ManagedSession[] = []
+  const ret: SessionInfo[] = []
   for await (const rel of paths) {
-    const path = normPath(`${root}/${rel}`)
-    const dir = dirname(path)
-    const id = basename(dir)
-    const scope = basename(dirname(dir))
-    ret.push({ dir, id, path, scope })
+    const path = normPath(root, rel)
+    ret.push(sessionInfo({ path }))
   }
   if (!opts.sort) return ret
   const stats = await Promise.all(
@@ -55,25 +82,50 @@ export async function sessionList(opts: Partial<SessionScope> & { sort?: boolean
     })
   )
   return stats
-    .filter((e): e is ManagedSession & { mtime: number } => e.mtime !== undefined)
+    .filter((e): e is SessionInfo & { mtime: number } => e.mtime !== undefined)
     .toSorted((a, b) => b.mtime - a.mtime) // newest first
 }
 
-export function sessionCreate(opts: SessionScope) {
-  const scope = opts.scope ?? projectScope(opts.cwd)
+export async function resumeSession(filter: string | SessionFilter): Promise<Session | undefined> {
+  const list = await listSessions({ filter, sort: true })
+  return list.length === 0 ? undefined : loadSession(list[0])
+}
+
+export async function loadSession(opts: Partial<SessionInfo> = {}): Promise<Session> {
+  const info = sessionInfo(opts)
+  await mkdir(info.dir, { recursive: true })
+  return Session.load({
+    defaults: {
+      cwd: normPath(),
+      sessionId: info.id,
+      workspace: info.workspace,
+    },
+    dir: info.dir,
+    path: info.path,
+  })
+}
+
+export function sessionInfo(opts: Partial<SessionInfo> = {}): SessionInfo {
+  if (opts.path && !relative(zalyPaths.sessions, opts.path).startsWith("..")) {
+    // Managed session
+    const path = normPath(opts.path)
+    const dir = normPath(opts.dir ?? dirname(path))
+    const id = opts.id ?? basename(dir)
+    const slug = basename(dirname(dir))
+    const workspace = normPath(opts.workspace ?? decodePath(slug))
+    return { dir, id, path, workspace }
+  } else if (opts.path) {
+    // Existing session, but not in a managed location
+    const path = normPath(opts.path)
+    const dir = normPath(opts.dir ?? dirname(path))
+    const workspace = normPath(opts.workspace)
+    return { dir, path, workspace }
+  }
+  // New session
+  const workspace = normPath(opts.workspace) // defaults to cwd
+  const slug = workspaceSlug(workspace)
   const id = opts.id ?? uuidv7()
-  const dir = normPath(`${zalyPaths.sessions}/${scope}/${id}`)
-  const path = normPath(`${dir}/session.jsonl`)
-  return sessionLoad({ cwd: opts.cwd, dir, id, path, scope })
-}
-
-export async function sessionResume(opts: SessionScope): Promise<Session | undefined> {
-  const scope = opts.scope ?? projectScope(opts.cwd)
-  const list = await sessionList({ scope, sort: true })
-  return list.length === 0 ? undefined : sessionLoad(list[0])
-}
-
-export async function sessionLoad(opts: ManagedSession): Promise<Session> {
-  await mkdir(opts.dir, { recursive: true })
-  return Session.load(opts)
+  const dir = opts.dir ? normPath(opts.dir) : normPath(zalyPaths.sessions, slug, id)
+  const path = normPath(dir, "session.jsonl")
+  return { dir, id, path, workspace }
 }

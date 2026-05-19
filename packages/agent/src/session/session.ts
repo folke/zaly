@@ -54,6 +54,7 @@ const VERSION = 1
  */
 export class Session<T extends SessionStore = SessionStore> extends Emitter<SessionEvents> {
   readonly #store: T
+  #opts: SessionInit<T>
   #id: string
   #dir: string
   #settings: SessionSettings = {}
@@ -64,10 +65,11 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
 
   protected constructor(opts: SessionInit<T>) {
     super()
+    this.#opts = opts
     this.#path = opts.path
     this.#store = opts.store
-    this.#id = opts.id ?? uuidv7()
-    this.#dir = normPath(opts.dir ?? join(zalyPaths.env.tmp, "sessions"))
+    this.#id = uuidv7()
+    this.#dir = normPath(opts.dir ?? join(zalyPaths.env.tmp, "sessions", this.#id))
   }
 
   /** Recommended one-step path: pick the right store backend, hydrate
@@ -82,12 +84,34 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   static async load(opts: SessionOptions & { path: string }): Promise<Session<JsonlStore>>
   static async load(opts?: SessionOptions & {}): Promise<Session<MemoryStore>>
   static async load(opts: SessionOptions = {}): Promise<Session> {
+    const session = await Session.create(opts)
+    await session.#rebuild()
+    return session
+  }
+
+  private static async create(opts: SessionOptions = {}): Promise<Session> {
     const path = opts.path ? normPath(opts.path) : undefined
     const store: SessionStore =
       opts.store ?? (path ? await JsonlStore.load(path) : new MemoryStore())
     const init: SessionInit = { ...opts, path, store }
-    const ret = new Session(init)
-    await ret.#rebuild()
+    return new Session(init)
+  }
+
+  /** Efficiently fetch the most recent user message by walking backward until we hit
+   * a user message, without reconstructing the full chain. Useful for a session picker. */
+  static async lastMessage(opts: SessionOptions = {}): Promise<Message<"user"> | undefined> {
+    const session = await Session.create(opts)
+    let ret: Message<"user"> | undefined
+    await session.#chain({
+      stop: (node) => {
+        if (node.type === "message" && node.message.role === "user") {
+          ret = node.message
+          return true
+        }
+        return false
+      },
+    })
+    void session.close()
     return ret
   }
 
@@ -119,10 +143,9 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#path
   }
 
-  /** Cumulative session meta as of the current head — derived from the
-   *  most recent `session-meta` snapshot in the active chain. */
+  /** Current session settings, merged with defaults. */
   get settings(): SessionSettings {
-    return this.#settings
+    return { ...this.#opts.defaults, ...this.#settings }
   }
 
   async update(settings: SessionUpdate, opts?: { force?: boolean }): Promise<string> {
@@ -263,12 +286,14 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     if (this.#closed) throw new Error("Session is closed")
 
     const next: SessionSettings = {
+      ...this.#opts.defaults,
       ...this.#settings,
       ...(node.type === "session-settings" ? node.settings : {}),
       sessionId: this.#id,
       version: VERSION,
     }
     if (next.cwd) next.cwd = normPath(next.cwd)
+    if (next.workspace) next.workspace = normPath(next.workspace)
 
     if (node.type === "session-settings") {
       if (!opts.force && isDeepStrictEqual(this.#settings, next)) return this.#store.root!.uuid
@@ -313,7 +338,12 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
    *    - `false`     — includes everything back to the root
    *  Returns chronological order. */
   async #chain(
-    opts: { active?: boolean; limit?: number; uuid?: string } = {}
+    opts: {
+      active?: boolean
+      limit?: number
+      uuid?: string
+      stop?: (node: SessionNode) => boolean
+    } = {}
   ): Promise<SessionView & { settings: SessionSettings }> {
     // Backward pass: collect raw nodes (new to old)
     const reverse: SessionNode[] = []
@@ -335,6 +365,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
         // update limit to the compact's tail
         limit = Math.min(limit, messageNodes.length + node.tail)
       }
+      if (opts.stop?.(node)) break
     }
 
     // Forward pass: decorate with cumulative meta. session-meta nodes

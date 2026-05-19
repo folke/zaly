@@ -59,3 +59,17 @@ export function uuidv7(): string {
   const hex = [...b].map((x) => x.toString(16).padStart(2, "0")).join("")
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
 }
+
+export function isUuidv7(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+}
+
+export function isUuidv7Like(s: string): boolean {
+  if (s.length < 7) return false
+  // First 12 chars of a v7 UUID is a timestamp
+  s = s.replace(/-/g, "").slice(0, 12).padEnd(12, "0").toLowerCase()
+  if (!/^[0-9a-f]+$/.test(s)) return false
+  const ts = parseInt(s, 16)
+  // Reject timestamps before 2026, and more than an hour in the future to allow for clock drift
+  return ts > Date.parse("2026-01-01T00:00:00Z") && ts < Date.now() + 3600 * 1000
+}

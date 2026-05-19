@@ -62,6 +62,7 @@ export type SessionSettings = {
   version?: number
   sessionId?: string
   cwd?: string
+  workspace?: string
   modelId?: string
   reasoning?: ReasoningEffort
 }
@@ -92,7 +93,6 @@ export type SessionEvents = {
 // ── Session ──────────────────────────────────────────────────────────────
 
 export type SessionOptions<T extends SessionStore = SessionStore> = {
-  id?: string
   store?: T
   /** JSONL file to persist the session to. If the file exists, its
    *  records are read into the DAG before any `add()` calls; either way
@@ -102,13 +102,11 @@ export type SessionOptions<T extends SessionStore = SessionStore> = {
   /** Per-session directory for artifacts produced during this session —
    *  bash command logs (when output exceeds the inline cap), subagent
    *  traces, cached attachments, and any other side-channel data tools
-   *  need to write somewhere session-scoped.
-   *
-   *  Layout: this is a *sibling* of the session's JSONL file, not its
-   *  parent. For a session with `path = <project>/<id>.jsonl`, the
-   *  artifacts dir is `<project>/<id>/`. Tools place their data inside
-   *  (e.g. `<dir>/bash-logs/<n>.log`). */
+   *  need to write somewhere session-scoped. */
   dir?: string
+  /** Initial session settings. Only used to fill in missing fields in the
+   * session's first `session-settings` node; */
+  defaults?: Omit<SessionSettings, "version">
 }
 
 export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions & {
