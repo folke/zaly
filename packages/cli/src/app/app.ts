@@ -1,10 +1,8 @@
 import type { Agent } from "@zaly/agent"
-import type { Session } from "@zaly/agent/session"
 import type { Usage } from "@zaly/ai"
-import type { Config } from "@zaly/config"
-import type { Input, Renderer, Theme } from "@zaly/tui"
+import type { Input, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
-import type { Flags } from "../flags.ts"
+import type { Context } from "../context.ts"
 
 import { createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
@@ -14,15 +12,8 @@ import { registerAgentActions, registerUiActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
 import { AttachmentBuffer } from "./attachments.ts"
 import { replay } from "./replay.ts"
-import { loadSession } from "./session.ts"
 import { bindStream } from "./stream.ts"
 import { submit } from "./submit.ts"
-
-export type AppContext = {
-  flags: Flags
-  config: Config
-  session: Session
-}
 
 /**
  * App = the long-lived glue between Agent and Renderer. Startup is
@@ -36,10 +27,7 @@ export type AppContext = {
  * completes, so typing during load is fine but Enter is a no-op.
  */
 export class App {
-  readonly #flags: Flags
-  #config!: Config
-
-  #theme!: Theme
+  #ctx: Context
   #renderer!: Renderer
   #input!: Input
 
@@ -53,22 +41,16 @@ export class App {
 
   readonly #attachments = new AttachmentBuffer()
 
-  private constructor(config: Flags) {
-    this.#flags = config
+  private constructor(ctx: Context) {
+    this.#ctx = ctx
   }
 
   static async start(cli: Cli): Promise<App> {
-    const app = new App(cli.flags)
-    app.#theme = await cli.loadTheme()
-    app.#config = await cli.config()
+    const app = new App(cli.ctx)
     await app.#initRenderer()
     app.#renderer.start()
     void app.#initSessionAndAgent()
     return app
-  }
-
-  get config() {
-    return this.#config
   }
 
   get log() {
@@ -83,9 +65,10 @@ export class App {
       // is contiguous with the visible region as long as autocomplete and
       // other transient widgets stay closed.
       fixedFooterHeight: 3,
-      theme: this.#theme,
+      theme: await this.#ctx.theme(),
     })
-    this.#renderer.logger.install()
+
+    await this.#ctx.setLogger(this.#renderer.log)
 
     const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
 
@@ -117,6 +100,10 @@ export class App {
     this.#input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
       if (trimmed === "" || this.#busy.get() || !this.#agent) return
+      if (!this.#agent.model) {
+        this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
+        return
+      }
       self.setState({ cursor: 0, value: "" })
       const refs = this.#attachments.consume(trimmed)
       submit(trimmed, refs, this.#agent, this.#renderer)
@@ -133,7 +120,7 @@ export class App {
    *  the agent (heavy). The user sees their conversation history
    *  before model resolution finishes. */
   async #initSessionAndAgent(): Promise<void> {
-    const session = await loadSession(this.#flags)
+    const session = await this.#ctx.session()
 
     // Replay the tail of a resumed conversation. 50 messages ≈ several
     // recent exchanges; older history stays in the session and is sent
@@ -142,8 +129,8 @@ export class App {
 
     await replay(tail, this.#renderer)
 
-    this.#agent = await buildAgent({ config: this.#config, flags: this.#flags, session })
-    this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
+    this.#agent = await buildAgent(this.#ctx)
+    this.#model.set(this.#agent.model?.id ?? "no model")
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }
@@ -186,10 +173,9 @@ export class App {
     this.#agentLifetime?.abort()
     await this.#agent?.dispose()
     this.#agent = undefined
-
-    const session = await loadSession(this.#flags)
-    this.#agent = await buildAgent({ config: this.#config, flags: this.#flags, session })
-    this.#model.set(this.#agent.model.id)
+    this.#ctx.reset("session")
+    this.#agent = await buildAgent(this.#ctx)
+    this.#model.set(this.#agent.model?.id ?? "no model")
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }

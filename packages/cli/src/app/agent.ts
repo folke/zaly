@@ -1,7 +1,7 @@
 import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
-import type { AppContext } from "./app.ts"
+import type { Context } from "../context.ts"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
@@ -13,13 +13,15 @@ import type { AppContext } from "./app.ts"
  * model id is resolved against the session here (not in `resolveConfig`)
  * because the session has to be loaded async first.
  */
-export async function buildAgent(ctx: AppContext): Promise<Agent> {
+export async function buildAgent(ctx: Context): Promise<Agent> {
   const { createAgent } = await import("@zaly/agent")
   const { loadModel } = await import("@zaly/ai")
-  const { resolveModelId } = await import("./model.ts")
-  const modelId = await resolveModelId(ctx.flags, ctx.session)
-  const model = await loadModel(modelId, { apiKey: ctx.flags.apiKey })
-  const settings = ctx.config.settings
+  const session = await ctx.session()
+  const config = await ctx.config()
+  const settings = config.settings
+
+  const modelId = ctx.flags.model ?? session.settings.modelId ?? settings.model
+  const model = modelId ? await loadModel(modelId, { apiKey: ctx.flags.apiKey }) : undefined
 
   const reasoning = settings.reasoning ? { effort: settings.reasoning } : undefined
 
@@ -27,8 +29,8 @@ export async function buildAgent(ctx: AppContext): Promise<Agent> {
     model,
     permissions: ctx.flags.yolo ? { preset: "yolo" } : undefined,
     request: { reasoning },
-    session: ctx.session,
-    skills: await ctx.config.resources.skills(),
+    session,
+    skills: await config.resources.skills(),
     tools: settings.tools,
   })
 }

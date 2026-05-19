@@ -1,15 +1,10 @@
 // oxlint-disable sort-keys
 
-import type { Config, Settings } from "@zaly/config"
-import type { Node, RenderCtx, Theme } from "@zaly/tui"
+import type { Settings } from "@zaly/config"
 import type { CamelCase } from "scule"
-import type { Flags } from "./flags.ts"
 
-import { createCtx, createRender } from "@zaly/tui"
-import { Logger } from "@zaly/tui/logger"
-import { defaultTheme, loadTheme } from "@zaly/tui/themes"
 import { defineCommand } from "citty"
-import { resolveConfig } from "./flags.ts"
+import { Context } from "./context.ts"
 
 // `CliArgs` is derived from the citty arg defs above so handlers can
 // read parsed flags type-safely without re-declaring the shape.
@@ -26,81 +21,26 @@ const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] a
  * `setup` hook and the lazy-loaded subcommand modules. Subcommands grab
  * `cli.config` when they run; bare invocation falls through to the TUI.
  */
-export class Cli extends Logger {
-  args!: CliArgs
-  #flags?: Flags
-  #config?: Promise<Config>
-  #ctx?: RenderCtx
-  #queue: Promise<unknown> = Promise.resolve()
-  #theme?: Theme
+export class Cli {
+  #args?: CliArgs
+  #ctx?: Context
 
-  constructor() {
-    super({
-      styles: {
-        log: { style: "text" },
-      },
-    })
-    this.attach({
-      append: (node) => {
-        // Reassign so `exit()` (and the next append) can await the tail.
-        // Discarding the chained promise — as `void this.#queue.then(...)`
-        // did — leaves `#queue` as the original `Promise.resolve()`,
-        // making `await this.#queue` a no-op and racing process.exit().
-        this.#queue = this.#queue
-          .then(() => this.#append(node))
-          .catch((error) => process.stderr.write(`Logger error: ${error}\n`))
-      },
-    })
-    // this.install()
+  set args(args: CliArgs) {
+    this.#args = args
   }
 
-  async loadTheme() {
-    const config = await this.config()
-    this.#theme ??= await loadTheme({
-      name: config.settings.theme,
-      dirs: await config.resources.themes(),
-    })
-    this.#theme ??= defaultTheme
-    return this.#theme
+  get args(): CliArgs {
+    if (!this.#args) throw new Error("CLI args not set")
+    return this.#args
   }
 
-  async #append(node: () => Node): Promise<void> {
-    this.#ctx ??= await createCtx({ theme: await this.loadTheme() })
-    const rows = await createRender(node, this.#ctx)
-    process.stdout.write(`${rows.join("\n")}\n`)
-  }
-
-  get flags(): Flags {
-    return (this.#flags ??= resolveConfig(this.args))
-  }
-
-  async config(): Promise<Config> {
-    if (this.#config) return this.#config
-    const { loadConfig } = await import("@zaly/config")
-    return (this.#config = loadConfig({
-      cwd: this.flags.cwd,
-      resources: {
-        plugins: this.flags.plugins,
-        themes: this.flags.themes,
-        prompts: this.flags.prompts,
-        skills: this.flags.skills,
-      },
-      settings: {
-        theme: this.flags.theme,
-        reasoning: this.flags.reasoning,
-        model: this.flags.model,
-        tools: this.flags.tools,
-      },
-    }))
-  }
-
-  async exit(code = 0): Promise<never> {
-    await this.#queue
-    process.exit(code)
+  get ctx(): Context {
+    this.#ctx ??= new Context(this.args)
+    return this.#ctx
   }
 
   async printConfig(): Promise<void> {
-    const config = await this.config()
+    const config = await this.ctx.config()
     const settings: Settings = {
       ...config.settings,
       plugins: await config.resources.plugins(),
@@ -109,12 +49,17 @@ export class Cli extends Logger {
       skills: await config.resources.skills(),
       packs: await config.resources.packs(),
     }
+    const { settingsReviverIssues } = await import("@zaly/config")
+    const issues = settingsReviverIssues(settings)
+    for (const issue of issues) {
+      console.warn(`- **${issue.path}**: ${issue.msg}`)
+    }
     const { codeToAnsi } = await import("@zaly/tui/shiki")
     const json = JSON.stringify(settings, undefined, 2)
-    const theme = await this.loadTheme()
+    const theme = await this.ctx.theme()
     const str = await codeToAnsi(json, "json", theme.shiki)
-    this.log(str.trim())
-    await this.exit()
+    this.ctx.log(str.trim())
+    await this.ctx.exit()
   }
 
   async listThemes(): Promise<void> {
@@ -123,8 +68,8 @@ export class Cli extends Logger {
     for (const name of themeRegistry.keys().toSorted()) {
       md.push(`- **${name}**`)
     }
-    this.log(md.join("\n"))
-    await this.exit()
+    this.ctx.log(md.join("\n"))
+    await this.ctx.exit()
   }
 }
 
