@@ -6,6 +6,7 @@ import { zalyPaths } from "@zaly/shared/paths"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
 import { ResourceManager } from "./resource/manager.ts"
+import { settingsReviver } from "./reviver.ts"
 import { validateSettings } from "./schemas/gen/settings.ts"
 import { merge } from "./utils.ts"
 
@@ -38,13 +39,16 @@ export async function loadSettings(dir: string): Promise<Settings | undefined> {
   const path = settingsPath(dir)
   const s = await stat(path).catch(() => undefined)
   if (!s?.isFile()) return
-  const data = await withError(() => readJson(path), `Failed to load settings from \`${path}\``)
+  const data = await withError(
+    () => readJson(path, settingsReviver),
+    `Failed to load settings from \`${path}\``
+  )
   return validateSettings(data)
 }
 
-export async function updateSettings(dir: string, settings: Settings): Promise<Settings> {
+export async function updateSettings(dir: string, patch: Settings): Promise<Settings> {
   const path = settingsPath(dir)
-  return await writeJson<Settings>(path, (prev) => merge({}, settings, prev))
+  return await writeJson<Settings>(path, (prev) => merge({}, patch, prev))
 }
 
 async function loadScope<T extends SettingsScope>(

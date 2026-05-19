@@ -1,4 +1,6 @@
 export type * from "./types.ts"
 export type * from "./resource/index.ts"
+export type { ReviverType, ReviverIssue } from "./reviver.ts"
 export * from "./config.ts"
 export * from "./state.ts"
+export { settingsReviverIssues } from "./reviver.ts"

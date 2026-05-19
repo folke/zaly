@@ -6,9 +6,21 @@ export type JsonArray = JsonValue[] | readonly JsonValue[]
 export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray
 
-export async function readJson<T extends JsonObject = JsonObject>(path: string): Promise<T> {
+/** Reviver type for JSON.parse.
+ *  - `this`: The value of the containing object at the time the reviver is called.
+ *  - `key`: The key of the property being processed.
+ *  - `value`: The value of the property being processed, after any transformations by previous reviver calls.
+ *
+ *  The reviver can return a transformed value to replace the original, or `undefined` to delete the property.
+ * */
+export type JsonReviver = (this: unknown, key: string, value: unknown) => unknown
+
+export async function readJson<T extends JsonObject = JsonObject>(
+  path: string,
+  reviver?: JsonReviver
+): Promise<T> {
   const text = await readFile(path, "utf8")
-  const ret = JSON.parse(text)
+  const ret = JSON.parse(text, reviver)
   if (typeof ret !== "object" || ret === null)
     throw new Error(`Expected JSON object at ${path}, got ${typeof ret}`)
   return ret
@@ -37,9 +49,10 @@ export async function writeJson<T extends JsonObject = JsonObject>(
 }
 
 export async function safeReadJson<T extends JsonObject = JsonObject>(
-  path: string
+  path: string,
+  reviver?: JsonReviver
 ): Promise<T | undefined> {
-  return readJson<T>(path).catch(() => undefined)
+  return readJson<T>(path, reviver).catch(() => undefined)
 }
 
 export async function safeWriteJson<T extends JsonObject = JsonObject>(
