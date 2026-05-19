@@ -119,7 +119,7 @@ export class Agent extends Emitter<AgentEvents> {
     this.#stopPolicy.attach(this)
     this.onEmitError = (error) => {
       // oxlint-disable-next-line no-console
-      console.error("Agent event handler threw an error", error)
+      console.error("Agent event handler threw an error:", error)
     }
     this.#ctx.attach(this)
   }
@@ -194,7 +194,7 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#ctx.cwd
   }
 
-  get model(): Model {
+  get model(): Model | undefined {
     return this.#ctx.model
   }
 
@@ -384,7 +384,9 @@ export class Agent extends Emitter<AgentEvents> {
       tools: await this.tools(),
     } satisfies Context
     await this.emitSerial("context", context)
-    return this.model.stream(context, this.#streamOpts())
+    const model = this.model
+    if (!model) throw new Error("model must be loaded to collect")
+    return model.stream(context, this.#streamOpts())
   }
 
   #shouldAutoCompact(): boolean {

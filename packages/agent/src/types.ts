@@ -124,7 +124,7 @@ export interface StepResult {
 
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
-  model: Model
+  model?: Model
   /** Session for the conversation.
    *  When omitted, a fresh in-memory Session is created. Either way,
    *  `messages` (if any) are appended to it. */

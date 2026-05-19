@@ -25,7 +25,7 @@ type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
 export class AgentContext {
   #agent?: Agent
   #opts: AgentOptions
-  #model: Model
+  #model?: Model
   #session: Session
   #cwd: string
   #skills?: Skills
@@ -43,10 +43,10 @@ export class AgentContext {
 
   constructor(opts: AgentContextOpts) {
     this.#opts = opts
-    this.#model = opts.model
     this.#cwd = normPath(opts.cwd)
     this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
     this.#session = opts.session
+    this.#model = opts.model
 
     this.$prompt = opts.prompt ?? [
       { template: "agent" },
@@ -61,6 +61,8 @@ export class AgentContext {
 
   private async start() {
     const [masker, notifier] = await Promise.all([this.masker(), this.notifier()])
+
+    if (!this.model) throw new Error("model is required to start agent session")
 
     if (masker) masker.attach(this.agent)
     if (notifier) notifier.attach(this.agent)
@@ -123,13 +125,13 @@ export class AgentContext {
     this.#session = s
   }
 
-  get model(): Model {
+  get model() {
     return this.#model
   }
 
-  set model(m: Model) {
+  set model(m: Model | undefined) {
     this.#model = m
-    void this.#session.update({ modelId: m.id })
+    if (m) void this.#session.update({ modelId: m.id })
   }
 
   async tools(): Promise<Tool[]> {
@@ -138,7 +140,9 @@ export class AgentContext {
       .filter((t): t is string => typeof t === "string")
       .filter((t) => !this.#tools.has(t))
     if (missing.length > 0) {
-      const toolInit = { cwd: this.cwd, model: this.model }
+      const model = this.model
+      if (!model) throw new Error("model must be loaded to load tools")
+      const toolInit = { cwd: this.cwd, model }
       const { toolRegistry } = await import("./tools/registry.ts")
       await Promise.all(
         missing.map(async (t) => {
@@ -159,7 +163,9 @@ export class AgentContext {
       .map((p) => p.template)
       .filter((p) => !this.#prompt.has(p))
     if (missing.length > 0) {
-      const promptCtx = { cwd: this.cwd, model: this.model }
+      const model = this.model
+      if (!model) throw new Error("model must be loaded to load prompts")
+      const promptCtx = { cwd: this.cwd, model }
       const { promptRegistry } = await import("./prompt/registry.ts")
       await Promise.all(
         missing.map(async (p) => {
