@@ -68,7 +68,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     this.#opts = opts
     this.#path = opts.path
     this.#store = opts.store
-    this.#id = uuidv7()
+    this.#id = opts.defaults?.sessionId ?? uuidv7()
     this.#dir = normPath(opts.dir ?? join(zalyPaths.env.tmp, "sessions", this.#id))
   }
 

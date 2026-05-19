@@ -10,7 +10,7 @@ export type SessionInfo = {
   /** uuidv7 session id. Absent for non-managed external paths until the
    *  session is loaded — the file's session-start node carries the
    *  authoritative id. */
-  id?: string
+  id: string
   /** Absolute path to the session file. Typically within `zalyPaths.sessions`. */
   path: string
   /** Data directory used for session artifacts */
@@ -119,7 +119,7 @@ export function sessionInfo(opts: Partial<SessionInfo> = {}): SessionInfo {
     const path = normPath(opts.path)
     const dir = normPath(opts.dir ?? dirname(path))
     const workspace = normPath(opts.workspace)
-    return { dir, path, workspace }
+    return { dir, id: uuidv7(), path, workspace }
   }
   // New session
   const workspace = normPath(opts.workspace) // defaults to cwd
