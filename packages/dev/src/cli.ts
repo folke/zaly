@@ -106,6 +106,7 @@ const main = defineCommand({
         description: "Update the current package (or all when run from root)",
       },
       run: async () => {
+        await exec(["bun", "update", "-r", "--latest"])
         for (const dir of pkgDirs()) {
           console.log(`Updating ${dir}...`)
           await exec(["bun", "update", "--cwd", dir, "--latest"])

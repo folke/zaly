@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
 import { readFileSync, statSync } from "node:fs"
-import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises"
 import { dirname, join, resolve } from "pathe"
 
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R
@@ -40,6 +40,7 @@ export function toError(err: unknown): Error {
 export const safeReadFile = safeFn((p: string) => readFile(p, "utf8"))
 export const safeReadFileSync = safeFn((path: string) => readFileSync(path, "utf8"))
 export const safeStat = safeFn(statSync)
+export const safeStatAsync = safeFn((p: string) => stat(p))
 
 /** JSON.stringify with two safety guarantees:
  *    1. BigInt values are coerced to their decimal string (default
