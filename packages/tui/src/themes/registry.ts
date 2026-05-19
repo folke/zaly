@@ -39,6 +39,7 @@ export async function loadTheme(
   o ??= DEFAULT_THEME
   const opts = typeof o === "string" ? { name: o } : o
 
+  if (opts.name === DEFAULT_THEME) return defaultTheme
   if (opts.name?.endsWith(".json")) return loadTheme({ path: opts.name })
   if (opts.path) return loadThemeFile(opts.path)
   if (opts.name) {
