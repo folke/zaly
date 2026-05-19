@@ -89,7 +89,7 @@ async function list(cli: Cli, args: ListArgs): Promise<void> {
   // Without `--all`, scope to the current cwd. With `--all`, omit the
   // filter so the manager walks every project scope.
   const sessions = await listSessions({
-    filter: args.all ? undefined : cli.config.cwd,
+    filter: args.all ? undefined : cli.flags.cwd,
     sort: true,
   })
   const filtered = args.pattern
@@ -162,7 +162,7 @@ async function resolve(cli: Cli, ref: string | undefined): Promise<SessionInfo> 
     return { dir, id, path: filePath, workspace }
   }
   // Plain id — look up under current scope first, fall back to any scope.
-  const inScope = await listSessions({ filter: { workspace: cli.config.cwd, id: ref }, sort: true })
+  const inScope = await listSessions({ filter: { workspace: cli.flags.cwd, id: ref }, sort: true })
   const matches =
     inScope.length > 0 ? inScope : await listSessions({ filter: { id: ref }, sort: true })
   if (matches.length === 0) {

@@ -31,6 +31,8 @@
     "test": "z test"
   },
   "dependencies": {
+    "@zaly/agent": "workspace:*",
+    "@zaly/ai": "workspace:*",
     "@zaly/shared": "workspace:*",
     "pathe": "^2.0.3"
   },

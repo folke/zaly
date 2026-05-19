@@ -1,23 +1,25 @@
+import type { ReasoningEffort } from "@zaly/ai"
 import type { ProjectPaths } from "@zaly/shared/paths"
 import type { ResourceManager } from "./resource/manager.ts"
 
 export type Settings = {
   $schema?: string
-  agent?: {}
-  ui?: {
-    /** Theme name or path to custom theme file */
-    theme?: string
-  }
-  resources?: {
-    packs?: string[]
-    plugins?: string[]
-    skills?: string[]
-    themes?: string[]
-    prompts?: string[]
-  }
+  model?: string
+  reasoning?: ReasoningEffort
+  tools?: string[]
+  /** Theme name or path to custom theme file */
+  theme?: string
+  /** Resources **/
+  packs?: string[]
+  plugins?: string[]
+  skills?: string[]
+  themes?: string[]
+  prompts?: string[]
 }
 
-export type LoadedSettings<T extends "user" | "project" = "user" | "project"> = {
+export type SettingsScope = "user" | "workspace" | "project"
+
+export type LoadedSettings<T extends SettingsScope = SettingsScope> = {
   type: T
   dir: string
   settings?: Settings
@@ -29,6 +31,7 @@ export type Config = {
   paths: ProjectPaths
   user: LoadedSettings<"user">
   project: LoadedSettings<"project">
+  workspace?: LoadedSettings<"workspace">
 }
 
 export type State = {

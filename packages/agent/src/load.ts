@@ -15,7 +15,10 @@ import { normPath } from "@zaly/shared"
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 const isInstance = <T>(v: unknown): v is T =>
-  typeof v === "object" && v !== null && Object.getPrototypeOf(v) !== Object.prototype
+  typeof v === "object" &&
+  v !== null &&
+  !Array.isArray(v) &&
+  Object.getPrototypeOf(v) !== Object.prototype
 
 type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
 
@@ -182,7 +185,7 @@ export class AgentContext {
     if (isInstance<Skills>(spec)) this.#skills = spec
     else {
       const { Skills } = await import("./skills.ts")
-      this.#skills = await Skills.load(spec)
+      this.#skills = await Skills.load({ paths: spec })
     }
     return this.#skills
   }

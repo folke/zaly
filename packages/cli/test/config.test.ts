@@ -1,7 +1,7 @@
 import type { CliArgs } from "../src/cli.ts"
 
 import { describe, expect, test } from "vitest"
-import { resolveConfig } from "../src/config.ts"
+import { resolveConfig } from "../src/flags.ts"
 
 const baseArgs = {
   _: [],

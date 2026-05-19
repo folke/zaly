@@ -9,56 +9,50 @@ export const SettingsSchema = {
                     $schema: {
                         type: "string"
                     },
-                    agent: {
-                        type: "object",
-                        properties: {},
-                        required: []
+                    model: {
+                        type: "string"
                     },
-                    ui: {
-                        type: "object",
-                        properties: {
-                            theme: {
-                                type: "string",
-                                description: "Theme name or path to custom theme file"
-                            }
-                        },
-                        required: []
+                    reasoning: {},
+                    tools: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        }
                     },
-                    resources: {
-                        type: "object",
-                        properties: {
-                            packs: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            },
-                            plugins: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            },
-                            skills: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            },
-                            themes: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            },
-                            prompts: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            }
+                    theme: {
+                        type: "string",
+                        description: "Theme name or path to custom theme file"
+                    },
+                    packs: {
+                        type: "array",
+                        items: {
+                            type: "string"
                         },
-                        required: []
+                        description: "Resources *"
+                    },
+                    plugins: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        }
+                    },
+                    skills: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        }
+                    },
+                    themes: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        }
+                    },
+                    prompts: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        }
                     }
                 },
                 required: []

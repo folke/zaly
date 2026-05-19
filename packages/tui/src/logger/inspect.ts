@@ -1,5 +1,6 @@
 import type { InspectOptions as NodeInspectOptions } from "node:util"
 
+import { hasColors } from "@zaly/shared/env"
 import { formatWithOptions } from "node:util"
 import { hasAnsi } from "../style/ansi.ts"
 
@@ -38,7 +39,7 @@ export function inspect(msg: unknown[], opts: InspectOptions = {}): string {
   // stream surface (which emits ANSI anyway), so `util.inspect`'s per-
   // token colors should pass through. Callers can still opt out via
   // `opts.inspect.colors = false`.
-  const inspectOpts: NodeInspectOptions = { colors: true, ...opts.inspect }
+  const inspectOpts: NodeInspectOptions = { colors: hasColors, ...opts.inspect }
 
   // oxlint-disable-next-line oxc/no-accumulating-spread
   let ret: unknown[] = []

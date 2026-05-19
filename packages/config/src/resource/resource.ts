@@ -1,5 +1,5 @@
 import type { Stats } from "node:fs"
-import type { Config, LoadedSettings } from "../types.ts"
+import type { LoadedSettings } from "../types.ts"
 
 import { normPath } from "@zaly/shared"
 import { isRemotePath, zalyPaths } from "@zaly/shared/paths"
@@ -69,15 +69,16 @@ export abstract class ResourceProvider {
 }
 
 export class ResourcePaths extends ResourceProvider {
-  #paths: NonNullable<Config["settings"]["resources"]>
+  #paths: Partial<Record<ResourceType, string[]>>
   #packs = new Map<string, ResourcePack>()
   #dir: string
 
   constructor(opts: LoadedSettings) {
     super()
     this.#dir = normPath(opts.dir)
-    this.#paths = opts.settings?.resources ?? {}
-    for (const p of this.#paths.packs ?? []) {
+    this.#paths = {}
+    for (const type of types) this.#paths[type] = opts.settings?.[type]
+    for (const p of opts.settings?.packs ?? []) {
       const dir = isRemotePath(p) ? zalyPaths.pluginPath(p) : normPath(this.#dir, p)
       this.#packs.set(p, new ResourcePack({ dir, source: p }))
     }

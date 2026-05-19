@@ -57,20 +57,19 @@ export class Skills {
   }
 
   static async load(opts?: SkillsOptions): Promise<Skills> {
-    const skills = new Skills(opts)
-    await skills.reload()
-    return skills
+    return new Skills(opts).reload()
   }
 
   /** (Re)scan project + user `.agent/skills/` directories. Wipes the
    *  current catalog and the cached tool, then repopulates. Safe to
    *  call mid-session — agent uses `this.tool` per-step so the next
    *  request after reload picks up the change. */
-  async reload(): Promise<void> {
+  async reload(): Promise<this> {
     this.catalog.clear()
     this.#tool = undefined
     const paths = this.#opts.paths ?? []
     await Promise.all(paths.map(async (path) => await this.add(path)))
+    return this
   }
 
   async add(path: string): Promise<void> {

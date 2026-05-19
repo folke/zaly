@@ -1,14 +1,15 @@
 // oxlint-disable sort-keys
 
+import type { Config, Settings } from "@zaly/config"
 import type { Node, RenderCtx, Theme } from "@zaly/tui"
 import type { CamelCase } from "scule"
-import type { Flags } from "./config.ts"
+import type { Flags } from "./flags.ts"
 
 import { createCtx, createRender } from "@zaly/tui"
 import { Logger } from "@zaly/tui/logger"
 import { defaultTheme, loadTheme } from "@zaly/tui/themes"
 import { defineCommand } from "citty"
-import { resolveConfig } from "./config.ts"
+import { resolveConfig } from "./flags.ts"
 
 // `CliArgs` is derived from the citty arg defs above so handlers can
 // read parsed flags type-safely without re-declaring the shape.
@@ -27,7 +28,8 @@ const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] a
  */
 export class Cli extends Logger {
   args!: CliArgs
-  #config?: Flags
+  #flags?: Flags
+  #config?: Promise<Config>
   #ctx?: RenderCtx
   #queue: Promise<unknown> = Promise.resolve()
   #theme?: Theme
@@ -53,7 +55,11 @@ export class Cli extends Logger {
   }
 
   async loadTheme() {
-    this.#theme ??= await loadTheme(this.config.theme)
+    const config = await this.config()
+    this.#theme ??= await loadTheme({
+      name: config.settings.theme,
+      dirs: await config.resources.themes(),
+    })
     this.#theme ??= defaultTheme
     return this.#theme
   }
@@ -64,8 +70,28 @@ export class Cli extends Logger {
     process.stdout.write(`${rows.join("\n")}\n`)
   }
 
-  get config(): Flags {
-    return (this.#config ??= resolveConfig(this.args))
+  get flags(): Flags {
+    return (this.#flags ??= resolveConfig(this.args))
+  }
+
+  async config(): Promise<Config> {
+    if (this.#config) return this.#config
+    const { loadConfig } = await import("@zaly/config")
+    return (this.#config = loadConfig({
+      cwd: this.flags.cwd,
+      resources: {
+        plugins: this.flags.plugins,
+        themes: this.flags.themes,
+        prompts: this.flags.prompts,
+        skills: this.flags.skills,
+      },
+      settings: {
+        theme: this.flags.theme,
+        reasoning: this.flags.reasoning,
+        model: this.flags.model,
+        tools: this.flags.tools,
+      },
+    }))
   }
 
   async exit(code = 0): Promise<never> {
@@ -74,7 +100,20 @@ export class Cli extends Logger {
   }
 
   async printConfig(): Promise<void> {
-    console.log(JSON.stringify(this.config, undefined, 2))
+    const config = await this.config()
+    const settings: Settings = {
+      ...config.settings,
+      plugins: await config.resources.plugins(),
+      themes: await config.resources.themes(),
+      prompts: await config.resources.prompts(),
+      skills: await config.resources.skills(),
+      packs: await config.resources.packs(),
+    }
+    const { codeToAnsi } = await import("@zaly/tui/shiki")
+    const json = JSON.stringify(settings, undefined, 2)
+    const theme = await this.loadTheme()
+    const str = await codeToAnsi(json, "json", theme.shiki)
+    this.log(str.trim())
     await this.exit()
   }
 
@@ -115,6 +154,26 @@ export function mainCommand(cli: Cli) {
       session: {
         type: "string",
         description: "Session id, file path, cwd or glob pattern to resume",
+      },
+      "no-skills": {
+        type: "boolean",
+        description: "Don't load any skills",
+      },
+      "no-plugins": {
+        type: "boolean",
+        description: "Don't load any plugins",
+      },
+      "no-themes": {
+        type: "boolean",
+        description: "Don't load any themes",
+      },
+      "no-prompts": {
+        type: "boolean",
+        description: "Don't load any prompts",
+      },
+      "no-packs": {
+        type: "boolean",
+        description: "Don't load any resource packs",
       },
       tools: {
         type: "string",

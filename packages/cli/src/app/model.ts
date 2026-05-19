@@ -1,5 +1,5 @@
 import type { Session } from "@zaly/agent/session"
-import type { Flags } from "../config.ts"
+import type { Flags } from "../flags.ts"
 
 import { loadState, updateState } from "@zaly/config"
 

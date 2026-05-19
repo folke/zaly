@@ -31,7 +31,7 @@ themeRegistry.register("ansi", async () => defaults)
  * theme returns just `defaults` (no palette).
  */
 export async function loadTheme(name?: string): Promise<Theme>
-export async function loadTheme(opts: { name: string; dirs?: string[] }): Promise<Theme>
+export async function loadTheme(opts: { name?: string; dirs?: string[] }): Promise<Theme>
 export async function loadTheme(opts: { path: string }): Promise<Theme>
 export async function loadTheme(
   o?: string | { name?: string; dirs?: string[]; path?: string }
@@ -40,7 +40,7 @@ export async function loadTheme(
   const opts = typeof o === "string" ? { name: o } : o
 
   if (opts.name?.endsWith(".json")) return loadTheme({ path: opts.name })
-
+  if (opts.path) return loadThemeFile(opts.path)
   if (opts.name) {
     const files = (opts.dirs ?? []).map((dir) => resolve(dir, `${opts.name}.json`))
     const file = files.find((path) => safeStat(path)?.isFile())
@@ -51,8 +51,7 @@ export async function loadTheme(
     )
   }
 
-  if (opts.path) return loadThemeFile(opts.path)
-  throw new Error("No theme name or path provided")
+  return defaultTheme
 }
 
 /**

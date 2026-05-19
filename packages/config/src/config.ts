@@ -1,4 +1,5 @@
-import type { Config, Settings } from "./types.ts"
+import type { ResourceType } from "./resource/resource.ts"
+import type { Config, LoadedSettings, Settings, SettingsScope } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
 import { zalyPaths } from "@zaly/shared/paths"
@@ -7,6 +8,27 @@ import { join } from "pathe"
 import { ResourceManager } from "./resource/manager.ts"
 import { validateSettings } from "./schemas/gen/settings.ts"
 import { merge } from "./utils.ts"
+
+const defaults: Settings = {
+  model: "openai/gpt-5.5",
+  reasoning: "low",
+  theme: "tokyonight-moon",
+  tools: [
+    "bash",
+    "edit",
+    "fetch",
+    "read",
+    "search",
+    "subagent",
+    "agent_send",
+    "agent_spawn",
+    "task_list",
+    "task_poll",
+    "task_stop",
+    "wakeup",
+    "write",
+  ] as const,
+}
 
 function settingsPath(dir: string) {
   return normPath(dir, "settings.json")
@@ -25,28 +47,55 @@ export async function updateSettings(dir: string, settings: Settings): Promise<S
   return await writeJson<Settings>(path, (prev) => merge({}, settings, prev))
 }
 
-export async function loadConfig(cwd?: string): Promise<Config> {
-  cwd = normPath(cwd)
-  const userSettings = await loadSettings(zalyPaths.config)
+async function loadScope<T extends SettingsScope>(
+  dir: string,
+  scope: T,
+  exists?: boolean
+): Promise<LoadedSettings<T>> {
+  return { dir, settings: exists !== false ? await loadSettings(dir) : undefined, type: scope }
+}
 
+export type LoadConfigOpts = {
+  cwd?: string
+  workspace?: string
+  /** Settings to override coming from CLI flags. */
+  settings?: Settings
+  resources?: Partial<Record<ResourceType, boolean>>
+}
+
+export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
+  const cwd = normPath(opts.cwd)
   const paths = zalyPaths.project(cwd)
-  const projectSettings = paths.dotZaly ? await loadSettings(paths.dotZaly) : undefined
+
+  const user = await loadScope(zalyPaths.config, "user")
+  const project = await loadScope(
+    paths.dotZaly ?? join(paths.root, ".zaly"),
+    "project",
+    paths.dotZaly !== undefined
+  )
+
+  const wsDotZaly = opts.workspace ? zalyPaths.project(opts.workspace).dotZaly : undefined
+  const wsDir = opts.workspace ? (wsDotZaly ?? join(opts.workspace, ".zaly")) : undefined
+  const workspace =
+    wsDir && wsDir !== project.dir // Only load if workspace is different from project
+      ? await loadScope(wsDir, "workspace", wsDotZaly !== undefined)
+      : undefined
 
   // oxlint-disable-next-line sort-keys
   const config: Omit<Config, "resources"> = {
-    settings: merge({}, projectSettings ?? {}, userSettings ?? {}),
+    settings: merge(
+      {},
+      opts.settings,
+      project.settings,
+      workspace?.settings,
+      user.settings,
+      defaults
+    ),
     paths,
-    user: {
-      dir: zalyPaths.config,
-      settings: userSettings,
-      type: "user",
-    },
-    project: {
-      dir: paths.dotZaly ?? join(paths.root, ".zaly"),
-      settings: projectSettings,
-      type: "project",
-    },
+    user,
+    project,
+    workspace,
   }
 
-  return { ...config, resources: new ResourceManager(config) }
+  return { ...config, resources: new ResourceManager(config, opts) }
 }

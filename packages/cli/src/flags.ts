@@ -1,8 +1,7 @@
+import type { ReasoningEffort } from "@zaly/ai"
 import type { CliArgs } from "./cli.ts"
 
 import { normPath } from "@zaly/shared"
-
-export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh"
 
 export interface Flags {
   cwd?: string
@@ -20,6 +19,10 @@ export interface Flags {
   /** Use the `yolo` permissions preset. Default `false`. */
   yolo: boolean
   session?: string
+  skills: boolean
+  themes: boolean
+  prompts: boolean
+  plugins: boolean
   new?: boolean
 }
 
@@ -38,9 +41,13 @@ export function resolveConfig(args: CliArgs): Flags {
     cwd: args.cwd ? normPath(args.cwd) : undefined,
     model: args.model,
     new: args.new,
+    plugins: args.plugins !== false, // default true
+    prompts: args.prompts !== false, // default true
     reasoning: args.reasoning ?? args.thinking,
     session: args.session,
+    skills: args.skills !== false, // default true
     theme: args.theme,
+    themes: args.themes !== false, // default true
     tools: tools?.length ? tools : undefined,
     yolo: args.yolo === true,
   }

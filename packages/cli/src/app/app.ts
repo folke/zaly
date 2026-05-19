@@ -1,8 +1,10 @@
 import type { Agent } from "@zaly/agent"
+import type { Session } from "@zaly/agent/session"
 import type { Usage } from "@zaly/ai"
+import type { Config } from "@zaly/config"
 import type { Input, Renderer, Theme } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
-import type { Flags } from "../config.ts"
+import type { Flags } from "../flags.ts"
 
 import { createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
@@ -16,6 +18,12 @@ import { loadSession } from "./session.ts"
 import { bindStream } from "./stream.ts"
 import { submit } from "./submit.ts"
 
+export type AppContext = {
+  flags: Flags
+  config: Config
+  session: Session
+}
+
 /**
  * App = the long-lived glue between Agent and Renderer. Startup is
  * split into three phases so the UI paints before the agent loads:
@@ -28,7 +36,9 @@ import { submit } from "./submit.ts"
  * completes, so typing during load is fine but Enter is a no-op.
  */
 export class App {
-  readonly #config: Flags
+  readonly #flags: Flags
+  #config!: Config
+
   #theme!: Theme
   #renderer!: Renderer
   #input!: Input
@@ -44,16 +54,21 @@ export class App {
   readonly #attachments = new AttachmentBuffer()
 
   private constructor(config: Flags) {
-    this.#config = config
+    this.#flags = config
   }
 
   static async start(cli: Cli): Promise<App> {
-    const app = new App(cli.config)
+    const app = new App(cli.flags)
     app.#theme = await cli.loadTheme()
+    app.#config = await cli.config()
     await app.#initRenderer()
     app.#renderer.start()
     void app.#initSessionAndAgent()
     return app
+  }
+
+  get config() {
+    return this.#config
   }
 
   get log() {
@@ -118,7 +133,7 @@ export class App {
    *  the agent (heavy). The user sees their conversation history
    *  before model resolution finishes. */
   async #initSessionAndAgent(): Promise<void> {
-    const session = await loadSession(this.#config)
+    const session = await loadSession(this.#flags)
 
     // Replay the tail of a resumed conversation. 50 messages ≈ several
     // recent exchanges; older history stays in the session and is sent
@@ -127,7 +142,7 @@ export class App {
 
     await replay(tail, this.#renderer)
 
-    this.#agent = await buildAgent(this.#config, session)
+    this.#agent = await buildAgent({ config: this.#config, flags: this.#flags, session })
     this.#model.set(`${this.#agent.model.id}:${this.#agent.model.provider.id}`)
 
     this.#agentLifetime = new AbortController()
@@ -172,8 +187,8 @@ export class App {
     await this.#agent?.dispose()
     this.#agent = undefined
 
-    const preloaded = await loadSession(this.#config)
-    this.#agent = await buildAgent(this.#config, preloaded)
+    const session = await loadSession(this.#flags)
+    this.#agent = await buildAgent({ config: this.#config, flags: this.#flags, session })
     this.#model.set(this.#agent.model.id)
 
     this.#agentLifetime = new AbortController()

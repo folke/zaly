@@ -1,5 +1,5 @@
 import type { Session } from "@zaly/agent/session"
-import type { Flags } from "../config.ts"
+import type { Flags } from "../flags.ts"
 
 import { loadSession as $loadSession, resumeSession } from "@zaly/agent/session"
 import { normPath, safeStatAsync } from "@zaly/shared"
@@ -27,7 +27,6 @@ export async function loadSession(flags: Flags): Promise<Session> {
   }
 
   const session = await resumeSession(filter)
-  console.log(session?.messages.length, session?.path)
 
   if (!session && flags.session) throw new Error(`No session found for \`${flags.session}\``)
 
