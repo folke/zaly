@@ -39,13 +39,13 @@ export async function loadTheme(
   o ??= DEFAULT_THEME
   const opts = typeof o === "string" ? { name: o } : o
 
-  if (opts.name === DEFAULT_THEME) return defaultTheme
   if (opts.name?.endsWith(".json")) return loadTheme({ path: opts.name })
   if (opts.path) return loadThemeFile(opts.path)
   if (opts.name) {
     const files = (opts.dirs ?? []).map((dir) => resolve(dir, `${opts.name}.json`))
     const file = files.find((path) => safeStat(path)?.isFile())
     if (file) return loadThemeFile(file)
+    if (opts.name === DEFAULT_THEME) return defaultTheme
     if (themeRegistry.has(opts.name)) return resolveTheme(await themeRegistry.load(opts.name))
     throw new Error(
       `Theme "${opts.name}" not found. Searched:\n${files.map((p) => `  - ${p}`).join("\n")}`
