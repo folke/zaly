@@ -2,8 +2,7 @@ import type { HexColor, RGB } from "./types.ts"
 
 import { clamp } from "@zaly/shared"
 
-const hexByte = (n: number): string =>
-  clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0")
+const hexByte = (n: number): string => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0")
 
 export function toHex(c: RGB): HexColor
 export function toHex(r: number, g: number, b: number): HexColor

@@ -43,10 +43,7 @@ const lastToolPart = (agent: Agent) => {
   return undefined
 }
 
-const validate = (
-  input: string,
-  rules: { pattern: string; policy: "allow" | "deny" | "ask" }[]
-) =>
+const validate = (input: string, rules: { pattern: string; policy: "allow" | "deny" | "ask" }[]) =>
   toolHandler.validate(input, {
     cwd: "/x",
     rules: rules.map((r) => ({ ...r, scope: "tool" as const })),
@@ -56,7 +53,6 @@ const validate = (
   })
 
 describe("toolHandler — direct", () => {
-
   test("default verdict is allow when no rule matches", () => {
     expect(validate("any-tool", [])).toEqual({ verdict: "allow" })
   })

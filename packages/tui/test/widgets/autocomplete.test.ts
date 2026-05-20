@@ -182,7 +182,6 @@ describe("autocomplete", () => {
     await Promise.resolve()
     expect(ac.open).toBe(true)
 
-
     expect(ac.menu.state.active).toBe(0)
     void i.emit("key", { key: keyEv("down") })
     expect(ac.menu.state.active).toBe(1)

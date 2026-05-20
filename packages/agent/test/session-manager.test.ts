@@ -4,12 +4,7 @@ import { rm, stat, utimes } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import {
-  Session,
-  listSessions,
-  loadSession,
-  resumeSession,
-} from "../src/session/index.ts"
+import { Session, listSessions, loadSession, resumeSession } from "../src/session/index.ts"
 
 // Redirect ZALY_ROOT to a per-suite tmpdir so tests can never touch the
 // real ~/.zaly/. The whole tree gets nuked in afterAll regardless of
