@@ -40,12 +40,13 @@ export type Settings = {
     deny?: string[]
     ask?: string[]
   }
-  /** Resources **/
-  packs?: string[]
-  plugins?: string[]
-  skills?: string[]
-  themes?: string[]
-  prompts?: string[]
+  resources?: {
+    packs?: string[] | false
+    plugins?: string[] | false
+    skills?: string[] | false
+    themes?: string[] | false
+    prompts?: string[] | false
+  }
 }
 
 export type SettingsScope = "user" | "workspace" | "project"

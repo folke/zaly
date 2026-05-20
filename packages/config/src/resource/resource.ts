@@ -69,16 +69,17 @@ export abstract class ResourceProvider {
 }
 
 export class ResourcePaths extends ResourceProvider {
-  #paths: Partial<Record<ResourceType, string[]>>
+  #paths: Partial<Record<ResourceType, string[]>> = {}
   #packs = new Map<string, ResourcePack>()
   #dir: string
 
   constructor(opts: LoadedSettings) {
     super()
     this.#dir = normPath(opts.dir)
-    this.#paths = {}
-    for (const type of types) this.#paths[type] = opts.settings?.[type]
-    for (const p of opts.settings?.packs ?? []) {
+    const res = opts.settings?.resources ?? {}
+    const resolve = (t: ResourceType | "packs") => (Array.isArray(res[t]) ? res[t] : [])
+    for (const type of types) this.#paths[type] = resolve(type)
+    for (const p of resolve("packs")) {
       const dir = isRemotePath(p) ? zalyPaths.pluginPath(p) : normPath(this.#dir, p)
       this.#packs.set(p, new ResourcePack({ dir, source: p }))
     }

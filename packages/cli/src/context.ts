@@ -78,17 +78,19 @@ export class Context extends LoggerBase {
   config(): Promise<Config> {
     return this.#cache.need("config", async () => {
       const { loadConfig } = await import("@zaly/config")
+      // oxlint-disable-next-line unicorn/consistent-function-scoping
+      const falsy = (v?: boolean) => (v === false ? v : undefined)
       return loadConfig({
         cwd: this.flags.cwd,
-        resources: {
-          plugins: this.flags.plugins,
-          prompts: this.flags.prompts,
-          skills: this.flags.skills,
-          themes: this.flags.themes,
-        },
         settings: {
           model: this.flags.model,
           reasoning: this.flags.reasoning,
+          resources: {
+            plugins: falsy(this.flags.plugins),
+            prompts: falsy(this.flags.prompts),
+            skills: falsy(this.flags.skills),
+            themes: falsy(this.flags.themes),
+          },
           theme: this.flags.theme,
           tools: this.flags.tools,
         },

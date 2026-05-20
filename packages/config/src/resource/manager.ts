@@ -31,7 +31,7 @@ export class ResourceManager extends ResourceProvider {
         (dir) =>
           new ResourcePaths({
             dir,
-            settings: { skills: ["skills"] },
+            settings: { resources: { skills: ["skills"] } },
             type: opts.type,
           })
       )
@@ -52,7 +52,7 @@ export class ResourceManager extends ResourceProvider {
   }
 
   async _get(type: ResourceType): Promise<string[]> {
-    if (this.#opts.resources?.[type] === false) return []
+    if (this.#opts.settings?.resources?.[type] === false) return []
     const ret = await Promise.all(this.#providers.map(async (res) => res[type]()))
     return ret.flat()
   }

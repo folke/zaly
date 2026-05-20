@@ -43,11 +43,13 @@ export class Cli {
     const config = await this.ctx.config()
     const settings: Settings = {
       ...config.settings,
-      plugins: await config.resources.plugins(),
-      themes: await config.resources.themes(),
-      prompts: await config.resources.prompts(),
-      skills: await config.resources.skills(),
-      packs: await config.resources.packs(),
+      resources: {
+        plugins: await config.resources.plugins(),
+        themes: await config.resources.themes(),
+        prompts: await config.resources.prompts(),
+        skills: await config.resources.skills(),
+        packs: await config.resources.packs(),
+      },
     }
     const { settingsReviverIssues } = await import("@zaly/config")
     const issues = settingsReviverIssues(settings)

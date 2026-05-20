@@ -1,4 +1,3 @@
-import type { ResourceType } from "./resource/resource.ts"
 import type { Config, LoadedSettings, Settings, SettingsScope } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
@@ -44,7 +43,6 @@ export type LoadConfigOpts = {
   workspace?: string
   /** Settings to override coming from CLI flags. */
   settings?: Settings
-  resources?: Partial<Record<ResourceType, boolean>>
 }
 
 export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
