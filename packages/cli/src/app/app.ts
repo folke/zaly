@@ -65,6 +65,9 @@ export class App {
       // is contiguous with the visible region as long as autocomplete and
       // other transient widgets stay closed.
       fixedFooterHeight: 3,
+      logger: {
+        wrap: (node) => box({ padding: [1, 0, 0, 0] }, node),
+      },
       theme: await this.#ctx.theme(),
     })
 

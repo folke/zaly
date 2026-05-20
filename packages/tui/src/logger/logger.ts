@@ -26,6 +26,7 @@ export interface LoggerOptions extends InspectOptions {
   styles?: Partial<Record<LogLevel, LogStyleOverride>>
   /** Override the node produced per entry. Default uses `log()`. */
   factory?: LogEntryFactory
+  wrap?: (node: Node) => Node
   /** Fallback writer for when no stream is attached. Defaults to
    *  `process.stdout/stderr`. Injectable for tests. */
   write?: (text: string, kind: "stdout" | "stderr") => void
@@ -63,7 +64,10 @@ export class Logger extends LoggerBase {
   protected _log(level: LogLevel, ...msg: unknown[]): void {
     if (!shouldLog(level, this.#opts.minLevel)) return
     if (this.#stream) {
-      this.#stream.append(() => this.#factory(level, msg))
+      this.#stream.append(() => {
+        const node = this.#factory(level, msg)
+        return this.#opts.wrap?.(node) ?? node
+      })
       return
     }
     this.#writeFallback(level, msg)
