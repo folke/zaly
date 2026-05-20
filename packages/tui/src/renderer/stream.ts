@@ -10,8 +10,11 @@ import {
   SuspenseContext,
   withOwner,
 } from "../core/reactive.ts"
-import { createRender } from "../core/render.ts"
 import { Surface } from "./surface.ts"
+
+export type StreamEvents = {
+  idle: void
+}
 
 type RenderState = {
   node: Node
@@ -68,10 +71,13 @@ export type StreamOptions = {
  * promotion). So growth of the stream always flows through the bottom
  * row with a `\n`-prefix write per new row.
  */
-export class Stream extends Surface {
+export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
+  #queue: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
+  // oxlint-disable-next-line no-unused-private-class-members
+  #pumpScheduled?: Promise<void>
   /** Bottom row of the live region the last time we painted. Used to
    *  compute where `#rows` actually live on screen when the footer
    *  resizes between renders (scrollBottom moves). Without this we'd
@@ -130,11 +136,11 @@ export class Stream extends Surface {
         return node()
       })
     )
-    resolved.on("invalidate", this.onDirty)
-    this.#state.push({ boundary, live: true, node: resolved })
+    this.#queue.push({ boundary, live: true, node: resolved })
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
-    this.commit({ keep: this.#opts.maxLive, render: false })
+    resolved.on("invalidate", this.onDirty)
+    //this.commit({ keep: this.#opts.maxLive, render: false })
     void this.emit("dirty")
     return resolved
   }
@@ -149,6 +155,11 @@ export class Stream extends Surface {
     return this.#state.map((s) => s.node)
   }
 
+  async waitIdle(): Promise<void> {
+    if (!this.asyncPending && this.#queue.length === 0) return
+    await new Promise((resolve) => this.once("idle", resolve))
+  }
+
   /**
    * Rows currently painted in the live region, top-to-bottom. Bottom
    * of the returned array aligns with `terminal.scrollBottom`. Exposed
@@ -160,6 +171,7 @@ export class Stream extends Surface {
 
   async render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn) => this.terminal.sync(fn))
+
     // Snapshot in case new appends land mid-render.
     const states = [...this.#state]
     const ctx = this.getCtx()
@@ -174,9 +186,7 @@ export class Stream extends Surface {
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
           const len = s.rows?.length ?? 0
-          s.rows = s.live
-            ? await s.node.render(ctx)
-            : await createRender(s.node, { ...ctx, boundary: s.boundary })
+          s.rows = await s.node.render(ctx)
           if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
           s.version = ctx.version
         }
@@ -319,6 +329,29 @@ export class Stream extends Surface {
       dropped += len
     }
     this.#scrollbackCount = newCC - dropped
+    this.pump()
+  }
+
+  pump() {
+    const active = this.#state.filter((s) => s.boundary.active())
+    // When no async work is pending, schedule the next queued node
+    if (active.length) {
+      this.#pumpScheduled ??= Promise.all(active.map((s) => s.boundary.whenIdle())).then(() => {
+        this.#pumpScheduled = undefined
+        this.pump()
+      })
+    } else {
+      const next = this.#queue.shift()
+      if (next) {
+        this.#state.push(next)
+        this.commit({ keep: this.#opts.maxLive, render: false })
+        this.onDirty()
+      } else void this.emit("idle")
+    }
+  }
+
+  get asyncPending() {
+    return this.#state.some((s) => s.boundary.active())
   }
 
   /** Detach invalidate listener and mark non-live.

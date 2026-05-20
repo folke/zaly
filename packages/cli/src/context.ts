@@ -81,7 +81,6 @@ export class Context extends LoggerBase {
       // oxlint-disable-next-line unicorn/consistent-function-scoping
       const falsy = (v?: boolean) => (v === false ? v : undefined)
       return loadConfig({
-        cwd: this.flags.cwd,
         settings: {
           model: this.flags.model,
           reasoning: this.flags.reasoning,

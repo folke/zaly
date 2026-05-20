@@ -11,7 +11,7 @@ import { userMessage } from "../widgets/user.ts"
 export async function replay(messages: readonly Message[], renderer: Renderer) {
   const nodes = [...toWidgets(messages)]
   const len = 8
-  const tail = nodes.splice(-len, len)
+  const tail = nodes.slice(-len)
 
   const over = renderer.overlay
     .add(() =>
@@ -27,21 +27,11 @@ export async function replay(messages: readonly Message[], renderer: Renderer) {
       )
     )
     .show()
-  await renderer.render()
-
-  await Promise.resolve()
-
-  for (const node of nodes) {
-    renderer.stream.append(node)
-    // oxlint-disable-next-line no-await-in-loop
-    await Promise.resolve()
-  }
 
   await renderer.render()
-
+  for (const node of nodes) renderer.stream.append(node)
+  await renderer.stream.waitIdle()
   renderer.overlay.remove(over)
-  //for (const node of over.children) renderer.stream.append(() => node)
-  for (const node of tail) renderer.stream.append(node)
 }
 
 /**
