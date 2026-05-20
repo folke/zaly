@@ -111,8 +111,8 @@ export class App {
     })
 
     this.#input.on("attach", ({ attachment: att }, self) => {
-      if (!this.#agent) return
-      void this.#attachments.stage(att, self, this.#agent)
+      if (!this.#agent?.model) return
+      void this.#attachments.stage(att, self, this.#agent.model)
     })
   }
 

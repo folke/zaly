@@ -1,5 +1,4 @@
-import type { Agent } from "@zaly/agent"
-import type { Attachment } from "@zaly/ai"
+import type { Attachment, Model } from "@zaly/ai"
 import type { Input } from "@zaly/tui"
 
 import { readFile } from "node:fs/promises"
@@ -41,14 +40,14 @@ export class AttachmentBuffer {
   async stage(
     att: { kind: "image" | "file"; path: string; type: string },
     input: Input,
-    agent: Agent
+    model: Model
   ): Promise<void> {
     const isImage = att.kind === "image" || att.type.startsWith("image/")
     const isPdf =
       att.kind === "file" &&
       (att.type === "application/pdf" || att.path.toLowerCase().endsWith(".pdf"))
 
-    if (isImage && agent.model.canAttach("image")) {
+    if (isImage && model.canAttach("image")) {
       const { toImagePart } = await import("@zaly/ai")
       const { fileDetect } = await import("@zaly/shared/detect")
       const detected = await fileDetect(att.path)
@@ -69,7 +68,7 @@ export class AttachmentBuffer {
       return
     }
 
-    if (isPdf && agent.model.canAttach("pdf")) {
+    if (isPdf && model.canAttach("pdf")) {
       const { toPdfPart } = await import("@zaly/ai")
       const data = await readFile(att.path).catch((error: unknown) => {
         console.error(`couldn't read **PDF** \`${att.path}\`: ${(error as Error).message}`)

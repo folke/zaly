@@ -109,6 +109,7 @@ export class Compaction {
 
   async #summarize(message: Message<"user">): Promise<string> {
     const model = this.#agent.model
+    if (!model) throw new Error("model must be loaded to compact")
     const m = await model.stream(
       {
         messages: [message],

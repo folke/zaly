@@ -1,26 +1,28 @@
 import type { Model, ReasoningEffort, Tool } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { AgentStatus } from "./events.ts"
-import type { Masker } from "./masker.ts"
-import type { Notifier } from "./notify.ts"
-import type { PermissionManager } from "./permissions/manager.ts"
+import type { Masker, MaskOptions } from "./masker.ts"
+import type { Notifier, NotifyOptions } from "./notify.ts"
+import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
 import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
-import type { Skills } from "./skills.ts"
+import type { Skills, SkillsOptions } from "./skills.ts"
 import type { Swarm } from "./swarm.ts"
 import type { AnyTool } from "./tools/registry.ts"
 import type { AgentOptions } from "./types.ts"
 
-import { normPath } from "@zaly/shared"
-
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-const isInstance = <T>(v: unknown): v is T =>
-  typeof v === "object" &&
-  v !== null &&
-  !Array.isArray(v) &&
-  Object.getPrototypeOf(v) !== Object.prototype
+import { normPath, isInstance } from "@zaly/shared"
+import { LazyCache } from "@zaly/shared/cache"
 
 type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
+
+type Slots = {
+  notifier: Notifier
+  masker: Masker
+  permissions: PermissionManager
+  skills: Skills
+  swarm: Swarm
+}
 
 export class AgentContext {
   #agent?: Agent
@@ -28,12 +30,8 @@ export class AgentContext {
   #model?: Model
   #session: Session
   #cwd: string
-  #skills?: Skills
-  #notifier?: Notifier
-  #masker?: Masker
-  #permissions?: PermissionManager
-  #swarm?: Swarm
   #reasoning: ReasoningEffort
+  #cache = new LazyCache<Slots>()
 
   #prompt = new Map<string, string>()
   #tools = new Map<string, Tool>()
@@ -177,58 +175,58 @@ export class AgentContext {
   }
 
   async swarm() {
-    this.#swarm ??= this.#opts.swarm
-    if (this.#swarm) return this.#swarm
-    const { Swarm } = await import("./swarm.ts")
-    this.#swarm = new Swarm()
-    return this.#swarm
+    return this.#cache.need(
+      "swarm",
+      async () => {
+        const { Swarm } = await import("./swarm.ts")
+        return new Swarm()
+      },
+      this.#opts.swarm
+    )
   }
 
   async skills(): Promise<Skills | undefined> {
-    if (this.#skills) return this.#skills
-    const spec = this.#opts.skills
-    if (spec === undefined) return
-    if (isInstance<Skills>(spec)) this.#skills = spec
-    else {
-      const { Skills } = await import("./skills.ts")
-      this.#skills = await Skills.load({ paths: spec })
-    }
-    return this.#skills
+    return this.#cache.want(
+      "skills",
+      async (opts?: SkillsOptions) => {
+        const { Skills } = await import("./skills.ts")
+        return await Skills.load(opts)
+      },
+      this.#opts.skills
+    )
   }
 
   private async notifier(): Promise<Notifier | undefined> {
-    if (this.#notifier) return this.#notifier
-    const spec = this.#opts.notify ?? true
-    if (spec === false) return
-    if (isInstance<Notifier>(spec)) this.#notifier = spec
-    else {
-      const { Notifier } = await import("./notify.ts")
-      this.#notifier = new Notifier(typeof spec === "object" ? spec : {})
-    }
-    return this.#notifier
+    return this.#cache.want(
+      "notifier",
+      async (opts?: NotifyOptions) => {
+        const { Notifier } = await import("./notify.ts")
+        return new Notifier(opts)
+      },
+      this.#opts.notify
+    )
   }
 
   private async masker(): Promise<Masker | undefined> {
-    if (this.#masker) return this.#masker
-    const spec = this.#opts.mask ?? false
-    if (spec === false) return
-    if (isInstance<Masker>(spec)) this.#masker = spec
-    else {
-      const { Masker } = await import("./masker.ts")
-      this.#masker = new Masker(typeof spec === "object" ? spec : {})
-    }
-    return this.#masker
+    return this.#cache.want(
+      "masker",
+      async (opts?: MaskOptions) => {
+        const { Masker } = await import("./masker.ts")
+        return new Masker(opts)
+      },
+      this.#opts.mask
+    )
   }
 
   async permissions(): Promise<PermissionManager> {
-    if (this.#permissions) return this.#permissions
-    const spec = this.#opts.permissions ?? {}
-    if (isInstance<PermissionManager>(spec)) this.#permissions = spec
-    else {
-      const { PermissionManager } = await import("./permissions/manager.ts")
-      this.#permissions = new PermissionManager({ ...spec, cwd: this.cwd })
-    }
-    return this.#permissions
+    return this.#cache.need(
+      "permissions",
+      async (opts?: PermissionOptions) => {
+        const { PermissionManager } = await import("./permissions/manager.ts")
+        return new PermissionManager({ ...opts, cwd: this.cwd })
+      },
+      this.#opts.permissions
+    )
   }
 }
 

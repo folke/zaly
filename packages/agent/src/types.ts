@@ -18,7 +18,7 @@ import type { Suggestion } from "./permissions/types.ts"
 import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
 import type { SessionOptions } from "./session/types.ts"
-import type { Skills } from "./skills.ts"
+import type { Skills, SkillsOptions } from "./skills.ts"
 import type { StopOptions } from "./stop.ts"
 import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
@@ -181,7 +181,7 @@ export interface AgentOptions extends CollectOptions {
    *  `${cwd}/.agent/skills/` and `~/.agent/skills/` on `skills.load()`,
    *  and exposes the activation tool to the model. Set `false` to skip
    *  skills entirely (no `skills` getter, no scanning, no tool). */
-  skills?: string[] | Skills
+  skills?: SkillsOptions | Skills
   /** Optional `Swarm` registry. When set, this agent participates in a
    *  multi-agent swarm — children spawned via `agent.child()` inherit
    *  the same swarm, and tools like `agent_spawn` / `agent_send`
@@ -214,7 +214,7 @@ export interface AgentOptions extends CollectOptions {
    *  session DAG. Once a message is stamped, the stamp is durable for
    *  the agent's lifetime — see `Masker` for the cache-stability rules.
    *
-   *  Default on. Pass `false` to disable, or a `MaskOptions` object to
+   *  Default off. Pass `true` to enable, or a `MaskOptions` object to
    *  tune `tools` / `keepRecent`. */
   mask?: boolean | MaskOptions
 

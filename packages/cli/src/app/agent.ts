@@ -30,7 +30,7 @@ export async function buildAgent(ctx: Context): Promise<Agent> {
     permissions: ctx.flags.yolo ? { preset: "yolo" } : undefined,
     request: { reasoning },
     session,
-    skills: await config.resources.skills(),
+    skills: { paths: await config.resources.skills() },
     tools: settings.tools,
   })
 }

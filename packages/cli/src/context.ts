@@ -7,6 +7,7 @@ import type { Console } from "./console.ts"
 import type { Flags } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
+import { LazyCache } from "@zaly/shared/cache"
 import { LoggerBase } from "@zaly/tui/logger"
 
 type Slots = { config: Config; theme: Theme; console: Console; session: Session }
@@ -14,7 +15,7 @@ type Slots = { config: Config; theme: Theme; console: Console; session: Session 
 export class Context extends LoggerBase {
   #flags?: Flags
   #logger?: LogApi
-  #proms = new Map<string, Promise<unknown>>()
+  #cache = new LazyCache<Slots>()
   #flush: (() => Promise<void>)[] = []
 
   constructor(public args: CliArgs) {
@@ -31,14 +32,14 @@ export class Context extends LoggerBase {
   }
 
   async session() {
-    return this.#lazy("session", async () => {
+    return this.#cache.need("session", async () => {
       const { loadSession } = await import("./app/session.ts")
       return await loadSession(this.flags)
     })
   }
 
   #console() {
-    return this.#lazy("console", async () => {
+    return this.#cache.need("console", async () => {
       const { Console } = await import("./console.ts")
       const c = new Console(this)
       this.#flush.push(() => c.flush())
@@ -47,7 +48,7 @@ export class Context extends LoggerBase {
   }
 
   async flush() {
-    await Promise.all(this.#proms.values())
+    await this.#cache.wait()
     await Promise.all(this.#flush.map((fn) => fn()))
   }
 
@@ -71,22 +72,11 @@ export class Context extends LoggerBase {
   }
 
   reset(key: keyof Slots): void {
-    this.#proms.delete(key)
-  }
-
-  #lazy<K extends keyof Slots>(key: K, fn: () => Promise<Slots[K]>): Promise<Slots[K]> {
-    const ret = this.#proms.get(key)
-    if (ret) return ret as Promise<Slots[K]>
-    const prom = fn().catch((error) => {
-      this.#proms.delete(key)
-      throw error
-    })
-    this.#proms.set(key, prom)
-    return prom
+    this.#cache.forget(key)
   }
 
   config(): Promise<Config> {
-    return this.#lazy("config", async () => {
+    return this.#cache.need("config", async () => {
       const { loadConfig } = await import("@zaly/config")
       return loadConfig({
         cwd: this.flags.cwd,
@@ -107,7 +97,7 @@ export class Context extends LoggerBase {
   }
 
   theme() {
-    return this.#lazy("theme", async () => {
+    return this.#cache.need("theme", async () => {
       const config = await this.config()
       const { loadTheme } = await import("@zaly/tui/themes")
       return await loadTheme({

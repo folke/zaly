@@ -699,6 +699,7 @@ export class Agent extends Emitter<AgentEvents> {
    *  agent doesn't auto-dispose today, so callers (TUI on quit, headless
    *  runner on completion) should invoke this explicitly. */
   async dispose(): Promise<void> {
+    this.clearListeners()
     this.#cancelAllWakeups()
     await this.#tasks.killAll()
   }

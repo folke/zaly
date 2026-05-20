@@ -1,5 +1,5 @@
 import type { Session } from "@zaly/agent/session"
-import type { Flags } from "../flags.ts"
+import type { Flags } from "../types.ts"
 
 import { loadSession as $loadSession, resumeSession } from "@zaly/agent/session"
 import { normPath, safeStatAsync } from "@zaly/shared"

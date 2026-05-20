@@ -1,66 +1,70 @@
+import type { ArgsDef } from "citty"
 import type { CliArgs } from "../src/cli.ts"
 
+import { parseArgs } from "citty"
 import { describe, expect, test } from "vitest"
-import { resolveConfig } from "../src/flags.ts"
+import { Cli, mainCommand } from "../src/cli.ts"
+import { Context } from "../src/context.ts"
 
-const baseArgs = {
-  _: [],
-  cwd: "/tmp/zaly-test",
-} as unknown as CliArgs
+async function resolveConfig(args: string[]) {
+  const cli = new Cli()
+  const cmd = mainCommand(cli)
+  const argsDef = (await (typeof cmd.args === "function" ? cmd.args() : cmd.args)) as ArgsDef
+  const parsed = parseArgs(args, argsDef)
+  return new Context(parsed as unknown as CliArgs).flags
+}
+
+const base = ["--cwd", "/tmp/zaly-test"]
 
 describe("resolveConfig", () => {
-  test("normalises cwd", () => {
-    const cfg = resolveConfig({ ...baseArgs, cwd: "/tmp/zaly-test/" } as CliArgs)
+  test("normalises cwd", async () => {
+    const cfg = await resolveConfig(["--cwd", "/tmp/zaly-test/"])
     expect(cfg.cwd).toBe("/tmp/zaly-test")
   })
 
-  test("--reasoning takes precedence; --thinking is the fallback alias", () => {
-    expect(
-      resolveConfig({ ...baseArgs, reasoning: "high", thinking: "low" } as CliArgs).reasoning
-    ).toBe("high")
-    expect(resolveConfig({ ...baseArgs, thinking: "low" } as CliArgs).reasoning).toBe("low")
+  test("--thinking is an alias for --reasoning", async () => {
+    const a = await resolveConfig([...base, "--reasoning", "high"])
+    const b = await resolveConfig([...base, "--thinking", "low"])
+    expect(a.reasoning).toBe("high")
+    expect(b.reasoning).toBe("low")
   })
 
-  test("yolo defaults to false; coerces explicit true", () => {
-    expect(resolveConfig(baseArgs).yolo).toBe(false)
-    expect(resolveConfig({ ...baseArgs, yolo: true } as CliArgs).yolo).toBe(true)
+  test("yolo defaults to false; --yolo coerces to true", async () => {
+    const defaults = await resolveConfig(base)
+    const explicit = await resolveConfig([...base, "--yolo"])
+    expect(defaults.yolo).toBeFalsy()
+    expect(explicit.yolo).toBe(true)
   })
 
   describe("--tools parsing", () => {
-    test("undefined → undefined (caller falls back to defaults)", () => {
-      expect(resolveConfig(baseArgs).tools).toBeUndefined()
+    test("undefined → undefined (caller falls back to defaults)", async () => {
+      const cfg = await resolveConfig(base)
+      expect(cfg.tools).toBeUndefined()
     })
 
-    test("comma-separated values get split + trimmed", () => {
-      const cfg = resolveConfig({ ...baseArgs, tools: "read, write,exec " } as CliArgs)
+    test("comma-separated values get split + trimmed", async () => {
+      const cfg = await resolveConfig([...base, "--tools", "read, write,exec "])
       expect(cfg.tools).toEqual(["read", "write", "exec"])
     })
 
-    test("repeated --tools merges across occurrences", () => {
-      // citty's `ParsedArgs` types `tools` as `string`, but at runtime
-      // repeated `--tools` flags collapse to `string[]` — which is what
-      // `parseTools` is built to handle. Cast through `unknown` to bypass
-      // the static type and exercise the array path.
-      const cfg = resolveConfig({
-        ...baseArgs,
-        tools: "read,write,exec",
-      } as unknown as CliArgs)
-      expect(cfg.tools).toEqual(["read", "write", "exec"])
-    })
-
-    test("empty / whitespace-only input collapses to undefined", () => {
-      expect(resolveConfig({ ...baseArgs, tools: "" } as CliArgs).tools).toBeUndefined()
-      expect(resolveConfig({ ...baseArgs, tools: " , ,  " } as CliArgs).tools).toBeUndefined()
+    test("empty / whitespace-only input collapses to undefined", async () => {
+      const empty = await resolveConfig([...base, "--tools", ""])
+      const whitespace = await resolveConfig([...base, "--tools", " , ,  "])
+      expect(empty.tools).toBeUndefined()
+      expect(whitespace.tools).toBeUndefined()
     })
   })
 
-  test("api-key + model + theme pass through verbatim", () => {
-    const cfg = resolveConfig({
-      ...baseArgs,
-      apiKey: "sk-...",
-      model: "claude-opus-4-7",
-      theme: "tokyonight",
-    } as unknown as CliArgs)
+  test("api-key + model + theme pass through verbatim", async () => {
+    const cfg = await resolveConfig([
+      ...base,
+      "--api-key",
+      "sk-...",
+      "--model",
+      "claude-opus-4-7",
+      "--theme",
+      "tokyonight",
+    ])
     expect(cfg.apiKey).toBe("sk-...")
     expect(cfg.model).toBe("claude-opus-4-7")
     expect(cfg.theme).toBe("tokyonight")
