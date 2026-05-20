@@ -8,6 +8,6 @@ export type DividerState = Style & {
   length?: number
 }
 
-export function divider(state: DividerState = { style: "accent" }): Text {
+export function divider(state: DividerState = { style: "divider" }): Text {
   return text((ctx) => (state.char ?? "─").repeat(state.length ?? ctx.width), state)
 }
