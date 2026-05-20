@@ -24,10 +24,13 @@ export async function buildAgent(ctx: Context): Promise<Agent> {
   const model = modelId ? await loadModel(modelId, { apiKey: ctx.flags.apiKey }) : undefined
 
   const reasoning = settings.reasoning ? { effort: settings.reasoning } : undefined
+  const p = settings.permissions ?? {}
 
   return await createAgent({
     model,
-    permissions: ctx.flags.yolo ? { preset: "yolo" } : undefined,
+    permissions: ctx.flags.yolo
+      ? { preset: "yolo" }
+      : { preset: p.preset, rules: { allow: p.allow, ask: p.ask, deny: p.deny } },
     request: { reasoning },
     session,
     skills: { paths: await config.resources.skills() },

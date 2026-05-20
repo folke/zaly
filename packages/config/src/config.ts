@@ -8,28 +8,8 @@ import { join } from "pathe"
 import { ResourceManager } from "./resource/manager.ts"
 import { settingsReviver } from "./reviver.ts"
 import { validateSettings } from "./schemas/gen/settings.ts"
+import { defaults } from "./types.ts"
 import { merge } from "./utils.ts"
-
-const defaults: Settings = {
-  model: "openai/gpt-5.5",
-  reasoning: "low",
-  theme: "tokyonight-moon",
-  tools: [
-    "bash",
-    "edit",
-    "fetch",
-    "read",
-    "search",
-    "subagent",
-    "agent_send",
-    "agent_spawn",
-    "task_list",
-    "task_poll",
-    "task_stop",
-    "wakeup",
-    "write",
-  ] as const,
-}
 
 function settingsPath(dir: string) {
   return normPath(dir, "settings.json")

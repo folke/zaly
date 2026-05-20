@@ -12,7 +12,17 @@ export const SettingsSchema = {
                     model: {
                         type: "string"
                     },
-                    reasoning: {},
+                    reasoning: {
+                        type: "string",
+                        "enum": [
+                            "off",
+                            "minimal",
+                            "low",
+                            "medium",
+                            "high",
+                            "xhigh"
+                        ]
+                    },
                     tools: {
                         type: "array",
                         items: {
@@ -22,6 +32,40 @@ export const SettingsSchema = {
                     theme: {
                         type: "string",
                         description: "Theme name or path to custom theme file"
+                    },
+                    permissions: {
+                        type: "object",
+                        properties: {
+                            preset: {
+                                type: "string",
+                                "enum": [
+                                    "strict",
+                                    "readonly",
+                                    "permissive",
+                                    "yolo"
+                                ]
+                            },
+                            allow: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                }
+                            },
+                            deny: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                }
+                            },
+                            ask: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                }
+                            }
+                        },
+                        required: [],
+                        description: "test *"
                     },
                     packs: {
                         type: "array",
