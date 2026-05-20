@@ -77,7 +77,7 @@ export class Stream extends Surface<StreamEvents> {
   #scrollbackCount = 0
   #rows: string[] = []
   // oxlint-disable-next-line no-unused-private-class-members
-  #pumpScheduled?: Promise<void>
+  #asyncDirtyCheck?: Promise<void>
   /** Bottom row of the live region the last time we painted. Used to
    *  compute where `#rows` actually live on screen when the footer
    *  resizes between renders (scrollBottom moves). Without this we'd
@@ -152,11 +152,11 @@ export class Stream extends Surface<StreamEvents> {
 
   /** Tracked nodes (oldest first). Used by renderer traversals. */
   get nodes(): readonly Node[] {
-    return this.#state.map((s) => s.node)
+    return [...this.#state.map((s) => s.node), ...this.#queue.map((s) => s.node)]
   }
 
   async waitIdle(): Promise<void> {
-    if (!this.asyncPending && this.#queue.length === 0) return
+    if (!this.pending) return
     await new Promise((resolve) => this.once("idle", resolve))
   }
 
@@ -169,19 +169,14 @@ export class Stream extends Surface<StreamEvents> {
     return this.#rows
   }
 
-  async render(sync?: (fn: () => void) => void): Promise<void> {
+  async _render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn) => this.terminal.sync(fn))
 
     // Snapshot in case new appends land mid-render.
     const states = [...this.#state]
     const ctx = this.getCtx()
 
-    // Per-state render + drain. Each state owns its boundary;
-    // `createRender` blocks until that state's `createAsync` work has
-    // settled, so `s.rows` is always the final resolved output. Drains
-    // are independent — `Promise.all` waits for the slowest. We skip
-    // states whose cached rows are still valid: only re-render when
-    // live, never-rendered, or stale-cache (resize / theme swap).
+    // First render any dirty live nodes. This populates `rows` for all
     await Promise.all(
       states.map(async (s) => {
         if (s.live || s.rows === undefined || s.version !== ctx.version) {
@@ -192,6 +187,25 @@ export class Stream extends Surface<StreamEvents> {
         }
       })
     )
+
+    // Keep adding queued nodes until we hit an active boundary (pending async work)
+    while (this.#queue.length) {
+      const active = this.#state.filter((s) => s.boundary.active())
+      if (active.length) {
+        this.#asyncDirtyCheck ??= Promise.all(active.map((s) => s.boundary.whenIdle())).then(() => {
+          this.#asyncDirtyCheck = undefined
+          this.onDirty()
+        })
+        break
+      }
+      const next = this.#queue.shift()!
+      this.#state.push(next)
+      this.commit({ keep: this.#opts.maxLive, render: false })
+      states.push(next)
+      // oxlint-disable-next-line no-await-in-loop
+      next.rows = await next.node.render(ctx)
+      next.version = ctx.version
+    }
 
     const allRows: string[] = []
     for (const s of states) if (s.rows) allRows.push(...s.rows)
@@ -329,29 +343,12 @@ export class Stream extends Surface<StreamEvents> {
       dropped += len
     }
     this.#scrollbackCount = newCC - dropped
-    this.pump()
+
+    if (!this.pending) void this.emit("idle")
   }
 
-  pump() {
-    const active = this.#state.filter((s) => s.boundary.active())
-    // When no async work is pending, schedule the next queued node
-    if (active.length) {
-      this.#pumpScheduled ??= Promise.all(active.map((s) => s.boundary.whenIdle())).then(() => {
-        this.#pumpScheduled = undefined
-        this.pump()
-      })
-    } else {
-      const next = this.#queue.shift()
-      if (next) {
-        this.#state.push(next)
-        this.commit({ keep: this.#opts.maxLive, render: false })
-        this.onDirty()
-      } else void this.emit("idle")
-    }
-  }
-
-  get asyncPending() {
-    return this.#state.some((s) => s.boundary.active())
+  get pending() {
+    return this.#state.some((s) => s.boundary.active()) || this.#queue.length > 0
   }
 
   /** Detach invalidate listener and mark non-live.
@@ -439,16 +436,14 @@ export class Stream extends Surface<StreamEvents> {
     // commit threshold. Marking stale forces an explicit clear (above
     // the visible paint area) or a diff miss (inside).
     for (let r = 1; r <= this.terminal.scrollBottom; r++) this.#stale.add(r)
-    for (const s of this.#state) {
-      if (!s.node.mounted) s.node.mount(ctx)
-    }
+    for (const s of this.#state) if (!s.node.mounted) s.node.mount(ctx)
+    for (const s of this.#queue) if (!s.node.mounted) s.node.mount(ctx)
   }
 
   protected unmountAll(): void {
     // Tracked state (`#state`) is preserved so a subsequent `onStart()`
     // finds the same tree and remounts it.
-    for (const s of this.#state) {
-      if (s.node.mounted) s.node.unmount()
-    }
+    for (const s of this.#state) if (s.node.mounted) s.node.unmount()
+    for (const s of this.#queue) if (s.node.mounted) s.node.unmount()
   }
 }

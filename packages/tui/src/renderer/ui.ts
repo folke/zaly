@@ -94,7 +94,7 @@ export class UI extends Surface {
    * provided so all surfaces paint inside one atomic sync frame. Direct
    * callers (tests) omit it and get an immediate `terminal.sync`.
    */
-  async render(sync?: (fn: () => void) => void): Promise<void> {
+  async _render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn: () => void) => this.terminal.sync(fn))
     const ctx = this.getCtx()
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })

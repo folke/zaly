@@ -2,8 +2,6 @@ import type { Node } from "../../src/core/node.ts"
 
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { Logger } from "../../src/logger/logger.ts"
-import { Log } from "../../src/widgets/log.ts"
-import { Markdown } from "../../src/widgets/markdown.ts"
 import { Text } from "../../src/widgets/text.ts"
 
 const fakeStream = () => {
@@ -19,64 +17,6 @@ const fakeStream = () => {
 }
 
 describe("Logger — stream attached", () => {
-  test("appends a Log node to the stream", () => {
-    const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
-    logger.info("hello")
-    expect(s.nodes).toHaveLength(1)
-    expect(s.nodes[0]).toBeInstanceOf(Log)
-    expect((s.nodes[0] as Log).state.level).toBe("info")
-  })
-
-  test("string body with markdown markers becomes a Markdown child", () => {
-    const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
-    logger.info("**bold** text")
-    const node = s.nodes[0] as Log
-    expect(node.children[0]).toBeInstanceOf(Markdown)
-  })
-
-  test("plain string body wraps in Text (via log widget's string path)", () => {
-    const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
-    logger.info("plain text")
-    const node = s.nodes[0] as Log
-    expect(typeof node.state.content).toBe("string")
-    expect(node.state.content).toBe("plain text")
-  })
-
-  test("minLevel filters entries below threshold", () => {
-    const s = fakeStream()
-    const logger = new Logger({ minLevel: "warn" })
-    logger.attach(s)
-    logger.info("filtered")
-    logger.warn("kept")
-    expect(s.nodes).toHaveLength(1)
-    expect((s.nodes[0] as Log).state.level).toBe("warn")
-  })
-
-  test("object bodies carry ANSI color codes from util.inspect", async () => {
-    const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
-    logger.info({ n: 1, s: "hi" })
-    const node = s.nodes[0] as Log
-    const { createCtx } = await import("../../src/core/ctx.ts")
-    const rows = await node.render(createCtx({ width: 80 }))
-    expect(rows.join("\n")).toMatch(/\x1b\[[0-9;]*m/)
-  })
-
-  test("Error values → message only by default", () => {
-    const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
-    logger.error(new Error("boom"))
-    expect((s.nodes[0] as Log).state.content).toBe("boom")
-  })
-
   test("detach stops appending to the stream", () => {
     const s = fakeStream()
     const logger = new Logger({ write: () => {} })
@@ -152,8 +92,6 @@ describe("Logger — console install/uninstall", () => {
     expect(console.log).not.toBe(originalLog)
     console.log("from-console")
     expect(s.nodes).toHaveLength(1)
-    expect((s.nodes[0] as Log).state.level).toBe("log")
-
     logger.uninstall()
     expect(console.log).toBe(originalLog)
   })

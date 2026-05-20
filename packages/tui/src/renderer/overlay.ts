@@ -104,7 +104,7 @@ export class OverlaySurface extends Surface {
    * `render(sync?)` shape used by Stream and UI so the Renderer can
    * capture all three paints and emit them in one atomic frame.
    */
-  async render(sync?: (fn: () => void) => void): Promise<void> {
+  async _render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn: () => void) => this.deps.terminal.sync(fn))
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.deps.getCtx()

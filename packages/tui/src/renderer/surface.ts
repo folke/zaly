@@ -47,6 +47,7 @@ export type SurfaceEvents = {
 export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvents, E> {
   #running = false
   #mountCtx?: MountCtx
+  #rendering?: Promise<void>
 
   /** Re-usable listener that bridges a tracked node's `invalidate`
    *  event into this surface's `dirty` event. Subclasses attach this
@@ -103,5 +104,11 @@ export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvent
    *  capture-style `sync` is provided so the three surfaces paint
    *  inside one atomic sync frame. Direct callers (tests) omit it
    *  and each surface uses its own `terminal.sync`. */
-  abstract render(sync?: (fn: () => void) => void): Promise<void>
+  abstract _render(sync?: (fn: () => void) => void): Promise<void>
+
+  async render(sync?: (fn: () => void) => void): Promise<void> {
+    return (this.#rendering ??= this._render(sync).finally(() => {
+      this.#rendering = undefined
+    }))
+  }
 }

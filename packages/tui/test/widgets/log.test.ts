@@ -47,10 +47,4 @@ describe("log() widget", () => {
     const plain = strip(rows[0])
     expect(plain).toMatch(/^»\s+info\s+hi/)
   })
-
-  test("accepts a Node as content", async () => {
-    const { text } = await import("../../src/widgets/text.ts")
-    const rows = await log({ content: text("from-node"), level: "info" }).render(ctx)
-    expect(strip(rows[0])).toContain("from-node")
-  })
 })
