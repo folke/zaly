@@ -1,19 +1,22 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Node } from "../core/node.ts"
 import type { LogLevel } from "../logger/levels.ts"
 import type { Color } from "../style/types.ts"
 
 import { hasColors } from "@zaly/shared/env"
-import { Node, isNode } from "../core/node.ts"
 import { isMarkdown } from "../logger/inspect.ts"
 import { stringWidth } from "../style/ansi.ts"
+import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
-import { text as textFactory } from "./text.ts"
+import { text } from "./text.ts"
+import { widget } from "./widget.ts"
 
-export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text"
+export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif"
 
 export interface LogState {
   level: LogLevel
-  content: Node | string
+  content: string
+  title?: string
   /** Rendering of the per-level prefix chunk. Defaults by level. */
   style?: LogStyle
   /** Single-glyph icon for `icon` / `prompt` styles. */
@@ -51,66 +54,40 @@ const defaultLogStyles: Record<LogLevel, LevelDefaults> = {
 const noColorStyles: Record<LogStyle, LogStyle> = {
   badge: "title",
   icon: "text",
+  notif: "text",
   prompt: "text",
   text: "text",
   title: "text",
 }
 
-export class Log extends Node<LogState> {
-  #child: Node
+function renderPrefix(s: LogState, ctx: RenderCtx): string {
+  const style = ctx.style
 
-  constructor(state: LogState) {
-    super(state)
-    let child: Node
+  const base = defaultLogStyles[s.level]
+  let ls: LogStyle = s.style ?? base.style
+  if (!hasColors) ls = noColorStyles[ls]
 
-    if (isNode(state.content)) child = state.content
-    else if ((state.markdown ?? true) && isMarkdown(state.content)) child = markdown(state.content)
-    else child = textFactory(state.content)
+  let icon = s.icon ?? base.icon ?? ""
+  icon = icon === "" ? "" : `${icon}${" ".repeat(2 - stringWidth(icon))}`
+  const color: Color = s.color ?? base.color ?? "inherit"
 
-    this.#child = child
-    this.add(this.#child)
+  // text doesn't get a prefix
+  let styledPrefix = ""
+  if (ls === "badge") {
+    styledPrefix = style.bg(color).fg("black").bold(` ${s.level} `)
+  } else if (ls === "icon") {
+    styledPrefix = style.fg(color)(icon)
+  } else if (ls === "prompt") {
+    styledPrefix = style.fg(color).bold(`${icon} ${s.level}`)
+  } else if (ls === "title") {
+    styledPrefix = style.fg(color).bold(`${s.level}:`)
+  } else if (ls === "notif") {
+    styledPrefix = style.fg(color).bold(`${icon} ${s.title ?? s.level}`)
   }
 
-  protected async _render(ctx: RenderCtx): Promise<string[]> {
-    const s = this.state
-    const base = defaultLogStyles[s.level]
-
-    let style: LogStyle = s.style ?? base.style
-    if (!hasColors) style = noColorStyles[style]
-
-    let icon = s.icon ?? base.icon ?? ""
-    icon = icon === "" ? "" : `${icon}${" ".repeat(2 - stringWidth(icon))}`
-    const color: Color = s.color ?? base.color ?? "inherit"
-    const textColor = s.textColor ?? base.textColor
-
-    let styledPrefix = ""
-    if (style === "badge") {
-      styledPrefix = ctx.style.bg(color).fg("black").bold(` ${s.level} `)
-    } else if (style === "icon") {
-      styledPrefix = ctx.style.fg(color)(icon)
-    } else if (style === "prompt") {
-      styledPrefix = ctx.style.fg(color).bold(`${icon} ${s.level}`)
-    } else if (style === "title") {
-      styledPrefix = ctx.style.fg(color).bold(`${s.level}:`)
-    }
-
-    if (s.prefix) styledPrefix = s.prefix + styledPrefix
-
-    const prefixWidth = stringWidth(styledPrefix)
-    const bodyOffset = prefixWidth === 0 ? 0 : prefixWidth + 1
-    const bodyWidth = Math.max(1, ctx.width - bodyOffset)
-
-    const bodyRows = await this.#child.render({
-      ...ctx,
-      style: textColor ? ctx.style.fg(textColor) : ctx.style,
-      width: bodyWidth,
-    })
-
-    if (bodyOffset === 0) return bodyRows
-
-    const pad = " ".repeat(bodyOffset)
-    return bodyRows.map((row, i) => (i === 0 ? `${styledPrefix} ${row}` : `${pad}${row}`))
-  }
+  if (s.prefix) styledPrefix = s.prefix + styledPrefix
+  if (s.title) styledPrefix += style.bold(` ${s.title}`)
+  return styledPrefix
 }
 
 /**
@@ -123,6 +100,37 @@ export class Log extends Node<LogState> {
  * log({ level: "error", content: markdown("**boom**") })
  * ```
  */
-export function log(state: LogState): Log {
-  return new Log(state)
-}
+export const log = widget((state: LogState, ...children: Node[]) => {
+  const body =
+    (state.markdown ?? true) && isMarkdown(state.content)
+      ? markdown(state.content, { width: "fill" })
+      : text(state.content, { width: "fill" })
+
+  const base = defaultLogStyles[state.level]
+  const color: Color = state.color ?? base.color ?? "inherit"
+  const textColor = state.textColor ?? base.textColor
+  body.setState({ style: textColor ? { fg: textColor } : undefined })
+
+  const s = state
+
+  return box(
+    {
+      ...(s.style === "notif"
+        ? {
+            border: "single",
+            borderStyle: { fg: color },
+            borderTitle: (ctx) => renderPrefix(state, ctx),
+            borderTitleAlign: "center",
+            padding: [0, 1],
+            //style: "overlay",
+            width: "fill",
+          }
+        : undefined),
+      flexDirection: "row",
+      gap: 1,
+    },
+    s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx)),
+    body,
+    ...children
+  )
+})

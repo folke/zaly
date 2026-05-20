@@ -115,10 +115,11 @@ export class OverlaySurface extends Surface {
         // pair on `BoxStyle`). We pass ctx unchanged and trust the
         // overlay's own state to size correctly.
         const rows = await o.render(ctx)
-        const x = o.state.x
+        let x = o.state.x
         const a = o.state.verticalAnchor ?? "top"
         let y = o.state.y
         if (y < 0) y = this.deps.terminal.rows + y // Allow negative y to position relative to scrollBottom
+        if (x < 0) x = this.deps.terminal.cols + x // Allow negative x to position relative to right edge
         y = a === "bottom" ? y - rows.length + 1 : y
         painted.push({ rows, x, y })
       })

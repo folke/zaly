@@ -7,6 +7,7 @@ import type { Context } from "../context.ts"
 import { box, createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { helpOverlay } from "../widgets/help.ts"
+import { Notifier, type NotifProps } from "../widgets/notify.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { registerAgentActions, registerUiActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
@@ -34,6 +35,7 @@ export class App {
   #agent?: Agent
   #agentLifetime?: AbortController
   #exitPromise!: ReturnType<typeof Promise.withResolvers>
+  #notifier!: Notifier
 
   readonly #busy = signal(true)
   readonly #status = signal("loading")
@@ -85,6 +87,12 @@ export class App {
       },
       theme: await this.#ctx.theme(),
     })
+
+    this.#notifier = new Notifier(this.#renderer.overlay)
+
+    setTimeout(() => {
+      this.#notifier.notify("Welcome to zaly! Use Ctrl-H for help.")
+    }, 1000)
 
     await this.#ctx.setLogger(this.#renderer.log)
 
@@ -139,6 +147,10 @@ export class App {
     })
   }
 
+  notify(msg: string, opts?: NotifProps) {
+    this.#notifier.notify(msg, opts)
+  }
+
   /** Phase B — load session first (cheap), paint replay, then build
    *  the agent (heavy). The user sees their conversation history
    *  before model resolution finishes. */
@@ -151,6 +163,7 @@ export class App {
     const tail = session.messages.slice(-50)
 
     await replay(tail, this.#renderer)
+    this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
 
     this.#agent = await buildAgent(this.#ctx)
     const updateModel = () => this.#model.set(this.#agent?.model?.id ?? "no model")

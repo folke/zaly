@@ -34,7 +34,7 @@ export interface TextStyle extends Style {
 
 export class Text extends Node<TextStyle> {
   protected _render(ctx: RenderCtx): string[] {
-    const content = this.content(ctx)
+    const content = textContent(this.state.content, ctx)
     return formatText(content, {
       style: ctx.style.add(this.state),
       width: ctx.width,
@@ -42,14 +42,17 @@ export class Text extends Node<TextStyle> {
     })
   }
 
-  content(ctx: RenderCtx): string {
-    const raw = unwrap(this.state.content)
-    return unwrap(typeof raw === "string" ? raw : raw(ctx))
-  }
-
   override layout(ctx: RenderCtx) {
-    return calcLayout(this.content(ctx))
+    return calcLayout(textContent(this.state.content, ctx))
   }
+}
+
+export function textContent(content: TextContent, ctx: RenderCtx): string
+export function textContent(content: TextContent | undefined, ctx: RenderCtx): undefined
+export function textContent(content: TextContent | undefined, ctx: RenderCtx): string | undefined {
+  if (content === undefined) return
+  const raw = unwrap(content)
+  return unwrap(typeof raw === "string" ? raw : raw(ctx))
 }
 
 /**

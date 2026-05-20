@@ -3,6 +3,7 @@ import type { State } from "../core/state.ts"
 import type { BorderSpec, TitleAlign } from "../layout/border.ts"
 import type { RowItem } from "../layout/flex.ts"
 import type { Style } from "../style/types.ts"
+import type { TextContent } from "./text.ts"
 
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
@@ -10,6 +11,7 @@ import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { allocateRow, isFixedWidth, padRow, stackColumn, zipRow } from "../layout/flex.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
 import { stringWidth } from "../style/ansi.ts"
+import { textContent } from "./text.ts"
 
 export type Padding =
   | number
@@ -33,7 +35,7 @@ export interface BoxStyle extends Style {
   verticalAlign?: "top" | "bottom"
   padding?: Padding
   border?: BorderSpec
-  borderTitle?: string
+  borderTitle?: TextContent
   /** Placement of `borderTitle` along the top border. Defaults to `"left"`. */
   borderTitleAlign?: TitleAlign
   /**
@@ -125,7 +127,7 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     if (bchars) {
       rows = drawBorder(rows, bchars, {
         borderStyle: ctx.style.add(style.borderStyle ?? "border"),
-        title: style.borderTitle,
+        title: textContent(style.borderTitle, ctx),
         titleAlign: style.borderTitleAlign,
         titleStyle: ctx.style.add(style.borderTitleStyle ?? "borderTitle"),
       })
