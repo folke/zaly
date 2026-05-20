@@ -15,6 +15,10 @@ export type LazyMap = Record<string, unknown>
 export class LazyCache<T extends LazyMap = LazyMap> {
   #proms = new Map<keyof T, Promise<unknown>>()
 
+  get<K extends keyof T>(key: K): T[K] | undefined {
+    return this.#proms.get(key) as T[K] | undefined
+  }
+
   async want<K extends keyof T, L extends LazyLoader<T[K]>>(
     key: K,
     loader: L,

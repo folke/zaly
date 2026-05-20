@@ -89,6 +89,7 @@ async function list(cli: Cli, args: ListArgs): Promise<void> {
   // Without `--all`, scope to the current cwd. With `--all`, omit the
   // filter so the manager walks every project scope.
   const sessions = await listSessions({
+    // FIXME:
     filter: args.all ? undefined : cli.ctx.flags.cwd,
     sort: true,
   })

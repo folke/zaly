@@ -63,8 +63,9 @@ export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
       ? await loadScope(wsDir, "workspace", wsDotZaly !== undefined)
       : undefined
 
-  // oxlint-disable-next-line sort-keys
   const config: Omit<Config, "resources"> = {
+    paths,
+    project,
     settings: merge(
       {},
       opts.settings,
@@ -73,9 +74,7 @@ export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
       user.settings,
       defaults
     ),
-    paths,
     user,
-    project,
     workspace,
   }
 

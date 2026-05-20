@@ -19,14 +19,23 @@ export async function buildAgent(ctx: Context): Promise<Agent> {
   const session = await ctx.session()
   const config = await ctx.config()
   const settings = config.settings
-
-  const modelId = ctx.flags.model ?? session.settings.modelId ?? settings.model
-  const model = modelId ? await loadModel(modelId, { apiKey: ctx.flags.apiKey }) : undefined
-
-  const reasoning = settings.reasoning ? { effort: settings.reasoning } : undefined
+  const ss = session.settings
   const p = settings.permissions ?? {}
 
+  const merged = {
+    cwd: ctx.flags.cwd ?? ss.cwd ?? config.paths.cwd,
+    model: ctx.flags.model ?? ss.modelId ?? settings.model,
+    reasoning: ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning,
+  }
+
+  const model = merged.model
+    ? await loadModel(merged.model, { apiKey: ctx.flags.apiKey })
+    : undefined
+
+  const reasoning = merged.reasoning ? { effort: merged.reasoning } : undefined
+
   return await createAgent({
+    cwd: merged.cwd,
     model,
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }
