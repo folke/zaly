@@ -4,7 +4,7 @@ import type { AgentStopKind } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
-import { createAgent } from "../src/load.ts"
+import { createAgent } from "../src/context.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
 

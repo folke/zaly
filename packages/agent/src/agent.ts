@@ -12,8 +12,8 @@ import type {
   ToolContext,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
+import type { AgentContext } from "./context.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
-import type { AgentContext } from "./load.ts"
 import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
@@ -147,7 +147,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     let tools = [...(await this.tools())].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
-    const { createAgent } = await import("./load.ts")
+    const { createAgent } = await import("./context.ts")
 
     const ret = await createAgent({
       cwd: this.cwd,
