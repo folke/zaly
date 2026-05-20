@@ -1,3 +1,4 @@
+import type { ThemeKey } from "@zaly/tui"
 import type { AppState } from "../types.ts"
 
 import { box, memo, spinner, text, widget } from "@zaly/tui"
@@ -23,10 +24,16 @@ export const statusline = widget((props: AppState) =>
       // writes + output. Read and write are shown only when present
       // (non-Anthropic providers omit them or report only reads).
       const total = u.input + cacheRead + cacheWrite + u.output
+      const limit = props.model?.spec.limit.context ?? 0
       if (total === 0) return lhs
       const read = cacheRead > 0 ? ` ${style.dim("⚡")}${fmt(cacheRead)}` : ""
       const write = cacheWrite > 0 ? ` ${style.dim("+")}${fmt(cacheWrite)}` : ""
-      return `${lhs} ${dot} ${style.dim("ctx")} ${fmt(total)} ${dot} ${style.dim("↑")}${fmt(u.input)} ${style.dim("↓")}${fmt(u.output)}${read}${write}`
+      const pct = limit > 0 ? Math.round((total / limit) * 100) : 0
+      let pctStyle: ThemeKey = "success"
+      if (pct >= 80) pctStyle = "error"
+      else if (pct >= 60) pctStyle = "warn"
+      const pcts = limit > 0 ? style.add(pctStyle)(`(${pct}%)`) : ""
+      return `${lhs} ${dot} ${style.dim("ctx")} ${fmt(total)} ${pcts} ${dot} ${style.dim("↑")}${fmt(u.input)} ${style.dim("↓")}${fmt(u.output)}${read}${write}`
     })
   )
 )
