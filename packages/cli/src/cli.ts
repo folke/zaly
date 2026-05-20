@@ -61,7 +61,6 @@ export class Cli {
     const theme = await this.ctx.theme()
     const str = await codeToAnsi(json, "json", theme.shiki)
     this.ctx.log(str.trim())
-    await this.ctx.exit()
   }
 
   async listThemes(): Promise<void> {
@@ -71,7 +70,6 @@ export class Cli {
       md.push(`- **${name}**`)
     }
     this.ctx.log(md.join("\n"))
-    await this.ctx.exit()
   }
 }
 
@@ -158,8 +156,6 @@ export function mainCommand(cli: Cli) {
     },
     async setup({ args }) {
       cli.args = args as unknown as CliArgs
-      if (cli.args.printConfig) await cli.printConfig()
-      if (cli.args.listThemes) await cli.listThemes()
     },
     // Lazy subcommand loading — each module is only imported when its
     // command name appears on the cli. The factory pattern lets us hand
@@ -174,6 +170,8 @@ export function mainCommand(cli: Cli) {
     // a subcommand consumed the invocation.
     async run({ args }) {
       if (args._.length > 0) return
+      if (cli.args.printConfig) return await cli.printConfig()
+      if (cli.args.listThemes) return await cli.listThemes()
       const { run } = await import("./commands/tui.ts")
       await run(cli)
     },

@@ -108,9 +108,4 @@ export class Context extends LoggerBase {
       })
     })
   }
-
-  async exit(code = 0): Promise<never> {
-    await this.flush()
-    process.exit(code)
-  }
 }
