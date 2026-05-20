@@ -372,6 +372,7 @@ export class Renderer {
         blur: () => this.input.focus(undefined),
         focus: (node) => this.input.focus(node),
       },
+      onError: (error, _node) => this.log.error(error),
       overlay: {
         add: (o) => this.overlay.add(o),
         remove: (o) => this.overlay.remove(o),

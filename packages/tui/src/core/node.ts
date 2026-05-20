@@ -64,6 +64,11 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   constructor(state: State<T>, ...children: Node[]) {
     super()
+    this.onEmitError = (err) => {
+      if (this.#ctx) this.#ctx.onError(err, this)
+      // oxlint-disable-next-line no-console
+      else console.error("Uncaught node event error (node is unmounted, no ctx):", err)
+    }
     // `createStore` gives us per-field reactivity for free: reads
     // inside `_render` subscribe via the rendering Node's tracking
     // ctx, so mutating a read field invalidates exactly this node.

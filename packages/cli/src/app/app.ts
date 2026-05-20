@@ -4,10 +4,10 @@ import type { Input, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 
-import { createRef, createRenderer, signal } from "@zaly/tui"
+import { box, createRef, createRenderer, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { helpOverlay } from "../widgets/help.ts"
-import { appUi } from "../widgets/ui.ts"
+import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { registerAgentActions, registerUiActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
 import { AttachmentBuffer } from "./attachments.ts"
@@ -33,6 +33,7 @@ export class App {
 
   #agent?: Agent
   #agentLifetime?: AbortController
+  #exitPromise!: ReturnType<typeof Promise.withResolvers>
 
   readonly #busy = signal(true)
   readonly #status = signal("loading")
@@ -50,7 +51,21 @@ export class App {
     await app.#initRenderer()
     app.#renderer.start()
     void app.#initSessionAndAgent()
+    app.#exitPromise = Promise.withResolvers()
     return app
+  }
+
+  async waitExit(): Promise<unknown> {
+    return this.#exitPromise.promise
+  }
+
+  exit(code = 0): void {
+    this.#renderer.stop()
+    this.#agentLifetime?.abort()
+    if (code === 0) this.#exitPromise.resolve()
+    else this.#exitPromise.reject(new Error(`Exited with code ${code}`))
+    // Defer exit to allow pending renders and agent cleanup to complete.
+    setTimeout(() => process.exit(code), 100)
   }
 
   get log() {
@@ -77,6 +92,10 @@ export class App {
 
     const composer = createRef<Input>()
 
+    this.#renderer.overlay.add(() =>
+      autocompleteOverlay({ actions: this.#renderer.actions, composer })
+    )
+
     this.#renderer.ui.add(() =>
       appUi({
         actions: this.#renderer.actions,
@@ -93,6 +112,7 @@ export class App {
     this.#input = composer()
 
     registerUiActions({
+      app: this,
       composer: this.#input,
       renderer: this.#renderer,
       toggleHelp: () => help.toggle(),
@@ -133,7 +153,9 @@ export class App {
     await replay(tail, this.#renderer)
 
     this.#agent = await buildAgent(this.#ctx)
-    this.#model.set(this.#agent.model?.id ?? "no model")
+    const updateModel = () => this.#model.set(this.#agent?.model?.id ?? "no model")
+    this.#agent.ctx.on("model", updateModel)
+    updateModel()
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }
@@ -153,14 +175,11 @@ export class App {
     registerAgentActions({
       agent: this.#agent,
       renderer: this.#renderer,
-      reset: () => this.#reset(),
     })
 
     this.#agent.session.on(
       "compact",
-      () => {
-        this.#renderer.stream.append(() => compactionMarker())
-      },
+      () => this.#renderer.stream.append(() => compactionMarker()),
       opts
     )
 
@@ -170,28 +189,5 @@ export class App {
     // #status from here on.
     this.#busy.set(false)
     this.#status.set("ready")
-  }
-
-  async #reset(): Promise<void> {
-    this.#agentLifetime?.abort()
-    await this.#agent?.dispose()
-    this.#agent = undefined
-    this.#ctx.reset("session")
-    this.#agent = await buildAgent(this.#ctx)
-    this.#model.set(this.#agent.model?.id ?? "no model")
-
-    this.#agentLifetime = new AbortController()
-    const opts = { signal: this.#agentLifetime.signal }
-
-    wireAgent(
-      this.#agent,
-      {
-        setBusy: this.#busy.set,
-        setStatus: this.#status.set,
-        setUsage: this.#usage.set,
-      },
-      opts
-    )
-    bindStream(this.#renderer, this.#agent, opts)
   }
 }

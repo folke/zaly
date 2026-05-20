@@ -97,6 +97,8 @@ export interface MountCtx {
    *  pass a function for richer predicates. Same semantics as
    *  `Renderer.findNode`. */
   readonly findNode: (match: string | ((n: Node) => boolean)) => Node[]
+
+  onError: (error: unknown, node: Node) => void
 }
 
 /**
