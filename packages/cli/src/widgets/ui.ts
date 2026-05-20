@@ -1,7 +1,7 @@
 import type { Usage } from "@zaly/ai"
 import type { Actions, Input, Reactive, Ref } from "@zaly/tui"
 
-import { actionsSource, autocomplete, box, filesSource, input, text } from "@zaly/tui"
+import { actionsSource, autocomplete, box, divider, filesSource, input, text } from "@zaly/tui"
 import { statusline } from "./statusline.ts"
 
 export interface UiState {
@@ -29,11 +29,13 @@ export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<I
           slash: actionsSource({ actions: props.actions }),
         },
       }),
+      divider(),
       box(
         { flexDirection: "row", gap: 1 },
         text(({ style }) => style.primary("❯"), { width: 1 }),
         input({ placeholder: "Ask zaly anything…" }).ref(props.composer).focus()
       ),
+      divider(),
       statusline(props.state)
     )
   )
