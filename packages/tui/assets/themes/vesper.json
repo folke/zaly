@@ -40,25 +40,32 @@
     "fg": "#575757"
   },
   "mdHeading": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading1": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading2": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading3": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading4": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading5": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdHeading6": {
-    "fg": "#FFC799"
+    "fg": "#FFC799",
+    "bold": true
   },
   "mdBold": {
     "bold": true,

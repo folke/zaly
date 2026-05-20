@@ -48,25 +48,32 @@
     "fg": "#88846f"
   },
   "mdHeading": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading1": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading2": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading3": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading4": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading5": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdHeading6": {
-    "fg": "#A6E22E"
+    "fg": "#A6E22E",
+    "bold": true
   },
   "mdBold": {
     "fg": "#66D9EF"

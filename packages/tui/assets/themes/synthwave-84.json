@@ -42,25 +42,32 @@
     "fg": "#848bbd"
   },
   "mdHeading": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading1": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading2": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading3": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading4": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading5": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdHeading6": {
-    "fg": "#ff7edb"
+    "fg": "#ff7edb",
+    "bold": true
   },
   "mdLink": {
     "fg": "#D50"

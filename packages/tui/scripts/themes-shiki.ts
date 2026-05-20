@@ -137,6 +137,8 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
   const fg = theme.fg as HexColor
   const bg = theme.bg as HexColor
 
+  const extend = (s: Style | undefined, e: Style) => (s ? { ...s, ...e } : undefined)
+
   const out: Partial<Theme> & { $schema: string } = {
     $schema: "file:./../schemas/theme.schema.json",
     /** Matching shiki theme name — used by the markdown/code renderers
@@ -179,13 +181,13 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
     comment: t.style("comment"),
 
     // ── markdown (scope rules) ─────────────────────────────────────────
-    mdHeading: t.style("heading.1.markdown", "markup.heading"),
-    mdHeading1: t.style("heading.1.markdown", "markup.heading.heading-1"),
-    mdHeading2: t.style("heading.2.markdown", "markup.heading.heading-2"),
-    mdHeading3: t.style("heading.3.markdown", "markup.heading.heading-3"),
-    mdHeading4: t.style("heading.4.markdown", "markup.heading.heading-4"),
-    mdHeading5: t.style("heading.5.markdown", "markup.heading.heading-5"),
-    mdHeading6: t.style("heading.6.markdown", "markup.heading.heading-6"),
+    mdHeading: extend(t.style("heading.1.markdown", "markup.heading"), { bold: true }),
+    mdHeading1: extend(t.style("heading.1.markdown", "markup.heading.heading-1"), { bold: true }),
+    mdHeading2: extend(t.style("heading.2.markdown", "markup.heading.heading-2"), { bold: true }),
+    mdHeading3: extend(t.style("heading.3.markdown", "markup.heading.heading-3"), { bold: true }),
+    mdHeading4: extend(t.style("heading.4.markdown", "markup.heading.heading-4"), { bold: true }),
+    mdHeading5: extend(t.style("heading.5.markdown", "markup.heading.heading-5"), { bold: true }),
+    mdHeading6: extend(t.style("heading.6.markdown", "markup.heading.heading-6"), { bold: true }),
     mdBold: t.style("markup.bold"),
     mdItalic: t.style("markup.italic"),
     mdStrikethrough: t.style("markup.strikethrough"),

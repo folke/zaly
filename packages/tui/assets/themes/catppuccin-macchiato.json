@@ -49,25 +49,32 @@
     "fg": "#939ab7"
   },
   "mdHeading": {
-    "fg": "#ed8796"
+    "fg": "#ed8796",
+    "bold": true
   },
   "mdHeading1": {
-    "fg": "#ed8796"
+    "fg": "#ed8796",
+    "bold": true
   },
   "mdHeading2": {
-    "fg": "#f5a97f"
+    "fg": "#f5a97f",
+    "bold": true
   },
   "mdHeading3": {
-    "fg": "#eed49f"
+    "fg": "#eed49f",
+    "bold": true
   },
   "mdHeading4": {
-    "fg": "#a6da95"
+    "fg": "#a6da95",
+    "bold": true
   },
   "mdHeading5": {
-    "fg": "#7dc4e4"
+    "fg": "#7dc4e4",
+    "bold": true
   },
   "mdHeading6": {
-    "fg": "#b7bdf8"
+    "fg": "#b7bdf8",
+    "bold": true
   },
   "mdBold": {
     "bold": true,
