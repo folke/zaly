@@ -14,11 +14,10 @@ export default defineConfig({
       conditions: ["bun", "import", "module", "default"],
     },
   },
-
   test: {
     alias: {
-      "#md": "./src/runtime/md.node.ts",
-      "#ansi": "./src/runtime/ansi.node.ts",
+      "#md": join(pkgDir, "tui/src/runtime/md.node.ts"),
+      "#ansi": join(pkgDir, "tui/src/runtime/ansi.node.ts"),
     },
     environment: "node",
     update: "new",
