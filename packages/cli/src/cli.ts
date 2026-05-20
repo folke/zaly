@@ -175,5 +175,9 @@ export function mainCommand(cli: Cli) {
       const { run } = await import("./commands/tui.ts")
       await run(cli)
     },
+    async cleanup() {
+      cli.ctx.uninstall()
+      await cli.ctx.flush()
+    },
   })
 }
