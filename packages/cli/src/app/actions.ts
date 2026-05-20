@@ -1,6 +1,9 @@
 import type { Agent } from "@zaly/agent"
 import type { OAuthProvider } from "@zaly/ai"
 import type { Input, Renderer } from "@zaly/tui"
+import type { App } from "./app.ts"
+
+import { prettyPath } from "@zaly/shared"
 
 /**
  * UI-only actions — registered in Phase A (no agent required).
@@ -8,11 +11,12 @@ import type { Input, Renderer } from "@zaly/tui"
  * the help overlay and in `/`-triggered autocomplete.
  */
 export function registerUiActions(opts: {
+  app: App
   renderer: Renderer
   composer: Input
   toggleHelp: () => void
 }): void {
-  const { renderer, composer, toggleHelp } = opts
+  const { app, renderer, composer, toggleHelp } = opts
   renderer.actions.register({
     "app.clear": {
       desc: "clear the composer",
@@ -31,19 +35,16 @@ export function registerUiActions(opts: {
       desc: "authorize zaly with your ChatGPT (codex) account",
       fn: () => {
         void runCodexLogin().catch((error) => {
-          process.stderr.write(
+          console.error(
             `[login] failed: ${error instanceof Error ? error.message : String(error)}\n`
           )
         })
       },
       name: "login",
     },
-    "app.quit": {
+    "global.quit": {
       desc: "exit zaly",
-      fn: () => {
-        renderer.stop()
-        process.exit(0)
-      },
+      fn: () => app.exit(),
       name: "quit",
     },
   })
@@ -54,12 +55,8 @@ export function registerUiActions(opts: {
  * resolves. Hot-add to the registry: the help overlay subscribes via
  * `actions.onChange` and re-renders as soon as these appear.
  */
-export function registerAgentActions(opts: {
-  renderer: Renderer
-  agent: Agent
-  reset: () => Promise<void>
-}): void {
-  const { renderer, agent, reset } = opts
+export function registerAgentActions(opts: { renderer: Renderer; agent: Agent }): void {
+  const { renderer, agent } = opts
   renderer.actions.register({
     "app.compact": {
       desc: "summarize older history to free context space",
@@ -72,10 +69,13 @@ export function registerAgentActions(opts: {
       },
       name: "compact",
     },
-    "app.reset": {
-      desc: "start a fresh session",
-      fn: () => void reset(),
-      name: "reset",
+    "app.pwd": {
+      desc: "print the agent's current working directory",
+      fn: () => {
+        const cwd = prettyPath(agent.ctx.cwd, "~")
+        console.info(`Current working directory: \`${cwd}\``)
+      },
+      name: "pwd",
     },
     "app.stop": {
       desc: "abort the current run",
@@ -98,27 +98,28 @@ async function runCodexLogin(): Promise<void> {
 
   const creds = await codexAuth.login({
     onAuthUrl: ({ url }) => {
-      process.stdout.write(
-        `[login] open this URL in your browser if it doesn't open automatically:\n  ${url}\n`
+      console.info(
+        `**[login]** open this URL in your browser if it doesn't open automatically:\n  [${url}](${url})`
       )
-      openBrowser(url)
+      void openBrowser(url)
     },
     onProgress: (message) => {
-      process.stdout.write(`[login] ${message}\n`)
+      console.info(`**[login]** ${message}**`)
     },
   })
-  process.stdout.write(`[login] linked ChatGPT account ${creds.accountId}.\n`)
+  console.info(`[login] linked ChatGPT account \`${creds.accountId}\`.`)
 }
 
 /** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures
  *  are silent — the URL has already been printed for the user. */
-function openBrowser(url: string): void {
+async function openBrowser(url: string): Promise<void> {
   let cmd: string[]
   if (process.platform === "darwin") cmd = ["open", url]
   else if (process.platform === "win32") cmd = ["cmd", "/c", "start", "", url]
   else cmd = ["xdg-open", url]
+  const { spawn } = await import("node:child_process")
   try {
-    Bun.spawn(cmd, { stderr: "ignore", stdin: "ignore", stdout: "ignore" })
+    spawn(cmd[0], cmd.slice(1), { detached: true, stdio: "ignore" }).unref()
   } catch {
     // No `open` available — user can copy from the printed URL.
   }
