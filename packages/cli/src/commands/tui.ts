@@ -7,5 +7,6 @@ import { App } from "../app/app.ts"
  *  subcommands (`zaly models`, `zaly session list`) don't pay the
  *  agent + renderer import cost. */
 export async function run(cli: Cli): Promise<void> {
-  await App.start(cli)
+  const app = await App.start(cli)
+  await app.waitExit()
 }
