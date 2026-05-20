@@ -11,7 +11,7 @@ import type { Swarm } from "./swarm.ts"
 import type { AnyTool } from "./tools/registry.ts"
 import type { AgentOptions } from "./types.ts"
 
-import { normPath, isInstance } from "@zaly/shared"
+import { normPath, isInstance, Emitter } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
 
 type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
@@ -24,13 +24,20 @@ type Slots = {
   swarm: Swarm
 }
 
-export class AgentContext {
+type AgentContextEvents = {
+  model: { model?: Model; prev?: Model }
+  reasoning: { effort: ReasoningEffort; prev?: ReasoningEffort }
+  session: { session: Session; prev?: Session }
+  cwd: { cwd: string; prev?: string }
+}
+
+export class AgentContext extends Emitter<AgentContextEvents> {
   #agent?: Agent
   #opts: AgentOptions
   #model?: Model
   #session: Session
-  #cwd: string
   #reasoning: ReasoningEffort
+  #cwd: string
   #cache = new LazyCache<Slots>()
 
   #prompt = new Map<string, string>()
@@ -40,6 +47,7 @@ export class AgentContext {
   $tools: (Tool | AnyTool)[]
 
   constructor(opts: AgentContextOpts) {
+    super()
     this.#opts = opts
     this.#cwd = normPath(opts.cwd)
     this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
@@ -55,6 +63,19 @@ export class AgentContext {
     ]
 
     this.$tools = opts.tools ?? []
+
+    this.on("model", async ({ model }) => {
+      if (model) await this.session.update({ modelId: model.id })
+    })
+      .on("reasoning", async ({ effort }) => {
+        await this.session.update({ reasoning: effort })
+      })
+      .on("cwd", ({ cwd }) => {
+        this.#tools = new Map() // reset tools to force reload with new cwd
+        this.#prompt = new Map() // reset prompts to force reload with new cwd
+        this.#cache.forget("permissions") // reset permissions to force reload with new cwd
+        void this.session.update({ cwd })
+      })
   }
 
   private async start() {
@@ -77,6 +98,7 @@ export class AgentContext {
   attach(agent: Agent) {
     if (this.#agent === agent) return
     if (this.#agent) throw new Error("agent already attached to context")
+    if (agent.started) throw new Error("cannot attach agent that has already started")
     this.#agent = agent
     agent.once("start", () => this.start())
   }
@@ -97,6 +119,13 @@ export class AgentContext {
     return this.#cwd
   }
 
+  set cwd(c: string) {
+    if (c === this.#cwd) return
+    const prev = this.#cwd
+    this.#cwd = normPath(c)
+    void this.emit("cwd", { cwd: this.#cwd, prev })
+  }
+
   get signal() {
     return this.#agent?.signal
   }
@@ -111,16 +140,34 @@ export class AgentContext {
   }
 
   set reasoning(r: ReasoningEffort) {
+    if (r === this.#reasoning) return
+    const prev = this.#reasoning
     this.#reasoning = r
-    void this.#session.update({ reasoning: r })
+    void this.emit("reasoning", { effort: r, prev })
   }
 
   get session(): Session {
     return this.#session
   }
 
-  set session(s: Session) {
+  async useSession(s: Session): Promise<void> {
+    if (s === this.#session) return
+    const prev = this.#session
     this.#session = s
+    const modelId = s.settings.modelId
+    if (modelId && modelId !== this.model?.id) {
+      const { loadModel } = await import("@zaly/ai")
+      this.model = await loadModel(modelId)
+    }
+    this.cwd = s.settings.cwd ?? this.cwd
+    this.reasoning = s.settings.reasoning ?? this.reasoning
+    await this.emit("session", { prev, session: s })
+    if (this.#agent?.started)
+      await s.start({
+        cwd: this.cwd,
+        modelId: this.model?.id,
+        reasoning: this.reasoning,
+      })
   }
 
   get model() {
@@ -128,8 +175,10 @@ export class AgentContext {
   }
 
   set model(m: Model | undefined) {
+    if (m === this.#model) return
+    const prev = this.#model
     this.#model = m
-    if (m) void this.#session.update({ modelId: m.id })
+    void this.emit("model", { model: m, prev })
   }
 
   async tools(): Promise<Tool[]> {
