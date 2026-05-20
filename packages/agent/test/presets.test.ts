@@ -119,6 +119,7 @@ describe("preset — yolo", () => {
       "rm -rf /tmp/junk",
       "bun add some-package",
       "git push origin main",
+      "find packages -name package.json -exec sed -n '1,120p' {} ;",
       "any-random-cmd --whatever",
     ]) {
       expect(m.validate("bash", cmd).verdict).toBe("allow")

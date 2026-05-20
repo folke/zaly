@@ -35,16 +35,18 @@ export const bashHandler: PermissionHandler<"bash"> = {
     const suggestions: Suggestion[] = []
 
     for (const seg of parsed.segments) {
-      if (seg.hasCommandSubst) {
+      // Bash rule match for the command itself. Resolve this before the
+      // conservative safety checks so explicit allow-all presets like yolo can
+      // mean exactly that instead of degrading to an unimplemented ask prompt.
+      const cmdVerdict = resolveRules(ctx.rules, seg) ?? "ask"
+      if (seg.hasCommandSubst && cmdVerdict !== "allow") {
         return { reason: "command substitution not allowed", verdict: "ask" }
       }
       const spec = TOOLS[seg.cmd]
-      if (spec?.unsafe?.(seg.args)) {
+      if (spec?.unsafe?.(seg.args) && cmdVerdict !== "allow") {
         return { reason: `${seg.cmd}: invocation mode not safely modelled`, verdict: "ask" }
       }
 
-      // Bash rule match for the command itself.
-      const cmdVerdict = resolveRules(ctx.rules, seg) ?? "ask"
       let segVerdict: Verdict = cmdVerdict
       let segReason: string | undefined =
         cmdVerdict === "allow" ? undefined : `segment "${seg.cmd}" → ${cmdVerdict}`
