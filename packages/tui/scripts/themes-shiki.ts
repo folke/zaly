@@ -121,6 +121,8 @@ function parse(theme: ThemeRegistrationResolved) {
   }
 }
 
+const extend = (s: Style | undefined, e: Style) => (s ? { ...s, ...e } : undefined)
+
 /** Convert a shiki theme's `colors` map + `settings` rules into our
  *  `Theme` shape. Two helpers in play:
  *    - `t.color(...vsKeys)`: VSCode UI color names (`terminal.ansiBlue`,
@@ -136,8 +138,6 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
   const t = parse(theme)
   const fg = theme.fg as HexColor
   const bg = theme.bg as HexColor
-
-  const extend = (s: Style | undefined, e: Style) => (s ? { ...s, ...e } : undefined)
 
   const out: Partial<Theme> & { $schema: string } = {
     $schema: "file:./../schemas/theme.schema.json",

@@ -20,6 +20,7 @@ export function mockMountCtx(
   actions.setTargetResolver(() => router.focused)
   router.setActions(actions)
   return {
+    onError: (_error) => {},
     actions,
     findNode: () => [],
     getNode: () => undefined,
