@@ -17,7 +17,27 @@ export function registerUiActions(opts: {
   toggleHelp: () => void
 }): void {
   const { app, renderer, composer, toggleHelp } = opts
+  let cancel = false
   renderer.actions.register({
+    "app.cancel": {
+      desc: "cancel current input or exit on second press",
+      fn: () => {
+        if (cancel) app.exit()
+        else {
+          if ((composer.state.value ?? "").length > 0)
+            return composer.setState({ cursor: 0, value: "" })
+          cancel = true
+          app.notify("Press `Ctrl-C` again to exit.", {
+            level: "warn",
+            onClose: () => (cancel = false),
+            timeout: 500,
+          })
+        }
+      },
+      hidden: true,
+      keys: ["ctrl-c"],
+      name: "cancel",
+    },
     "app.clear": {
       desc: "clear the composer",
       fn: () => {
@@ -42,11 +62,7 @@ export function registerUiActions(opts: {
       },
       name: "login",
     },
-    "global.quit": {
-      desc: "exit zaly",
-      fn: () => app.exit(),
-      name: "quit",
-    },
+    "global.quit": { keys: [] },
   })
 }
 
