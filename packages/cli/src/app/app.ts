@@ -1,13 +1,14 @@
 import type { Agent } from "@zaly/agent"
-import type { Usage } from "@zaly/ai"
 import type { Input, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
+import type { AppState } from "../types.ts"
+import type { NotifProps } from "../widgets/notify.ts"
 
-import { box, createRef, createRenderer, signal } from "@zaly/tui"
+import { box, createRef, createRenderer, createStore } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { helpOverlay } from "../widgets/help.ts"
-import { Notifier, type NotifProps } from "../widgets/notify.ts"
+import { Notifier } from "../widgets/notify.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { registerAgentActions, registerUiActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
@@ -37,10 +38,11 @@ export class App {
   #exitPromise!: ReturnType<typeof Promise.withResolvers>
   #notifier!: Notifier
 
-  readonly #busy = signal(true)
-  readonly #status = signal("loading")
-  readonly #model = signal("")
-  readonly #usage = signal<Usage>({ input: 0, output: 0 })
+  #state = createStore<AppState>({
+    busy: true,
+    status: "loading",
+    usage: { input: 0, output: 0 },
+  })
 
   readonly #attachments = new AttachmentBuffer()
 
@@ -105,16 +107,7 @@ export class App {
     )
 
     this.#renderer.ui.add(() =>
-      appUi({
-        actions: this.#renderer.actions,
-        composer,
-        state: {
-          busy: this.#busy.get,
-          model: this.#model.get,
-          status: this.#status.get,
-          usage: this.#usage.get,
-        },
-      })
+      appUi({ actions: this.#renderer.actions, composer, state: this.#state })
     )
 
     this.#input = composer()
@@ -130,7 +123,7 @@ export class App {
     // waits for the agent to be ready.
     this.#input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
-      if (trimmed === "" || this.#busy.get() || !this.#agent) return
+      if (trimmed === "" || this.#state.busy || !this.#agent) return
       if (!this.#agent.model) {
         this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
         return
@@ -166,22 +159,14 @@ export class App {
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
 
     this.#agent = await buildAgent(this.#ctx)
-    const updateModel = () => this.#model.set(this.#agent?.model?.id ?? "no model")
+    const updateModel = () => (this.#state.model = this.#agent?.model)
     this.#agent.ctx.on("model", updateModel)
     updateModel()
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }
 
-    wireAgent(
-      this.#agent,
-      {
-        setBusy: this.#busy.set,
-        setStatus: this.#status.set,
-        setUsage: this.#usage.set,
-      },
-      opts
-    )
+    wireAgent(this.#agent, this.#state, opts)
 
     bindStream(this.#renderer, this.#agent, opts)
 
@@ -200,7 +185,7 @@ export class App {
     // whatever the agent's authoritative state is (almost always
     // "ready"). wireAgent's onStatus handler drives both #busy and
     // #status from here on.
-    this.#busy.set(false)
-    this.#status.set("ready")
+    this.#state.busy = false
+    this.#state.status = "ready"
   }
 }

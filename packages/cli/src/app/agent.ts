@@ -2,6 +2,7 @@ import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
 import type { Context } from "../context.ts"
+import type { AppState } from "../types.ts"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
@@ -63,19 +64,15 @@ export interface AgentSignals {
  * (`paused`) uniformly. `usage` refreshes on `step-end` since
  * `agent.usage` reflects the last response by then.
  */
-export function wireAgent(
-  agent: Agent,
-  signals: AgentSignals,
-  opts?: { signal?: AbortSignal }
-): void {
+export function wireAgent(agent: Agent, state: AppState, opts?: { signal?: AbortSignal }): void {
   agent
-    .on("step-end", () => signals.setUsage(agent.usage), opts)
+    .on("step-end", () => (state.usage = agent.usage), opts)
     .on(
       "status",
       ({ status }) => {
         const busy = status !== "idle" && status !== "paused"
-        signals.setBusy(busy)
-        signals.setStatus(status === "idle" ? "ready" : status)
+        state.busy = busy
+        state.status = status === "idle" ? "ready" : status
       },
       opts
     )
@@ -83,7 +80,7 @@ export function wireAgent(
       "stop",
       ({ kind }) => {
         if (kind !== "error") return
-        signals.setStatus("error")
+        state.status = "error"
         const err = agent.lastStop?.error
         if (err) console.error(`${err.name}: ${err.message}`)
       },
@@ -93,5 +90,5 @@ export function wireAgent(
   // Seed usage from the tail of any resumed conversation.
   const last = agent.messages.at(-1)
   const usage = last?.role === "assistant" ? last.meta?.usage : undefined
-  if (usage) signals.setUsage(usage)
+  if (usage) state.usage = usage
 }

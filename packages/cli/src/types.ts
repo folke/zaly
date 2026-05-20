@@ -1,4 +1,4 @@
-import type { ReasoningEffort } from "@zaly/ai"
+import type { Model, ReasoningEffort, Usage } from "@zaly/ai"
 
 export interface Flags {
   cwd?: string
@@ -14,4 +14,11 @@ export interface Flags {
   prompts?: boolean
   plugins?: boolean
   new?: boolean
+}
+
+export type AppState = {
+  busy: boolean
+  model?: Model
+  status: string
+  usage: Usage
 }

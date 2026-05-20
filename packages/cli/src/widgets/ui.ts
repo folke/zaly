@@ -1,5 +1,5 @@
-import type { Usage } from "@zaly/ai"
-import type { Actions, Input, Reactive, Ref } from "@zaly/tui"
+import type { Actions, Input, Ref } from "@zaly/tui"
+import type { AppState } from "../types.ts"
 
 import {
   actionsSource,
@@ -14,19 +14,12 @@ import {
 } from "@zaly/tui"
 import { statusline } from "./statusline.ts"
 
-export interface UiState {
-  busy: Reactive<boolean>
-  model: Reactive<string>
-  status: Reactive<string>
-  usage: Reactive<Usage>
-}
-
 /**
  * Sticky footer tree: statusline, autocomplete popup, composer prompt.
  * Returned `input` is the composer node so `app.ts` can wire its
  * `submit` / `attach` handlers.
  */
-export const appUi = (props: { state: UiState; actions: Actions; composer: Ref<Input> }) =>
+export const appUi = (props: { state: AppState; actions: Actions; composer: Ref<Input> }) =>
   box(
     { padding: [1, 0, 0, 0] },
     box(
