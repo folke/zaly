@@ -33,6 +33,7 @@ export class UI extends Surface {
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
   readonly #maxHeight: number | undefined
+  readonly #stale = new Set<number>()
 
   constructor(
     private readonly terminal: Terminal,
@@ -99,6 +100,8 @@ export class UI extends Surface {
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const cap = this.#maxHeight ?? Math.max(1, Math.floor(this.terminal.rows / 3))
     const rows = rendered.slice(0, cap)
+    const stale = new Set(this.#stale)
+    this.#stale.clear()
 
     // Snapshot the currently-painted rows BEFORE writing `this.#rows`.
     // The paint closure can run deferred (when a capture `sync` is
@@ -126,7 +129,7 @@ export class UI extends Surface {
       // `footerTop` (1-based). Only rewrite rows whose content changed.
       const top = this.terminal.footerTop
       for (let i = 0; i < nextHeight; i++) {
-        if (prevRows[i] === rows[i] && prevHeight === nextHeight) continue
+        if (!stale.has(i) && prevRows[i] === rows[i] && prevHeight === nextHeight) continue
         this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
       }
     })
@@ -145,6 +148,7 @@ export class UI extends Surface {
    */
   invalidate(): void {
     this.#rows = this.#rows.map(() => "")
+    this.#rows.forEach((_, i) => this.#stale.add(i))
     void this.emit("dirty")
   }
 
@@ -171,5 +175,13 @@ export class UI extends Surface {
 
   protected unmountAll(): void {
     if (this.#root.mounted) this.#root.unmount()
+  }
+
+  markStale(fromRow: number, toRow: number): void {
+    const top = this.terminal.footerTop
+    for (let r = fromRow; r <= toRow; r++) {
+      const i = r - top
+      if (i >= 0 && i < this.#rows.length) this.#stale.add(i)
+    }
   }
 }

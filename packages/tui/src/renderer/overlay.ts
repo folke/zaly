@@ -4,6 +4,7 @@ import type { Owner } from "../core/reactive.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Stream } from "./stream.ts"
 import type { Terminal } from "./terminal.ts"
+import type { UI } from "./ui.ts"
 
 import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
@@ -13,6 +14,7 @@ export interface OverlayDeps {
   getCtx: () => RenderCtx
   rootOwner: Owner
   stream: Stream
+  ui: UI
 }
 
 /**
@@ -113,7 +115,12 @@ export class OverlaySurface extends Surface {
         // pair on `BoxStyle`). We pass ctx unchanged and trust the
         // overlay's own state to size correctly.
         const rows = await o.render(ctx)
-        painted.push({ rows, x: o.state.x, y: o.state.y })
+        const x = o.state.x
+        const a = o.state.verticalAnchor ?? "top"
+        let y = o.state.y
+        if (y < 0) y = this.deps.terminal.rows + y // Allow negative y to position relative to scrollBottom
+        y = a === "bottom" ? y - rows.length + 1 : y
+        painted.push({ rows, x, y })
       })
     )
     run(() => {
@@ -130,6 +137,7 @@ export class OverlaySurface extends Surface {
       for (const { rows, y } of painted) {
         if (rows.length > 0) {
           this.deps.stream.markStale(y, y + rows.length - 1)
+          this.deps.ui.markStale(y, y + rows.length - 1)
         }
       }
     })

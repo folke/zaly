@@ -159,6 +159,7 @@ export class Renderer {
       rootOwner: this.#rootOwner,
       stream: this.stream,
       terminal: this.terminal,
+      ui: this.ui,
     })
     this.overlay.on("dirty-ui", () => this.ui.invalidate())
     this.overlay.on("dirty-stream", () => this.stream.invalidate())
