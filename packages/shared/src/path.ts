@@ -1,6 +1,5 @@
 import { homedir } from "node:os"
 import { relative, resolve } from "pathe"
-import { reverseResolveAlias } from "pathe/utils"
 
 // Similar to path.resolve but also expands ~ to the user home
 // directory. Accepts undefined / empty entries (filtered out) so
@@ -13,11 +12,13 @@ export function normPath(...paths: (string | undefined)[]) {
   )
 }
 
-export function prettyPath(path: string) {
-  let rel = relative(process.cwd(), path)
-  rel = rel === "" ? "." : rel
-  rel = rel.startsWith("..") ? (reverseResolveAlias(path, { "~": homedir() })[0] ?? path) : rel
-  return rel
+export function prettyPath(path: string, to = ".") {
+  to = normPath(to)
+  let rel = relative(to, path)
+  const home = normPath("~")
+  if (rel.startsWith("..")) return path.startsWith(home) ? `~${path.slice(home.length)}` : path
+  if (to === home) rel = `~/${rel}`
+  return rel === "" ? "." : rel
 }
 
 /** Encoding rules (applied in order):
