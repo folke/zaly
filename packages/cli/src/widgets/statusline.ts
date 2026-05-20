@@ -21,7 +21,7 @@ export interface StatuslineProps {
 export const statusline = widget((props: StatuslineProps) =>
   box(
     { flexDirection: "row", gap: 1 },
-    spinner({ color: "accent", running: props.busy }),
+    spinner({ color: "accent", idle: "✓", running: props.busy }),
     text(({ style }) => {
       const dot = style.dim("·")
       const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(unwrap(props.model))} ${dot} ${style.accent(unwrap(props.status))}`

@@ -33,6 +33,7 @@ export interface SpinnerState {
    *  reactive state. Setting `false` stops the interval; setting
    *  `true` restarts it. */
   running?: Reactive<boolean>
+  idle?: string
 }
 
 /**
@@ -115,13 +116,14 @@ export class Spinner extends Node<SpinnerState> {
 
     const f = this.state.frames
     const frames = (typeof f === "string" ? spinnerFrames[f] : f) ?? spinnerFrames.dots
-    const frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
+    let frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
     // When stopped, hold the slot open with blank space of the same
     // cell width so surrounding layout doesn't jump as the spinner
     // toggles. Stable-width frame sets (dots, line, circle) look the
     // same; variable sets (bouncingBar) pick the longest frame's
     // width so stops after a short frame still hold full space.
-    if (!unwrap(this.state.running ?? true)) return [" ".repeat(stringWidth(frame))]
+    if (!unwrap(this.state.running ?? true))
+      frame = (this.state.idle ?? " ").repeat(stringWidth(frame))
     const color = this.state.color ?? "primary"
     return [ctx.style.add(unwrap(color))(frame)]
   }
