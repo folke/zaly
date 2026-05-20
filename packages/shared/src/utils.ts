@@ -187,3 +187,10 @@ export async function atomicWriteFile(path: string, data: string): Promise<void>
     throw error
   }
 }
+
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+export const isInstance = <T>(v: unknown): v is T =>
+  typeof v === "object" &&
+  v !== null &&
+  !Array.isArray(v) &&
+  Object.getPrototypeOf(v) !== Object.prototype
