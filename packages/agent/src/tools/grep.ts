@@ -26,7 +26,7 @@ export const grepTool = defineTool({
   name: "grep",
   desc:
     `Search file contents using rg/grep. Respects .gitignore by default when ripgrep is available; ` +
-    "prefer this over bash grep/find for code search. Returns `path:line:column:text` matches when possible.",
+    "prefer this over bash grep/find for code search. Returns human-readable grouped matches with line numbers.",
   parallel: true,
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
