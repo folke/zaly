@@ -96,7 +96,7 @@ export function registerAgentActions(opts: { renderer: Renderer; agent: Agent })
     "app.stop": {
       desc: "abort the current run",
       fn: () => agent.stop(),
-      keys: ["ctrl-x"],
+      keys: ["esc"],
       name: "stop",
     },
   })
