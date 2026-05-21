@@ -342,6 +342,24 @@ describe("Input — render", () => {
     expect(rows.join("")).toContain("bar")
   })
 
+  test("soft-wrap suppresses one leading continuation space", async () => {
+    const n = input({ value: "hello world" })
+    const rows = await n.render(ctx(5))
+    expect(rows).toEqual(["hello", "world"])
+  })
+
+  test("soft-wrap preserves additional intentional continuation spaces", async () => {
+    const n = input({ value: "hello  world" })
+    const rows = await n.render(ctx(5))
+    expect(rows).toEqual(["hello", " ", "world"])
+  })
+
+  test("explicit newline preserves leading whitespace", async () => {
+    const n = input({ value: "hello\n world" })
+    const rows = await n.render(ctx(5))
+    expect(rows).toEqual(["hello", " ", "world"])
+  })
+
   test("cursor at end of a wrapped line renders without crashing", async () => {
     const n = input({ value: "hello world" })
     void n.emit("focus")

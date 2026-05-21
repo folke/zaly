@@ -291,11 +291,7 @@ export class Input extends Node<InputState, InputEvents> {
       content = value
     }
 
-    return formatText(content, {
-      style: ctx.style.add(this.state),
-      width: ctx.width,
-      wrap: "word",
-    })
+    return formatInputText(content, ctx, this.state)
   }
 }
 
@@ -314,6 +310,23 @@ export function input(state: InputState = {}): Input {
 }
 
 // ---------- helpers ----------
+
+function formatInputText(content: string, ctx: RenderCtx, state: InputState): string[] {
+  const ret: string[] = []
+  for (const line of content.split("\n")) {
+    const rows = formatText(line, {
+      style: ctx.style.add(state),
+      width: ctx.width,
+      wrap: "word",
+    })
+    for (let j = 0; j < rows.length; j++) {
+      const row = j > 0 && rows[j].startsWith(" ") ? rows[j].slice(1) : rows[j]
+      if (row === "" && j > 0 && j < rows.length - 1) continue
+      ret.push(row)
+    }
+  }
+  return ret
+}
 
 function isWhitespace(ch: string | undefined): boolean {
   return ch !== undefined && (ch === " " || ch === "\t" || ch === "\n")
