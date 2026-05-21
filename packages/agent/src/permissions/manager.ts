@@ -15,7 +15,7 @@ export type PermissionOptions = {
    *  over preset rules on conflict (first-match-wins resolution; user
    *  rules are listed before preset rules at construction). */
   preset?: PermissionPresetName
-  rules?: Rule[] | Partial<Record<Verdict, string[]>>
+  rules?: Rule[] | Partial<Record<Verdict, string[] | undefined>>
   /** Initial workspace list. `cwd` is auto-added so the user doesn't
    *  have to repeat it. Pass paths absolute (or relative — they'll be
    *  resolved against `cwd`). */
@@ -115,17 +115,19 @@ export class PermissionManager {
  *  Malformed entries are pushed verbatim so `manager.invalidRules`
  *  surfaces them — typos in the scope ("Bahs(...)") are caught the same
  *  way (no handler registered → flagged invalid). */
-export function parseRules(rules: Partial<Record<Verdict, string[]>>): Rule[] {
+export function parseRules(rules: Partial<Record<Verdict, string[] | undefined>>): Rule[] {
   const ret: Rule[] = []
-  for (const [policy, patterns] of Object.entries(rules)) {
+  for (const policy of Object.keys(rules) as Verdict[]) {
+    const patterns = rules[policy]
+    if (!Array.isArray(patterns)) continue
     for (const raw of patterns) {
       const m = raw.match(/^(\w+)(?:\((.+)\))?$/)
       if (m) {
         const [, scope, pat = "*"] = m
-        ret.push({ pattern: pat, policy: policy as Verdict, scope: scope.toLowerCase() })
+        ret.push({ pattern: pat, policy, scope: scope.toLowerCase() })
       } else {
         // Truly malformed — preserve verbatim so invalidRules surfaces it.
-        ret.push({ pattern: raw, policy: policy as Verdict, scope: "invalid" })
+        ret.push({ pattern: raw, policy, scope: "invalid" })
       }
     }
   }

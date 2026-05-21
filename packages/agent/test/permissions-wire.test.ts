@@ -14,6 +14,8 @@ import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { toolHandler } from "../src/permissions/handlers/tool.ts"
 import { PermissionManager } from "../src/permissions/manager.ts"
+import { bashTool } from "../src/tools/bash.ts"
+import { findTool } from "../src/tools/find.ts"
 import { loadAgent, mockModel } from "./helpers.ts"
 
 const noopTool: Tool = defineTool({
@@ -41,6 +43,13 @@ const lastToolPart = (agent: Agent) => {
     if (m.role === "tool") return m.content[0]
   }
   return undefined
+}
+
+const runWithTimeout = async (agent: Agent, ms = 2_000) => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`agent.run() did not settle within ${ms}ms`)), ms)
+  )
+  return await Promise.race([agent.run(), timeout])
 }
 
 const validate = (input: string, rules: { pattern: string; policy: "allow" | "deny" | "ask" }[]) =>
@@ -131,6 +140,80 @@ describe("Tasks auto-check on tool dispatch", () => {
       tools: [noopTool],
     })
     await agent.run()
+    const part = lastToolPart(agent)
+    if (!part) throw new Error("expected tool-result")
+    expect(part.isError).toBe(false)
+  })
+})
+
+describe("real tools do not leave the agent stuck in running-tools", () => {
+  test("bash ask without allow callback commits PERMISSION_DENIED and stops", async () => {
+    const agent = await loadAgent({
+      model: mockModel([
+        [
+          {
+            id: "bash-1",
+            name: "bash",
+            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1_000 },
+            type: "tool-call",
+          },
+          { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+        ],
+        [{ finishReason: "stop", type: "finish", usage: { input: 1, output: 1 } }],
+      ]),
+      permissions: {},
+      tools: [bashTool],
+    })
+
+    const statuses: string[] = []
+    agent.on("status", ({ status }) => statuses.push(status))
+
+    await runWithTimeout(agent)
+
+    expect(agent.status).toBe("idle")
+    expect(statuses).toContain("running-tools")
+    const part = lastToolPart(agent)
+    if (!part) throw new Error("expected tool-result")
+    expect(part.isError).toBe(true)
+    expect(part.error?.code).toBe("PERMISSION_DENIED")
+  })
+
+  test("bash with permissive preset commits a tool result and stops", async () => {
+    const agent = await loadAgent({
+      model: mockModel([
+        [
+          {
+            id: "bash-1",
+            name: "bash",
+            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1_000 },
+            type: "tool-call",
+          },
+          { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
+        ],
+        [{ finishReason: "stop", type: "finish", usage: { input: 1, output: 1 } }],
+      ]),
+      permissions: { preset: "permissive" },
+      tools: [bashTool],
+    })
+
+    await runWithTimeout(agent)
+
+    expect(agent.status).toBe("idle")
+    const part = lastToolPart(agent)
+    if (!part) throw new Error("expected tool-result")
+    expect(part.isError).toBe(false)
+  })
+
+  test("find with default permissions commits a tool result and stops", async () => {
+    const agent = await loadAgent({
+      model: mockModel(callThenStop("find")),
+      permissions: {},
+      tools: [findTool],
+    })
+
+    await runWithTimeout(agent)
+
+    expect(agent.status).toBe("idle")
     const part = lastToolPart(agent)
     if (!part) throw new Error("expected tool-result")
     expect(part.isError).toBe(false)
