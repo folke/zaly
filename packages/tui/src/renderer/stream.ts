@@ -27,15 +27,6 @@ type RenderState = {
   boundary: SuspenseBoundary
   /** Undefined until the first render pass populates it. */
   rows?: string[]
-  /** `ctx.version` captured when `rows` was produced. When the current
-   *  ctx version moves past this, the cached rows are stale — we
-   *  re-render even for non-live (frozen) states (e.g. on resize). */
-  version?: number
-  /** True while invalidate-triggered mutations should re-render this node.
-   *  Flipped to false when a newer node is appended. A non-live node with
-   *  `rows` set is frozen content — its bytes live on screen (and maybe
-   *  in scrollback) but we won't re-render it. */
-  live: boolean
 }
 
 export type StreamOptions = {
@@ -136,7 +127,7 @@ export class Stream extends Surface<StreamEvents> {
         return node()
       })
     )
-    this.#queue.push({ boundary, live: true, node: resolved })
+    this.#queue.push({ boundary, node: resolved })
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
     resolved.on("invalidate", this.onDirty)
@@ -176,15 +167,14 @@ export class Stream extends Surface<StreamEvents> {
     const states = [...this.#state]
     const ctx = this.getCtx()
 
-    // First render any dirty live nodes. This populates `rows` for all
+    // Render tracked nodes. Node.render() owns cache invalidation, so clean
+    // nodes return cached rows immediately; Stream only preserves the
+    // previous row count when a node shrinks so stale terminal rows clear.
     await Promise.all(
       states.map(async (s) => {
-        if (s.live || s.rows === undefined || s.version !== ctx.version) {
-          const len = s.rows?.length ?? 0
-          s.rows = await s.node.render(ctx)
-          if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
-          s.version = ctx.version
-        }
+        const len = s.rows?.length ?? 0
+        s.rows = await s.node.render(ctx)
+        if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
       })
     )
 
@@ -200,11 +190,9 @@ export class Stream extends Surface<StreamEvents> {
       }
       const next = this.#queue.shift()!
       this.#state.push(next)
-      this.commit({ keep: this.#opts.maxLive, render: false })
       states.push(next)
       // oxlint-disable-next-line no-await-in-loop
       next.rows = await next.node.render(ctx)
-      next.version = ctx.version
     }
 
     const allRows: string[] = []
@@ -337,9 +325,8 @@ export class Stream extends Surface<StreamEvents> {
       const first = this.#state[0]
       const len = first.rows?.length ?? 0
       if (dropped + len > newCC) break
-      if (first.node.mounted) first.node.unmount()
       this.#state.shift()
-      this.#commit(first)
+      this.#freeze(first)
       dropped += len
     }
     this.#scrollbackCount = newCC - dropped
@@ -353,24 +340,9 @@ export class Stream extends Surface<StreamEvents> {
 
   /** Detach invalidate listener and mark non-live.
    * Might still render this node if it was never rendered yet */
-  #commit(state: RenderState): void {
-    if (!state.live) return
-    state.live = false
+  #freeze(state: RenderState): void {
+    if (state.node.mounted) state.node.unmount()
     state.node.off("invalidate", this.onDirty)
-  }
-
-  /** Commit all but the last `keep` states. If `render` is true, also
-   * schedule a render to flush the commits. */
-  commit(opts?: { keep?: number; render?: boolean }): void {
-    const keep = opts?.keep ?? 1
-    const render = opts?.render ?? true
-    let changed = false
-    for (let i = 0; i < this.#state.length - keep; i++) {
-      const s = this.#state[i]
-      this.#commit(s)
-      changed = true
-    }
-    if (changed && render) void this.emit("dirty")
   }
 
   /**
@@ -393,9 +365,8 @@ export class Stream extends Surface<StreamEvents> {
    * row. We can't reconstruct where each pre-resize row "actually"
    * landed; the pragmatic fix is to forget the visible-region bookkeeping
    * and let the next render paint from scratch against the new
-   * dimensions. Node state (`#state`) is preserved so live nodes
-   * re-render at the new width; their caches self-invalidate via
-   * `ctx.version`.
+   * dimensions. Node state (`#state`) is preserved so retained nodes
+   * re-render at the new width through Node.render()'s cache key.
    *
    * Paired with a screen-clear in the Renderer's resize handler — this
    * method only resets our mirror of what's on screen; the actual wipe

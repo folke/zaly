@@ -99,11 +99,9 @@ describe("Stream — overflow & scrollback", () => {
   })
 })
 
-describe("Stream — live / frozen nodes", () => {
-  test("mutating a node past the maxLive window does not re-render it", async () => {
+describe("Stream — retained nodes", () => {
+  test("mutating any retained node re-renders it until it fully enters scrollback", async () => {
     const h = await makeHarness({ cols: 20, rows: 10 })
-    // maxLive defaults to 3. Append four nodes — the first is forced
-    // non-live once the fourth arrives.
     const first = text("first")
     const second = text("second")
     const third = text("third")
@@ -115,36 +113,11 @@ describe("Stream — live / frozen nodes", () => {
     await h.flush()
     expect(h.viewport().slice(-4)).toEqual(["first", "second", "third", "fourth"])
 
-    // Mutate the (now frozen) first. Nothing should change.
-    first.state.content = "CHANGED"
-    await h.flush()
-    expect(h.viewport().slice(-4)).toEqual(["first", "second", "third", "fourth"])
-
-    // Mutate one that's still inside the live window.
+    first.state.content = "FIRST!"
     third.state.content = "THIRD!"
     await h.flush()
-    expect(h.viewport().slice(-4)).toEqual(["first", "second", "THIRD!", "fourth"])
+    expect(h.viewport().slice(-4)).toEqual(["FIRST!", "second", "THIRD!", "fourth"])
 
-    h.dispose()
-  })
-})
-
-describe("Stream.commit", () => {
-  test("commit({ keep: 1 }) freezes all but the last node", async () => {
-    const h = await makeHarness({ cols: 20, rows: 10 })
-    const a = text("a")
-    const b = text("b")
-    h.renderer.stream.append(() => a)
-    h.renderer.stream.append(() => b)
-    await h.flush()
-    h.renderer.stream.commit({ keep: 1, render: false })
-
-    a.state.content = "A!"
-    b.state.content = "B!"
-    await h.flush()
-    // a was frozen → stale. b is still live → updated.
-    expect(h.viewport()[8]).toBe("a")
-    expect(h.viewport()[9]).toBe("B!")
     h.dispose()
   })
 })

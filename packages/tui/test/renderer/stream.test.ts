@@ -175,7 +175,6 @@ describe("Stream — drain through real surface", () => {
     // boundary's `whenIdle` before painting — so the drain catches the
     // resolved value and we see >DONE< in the paint output.
     resolveWork("DONE")
-    stream.commit({ keep: 0, render: false })
     await stream.render()
 
     expect(stdout.all).toContain(">DONE<")
@@ -197,7 +196,6 @@ describe("Stream — drain through real surface", () => {
       return text(formatted, { wrap: "none" })
     })
     resolveA("A:DONE")
-    stream.commit({ keep: 0, render: false })
     await stream.render()
 
     expect(stdout.all).toContain(">A:DONE<")
@@ -214,7 +212,6 @@ describe("Stream — drain through real surface", () => {
       return text(formatted, { wrap: "none" })
     })
     resolveB("B:DONE")
-    stream.commit({ keep: 0, render: false })
     await stream.render()
 
     expect(stdout.all).toContain(">B:DONE<")
