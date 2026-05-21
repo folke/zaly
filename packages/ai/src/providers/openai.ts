@@ -27,6 +27,7 @@ import {
   inlineFileSources,
   metaToText,
   sanitizeText,
+  truncateText,
 } from "../content/compose.ts"
 import { stringifyContent } from "../content/format.ts"
 import { ContentTransform } from "../content/transform.ts"
@@ -58,6 +59,7 @@ const openaiTransform = ContentTransform.create()
   .pipe(errorToMeta())
   .pipe(metaToText())
   .pipe(sanitizeText())
+  .pipe(truncateText())
 
 async function transformOpenAI(content: Content) {
   const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content

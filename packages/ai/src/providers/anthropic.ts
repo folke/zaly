@@ -18,6 +18,7 @@ import {
   inlineFileSources,
   metaToText,
   sanitizeText,
+  truncateText,
 } from "../content/compose.ts"
 import { ContentTransform } from "../content/transform.ts"
 
@@ -55,6 +56,7 @@ const anthropicTransform = ContentTransform.create()
   .pipe(errorToMeta())
   .pipe(metaToText())
   .pipe(sanitizeText())
+  .pipe(truncateText())
 
 async function transformAnthropic(content: Content) {
   const parts = typeof content === "string" ? [{ text: content, type: "text" as const }] : content

@@ -88,6 +88,13 @@ export function sanitizeText() {
     ct.map("text", (part) => ({ ...part, text: cleanTextAgent(part.text) }))
 }
 
+/** Truncate every `TextPart` to `maxLen` characters. This is mainly used as a safety valve
+ * to prevent runaway token counts from mis-behaving tools */
+export function truncateText(maxLen = 60_000) {
+  return <T extends ContentPart>(ct: ContentTransform<T>) =>
+    ct.map("text", (part) => ({ ...part, text: part.text.slice(0, maxLen) }))
+}
+
 /** Compress every base64-source `ImagePart` to fit a size budget.
  *  Resizes to `maxDimension` on the longest edge and re-encodes
  *  (JPEG with quality step-down, or PNG when the source has alpha).
