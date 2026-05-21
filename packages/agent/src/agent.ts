@@ -370,6 +370,7 @@ export class Agent extends Emitter<AgentEvents> {
   run(): Promise<AgentStopKind> {
     if (this.#running) return this.#running
     this.#pauseRequested = undefined
+    this.#abortController = undefined
     this.#running = this.#loop().finally(() => {
       this.#running = undefined
     })
@@ -425,8 +426,8 @@ export class Agent extends Emitter<AgentEvents> {
     // Drain the send queue (user-submitted via `send()`) and the inject
     // queue (notifier / wakeup / hooks). Sequential await preserves
     // chronological order on the session.
-    for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
     for (const m of this.#injectQueue.splice(0)) await this.session.add(m)
+    for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
 
     this.#setStatus("streaming")
 
