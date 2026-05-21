@@ -634,7 +634,7 @@ export function createStore<T extends object>(initial: T): SignalStore<T> {
     const p = typeof patch === "function" ? patch(state) : patch
     for (const k of Object.keys(p) as (keyof T)[]) {
       const v = p[k]
-      if (v !== undefined) setKey(k, v as T[typeof k])
+      setKey(k, v as T[typeof k])
     }
   }
 
