@@ -14,6 +14,8 @@ export const defaults: Settings = {
     "bash",
     "edit",
     "fetch",
+    "grep",
+    "find",
     "read",
     "search",
     "subagent",

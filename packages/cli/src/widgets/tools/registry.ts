@@ -42,6 +42,8 @@ export type ToolResultLoader = () => ToolResultRenderer
 const builtin = {
   bash: () => bashResult as ToolResultRenderer,
   edit: () => editResult as ToolResultRenderer,
+  find: () => bashResult as ToolResultRenderer,
+  grep: () => bashResult as ToolResultRenderer,
   read: () => readResult as ToolResultRenderer,
   write: () => writeResult as ToolResultRenderer,
 } as const satisfies Record<string, ToolResultLoader>

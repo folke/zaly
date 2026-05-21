@@ -47,7 +47,7 @@ export const toolCall = widget((props: ToolCallProps) => {
       { flexDirection: "column" },
       // Tool name + params preview
       text(({ style, width }) => {
-        const p = params.path ?? params.command ?? params.url ?? params
+        const p = params.path ?? params.command ?? params.url ?? params.pattern ?? params
         const json =
           typeof p === "string"
             ? style.success(JSON.stringify(p))
