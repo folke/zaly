@@ -6,6 +6,7 @@ import type { Cli } from "../cli.ts"
 
 import { listSessions, Session } from "@zaly/agent/session"
 import { stringifyContent } from "@zaly/ai"
+import { normPath } from "@zaly/shared"
 import { defineCommand } from "citty"
 import { rm } from "node:fs/promises"
 import { basename, dirname, isAbsolute } from "pathe"
@@ -85,12 +86,11 @@ export function sessionCommand(cli: Cli) {
   })
 }
 
-async function list(cli: Cli, args: ListArgs): Promise<void> {
+async function list(_cli: Cli, args: ListArgs): Promise<void> {
   // Without `--all`, scope to the current cwd. With `--all`, omit the
   // filter so the manager walks every project scope.
   const sessions = await listSessions({
-    // FIXME:
-    filter: args.all ? undefined : cli.ctx.flags.cwd,
+    filter: args.all ? undefined : normPath(),
     sort: true,
   })
   const filtered = args.pattern

@@ -335,9 +335,6 @@ export class Tasks extends Emitter<TasksEvents> {
     const tools = await this.tools()
 
     for (const call of calls) {
-      // Look up in user-managed tools first, fall back to caller-supplied
-      // extras (skill tool, future system tools). Keeps Tasks's own
-      // tool registry decoupled from agent-level extras.
       const tool = tools.find((t) => t.name === call.name)
       if (!tool) {
         tasks.push(this.#startSyncResult(call, unknownToolResult(call.name), round))
