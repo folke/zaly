@@ -6,9 +6,7 @@ import { defineCommand, runCommand, runMain, showUsage } from "citty"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, join, resolve } from "pathe"
-import { isAgent as ia } from "std-env"
-
-const isAgent = ia || process.env.ZALY === "1"
+import { isAgent } from "std-env"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 

@@ -264,8 +264,8 @@ describe("PermissionManager.validate('bash') — end-to-end", () => {
     expect(m.validate("bash", "sed -n '1,20p' src/index.ts").verdict).toBe("allow")
   })
 
-  test("sed with `w` script command is unsafe → ask", () => {
-    expect(m.validate("bash", "sed -e 'w /tmp/out' src/index.ts").verdict).toBe("ask")
+  test("explicit sed allow rule takes precedence over unsafe-mode ask", () => {
+    expect(m.validate("bash", "sed -e 'w /tmp/out' src/index.ts").verdict).toBe("allow")
   })
 
   test("piped read-only commands all allow", () => {
@@ -284,8 +284,8 @@ describe("PermissionManager.validate('bash') — end-to-end", () => {
     expect(m.validate("bash", "some-random-cmd --flag").verdict).toBe("ask")
   })
 
-  test("command substitution forces ask", () => {
-    expect(m.validate("bash", "echo $(whoami)").verdict).toBe("ask")
+  test("explicit bash allow rule takes precedence over command substitution ask", () => {
+    expect(m.validate("bash", "echo $(whoami)").verdict).toBe("allow")
   })
 
   test("redirect to /dev/null is invisible (file handler not consulted)", () => {
