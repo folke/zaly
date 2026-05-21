@@ -123,7 +123,7 @@ export class App {
     // waits for the agent to be ready.
     this.#input.on("submit", ({ value }, self) => {
       const trimmed = value.trim()
-      if (trimmed === "" || this.#state.busy || !this.#agent) return
+      if (trimmed === "" || !this.#agent) return
       if (!this.#agent.model) {
         this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
         return
