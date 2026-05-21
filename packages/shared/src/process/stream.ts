@@ -1,4 +1,5 @@
-import { createWriteStream } from "node:fs"
+import { createWriteStream, mkdirSync } from "node:fs"
+import { dirname } from "pathe"
 
 export type Stream<T> = {
   add(chunk: Buffer): void
@@ -164,6 +165,7 @@ export function bufferedTailStream<T>(stream: Stream<T>): {
   return {
     startTailing: (path: string) => {
       if (writer) return // already tailing
+      mkdirSync(dirname(path), { recursive: true })
       writer = createWriteStream(path, { flags: "a" })
       writer.on("error", () => {})
       if (buffer) {

@@ -36,6 +36,7 @@ export interface WakeupContext {
   agent?: Agent
 }
 
+// FIXME:
 declare module "@zaly/ai" {
   interface ToolContext {
     /** Reference to the running agent — surfaced for tools that need to

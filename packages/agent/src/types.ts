@@ -31,6 +31,8 @@ import type { AnyTool } from "./tools/registry.ts"
 // tests, evals) may pass a smaller context.
 declare module "@zaly/ai" {
   interface ToolContext {
+    /** Data directory for tools to read/write durable files. */
+    sessionDir?: string
     /** Permissions registry — manager.validate(scope, input) for tools
      *  that gate themselves. */
     perms?: PermissionManager

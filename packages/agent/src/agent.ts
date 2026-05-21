@@ -662,6 +662,7 @@ export class Agent extends Emitter<AgentEvents> {
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
       perms: await this.ctx.permissions(),
+      sessionDir: this.session.dir,
       signal: this.#abortController?.signal,
       swarm: () => this.#ctx.swarm(),
       tasks: this.#tasks,

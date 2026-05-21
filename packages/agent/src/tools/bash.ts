@@ -3,11 +3,10 @@ import type { MetaOf, MetaPart, Streamable, TextPart, ToolResult } from "@zaly/a
 import { defineTool } from "@zaly/ai"
 import { cleanTextTui, normPath, randomHash } from "@zaly/shared"
 import { bufferedTailStream, Spawn, TextStream } from "@zaly/shared/process"
-import { mkdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
-import { summarizeOutput } from "../utils/output.ts"
+import { truncate } from "../utils/truncate.ts"
 
 export type BashTool = typeof bashTool
 export type BashToolMeta = MetaOf<BashTool>
@@ -87,7 +86,6 @@ export const bashTool = defineTool({
     const cwd = normPath(ctx.cwd)
     const timeout = args.timeout
     const startedAt = Date.now()
-    const half = Math.floor(args.max_lines / 2)
 
     // Buffer in memory; only flip to disk if a snapshot reports the
     // output exceeded the inline cap.
@@ -95,7 +93,10 @@ export const bashTool = defineTool({
     const logState: { path?: string } = {}
     const logPath = (): string => {
       if (!logState.path) {
-        logState.path = allocateLogPath()
+        logState.path = join(
+          ctx.sessionDir ?? join(tmpdir(), "zaly-bash"),
+          `bash-${randomHash()}.log`
+        )
         startTailing(logState.path)
       }
       return logState.path
@@ -125,7 +126,7 @@ export const bashTool = defineTool({
       // heartbeat flag this task with `*new*` without advancing the
       // cursor (which would consume the bytes for any later poll).
       hasNew: () => proc.stdout.length > cursor.combined,
-      poll: () => snapshot({ cursor, head: half, logPath, proc, startedAt, tail: half }),
+      poll: () => snapshot({ cursor, logPath, maxLines: args.max_lines, proc, startedAt }),
     }
   },
 })
@@ -139,9 +140,8 @@ interface SnapshotOpts {
    *  bufferedTailStream into tailing mode so subsequent chunks land on
    *  disk too. Idempotent. */
   logPath: () => string
-  head: number
-  tail: number
   cursor: { combined: number }
+  maxLines: number
 }
 
 /** Build the current `ToolResult` snapshot for a running or exited bash
@@ -151,9 +151,8 @@ function snapshot({
   proc,
   startedAt,
   logPath,
-  head,
-  tail,
   cursor,
+  maxLines,
 }: SnapshotOpts): ToolResult & { running: boolean } {
   // Slice incremental combined output since the cursor and advance.
   let text = proc.stdout.slice(cursor.combined)
@@ -162,11 +161,6 @@ function snapshot({
   // clean text, but keep styles. Styles are stripped in the provider
   // content transform pipelines
   text = cleanTextTui(text)
-
-  // Pass `logPath` to summarizeOutput only when truncation actually
-  // happens — at which point ensureLog() materializes the file and
-  // bufferedTailStream replays the buffered bytes to disk.
-  const summary = summarizeOutput(text, { head, logPath, tail })
 
   const status: "exited" | "running" = proc.done ? "exited" : "running"
   const meta: Record<string, unknown> = {
@@ -177,8 +171,15 @@ function snapshot({
     meta.code = proc.exitCode ?? -1
     if (proc.killReason) meta.killReason = proc.killReason
   }
-  if (summary.truncated)
-    meta.truncated = { fullOutputPath: summary.logPath, totalLines: summary.totalLines }
+
+  const summary = truncate(text, { maxLines, strategy: "head+tail" })
+  if (summary.truncated) {
+    const log = logPath()
+    meta.truncated = {
+      fullOutputPath: log,
+      totalLines: summary.origLines,
+    }
+  }
 
   const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "bash", type: "meta" }]
   if (summary.text !== "") parts.push({ text: summary.text, type: "text" })
@@ -188,18 +189,4 @@ function snapshot({
     isError: false,
     running: !proc.done,
   }
-}
-
-/** Allocate a log path under a session-scoped tmp dir. The dir is shared
- *  across bash calls in the same process (cheap mkdir is idempotent), so
- *  cleanup is the agent harness's concern at the OS level — we don't
- *  delete files ourselves. The file itself is created lazily by the
- *  writer when bufferedTailStream flushes; no need to touch it here. */
-let sessionDir: string | undefined
-function allocateLogPath(): string {
-  if (sessionDir === undefined) {
-    sessionDir = join(tmpdir(), `zaly-bash-${randomHash()}`)
-    mkdirSync(sessionDir, { recursive: true })
-  }
-  return join(sessionDir, `bash-${randomHash()}.log`)
 }

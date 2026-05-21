@@ -1,46 +1,72 @@
 import { describe, expect, test } from "vitest"
-import { summarizeOutput } from "../src/utils/truncate.ts"
+import { truncate } from "../src/utils/truncate.ts"
 import { addUsage } from "../src/utils/usage.ts"
 
-describe("summarizeOutput", () => {
-  test("empty input → empty result", () => {
-    expect(summarizeOutput("")).toEqual({ text: "", totalLines: 0, truncated: false })
+describe("truncate", () => {
+  test("returns small text untouched", () => {
+    const r = truncate("a\nb\nc", { maxChars: 100, maxLines: 10 })
+    expect(r.text).toBe("a\nb\nc")
+    expect(r.truncated).toBe(false)
+    expect(r.origLines).toBe(3)
+    expect(r.origChars).toBe(5)
   })
 
-  test("under the limit returns full text untouched", () => {
-    const r = summarizeOutput("a\nb\nc")
-    expect(r).toEqual({ text: "a\nb\nc", totalLines: 3, truncated: false })
-  })
-
-  test("trailing newline is not counted as an extra line", () => {
-    const r = summarizeOutput("a\nb\nc\n")
-    expect(r).toEqual({ text: "a\nb\nc", totalLines: 3, truncated: false })
-  })
-
-  test("over limit produces head+tail with elision marker", () => {
-    const lines = Array.from({ length: 50 }, (_, i) => `L${i + 1}`).join("\n")
-    const r = summarizeOutput(lines, { head: 5, tail: 5 })
-    if ("binary" in r) throw new Error("expected text result")
+  test("truncates overlong non-json lines", () => {
+    const r = truncate("0123456789", { maxLineChars: 4 })
     expect(r.truncated).toBe(true)
-    expect(r.totalLines).toBe(50)
-    const parts = r.text.split("\n")
-    expect(parts[0]).toBe("L1")
-    expect(parts[4]).toBe("L5")
-    expect(parts[5]).toMatch(/40 lines elided/)
-    expect(parts[6]).toBe("L46")
-    expect(parts.at(-1)).toBe("L50")
+    expect(r.truncatedLineChars).toBe(true)
+    expect(r.text).toBe("0123 … [truncated 6 chars]")
   })
 
-  test("logPath is woven into the elision marker", () => {
-    const lines = Array.from({ length: 20 }, (_, i) => `L${i + 1}`).join("\n")
-    const r = summarizeOutput(lines, { head: 2, tail: 2, logPath: "/tmp/log.txt" })
-    if ("binary" in r) throw new Error("expected text result")
-    expect(r.text).toContain("/tmp/log.txt")
+  test("preserves head and tail lines by default", () => {
+    const input = Array.from({ length: 10 }, (_, i) => `L${i + 1}`).join("\n")
+    const r = truncate(input, { head: 2, maxChars: 1000, maxLines: 5 })
+    expect(r.truncated).toBe(true)
+    expect(r.truncatedLines).toBe(true)
+    expect(r.text.split("\n")).toEqual([
+      "L1",
+      "L2",
+      "… [truncated 5 lines]",
+      "L8",
+      "L9",
+      "L10",
+    ])
+  })
+
+  test("supports head strategy", () => {
+    const input = Array.from({ length: 5 }, (_, i) => `L${i + 1}`).join("\n")
+    const r = truncate(input, { maxChars: 1000, maxLines: 2, strategy: "head" })
+    expect(r.text.split("\n")).toEqual(["L1", "L2", "… [truncated 3 lines]"])
+  })
+
+  test("supports tail strategy", () => {
+    const input = Array.from({ length: 5 }, (_, i) => `L${i + 1}`).join("\n")
+    const r = truncate(input, { maxChars: 1000, maxLines: 2, strategy: "tail" })
+    expect(r.text.split("\n")).toEqual(["… [truncated 3 lines]", "L4", "L5"])
+  })
+
+  test("treats fractional head as fraction of maxLines", () => {
+    const input = Array.from({ length: 8 }, (_, i) => `L${i + 1}`).join("\n")
+    const r = truncate(input, { head: 0.25, maxChars: 1000, maxLines: 4 })
+    expect(r.opts.head).toBe(1)
+    expect(r.text.split("\n")).toEqual(["L1", "… [truncated 4 lines]", "L6", "L7", "L8"])
+  })
+
+  test("truncates huge one-line json by chars without line budgeting", () => {
+    const input = `{"data":"${"x".repeat(100)}"}`
+    const r = truncate(input, { maxChars: 40, maxLineChars: 10, maxLines: 10 })
+    expect(r.truncated).toBe(true)
+    expect(r.truncatedChars).toBe(true)
+    expect(r.truncatedLineChars).toBeUndefined()
+    expect(r.truncatedLines).toBeUndefined()
+    expect(r.text).toContain("[truncated")
+    expect(r.text.startsWith("{")).toBe(true)
+    expect(r.text.length).toBeLessThanOrEqual(80)
   })
 
   test("string and Buffer with identical content produce identical results", () => {
     const text = "one\ntwo\nthree"
-    expect(summarizeOutput(text)).toEqual(summarizeOutput(Buffer.from(text)))
+    expect(truncate(text)).toEqual(truncate(Buffer.from(text)))
   })
 })
 
