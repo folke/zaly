@@ -45,7 +45,7 @@ const lastToolPart = (agent: Agent) => {
   return undefined
 }
 
-const runWithTimeout = async (agent: Agent, ms = 2_000) => {
+const runWithTimeout = async (agent: Agent, ms = 2000) => {
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`agent.run() did not settle within ${ms}ms`)), ms)
   )
@@ -154,7 +154,7 @@ describe("real tools do not leave the agent stuck in running-tools", () => {
           {
             id: "bash-1",
             name: "bash",
-            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1_000 },
+            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1000 },
             type: "tool-call",
           },
           { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
@@ -185,7 +185,7 @@ describe("real tools do not leave the agent stuck in running-tools", () => {
           {
             id: "bash-1",
             name: "bash",
-            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1_000 },
+            params: { command: "ls", description: "list files", max_lines: 20, timeout: 1000 },
             type: "tool-call",
           },
           { finishReason: "tool-calls", type: "finish", usage: { input: 1, output: 1 } },
