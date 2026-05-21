@@ -88,6 +88,11 @@ export const overrides: Record<string, ProviderOverride> = {
       responsesStore: false,
       responsesSystemAs: "instructions",
     },
+    transform: (info: ModelInfo) => ({
+      ...info,
+      // codex models have a hard 270k context cap
+      limit: { ...info.limit, context: Math.min(270_000, info.limit.context) },
+    }),
   },
 
   // ── OpenRouter ────────────────────────────────────────────────────
