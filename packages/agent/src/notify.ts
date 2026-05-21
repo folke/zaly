@@ -1,6 +1,6 @@
 import type { Agent } from "./agent.ts"
 
-import { since } from "@zaly/shared"
+import { formatDuration } from "@zaly/shared"
 
 export type NotifyContext = {
   agent: Agent
@@ -64,7 +64,7 @@ export class Notifier {
       agent.notify("new-day", this.time(now))
     } else if (now - this.#lastStep > this.#opts.idle * 1000) {
       agent.notify("user-returned", {
-        idle: since(this.#lastStep, now),
+        idle: formatDuration(this.#lastStep, { to: now }),
         ...this.time(now),
       })
     } else if (now - (this.#lastTime ?? now) > this.#opts.periodic * 1000) {

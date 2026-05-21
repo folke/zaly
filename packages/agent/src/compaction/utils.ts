@@ -17,7 +17,7 @@ import {
   stringifyContent,
   toXml,
 } from "@zaly/ai"
-import { safeStringify, since } from "@zaly/shared"
+import { safeStringify, formatDuration } from "@zaly/shared"
 import { parseBash } from "../utils/bash/parser.ts"
 import { TOOLS } from "../utils/bash/tools.ts"
 
@@ -280,7 +280,7 @@ export async function messageTail(
 
 const lastCol = (lastTurn: number, lastTs: number): string => {
   const turn = lastTurn === Infinity ? "?" : `${lastTurn}t`
-  const wall = lastTs > 0 ? since(lastTs) : "?"
+  const wall = lastTs > 0 ? formatDuration(lastTs) : "?"
   return `${turn} / ${wall}`
 }
 

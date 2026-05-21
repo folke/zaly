@@ -141,19 +141,6 @@ export function withError<T>(fn: () => T, errorMsg: string): T {
   }
 }
 
-/** Humanized elapsed-time string between two epoch-ms timestamps. */
-export function since(from: number, to = Date.now()): string {
-  const ms = to - from
-  const s = Math.floor(ms / 1000)
-  if (s < 60) return `${s}s`
-  const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 24) return m % 60 === 0 ? `${h}h` : `${h}h ${m % 60}m`
-  const d = Math.floor(h / 24)
-  return h % 24 === 0 ? `${d}d` : `${d}d ${h % 24}h`
-}
-
 export function clamp(num: number, min?: number, max?: number): number {
   return Math.min(max ?? num, Math.max(min ?? num, num))
 }

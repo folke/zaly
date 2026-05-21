@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { summarizeOutput } from "../src/utils/output.ts"
+import { summarizeOutput } from "../src/utils/truncate.ts"
 import { addUsage } from "../src/utils/usage.ts"
 
 describe("summarizeOutput", () => {

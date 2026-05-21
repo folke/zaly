@@ -18,13 +18,13 @@
 import type { CompactionContext } from "../src/compaction/compactions.ts"
 import type { BashUsage, FileUsage } from "../src/compaction/utils.ts"
 
-import { since } from "@zaly/shared"
+import { formatDuration } from "@zaly/shared"
 import { extractBashUsage, extractFileUsage } from "../src/compaction/utils.ts"
 import { loadSession } from "./helpers.ts"
 
 const lastCol = (lastTurn: number, lastTs: number): string => {
   const turn = lastTurn === Infinity ? "?" : `${lastTurn}t`
-  const wall = lastTs > 0 ? since(lastTs) : "?"
+  const wall = lastTs > 0 ? formatDuration(lastTs) : "?"
   return `${turn} / ${wall}`
 }
 
