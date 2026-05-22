@@ -6,6 +6,7 @@ import { Actions } from "../../src/input/actions.ts"
 import { defaultActions } from "../../src/input/defaults.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { input } from "../../src/widgets/input.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
 function key(name: string, more: Partial<RoutedKey> = {}): RoutedKey {
   const ev: RoutedKey = {
@@ -270,10 +271,10 @@ function mount(state = {}) {
   const actions = new Actions()
   actions.setTargetResolver(() => router.focused)
   router.setActions(actions)
-  actions.register(defaultActions)
+  actions.register(defaultActions, { default: true })
   const n = input(state)
+  n.mount(mockMountCtx("ui", { actions, input: { bind: (binding) => actions.bind(binding), blur: () => router.focus(undefined), focus: (node) => router.focus(node) } }))
   router.focus(n)
-  router.setKeymapIndex(actions.buildKeymap())
   return { n, router }
 }
 

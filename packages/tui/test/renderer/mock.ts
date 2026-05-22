@@ -27,7 +27,7 @@ export function mockMountCtx(
     findNode: () => [],
     getNode: () => undefined,
     input: {
-      bind: (pattern, handler) => router.bind(pattern, handler),
+      bind: (binding) => actions.bind(binding),
       blur: () => router.focus(undefined),
       focus: (node) => router.focus(node),
     },

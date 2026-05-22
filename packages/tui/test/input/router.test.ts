@@ -1,3 +1,4 @@
+import type { Node } from "../../src/index.ts"
 import type { KeyEvent } from "../../src/input/keys.ts"
 import type { Box } from "../../src/widgets/box.ts"
 
@@ -6,9 +7,31 @@ import { Actions } from "../../src/input/actions.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { box } from "../../src/widgets/box.ts"
 import { text } from "../../src/widgets/text.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
 function makeKey(name: string, mods: Partial<KeyEvent> = {}): KeyEvent {
   return { alt: false, ctrl: false, meta: false, name, shift: false, ...mods }
+}
+
+function setup() {
+  const router = new InputRouter()
+  const actions = new Actions()
+  actions.setTargetResolver(() => router.focused)
+  router.setActions(actions)
+  const mount = <T extends Node>(node: T) => {
+    node.mount(
+      mockMountCtx("ui", {
+        actions,
+        input: {
+          bind: (binding) => actions.bind(binding),
+          blur: () => router.focus(undefined),
+          focus: (n) => router.focus(n),
+        },
+      })
+    )
+    return node
+  }
+  return { actions, mount, router }
 }
 
 describe("InputRouter — focus", () => {
@@ -85,44 +108,42 @@ describe("InputRouter — key dispatch", () => {
 
   test("no focused node — dispatch is a no-op", () => {
     const router = new InputRouter()
-    // Doesn't throw.
     expect(() => router.dispatch({ event: makeKey("q"), type: "key" })).not.toThrow()
   })
 })
 
-describe("InputRouter — globals", () => {
-  test("global handler fires on matching pattern", () => {
-    const router = new InputRouter()
+describe("InputRouter — action bindings", () => {
+  test("global action fires on matching pattern", () => {
+    const { actions, router } = setup()
     let hits = 0
-    router.bind("ctrl-c", () => {
-      hits++
-    })
+    actions.bind({ fn: () => hits++, id: "test.global", keys: "ctrl-c" })
     router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
     expect(hits).toBe(1)
   })
 
   test("global with no match falls through to the focused node", () => {
-    const router = new InputRouter()
-    const n = text("x")
+    const { actions, mount, router } = setup()
+    const n = mount(text("x"))
     const nodeSeen: string[] = []
     n.on("key", (ev) => nodeSeen.push(ev.key.name))
-    router.bind("ctrl-c", () => {
-      throw new Error("should not fire")
+    actions.bind({
+      fn: () => {
+        throw new Error("should not fire")
+      },
+      id: "test.global",
+      keys: "ctrl-c",
     })
     router.focus(n)
     router.dispatch({ event: makeKey("a"), type: "key" })
     expect(nodeSeen).toEqual(["a"])
   })
 
-  test("global handler fires as a last-resort fallback", () => {
-    // `bind()` runs in phase 3 — after node bubble and keymap lookup.
-    // The node's raw key listener sees the event first; the global
-    // handler catches the unclaimed event and consumes it.
-    const router = new InputRouter()
-    const n = text("x")
+  test("global action fires after raw key bubble", () => {
+    const { actions, mount, router } = setup()
+    const n = mount(text("x"))
     const nodeSeen: string[] = []
     n.on("key", (ev) => nodeSeen.push(ev.key.name))
-    router.bind("ctrl-c", () => true)
+    actions.bind({ fn: () => true, id: "test.global", keys: "ctrl-c" })
     router.focus(n)
     const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
     expect(consumed).toBe(true)
@@ -130,11 +151,9 @@ describe("InputRouter — globals", () => {
   })
 
   test("bind returns an unsubscribe function", () => {
-    const router = new InputRouter()
+    const { actions, router } = setup()
     let hits = 0
-    const off = router.bind("a", () => {
-      hits++
-    })
+    const off = actions.bind({ fn: () => hits++, id: "test.global", keys: "a" })
     router.dispatch({ event: makeKey("a"), type: "key" })
     expect(hits).toBe(1)
     off()
@@ -145,43 +164,32 @@ describe("InputRouter — globals", () => {
 
 describe("InputRouter — keymap → action dispatch", () => {
   test("keymap entry with action id fires the focused node's handler", () => {
-    const router = new InputRouter()
-    const actions = new Actions()
-    actions.setTargetResolver(() => router.focused)
-    router.setActions(actions)
+    const { actions, mount, router } = setup()
     actions.register({ "input.cursorLeft": { keys: ["left"] } })
 
-    const n = text("t")
+    const n = mount(text("t"))
     let fired = 0
     ;(n as unknown as { actions: Record<string, () => void> }).actions = {
       "input.cursorLeft": () => fired++,
     }
     router.focus(n)
-    router.setKeymapIndex(actions.buildKeymap())
     const consumed = router.dispatch({ event: makeKey("left"), type: "key" })
     expect(consumed).toBe(true)
     expect(fired).toBe(1)
   })
 
   test("action with catalog `fn` fires directly without walking", () => {
-    const router = new InputRouter()
-    const actions = new Actions()
-    actions.setTargetResolver(() => router.focused)
-    router.setActions(actions)
+    const { actions, router } = setup()
     let fired = 0
     actions.register({ "global.quit": { fn: () => fired++, keys: ["ctrl-c"] } })
-    router.setKeymapIndex(actions.buildKeymap())
     const consumed = router.dispatch({ event: makeKey("c", { ctrl: true }), type: "key" })
     expect(consumed).toBe(true)
     expect(fired).toBe(1)
   })
 
   test("dispatch walks the focus chain for node.actions[id]", () => {
-    const router = new InputRouter()
-    const actions = new Actions()
-    actions.setTargetResolver(() => router.focused)
-    router.setActions(actions)
-    const parent = box({})
+    const { actions, mount, router } = setup()
+    const parent = mount(box({}))
     const child = text("c")
     parent.add(child)
     let fired = 0
@@ -190,50 +198,41 @@ describe("InputRouter — keymap → action dispatch", () => {
     }
     actions.register({ "app.doit": { keys: ["ctrl-d"] } })
     router.focus(child)
-    router.setKeymapIndex(actions.buildKeymap())
     router.dispatch({ event: makeKey("d", { ctrl: true }), type: "key" })
     expect(fired).toBe(1)
   })
 
   test("unmatched keys fall through to the raw key event", () => {
-    const router = new InputRouter()
-    const n = text("t")
+    const { actions, mount, router } = setup()
+    const n = mount(text("t"))
     const seen: string[] = []
     n.on("key", (ev) => seen.push(ev.key.name))
+    actions.register({ "input.foo": { keys: ["enter"] } })
     router.focus(n)
-    router.setKeymap({ enter: "input.foo" })
-    // "a" isn't bound — bubbles as a raw key first anyway.
     router.dispatch({ event: makeKey("a"), type: "key" })
     expect(seen).toEqual(["a"])
   })
 
-  test("direct handler in keymap fires and consumes", () => {
-    const router = new InputRouter()
-    let fired = 0
-    router.setKeymap({
-      "ctrl-s": () => {
-        fired++
-        return true
-      },
+  test("action target takes precedence over the focused node", () => {
+    const { actions, mount, router } = setup()
+    const input = mount(text("input"))
+    const menu = mount(text("menu"))
+    const seen: string[] = []
+    ;(input as unknown as { actions: Record<string, () => void> }).actions = {
+      "input.submit": () => seen.push("input"),
+    }
+    ;(menu as unknown as { actions: Record<string, () => void> }).actions = {
+      "menu.select": () => seen.push("menu"),
+    }
+    input.addActionTarget(menu)
+    actions.register({
+      "input.submit": { keys: ["enter"] },
+      "menu.select": { keys: ["enter"] },
     })
-    const consumed = router.dispatch({ event: makeKey("s", { ctrl: true }), type: "key" })
+    router.focus(input)
+    const consumed = router.dispatch({ event: makeKey("enter"), type: "key" })
     expect(consumed).toBe(true)
-    expect(fired).toBe(1)
-  })
-
-  test("setKeymap replaces the index wholesale", () => {
-    const router = new InputRouter()
-    const actions = new Actions()
-    router.setActions(actions)
-    let fired = 0
-    router.setKeymap({ left: () => (fired++, true) })
-    router.dispatch({ event: makeKey("left"), type: "key" })
-    expect(fired).toBe(1)
-    router.setKeymap({ right: () => (fired++, true) })
-    router.dispatch({ event: makeKey("left"), type: "key" })
-    expect(fired).toBe(1)
-    router.dispatch({ event: makeKey("right"), type: "key" })
-    expect(fired).toBe(2)
+    expect(seen).toEqual(["menu"])
   })
 })
 
