@@ -1,7 +1,6 @@
 import type { AuthProvider } from "./auth/auth.ts"
 import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
 
-import { compareNaturalDescNumbers } from "@zaly/shared"
 import { hasAuth } from "./auth/auth.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
@@ -140,7 +139,14 @@ export async function listModels(opts?: ModelFilter): Promise<Record<string, Mod
     attachProviderInfo(stored, catalog, id),
   ])
 
-  entries.sort(([a], [b]) => compareNaturalDescNumbers(a, b))
+  entries.sort(([a, am], [b, bm]) => {
+    const ap = am.providerInfo?.name ?? "0"
+    const bp = bm.providerInfo?.name ?? "0"
+    if (ap && bp && ap !== bp) return ap.localeCompare(bp)
+    const ka = am.release_date ?? am.last_updated ?? a
+    const kb = bm.release_date ?? bm.last_updated ?? b
+    return -ka.localeCompare(kb)
+  })
 
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.

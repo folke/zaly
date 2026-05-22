@@ -4,6 +4,7 @@ import type { ParsedArgs } from "citty"
 import type { Cli } from "../cli.ts"
 
 import { listModels } from "@zaly/ai"
+import { formatNumber } from "@zaly/shared"
 import { defineCommand } from "citty"
 
 type ModelsArgs = ParsedArgs<{
@@ -52,7 +53,21 @@ async function run(_cli: Cli, args: ModelsArgs): Promise<void> {
     return
   }
 
-  for (const id of Object.keys(models)) {
-    console.log(id)
+  const ctx = _cli.ctx
+
+  const rows: string[] = [
+    "| Model Id | Reasoning | Context limit | Modalities | Release Date |",
+    "|-|-:|-:|-|-:|",
+  ]
+  for (const [id, m] of Object.entries(models)) {
+    const row = [
+      `**${id}**`,
+      m.reasoning ? "**✓**" : "",
+      `\`${formatNumber(m.limit.context)}\``,
+      m.modalities.input.toSorted().join(", "),
+      m.release_date ?? "",
+    ]
+    rows.push(`| ${row.join(" | ")} |`)
   }
+  ctx.log(rows.join("\n"))
 }

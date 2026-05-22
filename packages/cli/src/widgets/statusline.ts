@@ -1,6 +1,7 @@
 import type { ThemeKey } from "@zaly/tui"
 import type { AppState } from "../types.ts"
 
+import { formatNumber as fmt } from "@zaly/shared"
 import { box, memo, spinner, text, widget } from "@zaly/tui"
 
 /**
@@ -37,11 +38,3 @@ export const statusline = widget((props: AppState) =>
     })
   )
 )
-
-/** Compact token formatter — `812`, `4.2k`, `123k`, `1.4M`. */
-function fmt(n: number): string {
-  if (n < 1000) return String(n)
-  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`
-  if (n < 1_000_000) return `${Math.round(n / 1000)}k`
-  return `${(n / 1_000_000).toFixed(1)}M`
-}

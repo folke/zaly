@@ -64,39 +64,93 @@ export const SettingsSchema = {
                                 }
                             }
                         },
-                        required: [],
-                        description: "test *"
+                        required: []
                     },
-                    packs: {
-                        type: "array",
-                        items: {
-                            type: "string"
+                    resources: {
+                        type: "object",
+                        properties: {
+                            packs: {
+                                oneOf: [
+                                    {
+                                        type: "array",
+                                        items: {
+                                            type: "string"
+                                        }
+                                    },
+                                    {
+                                        type: "boolean",
+                                        "enum": [
+                                            false
+                                        ]
+                                    }
+                                ]
+                            },
+                            plugins: {
+                                oneOf: [
+                                    {
+                                        type: "array",
+                                        items: {
+                                            type: "string"
+                                        }
+                                    },
+                                    {
+                                        type: "boolean",
+                                        "enum": [
+                                            false
+                                        ]
+                                    }
+                                ]
+                            },
+                            skills: {
+                                oneOf: [
+                                    {
+                                        type: "array",
+                                        items: {
+                                            type: "string"
+                                        }
+                                    },
+                                    {
+                                        type: "boolean",
+                                        "enum": [
+                                            false
+                                        ]
+                                    }
+                                ]
+                            },
+                            themes: {
+                                oneOf: [
+                                    {
+                                        type: "array",
+                                        items: {
+                                            type: "string"
+                                        }
+                                    },
+                                    {
+                                        type: "boolean",
+                                        "enum": [
+                                            false
+                                        ]
+                                    }
+                                ]
+                            },
+                            prompts: {
+                                oneOf: [
+                                    {
+                                        type: "array",
+                                        items: {
+                                            type: "string"
+                                        }
+                                    },
+                                    {
+                                        type: "boolean",
+                                        "enum": [
+                                            false
+                                        ]
+                                    }
+                                ]
+                            }
                         },
-                        description: "Resources *"
-                    },
-                    plugins: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        }
-                    },
-                    skills: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        }
-                    },
-                    themes: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        }
-                    },
-                    prompts: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        }
+                        required: []
                     }
                 },
                 required: []

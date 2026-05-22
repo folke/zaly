@@ -35,3 +35,10 @@ export function formatSize(bytes: number): string {
   } while (bytes >= 1024 && i < units.length - 1)
   return `${bytes.toFixed(2)} ${units[i]}`
 }
+
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 1,
+    notation: n >= 1000 ? "compact" : "standard",
+  }).format(n)
+}
