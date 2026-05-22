@@ -2,7 +2,8 @@ import type { RoutedKey, RoutedPaste } from "../../src/input/router.ts"
 
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { Actions, defaultActions } from "../../src/input/actions.ts"
+import { Actions } from "../../src/input/actions.ts"
+import { defaultActions } from "../../src/input/defaults.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { input } from "../../src/widgets/input.ts"
 
