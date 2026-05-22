@@ -213,28 +213,16 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
    * it pre-empts the input's own keymap-driven actions.
    */
   #installKeyIntercept(input: Input): void {
+    const keymap = {
+      down: "menu.next",
+      enter: "menu.select",
+      esc: "menu.cancel",
+      tab: "menu.select",
+      up: "menu.prev",
+    } as Record<string, string | undefined>
     const listener = ({ key: ev }: { key: RoutedKey }): void => {
       if (!this.open) return
-      const id = ((): string | undefined => {
-        switch (ev.pattern) {
-          case "up": {
-            return "menu.prev"
-          }
-          case "down": {
-            return "menu.next"
-          }
-          case "tab":
-          case "enter": {
-            return "menu.select"
-          }
-          case "esc": {
-            return "menu.cancel"
-          }
-          default: {
-            return undefined
-          }
-        }
-      })()
+      const id = keymap[ev.pattern]
       if (id === undefined) return
       // Dispatch through the action registry with an explicit target
       // so it walks *from the menu* rather than the focused input —
