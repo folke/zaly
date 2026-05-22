@@ -176,8 +176,7 @@ export function mainCommand(cli: Cli) {
       await run(cli)
     },
     async cleanup() {
-      cli.ctx.uninstall()
-      await cli.ctx.flush()
+      await cli.ctx.stop()
     },
   })
 }

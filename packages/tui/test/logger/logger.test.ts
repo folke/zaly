@@ -1,7 +1,8 @@
 import type { Node } from "../../src/core/node.ts"
 
+import { installLogger, Logger } from "@zaly/shared/logger"
 import { afterEach, describe, expect, test, vi } from "vitest"
-import { Logger } from "../../src/logger/logger.ts"
+import { TuiReporter } from "../../src/logger/logger.ts"
 import { Text } from "../../src/widgets/text.ts"
 
 const fakeStream = () => {
@@ -19,9 +20,10 @@ const fakeStream = () => {
 describe("Logger — stream attached", () => {
   test("detach stops appending to the stream", () => {
     const s = fakeStream()
-    const logger = new Logger({ write: () => {} })
-    logger.attach(s)
-    logger.detach()
+    const reporter = new TuiReporter({ write: () => {} })
+    const logger = new Logger().attach("tui", reporter)
+    reporter.attach(s)
+    reporter.detach()
     logger.info("after")
     expect(s.nodes).toHaveLength(0)
   })
@@ -31,8 +33,9 @@ describe("Logger — stream attached", () => {
     const custom = vi.fn(
       (level: string, msg: unknown[]) => new Text({ content: `[${level}] ${msg.join(" ")}` })
     )
-    const logger = new Logger({ factory: custom })
-    logger.attach(s)
+    const reporter = new TuiReporter({ factory: custom })
+    const logger = new Logger().attach("tui", reporter)
+    reporter.attach(s)
     logger.warn("a", "b")
     expect(custom).toHaveBeenCalledWith("warn", ["a", "b"])
     expect(s.nodes[0]).toBeInstanceOf(Text)
@@ -42,7 +45,8 @@ describe("Logger — stream attached", () => {
 describe("Logger — no stream attached (fallback)", () => {
   test("error/fatal/warn route to stderr, rest to stdout", () => {
     const writes: { kind: string; text: string }[] = []
-    const logger = new Logger({ write: (text, kind) => writes.push({ kind, text }) })
+    const reporter = new TuiReporter({ write: (text, kind) => writes.push({ kind, text }) })
+    const logger = new Logger().attach("tui", reporter)
     logger.info("i")
     logger.error("e")
     logger.warn("w")
@@ -53,14 +57,16 @@ describe("Logger — no stream attached (fallback)", () => {
 
   test("each write ends with a newline", () => {
     const writes: string[] = []
-    const logger = new Logger({ write: (text) => writes.push(text) })
+    const reporter = new TuiReporter({ write: (text) => writes.push(text) })
+    const logger = new Logger().attach("tui", reporter)
     logger.info("hi")
     expect(writes[0].endsWith("\n")).toBe(true)
   })
 
   test("fallback content contains the inspected body", () => {
     const writes: string[] = []
-    const logger = new Logger({ write: (text) => writes.push(text) })
+    const reporter = new TuiReporter({ write: (text) => writes.push(text) })
+    const logger = new Logger().attach("tui", reporter)
     logger.info("hello world")
     expect(writes[0]).toContain("hello world")
   })
@@ -85,19 +91,15 @@ describe("Logger — console install/uninstall", () => {
 
   test("patches console.* to route through logger, restores on uninstall", () => {
     const s = fakeStream()
-    const logger = new Logger()
-    logger.attach(s)
+    const reporter = new TuiReporter()
+    const logger = new Logger().attach("tui", reporter)
+    reporter.attach(s)
     const originalLog = console.log
-    logger.install()
+    const uninstall = installLogger(logger)
     expect(console.log).not.toBe(originalLog)
     console.log("from-console")
     expect(s.nodes).toHaveLength(1)
-    logger.uninstall()
+    uninstall()
     expect(console.log).toBe(originalLog)
-  })
-
-  test("uninstall is safe when install was never called", () => {
-    const logger = new Logger({ write: () => {} })
-    expect(() => logger.uninstall()).not.toThrow()
   })
 })

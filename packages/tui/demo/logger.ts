@@ -1,3 +1,4 @@
+import { installLogger, Logger } from "@zaly/shared/logger"
 import { box, createRenderer, spinner, text } from "@zaly/tui"
 
 /**
@@ -17,7 +18,8 @@ import { box, createRenderer, spinner, text } from "@zaly/tui"
  *     the logger and land in the stream like any other entry.
  */
 
-const renderer = await createRenderer({ logger: { minLevel: "trace" } })
+const logger = new Logger({ name: "demo-logger" }, { level: "trace" })
+const renderer = await createRenderer({ logger })
 
 renderer.ui.add(() =>
   box(
@@ -33,7 +35,7 @@ renderer.ui.add(() =>
   )
 )
 
-const { log } = renderer
+const log = renderer.logger
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 renderer.start()
@@ -44,7 +46,7 @@ async function main(): Promise<void> {
   // ── 1. One entry per level, so you can see the default prefix styles ──
   log.trace("trace-level breadcrumb")
   log.debug("debug-level diagnostic")
-  log("plain log — no chrome")
+  log.log("plain log — no chrome")
   log.info("informational message")
   log.success("operation completed")
   log.cancel("user cancelled the action")
@@ -88,11 +90,11 @@ async function main(): Promise<void> {
   await wait(800)
 
   // ── 5. Patch console.* so third-party code lands here too ──
-  log.install()
+  const uninstall = installLogger(logger)
   console.log("hello from patched console.log")
   console.warn("hello from patched console.warn")
   console.error("hello from patched console.error")
-  log.uninstall()
+  uninstall()
 
   await wait(3500)
 

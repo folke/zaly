@@ -1,34 +1,38 @@
 import type { Session } from "@zaly/agent/session"
 import type { Config } from "@zaly/config"
+import type { LogLevel } from "@zaly/shared/logger"
 import type { Theme } from "@zaly/tui"
-import type { LogApi, LogLevel } from "@zaly/tui/logger"
 import type { CliArgs } from "./cli.ts"
-import type { Console } from "./console.ts"
+import type { CliReporter } from "./reporter.ts"
 import type { Flags } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
-import { LoggerBase } from "@zaly/tui/logger"
+import { BaseLogger, installLogger, Logger } from "@zaly/shared/logger"
 
-type Slots = { config: Config; theme: Theme; console: Console; session: Session }
+type Slots = { config: Config; theme: Theme; console: CliReporter; session: Session }
 
-export class Context extends LoggerBase {
+export class Context extends BaseLogger {
   #flags?: Flags
-  #logger?: LogApi
+  #logger = new Logger({ name: "cli" }, { level: "info" })
   #cache = new LazyCache<Slots>()
   #flush: (() => Promise<void>)[] = []
+  #dispose: (() => Promise<void> | void)[] = []
 
   constructor(public args: CliArgs) {
     super()
-    this.install()
+    this.#dispose.push(installLogger(this.#logger))
+    this.#logger.attach("cli", (entry) => {
+      void this.#reporter().then((c) => c.$log(entry))
+    })
   }
 
-  protected _log(level: LogLevel, ...msg: unknown[]): void {
-    if (this.#logger) return this.#logger[level](...msg)
-    void this.#console().then((c) => {
-      this.#logger ??= c
-      this.#logger[level](...msg)
-    })
+  get logger(): Logger {
+    return this.#logger
+  }
+
+  $log(level: LogLevel, ...msg: unknown[]): void {
+    this.#logger[level](...msg)
   }
 
   async session() {
@@ -38,10 +42,10 @@ export class Context extends LoggerBase {
     })
   }
 
-  #console() {
+  #reporter() {
     return this.#cache.need("console", async () => {
-      const { Console } = await import("./console.ts")
-      const c = new Console(this)
+      const { CliReporter } = await import("./reporter.ts")
+      const c = new CliReporter(this)
       this.#flush.push(() => c.flush())
       return c
     })
@@ -50,11 +54,6 @@ export class Context extends LoggerBase {
   async flush() {
     await this.#cache.wait()
     await Promise.all(this.#flush.map((fn) => fn()))
-  }
-
-  async setLogger(logger: LogApi): Promise<void> {
-    await this.flush()
-    this.#logger = logger
   }
 
   get flags(): Flags {
@@ -106,5 +105,10 @@ export class Context extends LoggerBase {
         name: config.settings.theme,
       })
     })
+  }
+
+  async stop(): Promise<void> {
+    await this.flush()
+    await Promise.all(this.#dispose.map((fn) => Promise.resolve(fn())))
   }
 }

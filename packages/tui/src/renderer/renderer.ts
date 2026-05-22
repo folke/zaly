@@ -2,17 +2,18 @@ import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Owner } from "../core/reactive.ts"
 import type { ActionInfo } from "../input/actions.ts"
-import type { LogCallable, LoggerOptions } from "../logger/logger.ts"
+import type { TuiReporterOpts } from "../logger/logger.ts"
 import type { Theme } from "../themes/types.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 import type { UIOptions } from "./ui.ts"
 
+import { Logger } from "@zaly/shared/logger"
 import { createCtx, RenderContext } from "../core/ctx.ts"
 import { createRoot, memo, provideContext, signal, useActiveOwner } from "../core/reactive.ts"
 import { Actions, defaultActions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
 import { InputRouter } from "../input/router.ts"
-import { Logger, makeLog } from "../logger/logger.ts"
+import { TuiReporter } from "../logger/logger.ts"
 import { style as buildStyle } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
 import { OverlaySurface } from "./overlay.ts"
@@ -37,8 +38,8 @@ export interface RendererOptions {
   fixedFooterHeight?: number
   /** Register SIGINT/SIGTERM cleanup (default: true). Disable in tests. */
   hookSignals?: boolean
-  /** Options for the built-in `logger` (and its callable `log` accessor). */
-  logger?: LoggerOptions
+  logger?: Logger
+  reporter?: TuiReporterOpts
 }
 
 export type SurfaceType = "stream" | "ui" | "overlay"
@@ -69,7 +70,6 @@ export class Renderer {
   /** Always-on logger, auto-attached to `this.stream`. Calling
    *  `renderer.log("msg")` logs at `"log"` level; level methods
    *  (`renderer.log.error(...)` etc.) are also available. */
-  readonly log: LogCallable
   readonly logger: Logger
 
   readonly #decoder = new Decoder()
@@ -164,9 +164,14 @@ export class Renderer {
     this.overlay.on("dirty-ui", () => this.ui.invalidate())
     this.overlay.on("dirty-stream", () => this.stream.invalidate())
     this.input = new InputRouter()
-    this.logger = new Logger(opts.logger)
-    this.logger.attach(this.stream)
-    this.log = makeLog(this.logger)
+
+    this.logger = opts.logger ?? new Logger({ name: "renderer" })
+
+    const reporter = new TuiReporter(opts.reporter)
+    reporter.attach({ append: (node) => this.stream.append(node) })
+
+    this.logger.attach("tui", reporter)
+
     // Wire the action registry: Actions looks up the focused node
     // (so programmatic dispatch starts there) and the Router hands
     // matched keymap action ids back to the registry for dispatch.
@@ -372,7 +377,7 @@ export class Renderer {
         blur: () => this.input.focus(undefined),
         focus: (node) => this.input.focus(node),
       },
-      onError: (error, _node) => this.log.error(error),
+      onError: (error, _node) => this.logger.error(error),
       overlay: {
         add: (o) => this.overlay.add(o),
         remove: (o) => this.overlay.remove(o),

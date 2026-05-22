@@ -11,5 +11,6 @@ export default defineConfig({
     glob: "src/glob.ts",
     paths: "src/paths/index.ts",
     cache: "src/cache.ts",
+    logger: "src/logger.ts",
   },
 })

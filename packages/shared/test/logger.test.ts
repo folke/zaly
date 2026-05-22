@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { isLogLevel, LOG_LEVELS, LoggerBase, shouldLog } from "../../src/logger/levels.ts"
+import { isLogLevel, LOG_LEVELS, BaseLogger, shouldLog } from "../src/logger.ts"
 
 describe("LOG_LEVELS", () => {
   test("contains all expected levels minus prompt", () => {
@@ -57,8 +57,8 @@ describe("shouldLog", () => {
 describe("LoggerBase", () => {
   test("wires all level methods to _log", () => {
     const calls: [string, unknown[]][] = []
-    class L extends LoggerBase {
-      protected _log(level: string, ...msg: unknown[]) {
+    class L extends BaseLogger {
+      $log(level: string, ...msg: unknown[]) {
         calls.push([level, msg])
       }
     }
@@ -98,8 +98,8 @@ describe("LoggerBase", () => {
 
   test("forwards all args", () => {
     const calls: unknown[][] = []
-    class L extends LoggerBase {
-      protected _log(_level: string, ...msg: unknown[]) {
+    class L extends BaseLogger {
+      $log(_level: string, ...msg: unknown[]) {
         calls.push(msg)
       }
     }

@@ -72,21 +72,19 @@ export class App {
     setTimeout(() => process.exit(code), 100)
   }
 
-  get log() {
-    return this.#renderer.log
-  }
-
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
+    // oxlint-disable-next-line sort-keys
     this.#renderer = await createRenderer({
       // Steady-state footer = input bar (1 row + 1 spacer/border row).
       // Stream commits to scrollback at `terminal.rows - 2`, so scrollback
       // is contiguous with the visible region as long as autocomplete and
       // other transient widgets stay closed.
       fixedFooterHeight: 3,
-      logger: {
+      reporter: {
         wrap: (node) => box({ padding: [1, 0, 0, 0] }, node),
       },
+      logger: this.#ctx.logger.child("renderer"),
       theme: await this.#ctx.theme(),
     })
 
@@ -96,7 +94,8 @@ export class App {
       this.#notifier.notify("Welcome to zaly! Use Ctrl-H for help.")
     }, 1000)
 
-    await this.#ctx.setLogger(this.#renderer.log)
+    await this.#ctx.flush()
+    this.#ctx.logger.detach("cli")
 
     const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
 

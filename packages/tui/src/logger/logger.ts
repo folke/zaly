@@ -1,11 +1,10 @@
+import type { LogEntry, LogLevel, LogReporter } from "@zaly/shared/logger"
 import type { Node } from "../core/node.ts"
 import type { LogState } from "../widgets/log.ts"
 import type { InspectOptions } from "./inspect.ts"
-import type { LogApi, LogFn, LogLevel } from "./levels.ts"
 
 import { log } from "../widgets/log.ts"
 import { inspect } from "./inspect.ts"
-import { LoggerBase, shouldLog } from "./levels.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
 export interface LoggerStream {
@@ -16,9 +15,7 @@ export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node
 
 export type LogStyleOverride = Omit<LogState, "level" | "content">
 
-export interface LoggerOptions extends InspectOptions {
-  /** Minimum level to emit. Defaults to `"log"`. */
-  minLevel?: LogLevel
+export interface TuiReporterOpts extends InspectOptions {
   /** Render string messages as markdown when they look like it.
    *  Default: `true`. */
   markdown?: boolean
@@ -40,13 +37,12 @@ function defaultWrite(text: string, kind: "stdout" | "stderr"): void {
   stream.write(text)
 }
 
-export class Logger extends LoggerBase {
+export class TuiReporter implements LogReporter {
   #stream?: LoggerStream
-  #opts: LoggerOptions
+  #opts: TuiReporterOpts
   #factory: LogEntryFactory
 
-  constructor(opts: LoggerOptions = {}) {
-    super()
+  constructor(opts: TuiReporterOpts = {}) {
     this.#opts = opts
     this.#factory = opts.factory ?? ((level, msg) => this.#defaultFactory(level, msg))
   }
@@ -61,8 +57,7 @@ export class Logger extends LoggerBase {
     return this
   }
 
-  protected _log(level: LogLevel, ...msg: unknown[]): void {
-    if (!shouldLog(level, this.#opts.minLevel)) return
+  $log({ level, msg }: LogEntry): void {
     if (this.#stream) {
       this.#stream.append(() => {
         const node = this.#factory(level, msg)
@@ -88,29 +83,4 @@ export class Logger extends LoggerBase {
     const write = this.#opts.write ?? defaultWrite
     write(`${str}\n`, kind)
   }
-}
-
-/**
- * A `Logger` exposed as a callable. Call directly to log at `"log"`
- * level; access level methods as properties (`log.error("boom")`). All
- * `Logger` methods (`install`, `attach`, …) are reachable as properties.
- */
-export type LogCallable = LogFn &
-  LogApi &
-  Pick<Logger, "attach" | "detach" | "install" | "uninstall">
-
-/**
- * Wrap a `Logger` in a callable Proxy so `log("x")` works in addition
- * to `log.error("x")`. Mainly used by `Renderer.log` but also handy
- * when exposing a logger from app code.
- */
-export function makeLog(logger: Logger): LogCallable {
-  const fn = ((...msg: unknown[]) => logger.log(...msg)) as LogCallable
-  return new Proxy(fn, {
-    get(target, key) {
-      if (key in target) return Reflect.get(target, key)
-      const v = (logger as unknown as Record<PropertyKey, unknown>)[key]
-      return typeof v === "function" ? v.bind(logger) : v
-    },
-  })
 }

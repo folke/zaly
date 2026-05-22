@@ -35,6 +35,10 @@
       "bun": "./src/image/index.ts",
       "default": "./dist/image.mjs"
     },
+    "./logger": {
+      "bun": "./src/logger.ts",
+      "default": "./dist/logger.mjs"
+    },
     "./paths": {
       "bun": "./src/paths/index.ts",
       "default": "./dist/paths.mjs"
@@ -57,6 +61,7 @@
       "./env": "./dist/env.mjs",
       "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
+      "./logger": "./dist/logger.mjs",
       "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",

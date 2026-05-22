@@ -1,14 +1,14 @@
 import type { Node, RenderCtx } from "@zaly/tui"
 import type { Context } from "./context.ts"
 
-import { Logger } from "@zaly/tui/logger"
+import { TuiReporter } from "@zaly/tui/logger"
 
 /**
  * `Cli` carries parsed args + lazily-resolved config between citty's
  * `setup` hook and the lazy-loaded subcommand modules. Subcommands grab
  * `cli.config` when they run; bare invocation falls through to the TUI.
  */
-export class Console extends Logger {
+export class CliReporter extends TuiReporter {
   #ctx: Context
   #renderCtx?: RenderCtx
   #queue: Promise<unknown> = Promise.resolve()

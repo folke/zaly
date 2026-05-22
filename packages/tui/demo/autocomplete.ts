@@ -30,7 +30,7 @@ import {
 
 const renderer = await createRenderer()
 
-const { log } = renderer
+const { logger: log } = renderer
 
 // App-level actions. `register` merges by id, so these compose with
 // the bundled defaults (`global.quit`, input/menu bindings, etc.)

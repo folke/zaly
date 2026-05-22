@@ -1,6 +1,6 @@
+import type { LogLevel } from "@zaly/shared/logger"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { LogLevel } from "../logger/levels.ts"
 import type { Color } from "../style/types.ts"
 
 import { hasColors } from "@zaly/shared/env"

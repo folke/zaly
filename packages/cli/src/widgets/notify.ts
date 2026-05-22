@@ -1,5 +1,5 @@
+import type { LogLevel } from "@zaly/shared/logger"
 import type { LogState, Overlay, OverlaySurface } from "@zaly/tui"
-import type { LogLevel } from "@zaly/tui/logger"
 
 import { log, overlay } from "@zaly/tui"
 
