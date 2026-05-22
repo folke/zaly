@@ -59,6 +59,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   #state: SignalStore<T>
   #ctx?: MountCtx
   #id?: string
+  #actionTargets = new Set<Node>()
   actions?: ActionMap
   type?: string
   protected layout?(ctx: RenderCtx): Layout | undefined
@@ -168,6 +169,20 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     const ret: Node[] = []
     for (const c of this.with(() => this.layoutChildren?.()) ?? []) ret.push(...c.layoutNodes)
     return ret
+  }
+
+  addActionTarget(node: Node): this {
+    this.#actionTargets.add(node)
+    return this
+  }
+
+  removeActionTarget(node: Node): this {
+    this.#actionTargets.delete(node)
+    return this
+  }
+
+  get actionTargets(): Iterable<Node> {
+    return this.#actionTargets
   }
 
   invalidate(): this {
@@ -347,7 +362,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
       metas[id] = info
       any = true
     }
-    if (any) ctx.actions.register(metas, { extend: false })
+    if (any) ctx.actions.register(metas, { default: true })
   }
 
   unmount(): this {

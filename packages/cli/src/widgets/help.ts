@@ -10,7 +10,7 @@ import { overlay, signal, text } from "@zaly/tui"
 
 export const helpOverlay = (props: { actions: Actions }) => {
   const [actions, setActions] = signal(props.actions.list())
-  props.actions.onChange(() => {
+  props.actions.on("change", () => {
     setActions(props.actions.list())
   })
   return overlay(

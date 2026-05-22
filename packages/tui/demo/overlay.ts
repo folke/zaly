@@ -92,12 +92,20 @@ function showToast(m: string): void {
   setTimeout(() => toast.hide(), 1800).unref()
 }
 
-renderer.bind("h", () => {
-  helpPanel.toggle()
+renderer.bind({
+  fn: () => {
+    helpPanel.toggle()
+  },
+  id: "help",
+  keys: "h",
 })
-renderer.bind("t", () => {
-  showToast("toast · overlay over stream")
-  return true
+renderer.bind({
+  fn: () => {
+    showToast("toast · overlay over stream")
+    return true
+  },
+  id: "toast",
+  keys: "t",
 })
 
 const responses = [

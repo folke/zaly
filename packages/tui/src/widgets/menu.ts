@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { Reactive } from "../core/reactive.ts"
+import type { Reactive, Ref } from "../core/reactive.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/types.ts"
@@ -9,6 +9,7 @@ import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 import { sliceAnsi, stringWidth } from "../style/ansi.ts"
+import { Input } from "./input.ts"
 
 /** Default shape for items in a Menu. All fields optional so callers
  *  can produce either a fully-fledged entry or a custom-typed item
@@ -149,6 +150,19 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
     if (n === 0) return 0
     const a = this.state.active ?? 0
     return Math.max(0, Math.min(n - 1, a))
+  }
+
+  bind(input: Input | Ref<Input>): this {
+    let inp: Input | undefined
+    this.on("mount", () => {
+      inp = input instanceof Input ? input : input()
+      inp.addActionTarget(this)
+    })
+    this.on("unmount", () => {
+      inp?.removeActionTarget(this)
+      inp = undefined
+    })
+    return this
   }
 
   protected _render(ctx: RenderCtx): string[] {

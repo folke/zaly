@@ -182,14 +182,11 @@ export class Renderer {
     // Rebuild the Router's keymap whenever the catalog changes. Action
     // `.keys` fields are the single source of truth for default
     // bindings; `setKeymap` can still be called by apps to override.
-    this.actions.onChange(() => {
-      this.input.setKeymapIndex(this.actions.buildKeymap())
-    })
     // Bundled metadata + impls. `register` merges by id, so the
     // `globalActions` `fn` entries augment the docs/keys already
     // supplied by `defaultActions`.
-    this.actions.register(defaultActions)
-    this.actions.register(this.globalActions)
+    this.actions.register(defaultActions, { default: true })
+    this.actions.register(this.globalActions, { default: true })
 
     // Surfaces emit `"dirty"` instead of self-scheduling. Centralising
     // the microtask here means one flush per tick for the whole tree
@@ -271,7 +268,7 @@ export class Renderer {
   /** Shortcut for `renderer.input.bind(pattern, handler)`. Returns an
    *  unsubscribe function. Use for one-off app-level bindings where a
    *  named action would be overkill. */
-  bind: InputRouter["bind"] = (pattern, handler) => this.input.bind(pattern, handler)
+  bind: Actions["bind"] = (binding) => this.actions.bind(binding)
 
   /** Swap the ambient theme. Widgets that read `theme()` / `style()`
    *  from `useContext(RenderContext)` re-fire automatically; primitive
@@ -376,7 +373,7 @@ export class Renderer {
       findNode: (m) => this.findNode(m),
       getNode: (id) => this.getNode(id),
       input: {
-        bind: (pattern, handler) => this.input.bind(pattern, handler),
+        bind: (binding) => this.actions.bind(binding),
         blur: () => this.input.focus(undefined),
         focus: (node) => this.input.focus(node),
       },

@@ -3,8 +3,9 @@ import type { Renderer } from "../renderer/renderer.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Menu } from "../widgets/menu.ts"
 import type { KeyPattern } from "./keys.ts"
-import type { RoutedKey } from "./router.ts"
+import type { KeyPatterns, RoutedKey } from "./router.ts"
 
+import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
 import { canonical } from "./keys.ts"
 
@@ -30,6 +31,14 @@ export interface ActionCtx {
   readonly key?: RoutedKey
 }
 
+export type ActionFn = (ctx: ActionCtx) => unknown
+
+export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
+  id: string
+  fn: ActionFn
+  keys: KeyPatterns
+}
+
 /**
  * Metadata + default bindings for a single action. Used as catalog
  * entries inside the `Actions` registry.
@@ -48,7 +57,7 @@ export interface ActionInfo {
   desc?: string
   keys?: readonly KeyPattern[]
   hidden?: boolean
-  fn?: (ctx: ActionCtx) => void
+  fn?: ActionFn
 }
 
 /** A single entry in a Node's `actions` dict.
@@ -75,9 +84,9 @@ export type ActionMap = Record<string, NodeAction>
  */
 export type BuiltinAction = keyof (Input["actions"] & Menu["actions"] & Renderer["globalActions"])
 
-/** Emitted by `Actions` whenever the catalog changes (register /
- *  unregister). The Router listens to rebuild its keymap index. */
-export type ActionsListener = () => void
+type ActionEvents = {
+  change: {}
+}
 
 /**
  * Runtime registry of action metadata + impls.
@@ -97,17 +106,19 @@ export type ActionsListener = () => void
  *
  * `list()` returns the catalog for command palette / help enumeration.
  */
-export class Actions {
+export class Actions extends Emitter<ActionEvents> {
   readonly #catalog = new Map<string, ActionInfo>()
-  readonly #listeners = new Set<ActionsListener>()
   /** Optional focus-chain walker. Supplied by the Renderer so Actions
    *  doesn't have to know about the router directly. Returns the
    *  starting node (focused by default) so dispatch can walk up. */
   #getTarget: () => Node | undefined = () => undefined
   #logger: Logger
+  #keymap = new Map<string, string[]>()
 
   constructor(logger?: Logger) {
+    super()
     this.#logger = logger ?? new Logger()
+    this.on("change", () => this.#updateKeymap())
   }
 
   /** Internal — the Renderer wires this after construction. */
@@ -115,44 +126,45 @@ export class Actions {
     this.#getTarget = fn
   }
 
-  /** Subscribe to catalog changes. Returns an unsubscribe. */
-  onChange(fn: ActionsListener): () => void {
-    this.#listeners.add(fn)
-    return () => {
-      this.#listeners.delete(fn)
-    }
+  bind(binding: KeyBinding): () => void {
+    const { id, keys, ...info } = binding
+    return this.register({
+      [id]: {
+        ...info,
+        keys: Array.isArray(keys) ? keys : [keys],
+      },
+    })
   }
 
   /**
    * Register or merge catalog entries. Values are shallow-merged into
    * existing entries by id.
    *
-   * - `extend: true` (default) — new values **override** existing
-   *   fields. Use this for app/user rebinds where you *want* to
-   *   overwrite defaults.
-   * - `extend: false` — existing values **win**. Use this for widget-
-   *   level contributions (e.g. a plugin mounting for the first time)
-   *   so defaults don't clobber whatever the user already configured.
+   * When `opts.default` is `true`, the new entry is merged *before* the
+   * existing one, so it provides defaults.
+   *
+   * When `opts.default` is `false` (the default), the new entry is merged
+   * *after* the existing one, so it overrides prior values.
    *
    * Returns an unregister function that rolls this call back.
    */
-  register(entries: Record<string, ActionInfo>, opts: { extend?: boolean } = {}): () => void {
-    const extend = opts.extend ?? true
+  register(entries: Record<string, ActionInfo>, opts: { default?: boolean } = {}): () => void {
+    const isDefault = opts.default ?? false
     const ids = Object.keys(entries)
     const prior = new Map<string, ActionInfo | undefined>()
     for (const id of ids) prior.set(id, this.#catalog.get(id))
     for (const [id, info] of Object.entries(entries)) {
       const existing = this.#catalog.get(id)
-      this.#catalog.set(id, extend ? { ...existing, ...info } : { ...info, ...existing })
+      this.#catalog.set(id, isDefault ? { ...info, ...existing } : { ...existing, ...info })
     }
-    this.#emitChange()
+    void this.emit("change")
     return () => {
       for (const id of ids) {
         const before = prior.get(id)
         if (before === undefined) this.#catalog.delete(id)
         else this.#catalog.set(id, before)
       }
-      this.#emitChange()
+      void this.emit("change")
     }
   }
 
@@ -162,7 +174,7 @@ export class Actions {
     for (const id of ids) {
       if (this.#catalog.delete(id)) changed = true
     }
-    if (changed) this.#emitChange()
+    if (changed) void this.emit("change")
   }
 
   get(id: string): ActionInfo | undefined {
@@ -194,6 +206,7 @@ export class Actions {
       return true
     }
     for (let node: Node | undefined = target; node !== undefined; node = node.parent) {
+      if (!node.visible || !node.mounted) continue
       const entry = node.actions?.[id]
       const fn = typeof entry === "function" ? entry : entry?.fn
       if (typeof fn === "function") {
@@ -205,6 +218,25 @@ export class Actions {
     return false
   }
 
+  dispatchKey(routed: RoutedKey): boolean {
+    const entries = this.#keymap.get(routed.pattern) ?? []
+    const nodeActions = entries.filter((id) => !this.get(id)?.fn)
+    const globalActions = entries.filter((id) => this.get(id)?.fn)
+    const target = this.#getTarget()
+
+    // Phase 1 - Node actions
+    // A node's action targets have higher precedence than the node itself
+    for (const t of target ? [...target.actionTargets, target] : []) {
+      for (const a of nodeActions)
+        if (this.dispatch(a, { key: routed, source: "key", target: t })) return true
+    }
+
+    // Phase 2 - global actions
+    for (const a of globalActions) if (this.dispatch(a, { key: routed, source: "key" })) return true
+
+    return false
+  }
+
   /**
    * Build a `canonical-key → action-id[]` keymap from every catalog
    * entry's `keys` field. Multiple actions can share the same default
@@ -213,7 +245,7 @@ export class Actions {
    * and the first whose handler is reachable on the focus chain
    * wins. Registration order defines priority; later wins.
    */
-  buildKeymap(): Map<string, string[]> {
+  #updateKeymap(): void {
     const out = new Map<string, string[]>()
     for (const [id, info] of this.#catalog) {
       if (!info.keys) continue
@@ -224,10 +256,6 @@ export class Actions {
         out.set(c, list)
       }
     }
-    return out
-  }
-
-  #emitChange(): void {
-    for (const fn of this.#listeners) fn()
+    this.#keymap = out
   }
 }
