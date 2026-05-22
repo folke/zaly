@@ -13,8 +13,21 @@ export function formatText(
   opts: { wrap?: WrapMode; width: number; style?: StyleBuilder }
 ): string[] {
   const mode = opts.wrap ?? "word"
-  text = mode === "none" ? text : wrapAnsi(text, opts.width, { mode })
-  return splitAnsi(text).map((line) => (opts.style ? opts.style(line) : line))
+  const lines = splitAnsi(text)
+  const ret: string[] = []
+  if (mode === "none") ret.push(...lines)
+  else {
+    for (const line of lines) {
+      const wrapped = splitAnsi(wrapAnsi(line, opts.width, { mode }))
+      // strip single leading space from wrapped lines after the first
+      for (let r = 0; r < wrapped.length; r++) {
+        const row = r > 0 && wrapped[r].startsWith(" ") ? wrapped[r].slice(1) : wrapped[r]
+        if (row === "" && r > 0 && r < wrapped.length - 1) continue
+        ret.push(row)
+      }
+    }
+  }
+  return ret.map((line) => (opts.style ? opts.style(line) : line))
 }
 
 export function formatLines(

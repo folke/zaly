@@ -23,12 +23,12 @@ describe("Text", () => {
   })
 
   test("narrow ctx wraps content tightly", async () => {
-    // "hello world" at width 5 is a pathological case: the inter-word
-    // space can't fit on either line (5+1 > 5, and 1+5 > 5). wrap-ansi
-    // with trim:false places it on its own line so structural
-    // whitespace is never silently dropped.
+    // A break-space belongs to the wrap boundary, not to its own visual row.
+    // "hello world" at width 5 should render as two words, not a standalone
+    // row containing only the inter-word separator.
     const t = new Text({ content: "hello world" })
-    expect(await t.render(ctx(5))).toEqual(["hello", " ", "world"])
+    expect(await t.render(ctx(5))).toEqual(["hello", "world"])
+    expect(await t.render(ctx(6))).toEqual(["hello ", "world"])
   })
 
   test("char wrap hard-breaks long words", async () => {
