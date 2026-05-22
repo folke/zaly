@@ -1,3 +1,4 @@
+import type { Logger } from "@zaly/shared/logger"
 import type { Actions } from "../input/actions.ts"
 import type { InputRouter } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
@@ -98,7 +99,7 @@ export interface MountCtx {
    *  `Renderer.findNode`. */
   readonly findNode: (match: string | ((n: Node) => boolean)) => Node[]
 
-  onError: (error: unknown, node: Node) => void
+  logger: Logger
 }
 
 /**

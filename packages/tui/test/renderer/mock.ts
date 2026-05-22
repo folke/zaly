@@ -2,6 +2,7 @@ import type { MountCtx } from "../../src/core/ctx.ts"
 import type { SurfaceType } from "../../src/renderer/index.ts"
 import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal.ts"
 
+import { Logger } from "@zaly/shared/logger"
 import { Actions } from "../../src/input/actions.ts"
 import { InputRouter } from "../../src/input/router.ts"
 
@@ -17,11 +18,12 @@ export function mockMountCtx(
 ): MountCtx {
   const router = new InputRouter()
   const actions = new Actions()
+  const logger = new Logger()
   actions.setTargetResolver(() => router.focused)
   router.setActions(actions)
   return {
-    onError: (_error) => {},
     actions,
+    logger,
     findNode: () => [],
     getNode: () => undefined,
     input: {

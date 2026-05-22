@@ -1,3 +1,4 @@
+import type { TryResult } from "@zaly/shared/logger"
 import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
@@ -65,7 +66,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   constructor(state: State<T>, ...children: Node[]) {
     super()
     this.onEmitError = (err) => {
-      if (this.#ctx) this.#ctx.onError(err, this)
+      const logger = this.logger
+      if (logger) logger.error(err)
       // oxlint-disable-next-line no-console
       else console.error("Uncaught node event error (node is unmounted, no ctx):", err)
     }
@@ -85,6 +87,20 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   get children(): readonly Node[] {
     return this.#children
+  }
+
+  protected get logger() {
+    return this.#ctx?.logger.child({
+      id: this.#id,
+      name: "node",
+      node: this.type ?? "unknown",
+    })
+  }
+
+  protected try<R>(fn: () => R): TryResult<R> {
+    const logger = this.logger
+    if (!logger) return fn() as TryResult<R>
+    return logger.try(fn) as TryResult<R>
   }
 
   /** Fragment protocol — opt-in. When defined, layout containers

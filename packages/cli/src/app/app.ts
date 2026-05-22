@@ -54,7 +54,7 @@ export class App {
     const app = new App(cli.ctx)
     await app.#initRenderer()
     app.#renderer.start()
-    void app.#initSessionAndAgent()
+    void app.#initSessionAndAgent().catch((error) => app.#handleInitError(error))
     app.#exitPromise = Promise.withResolvers()
     return app
   }
@@ -141,6 +141,13 @@ export class App {
 
   notify(msg: string, opts?: NotifProps) {
     this.#notifier.notify(msg, opts)
+  }
+
+  #handleInitError(error: unknown): void {
+    this.#ctx.logger.child("app").error(error)
+    this.#state.busy = false
+    this.#state.status = "error"
+    this.#notifier.notify(error instanceof Error ? error.message : String(error), { level: "error" })
   }
 
   /** Phase B — load session first (cheap), paint replay, then build

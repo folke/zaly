@@ -3,6 +3,7 @@ import type { Actions } from "./actions.ts"
 import type { InputEvent } from "./decoder.ts"
 import type { KeyEvent, KeyPattern } from "./keys.ts"
 
+import { Logger } from "@zaly/shared/logger"
 import { canonical, keyMatches } from "./keys.ts"
 
 export type { KeyPattern }
@@ -72,6 +73,11 @@ export class InputRouter {
   /** Set by the Renderer so keymap-matched action ids can be
    *  dispatched through the catalog. */
   #actions: Actions | undefined
+  #logger: Logger
+
+  constructor(logger?: Logger) {
+    this.#logger = logger ?? new Logger()
+  }
 
   /** Internal — wired by the Renderer at construction. */
   setActions(actions: Actions): void {
@@ -168,7 +174,8 @@ export class InputRouter {
     if (entries !== undefined) {
       for (const entry of entries) {
         if (typeof entry === "function") {
-          if (entry(event) === true) return true
+          const ret = this.#logger.try(() => entry(event), { name: "dispatch", source: "keymap" })
+          if (ret === true) return true
         } else if (this.#actions !== undefined) {
           if (this.#actions.dispatch(entry, { key: routed, source: "key" })) return true
         }
@@ -177,7 +184,9 @@ export class InputRouter {
 
     // Phase 3 — global fallback. Last-resort app/demo bindings.
     for (const g of this.#globals) {
-      if (keyMatches(event, g.pattern) && g.handler(event) === true) return true
+      if (!keyMatches(event, g.pattern)) continue
+      const ret = this.#logger.try(() => g.handler(event), { name: "dispatch", source: "global" })
+      if (ret === true) return true
     }
     return false
   }

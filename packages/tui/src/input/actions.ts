@@ -5,6 +5,7 @@ import type { Menu } from "../widgets/menu.ts"
 import type { KeyPattern } from "./keys.ts"
 import type { RoutedKey } from "./router.ts"
 
+import { Logger } from "@zaly/shared/logger"
 import { canonical } from "./keys.ts"
 
 /**
@@ -216,6 +217,11 @@ export class Actions {
    *  doesn't have to know about the router directly. Returns the
    *  starting node (focused by default) so dispatch can walk up. */
   #getTarget: () => Node | undefined = () => undefined
+  #logger: Logger
+
+  constructor(logger?: Logger) {
+    this.#logger = logger ?? new Logger()
+  }
 
   /** Internal — the Renderer wires this after construction. */
   setTargetResolver(fn: () => Node | undefined): void {
@@ -295,14 +301,17 @@ export class Actions {
     const target = partial.target ?? this.#getTarget()
     const source = partial.source ?? "programmatic"
     if (info?.fn) {
-      info.fn({ id, source, target, ...partial })
+      const ctx = { id, source, target, ...partial }
+      const fn = info.fn
+      this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
       return true
     }
     for (let node: Node | undefined = target; node !== undefined; node = node.parent) {
       const entry = node.actions?.[id]
       const fn = typeof entry === "function" ? entry : entry?.fn
       if (typeof fn === "function") {
-        fn({ id, node, source, target, ...partial })
+        const ctx = { id, node, source, target, ...partial }
+        this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
         return true
       }
     }

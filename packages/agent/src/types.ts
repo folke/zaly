@@ -8,6 +8,7 @@ import type {
   TokenCount,
   Tool,
 } from "@zaly/ai"
+import type { Logger } from "@zaly/shared/logger"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { StepKind } from "./events.ts"
 import type { MaskOptions } from "./masker.ts"
@@ -127,6 +128,8 @@ export interface StepResult {
 /** Options for constructing an `Agent`. */
 export interface AgentOptions extends CollectOptions {
   model?: Model
+  /** Logger used for top-level agent error boundaries. */
+  logger?: Logger
   /** Session for the conversation.
    *  When omitted, a fresh in-memory Session is created. Either way,
    *  `messages` (if any) are appended to it. */

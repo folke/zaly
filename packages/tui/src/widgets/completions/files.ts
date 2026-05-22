@@ -65,8 +65,6 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource {
       const lastSlash = query.lastIndexOf("/")
       const dirPart = lastSlash === -1 ? "" : query.slice(0, lastSlash + 1)
       const absDir = resolve(cwd, dirPart)
-      throw new Error("TODO: cache invalidation")
-
       let entries = cache.get(absDir)
       if (entries === undefined) {
         try {

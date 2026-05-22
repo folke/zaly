@@ -181,3 +181,7 @@ export const isInstance = <T>(v: unknown): v is T =>
   v !== null &&
   !Array.isArray(v) &&
   Object.getPrototypeOf(v) !== Object.prototype
+
+export function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return !!value && typeof value === "object" && typeof (value as any).then === "function"
+}

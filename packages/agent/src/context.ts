@@ -63,6 +63,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     ]
 
     this.$tools = opts.tools ?? []
+    this.onEmitError = (error) => this.#opts.logger?.child("context").error(error)
 
     this.on("model", async ({ model }) => {
       if (model) await this.session.update({ modelId: model.id })

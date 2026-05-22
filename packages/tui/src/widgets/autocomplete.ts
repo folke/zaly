@@ -194,7 +194,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // its own microtask, and the `#refreshSeq` guard prevents a slow
     // response from overwriting newer state.
     this.#invalidateListener = (): void => {
-      void this.#refresh()
+      void this.try(() => this.#refresh())
     }
     node.on("invalidate", this.#invalidateListener)
   }

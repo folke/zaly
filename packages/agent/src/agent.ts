@@ -98,6 +98,7 @@ export class Agent extends Emitter<AgentEvents> {
     this.#tasks = new Tasks()
     this.#tasks.$tools = async () => await this.tools()
     this.#tasks.heartbeatMs = opts.heartbeatMs
+    this.#tasks.onEmitError = (error) => opts.logger?.child("tasks").error(error)
     // Post-round task completions inject a system message into the next
     // step, surfacing the result to the model. Round-internal completions
     // are folded into the round's returned parts and don't fire here.
@@ -117,10 +118,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     this.#stopPolicy = new StopPolicy(opts.stop)
     this.#stopPolicy.attach(this)
-    this.onEmitError = (error) => {
-      // oxlint-disable-next-line no-console
-      console.error("Agent event handler threw an error:", error)
-    }
+    this.onEmitError = (error) => opts.logger?.child("events").error(error)
     this.#ctx.attach(this)
   }
 
@@ -371,9 +369,14 @@ export class Agent extends Emitter<AgentEvents> {
     if (this.#running) return this.#running
     this.#pauseRequested = undefined
     this.#abortController = undefined
-    this.#running = this.#loop().finally(() => {
-      this.#running = undefined
-    })
+    this.#running = this.#loop()
+      .catch((error) => {
+        this.#opts.logger?.child("run").error(error)
+        return this.#stop(error instanceof Error && error.name === "AbortError" ? "aborted" : "error", error)
+      })
+      .finally(() => {
+        this.#running = undefined
+      })
     return this.#running
   }
 
@@ -403,7 +406,11 @@ export class Agent extends Emitter<AgentEvents> {
       ...base,
       onEvent: (event) => {
         void this.emit("stream-event", { event })
-        void this.#opts.onEvent?.(event)
+        try {
+          void this.#opts.onEvent?.(event)
+        } catch (error) {
+          this.#opts.logger?.child("stream").error(error)
+        }
       },
       onUpdate: this.#opts.onUpdate,
       reasoning: { ...base.reasoning, effort: this.#ctx.reasoning },

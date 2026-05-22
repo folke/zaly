@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { isLogLevel, LOG_LEVELS, BaseLogger, shouldLog } from "../src/logger.ts"
+import { isLogLevel, LOG_LEVELS, BaseLogger, Logger, shouldLog } from "../src/logger.ts"
 
 describe("LOG_LEVELS", () => {
   test("contains all expected levels minus prompt", () => {
@@ -54,7 +54,7 @@ describe("shouldLog", () => {
   })
 })
 
-describe("LoggerBase", () => {
+describe("BaseLogger", () => {
   test("wires all level methods to _log", () => {
     const calls: [string, unknown[]][] = []
     class L extends BaseLogger {
@@ -106,5 +106,60 @@ describe("LoggerBase", () => {
     const l = new L()
     l.info("hello %s", "world", { n: 1 })
     expect(calls[0]).toEqual(["hello %s", "world", { n: 1 }])
+  })
+})
+
+describe("Logger", () => {
+  test("attaching a sink through a child attaches to the root", () => {
+    const calls: unknown[] = []
+    const root = new Logger({ name: "root" })
+    const child = root.child("child")
+
+    child.attach("test", (entry) => calls.push(entry))
+    child.info("hello")
+
+    expect(calls).toHaveLength(1)
+    expect(root.sinks.size).toBe(1)
+    expect(child.sinks.size).toBe(0)
+  })
+
+  test("child entries include merged metadata and colon-scoped name", () => {
+    const calls: unknown[] = []
+    const root = new Logger({ app: "zaly", name: "root" })
+    const child = root.child({ component: "agent", name: "child" })
+
+    root.attach("test", (entry) => calls.push(entry))
+    child.warn("hello")
+
+    expect(calls[0]).toMatchObject({
+      level: "warn",
+      meta: { app: "zaly", component: "agent", name: "root:child" },
+      msg: ["hello"],
+    })
+  })
+
+  test("children inherit the current parent level", () => {
+    const calls: unknown[] = []
+    const root = new Logger({ name: "root" }, { level: "warn" })
+    const child = root.child("child")
+
+    root.attach("test", (entry) => calls.push(entry))
+    child.info("skip")
+    child.warn("keep")
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ level: "warn", msg: ["keep"] })
+  })
+
+  test("child level can override parent level", () => {
+    const calls: unknown[] = []
+    const root = new Logger({ name: "root" }, { level: "fatal" })
+    const child = root.child("child", { level: "trace" })
+
+    root.attach("test", (entry) => calls.push(entry))
+    child.debug("keep")
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({ level: "debug", msg: ["keep"] })
   })
 })

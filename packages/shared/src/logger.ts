@@ -1,3 +1,6 @@
+// oxlint-disable typescript/no-unnecessary-type-parameters
+import { isPromiseLike } from "./utils.ts"
+
 export type LogLevel = (typeof LOG_LEVELS)[number]
 export type LogFn = (...msg: unknown[]) => void
 export type LogLevelFn = (level: LogLevel, ...msg: unknown[]) => void
@@ -14,12 +17,15 @@ export type LogEntry<T extends LogMeta = LogMeta> = {
   msg: unknown[]
 }
 
-export type LogReporter<T extends LogMeta = LogMeta> = {
-  $log(entry: LogEntry<T>): void
+export type LogReporter = {
+  $log(entry: LogEntry<any>): void
 }
 
-export type LogSinkFn<T extends LogMeta = LogMeta> = (data: LogEntry<T>) => void
-export type LogSink<T extends LogMeta = LogMeta> = LogSinkFn<T> | LogReporter<T>
+export type LogSinkFn = (data: LogEntry<any>) => void
+export type LogSink = LogSinkFn | LogReporter
+
+export type TryResult<R> = R extends PromiseLike<infer U> ? Promise<U | undefined> : R | undefined
+export type TrackResult<R> = R extends PromiseLike<infer U> ? Promise<U> : R
 
 export function consoleSink<T extends LogMeta = LogMeta>(data: LogEntry<T>) {
   const { level, msg, ts: _ts, ...rest } = data
@@ -86,7 +92,7 @@ export abstract class BaseLogger implements LogApi {
 }
 
 export class Logger<T extends LogMeta = LogMeta> extends BaseLogger {
-  #sinks = new Map<string, LogSink<T>>()
+  #sinks = new Map<string, LogSink>()
   #level: LogLevel
   #meta: T
   #parent?: Logger<any>
@@ -97,11 +103,11 @@ export class Logger<T extends LogMeta = LogMeta> extends BaseLogger {
     this.#level = opts.level ?? "log"
   }
 
-  get sinks(): ReadonlyMap<string, LogSink<T>> {
+  get sinks(): ReadonlyMap<string, LogSink> {
     return this.#sinks
   }
 
-  attach(name: string, sink: LogSink<T>): this {
+  attach(name: string, sink: LogSink): this {
     this.root.#sinks.set(name, sink)
     return this
   }
@@ -158,6 +164,39 @@ export class Logger<T extends LogMeta = LogMeta> extends BaseLogger {
     for (const sink of root.#sinks.values()) {
       if (typeof sink === "function") sink(entry)
       else sink.$log(entry)
+    }
+  }
+
+  try<R, D extends LogMeta>(fn: () => R, meta?: string | D): TryResult<R> {
+    return this.#try(fn, meta, { throw: false })
+  }
+
+  track<R, D extends LogMeta>(fn: () => R, meta?: string | D): TrackResult<R> {
+    return this.#try(fn, meta, { throw: true }) as TrackResult<R>
+  }
+
+  #try<R, D extends LogMeta>(
+    fn: () => R,
+    meta?: string | D,
+    opts?: { throw?: boolean }
+  ): TryResult<R> {
+    const logger = meta === undefined ? this : this.child(meta as D)
+    const fail = (error: unknown) => {
+      logger.error(error)
+      if (opts?.throw) throw error
+      return undefined as TryResult<R>
+    }
+    try {
+      const ret = fn()
+      if (isPromiseLike(ret)) {
+        return ret.then(
+          (r) => r,
+          (error) => fail(error)
+        ) as TryResult<R>
+      }
+      return ret as TryResult<R>
+    } catch (error) {
+      return fail(error)
     }
   }
 }

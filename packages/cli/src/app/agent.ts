@@ -37,6 +37,7 @@ export async function buildAgent(ctx: Context): Promise<Agent> {
 
   return await createAgent({
     cwd: merged.cwd,
+    logger: ctx.logger.child("agent"),
     model,
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }

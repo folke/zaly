@@ -96,7 +96,7 @@ export class Renderer {
   /** Runtime action registry (catalog + dispatcher). Populated with
    *  `defaultActions` + `globalActions` at construction; apps extend
    *  via `renderer.actions.register({ "app.foo": { ... } })`. */
-  readonly actions = new Actions()
+  readonly actions: Actions
 
   /** Global action impls. Merged into the `actions` catalog on
    *  construction so the ids declared here gain their keys and desc
@@ -163,9 +163,10 @@ export class Renderer {
     })
     this.overlay.on("dirty-ui", () => this.ui.invalidate())
     this.overlay.on("dirty-stream", () => this.stream.invalidate())
-    this.input = new InputRouter()
-
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
+
+    this.input = new InputRouter(this.logger.child({ name: "input" }))
+    this.actions = new Actions(this.logger.child({ name: "actions" }))
 
     const reporter = new TuiReporter(opts.reporter)
     reporter.attach({ append: (node) => this.stream.append(node) })
@@ -368,6 +369,7 @@ export class Renderer {
    *  object but closes over the same underlying services, so nodes
    *  across surfaces share a single overlay surface, router, etc. */
   #mountCtxFor(surface: SurfaceType): MountCtx {
+    const logger = this.logger.child({ name: surface, surface })
     return {
       actions: this.actions,
       findNode: (m) => this.findNode(m),
@@ -377,7 +379,7 @@ export class Renderer {
         blur: () => this.input.focus(undefined),
         focus: (node) => this.input.focus(node),
       },
-      onError: (error, _node) => this.logger.error(error),
+      logger,
       overlay: {
         add: (o) => this.overlay.add(o),
         remove: (o) => this.overlay.remove(o),
@@ -416,6 +418,7 @@ export class Renderer {
             // next tick so `uncaughtException` picks it up with the
             // terminal already torn down cleanly.
             this.#running = false
+            this.logger.child("render").error(error)
             process.nextTick(() => {
               throw error
             })
