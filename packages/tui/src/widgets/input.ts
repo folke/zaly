@@ -277,8 +277,8 @@ export class Input extends Node<InputState, InputEvents> {
         content = focused ? ctx.style.inverse(" ") : ""
       } else {
         content = focused
-          ? ctx.style.inverse(" ") + ctx.style.dim(` ${placeholder}`)
-          : ctx.style.dim(placeholder)
+          ? ctx.style.inverse(" ") + ctx.style.quiet(` ${placeholder}`)
+          : ctx.style.quiet(placeholder)
       }
     } else if (focused) {
       // Inverse-video cursor overlaid on the char at `cursor`; on trailing
