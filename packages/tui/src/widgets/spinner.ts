@@ -72,14 +72,16 @@ export class Spinner extends Node<SpinnerState> {
     return Math.floor(performance.now() / speed)
   }
 
-  /** Shorthand for `setState({ running: true })`. */
+  /** Shorthand for `state.set({ running: true })`. */
   start(): this {
-    return this.setState({ running: true })
+    this.state.set({ running: true })
+    return this
   }
 
-  /** Shorthand for `setState({ running: false })`. */
+  /** Shorthand for `state.set({ running: false })`. */
   stop(): this {
-    return this.setState({ running: false })
+    this.state.set({ running: false })
+    return this
   }
 
   #startTimer(): void {

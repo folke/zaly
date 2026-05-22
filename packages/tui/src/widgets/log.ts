@@ -109,7 +109,7 @@ export const log = widget((state: LogState, ...children: Node[]) => {
   const base = defaultLogStyles[state.level]
   const color: Color = state.color ?? base.color ?? "inherit"
   const textColor = state.textColor ?? base.textColor
-  body.setState({ style: textColor ? { fg: textColor } : undefined })
+  body.state.set({ style: textColor ? { fg: textColor } : undefined })
 
   const s = state
 

@@ -56,7 +56,7 @@ describe("autocomplete", () => {
     })
     // Triggering is driven by input state changes; the widget subscribes
     // on construction, so we nudge state to fire the watcher.
-    i.setState({ cursor: 3, value: "/he" })
+    i.state.set({ cursor: 3, value: "/he" })
     // Allow the microtask-queued refresh to run.
     await Promise.resolve()
     expect(complete).toHaveBeenCalledWith("he", expect.any(Function))
@@ -76,7 +76,7 @@ describe("autocomplete", () => {
         },
       },
     })
-    i.setState({ cursor: 3, value: "/he" })
+    i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
     expect(i.state.value).toBe("/help ")
@@ -95,7 +95,7 @@ describe("autocomplete", () => {
       },
     })
     ac.on("complete", cb)
-    i.setState({ cursor: 1, value: "/" })
+    i.state.set({ cursor: 1, value: "/" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
     expect(cb).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe("autocomplete", () => {
         },
       },
     })
-    i.setState({ cursor: 3, value: "/he" })
+    i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
     ac.menu.actions["menu.cancel"]()
@@ -136,7 +136,7 @@ describe("autocomplete", () => {
         mention: { complete, triggers: [/\B@/] },
       },
     })
-    i.setState({ cursor: 7, value: "hey @bo" })
+    i.state.set({ cursor: 7, value: "hey @bo" })
     await Promise.resolve()
     expect(complete).toHaveBeenCalledWith("bo", expect.any(Function))
     ac.menu.actions["menu.select"]()
@@ -155,7 +155,7 @@ describe("autocomplete", () => {
         slash: { complete: slashComplete, triggers: [/^\s*\//] },
       },
     })
-    i.setState({ cursor: 2, value: "/x" })
+    i.state.set({ cursor: 2, value: "/x" })
     await Promise.resolve()
     // Sources iterate in object-insertion order; `other` is declared
     // first (after alphabetical sort), so it claims the match.
@@ -178,7 +178,7 @@ describe("autocomplete", () => {
     // Mount so the key interceptor auto-installs and ctx.actions is
     // available for dispatch.
     ac.mount(mockMountCtx("ui"))
-    i.setState({ cursor: 1, value: "/" })
+    i.state.set({ cursor: 1, value: "/" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
 
@@ -206,7 +206,7 @@ describe("autocomplete", () => {
         },
       },
     })
-    i.setState({ cursor: 3, value: "/qu" })
+    i.state.set({ cursor: 3, value: "/qu" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
     expect(onAccept).toHaveBeenCalledWith({ value: "quit" }, "qu")
@@ -230,7 +230,7 @@ describe("autocomplete", () => {
         },
       },
     })
-    i.setState({ cursor: 4, value: "@src" })
+    i.state.set({ cursor: 4, value: "@src" })
     await Promise.resolve()
     ac.menu.actions["menu.select"]()
     // No trailing space (files override).
@@ -250,10 +250,10 @@ describe("autocomplete", () => {
         },
       },
     })
-    i.setState({ cursor: 3, value: "/he" })
+    i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
-    i.setState({ cursor: 5, value: "hello" })
+    i.state.set({ cursor: 5, value: "hello" })
     await Promise.resolve()
     expect(ac.open).toBe(false)
   })

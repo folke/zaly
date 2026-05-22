@@ -292,7 +292,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // Forward the source's custom `render` so per-source row styling
     // kicks in. Explicitly clear it when the new source doesn't supply
     // one so we don't carry a previous source's renderer.
-    this.menu.setState({ active: 0, items, render: source.render })
+    this.menu.state.set({ active: 0, items, render: source.render })
     this.#setVisible(true)
   }
 
@@ -341,12 +341,12 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     if (accepted === undefined) {
       // Source handled the selection itself (dispatched an action,
       // etc.) — just clear the trigger..cursor range.
-      this.#input.setState({
+      this.#input.state.set({
         cursor: match.start,
         value: value.slice(0, match.start) + tail,
       })
     } else {
-      this.#input.setState({
+      this.#input.state.set({
         cursor: match.start + accepted.length,
         value: value.slice(0, match.start) + accepted + tail,
       })
@@ -361,7 +361,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // Clear the Menu's items + sticky grown-height so nothing stale
     // lingers in state (e.g. briefly visible if anything re-opens the
     // popup before a fresh complete() lands).
-    this.menu.setState({ items: [] })
+    this.menu.state.set({ items: [] })
     this.menu.resetHeight()
     void this.emit("close")
   }

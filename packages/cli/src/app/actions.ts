@@ -25,7 +25,7 @@ export function registerUiActions(opts: {
         if (cancel) app.exit()
         else {
           if ((composer.state.value ?? "").length > 0)
-            return composer.setState({ cursor: 0, value: "" })
+            return composer.state.set({ cursor: 0, value: "" })
           cancel = true
           app.notify("Press `Ctrl-C` again to exit.", {
             level: "warn",
@@ -41,7 +41,7 @@ export function registerUiActions(opts: {
     "app.clear": {
       desc: "clear the composer",
       fn: () => {
-        composer.setState({ cursor: 0, value: "" })
+        composer.state.set({ cursor: 0, value: "" })
       },
       name: "clear",
     },

@@ -91,7 +91,7 @@ renderer.ui.add(() =>
         .on("submit", ({ value }, self) => {
           if (value.trim() === "") return
           renderer.stream.append(() => markdown(`**you:** ${value}`))
-          self.setState({ cursor: 0, value: "" })
+          self.state.set({ cursor: 0, value: "" })
         })
     ),
     autocomplete({

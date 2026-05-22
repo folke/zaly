@@ -81,7 +81,7 @@ renderer.overlay.add(() => help)
 renderer.actions.register({
   "app.clear": {
     desc: "clear the composer",
-    fn: () => composer.setState({ cursor: 0, value: "" }),
+    fn: () => composer.state.set({ cursor: 0, value: "" }),
     name: "clear",
   },
   "app.help": {
@@ -221,7 +221,7 @@ async function streamReply(prompt: string, full: string): Promise<void> {
 
 composer.on("submit", ({ value }, self) => {
   if (busy() || value.trim() === "") return
-  self.setState({ cursor: 0, value: "" })
+  self.state.set({ cursor: 0, value: "" })
   const prompt = value.trim()
   const body = prompt.includes("input.ts")
     ? `### \`src/widgets/input.ts\`\n\nThat widget keeps editing state local, exposes actions through the router, and grows vertically with wrapped content.`

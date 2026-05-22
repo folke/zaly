@@ -92,5 +92,5 @@ export class AttachmentBuffer {
 function insertAtCursor(input: Input, s: string): void {
   const v = input.state.value ?? ""
   const c = input.state.cursor ?? 0
-  input.setState({ cursor: c + s.length, value: v.slice(0, c) + s + v.slice(c) })
+  input.state.set({ cursor: c + s.length, value: v.slice(0, c) + s + v.slice(c) })
 }

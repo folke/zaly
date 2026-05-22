@@ -170,14 +170,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return ret
   }
 
-  setState(patch: Partial<State<T>>): this {
-    // Thin compat shim — `this.state.set(patch)` does the same
-    // diff-and-notify work per field. Will be removed once callers
-    // migrate to `this.state.set` directly.
-    this.state.set(patch)
-    return this
-  }
-
   invalidate(): this {
     this.#cache = undefined
     // Suppress only when this invalidate originates from *inside this

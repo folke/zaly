@@ -127,7 +127,7 @@ export class App {
         this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
         return
       }
-      self.setState({ cursor: 0, value: "" })
+      self.state.set({ cursor: 0, value: "" })
       const refs = this.#attachments.consume(trimmed)
       submit(trimmed, refs, this.#agent, this.#renderer)
       void this.#agent.waitIdle()

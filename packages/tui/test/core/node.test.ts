@@ -102,29 +102,24 @@ describe("NodeBase", () => {
     expect(rows2).toEqual(["hi:0:20"])
   })
 
-  test("setState invalidates on every field change", async () => {
+  test("state.set invalidates on every field change", async () => {
     const n = new TestNode({ count: 0, text: "hi" })
     await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
-    n.setState({ count: 10, text: "new" })
+    n.state.set({ count: 10, text: "new" })
     expect(fn).toHaveBeenCalledTimes(2)
     expect(n.state.text).toBe("new")
     expect(n.state.count).toBe(10)
   })
 
-  test("setState with no real changes does not invalidate", async () => {
+  test("state.set with no real changes does not invalidate", async () => {
     const n = new TestNode({ count: 5, text: "hi" })
     await n.render(ctx)
     const fn = vi.fn()
     n.on("invalidate", fn)
-    n.setState({ count: 5, text: "hi" })
+    n.state.set({ count: 5, text: "hi" })
     expect(fn).not.toHaveBeenCalled()
-  })
-
-  test("setState returns this for chaining", async () => {
-    const n = new TestNode({ count: 0, text: "hi" })
-    expect(n.setState({ count: 1 })).toBe(n)
   })
 
   test("render caches across calls", async () => {

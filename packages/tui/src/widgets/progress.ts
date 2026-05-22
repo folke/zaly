@@ -12,7 +12,7 @@ import { stringWidth } from "../style/ansi.ts"
 export interface ProgressState {
   /** Current value. Clamped to `[0, total]`. Accepts a signal accessor
    *  so callers can drive the bar from reactive state without manual
-   *  `setState` plumbing. */
+   *  `state.set` plumbing. */
   value: Reactive<number>
   /** Maximum value. Defaults to `1` — pass a fraction in `[0, 1]` to value. */
   total?: Reactive<number>
