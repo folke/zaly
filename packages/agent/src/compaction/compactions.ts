@@ -41,7 +41,7 @@ const defaults: CompactionOptions = {
   maxSummaryTokens: 10_000,
   maxToolResultLen: 2000,
   reasoning: { effort: "low" },
-  treshold: 0.85,
+  treshold: 0.95,
 }
 
 export class Compaction {

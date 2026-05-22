@@ -393,7 +393,7 @@ export class Agent extends Emitter<AgentEvents> {
   #shouldAutoCompact(): boolean {
     const auto = this.#opts.compaction?.auto ?? true
     if (!auto) return false
-    const threshold = this.#opts.compaction?.treshold ?? 0.85
+    const threshold = this.#opts.compaction?.treshold ?? 0.95
     return this.pressure.ratio >= threshold
   }
 
