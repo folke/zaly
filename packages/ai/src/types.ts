@@ -197,6 +197,8 @@ type MessageBase = {
     }
 )
 
+export type Role = MessageBase["role"]
+
 /** A message in the conversation. Role layout follows OpenAI Chat
  *  Completions (system / user / assistant / tool as separate messages);
  *  assistant content is an ordered array of parts so text + tool calls
@@ -204,10 +206,7 @@ type MessageBase = {
  *
  *  String shorthands on `user` and `assistant` expand to a single
  *  `TextPart` — they're there for ergonomics, not a different shape. */
-export type Message<T extends MessageBase["role"] = MessageBase["role"]> = Extract<
-  MessageBase,
-  { role: T }
->
+export type Message<T extends Role = Role> = Extract<MessageBase, { role: T }>
 
 /** A callable tool exposed to the model.
  *

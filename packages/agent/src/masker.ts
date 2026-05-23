@@ -1,13 +1,20 @@
-import type { Attachment, Message, TextPart, Tool, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type {
+  Attachment,
+  Message,
+  TextPart,
+  Tool,
+  ToolCallPart,
+  ToolResultPart,
+  Role,
+} from "@zaly/ai"
 import type { Agent } from "./agent.ts"
-import type { EditTool } from "./tools/edit.ts"
-import type { ReadTool } from "./tools/read.ts"
+import type { FileMeta } from "./tools/read.ts"
 import type { AnyTool } from "./tools/registry.ts"
-import type { WriteTool } from "./tools/write.ts"
 import type { ContextPressure } from "./types.ts"
 
 import { hasAttachments, isAttachment, safeParseToolParams } from "@zaly/ai"
 import { safeStringify } from "@zaly/shared"
+import { extractFileUsage } from "./compaction/utils.ts"
 
 /** Unified mask rule. The bucket key *is* the uniqueness criterion —
  *  every item past the first in a bucket is a duplicate by definition,
@@ -53,6 +60,7 @@ export type MaskOptions = {
    *  same path (or, for reads, a later full-read subsumed it). Current
    *  ops are working memory and never masked. */
   files?: { read?: number; write?: number; edit?: number } | false
+  frecency?: { limit?: number; minScore?: number }
   /** Attachment masking (image / pdf / audio / video). All attachments
    *  beyond the most-recent are mask candidates; `keep` retains a floor
    *  of N more, and `maxAge` / `maxTurns` also mask items older than
@@ -69,14 +77,23 @@ export type ResolvedMaskOptions = {
   tools: Exclude<MaskOptions["tools"], false>
   files: Exclude<MaskOptions["files"], false>
   attachments: Exclude<MaskOptions["attachments"], false>
+  frecency: { limit: number; minScore: number }
   minChars: number
 }
 
 const defaults = {
   attachments: { keep: 10, maxAge: 24 * 60 * 60 * 1000 },
-  files: { edit: 10, read: 2, write: 3 },
+  files: { edit: 5, read: 0, write: 0 },
+  frecency: { limit: 20, minScore: 0.5 },
   minChars: 500,
-  tools: [{ keep: 0, key: "params", tool: "*" }],
+  tools: [
+    { keep: 1, key: "name", maxTurns: 20, tool: "grep" },
+    { keep: 1, key: "name", maxTurns: 20, tool: "find" },
+    { keep: 3, key: "params", maxTurns: 20, tool: "bash" },
+    { keep: 0, key: "params", maxTurns: 20, tool: "fetch" },
+    { keep: 1, key: "name", maxTurns: 20, tool: "search" },
+    { keep: 0, key: "params", tool: "*" },
+  ],
 } as const satisfies ResolvedMaskOptions
 
 /** In-place mask projection for the request stream.
@@ -98,10 +115,11 @@ const defaults = {
 export class Masker {
   readonly #opts: ResolvedMaskOptions
   readonly #stamped = new Map<string, Set<number>>()
+  #stats = new Map<Role, Record<string, number>>()
 
   /** Highest pressure level we've decided at. Monotonic up; resets only
    *  when current level falls back to `0` (e.g. after compaction). */
-  #pressureLevel = 0
+  #pressureLevel = -1
 
   // Per-apply scan state. Cleared at the top of every `#decide()`.
   #callIndex = new Map<string, ToolCallPart>()
@@ -112,6 +130,7 @@ export class Masker {
   #turns = new Map<string, number>()
   #now = 0
   #messages = new Map<string, Message>()
+  #frecentFiles = new Set<string>()
 
   constructor(opts: MaskOptions = {}) {
     function getOpt<T extends "files" | "attachments">(k: T): ResolvedMaskOptions[T] {
@@ -120,13 +139,24 @@ export class Masker {
     this.#opts = {
       attachments: getOpt("attachments"),
       files: getOpt("files"),
+      frecency: { ...defaults.frecency, ...opts.frecency },
       minChars: opts.minChars ?? defaults.minChars,
       tools: opts.tools === false ? undefined : (opts.tools ?? defaults.tools),
     }
   }
 
+  get stats(): Map<Role, Record<string, number>> {
+    return this.#stats
+  }
+
+  addStat(role: Role, key: string, n = 1): void {
+    const r = this.#stats.get(role) ?? {}
+    r[key] = (r[key] ?? 0) + n
+    this.#stats.set(role, r)
+  }
+
   attach(agent: Agent) {
-    agent.on("context", async (ctx, a) => {
+    agent.on("context", (ctx, a) => {
       ctx.messages = this.apply(ctx.messages, a.pressure)
     })
   }
@@ -160,6 +190,7 @@ export class Masker {
       // re-fire decide.
       this.#pressureLevel = 0
     }
+    // console.log(this.#callIndex)
     return this.#render(messages)
   }
 
@@ -210,6 +241,15 @@ export class Masker {
     this.#now = Date.now()
     this.#turns.clear()
     this.#messages.clear()
+    this.#frecentFiles.clear()
+
+    const fileUsage = extractFileUsage(messages, {
+      limit: this.#opts.frecency.limit,
+      minCount: 1,
+      minScore: this.#opts.frecency.minScore,
+      sort: "score",
+    })
+    for (const { path } of fileUsage) this.#frecentFiles.add(path)
 
     let turn = 0
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -261,15 +301,19 @@ export class Masker {
   #checkFile(msg: Message, p: ToolResultPart<FileTool>, partIdx: number): void {
     if (!this.#opts.files || !msg.id) return
     const kind = p.name
-    const info = classifyFileCall(p.name, this.#callIndex.get(p.id)?.params)
+    const info = p.meta as FileMeta | undefined
     if (!info) return
+    if (!this.#frecentFiles.has(info.path)) {
+      markPart(this.#decisions, msg.id, partIdx)
+      return
+    }
     const s: FileState = this.#files.get(info.path) ?? { edit: 0, read: 0, stale: false, write: 0 }
     if (s.stale) {
-      if (s[kind] >= (this.#opts.files[kind] ?? Infinity))
-        markPart(this.#decisions, msg.id, partIdx)
-      else s[kind]++
+      s[kind]++
+      if (s[kind] > (this.#opts.files[kind] ?? Infinity)) markPart(this.#decisions, msg.id, partIdx)
     }
-    s.stale ||= info.full
+    s.stale ||= info.full ?? false
+    s.stale ||= (this.#turns.get(msg.id) ?? 0) > 50 // Fresh if from the current user turn.
     this.#files.set(info.path, s)
   }
 
@@ -338,6 +382,7 @@ export class Masker {
    *  Reads only from `#stamped` — fresh decisions from `#decide` are
    *  already merged in. Cheap; no per-part decision logic. */
   #render(messages: readonly Message[]): Message[] {
+    this.#stats.clear()
     const out: Message[] = Array.from({ length: messages.length })
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i]
@@ -355,11 +400,63 @@ export class Masker {
         out[i] = m
         continue
       }
-      if (m.role === "tool") out[i] = maskToolParts(m, this.#callIndex, stamped)
-      else if (m.role === "user") out[i] = maskUserParts(m, stamped)
-      else out[i] = maskAssistantParts(m, stamped)
+      if (m.role === "tool") out[i] = this.maskToolParts(m, this.#callIndex, stamped)
+      else if (m.role === "user") out[i] = this.maskUserParts(m, stamped)
+      else out[i] = this.maskAssistantParts(m, stamped)
     }
     return out
+  }
+
+  maskToolParts(
+    m: Message<"tool">,
+    calls: Map<string, ToolCallPart>,
+    parts: Set<number>
+  ): Message<"tool"> {
+    return {
+      ...m,
+      content: m.content.map((p, i) => (parts.has(i) ? this.maskResult(p, calls.get(p.id)) : p)),
+    }
+  }
+
+  maskUserParts(m: Message<"user">, parts: Set<number>): Message<"user"> {
+    if (typeof m.content === "string") return m
+    return {
+      ...m,
+      content: m.content.map((p, i) =>
+        parts.has(i) && isAttachment(p) ? this.attachmentStub(p) : p
+      ),
+    }
+  }
+
+  maskAssistantParts(m: Message<"assistant">, parts: Set<number>): Message<"assistant"> {
+    if (typeof m.content === "string") return m
+    return {
+      ...m,
+      content: m.content.map((p, i) =>
+        parts.has(i) && p.type === "tool-call" ? this.maskToolCall(p) : p
+      ),
+    }
+  }
+
+  maskToolCall(p: ToolCallPart): ToolCallPart {
+    this.addStat("assistant", `tool-call-${p.name}`)
+    return { ...p, params: { masked: stubText(p.name, p.params) } }
+  }
+
+  maskResult(p: ToolResultPart, call: ToolCallPart | undefined): ToolResultPart {
+    if (p.isError) return p
+    this.addStat("tool", `tool-result-${p.name}`)
+    return {
+      content: [{ text: stubText(p.name, call?.params), type: "text" }],
+      id: p.id,
+      name: p.name,
+      type: "tool-result",
+    }
+  }
+
+  attachmentStub(p: Attachment): TextPart {
+    this.addStat("user", `attachment-${p.type}`)
+    return { text: `[masked: ${p.type} attachment. Re-attach if needed.]`, type: "text" }
   }
 }
 
@@ -406,27 +503,6 @@ function isFileTool(name: string): name is FileTool {
   return FILE_TOOLS.has(name as FileTool)
 }
 
-const FULL_READ_LIMIT_THRESHOLD = 2000
-
-function classifyFileCall(
-  kind: FileTool,
-  params: unknown
-): { path: string; full: boolean } | undefined {
-  if (!params) return undefined
-  if (kind === "write") {
-    const p = safeParseToolParams<WriteTool>(params)
-    return p?.path ? { full: true, path: p.path } : undefined
-  } else if (kind === "edit") {
-    const p = safeParseToolParams<EditTool>(params)
-    return p?.path ? { full: false, path: p.path } : undefined
-  }
-  const p = safeParseToolParams<ReadTool>(params)
-  if (!p?.path) return undefined
-  const offset = typeof p.offset === "number" ? p.offset : 1
-  const limit = typeof p.limit === "number" ? p.limit : FULL_READ_LIMIT_THRESHOLD
-  return { full: offset <= 1 && limit >= FULL_READ_LIMIT_THRESHOLD, path: p.path }
-}
-
 // ── Tool-call propagation (write/edit) ─────────────────────────────────
 
 const PROPAGATED_TOOLS: ReadonlySet<string> = new Set(["write", "edit"])
@@ -458,53 +534,6 @@ function markPart(out: Map<string, Set<number>>, msgId: string, partIdx: number)
 }
 
 // ── Render (mask helpers) ──────────────────────────────────────────────
-
-function maskToolParts(
-  m: Message<"tool">,
-  calls: Map<string, ToolCallPart>,
-  parts: Set<number>
-): Message<"tool"> {
-  return {
-    ...m,
-    content: m.content.map((p, i) => (parts.has(i) ? maskResult(p, calls.get(p.id)) : p)),
-  }
-}
-
-function maskUserParts(m: Message<"user">, parts: Set<number>): Message<"user"> {
-  if (typeof m.content === "string") return m
-  return {
-    ...m,
-    content: m.content.map((p, i) => (parts.has(i) && isAttachment(p) ? attachmentStub(p) : p)),
-  }
-}
-
-function maskAssistantParts(m: Message<"assistant">, parts: Set<number>): Message<"assistant"> {
-  if (typeof m.content === "string") return m
-  return {
-    ...m,
-    content: m.content.map((p, i) =>
-      parts.has(i) && p.type === "tool-call" ? maskToolCall(p) : p
-    ),
-  }
-}
-
-function maskToolCall(p: ToolCallPart): ToolCallPart {
-  return { ...p, params: { masked: stubText(p.name, p.params) } }
-}
-
-function maskResult(p: ToolResultPart, call: ToolCallPart | undefined): ToolResultPart {
-  if (p.isError) return p
-  return {
-    content: [{ text: stubText(p.name, call?.params), type: "text" }],
-    id: p.id,
-    name: p.name,
-    type: "tool-result",
-  }
-}
-
-function attachmentStub(p: Attachment): TextPart {
-  return { text: `[masked: ${p.type} attachment. Re-attach if needed.]`, type: "text" }
-}
 
 function stubText(name: string, params: unknown): string {
   // File tools: the assistant tool-call message above already carries

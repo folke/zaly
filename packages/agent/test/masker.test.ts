@@ -158,7 +158,7 @@ describe("Masker — file-aware", () => {
     ]
     // Each path: 1 stale write + 1 current. With keep.write: 3, none
     // should be masked.
-    const masker = mask()
+    const masker = mask({ files: { write: 3 } })
     const out = masker.apply(withIds(messages), P)
     expect(masker.stamped).toBe(0)
     for (const i of [2, 4, 6, 8]) expect(firstText(out[i])).toBe("ok")
@@ -174,7 +174,7 @@ describe("Masker — dedupe", () => {
       call("c2", "bash", { command: "ls" }),
       result("c2", "bash", "second ls"),
     ]
-    const masker = mask()
+    const masker = mask({ tools: [{ keep: 0, key: "params", tool: "bash" }] })
     const out = masker.apply(withIds(messages), P)
 
     expect(firstText(out[2])).toContain("[masked:")

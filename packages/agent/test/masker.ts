@@ -54,3 +54,5 @@ const pct = before.total.tokens === 0 ? 0 : (saved / before.total.tokens) * 100
 console.log(
   `\nstamped ${masker.stamped} messages — saved ~${fmt(saved)} tokens (${pct.toFixed(1)}%)`
 )
+
+console.log(masker.stats)
