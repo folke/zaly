@@ -188,7 +188,7 @@ function withReadOf(path: string, mtime: number): Message<"tool"> {
     name: "read",
     type: "tool-result",
   }
-  return { content: [part], role: "tool" }
+  return { content: [part], id: "m1", role: "tool" }
 }
 
 describe("trackFile / assertFresh", () => {
