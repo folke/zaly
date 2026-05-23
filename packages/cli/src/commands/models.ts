@@ -1,17 +1,13 @@
 // oxlint-disable sort-keys
 
-import type { ParsedArgs } from "citty"
 import type { Cli } from "../cli.ts"
+import type { CmdArgs } from "../types.ts"
 
 import { listModels } from "@zaly/ai"
 import { formatNumber } from "@zaly/shared"
 import { defineCommand } from "citty"
 
-type ModelsArgs = ParsedArgs<{
-  pattern: { type: "positional"; required: false }
-  all: { type: "boolean"; default: false }
-  json: { type: "boolean"; default: false }
-}>
+type ModelsArgs = CmdArgs<typeof modelsCommand>
 
 export function modelsCommand(cli: Cli) {
   return defineCommand({
@@ -36,7 +32,7 @@ export function modelsCommand(cli: Cli) {
         default: false,
       },
     },
-    run: ({ args }) => run(cli, args as unknown as ModelsArgs),
+    run: ({ args }) => run(cli, args),
   })
 }
 

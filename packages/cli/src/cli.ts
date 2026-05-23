@@ -1,18 +1,12 @@
 // oxlint-disable sort-keys
 
 import type { Settings } from "@zaly/config"
-import type { CamelCase } from "scule"
+import type { CmdArgs } from "./types.ts"
 
 import { defineCommand } from "citty"
 import { Context } from "./context.ts"
 
-// `CliArgs` is derived from the citty arg defs above so handlers can
-// read parsed flags type-safely without re-declaring the shape.
-type Setup = Extract<ReturnType<typeof mainCommand>["setup"], (...args: any[]) => any>
-type Args = Parameters<Setup>[0]["args"]
-export type CliArgs = {
-  [K in keyof Args as CamelCase<K & string>]: Args[K]
-}
+export type CliArgs = CmdArgs<typeof mainCommand>
 
 const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const
 
@@ -162,6 +156,7 @@ export function mainCommand(cli: Cli) {
     // each subcommand the shared `cli` so it can read `cli.config`.
     subCommands: {
       models: () => import("./commands/models.ts").then((m) => m.modelsCommand(cli)),
+      debug: () => import("./commands/debug.ts").then((m) => m.debugCommand(cli)),
       session: () => import("./commands/session.ts").then((m) => m.sessionCommand(cli)),
     },
     // Citty fires `run` AFTER a subcommand returns, so guard against the
