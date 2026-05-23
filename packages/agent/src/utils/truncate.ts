@@ -1,3 +1,5 @@
+import { sliceAnsi, splitAnsi, stringWidth as sw } from "@zaly/shared/ansi"
+
 const MAX_CHARS = 50_000
 const MAX_LINES = 2000
 const MAX_LINE_CHARS = 1000
@@ -49,16 +51,16 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
   const text = typeof data === "string" ? data : data.toString("utf8")
   const o = truncateOpts(opts)
 
-  let lines = text.split("\n")
+  let lines = splitAnsi(text)
   while (lines.at(-1) === "") lines.pop()
   const bytes = typeof data === "string" ? Buffer.byteLength(data, "utf8") : data.length
 
   const ret: TruncateResult = {
     opts: o,
     origBytes: bytes,
-    origChars: text.length,
+    origChars: sw(text),
     origLines: lines.length,
-    origLongestLine: lines.reduce((max, l) => Math.max(max, l.length), 0),
+    origLongestLine: lines.reduce((max, l) => Math.max(max, sw(l)), 0),
     text,
     truncated: false,
   }
@@ -74,7 +76,8 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
 
   if (jsonish && ret.origChars > o.maxChars) {
     const marker = ` … [truncated ${ret.origChars - o.maxChars} chars]`
-    ret.text = lines[0].slice(0, Math.max(0, o.maxChars - marker.length))
+    const len = Math.max(0, o.maxChars - marker.length)
+    ret.text = sliceAnsi(lines[0], 0, len)
     ret.text += marker
     ret.truncatedChars = true
     return ret
@@ -82,10 +85,11 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
 
   if (truncLineChars) {
     lines = lines.map((l) => {
-      if (l.length <= o.maxLineChars) return l
+      const len = sw(l)
+      if (len <= o.maxLineChars) return l
       ret.truncatedLineChars = true
-      const trunc = l.length - o.maxLineChars
-      return `${l.slice(0, o.maxLineChars)} [ … truncated ${trunc} chars]`
+      const trunc = len - o.maxLineChars
+      return `${sliceAnsi(l, 0, o.maxLineChars)} [ … truncated ${trunc} chars]`
     })
   }
 
@@ -97,7 +101,7 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
     }
     let c = 0
     ll = ll.filter((l) => {
-      c += l.length + 1 // +1 for the dropped \n
+      c += sw(l) + 1 // +1 for the dropped \n
       if (c <= maxChars) return true
       ret.truncatedChars = true
       ret.truncatedLines = true
