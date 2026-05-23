@@ -421,6 +421,10 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     if (ref) ref.value = this
     return this
   }
+
+  isVisible(): boolean {
+    return this.visible && (this.parent ? this.parent.isVisible() : true)
+  }
 }
 
 /** Runtime type guard for Node.

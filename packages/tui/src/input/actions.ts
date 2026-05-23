@@ -206,7 +206,7 @@ export class Actions extends Emitter<ActionEvents> {
       return true
     }
     for (let node: Node | undefined = target; node !== undefined; node = node.parent) {
-      if (!node.visible || !node.mounted) continue
+      if (!node.isVisible() || !node.mounted) continue
       const entry = node.actions?.[id]
       const fn = typeof entry === "function" ? entry : entry?.fn
       if (typeof fn === "function") {
