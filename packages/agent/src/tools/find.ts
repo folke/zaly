@@ -71,7 +71,7 @@ export const findTool = defineTool({
   }),
 
   async call(args, ctx: ToolContext<FindToolMeta>): Promise<(MetaPart | TextPart)[]> {
-    const cwd = normPath(ctx.cwd)
+    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
     await ctx.need?.("read", cwd)
     let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
     await Promise.all(paths.map((path) => Promise.resolve(ctx.need?.("read", path))))

@@ -82,7 +82,7 @@ export const grepTool = defineTool({
     const command = resolveGrep()
     if (!command) throw new AiError({ code: "MISSING_TOOL", message: "grep requires rg or grep" })
 
-    const cwd = normPath(ctx.cwd)
+    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
     await ctx.need?.("read", cwd)
 
     let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
