@@ -4,6 +4,7 @@ import type { AgentStopKind } from "../src/events.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
+import { normPath } from "@zaly/shared"
 import { createAgent } from "../src/context.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
@@ -149,6 +150,7 @@ export async function runAgent(
  *  in-memory zaly Session; otherwise loads the path as a native zaly
  *  session JSONL. Used by `test/compaction.ts` and `test/masker.ts`. */
 export async function loadSession(path: string, opts?: { limit?: number }): Promise<Session> {
+  path = normPath(path)
   if (path.includes(".claude")) {
     const { messages } = await loadClaudeSession(path, { walk: "all" })
 

@@ -3,7 +3,6 @@ import type { BashTool } from "../tools/bash.ts"
 import type { EditToolMeta } from "../tools/edit.ts"
 import type { ReadToolMeta } from "../tools/read.ts"
 import type { WriteToolMeta } from "../tools/write.ts"
-import type { CompactionContext } from "./compactions.ts"
 
 import {
   attachmentToMeta,
@@ -117,11 +116,10 @@ function toolStats<T extends ToolStat = ToolStat>(
  *  node — relative paths are resolved against the cwd that was active
  *  when the call ran, and `~` is expanded. Calls under different cwds
  *  that target the same file thus collapse into one bucket. */
-export async function extractFileUsage(
-  ctx: CompactionContext,
+export function extractFileUsage(
+  messages: readonly Message[],
   opts: ToolStatOptions = {}
-): Promise<FileUsage[]> {
-  const { messages } = ctx
+): FileUsage[] {
   opts = { minScore: 0.5, ...opts }
   const map = new Map<string, FileUsage>()
   const { turns, weights } = turnInfo(messages)
@@ -158,8 +156,10 @@ export async function extractFileUsage(
  *  sed, …) are filtered out — they dominate raw counts but carry no
  *  operational signal a summarizer would describe. Returns the top-N
  *  by frecency `score`. */
-export function extractBashUsage(ctx: CompactionContext, opts: ToolStatOptions = {}): BashUsage[] {
-  const { messages } = ctx
+export function extractBashUsage(
+  messages: readonly Message[],
+  opts: ToolStatOptions = {}
+): BashUsage[] {
   opts = { minCount: 2, minScore: 0.5, ...opts } // bash commands are noisier, so default to minCount=2
   const { turns, weights } = turnInfo(messages)
   const map = new Map<string, BashUsage>()
@@ -200,10 +200,9 @@ function truncate(text: string, len: number): string {
 
 /** Flatten a list of messages into a single tagged transcript. */
 export function extractConversation(
-  ctx: CompactionContext,
+  messages: readonly Message[],
   opts: { maxToolResultLen?: number } = {}
 ): string {
-  const { messages } = ctx
   const transform = ContentTransform.create<AnyPart>()
     .drop("reasoning")
     .map("tool-call", (part) => ({
@@ -249,12 +248,12 @@ export function extractConversation(
 
 // ── Tail selection ────────────────────────────────────────────────────
 
-export async function messageTail(
-  ctx: CompactionContext,
+export function messageTail(
+  messages: readonly Message[],
   opts: { keepTokens?: number }
-): Promise<Message[]> {
+): Message[] {
   const maxTokens = opts.keepTokens ?? 20_000
-  const messages = ctx.messages.toReversed()
+  messages = messages.toReversed()
   const tail: Message[] = []
   const queue: Message[] = []
 

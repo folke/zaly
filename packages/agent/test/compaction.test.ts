@@ -31,28 +31,22 @@ const usage = (input: number, output = 0, extra: Partial<Usage> = {}): Usage => 
 describe("messageTail", () => {
   test("empty session returns empty tail", async () => {
     const { session } = await build([])
-    expect(
-      await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
-    ).toEqual([])
+    expect(messageTail(session.messages, { keepTokens: 1000 })).toEqual([])
   })
 
   test("messages with no usage are queued and never flushed", async () => {
     const { session } = await build([[u("hi")], [u("again")]])
-    expect(
-      await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
-    ).toEqual([])
+    expect(messageTail(session.messages, { keepTokens: 1000 })).toEqual([])
   })
 
   test("newest assistant always admitted (delta = 0 by definition)", async () => {
     const { session, messages } = await build([[a("greeting"), usage(50, 10)]])
-    expect(await messageTail({ messages: session.messages, session }, { keepTokens: 0 })).toEqual(
-      messages
-    )
+    expect(messageTail(session.messages, { keepTokens: 0 })).toEqual(messages)
   })
 
   test("leading user without later assistant is dropped (queue never flushes)", async () => {
     const { session, messages } = await build([[u("q1")], [a("a1"), usage(50, 10)]])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
+    const tail = messageTail(session.messages, { keepTokens: 1000 })
     expect(tail).toEqual([messages[1]])
   })
 
@@ -65,7 +59,7 @@ describe("messageTail", () => {
       [u("q3")],
       [a("a3"), usage(180, 20)],
     ])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
+    const tail = messageTail(session.messages, { keepTokens: 1000 })
     expect(tail).toEqual(messages.slice(1))
   })
 
@@ -78,7 +72,7 @@ describe("messageTail", () => {
       [u("q3")],
       [a("a3"), usage(180, 20)],
     ])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 100 })
+    const tail = messageTail(session.messages, { keepTokens: 100 })
     expect(tail).toEqual(messages.slice(3))
   })
 
@@ -90,12 +84,8 @@ describe("messageTail", () => {
       [u("q2-c")],
       [a("a2"), usage(120, 20)],
     ])
-    expect(
-      await messageTail({ messages: session.messages, session }, { keepTokens: 1000 })
-    ).toEqual(messages)
-    expect(await messageTail({ messages: session.messages, session }, { keepTokens: 50 })).toEqual([
-      messages[4],
-    ])
+    expect(messageTail(session.messages, { keepTokens: 1000 })).toEqual(messages)
+    expect(messageTail(session.messages, { keepTokens: 50 })).toEqual([messages[4]])
   })
 
   test("masker-style shrink — clamp prevents under-charge of newer growth", async () => {
@@ -107,7 +97,7 @@ describe("messageTail", () => {
       [u("q3")],
       [a("a3"), usage(180, 20)],
     ])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 50 })
+    const tail = messageTail(session.messages, { keepTokens: 50 })
     expect(tail).toEqual(messages.slice(5))
   })
 
@@ -122,7 +112,7 @@ describe("messageTail", () => {
       [u("q4")],
       [a("a4"), usage(80, 20)],
     ])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 30 })
+    const tail = messageTail(session.messages, { keepTokens: 30 })
     expect(tail).toEqual(messages.slice(5))
   })
 
@@ -133,19 +123,19 @@ describe("messageTail", () => {
       [u("q2")],
       [a("a2"), usage(70, 20, { cacheRead: 500, cacheWrite: 100 })],
     ])
-    const tail = await messageTail({ messages: session.messages, session }, { keepTokens: 100 })
+    const tail = messageTail(session.messages, { keepTokens: 100 })
     expect(tail).toEqual([messages[3]])
   })
 
   test("opts.messages overrides session.messages — used for masked agent view", async () => {
-    const { session, messages } = await build([
+    const { messages } = await build([
       [u("q1")],
       [a("a1"), usage(50, 10)],
       [u("q2")],
       [a("a2"), usage(110, 20)],
     ])
     const masked: Message[] = messages.map((m) => structuredClone(m))
-    const tail = await messageTail({ messages: masked, session }, { keepTokens: 1000 })
+    const tail = messageTail(masked, { keepTokens: 1000 })
     expect(tail).toEqual(masked.slice(1))
     expect(tail.every((m, i) => m === masked[i + 1])).toBe(true)
   })
@@ -157,8 +147,6 @@ describe("messageTail", () => {
       [u("q2")],
       [a("a2"), usage(200, 50)],
     ])
-    expect(await messageTail({ messages: session.messages, session }, {})).toEqual(
-      messages.slice(1)
-    )
+    expect(messageTail(session.messages, {})).toEqual(messages.slice(1))
   })
 })

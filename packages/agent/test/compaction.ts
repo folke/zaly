@@ -15,7 +15,6 @@
  * in-memory zaly Session. Otherwise the path is loaded as a native
  * zaly session JSONL. */
 
-import type { CompactionContext } from "../src/compaction/compactions.ts"
 import type { BashUsage, FileUsage } from "../src/compaction/utils.ts"
 
 import { formatDuration } from "@zaly/shared"
@@ -67,7 +66,7 @@ function formatFileTouches(files: FileUsage[]): string {
 // }
 
 const DEFAULT_SESSION =
-  "~/.claude/projects/-home-folke-projects-zaly/01e44572-4bc9-43c6-863b-92e31190f95f.jsonl"
+  "~/.local/share/zaly/sessions/+home+folke+projects+zaly/019e45c3-d436-7f1f-9649-f6bffe0e4054/session.jsonl"
 
 const path = process.env.SESSION ?? DEFAULT_SESSION
 const session = await loadSession(path)
@@ -76,16 +75,12 @@ const session = await loadSession(path)
 // let older = session.messages.slice(0, -tail.length)
 // the above is what should be used, but for testing, just take last 100
 const messages = session.messages //.slice(-500)
-const ctx: CompactionContext = {
-  session,
-  messages,
-}
 
 console.log(`loaded ${messages.length} messages from ${path}\n`)
 
-console.log(formatBashCommands(extractBashUsage(ctx)))
+console.log(formatBashCommands(extractBashUsage(messages)))
 console.log()
-console.log(formatFileTouches(await extractFileUsage(ctx)))
+console.log(formatFileTouches(extractFileUsage(messages)))
 console.log()
 
 // console.log(formatTranscript(extractConversation({ session, messages }), tail.length))

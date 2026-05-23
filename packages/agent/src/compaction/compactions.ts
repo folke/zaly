@@ -1,6 +1,5 @@
 import type { Message, ReasoningOptions } from "@zaly/ai"
 import type { Agent } from "../agent.ts"
-import type { Session } from "../session/session.ts"
 import type { ToolStatOptions } from "./utils.ts"
 
 import { toXml } from "@zaly/ai"
@@ -13,11 +12,6 @@ import {
   formatFileUsage,
   messageTail,
 } from "./utils.ts"
-
-export type CompactionContext = {
-  messages: readonly Message[]
-  session: Session
-}
 
 export type CompactionOptions = {
   auto: boolean
@@ -58,21 +52,19 @@ export class Compaction {
 
     const now = performance.now()
 
-    const tail = await messageTail({ messages, session }, { keepTokens: this.#opts.keepTokens })
+    const tail = messageTail(messages, { keepTokens: this.#opts.keepTokens })
     const older = tail.length > 0 ? messages.slice(0, -tail.length) : messages
 
     if (older.length === 0) return
 
     const conversation = extractConversation(
       // Conversation summary is based on the older messages, not the tail — the tail is what we keep
-      { messages: older, session },
+      older,
       { maxToolResultLen: this.#opts.maxToolResultLen }
     )
 
-    const bashUsage = formatBashUsage(extractBashUsage({ messages, session }, this.#opts.bash))
-    const fileUsage = formatFileUsage(
-      await extractFileUsage({ messages, session }, this.#opts.files)
-    )
+    const bashUsage = formatBashUsage(extractBashUsage(messages, this.#opts.bash))
+    const fileUsage = formatFileUsage(extractFileUsage(messages, this.#opts.files))
 
     const request: Message<"user"> = {
       content: [
