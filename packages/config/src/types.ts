@@ -1,33 +1,8 @@
 import type { PermissionPresetName } from "@zaly/agent"
 import type { ReasoningEffort } from "@zaly/ai"
 import type { ProjectPaths } from "@zaly/shared/paths"
+import type { BuiltinAction, KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
-
-export const defaults: Settings = {
-  model: "openai/gpt-5.5",
-  permissions: {
-    preset: "permissive",
-  },
-  reasoning: "low",
-  theme: "tokyonight-moon",
-  tools: [
-    "bash",
-    "edit",
-    "fetch",
-    "grep",
-    "find",
-    "read",
-    "search",
-    "subagent",
-    "agent_send",
-    "agent_spawn",
-    "task_list",
-    "task_poll",
-    "task_stop",
-    "wakeup",
-    "write",
-  ] as const,
-}
 
 export type Settings = {
   $schema?: string
@@ -49,6 +24,11 @@ export type Settings = {
     themes?: string[] | false
     prompts?: string[] | false
   }
+  bindings?: Partial<Record<BuiltinAction, KeyPatterns>>
+}
+
+export type TypiaSettings = Omit<Settings, "bindings"> & {
+  bindings?: Partial<Record<BuiltinAction, string | string[]>>
 }
 
 export type SettingsScope = "user" | "workspace" | "project"

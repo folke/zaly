@@ -1,7 +1,10 @@
 export type * from "./input/actions.ts"
+export type * from "./input/router.ts"
 export type * from "./style/types.ts"
 export type * from "./themes/types.ts"
+
 export * from "./core/index.ts"
 export * from "./layout/text.ts"
 export * from "./renderer/index.ts"
 export * from "./widgets/index.ts"
+export * from "./input/keys.ts"

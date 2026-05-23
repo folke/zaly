@@ -1,7 +1,7 @@
 import type { KeyEvent } from "../../src/input/keys.ts"
 
 import { describe, expect, test } from "vitest"
-import { keyMatches } from "../../src/input/keys.ts"
+import { canonical, isKeyPattern, keyMatches } from "../../src/input/keys.ts"
 
 // Minimal builder — explicit modifiers so test intent is obvious.
 function k(name: string, mods: Partial<KeyEvent> = {}): KeyEvent {
@@ -58,9 +58,10 @@ describe("keyMatches", () => {
     expect(keyMatches(k("backspace"), "backspace")).toBe(true)
   })
 
-  test("pattern is case-sensitive for letters (matches raw char)", () => {
+  test("normalizes uppercase letters to shifted lowercase", () => {
     expect(keyMatches(k("a"), "A")).toBe(false)
-    expect(keyMatches(k("A", { shift: true }), "A")).toBe(false) // needs shift-A
+    expect(keyMatches(k("A", { shift: true }), "A")).toBe(true)
+    expect(keyMatches(k("A", { shift: true }), "shift-a")).toBe(true)
     expect(keyMatches(k("A", { shift: true }), "shift-A")).toBe(true)
   })
 
@@ -70,13 +71,43 @@ describe("keyMatches", () => {
     expect(keyMatches(k("x"), ["q", "ctrl-c"])).toBe(false)
   })
 
-  test("unrecognised modifier-looking prefix falls through as the key name", () => {
-    // `"foo-bar"` is not a modifier combo — parser keeps it as the name.
-    // The event's name must literally be "foo-bar" to match. The string
-    // isn't a `KeyPattern` literal so we cast to exercise the parser's
-    // tolerance for unrecognised prefixes.
-    const p = "foo-bar" as unknown as Parameters<typeof keyMatches>[1]
-    expect(keyMatches(k("foo-bar"), p)).toBe(true)
-    expect(keyMatches(k("bar"), p)).toBe(false)
+  test("rejects unrecognised modifier-looking prefixes", () => {
+    expect(() => keyMatches(k("foo-bar"), "foo-bar")).toThrow(/unknown modifier/)
+  })
+})
+
+describe("canonical", () => {
+  test("normalizes shifted letters", () => {
+    expect(canonical("A")).toBe("shift-a")
+    expect(canonical("ctrl- ")).toBe("ctrl-space")
+    expect(canonical("shift-A")).toBe("shift-a")
+    expect(canonical("shift-a")).toBe("shift-a")
+    expect(canonical(k("A", { shift: true }))).toBe("shift-a")
+  })
+})
+
+describe("key pattern validation", () => {
+  test("accepts punctuation emitted by the decoder", () => {
+    expect(isKeyPattern("|")).toBe(true)
+    expect(isKeyPattern("=")).toBe(true)
+    expect(isKeyPattern("#")).toBe(true)
+    expect(isKeyPattern("@")).toBe(true)
+    expect(isKeyPattern("-")).toBe(true)
+    expect(isKeyPattern("ctrl--")).toBe(true)
+  })
+
+  test("rejects shifted printable punctuation/digits", () => {
+    expect(() => canonical("shift-2")).toThrow(/will not trigger/)
+    expect(() => canonical("shift-=")).toThrow(/will not trigger/)
+  })
+
+  test("accepts shifted letters and special keys", () => {
+    expect(canonical("A")).toBe("shift-a")
+    expect(canonical("shift-a")).toBe("shift-a")
+    expect(canonical("shift-tab")).toBe("shift-tab")
+  })
+
+  test("rejects duplicate modifiers", () => {
+    expect(() => canonical("ctrl-ctrl-a")).toThrow(/duplicate modifier/)
   })
 })

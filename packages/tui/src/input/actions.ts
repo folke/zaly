@@ -3,7 +3,7 @@ import type { Renderer } from "../renderer/renderer.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Menu } from "../widgets/menu.ts"
 import type { KeyPattern } from "./keys.ts"
-import type { KeyPatterns, RoutedKey } from "./router.ts"
+import type { RoutedKey } from "./router.ts"
 
 import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
@@ -36,7 +36,7 @@ export type ActionFn = (ctx: ActionCtx) => unknown
 export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
   id: string
   fn: ActionFn
-  keys: KeyPatterns
+  keys: string | readonly string[]
 }
 
 /**
@@ -55,7 +55,7 @@ export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
 export interface ActionInfo {
   name?: string
   desc?: string
-  keys?: readonly KeyPattern[]
+  keys?: readonly string[]
   hidden?: boolean
   fn?: ActionFn
 }
@@ -113,7 +113,7 @@ export class Actions extends Emitter<ActionEvents> {
    *  starting node (focused by default) so dispatch can walk up. */
   #getTarget: () => Node | undefined = () => undefined
   #logger: Logger
-  #keymap = new Map<string, string[]>()
+  #keymap = new Map<KeyPattern, string[]>()
 
   constructor(logger?: Logger) {
     super()
@@ -131,7 +131,7 @@ export class Actions extends Emitter<ActionEvents> {
     return this.register({
       [id]: {
         ...info,
-        keys: Array.isArray(keys) ? keys : [keys],
+        keys: (Array.isArray(keys) ? keys : [keys]).map((k) => canonical(k)),
       },
     })
   }
@@ -154,6 +154,7 @@ export class Actions extends Emitter<ActionEvents> {
     const prior = new Map<string, ActionInfo | undefined>()
     for (const id of ids) prior.set(id, this.#catalog.get(id))
     for (const [id, info] of Object.entries(entries)) {
+      info.keys = info.keys?.map((k) => canonical(k))
       const existing = this.#catalog.get(id)
       this.#catalog.set(id, isDefault ? { ...info, ...existing } : { ...existing, ...info })
     }
@@ -219,7 +220,7 @@ export class Actions extends Emitter<ActionEvents> {
   }
 
   dispatchKey(routed: RoutedKey): boolean {
-    const entries = this.#keymap.get(routed.pattern) ?? []
+    const entries = this.#keymap.get(canonical(routed.pattern)) ?? []
     const nodeActions = entries.filter((id) => !this.get(id)?.fn)
     const globalActions = entries.filter((id) => this.get(id)?.fn)
     const target = this.#getTarget()
@@ -246,11 +247,11 @@ export class Actions extends Emitter<ActionEvents> {
    * wins. Registration order defines priority; later wins.
    */
   #updateKeymap(): void {
-    const out = new Map<string, string[]>()
+    const out = new Map<KeyPattern, string[]>()
     for (const [id, info] of this.#catalog) {
       if (!info.keys) continue
       for (const pattern of info.keys) {
-        const c = canonical(pattern as string)
+        const c = canonical(pattern)
         const list = out.get(c) ?? []
         list.push(id)
         out.set(c, list)

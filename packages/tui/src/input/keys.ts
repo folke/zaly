@@ -47,112 +47,44 @@ export type KeyModifier = "ctrl" | "alt" | "shift" | "meta"
  * Named keys the decoder emits for non-printable keystrokes. Bindings
  * reference these directly (`"enter"`, `"f5"`, `"pageup"`, …).
  */
-export type SpecialKeyName =
-  | "enter"
-  | "tab"
-  | "backspace"
-  | "delete"
-  | "space"
-  | "esc"
-  | "up"
-  | "down"
-  | "left"
-  | "right"
-  | "home"
-  | "end"
-  | "pageup"
-  | "pagedown"
-  | "insert"
-  | "f1"
-  | "f2"
-  | "f3"
-  | "f4"
-  | "f5"
-  | "f6"
-  | "f7"
-  | "f8"
-  | "f9"
-  | "f10"
-  | "f11"
-  | "f12"
+export type SpecialKeyName = (typeof specialKeys)[number]
 
-// Template-literal types need finite key sets; we enumerate printable
-// ASCII letters + digits explicitly. Exotic chars (e.g. `?`, `!`, or
-// non-ASCII) are still parseable at runtime — bindings just have to be
-// widened via `as KeyPattern` or the caller can pass a bare string.
-type AlphaLower =
-  | "a"
-  | "b"
-  | "c"
-  | "d"
-  | "e"
-  | "f"
-  | "g"
-  | "h"
-  | "i"
-  | "j"
-  | "k"
-  | "l"
-  | "m"
-  | "n"
-  | "o"
-  | "p"
-  | "q"
-  | "r"
-  | "s"
-  | "t"
-  | "u"
-  | "v"
-  | "w"
-  | "x"
-  | "y"
-  | "z"
-type AlphaUpper =
-  | "A"
-  | "B"
-  | "C"
-  | "D"
-  | "E"
-  | "F"
-  | "G"
-  | "H"
-  | "I"
-  | "J"
-  | "K"
-  | "L"
-  | "M"
-  | "N"
-  | "O"
-  | "P"
-  | "Q"
-  | "R"
-  | "S"
-  | "T"
-  | "U"
-  | "V"
-  | "W"
-  | "X"
-  | "Y"
-  | "Z"
-type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+declare const KeyPatternBrand: unique symbol
 
-/** The key part of a `KeyPattern` — everything after the modifiers. */
-export type KeyName = SpecialKeyName | AlphaLower | AlphaUpper | Digit
-
-/**
- * Template-literal type for binding patterns: bare key, or up to three
- * stacked modifiers followed by a key. The runtime parser is tolerant of
- * an unknown prefix (it keeps it as part of the name), so the type is
- * stricter than the parser — patterns outside this union must go through
- * an explicit `as KeyPattern` cast if you really want them.
- */
-export type KeyPattern =
-  | KeyName
-  | `${KeyModifier}-${KeyName}`
-  | `${KeyModifier}-${KeyModifier}-${KeyName}`
-  | `${KeyModifier}-${KeyModifier}-${KeyModifier}-${KeyName}`
+/** A validated, canonical key binding string. */
+export type KeyPattern = string & { readonly [KeyPatternBrand]: true }
 
 const MOD_NAMES = new Set<string>(["ctrl", "alt", "shift", "meta"])
+const specialKeys = [
+  "enter",
+  "tab",
+  "backspace",
+  "delete",
+  "space",
+  "esc",
+  "up",
+  "down",
+  "left",
+  "right",
+  "home",
+  "end",
+  "pageup",
+  "pagedown",
+  "insert",
+  "f1",
+  "f2",
+  "f3",
+  "f4",
+  "f5",
+  "f6",
+  "f7",
+  "f8",
+  "f9",
+  "f10",
+  "f11",
+  "f12",
+] as const
+const SPECIAL_KEY_NAMES = new Set<string>(specialKeys)
 
 interface ParsedPattern {
   name: string
@@ -162,22 +94,62 @@ interface ParsedPattern {
   meta: boolean
 }
 
+export class KeyPatternError extends Error {
+  constructor(pattern: string, reason: string) {
+    super(`invalid key pattern ${JSON.stringify(pattern)}: ${reason}`)
+    this.name = "KeyPatternError"
+  }
+}
+
 function parsePattern(pattern: string): ParsedPattern {
   const mods = { alt: false, ctrl: false, meta: false, shift: false }
-  let rest = pattern
-  // Peel `<modifier>-` off the front while the token before the next
-  // dash is a recognised modifier name. Stops as soon as the head isn't
-  // a modifier — so a pattern like `"foo-bar"` stays intact as the key
-  // name `"foo-bar"`, never a malformed-modifier error.
-  while (rest.length > 0) {
-    const dash = rest.indexOf("-")
+  let name = pattern
+  while (name.length > 0) {
+    const dash = name.indexOf("-")
     if (dash <= 0) break
-    const head = rest.slice(0, dash)
-    if (!MOD_NAMES.has(head)) break
-    mods[head as KeyModifier] = true
-    rest = rest.slice(dash + 1)
+    const mod = name.slice(0, dash)
+    if (!MOD_NAMES.has(mod)) throw new KeyPatternError(pattern, `unknown modifier: ${mod}`)
+    if (mods[mod as KeyModifier]) throw new KeyPatternError(pattern, `duplicate modifier: ${mod}`)
+    mods[mod as KeyModifier] = true
+    name = name.slice(dash + 1)
   }
-  return { ...mods, name: rest }
+
+  const ret = normalizeKey({ ...mods, name })
+  name = ret.name
+  if (name === "") throw new KeyPatternError(pattern, "missing key name")
+  if (name.includes("-") && name !== "-") throw new KeyPatternError(pattern, "too many keys")
+  if (!isPrintableKeyName(name)) throw new KeyPatternError(pattern, `unknown key name: ${name}`)
+  if (mods.shift && !canUseShiftModifier(name)) {
+    throw new KeyPatternError(
+      pattern,
+      `shift-${name} will not trigger; bind the shifted character instead`
+    )
+  }
+  return ret
+}
+
+function normalizeKey(p: ParsedPattern): ParsedPattern {
+  if (/^[A-Z]$/.test(p.name)) return { ...p, name: p.name.toLowerCase(), shift: true }
+  if (p.name === " ") return { ...p, name: "space" }
+  return p
+}
+
+function isPrintableKeyName(s: string): boolean {
+  // oxlint-disable-next-line typescript/no-misused-spread
+  return SPECIAL_KEY_NAMES.has(s) || ([...s].length === 1 && !/[\p{C}]/u.test(s))
+}
+
+function canUseShiftModifier(name: string): boolean {
+  return /^[a-zA-Z]$/.test(name) || SPECIAL_KEY_NAMES.has(name)
+}
+
+export function isKeyPattern(s: string): s is KeyPattern {
+  try {
+    canonical(s)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -187,15 +159,16 @@ function parsePattern(pattern: string): ParsedPattern {
  * the user spelled the modifier order (`"ctrl-shift-a"` and
  * `"shift-ctrl-a"` both canonicalize to `"ctrl-shift-a"`).
  */
-export function canonical(patternOrEvent: string | KeyEvent): string {
-  const p = typeof patternOrEvent === "string" ? parsePattern(patternOrEvent) : patternOrEvent
+export function canonical(patternOrEvent: string | KeyEvent): KeyPattern {
+  const p =
+    typeof patternOrEvent === "string" ? parsePattern(patternOrEvent) : normalizeKey(patternOrEvent)
   const parts: string[] = []
   if (p.alt) parts.push("alt")
   if (p.ctrl) parts.push("ctrl")
   if (p.meta) parts.push("meta")
   if (p.shift) parts.push("shift")
   parts.push(p.name)
-  return parts.join("-")
+  return parts.join("-") as KeyPattern
 }
 
 /**
@@ -204,17 +177,18 @@ export function canonical(patternOrEvent: string | KeyEvent): string {
  * matching is strict, not inclusive, so `"a"` only matches a bare `a`
  * (no ctrl/alt/etc.).
  */
-export function keyMatches(ev: KeyEvent, pattern: KeyPattern | readonly KeyPattern[]): boolean {
+export function keyMatches(ev: KeyEvent, pattern: string | readonly string[]): boolean {
   if (Array.isArray(pattern)) {
     for (const p of pattern) if (keyMatches(ev, p)) return true
     return false
   }
   const p = parsePattern(pattern as string)
+  const e = normalizeKey(ev)
   return (
-    ev.name === p.name &&
-    ev.ctrl === p.ctrl &&
-    ev.alt === p.alt &&
-    ev.shift === p.shift &&
-    ev.meta === p.meta
+    e.name === p.name &&
+    e.ctrl === p.ctrl &&
+    e.alt === p.alt &&
+    e.shift === p.shift &&
+    e.meta === p.meta
   )
 }

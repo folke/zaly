@@ -4,10 +4,10 @@ import { normPath, readJson, withError, writeJson } from "@zaly/shared"
 import { zalyPaths } from "@zaly/shared/paths"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
+import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
 import { settingsReviver } from "./reviver.ts"
 import { validateSettings } from "./schemas/gen/settings.ts"
-import { defaults } from "./types.ts"
 import { merge } from "./utils.ts"
 
 function settingsPath(dir: string) {
@@ -72,7 +72,7 @@ export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
       project.settings,
       workspace?.settings,
       user.settings,
-      defaults
+      defaultSettings
     ),
     user,
     workspace,

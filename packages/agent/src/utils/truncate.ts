@@ -58,7 +58,7 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
   const ret: TruncateResult = {
     opts: o,
     origBytes: bytes,
-    origChars: sw(text),
+    origChars: lines.reduce((sum, l) => sum + sw(l) + 1, 0) - 1,
     origLines: lines.length,
     origLongestLine: lines.reduce((max, l) => Math.max(max, sw(l)), 0),
     text,
