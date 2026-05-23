@@ -80,7 +80,7 @@ export class App {
       // Stream commits to scrollback at `terminal.rows - 2`, so scrollback
       // is contiguous with the visible region as long as autocomplete and
       // other transient widgets stay closed.
-      fixedFooterHeight: 3,
+      fixedFooterHeight: 5,
       reporter: {
         wrap: (node) => box({ padding: [1, 0, 0, 0] }, node),
       },
