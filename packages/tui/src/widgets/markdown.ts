@@ -5,6 +5,7 @@ import type { WrapMode } from "../layout/text.ts"
 import type { MarkdownRenderer } from "../markdown/renderer.ts"
 import type { MdOptions } from "../markdown/types.ts"
 import type { AnsiHighlighter } from "../style/shiki.ts"
+import type { AnyStyle } from "../style/types.ts"
 import type { Image } from "./image.ts"
 
 import { hasColors } from "@zaly/shared/env"
@@ -28,6 +29,7 @@ export interface MarkdownState {
    */
   syntax?: boolean
   wrap?: WrapMode
+  style?: AnyStyle
 }
 
 export class Markdown extends Node<MarkdownState> {
@@ -60,6 +62,7 @@ export class Markdown extends Node<MarkdownState> {
       ? this.#renderer.normalizeEol(source, source)
       : await this.#renderer.render(source, { ...ctx, highlighter: this.#highlighter() })
     return formatText(formatted, {
+      style: this.state.style ? ctx.style.add(this.state.style) : undefined,
       width: ctx.width,
       wrap: this.state.wrap,
     })

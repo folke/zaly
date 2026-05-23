@@ -1,11 +1,11 @@
 import type { LogLevel } from "@zaly/shared/logger"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { Color } from "../style/types.ts"
 
 import { hasColors } from "@zaly/shared/env"
-import { isMarkdown } from "../logger/inspect.ts"
 import { stringWidth } from "../style/ansi.ts"
 import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
@@ -16,7 +16,7 @@ export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif"
 
 export interface LogState {
   level: LogLevel
-  content: string
+  content: Reactive<string>
   title?: string
   /** Rendering of the per-level prefix chunk. Defaults by level. */
   style?: LogStyle
@@ -102,18 +102,11 @@ function renderPrefix(s: LogState, ctx: RenderCtx): string {
  * ```
  */
 export const log = widget((state: State<LogState>, ...children: Node[]) => {
-  const body =
-    (state.markdown ?? true) && isMarkdown(state.content)
-      ? markdown(state.content, { width: "fill" })
-      : text(state.content, { width: "fill" })
-
   const base = defaultLogStyles[state.level]
   const color: Color = state.color ?? base.color ?? "inherit"
   const textColor = state.textColor ?? base.textColor
-  body.state.set({ style: textColor ? { fg: textColor } : undefined })
-
   const s = state
-
+  const style = { style: textColor ? { fg: textColor } : undefined, width: "fill" } as const
   return box(
     {
       ...(s.style === "notif"
@@ -132,7 +125,7 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
       visible: state.visible,
     },
     s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx)),
-    body,
+    (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
     ...children
   )
 })
