@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Input, Renderer } from "@zaly/tui"
+import type { ActionInfo, Input, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
@@ -88,6 +88,14 @@ export class App {
       theme: await this.#ctx.theme(),
     })
 
+    const config = await this.#ctx.config()
+    const bindings: Record<string, ActionInfo> = {}
+    for (const [id, pattern] of Object.entries(config.settings.bindings ?? {})) {
+      const keys = typeof pattern === "string" ? [pattern] : pattern
+      bindings[id] = { keys }
+    }
+    this.#renderer.actions.register(bindings, { default: false })
+
     this.#notifier = new Notifier(this.#renderer.overlay)
 
     setTimeout(() => {
@@ -147,7 +155,9 @@ export class App {
     this.#ctx.logger.child("app").error(error)
     this.#state.busy = false
     this.#state.status = "error"
-    this.#notifier.notify(error instanceof Error ? error.message : String(error), { level: "error" })
+    this.#notifier.notify(error instanceof Error ? error.message : String(error), {
+      level: "error",
+    })
   }
 
   /** Phase B — load session first (cheap), paint replay, then build
