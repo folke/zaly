@@ -2,7 +2,6 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { Ref } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
-import type { RoutedKey } from "../input/router.ts"
 import type { MenuItem, MenuRender } from "./menu.ts"
 
 import { Node } from "../core/node.ts"
@@ -128,12 +127,11 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   #input?: Input
   #match: Match | undefined
   #cancelled = false
-  #keyListener?: (ev: { key: RoutedKey }) => void
-  #invalidateListener?: () => void
   /** Increments each time a refresh starts, so an in-flight async
    *  `complete()` can notice it's been superseded and bail before
    *  writing stale items. */
   #refreshSeq = 0
+  #signal?: AbortSignal
 
   constructor(opts: AutocompleteOptions) {
     super({ visible: false })
@@ -146,6 +144,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       sticky: false,
     })
     this.add(this.menu)
+    this.menu.bind(this.#inputRef)
 
     // If a concrete Input is passed, wire immediately so the widget
     // works without a mount step (tests, standalone usage). Refs
@@ -162,7 +161,11 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       this.#close()
     })
 
+    let ctrl: AbortController | undefined
+
     this.on("mount", () => {
+      ctrl = new AbortController()
+      this.#signal = ctrl.signal
       if (this.#input === undefined && !(this.#inputRef instanceof Input)) {
         // Ref dereferences via `.value`, which throws if it hasn't been
         // wired by a `node.ref(ref)` call on an `Input` somewhere in
@@ -173,12 +176,8 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
           throw new Error("autocomplete: input Ref was not wired before mount")
         }
       }
-      if (this.#input) this.#installKeyIntercept(this.#input)
     })
-    this.on("unmount", () => {
-      this.#uninstallKeyIntercept()
-      this.#uninstallInvalidateListener()
-    })
+    this.on("unmount", () => ctrl?.abort())
   }
 
   /** Whether the popup is currently showing. */
@@ -193,53 +192,13 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // refresh kicks off synchronously; any async `complete(query)` adds
     // its own microtask, and the `#refreshSeq` guard prevents a slow
     // response from overwriting newer state.
-    this.#invalidateListener = (): void => {
-      void this.try(() => this.#refresh())
-    }
-    node.on("invalidate", this.#invalidateListener)
-  }
-
-  #uninstallInvalidateListener(): void {
-    if (this.#input && this.#invalidateListener) {
-      this.#input.off("invalidate", this.#invalidateListener)
-    }
-    this.#invalidateListener = undefined
-  }
-
-  /**
-   * Install a key interceptor on the bound input that routes popup
-   * navigation (`up` / `down` / `tab` / `enter` / `esc`) to the menu
-   * while the popup is open. Hooks phase-1 `"key"` on the input so
-   * it pre-empts the input's own keymap-driven actions.
-   */
-  #installKeyIntercept(input: Input): void {
-    const keymap = {
-      down: "menu.next",
-      enter: "menu.select",
-      esc: "menu.cancel",
-      tab: "menu.select",
-      up: "menu.prev",
-    } as Record<string, string | undefined>
-    const listener = ({ key: ev }: { key: RoutedKey }): void => {
-      if (!this.open) return
-      const id = keymap[ev.pattern]
-      if (id === undefined) return
-      // Dispatch through the action registry with an explicit target
-      // so it walks *from the menu* rather than the focused input —
-      // the menu isn't in the focus chain, but its actions dict holds
-      // the handlers we want.
-      this.ctx?.actions.dispatch(id, { key: ev, source: "key", target: this.menu })
-      ev.stop()
-    }
-    this.#keyListener = listener
-    input.on("key", listener)
-  }
-
-  #uninstallKeyIntercept(): void {
-    if (this.#input && this.#keyListener) {
-      this.#input.off("key", this.#keyListener)
-    }
-    this.#keyListener = undefined
+    node.on(
+      "invalidate",
+      (): void => {
+        void this.try(() => this.#refresh())
+      },
+      { signal: this.#signal }
+    )
   }
 
   async #refresh(): Promise<void> {

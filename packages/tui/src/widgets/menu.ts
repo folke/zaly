@@ -5,11 +5,10 @@ import type { ActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/types.ts"
 
+import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
-import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
-import { Input } from "./input.ts"
 
 /** Default shape for items in a Menu. All fields optional so callers
  *  can produce either a fully-fledged entry or a custom-typed item
@@ -152,16 +151,12 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
     return Math.max(0, Math.min(n - 1, a))
   }
 
-  bind(input: Input | Ref<Input>): this {
-    let inp: Input | undefined
-    this.on("mount", () => {
-      inp = input instanceof Input ? input : input()
-      inp.addActionTarget(this)
-    })
-    this.on("unmount", () => {
-      inp?.removeActionTarget(this)
-      inp = undefined
-    })
+  bind(node: Node | Ref<Node>): this {
+    let n: Node | undefined
+    const getn = () => (n = node instanceof Node ? node : node())
+    this.on("mount", () => getn().addActionTarget(this))
+    this.on("unmount", () => n?.removeActionTarget(this))
+    if (this.mounted) getn().addActionTarget(this)
     return this
   }
 

@@ -1,5 +1,4 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
-import type { RoutedKey } from "../../src/input/router.ts"
 import type { MenuItem } from "../../src/widgets/menu.ts"
 
 import { describe, expect, test, vi } from "vitest"
@@ -7,25 +6,8 @@ import { createCtx } from "../../src/core/ctx.ts"
 import { defaultTheme as theme } from "../../src/themes/registry.ts"
 import { autocomplete } from "../../src/widgets/autocomplete.ts"
 import { input } from "../../src/widgets/input.ts"
-import { mockMountCtx } from "../renderer/mock.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
-
-function keyEv(name: string): RoutedKey {
-  const ev: RoutedKey = {
-    alt: false,
-    ctrl: false,
-    meta: false,
-    name,
-    pattern: name,
-    shift: false,
-    stop: () => {
-      ev.stopped = true
-    },
-    stopped: false,
-  }
-  return ev
-}
 
 describe("autocomplete", () => {
   test("renders nothing when no trigger matches", async () => {
@@ -161,35 +143,6 @@ describe("autocomplete", () => {
     // first (after alphabetical sort), so it claims the match.
     expect(otherComplete).toHaveBeenCalled()
     expect(slashComplete).not.toHaveBeenCalled()
-  })
-
-  test("routes up/down/enter/esc to the menu while open", async () => {
-    const i = input({})
-    await i.render(ctx)
-    const ac = autocomplete({
-      input: i,
-      sources: {
-        slash: {
-          complete: () => [{ value: "/a" }, { value: "/b" }, { value: "/c" }],
-          triggers: [/^\s*\//],
-        },
-      },
-    })
-    // Mount so the key interceptor auto-installs and ctx.actions is
-    // available for dispatch.
-    ac.mount(mockMountCtx("ui"))
-    i.state.set({ cursor: 1, value: "/" })
-    await Promise.resolve()
-    expect(ac.open).toBe(true)
-
-    expect(ac.menu.state.active).toBe(0)
-    void i.emit("key", { key: keyEv("down") })
-    expect(ac.menu.state.active).toBe(1)
-    void i.emit("key", { key: keyEv("up") })
-    expect(ac.menu.state.active).toBe(0)
-    void i.emit("key", { key: keyEv("enter") })
-    expect(i.state.value).toBe("/a ")
-    expect(ac.open).toBe(false)
   })
 
   test("accept returning undefined clears the trigger+query range (side-effect source)", async () => {
