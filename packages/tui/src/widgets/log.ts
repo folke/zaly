@@ -6,7 +6,7 @@ import type { State } from "../core/state.ts"
 import type { Color } from "../style/types.ts"
 
 import { hasColors } from "@zaly/shared/env"
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
 import { text } from "./text.ts"

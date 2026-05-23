@@ -6,7 +6,7 @@ import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { createNode, markdown } from "../../src/index.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
-import { RESET } from "../../src/style/ansi.ts"
+import { RESET } from "@zaly/shared/ansi"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 

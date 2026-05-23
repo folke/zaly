@@ -10,10 +10,20 @@
     "dist/**/*"
   ],
   "type": "module",
+  "imports": {
+    "#ansi": {
+      "bun": "./src/runtime/ansi.bun.ts",
+      "default": "./dist/ansi.node.mjs"
+    }
+  },
   "exports": {
     ".": {
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
+    },
+    "./ansi": {
+      "bun": "./src/ansi.ts",
+      "default": "./dist/ansi.mjs"
     },
     "./cache": {
       "bun": "./src/cache.ts",
@@ -51,11 +61,16 @@
       "bun": "./src/registry.ts",
       "default": "./dist/registry.mjs"
     },
+    "./text": {
+      "bun": "./src/text.ts",
+      "default": "./dist/text.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "exports": {
       ".": "./dist/index.mjs",
+      "./ansi": "./dist/ansi.mjs",
       "./cache": "./dist/cache.mjs",
       "./detect": "./dist/detect.mjs",
       "./env": "./dist/env.mjs",
@@ -65,6 +80,7 @@
       "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
+      "./text": "./dist/text.mjs",
       "./package.json": "./package.json"
     },
     "access": "public"
@@ -83,7 +99,10 @@
     "@types/proper-lockfile": "^4.1.4",
     "ignore": "^7.0.5",
     "image-meta": "^0.2.2",
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.4",
+    "slice-ansi": "^9.0.0",
+    "string-width": "^8.2.1",
+    "wrap-ansi": "^10.0.0"
   },
   "optionalDependencies": {
     "sharp": "^0.34.5"

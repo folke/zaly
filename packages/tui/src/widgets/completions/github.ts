@@ -2,7 +2,7 @@ import type { CompletionSource, Matcher } from "../autocomplete.ts"
 import type { MenuRender } from "../menu.ts"
 
 import { spawn } from "node:child_process"
-import { stringWidth } from "../../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 /** A GitHub issue or pull request returned by `githubSource`. Shape
  *  mirrors the `gh` CLI's `--json number,title,state,author,url`

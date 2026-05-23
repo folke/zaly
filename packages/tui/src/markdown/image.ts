@@ -4,7 +4,7 @@ import type { Image } from "../widgets/image.ts"
 import type { MdCallbacks, MdImageMeta } from "./types.ts"
 
 import { basename } from "pathe"
-import { stripAnsi } from "../style/ansi.ts"
+import { stripAnsi } from "@zaly/shared/ansi"
 
 /** Minimal host shape the image callback needs. Any Node-like parent
  *  with a per-src `Image` cache satisfies it — the `Markdown` widget is

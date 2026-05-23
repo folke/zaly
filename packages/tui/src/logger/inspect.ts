@@ -2,7 +2,7 @@ import type { InspectOptions as NodeInspectOptions } from "node:util"
 
 import { hasColors } from "@zaly/shared/env"
 import { formatWithOptions } from "node:util"
-import { hasAnsi } from "../style/ansi.ts"
+import { hasAnsi } from "@zaly/shared/ansi"
 
 export interface InspectOptions {
   /** Forwarded to `util.formatWithOptions` for object inspection. */

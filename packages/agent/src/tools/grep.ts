@@ -1,8 +1,9 @@
 import type { MetaPart, TextPart, ToolContext } from "@zaly/ai"
 
 import { AiError, defineTool } from "@zaly/ai"
-import { cleanTextTui, normPath } from "@zaly/shared"
+import { normPath } from "@zaly/shared"
 import { Spawn, TextStream } from "@zaly/shared/process"
+import { cleanTextTui } from "@zaly/shared/text"
 import { Type } from "typebox"
 import { bin, defaultExcludes, fileTypeGlobs } from "../utils/search.ts"
 import { truncate } from "../utils/truncate.ts"

@@ -2,7 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { MdCallbacks } from "./types.ts"
 
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 type CellAlign = "left" | "center" | "right"
 

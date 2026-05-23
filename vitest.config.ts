@@ -17,7 +17,7 @@ export default defineConfig({
   test: {
     alias: {
       "#md": join(pkgDir, "tui/src/runtime/md.node.ts"),
-      "#ansi": join(pkgDir, "tui/src/runtime/ansi.node.ts"),
+      "#ansi": join(pkgDir, "shared/src/runtime/ansi.node.ts"),
     },
     environment: "node",
     update: "new",

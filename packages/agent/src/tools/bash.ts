@@ -1,8 +1,9 @@
 import type { MetaOf, MetaPart, Streamable, TextPart, ToolResult } from "@zaly/ai"
 
 import { defineTool } from "@zaly/ai"
-import { cleanTextTui, normPath, randomHash } from "@zaly/shared"
+import { normPath, randomHash } from "@zaly/shared"
 import { bufferedTailStream, Spawn, TextStream } from "@zaly/shared/process"
+import { cleanTextTui } from "@zaly/shared/text"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"

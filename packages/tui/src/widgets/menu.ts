@@ -8,7 +8,7 @@ import type { Style } from "../style/types.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
-import { sliceAnsi, stringWidth } from "../style/ansi.ts"
+import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
 import { Input } from "./input.ts"
 
 /** Default shape for items in a Menu. All fields optional so callers

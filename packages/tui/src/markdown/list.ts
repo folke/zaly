@@ -1,7 +1,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { MdCallbacks } from "./types.ts"
 
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 interface ListState {
   block: boolean

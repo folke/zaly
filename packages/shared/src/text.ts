@@ -1,21 +1,11 @@
 import { extname } from "pathe"
+import { stripAnsi } from "./ansi.ts"
 
 // ---- ANSI escape categories -------------------------------------------
 //
 // CSI / OSC / APC are the three categories of multi-byte terminal escape
 // sequences we care about. SGR (color/style) is a *subset* of CSI —
 // distinguished by ending in `m` rather than any other final letter.
-
-/** OSC: `ESC ] ... ST` or `ESC ] ... BEL` — window titles, hyperlinks
- *  (OSC 8), clipboard writes (OSC 52), color palette changes. */
-const OSC_RE = /\x1b\][\s\S]*?(?:\x1b\\|\x07)/g
-/** CSI: `ESC [ <params> <final>` — covers SGR (`m`), cursor moves
- *  (`H A B C D E F G s u`), erases (`J K`), insert/delete/scroll
- *  (`L M S T r`), and mode set/reset (`?...h`, `?...l`). */
-const CSI_RE = /\x1b\[[\d;?]*[a-zA-Z]/g
-/** APC: `ESC _ ... ESC \` — Kitty graphics protocol image transmits /
- *  placements and other side-channel payloads. */
-const APC_RE = /_[\s\S]*?\\/g
 
 /** C0 (`0x00–0x1F`) + DEL (`0x7F`) + C1 (`0x80–0x9F`), excluding `\t`,
  *  `\n`, `\r`. Includes ESC (`0x1B`). Use when no ANSI sequences are
@@ -41,24 +31,6 @@ const CRLF_EXT_FORCE = new Set([".reg"]) // override content
 const CRLF_EXT_DEFAULT = new Set([".bat", ".cmd"]) // new-file default only
 
 export type EOL = "\n" | "\r\n"
-
-/** Strip terminal control sequences from `s`.
- *
- *  Default: removes all ANSI categories — APC, OSC, and CSI — leaving
- *  plain text suitable for emptiness checks, logging, or any context
- *  where decorative escapes mustn't influence the result.
- *
- *  With `keepStyles: true`: preserves SGR (color/style) sequences while
- *  still removing OSC, APC, and non-SGR CSI (cursor moves, erases,
- *  scroll, mode flips). Use this when displaying *external* output
- *  inside a TUI that wants to render colors but mustn't let the source
- *  control TUI cursor / clipboard / screen state. */
-export function stripAnsi(s: string, opts: { keepStyles?: boolean } = {}): string {
-  s = s.replace(APC_RE, "").replace(OSC_RE, "")
-  return opts.keepStyles
-    ? s.replace(CSI_RE, (match) => (match.endsWith("m") ? match : ""))
-    : s.replace(CSI_RE, "")
-}
 
 /** Strip adversarial Unicode codepoints — zero-widths, BOM, bidi
  *  controls, and tag characters. These are invisible or

@@ -15,7 +15,7 @@ describe("truncate", () => {
     const r = truncate("0123456789", { maxLineChars: 4 })
     expect(r.truncated).toBe(true)
     expect(r.truncatedLineChars).toBe(true)
-    expect(r.text).toBe("0123 … [truncated 6 chars]")
+    expect(r.text).toBe("0123 [ … truncated 6 chars]")
   })
 
   test("preserves head and tail lines by default", () => {
@@ -23,33 +23,26 @@ describe("truncate", () => {
     const r = truncate(input, { head: 2, maxChars: 1000, maxLines: 5 })
     expect(r.truncated).toBe(true)
     expect(r.truncatedLines).toBe(true)
-    expect(r.text.split("\n")).toEqual([
-      "L1",
-      "L2",
-      "… [truncated 5 lines]",
-      "L8",
-      "L9",
-      "L10",
-    ])
+    expect(r.text.split("\n")).toEqual(["L1", "L2", " [ … truncated 5 lines]", "L8", "L9", "L10"])
   })
 
   test("supports head strategy", () => {
     const input = Array.from({ length: 5 }, (_, i) => `L${i + 1}`).join("\n")
     const r = truncate(input, { maxChars: 1000, maxLines: 2, strategy: "head" })
-    expect(r.text.split("\n")).toEqual(["L1", "L2", "… [truncated 3 lines]"])
+    expect(r.text.split("\n")).toEqual(["L1", "L2", " [ … truncated 3 lines]"])
   })
 
   test("supports tail strategy", () => {
     const input = Array.from({ length: 5 }, (_, i) => `L${i + 1}`).join("\n")
     const r = truncate(input, { maxChars: 1000, maxLines: 2, strategy: "tail" })
-    expect(r.text.split("\n")).toEqual(["… [truncated 3 lines]", "L4", "L5"])
+    expect(r.text.split("\n")).toEqual([" [ … truncated 3 lines]", "L4", "L5"])
   })
 
   test("treats fractional head as fraction of maxLines", () => {
     const input = Array.from({ length: 8 }, (_, i) => `L${i + 1}`).join("\n")
     const r = truncate(input, { head: 0.25, maxChars: 1000, maxLines: 4 })
     expect(r.opts.head).toBe(1)
-    expect(r.text.split("\n")).toEqual(["L1", "… [truncated 4 lines]", "L6", "L7", "L8"])
+    expect(r.text.split("\n")).toEqual(["L1", " [ … truncated 4 lines]", "L6", "L7", "L8"])
   })
 
   test("truncates huge one-line json by chars without line budgeting", () => {

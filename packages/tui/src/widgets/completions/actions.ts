@@ -2,7 +2,7 @@ import type { ActionInfo, Actions } from "../../input/actions.ts"
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
 import type { MenuRender } from "../menu.ts"
 
-import { stringWidth } from "../../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 /** Completion item produced by `actionsSource`. Carries the full
  *  `ActionInfo` plus the action `id` so the source's `accept` can

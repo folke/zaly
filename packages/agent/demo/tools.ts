@@ -2,7 +2,6 @@ import type { Model } from "@zaly/ai"
 
 import { toolRegistry } from "@zaly/agent"
 import { runTool, stringifyContent } from "@zaly/ai"
-import { cleanTextAgent } from "@zaly/shared"
 
 const grepTool = await toolRegistry.load("grep", {
   cwd: process.cwd(),
@@ -18,12 +17,11 @@ const ret = await runTool(
   { context: 1, cwd: ".", file_type: ["md", "ts"], pattern: "Optional" },
   {}
 )
-let text = stringifyContent(ret.content)
-//text = cleanTextAgent(text)
+const text = stringifyContent(ret.content)
 
 console.log(ret.meta)
 console.log(text)
 
-const findRet = await runTool(findTool, { cwd: ".", name: "package.json", max_depth: 3 }, {})
+const findRet = await runTool(findTool, { cwd: ".", max_depth: 3, name: "package.json" }, {})
 console.log(findRet.meta)
 console.log(stringifyContent(findRet.content))

@@ -1,5 +1,6 @@
+import { hasAnsi, RESET, splitAnsi } from "@zaly/shared/ansi"
 import { describe, expect, test } from "vitest"
-import { hasAnsi, hyperlink, RESET, splitAnsi } from "../../src/style/ansi.ts"
+import { hyperlink } from "../../src/style/ansi.ts"
 import { openStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 

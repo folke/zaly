@@ -10,7 +10,7 @@ import { basename, extname } from "pathe"
 import { Node } from "../core/node.ts"
 import { memo, unwrap } from "../core/reactive.ts"
 import { calcLayout, countLines } from "../layout/text.ts"
-import { splitAnsi, stringWidth, wrapAnsi } from "../style/ansi.ts"
+import { splitAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
 import { shiki } from "../style/shiki.ts"
 
 export interface DiffState {

@@ -2,7 +2,7 @@ import type { Layout } from "../core/state.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 
 import { clamp } from "@zaly/shared"
-import { splitAnsi, stringWidth, truncateAnsi, wrapAnsi } from "../style/ansi.ts"
+import { splitAnsi, stringWidth, truncateAnsi, wrapAnsi } from "@zaly/shared/ansi"
 
 export type WrapMode = "word" | "char" | "none"
 

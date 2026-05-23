@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { sliceAnsi, stringWidth, wrapAnsi } from "../src/style/ansi.ts"
+import { sliceAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
 
 describe("stringWidth", () => {
   test("ascii width equals length", () => {

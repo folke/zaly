@@ -2,8 +2,9 @@ import type { Content, ToolContext } from "@zaly/ai"
 import type { ToolInit } from "./registry.ts"
 
 import { AiError, defineTool, toAttachment } from "@zaly/ai"
-import { normalizeEol, normPath, safeStat } from "@zaly/shared"
+import { normPath, safeStat } from "@zaly/shared"
 import { fileDetect } from "@zaly/shared/detect"
+import { normalizeEol } from "@zaly/shared/text"
 import { stat } from "node:fs/promises"
 import { Type } from "typebox"
 

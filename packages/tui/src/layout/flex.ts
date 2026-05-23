@@ -1,6 +1,6 @@
 import type { FlexState } from "../core/state.ts"
 
-import { sliceAnsi, stringWidth } from "../style/ansi.ts"
+import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
 import { clamp, resolveSize } from "./size.ts"
 
 /**

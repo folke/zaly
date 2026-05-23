@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest"
+import { stripAnsi } from "../src/ansi.ts"
 import {
   cleanText,
   cleanTextAgent,
@@ -6,7 +7,6 @@ import {
   detectEol,
   normalizeEol,
   stripAdversarial,
-  stripAnsi,
   stripBinary,
 } from "../src/text.ts"
 

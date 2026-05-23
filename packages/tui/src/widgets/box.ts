@@ -10,7 +10,7 @@ import { unwrap } from "../core/reactive.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { allocateRow, isFixedWidth, padRow, stackColumn, zipRow } from "../layout/flex.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 import { textContent } from "./text.ts"
 
 export type Padding =

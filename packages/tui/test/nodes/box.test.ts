@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { RESET } from "../../src/style/ansi.ts"
+import { RESET } from "@zaly/shared/ansi"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { Box } from "../../src/widgets/box.ts"

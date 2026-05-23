@@ -2,7 +2,7 @@ import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { MarkdownCbCtx } from "./callbacks.ts"
 import type { MdCallbacks } from "./types.ts"
 
-import { splitAnsi, stringWidth } from "../style/ansi.ts"
+import { splitAnsi, stringWidth } from "@zaly/shared/ansi"
 
 /**
  * Build the `code` callback. The returned closure captures ctx/style/highlighter

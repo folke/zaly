@@ -1,7 +1,6 @@
 export * from "./emitter.ts"
 export * from "./utils.ts"
 export * from "./path.ts"
-export * from "./text.ts"
 export * from "./compare.ts"
 export * from "./json.ts"
 export * from "./format.ts"

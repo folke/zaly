@@ -7,7 +7,7 @@ import type { Color } from "../style/types.ts"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 export interface ProgressState {
   /** Current value. Clamped to `[0, total]`. Accepts a signal accessor

@@ -5,7 +5,7 @@ import type { AnyStyle } from "../style/types.ts"
 
 import { Node } from "../core/node.ts"
 import { untrack, unwrap } from "../core/reactive.ts"
-import { stringWidth } from "../style/ansi.ts"
+import { stringWidth } from "@zaly/shared/ansi"
 
 /**
  * Frame sets from the common terminal-spinner vocabulary. Pick one to taste.
