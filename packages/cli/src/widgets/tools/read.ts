@@ -3,7 +3,7 @@ import type { ToolResultProps } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { box, code, memo, widget } from "@zaly/tui"
+import { box, code, log, memo, show, widget } from "@zaly/tui"
 
 const PREVIEW_LINE_LIMIT = 10
 
@@ -19,21 +19,34 @@ export const readResult = widget((props: ToolResultProps<ReadTool>) => {
     const p = props.result()?.meta?.path
     return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
   })
+
+  const unchanged = memo(() => props.result()?.meta?.unchanged === true)
   const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
   const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
   const numberOffset = memo(() => props.result()?.meta?.offset ?? props.params?.offset)
 
   return box(
     {},
-    code({
-      code: content,
-      limit: PREVIEW_LINE_LIMIT,
-      more: (_more, msg) => `${msg} read`,
-      numberOffset,
-      numbered: true,
-      path,
-      title,
-    })
+    show(
+      { when: unchanged },
+      log({
+        content: "file unchanged since last read",
+        level: "warn",
+        visible: unchanged,
+      })
+    ),
+    show(
+      { when: memo(() => !unchanged()) },
+      code({
+        code: content,
+        limit: PREVIEW_LINE_LIMIT,
+        more: (_more, msg) => `${msg} read`,
+        numberOffset,
+        numbered: true,
+        path,
+        title,
+      })
+    )
   )
 })
 

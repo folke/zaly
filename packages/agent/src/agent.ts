@@ -372,7 +372,10 @@ export class Agent extends Emitter<AgentEvents> {
     this.#running = this.#loop()
       .catch((error) => {
         this.#opts.logger?.child("run").error(error)
-        return this.#stop(error instanceof Error && error.name === "AbortError" ? "aborted" : "error", error)
+        return this.#stop(
+          error instanceof Error && error.name === "AbortError" ? "aborted" : "error",
+          error
+        )
       })
       .finally(() => {
         this.#running = undefined
@@ -664,9 +667,11 @@ export class Agent extends Emitter<AgentEvents> {
    *  cwd, an abort signal scoped to the in-flight stream, and the
    *  long-running spawn registry are all surfaced here. */
   async #toolContext(): Promise<ToolContext> {
+    const masker = await this.#ctx.masker()
     return {
       agent: this,
       cwd: this.cwd,
+      isMasked: (msgId: string, partIdx?: number) => masker?.isMasked(msgId, partIdx) ?? false,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
       perms: await this.ctx.permissions(),

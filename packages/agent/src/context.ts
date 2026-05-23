@@ -257,7 +257,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     )
   }
 
-  private async masker(): Promise<Masker | undefined> {
+  async masker(): Promise<Masker | undefined> {
     return this.#cache.want(
       "masker",
       async (opts?: MaskOptions) => {

@@ -65,6 +65,7 @@ declare module "@zaly/ai" {
      *  Scope names autocomplete from the `PermissionScopes` interface;
      *  add your own via declaration merging. */
     need?: <S extends PermissionScope>(scope: S, input: PermissionScopes[S]) => Promise<void>
+    isMasked?: (msgId: string, partIdx?: number) => boolean
   }
 }
 

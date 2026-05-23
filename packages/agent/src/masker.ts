@@ -155,6 +155,12 @@ export class Masker {
     this.#stats.set(role, r)
   }
 
+  isMasked(msgId: string, partIdx?: number): boolean {
+    const parts = this.#stamped.get(msgId)
+    if (parts === undefined) return false
+    return partIdx === undefined ? parts.size > 0 : parts.has(partIdx)
+  }
+
   attach(agent: Agent) {
     agent.on("context", (ctx, a) => {
       ctx.messages = this.apply(ctx.messages, a.pressure)

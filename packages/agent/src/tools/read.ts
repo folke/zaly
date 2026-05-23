@@ -38,6 +38,7 @@ export type FileMeta = {
    *  subsumes earlier reads of the same path. `edit` never sets it
    *  because the result is patch-relative. */
   full?: boolean
+  unchanged?: boolean
 }
 
 function isFileMeta(meta: unknown): meta is FileMeta {
@@ -108,6 +109,23 @@ export function createReadTool(init: ToolInit) {
         throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
       }
 
+      if (isUnchanged(path, ctx)) {
+        // Fresh! We've seen this file's current bytes, so we can skip
+        // returning the content again.
+        ctx.meta = {
+          full: false,
+          kind: "read",
+          limit: 0,
+          mtime: fileStat.mtimeMs,
+          offset: 0,
+          path,
+          unchanged: true,
+        }
+        return [
+          { content: `file unchanged since last read: ${path}`, tag: "unchanged", type: "meta" },
+        ]
+      }
+
       const file = await fileDetect(path)
       if (!file) {
         throw new AiError({
@@ -160,23 +178,39 @@ export function createReadTool(init: ToolInit) {
 }
 
 export function assertFresh(path: string, ctx: ToolContext) {
+  const err = checkFresh(path, ctx)
+  if (err !== true) throw err
+}
+
+export function isUnchanged(path: string, ctx: ToolContext) {
+  return checkFresh(path, ctx, { full: true }) === true
+}
+
+export function checkFresh(
+  path: string,
+  ctx: ToolContext,
+  opts: { full?: boolean } = {}
+): AiError | true {
   path = normPath(ctx.cwd, path)
   const mtime = safeStat(path)?.mtimeMs
   if (mtime === undefined)
-    throw new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })
-  const messages = ctx.messages
-  if (!messages) throw freshnessError(path, "NOT_READ")
+    return new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })
+  const messages = ctx.messages ?? []
+  let ret: AiError = freshnessError(path, "NOT_READ")
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i]
-    if (m.role !== "tool") continue
-    const meta = m.content
-      .map((p) => p.meta)
-      .filter(isFileMeta)
-      .find((fm) => fm.path === path)
-    if (meta?.mtime === mtime) return // Fresh! The file's mtime matches what we saw at read time.
-    if (meta !== undefined) throw freshnessError(path, "STALE")
+    const id = m.id
+    if (!id || m.role !== "tool") continue
+    for (let p = 0; p < m.content.length; p++) {
+      if (ctx.isMasked?.(id, p)) continue
+      const meta = m.content[p].meta
+      if (!isFileMeta(meta) || meta.path !== path) continue
+      if (opts.full && !meta.full) continue
+      if (meta.mtime === mtime) return true // Fresh! The file's mtime matches what we saw at read time.
+      ret = freshnessError(path, "STALE")
+    }
   }
-  throw freshnessError(path, "NOT_READ")
+  return ret
 }
 
 /** Build the canonical "you need to read this first" error. Used by

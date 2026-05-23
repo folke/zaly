@@ -1,6 +1,7 @@
 import type { LogLevel } from "@zaly/shared/logger"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { State } from "../core/state.ts"
 import type { Color } from "../style/types.ts"
 
 import { hasColors } from "@zaly/shared/env"
@@ -100,7 +101,7 @@ function renderPrefix(s: LogState, ctx: RenderCtx): string {
  * log({ level: "error", content: markdown("**boom**") })
  * ```
  */
-export const log = widget((state: LogState, ...children: Node[]) => {
+export const log = widget((state: State<LogState>, ...children: Node[]) => {
   const body =
     (state.markdown ?? true) && isMarkdown(state.content)
       ? markdown(state.content, { width: "fill" })
@@ -128,6 +129,7 @@ export const log = widget((state: LogState, ...children: Node[]) => {
         : undefined),
       flexDirection: "row",
       gap: 1,
+      visible: state.visible,
     },
     s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx)),
     body,
