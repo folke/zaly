@@ -85,7 +85,7 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
       if (l.length <= o.maxLineChars) return l
       ret.truncatedLineChars = true
       const trunc = l.length - o.maxLineChars
-      return `${l.slice(0, o.maxLineChars)} … [truncated ${trunc} chars]`
+      return `${l.slice(0, o.maxLineChars)} [ … truncated ${trunc} chars]`
     })
   }
 
@@ -115,11 +115,11 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
   if (strategy === "head") {
     lines = truncateLines(lines, o.maxLines, o.maxChars)
     const truncated = ret.origLines - lines.length
-    if (truncated) lines.push(`… [truncated ${truncated} lines]`)
+    if (truncated) lines.push(` [ … truncated ${truncated} lines]`)
   } else if (strategy === "tail") {
     lines = truncateLines(lines, o.maxLines, o.maxChars, true)
     const truncated = ret.origLines - lines.length
-    if (truncated) lines.unshift(`… [truncated ${truncated} lines]`)
+    if (truncated) lines.unshift(` [ … truncated ${truncated} lines]`)
   } else {
     const headMaxChars = Math.floor((o.head / o.maxLines) * o.maxChars)
     const tailMaxChars = o.maxChars - headMaxChars
@@ -127,7 +127,9 @@ export function truncate(data: string | Buffer, opts: TruncateOps = {}) {
     const head = truncateLines(headLines, o.head, headMaxChars)
     const tail = truncateLines(lines, o.maxLines - o.head, tailMaxChars, true)
     const truncated = ret.origLines - head.length - tail.length
-    lines = truncated ? [...head, `… [truncated ${truncated} lines]`, ...tail] : [...head, ...tail]
+    lines = truncated
+      ? [...head, ` [ … truncated ${truncated} lines]`, ...tail]
+      : [...head, ...tail]
   }
 
   ret.text = lines.join("\n")

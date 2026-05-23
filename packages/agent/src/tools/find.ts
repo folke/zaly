@@ -21,6 +21,7 @@ const MAX_LIMIT = 1000
 export type FindTool = typeof findTool
 export type FindToolMeta = {
   cwd: string
+  pattern: string
   matches: number
   truncated: boolean
   cmd: string[]
@@ -69,10 +70,11 @@ export const findTool = defineTool({
   }),
 
   async call(args, ctx: ToolContext<FindToolMeta>): Promise<(MetaPart | TextPart)[]> {
-    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
+    const cwd = normPath(ctx.cwd)
     await ctx.need?.("read", cwd)
-    const paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
+    let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
     await Promise.all(paths.map((path) => Promise.resolve(ctx.need?.("read", path))))
+    paths = args.paths?.length ? args.paths : []
 
     const command = resolveFinder(args.type)
     if (!command) {
@@ -103,29 +105,38 @@ export const findTool = defineTool({
       })
     }
 
-    const found = cleanTextTui(result.stdout)
+    const text = cleanTextTui(result.stdout)
       .split("\n")
       .filter((l) => l !== "")
       .map((p) => compactPath(p, cwd))
-    const limited = found.slice(0, args.limit)
-    let text = limited.join("\n")
-    const dropped = found.length - limited.length
-    if (dropped > 0) text += `${text ? "\n" : ""}… [truncated ${dropped} paths]`
 
-    const summary = truncate(text, { maxLines: args.limit + 1, strategy: "head" })
-    const truncated = dropped > 0 || summary.truncated || result.killReason === "maxBuffer"
-    ctx.meta = { cmd: [command.cmd, ...cmdArgs], cwd, matches: found.length, truncated }
+    const summary = truncate(text.join("\n"), {
+      maxLines: args.limit + 1,
+      strategy: "head",
+    })
 
-    const meta: Record<string, unknown> = {
-      command: command.cmd,
+    const truncated = summary.truncated || result.killReason === "maxBuffer"
+    ctx.meta = {
+      cmd: [command.cmd, ...cmdArgs],
       cwd,
-      matches: found.length,
+      matches: summary.origLines,
+      pattern: args.pattern,
       truncated,
     }
-    if (result.killReason) meta.killReason = result.killReason
-    if (result.stderr.trim() !== "") meta.stderr = result.stderr.trim().slice(0, 500)
 
-    const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "find", type: "meta" }]
+    const parts: (MetaPart | TextPart)[] = []
+
+    const stderr = result.stderr.trim()
+    if (stderr || result.killReason) {
+      const meta: Record<string, unknown> = {
+        command: command.cmd,
+        cwd,
+        truncated,
+      }
+      if (result.killReason) meta.killReason = result.killReason
+      if (stderr) meta.stderr = stderr.slice(0, 500)
+      parts.push({ data: meta, tag: "grep", type: "meta" })
+    }
     parts.push({ text: summary.text || "No files found.", type: "text" })
     return parts
   },
@@ -153,7 +164,7 @@ function buildArgs(kind: Finder["kind"], args: FindArgs, paths: string[]): strin
 }
 
 function fdArgs(args: FindArgs, paths: string[]): string[] {
-  const ret = ["--color", "never", "--max-results", String(args.limit)]
+  const ret = ["--color", "always", "--max-results", String(args.limit)]
   if (args.type === "file") ret.push("--type", "file", "--type", "symlink")
   else if (args.type === "dir") ret.push("--type", "directory")
   if (args.hidden) ret.push("--hidden")

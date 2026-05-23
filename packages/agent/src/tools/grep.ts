@@ -4,7 +4,7 @@ import { AiError, defineTool } from "@zaly/ai"
 import { cleanTextTui, normPath } from "@zaly/shared"
 import { Spawn, TextStream } from "@zaly/shared/process"
 import { Type } from "typebox"
-import { bin, compactPath, defaultExcludes, fileTypeGlobs } from "../utils/search.ts"
+import { bin, defaultExcludes, fileTypeGlobs } from "../utils/search.ts"
 import { truncate } from "../utils/truncate.ts"
 
 const MAX_BUFFER = 512 * 1024
@@ -16,7 +16,6 @@ export type GrepTool = typeof grepTool
 export type GrepToolMeta = {
   cwd: string
   pattern: string
-  matches: number
   truncated: boolean
   cmd: string[]
 }
@@ -82,7 +81,7 @@ export const grepTool = defineTool({
     const command = resolveGrep()
     if (!command) throw new AiError({ code: "MISSING_TOOL", message: "grep requires rg or grep" })
 
-    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
+    const cwd = normPath(ctx.cwd)
     await ctx.need?.("read", cwd)
 
     let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
@@ -111,40 +110,34 @@ export const grepTool = defineTool({
       })
     }
 
-    const parsed =
-      command.kind === "rg"
-        ? parseRgOutput(result.stdout, cwd)
-        : parseGrepOutput(result.stdout, cwd)
-    const limited = parsed.lines.slice(0, args.limit)
-    let text = limited.join("\n")
-    const dropped = parsed.lines.length - limited.length
-    if (dropped > 0) text += `${text ? "\n" : ""}… [truncated ${dropped} matches]`
-
+    const text = cleanTextTui(result.stdout)
     const summary = truncate(text, {
       maxLineChars: command.kind === "rg" ? 500 : MAX_COLUMNS,
       maxLines: args.limit + 1,
       strategy: "head",
     })
 
-    const truncated = dropped > 0 || summary.truncated || result.killReason === "maxBuffer"
+    const truncated = summary.truncated || result.killReason === "maxBuffer"
     ctx.meta = {
       cmd: [command.cmd, ...cmdArgs],
       cwd,
-      matches: parsed.matches,
       pattern: args.pattern,
       truncated,
     }
 
-    const meta: Record<string, unknown> = {
-      command: command.cmd,
-      cwd,
-      matches: parsed.matches,
-      truncated,
-    }
-    if (result.killReason) meta.killReason = result.killReason
-    if (result.stderr.trim() !== "") meta.stderr = result.stderr.trim().slice(0, 500)
+    const parts: (MetaPart | TextPart)[] = []
 
-    const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "grep", type: "meta" }]
+    const stderr = result.stderr.trim()
+    if (stderr || result.killReason) {
+      const meta: Record<string, unknown> = {
+        command: command.cmd,
+        cwd,
+        truncated,
+      }
+      if (result.killReason) meta.killReason = result.killReason
+      if (stderr) meta.stderr = stderr.slice(0, 500)
+      parts.push({ data: meta, tag: "grep", type: "meta" })
+    }
     parts.push({ text: summary.text || "No matches found.", type: "text" })
     return parts
   },
@@ -173,7 +166,6 @@ function buildRgArgs(args: GrepArgs, paths: string[]): string[] {
     `--max-columns=${MAX_COLUMNS}`,
     "--max-columns-preview",
     "--path-separator=/",
-    "-0",
   ]
 
   if (args.fixed_strings) ret.push("--fixed-strings")
@@ -222,35 +214,4 @@ function grepGlobArgs(glob: string): string[] {
     return ["--exclude-dir", exclude.slice(0, -3)]
   }
   return ["--exclude", exclude]
-}
-
-function parseRgOutput(output: string, cwd: string): { lines: string[]; matches: number } {
-  if (output === "") return { lines: [], matches: 0 }
-  const lines: string[] = []
-  for (const raw of output.split("\n")) {
-    // if (raw === "") continue
-    const nul = raw.indexOf("\0")
-    if (nul === -1) {
-      lines.push(raw)
-      continue
-    }
-    const file = raw.slice(0, nul)
-    const rest = cleanTextTui(raw.slice(nul + 1))
-    lines.push(`${compactPath(file, cwd)}:${rest}`)
-  }
-  return { lines, matches: lines.length }
-}
-
-function parseGrepOutput(output: string, cwd: string): { lines: string[]; matches: number } {
-  if (output === "") return { lines: [], matches: 0 }
-  const lines = output
-    .split("\n")
-    .filter((l) => l !== "")
-    .map((line) => {
-      const match = /^(.*?):(\d+):(.*)$/.exec(line)
-      if (!match) return cleanTextTui(line)
-      const [, file, row, text] = match
-      return `${compactPath(file, cwd)}:${row}:${cleanTextTui(text)}`
-    })
-  return { lines, matches: lines.length }
 }
