@@ -80,7 +80,9 @@ console.log(`loaded ${messages.length} messages from ${path}\n`)
 
 console.log(formatBashCommands(extractBashUsage(messages)))
 console.log()
-console.log(formatFileTouches(extractFileUsage(messages)))
+console.log(
+  formatFileTouches(extractFileUsage(messages, { limit: 20, minCount: 1, minScore: 0.5 }))
+)
 console.log()
 
 // console.log(formatTranscript(extractConversation({ session, messages }), tail.length))

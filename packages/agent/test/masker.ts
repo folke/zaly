@@ -14,6 +14,7 @@
  *   - pdfs: ~2000 per page, with a byte-based page count guess
  *           (~3 KB / page for typical mixed content) */
 
+import { extractConversation } from "../src/compaction/utils.ts"
 import { formatTokenStats, tokenStats } from "../src/debug/tokens.ts"
 import { Masker } from "../src/masker.ts"
 import { loadSession } from "./helpers.ts"
@@ -37,9 +38,8 @@ const before = await tokenStats(messages)
 const masker = new Masker()
 // Force a high-pressure level so the harness always runs the decide
 // pass — otherwise low-pressure sessions would render no masks.
-const after = await tokenStats(
-  masker.apply(messages, { level: 3, limit: 200_000, ratio: 0.99, used: 198_000 })
-)
+const masked = masker.apply(messages, { level: 3, limit: 200_000, ratio: 0.99, used: 198_000 })
+const after = await tokenStats(masked)
 
 function fmt(n: number): string {
   return n.toLocaleString()
@@ -56,3 +56,5 @@ console.log(
 )
 
 console.log(masker.stats)
+
+// console.log(extractConversation(masked, { maxToolResultLen: 100 }))

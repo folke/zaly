@@ -12,7 +12,7 @@ import type { FileMeta } from "./tools/read.ts"
 import type { AnyTool } from "./tools/registry.ts"
 import type { ContextPressure } from "./types.ts"
 
-import { hasAttachments, isAttachment, safeParseToolParams } from "@zaly/ai"
+import { hasAttachments, isAttachment, safeParseToolParams, stringifyContent } from "@zaly/ai"
 import { safeStringify } from "@zaly/shared"
 import { extractFileUsage } from "./compaction/utils.ts"
 
@@ -316,10 +316,12 @@ export class Masker {
     const s: FileState = this.#files.get(info.path) ?? { edit: 0, read: 0, stale: false, write: 0 }
     if (s.stale) {
       s[kind]++
-      if (s[kind] > (this.#opts.files[kind] ?? Infinity)) markPart(this.#decisions, msg.id, partIdx)
+      if (s[kind] > (this.#opts.files[kind] ?? Infinity)) {
+        markPart(this.#decisions, msg.id, partIdx)
+      }
     }
     s.stale ||= info.full ?? false
-    s.stale ||= (this.#turns.get(msg.id) ?? 0) > 50 // Fresh if from the current user turn.
+    s.stale ||= p.name === "read" && !info.unchanged && (this.#turns.get(msg.id) ?? 0) > 100 // Fresh if from the current user turn.
     this.#files.set(info.path, s)
   }
 
