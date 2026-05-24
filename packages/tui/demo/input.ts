@@ -25,16 +25,15 @@ renderer.ui.add(() =>
       text(({ style }) => style.primary("❯"), { width: 1 }),
       input({ placeholder: "type a message, paste an image…" })
         .focus()
-        .on("submit", ({ value }, self) => {
+        .on("submit", ({ value, attachments }) => {
           if (value.trim() === "") return
-          renderer.stream.append(() => markdown(`**you:** ${value}`))
-          self.state.set({ cursor: 0, value: "" })
-        })
-        .on("attach", ({ attachment: att }) => {
-          renderer.stream.append(() => markdown(`*pasted ${att.kind}:* \`${att.path}\``))
-          if (att.kind === "image" || att.type.startsWith("image/")) {
-            renderer.stream.append(() => image(att.path))
+          for (const att of attachments) {
+            renderer.stream.append(() => markdown(`*attached ${att.type}:* \`${att.path}\``))
+            if (att.type === "image") {
+              renderer.stream.append(() => image(att.path))
+            }
           }
+          renderer.stream.append(() => markdown(`**you:** ${value}`))
         })
     )
   )

@@ -12,7 +12,7 @@ import { Notifier } from "../widgets/notify.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { registerAgentActions, registerUiActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
-import { AttachmentBuffer } from "./attachments.ts"
+import { attachmentParts, canAttach } from "./attachments.ts"
 import { replay } from "./replay.ts"
 import { bindStream } from "./stream.ts"
 import { submit } from "./submit.ts"
@@ -43,8 +43,6 @@ export class App {
     status: "loading",
     usage: { input: 0, output: 0 },
   })
-
-  readonly #attachments = new AttachmentBuffer()
 
   private constructor(ctx: Context) {
     this.#ctx = ctx
@@ -118,6 +116,7 @@ export class App {
     )
 
     this.#input = composer()
+    this.#input.canAttach = (att) => canAttach(att, this.#agent?.model)
 
     registerUiActions({
       app: this,
@@ -128,22 +127,16 @@ export class App {
 
     // Submit gated on busy — typing is fine during Phase B, but Enter
     // waits for the agent to be ready.
-    this.#input.on("submit", ({ value }, self) => {
+    this.#input.on("submit", async ({ value, attachments }) => {
       const trimmed = value.trim()
       if (trimmed === "" || !this.#agent) return
       if (!this.#agent.model) {
         this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
         return
       }
-      self.state.set({ cursor: 0, value: "" })
-      const refs = this.#attachments.consume(trimmed)
-      submit(trimmed, refs, this.#agent, this.#renderer)
+      const atts = await attachmentParts(attachments)
+      submit(value, atts, this.#agent, this.#renderer)
       void this.#agent.waitIdle()
-    })
-
-    this.#input.on("attach", ({ attachment: att }, self) => {
-      if (!this.#agent?.model) return
-      void this.#attachments.stage(att, self, this.#agent.model)
     })
   }
 

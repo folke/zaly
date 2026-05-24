@@ -175,10 +175,10 @@ describe("Input.actions — submit + newline", () => {
     expect(seen).toEqual(["hi"])
   })
 
-  test("submit does not clear the value", () => {
+  test("submit clears the value", () => {
     const n = input({ value: "hi" })
     n.actions["input.submit"]()
-    expect(n.state.value).toBe("hi")
+    expect(n.state.value).toBe("")
   })
 
   test(String.raw`insertNewline inserts \n at the cursor`, () => {
@@ -273,7 +273,16 @@ function mount(state = {}) {
   router.setActions(actions)
   actions.register(defaultActions, { default: true })
   const n = input(state)
-  n.mount(mockMountCtx("ui", { actions, input: { bind: (binding) => actions.bind(binding), blur: () => router.focus(undefined), focus: (node) => router.focus(node) } }))
+  n.mount(
+    mockMountCtx("ui", {
+      actions,
+      input: {
+        bind: (binding) => actions.bind(binding),
+        blur: () => router.focus(undefined),
+        focus: (node) => router.focus(node),
+      },
+    })
+  )
   router.focus(n)
   return { n, router }
 }

@@ -1,10 +1,14 @@
+import type { DetectedFile } from "@zaly/shared/detect"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { StyleState } from "../core/state.ts"
 import type { ActionMap } from "../input/actions.ts"
-import type { RoutedKey, RoutedPaste } from "../input/router.ts"
+import type { RoutedKey } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 
+import { stringWidth } from "@zaly/shared/ansi"
+import { fileDetect } from "@zaly/shared/detect"
+import { basename } from "pathe"
 import { Node } from "../core/node.ts"
 import { clipboard } from "../input/clipboard.ts"
 import { formatText } from "../layout/text.ts"
@@ -18,33 +22,23 @@ export interface InputState extends StyleState {
   cursor?: number
   /** Render width. Defaults to `fill`. */
   width?: Size
+  /** Threshold for showing pasted content as an attachment rather than raw text */
+  pasteMaxLines?: number
+  pasteMaxChars?: number
 }
 
-/** An attachment produced by an Input's paste action. Discriminated
- *  by `kind` so listeners can pattern-match without parsing MIME
- *  strings. `path` is always an absolute filesystem path the caller
- *  takes ownership of. */
-export type InputAttachment =
-  | {
-      kind: "image"
-      /** Temporary PNG file written from clipboard bytes. */
-      path: string
-      /** MIME type. Always `"image/png"` for image pastes. */
-      type: "image/png"
-    }
-  | {
-      kind: "file"
-      /** Real path on disk (e.g. from a file manager paste). */
-      path: string
-      /** Best-effort MIME guess from the file extension.
-       *  `"application/octet-stream"` when unknown — callers typically
-       *  re-sniff via their own tools. */
-      type: string
-    }
+const PASTE_MAX_LINES = 5
+const PASTE_MAX_CHARS = 1000
+
+/** A clipboard or bracketed paste that exceeds the `pasteMax*` thresholds. **/
+type Paste = { type: "paste"; text: string }
+
+/** A file or image attachment detected from the clipboard. */
+export type InputAttachment = DetectedFile & { path: string }
 
 export type InputEvents = BaseEvents & {
   /** Fired when plain Enter is pressed. Payload is the current value. */
-  submit: { value: string }
+  submit: { value: string; attachments: InputAttachment[] }
   /** Fired when the user pastes a non-text resource via the
    *  `input.paste` action. Images and file references both land here,
    *  discriminated by `attachment.kind`. One event fires per image
@@ -88,6 +82,8 @@ export class Input extends Node<InputState, InputEvents> {
 
   override readonly type = Input.type
   #focused = false
+  #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
+  canAttach?: (file: InputAttachment) => boolean
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -190,31 +186,31 @@ export class Input extends Node<InputState, InputEvents> {
       void (async (): Promise<void> => {
         const content = await clipboard.read()
         if (!content) return
-        if (content.kind === "image") {
-          void this.emit("attach", {
-            attachment: { kind: "image", path: content.path, type: content.type },
+
+        // Route through the regular paste handler
+        if (content.kind === "text") {
+          void this.emit("paste", {
+            paste: {
+              stop: () => void 0,
+              stopped: false,
+              text: content.text,
+            },
           })
           return
         }
-        if (content.kind === "files") {
-          for (const path of content.paths) {
-            void this.emit("attach", {
-              attachment: { kind: "file", path, type: guessMime(path) },
-            })
-          }
-          return
+
+        const paths: string[] = content.kind === "image" ? [content.path] : content.paths
+        const files = await Promise.all(paths.map((path) => fileDetect({ path })))
+        for (let i = 0; i < paths.length; i++) {
+          const path = paths[i]
+          const file = files[i]
+          if (!file) continue
+          this.attach({ ...file, path })
         }
-        // kind === "text"
-        const v = this.state.value ?? ""
-        const c = this.state.cursor ?? 0
-        this.state.set({
-          cursor: c + content.text.length,
-          value: v.slice(0, c) + content.text + v.slice(c),
-        })
       })()
     },
     "input.submit": (): void => {
-      void this.emit("submit", { value: this.state.value ?? "" })
+      void this.emit("submit", this.consume())
     },
   } satisfies ActionMap
 
@@ -225,7 +221,8 @@ export class Input extends Node<InputState, InputEvents> {
       this.#handleKey(key)
     })
     this.on("paste", ({ paste }) => {
-      this.#handlePaste(paste)
+      this.paste(paste.text)
+      paste.stop()
     })
     this.on("focus", () => {
       this.#focused = true
@@ -237,27 +234,68 @@ export class Input extends Node<InputState, InputEvents> {
     })
   }
 
+  attach(att: InputAttachment | Paste): void {
+    if (att.type !== "paste" && this.canAttach?.(att) === false) {
+      // Caller doesn't want this attachment (e.g. model doesn't support it) — fall
+      // back to pasting the path as plain text
+      return this.insert(att.path)
+    }
+
+    const id = this.#staged.length + 1
+    let prefix = att.type[0].toUpperCase() + att.type.slice(1)
+    let suffix = ""
+    if (att.type === "paste") {
+      prefix = "Pasted text"
+      suffix = ` +${countLines(att.text)} lines`
+    } else if (!["image", "pdf"].includes(att.type)) suffix = ` ${basename(att.path)}`
+    const marker = `[${prefix} #${id}${suffix}]`
+    this.#staged.push({ ...att, id, marker })
+    this.insert(marker)
+
+    if (att.type !== "paste") void this.emit("attach", { attachment: att })
+  }
+
+  paste(text: string): void {
+    if (
+      countLines(text) > (this.state.pasteMaxLines ?? PASTE_MAX_LINES) ||
+      stringWidth(text) > (this.state.pasteMaxChars ?? PASTE_MAX_CHARS)
+    )
+      return this.attach({ text, type: "paste" })
+    this.insert(text)
+  }
+
+  insert(text: string): void {
+    const v = this.state.value ?? ""
+    const c = this.state.cursor ?? 0
+    this.state.set({
+      cursor: c + text.length,
+      value: v.slice(0, c) + text + v.slice(c),
+    })
+  }
+
+  /** Consume the input's current value and attachments.
+   * Pastes are replaced inline with their text; file/image
+   * attachments are returned in the `attachments` array and removed from the value. */
+  consume(): { value: string; attachments: InputAttachment[] } {
+    let value = this.state.value ?? ""
+    const atts: InputAttachment[] = []
+    for (const att of this.#staged) {
+      if (!value.includes(att.marker)) continue
+      if (att.type === "paste") {
+        value = value.replace(att.marker, att.text)
+      } else atts.push(att)
+    }
+    this.#staged = []
+    this.state.set({ cursor: 0, value: "" })
+    return { attachments: atts, value }
+  }
+
   // Fallback path for anything the router couldn't resolve to a named
   // action: printable characters go straight into the value. Any other
   // unbound key (f7, unclaimed ctrl-combos, etc.) bubbles untouched.
   #handleKey(ev: RoutedKey): void {
     if (ev.text === undefined || ev.ctrl || ev.alt || ev.meta) return
-    const v = this.state.value ?? ""
-    const c = this.state.cursor ?? 0
-    this.state.set({
-      cursor: c + ev.text.length,
-      value: v.slice(0, c) + ev.text + v.slice(c),
-    })
-    ev.stop()
-  }
-
-  #handlePaste(ev: RoutedPaste): void {
-    const v = this.state.value ?? ""
-    const c = this.state.cursor ?? 0
-    this.state.set({
-      cursor: c + ev.text.length,
-      value: v.slice(0, c) + ev.text + v.slice(c),
-    })
+    this.insert(ev.text)
     ev.stop()
   }
 
@@ -289,6 +327,11 @@ export class Input extends Node<InputState, InputEvents> {
       content = head + ctx.style.inverse(at) + tail
     } else {
       content = value
+    }
+
+    for (const att of this.#staged) {
+      if (!content.includes(att.marker)) continue
+      content = content.replace(att.marker, ctx.style.primary(att.marker))
     }
 
     return formatText(content, {
@@ -349,29 +392,4 @@ function countLines(value: string): number {
   let n = 1
   for (const ch of value) if (ch === "\n") n++
   return n
-}
-
-/** Best-effort MIME guess from a file extension. Returns
- *  `application/octet-stream` for anything unknown — the caller that
- *  cares about MIME should re-sniff via its own tools (or `file(1)`). */
-function guessMime(path: string): string {
-  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase()
-  const MIMES: Record<string, string> = {
-    gif: "image/gif",
-    html: "text/html",
-    jpeg: "image/jpeg",
-    jpg: "image/jpeg",
-    json: "application/json",
-    md: "text/markdown",
-    mov: "video/quicktime",
-    mp3: "audio/mpeg",
-    mp4: "video/mp4",
-    pdf: "application/pdf",
-    png: "image/png",
-    svg: "image/svg+xml",
-    txt: "text/plain",
-    wav: "audio/wav",
-    webp: "image/webp",
-  }
-  return MIMES[ext] ?? "application/octet-stream"
 }
