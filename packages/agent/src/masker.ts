@@ -1,18 +1,18 @@
 import type {
   Attachment,
   Message,
+  Role,
   TextPart,
   Tool,
   ToolCallPart,
   ToolResultPart,
-  Role,
 } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { FileMeta } from "./tools/read.ts"
 import type { AnyTool } from "./tools/registry.ts"
 import type { ContextPressure } from "./types.ts"
 
-import { hasAttachments, isAttachment, safeParseToolParams, stringifyContent } from "@zaly/ai"
+import { hasAttachments, isAttachment, safeParseToolParams } from "@zaly/ai"
 import { safeStringify } from "@zaly/shared"
 import { extractFileUsage } from "./compaction/utils.ts"
 
@@ -145,6 +145,12 @@ export class Masker {
     }
   }
 
+  reset(): void {
+    this.#stamped.clear()
+    this.#stats.clear()
+    this.#pressureLevel = -1
+  }
+
   get stats(): Map<Role, Record<string, number>> {
     return this.#stats
   }
@@ -182,14 +188,16 @@ export class Masker {
    *    2. **Render** — every call. Walks messages once and applies
    *       previously-stamped masks. Cheap; doesn't change prefix bytes
    *       beyond what the previous decide already committed. */
-  apply(messages: readonly Message[], pressure: ContextPressure): Message[] {
+  apply(messages: readonly Message[], pressure: ContextPressure | true): Message[] {
+    const rebuild = pressure === true || pressure.level > this.#pressureLevel
+
     // Always rebuild the call index — render needs it for stub
     // generation, and it's cheap (one forward walk over assistant
     // messages).
     this.#buildCallIndex(messages)
-    if (pressure.level > this.#pressureLevel) {
+    if (rebuild) {
       this.#decide(messages)
-      this.#pressureLevel = pressure.level
+      if (pressure !== true) this.#pressureLevel = pressure.level
     } else if (pressure.level === 0) {
       // Reset only on a full clear (e.g. after compaction); intermediate
       // dips don't drop us back so flicker around a threshold doesn't

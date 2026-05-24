@@ -48,7 +48,11 @@ export class Compaction {
   }
 
   async compact(): Promise<void> {
-    const { session, messages } = this.#agent
+    const { session } = this.#agent
+
+    const masker = await this.#agent.ctx.masker()
+
+    const messages = masker ? masker.apply(session.messages, true) : session.messages
 
     const now = performance.now()
 
@@ -97,6 +101,7 @@ export class Compaction {
       tail: tail.length,
       trigger: this.#opts.trigger,
     })
+    masker?.reset()
   }
 
   async #summarize(message: Message<"user">): Promise<string> {
