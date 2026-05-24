@@ -129,6 +129,24 @@ export function appActions({ app }: { app: App }) {
       keys: ["esc"],
       name: "stop",
     },
+    "app.theme": {
+      desc: "choose a color theme",
+      fn: async () => {
+        const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
+        const themes = themeRegistry.keys()
+
+        const items: PickerItem[] = []
+        for (const id of themes) {
+          items.push({
+            label: id,
+            value: id,
+          })
+        }
+        const ret = await app.pick({ items, sort: true })
+        if (ret) app.renderer.setTheme(await loadTheme(ret.value))
+      },
+      name: "theme",
+    },
     "global.quit": { keys: [] },
   } as const satisfies Record<string, ActionInfo>
 }

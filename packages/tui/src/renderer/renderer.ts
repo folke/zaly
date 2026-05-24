@@ -75,7 +75,7 @@ export class Renderer {
 
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
-  readonly #theme: Theme | undefined
+  #theme: Theme | undefined
   /** Root Owner — every surface's function-shape `add` / `append` runs
    *  its child under this Owner via `withOwner(#rootOwner, …)`, so
    *  context values provided here (`RenderContext`, future global
@@ -276,6 +276,9 @@ export class Renderer {
    *  bump that already happens elsewhere on theme-driven invalidation. */
   setTheme(theme: Theme): void {
     this.#setTheme(theme)
+    this.#theme = theme
+    this.#ctxVersion++
+    this.#schedule()
   }
 
   start(): void {
