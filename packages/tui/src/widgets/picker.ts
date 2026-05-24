@@ -10,9 +10,14 @@ import { widget } from "./widget.ts"
 
 export type PickerItem<T = string> = MenuItem<T> & { searchText?: string }
 
-export type PickerResult<T = PickerItem> = readonly T[] | Promise<readonly T[]>
+export type PickerResult<T extends PickerItem<unknown> = PickerItem> =
+  | readonly T[]
+  | Promise<readonly T[]>
 
-export type PickerOptions<T = PickerItem> = Omit<MenuState<T>, "items"> & {
+export type PickerOptions<T extends PickerItem<unknown> = PickerItem> = Omit<
+  MenuState<T>,
+  "items"
+> & {
   /** The `Input` to watch. Pass the node directly, or a `Ref<Input>`
    *  populated by `node.ref(ref)` elsewhere in the tree — the latter
    *  enables fully inline composition where the input doesn't need a
@@ -24,13 +29,13 @@ export type PickerOptions<T = PickerItem> = Omit<MenuState<T>, "items"> & {
   sort?: boolean
 }
 
-function searchText(item: PickerItem): string {
+function searchText(item: PickerItem<unknown>): string {
   const ret = item.searchText ?? item.label
   if (!ret) throw new Error("Picker items must have a label or searchText")
   return ret
 }
 
-export const picker = widget(<T extends PickerItem = PickerItem>(props: PickerOptions<T>) => {
+export const picker = widget(<T extends PickerItem<unknown> = PickerItem>(props: PickerOptions<T>) => {
   const input = () => (props.input instanceof Input ? props.input : props.input())
   const it = props.items
 

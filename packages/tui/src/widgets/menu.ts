@@ -77,7 +77,7 @@ export interface MenuEvents<T = MenuItem> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
+export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
   static readonly type = "menu"
   override readonly type = Menu.type
 
@@ -217,7 +217,7 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
       const hintAvail = Math.max(0, width - labelWidth - gap)
       const spacer = " ".repeat(gap)
       return (item: T): string => {
-        const mi = item as unknown as MenuItem
+        const mi = item as MenuItem<unknown>
         const labelCell = fit(defaultLabel(item), labelWidth)
         const hintCell = fit(mi.hint ?? "", hintAvail)
         return ctx.style.add("menuLabel")(labelCell) + spacer + ctx.style.add("menuHint")(hintCell)
@@ -275,6 +275,6 @@ function fit(s: string, width: number): string {
  * m.on("select", (item) => console.log("picked", item.value))
  * ```
  */
-export function menu<T extends MenuItem = MenuItem>(state: MenuState<T>): Menu<T> {
+export function menu<T extends MenuItem<unknown> = MenuItem>(state: MenuState<T>): Menu<T> {
   return new Menu<T>(state)
 }

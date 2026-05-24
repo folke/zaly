@@ -208,7 +208,7 @@ export class App {
     this.#state.status = "ready"
   }
 
-  async pick<T extends PickerItem = PickerItem>(
+  async pick<T extends PickerItem<unknown> = PickerItem>(
     opts: Omit<PickOpts<T>, "input">
   ): Promise<T | undefined> {
     const res = Promise.withResolvers<T | undefined>()
