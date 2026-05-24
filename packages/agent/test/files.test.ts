@@ -68,22 +68,32 @@ describe("fileHandler — sensitive paths", () => {
   })
 })
 
-describe("fileHandler — rule precedence (deny > ask > allow)", () => {
-  test("deny rule trumps allow rule on the same path", () => {
+describe("fileHandler — rule precedence", () => {
+  test("first matching rule wins", () => {
     const r = validate("read", `${cwd}/src/index.ts`, {
       rules: [
         { pattern: "/src/index.ts", policy: "allow", scope: "read" },
         { pattern: "/src/index.ts", policy: "deny", scope: "read" },
       ],
     })
-    expect(r.verdict).toBe("deny")
+    expect(r.verdict).toBe("allow")
   })
 
-  test("ask rule trumps allow rule", () => {
+  test("specific promoted allow can beat a later broad ask", () => {
+    const r = validate("read", `${cwd}/README.ts`, {
+      rules: [
+        { pattern: "/README.ts", policy: "allow", scope: "read" },
+        { pattern: "*", policy: "ask", scope: "read" },
+      ],
+    })
+    expect(r.verdict).toBe("allow")
+  })
+
+  test("earlier ask can still beat a later allow", () => {
     const r = validate("read", `${cwd}/src/foo.ts`, {
       rules: [
-        { pattern: "/src/*", policy: "allow", scope: "read" },
         { pattern: "/src/foo.ts", policy: "ask", scope: "read" },
+        { pattern: "/src/*", policy: "allow", scope: "read" },
       ],
     })
     expect(r.verdict).toBe("ask")

@@ -81,7 +81,7 @@ export class PermissionManager {
   }
 
   addRule(rule: Rule): void {
-    this.#rules.push(rule)
+    this.#rules.unshift(rule)
   }
 
   // ── Dispatch ────────────────────────────────────────────────────────

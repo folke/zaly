@@ -24,6 +24,9 @@ export interface PermissionPreset {
 
 // ── Pattern groups ─────────────────────────────────────────────────────────
 
+/** Native tools that only inspect session state or workspace files. */
+const READONLY_TOOLS = ["tool(read)", "tool(grep)", "tool(find)", "tool(task_list)", "tool(task_poll)"]
+
 /** Read-only utilities the model can run without surprises: file
  *  inspection, search, metadata. None of these modify state on their own.
  *  (`sed`/`awk` writes still gated by Write rules via the bash handler's
@@ -145,8 +148,8 @@ export const permissionPresets = {
     description: "Ask for everything. No commands or file ops auto-allowed.",
     rules: {
       deny: HARD_DENIES,
-      // Override the file handler's default-allow-on-read inside workspace.
-      ask: ["read(*)", "write(*)"],
+      // Override the tool/file handlers' default allows.
+      ask: ["tool(*)", "read(*)", "write(*)"],
     },
   },
   readonly: {
@@ -155,7 +158,8 @@ export const permissionPresets = {
       "Reads inside the workspace are allowed (sensitive paths denied); writes always ask.",
     rules: {
       deny: HARD_DENIES,
-      allow: [...READONLY_BASH, ...READONLY_GIT, ...DEV_BASIC],
+      allow: [...READONLY_TOOLS, ...READONLY_BASH, ...READONLY_GIT, ...DEV_BASIC],
+      ask: ["tool(*)", "write(*)"],
     },
   },
   permissive: {
@@ -165,6 +169,7 @@ export const permissionPresets = {
     rules: {
       deny: HARD_DENIES,
       allow: [
+        "tool(*)",
         ...READONLY_BASH,
         ...READONLY_GIT,
         ...DEV_BASIC,
@@ -178,7 +183,7 @@ export const permissionPresets = {
   yolo: {
     description: "Allow everything. No prompts. Use only when you trust the model and the task.",
     rules: {
-      allow: ["bash", "read(*)", "write(*)"],
+      allow: ["bash", "read(*)", "write(*)", "tool(*)"],
     },
   },
 } as const satisfies Record<PermissionPresetName, PermissionPreset>

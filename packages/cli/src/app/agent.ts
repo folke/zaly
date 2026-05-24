@@ -1,8 +1,8 @@
 import type { Agent } from "@zaly/agent"
 import type { Usage } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
-import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
+import type { App } from "./app.ts"
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
@@ -14,9 +14,10 @@ import type { AppState } from "../types.ts"
  * model id is resolved against the session here (not in `resolveConfig`)
  * because the session has to be loaded async first.
  */
-export async function buildAgent(ctx: Context): Promise<Agent> {
+export async function buildAgent(app: App): Promise<Agent> {
   const { createAgent } = await import("@zaly/agent")
   const { loadModel } = await import("@zaly/ai")
+  const ctx = app.ctx
   const session = await ctx.session()
   const config = await ctx.config()
   const settings = config.settings
@@ -36,6 +37,7 @@ export async function buildAgent(ctx: Context): Promise<Agent> {
   const reasoning = merged.reasoning ? { effort: merged.reasoning } : undefined
 
   return await createAgent({
+    allow: (req) => app.allow(req),
     cwd: merged.cwd,
     logger: ctx.logger.child("agent"),
     model,

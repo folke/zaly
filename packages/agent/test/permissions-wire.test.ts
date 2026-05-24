@@ -84,17 +84,17 @@ describe("toolHandler — direct", () => {
     expect(validate("read", [{ pattern: "fetch:*", policy: "deny" }]).verdict).toBe("allow")
   })
 
-  test("precedence: deny > ask > allow", () => {
+  test("first matching rule wins", () => {
     expect(
       validate("bash", [
         { pattern: "*", policy: "allow" },
         { pattern: "bash", policy: "deny" },
       ]).verdict
-    ).toBe("deny")
+    ).toBe("allow")
     expect(
       validate("bash", [
-        { pattern: "*", policy: "allow" },
         { pattern: "bash", policy: "ask" },
+        { pattern: "*", policy: "allow" },
       ]).verdict
     ).toBe("ask")
   })

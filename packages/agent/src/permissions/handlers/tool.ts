@@ -1,4 +1,4 @@
-import type { CheckResult, PermissionHandler, Rule, Verdict } from "../types.ts"
+import type { CheckResult, PermissionHandler, Rule } from "../types.ts"
 
 import ignore from "ignore"
 
@@ -17,39 +17,30 @@ import ignore from "ignore"
  *   "tool(fetch:*)"    → glob match `"fetch:..."`
  *   "tool(task_*)"     → glob match `"task_..."`
  *
- * Precedence: deny > ask > allow > default. Default verdict when no
- * rule matches is `allow` — an unconfigured `tool` scope should not
- * surprise users by gating ordinary tool calls.
+ * Resolution is first-match-wins. Default verdict when no rule matches is
+ * `allow` — an unconfigured `tool` scope should not surprise users by
+ * gating ordinary tool calls.
  */
 export const toolHandler: PermissionHandler<"tool"> = {
   validate(input, ctx): CheckResult {
-    const { allow, ask, deny } = compileMatchers(ctx.rules)
-
-    if (deny.ignores(input)) {
+    const rule = resolveRule(input, ctx.rules)
+    if (rule?.policy === "deny") {
       return { reason: `tool ${input}: denied by rule`, verdict: "deny" }
     }
-    if (ask.ignores(input)) {
+    if (rule?.policy === "ask") {
       return {
+        ask: `Allow tool ${input}?`,
         reason: `tool ${input}: rule requires confirmation`,
         suggestions: [{ kind: "rule", pattern: input, scope: "tool" }],
         verdict: "ask",
       }
     }
-    if (allow.ignores(input)) return { verdict: "allow" }
-
-    // No rule matched → default allow. Lets the basic flow stay quiet
-    // for users who haven't bothered to write tool rules.
     return { verdict: "allow" }
   },
 }
 
-function compileMatchers(rules: readonly Rule<"tool">[]) {
-  const allow = ignore()
-  const ask = ignore()
-  const deny = ignore()
+function resolveRule(input: string, rules: readonly Rule<"tool">[]): Rule<"tool"> | undefined {
   for (const rule of rules) {
-    const target: Record<Verdict, ReturnType<typeof ignore>> = { allow, ask, deny }
-    target[rule.policy].add(rule.pattern)
+    if (ignore().add(rule.pattern).ignores(input)) return rule
   }
-  return { allow, ask, deny }
 }

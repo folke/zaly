@@ -14,7 +14,6 @@
  *   - pdfs: ~2000 per page, with a byte-based page count guess
  *           (~3 KB / page for typical mixed content) */
 
-import { extractConversation } from "../src/compaction/utils.ts"
 import { formatTokenStats, tokenStats } from "../src/debug/tokens.ts"
 import { Masker } from "../src/masker.ts"
 import { loadSession } from "./helpers.ts"

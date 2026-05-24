@@ -1,6 +1,6 @@
-import type { CheckResult, PermissionHandler, Rule, Verdict } from "../types.ts"
+import type { CheckResult, PermissionHandler, Rule } from "../types.ts"
 
-import { normPath } from "@zaly/shared"
+import { normPath, prettyPath } from "@zaly/shared"
 import ignore from "ignore"
 import { dirname, isAbsolute, relative } from "pathe"
 
@@ -14,9 +14,8 @@ import { dirname, isAbsolute, relative } from "pathe"
  *   3. Find the longest-prefix workspace containing the path. None →
  *      ask, with a `kind: "workspace"` suggestion for the containing
  *      directory.
- *   4. Inside a workspace: split rules by policy into three gitignore-
- *      style matchers (allow / deny / ask), test the workspace-relative
- *      path. Precedence: deny > ask > allow > default.
+ *   4. Inside a workspace: resolve the first matching rule against the
+ *      workspace-relative path. Earlier rules win.
  *   5. Default when no rule matches but the path is inside a workspace:
  *      `allow` for reads (workspace = trust signal), `ask` for writes
  *      (mutating ops escalate by default; users add `Write(...)` rules
@@ -49,10 +48,19 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
     const base = ws ?? "/"
     const rel = relative(base, abs)
 
-    const { allow, ask, deny } = compileMatchers(base, ctx.rules)
-    if (deny.ignores(rel)) return { reason: `${abs}: denied by rule`, verdict: "deny" }
-    if (ask.ignores(rel)) return { reason: `${abs}: rule requires confirmation`, verdict: "ask" }
-    if (allow.ignores(rel)) return { verdict: "allow" }
+    const verb = ctx.scope === "read" ? "reading" : "writing"
+
+    const rule = resolveRule(base, rel, ctx.rules)
+    if (rule?.policy === "deny") return { reason: `${abs}: denied by rule`, verdict: "deny" }
+    if (rule?.policy === "ask") {
+      return {
+        ask: `Allow ${verb} ${prettyPath(abs)}?`,
+        reason: `${abs}: rule requires confirmation`,
+        suggestions: [{ kind: "rule", pattern: `/${rel}`, scope: ctx.scope }],
+        verdict: "ask",
+      }
+    }
+    if (rule?.policy === "allow") return { verdict: "allow" }
 
     // No rule matched. Defaults differ by location:
     //   - Inside a workspace: reads ride on workspace trust → allow;
@@ -63,6 +71,7 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
     if (!inWorkspace) {
       const parent = dirname(abs)
       return {
+        ask: `Allow ${verb} ${prettyPath(abs)}? (not in any workspace)`,
         reason: `${abs}: outside any workspace`,
         suggestions: [
           { description: `add ${parent} as workspace`, kind: "workspace", path: parent },
@@ -72,6 +81,7 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
     }
     if (ctx.scope === "read") return { verdict: "allow" }
     return {
+      ask: `Allow ${verb} ${prettyPath(abs)}?`,
       reason: `${abs}: write requires confirmation`,
       suggestions: [{ kind: "rule", pattern: `/${rel}`, scope: "write" }],
       verdict: "ask",
@@ -115,21 +125,20 @@ function longestWorkspace(abs: string, workspaces: readonly string[]): string | 
   return best
 }
 
-/** Split rules by policy and feed each into its own gitignore matcher.
+/** Resolve the first matching rule.
  *  Patterns get normalized (`//abs`, `~/`, `/rel`, `rel`) into
  *  workspace-rooted gitignore syntax; patterns that resolve outside the
  *  candidate's workspace are dropped (they don't apply here). */
-function compileMatchers(workspace: string, rules: readonly Rule<"read" | "write">[]) {
-  const allow = ignore()
-  const deny = ignore()
-  const ask = ignore()
+function resolveRule(
+  workspace: string,
+  rel: string,
+  rules: readonly Rule<"read" | "write">[]
+): Rule<"read" | "write"> | undefined {
   for (const rule of rules) {
     const norm = normalizePattern(rule.pattern, workspace)
     if (norm === undefined) continue
-    const target: Record<Verdict, ReturnType<typeof ignore>> = { allow, ask, deny }
-    target[rule.policy].add(norm)
+    if (ignore().add(norm).ignores(rel)) return rule
   }
-  return { allow, ask, deny }
 }
 
 function normalizePattern(pattern: string, workspace: string): string | undefined {

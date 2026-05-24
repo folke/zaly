@@ -74,6 +74,7 @@ declare module "@zaly/ai" {
  *  can render a useful prompt: which scope, which input, why the
  *  manager paused, and what rule (if added) would have allowed it. */
 export interface PermissionRequest {
+  ask: string
   scope: string
   input: string
   reason: string

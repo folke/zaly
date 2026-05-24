@@ -1,9 +1,10 @@
-import type { Agent } from "@zaly/agent"
-import type { ActionInfo, Actions, Input, PickerItem, PickerOptions, Renderer } from "@zaly/tui"
+import type { Agent, PermissionRequest, Suggestion } from "@zaly/agent"
+import type { ActionInfo, Actions, Input, Menu, PickerItem, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 import type { NotifProps } from "../widgets/notify.ts"
+import type { PickOpts } from "../widgets/ui.ts"
 
 import { box, createRef, createRenderer, createStore, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
@@ -180,7 +181,7 @@ export class App {
     await replay(tail, this.#renderer)
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
 
-    this.#agent = await buildAgent(this.#ctx)
+    this.#agent = await buildAgent(this)
     this.#state.model = this.#agent.model
     this.#state.reasoning = this.#agent.ctx.reasoning
     this.#agent.ctx.on("model", () => (this.#state.model = this.#agent?.model))
@@ -208,14 +209,17 @@ export class App {
   }
 
   async pick<T extends PickerItem = PickerItem>(
-    opts: Omit<PickerOptions<T>, "input">
+    opts: Omit<PickOpts<T>, "input">
   ): Promise<T | undefined> {
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
     this.#input.consume()
-    const node = this.#renderer.overlay.open(() => pickerOverlay({ ...opts, input: this.#input }))
+    const ref = createRef<Menu<T>>()
+    const node = this.#renderer.overlay.open(() =>
+      pickerOverlay({ ...opts, input: this.#input, ref })
+    )
     this.#acEnabled.set(false)
-    const menu = node.children[1]
+    const menu = ref()
     const ac = new AbortController()
 
     const done = (value?: T) => {
@@ -233,5 +237,35 @@ export class App {
     menu.once("select", ({ item }) => done(item), { signal: ac.signal })
 
     return res.promise
+  }
+
+  async allow(req: PermissionRequest): Promise<boolean> {
+    const items: PickerItem<boolean | Suggestion>[] = []
+    items.push({ label: "Allow", value: true })
+    items.push({ label: "Deny", value: false })
+    for (const s of req.suggestions ?? []) {
+      if (s.kind === "rule") {
+        items.push({
+          hint: s.description,
+          label: `Allow \`${s.scope}(${s.pattern})\``,
+          value: { kind: "rule", pattern: s.pattern, scope: s.scope },
+        })
+      } else {
+        items.push({
+          hint: s.description,
+          label: `Add workspace ${s.path}`,
+          value: { kind: "workspace", path: s.path },
+        })
+      }
+    }
+    const ret = await this.pick<(typeof items)[number]>({ items, title: req.ask })
+    if (ret === undefined || ret.value === false) return false
+    if (ret.value !== true) {
+      const perms = await this.agent.ctx.permissions()
+      const s = ret.value
+      if (s.kind === "rule") perms.addRule({ ...s, policy: "allow" })
+      else perms.addWorkspace(s.path)
+    }
+    return true
   }
 }

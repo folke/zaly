@@ -692,6 +692,7 @@ export class Agent extends Emitter<AgentEvents> {
     if (r.verdict === "allow") return
     if (r.verdict === "ask" && this.#opts.allow) {
       const ok = await this.#opts.allow({
+        ask: r.ask,
         input,
         reason: r.reason,
         scope,

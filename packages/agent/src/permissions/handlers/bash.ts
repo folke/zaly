@@ -27,7 +27,11 @@ export const bashHandler: PermissionHandler<"bash"> = {
   validate(input, ctx): CheckResult {
     const parsed = parseBash(input)
     if (!parsed.ok) {
-      return { reason: parsed.reason, verdict: "ask" }
+      return {
+        ask: `Allow this bash command? (${parsed.reason})`,
+        reason: parsed.reason,
+        verdict: "ask",
+      }
     }
 
     let verdict: Verdict = "allow"
@@ -40,11 +44,19 @@ export const bashHandler: PermissionHandler<"bash"> = {
       // mean exactly that instead of degrading to an unimplemented ask prompt.
       const cmdVerdict = resolveRules(ctx.rules, seg) ?? "ask"
       if (seg.hasCommandSubst && cmdVerdict !== "allow") {
-        return { reason: "command substitution not allowed", verdict: "ask" }
+        return {
+          ask: `Allow command substitution in \`${seg.cmd}\`?`,
+          reason: "command substitution not allowed",
+          verdict: "ask",
+        }
       }
       const spec = TOOLS[seg.cmd]
       if (spec?.unsafe?.(seg.args) && cmdVerdict !== "allow") {
-        return { reason: `${seg.cmd}: invocation mode not safely modelled`, verdict: "ask" }
+        return {
+          ask: `Allow invocation of \`${seg.cmd}\`? (unsafe)`,
+          reason: `${seg.cmd}: invocation mode not safely modelled`,
+          verdict: "ask",
+        }
       }
 
       let segVerdict: Verdict = cmdVerdict
@@ -92,6 +104,7 @@ export const bashHandler: PermissionHandler<"bash"> = {
     return verdict === "allow"
       ? { verdict: "allow" }
       : {
+          ask: `Allow this bash command?`,
           reason: reason ?? "no rule matched",
           suggestions: suggestions.length > 0 ? suggestions : undefined,
           verdict,

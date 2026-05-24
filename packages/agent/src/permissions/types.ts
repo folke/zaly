@@ -40,12 +40,18 @@ export type Suggestion =
 export type CheckResult =
   | { verdict: "allow" }
   | {
-      verdict: Exclude<Verdict, "allow">
+      verdict: "deny"
       reason: string
       /** Optional hints for the prompt UI. Each suggestion describes a
        *  pattern/path that would have matched the input; the UI offers
        *  polarity buttons ("allow once" / "allow always" / "deny always")
        *  and applies the user's choice via the manager. */
+      suggestions?: Suggestion[]
+    }
+  | {
+      verdict: "ask"
+      reason: string
+      ask: string
       suggestions?: Suggestion[]
     }
 

@@ -46,10 +46,10 @@ describe("PermissionManager — workspaces", () => {
 })
 
 describe("PermissionManager — rules", () => {
-  test("addRule appends to the rule list", () => {
-    const m = new PermissionManager({ cwd })
+  test("addRule prepends to the rule list", () => {
+    const m = new PermissionManager({ cwd, rules: [{ pattern: "*", policy: "ask", scope: "bash" }] })
     m.addRule({ pattern: "ls", policy: "allow", scope: "bash" })
-    expect(m.rules.find((r) => r.pattern === "ls")).toBeDefined()
+    expect(m.rules[0]).toMatchObject({ pattern: "ls", policy: "allow", scope: "bash" })
   })
 
   test("invalidRules surfaces rules without a registered handler", () => {
