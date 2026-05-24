@@ -12,6 +12,7 @@ export interface OverlayState {
   /** Higher zIndex paints on top. Default: 0. */
   zIndex?: number
   verticalAnchor?: "top" | "center" | "bottom"
+  relative?: "screen" | "ui" | "stream"
 }
 
 export type Overlay = Box<OverlayState>

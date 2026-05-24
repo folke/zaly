@@ -56,11 +56,12 @@ export const autocompleteOverlay = (props: { composer: Ref<Input>; actions: Acti
   return overlay(
     {
       padding: [0, 1],
+      relative: "ui",
       style: "ui",
       verticalAnchor: "bottom",
       visible,
       x: 0,
-      y: -4,
+      y: 1,
     },
     divider({ style: "accent" }),
     ac

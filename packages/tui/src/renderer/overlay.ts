@@ -116,11 +116,25 @@ export class OverlaySurface extends Surface {
         // overlay's own state to size correctly.
         const rows = await o.render(ctx)
         let x = o.state.x
-        const a = o.state.verticalAnchor ?? "top"
         let y = o.state.y
-        if (y < 0) y = this.deps.terminal.rows + y // Allow negative y to position relative to scrollBottom
         if (x < 0) x = this.deps.terminal.cols + x // Allow negative x to position relative to right edge
-        y = a === "bottom" ? y - rows.length + 1 : y
+
+        let refY = 1
+        let refHeight = this.deps.terminal.rows
+
+        if (o.state.relative === "ui") {
+          refHeight = this.deps.ui.height
+          refY = this.deps.terminal.footerTop
+        } else if (o.state.relative === "stream") {
+          refHeight = this.deps.stream.liveHeight
+        }
+
+        const anchorY = y < 0 ? refY + refHeight + y : refY + y - 1
+
+        const a = o.state.verticalAnchor ?? "top"
+        if (a === "bottom") y = anchorY - rows.length + 1
+        else if (a === "center") y = anchorY - Math.floor(rows.length / 2)
+        else y = anchorY
         painted.push({ rows, x, y })
       })
     )
