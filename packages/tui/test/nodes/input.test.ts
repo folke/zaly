@@ -164,6 +164,25 @@ describe("Input.actions — word deletion", () => {
     expect(n.state.value).toBe("hello")
     expect(n.state.cursor).toBe(0)
   })
+
+  test("deleteCharBack removes a staged marker atomically", () => {
+    const n = input()
+    n.paste("a\nb\nc\nd\ne\nf")
+    const value = n.state.value ?? ""
+    n.state.cursor = value.length
+    n.actions["input.deleteCharBack"]()
+    expect(n.state.value).toBe("")
+    expect(n.state.cursor).toBe(0)
+  })
+
+  test("deleteCharForward removes a staged marker atomically", () => {
+    const n = input({ value: "x", cursor: 1 })
+    n.paste("a\nb\nc\nd\ne\nf")
+    n.state.cursor = 1
+    n.actions["input.deleteCharForward"]()
+    expect(n.state.value).toBe("x")
+    expect(n.state.cursor).toBe(1)
+  })
 })
 
 describe("Input.actions — submit + newline", () => {

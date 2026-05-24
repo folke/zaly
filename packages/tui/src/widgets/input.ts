@@ -5,8 +5,9 @@ import type { StyleState } from "../core/state.ts"
 import type { ActionMap } from "../input/actions.ts"
 import type { RoutedKey } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
+import type { StyleBuilder } from "../style/builder.ts"
 
-import { stringWidth } from "@zaly/shared/ansi"
+import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
 import { fileDetect } from "@zaly/shared/detect"
 import { basename } from "pathe"
 import { Node } from "../core/node.ts"
@@ -84,6 +85,7 @@ export class Input extends Node<InputState, InputEvents> {
   #focused = false
   #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
   canAttach?: (file: InputAttachment) => boolean
+  format?: (value: string, ctx: { style: StyleBuilder }) => string
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -126,12 +128,16 @@ export class Input extends Node<InputState, InputEvents> {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c === 0) return
+      const marker = this.#markerRange(c, "back")
+      if (marker) return this.#deleteRange(marker.start, marker.end)
       this.state.set({ cursor: c - 1, value: v.slice(0, c - 1) + v.slice(c) })
     },
     "input.deleteCharForward": (): void => {
       const v = this.state.value ?? ""
       const c = this.state.cursor ?? 0
       if (c >= v.length) return
+      const marker = this.#markerRange(c, "forward")
+      if (marker) return this.#deleteRange(marker.start, marker.end)
       this.state.value = v.slice(0, c) + v.slice(c + 1)
     },
     "input.deleteWordBack": (): void => {
@@ -290,6 +296,22 @@ export class Input extends Node<InputState, InputEvents> {
     return { attachments: atts, value }
   }
 
+  #deleteRange(start: number, end: number): void {
+    const v = this.state.value ?? ""
+    this.state.set({ cursor: start, value: v.slice(0, start) + v.slice(end) })
+  }
+
+  #markerRange(pos: number, dir: "back" | "forward"): { start: number; end: number } | undefined {
+    const value = this.state.value ?? ""
+    for (const att of this.#staged) {
+      const start = value.indexOf(att.marker)
+      if (start === -1) continue
+      const end = start + att.marker.length
+      if (dir === "back" && pos > start && pos <= end) return { end, start }
+      if (dir === "forward" && pos >= start && pos < end) return { end, start }
+    }
+  }
+
   // Fallback path for anything the router couldn't resolve to a named
   // action: printable characters go straight into the value. Any other
   // unbound key (f7, unclaimed ctrl-combos, etc.) bubbles untouched.
@@ -318,20 +340,21 @@ export class Input extends Node<InputState, InputEvents> {
           ? ctx.style.inverse(" ") + ctx.style.quiet(` ${placeholder}`)
           : ctx.style.quiet(placeholder)
       }
-    } else if (focused) {
-      // Inverse-video cursor overlaid on the char at `cursor`; on trailing
-      // cursors (past the last char) we overlay a space so it's visible.
-      const head = value.slice(0, cursor)
-      const at = value[cursor] ?? " "
-      const tail = value.slice(cursor + 1)
-      content = head + ctx.style.inverse(at) + tail
     } else {
       content = value
-    }
-
-    for (const att of this.#staged) {
-      if (!content.includes(att.marker)) continue
-      content = content.replace(att.marker, ctx.style.primary(att.marker))
+      for (const att of this.#staged) {
+        if (!content.includes(att.marker)) continue
+        content = content.replace(att.marker, ctx.style.accent(att.marker))
+      }
+      content = this.format ? this.format(content, { style: ctx.style }) : content
+      if (focused) {
+        // Inverse-video cursor overlaid on the char at `cursor`; on trailing
+        // cursors (past the last char) we overlay a space so it's visible.
+        const head = sliceAnsi(content, 0, cursor)
+        const at = sliceAnsi(content, cursor, cursor + 1) || " "
+        const tail = sliceAnsi(content, cursor + 1)
+        content = head + ctx.style.inverse(at) + tail
+      }
     }
 
     return formatText(content, {

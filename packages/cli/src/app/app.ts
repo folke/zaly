@@ -117,6 +117,10 @@ export class App {
 
     this.#input = composer()
     this.#input.canAttach = (att) => canAttach(att, this.#agent?.model)
+    this.#input.format = (text, ctx) =>
+      text
+        .replace(/^(\/\w+)/, (_, slashcmd) => ctx.style.primary(slashcmd))
+        .replace(/(@\S+)/g, (_, file) => ctx.style.mdLink(file))
 
     registerUiActions({
       app: this,
