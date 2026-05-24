@@ -73,7 +73,7 @@ export class OverlaySurface extends Surface {
     return this
   }
 
-  open(overlay: () => Overlay): Overlay {
+  open<T extends Overlay = Overlay>(overlay: () => T): T {
     return this.add(overlay).show()
   }
 

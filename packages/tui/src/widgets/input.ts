@@ -26,6 +26,8 @@ export interface InputState extends StyleState {
   /** Threshold for showing pasted content as an attachment rather than raw text */
   pasteMaxLines?: number
   pasteMaxChars?: number
+  canAttach?: (file: InputAttachment) => boolean
+  format?: (value: string, ctx: { style: StyleBuilder }) => string
 }
 
 const PASTE_MAX_LINES = 5
@@ -84,8 +86,6 @@ export class Input extends Node<InputState, InputEvents> {
   override readonly type = Input.type
   #focused = false
   #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
-  canAttach?: (file: InputAttachment) => boolean
-  format?: (value: string, ctx: { style: StyleBuilder }) => string
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -241,7 +241,7 @@ export class Input extends Node<InputState, InputEvents> {
   }
 
   attach(att: InputAttachment | Paste): void {
-    if (att.type !== "paste" && this.canAttach?.(att) === false) {
+    if (att.type !== "paste" && this.state.canAttach?.(att) === false) {
       // Caller doesn't want this attachment (e.g. model doesn't support it) — fall
       // back to pasting the path as plain text
       return this.insert(att.path)
@@ -346,7 +346,7 @@ export class Input extends Node<InputState, InputEvents> {
         if (!content.includes(att.marker)) continue
         content = content.replace(att.marker, ctx.style.accent(att.marker))
       }
-      content = this.format ? this.format(content, { style: ctx.style }) : content
+      content = this.state.format ? this.state.format(content, { style: ctx.style }) : content
       if (focused) {
         // Inverse-video cursor overlaid on the char at `cursor`; on trailing
         // cursors (past the last char) we overlay a space so it's visible.

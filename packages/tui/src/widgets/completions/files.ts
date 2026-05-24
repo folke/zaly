@@ -58,7 +58,7 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource {
       // Dirs keep the popup open (trigger still matches, user can
       // drill in). Files close it — a trailing space makes `#detect`
       // see whitespace in the query and bail.
-      const v = item.value ?? ""
+      const v = item.value
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
     async complete(query: string, match: Matcher): Promise<MenuItem[]> {

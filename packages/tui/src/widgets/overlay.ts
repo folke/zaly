@@ -15,10 +15,11 @@ export interface OverlayState {
   relative?: "screen" | "ui" | "stream"
 }
 
-export type Overlay = Box<OverlayState>
+export type Overlay<T extends Node[] = Node[]> = Box<OverlayState> & { children: T }
 
-type Child = Node | false | null | undefined
-
-export function overlay(state: State<OverlayState & BoxStyle>, ...children: Child[]): Overlay {
-  return box({ visible: false, ...state }, ...children) as Overlay
+export function overlay<T extends Node[] = Node[]>(
+  state: State<OverlayState & BoxStyle>,
+  ...children: T
+): Overlay<T> {
+  return box({ visible: false, ...state }, ...children) as Overlay<T>
 }

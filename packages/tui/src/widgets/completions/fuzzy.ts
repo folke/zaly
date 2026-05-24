@@ -28,30 +28,57 @@ export function rank<T>(items: Iterable<T>, score: (item: T) => number, limit?: 
  *   - each matched char contributes 1
  *   - consecutive matches add a run bonus (grows quadratically inside
  *     the run) so "abc" in "abcxyz" beats "a-b-c"
- *   - a match at index 0 gets a prefix bonus so "wid" ranks "widget.ts"
- *     above "some-widget.ts"
+ *   - earlier matches score higher, not just exact prefixes
+ *   - matches at path / word boundaries get a bonus
+ *   - exact substrings get an extra early-match bonus
+ *   - shorter targets get a small tie-break bonus
  *   - case-insensitive throughout
  */
 export function fuzzyScore(query: string, target: string): number {
+  query = query.trim()
   if (query === "") return 1
+
+  const parts = query.split(/\s+/).filter((p) => p !== "")
+  if (parts.length > 1) {
+    let ret = 0
+    for (const part of parts) {
+      const s = fuzzyScore(part, target)
+      if (s === 0) return 0
+      ret += s
+    }
+    return ret
+  }
+
   const q = query.toLowerCase()
   const t = target.toLowerCase()
   let qi = 0
   let score = 0
   let run = 0
   let firstMatch = -1
+
+  const exact = t.indexOf(q)
+  if (exact !== -1) score += 50 / (exact + 1)
+
   for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-    if (t[ti] === q[qi]) {
-      if (firstMatch === -1) firstMatch = ti
-      run++
-      // Base point + run bonus (grows so long runs pull ahead).
-      score += 1 + run * run
-      qi++
-    } else {
+    if (t[ti] !== q[qi]) {
       run = 0
+      continue
     }
+
+    if (firstMatch === -1) firstMatch = ti
+    run++
+    score += 1 + run * run
+    score += 20 / (ti + 1)
+    if (isBoundary(t, ti)) score += 8
+    qi++
   }
   if (qi < q.length) return 0
-  if (firstMatch === 0) score += 10
+
+  score += 30 / (firstMatch + 1)
+  score += Math.max(0, 10 - (target.length - query.length) / 4)
   return score
+}
+
+function isBoundary(target: string, index: number): boolean {
+  return index === 0 || /[/_.\-\s]/.test(target[index - 1])
 }

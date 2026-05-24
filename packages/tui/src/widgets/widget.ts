@@ -4,23 +4,6 @@ import { createNode } from "../core/reactive.ts"
 
 export type Props = Record<string, any>
 
-/** A widget is a `(props) → Node` factory. Same shape as `box`/`text`
- *  themselves — props in, Node out, runs once at construction.
- *
- *  The props argument is optional when every field of `P` is optional
- *  (or `P` is `{}` outright), so `noPropsWidget()` doesn't force a
- *  `noPropsWidget({})` call site. The `{} extends P` check is the
- *  canonical TS idiom for "P has no required fields". */
-export type Widget<
-  P extends Props = {},
-  N extends Node = Node,
-  C extends Node = never,
-> = {} extends P ? (props?: P, ...children: C[]) => N : (props: P, ...children: C[]) => N
-
-export type WidgetFactory<S extends Props = {}, N extends Node = Node, C extends Node = never> = (
-  fn: Widget<S, N, C>
-) => Widget<S, N, C>
-
 /**
  * Type helper for declaring widgets — runtime identity, just `return fn`.
  *
@@ -53,12 +36,6 @@ export type WidgetFactory<S extends Props = {}, N extends Node = Node, C extends
  *     resolved state is optional (so bare `widget()` works).
  */
 
-export function widget<S extends Props, N extends Node = Node, C extends Node = never>(
-  fn: Widget<S, N, C>
-): Widget<S, N, C> {
-  return ((props?: S, ...children: C[]) => createNode(() => fn(props as S, ...children))) as Widget<
-    S,
-    N,
-    C
-  >
+export function widget<T extends (...args: any[]) => Node>(fn: T): T {
+  return ((...args: Parameters<T>) => createNode(() => fn(...args))) as T
 }

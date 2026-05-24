@@ -54,7 +54,7 @@ describe("filesSource", () => {
       filter: (ent) => ent.isDirectory(),
     })
     const items = await src.complete("", match(""))
-    expect(items.every((i) => (i.value ?? "").endsWith("/"))).toBe(true)
+    expect(items.every((i) => i.value.endsWith("/"))).toBe(true)
   })
 
   test("resolves nested paths via trailing-slash segments", async () => {

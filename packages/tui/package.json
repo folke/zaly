@@ -111,17 +111,6 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "ansi-regex": "6.2.2",
-    "ansi-styles": "6.2.3",
-    "get-east-asian-width": "1.5.0",
-    "is-fullwidth-code-point": "5.1.0",
-    "slice-ansi": "9.0.0",
-    "string-width": [
-      "8.2.0",
-      "8.2.1"
-    ],
-    "strip-ansi": "7.2.0",
-    "typia": "12.1.1",
-    "wrap-ansi": "10.0.0"
+    "typia": "12.1.1"
   }
 }

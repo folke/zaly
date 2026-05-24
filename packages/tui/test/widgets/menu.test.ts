@@ -188,18 +188,17 @@ describe("menu", () => {
       tag: string
     }
     const m = menu<Row>({
-      items: [{ tag: "alpha" }, { tag: "beta" }, { tag: "gamma" }],
+      items: [
+        { tag: "alpha", value: "alpha" },
+        { tag: "beta", value: "beta" },
+        { tag: "gamma", value: "gamma" },
+      ],
       render: (it, active) => `${active ? "→" : " "} ${it.tag}`,
     })
     const rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows[0]).toMatch(/^→ alpha/)
     expect(rows[1]).toMatch(/^\s+beta/)
     expect(rows[2]).toMatch(/^\s+gamma/)
-  })
-
-  test("default render throws when items carry neither label nor value", async () => {
-    const m = menu({ items: [{} as unknown as { value: string }] })
-    await expect(m.render(ctx)).rejects.toThrow(/label.*value.*render/)
   })
 
   test("select on empty menu does not emit", () => {

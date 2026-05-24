@@ -1,10 +1,11 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { Ref } from "../core/reactive.ts"
+import type { Reactive, Ref } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
 import type { MenuItem, MenuRender } from "./menu.ts"
 
 import { Node } from "../core/node.ts"
+import { effect, unwrap } from "../core/reactive.ts"
 import { fuzzyScore } from "./completions/fuzzy.ts"
 import { Input } from "./input.ts"
 import { Menu } from "./menu.ts"
@@ -66,6 +67,7 @@ export interface AutocompleteOptions {
   sources: Record<string, CompletionSource<any>>
   /** Cap on rows the popup shows at once. Default: 8. */
   maxHeight?: number
+  enabled?: Reactive<boolean>
 }
 
 export interface AutocompleteEvents extends BaseEvents {
@@ -132,10 +134,12 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
    *  writing stale items. */
   #refreshSeq = 0
   #signal?: AbortSignal
+  #enabled?: Reactive<boolean>
 
   constructor(opts: AutocompleteOptions) {
     super({ visible: false })
     this.#inputRef = opts.input
+    this.#enabled = opts.enabled
     this.#sources = opts.sources
 
     this.menu = new Menu({
@@ -178,6 +182,18 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       }
     })
     this.on("unmount", () => ctrl?.abort())
+
+    effect(() => {
+      if (!this.enabled) {
+        this.#close()
+      } else {
+        void this.#refresh()
+      }
+    })
+  }
+
+  get enabled(): boolean {
+    return unwrap(this.#enabled ?? true)
   }
 
   /** Whether the popup is currently showing. */
@@ -203,6 +219,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
 
   async #refresh(): Promise<void> {
     if (!this.#input) return
+    if (!this.enabled) return this.#close()
     const seq = ++this.#refreshSeq
     const match = this.#detect()
     if (match === undefined) {

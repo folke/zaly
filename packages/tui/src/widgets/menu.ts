@@ -15,8 +15,8 @@ import { resolveSize } from "../layout/size.ts"
  *  plus their own `render`. `value` is what `Autocomplete`'s default
  *  `accept` inserts; `label` is what the default renderer shows
  *  (falling back to `value`); `hint` is a dim right-column description. */
-export interface MenuItem {
-  value?: string
+export interface MenuItem<T = string> {
+  value: T
   label?: string
   hint?: string
 }
@@ -33,7 +33,7 @@ export type MenuRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string
 export interface MenuState<T = MenuItem> extends Style {
   /** Items to show. Accepts a signal accessor so the list can be
    *  driven from reactive state (filtered results, search, etc.). */
-  items: Reactive<T[]>
+  items: Reactive<readonly T[]>
   /** Index of the highlighted row. Defaults to 0; clamped on render. */
   active?: number
   /** Max item rows visible at once. The counter (when shown) is an
@@ -140,7 +140,7 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
     this.invalidate()
   }
 
-  #items(): T[] {
+  #items(): readonly T[] {
     return unwrap(this.state.items)
   }
 
@@ -218,9 +218,6 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
       const spacer = " ".repeat(gap)
       return (item: T): string => {
         const mi = item as unknown as MenuItem
-        if (mi.label === undefined && mi.value === undefined) {
-          throw new Error("Menu: items without `label` or `value` require a custom `render`")
-        }
         const labelCell = fit(defaultLabel(item), labelWidth)
         const hintCell = fit(mi.hint ?? "", hintAvail)
         return ctx.style.add("menuLabel")(labelCell) + spacer + ctx.style.add("menuHint")(hintCell)
@@ -257,8 +254,8 @@ export class Menu<T extends MenuItem = MenuItem> extends Node<MenuState<T>, Menu
 
 function defaultLabel(item: unknown): string {
   if (typeof item === "object" && item !== null) {
-    const mi = item as MenuItem
-    return mi.label ?? mi.value ?? ""
+    const mi = item as MenuItem<unknown>
+    return mi.label ?? String(mi.value)
   }
   return String(item)
 }
