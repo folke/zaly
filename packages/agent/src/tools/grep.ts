@@ -78,16 +78,20 @@ export const grepTool = defineTool({
     }),
   }),
 
+  async preflight(args, ctx: ToolContext<GrepToolMeta>) {
+    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
+    await ctx.need?.("read", cwd)
+
+    const paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
+    await Promise.all(paths.map((path) => Promise.resolve(ctx.need?.("read", path))))
+  },
+
   async call(args, ctx: ToolContext<GrepToolMeta>): Promise<(MetaPart | TextPart)[]> {
     const command = resolveGrep()
     if (!command) throw new AiError({ code: "MISSING_TOOL", message: "grep requires rg or grep" })
 
     const cwd = normPath(ctx.cwd, args.cwd ?? ".")
-    await ctx.need?.("read", cwd)
-
-    let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
-    await Promise.all(paths.map((path) => Promise.resolve(ctx.need?.("read", path))))
-    paths = args.paths?.length ? args.paths : []
+    const paths = args.paths?.length ? args.paths : []
 
     const cmdArgs = buildArgs(command.kind, args, paths)
     const proc = new Spawn(command.cmd, cmdArgs, {

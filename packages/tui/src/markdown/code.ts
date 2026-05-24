@@ -2,7 +2,8 @@ import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { MarkdownCbCtx } from "./callbacks.ts"
 import type { MdCallbacks } from "./types.ts"
 
-import { splitAnsi, stringWidth } from "@zaly/shared/ansi"
+import { stringWidth } from "@zaly/shared/ansi"
+import { formatText } from "../layout/text.ts"
 
 /**
  * Build the `code` callback. The returned closure captures ctx/style/highlighter
@@ -27,7 +28,7 @@ export function createCodeCallback(ctx: MarkdownCbCtx): NonNullable<MdCallbacks[
     // and shiki's per-token colors show through on top of the backdrop.
     const wrap = highlighted === undefined ? s.mdCodeBlock : s.mdCodeBlock.fg("inherit")
     const hpad = 2
-    const lines = ["", ...splitAnsi(body), ""]
+    const lines = formatText(`\n${body}\n`, { width: ctx.width - hpad * 2 })
     const width = Math.min(ctx.width, Math.max(...lines.map(stringWidth)) + hpad * 2)
     // Left-align with a fixed `hpad` of leading whitespace; pad the
     // right to fill the bg out to `width`. Centering would push short

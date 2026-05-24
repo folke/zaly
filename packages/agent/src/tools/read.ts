@@ -95,9 +95,13 @@ export function createReadTool(init: ToolInit) {
       }),
     }),
 
-    async call(args, ctx: ToolContext<ReadToolMeta>): Promise<Content> {
+    async preflight(args, ctx: ToolContext<ReadToolMeta>) {
       const path = normPath(ctx.cwd, args.path)
       await ctx.need?.("read", path)
+    },
+
+    async call(args, ctx: ToolContext<ReadToolMeta>): Promise<Content> {
+      const path = normPath(ctx.cwd, args.path)
 
       const fileStat = await stat(path).catch((error: unknown) => {
         throw new AiError({

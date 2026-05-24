@@ -7,7 +7,7 @@
     "fg": "#589ed7"
   },
   "code": {
-    "bg": "#1e2030"
+    "bg": "#1e2030-1"
   },
   "comment": {
     "fg": "#636da6",
@@ -35,7 +35,7 @@
     "fg": "#82aaff"
   },
   "mdCodeBlock": {
-    "bg": "#1e2030",
+    "bg": "#1e2030-1",
     "fg": "#c8d3f5"
   },
   "mdHeading": {

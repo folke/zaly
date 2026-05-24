@@ -52,12 +52,16 @@ export const writeTool = defineTool({
     content: Type.String({ description: "File contents to write, verbatim." }),
   }),
 
+  async preflight(args, ctx: ToolContext<WriteToolMeta>) {
+    const path = normPath(ctx.cwd, args.path)
+    await ctx.need?.("write", path)
+  },
+
   async call(
     args,
     ctx: ToolContext<WriteToolMeta>
   ): Promise<{ ok: true; path: string; bytes: number; lines: number }> {
     const path = normPath(ctx.cwd, args.path)
-    await ctx.need?.("write", path)
 
     // Existing file → freshness required. New file → no requirement.
     if (safeStat(path)?.isFile()) assertFresh(path, ctx)

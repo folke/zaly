@@ -352,6 +352,18 @@ export class Tasks extends Emitter<TasksEvents> {
         continue
       }
 
+      if (this.#needsPreflight(tool, ctx)) {
+        // Preflight is intentionally sequential: permission prompts should
+        // appear one at a time and should not register/background a task while
+        // waiting for the user's answer.
+        // oxlint-disable-next-line no-await-in-loop
+        const preflight = await this.#preflight(tool, call, ctx)
+        if (preflight) {
+          tasks.push(this.#startSyncResult(call, preflight, round))
+          continue
+        }
+      }
+
       const task = this.#start({ call, ctxBase: ctx, round, tool })
       tasks.push(task)
       // If this call promoted to a long-running task and `parallel: false`,
@@ -469,6 +481,29 @@ export class Tasks extends Emitter<TasksEvents> {
     return task
   }
 
+  #needsPreflight(tool: Tool, ctx: ToolContext): boolean {
+    return ctx.need !== undefined || tool.preflight !== undefined
+  }
+
+  /** Run schema validation and semantic/tool permission checks before a
+   *  public task is allocated. Returns a formatted tool error when the
+   *  call should short-circuit, otherwise undefined. */
+  async #preflight(
+    tool: Tool,
+    call: ToolCallPart,
+    ctxBase: ToolContext
+  ): Promise<ToolResult | undefined> {
+    const ctx: ToolContext = { ...ctxBase, tasks: this }
+    let params: unknown
+    try {
+      params = await tool.validator.validateParams(call.params)
+      await ctx.need?.("tool", tool.name)
+      await tool.preflight?.(params, ctx)
+    } catch (error) {
+      return toErrorResult(error)
+    }
+  }
+
   /** Validate / call / wire up completion for an existing task record.
    *  Used both for fresh tasks (`#start`) and pending-becoming-ready
    *  (`#startReadyDependents`). The task's id and registry entry are
@@ -486,14 +521,7 @@ export class Tasks extends Emitter<TasksEvents> {
     const ctx: ToolContext = { ...ctxBase, tasks: this }
     task.status = "running"
 
-    // Tool-scope permission gate. Runs before validate/call so a denied
-    // tool name short-circuits cleanly without touching tool-defined
-    // params. Tools may layer richer per-input checks (`bash(command)`,
-    // `read(path)`, …) inside their own `call`. No-op when ctx.need is
-    // unset (eval / direct runTool harnesses).
-    const dispatchPromise = (ctx.need ? ctx.need("tool", tool.name) : Promise.resolve()).then(() =>
-      runTool(tool, call.params, ctx, { streaming: true })
-    )
+    const dispatchPromise = runTool(tool, call.params, ctx, { preflight: false, streaming: true })
 
     void dispatchPromise.then(
       (settled) => {
@@ -546,16 +574,34 @@ export class Tasks extends Emitter<TasksEvents> {
         )
         continue
       }
-      // Restart as a regular task. The round that originally registered
-      // this task has already returned its placeholder, so whatever
-      // happens now flows through normal `task-done`.
-      const pending = t.pending
-      if (!pending) continue
-      t.pending = undefined
-      t.waitingFor = undefined
-      t.ownerRound = undefined // round has ended; future done() fires the event
-      this.#dispatch(t, pending.tool, pending.call, pending.ctx)
+      void this.#startPending(t)
     }
+  }
+
+  async #startPending(task: InternalTask): Promise<void> {
+    const pending = task.pending
+    if (!pending) return
+    if (!this.#needsPreflight(pending.tool, pending.ctx)) {
+      task.pending = undefined
+      task.waitingFor = undefined
+      task.ownerRound = undefined
+      this.#dispatch(task, pending.tool, pending.call, pending.ctx)
+      return
+    }
+
+    const preflight = await this.#preflight(pending.tool, pending.call, pending.ctx)
+    if (preflight) {
+      this.done(task.id, preflight)
+      return
+    }
+
+    // Restart as a regular task. The round that originally registered
+    // this task has already returned its placeholder, so whatever happens
+    // now flows through normal `task-done`.
+    task.pending = undefined
+    task.waitingFor = undefined
+    task.ownerRound = undefined
+    this.#dispatch(task, pending.tool, pending.call, pending.ctx)
   }
 
   /** Build a `ToolResultPart` for a task at round-end. Done tasks pass

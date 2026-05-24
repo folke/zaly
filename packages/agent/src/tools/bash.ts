@@ -79,11 +79,14 @@ export const bashTool = defineTool({
     }),
   }),
 
-  async call(args, ctx): Promise<Streamable> {
+  async preflight(args, ctx) {
     // Permission gate. The bash handler validates the parsed command
     // (segments, redirects, sensitive paths) and composes file-scope
     // checks for any redirect targets via `ctx.validate`.
     await ctx.need?.("bash", args.command)
+  },
+
+  async call(args, ctx): Promise<Streamable> {
     const cwd = normPath(ctx.cwd)
     const timeout = args.timeout
     const startedAt = Date.now()

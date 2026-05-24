@@ -58,13 +58,17 @@ export const editTool = defineTool({
     ),
   }),
 
+  async preflight(args, ctx: ToolContext<EditToolMeta>) {
+    const path = normPath(ctx.cwd, args.path)
+    // Edits ride the `write` scope — they're mutations.
+    await ctx.need?.("write", path)
+  },
+
   async call(
     args,
     ctx: ToolContext<EditToolMeta>
   ): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
     const path = normPath(ctx.cwd, args.path)
-    // Edits ride the `write` scope — they're mutations.
-    await ctx.need?.("write", path)
 
     // Edit always requires freshness — the operation is content-aware,
     // so the model must have seen the current bytes.

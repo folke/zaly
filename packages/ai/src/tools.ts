@@ -51,13 +51,14 @@ export function defineTool<
 >(def: {
   desc?: string
   call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>
+  preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>
   name: string
   params: Params
   parallel?: boolean
   result?: Result
 }): Tool<Static<Params>, Static<Result>, Meta> {
   // oxlint-disable-next-line sort-keys
-  return {
+  const tool = {
     name: def.name,
     desc: def.desc,
     params: def.params,
@@ -66,6 +67,8 @@ export function defineTool<
     call: async (args, ctx) => def.call(args, ctx),
     validator: new Validator(def.params, def.result),
   } as Tool<Static<Params>, Static<Result>, Meta>
+  if (def.preflight) tool.preflight = async (args, ctx) => def.preflight?.(args, ctx)
+  return tool
 }
 
 export function pairedToolIds(messages: readonly Message[]) {
@@ -200,13 +203,13 @@ export async function runTool<I, O>(
   tool: Tool<I, O>,
   rawArgs: unknown,
   ctx: ToolContext,
-  opts: { streaming: true }
+  opts: { preflight?: boolean; streaming: true }
 ): Promise<ToolResult | Streamable>
 export async function runTool<I, O>(
   tool: Tool<I, O>,
   rawArgs: unknown,
   ctx: ToolContext,
-  opts?: { streaming?: boolean }
+  opts?: { preflight?: boolean; streaming?: boolean }
 ): Promise<ToolResult | Streamable> {
   ctx = { ...ctx, meta: {} }
   const streaming = opts?.streaming ?? false
@@ -216,6 +219,14 @@ export async function runTool<I, O>(
     params = await tool.validator.validateParams(rawArgs)
   } catch (error) {
     return toErrorResult(error)
+  }
+
+  if (opts?.preflight !== false) {
+    try {
+      await tool.preflight?.(params, ctx)
+    } catch (error) {
+      return toErrorResult(error)
+    }
   }
 
   let result: Awaited<O>

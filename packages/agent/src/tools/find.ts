@@ -70,12 +70,16 @@ export const findTool = defineTool({
     }),
   }),
 
-  async call(args, ctx: ToolContext<FindToolMeta>): Promise<(MetaPart | TextPart)[]> {
+  async preflight(args, ctx: ToolContext<FindToolMeta>) {
     const cwd = normPath(ctx.cwd, args.cwd ?? ".")
     await ctx.need?.("read", cwd)
-    let paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
+    const paths = (args.paths?.length ? args.paths : ["."]).map((p) => normPath(cwd, p))
     await Promise.all(paths.map((path) => Promise.resolve(ctx.need?.("read", path))))
-    paths = args.paths?.length ? args.paths : []
+  },
+
+  async call(args, ctx: ToolContext<FindToolMeta>): Promise<(MetaPart | TextPart)[]> {
+    const cwd = normPath(ctx.cwd, args.cwd ?? ".")
+    const paths = args.paths?.length ? args.paths : []
 
     const command = resolveFinder(args.type)
     if (!command) {
