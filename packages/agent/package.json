@@ -65,6 +65,6 @@
   "inlinedDependencies": {
     "ignore": "7.0.5",
     "jsonpath-plus": "10.4.0",
-    "shell-quote": "1.8.3"
+    "shell-quote": "1.8.4"
   }
 }

@@ -1,53 +1,106 @@
-import type { Agent } from "@zaly/agent"
-import type { OAuthProvider } from "@zaly/ai"
-import type { Input, Renderer } from "@zaly/tui"
+import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
+import type { ActionInfo, Overlay, PickerItem, Text } from "@zaly/tui"
 import type { App } from "./app.ts"
 
-import { prettyPath } from "@zaly/shared"
+import { formatNumber, prettyPath } from "@zaly/shared"
+import { REASONING_EFFORTS } from "../context.ts"
+
+export type AppAction = keyof ReturnType<typeof appActions>
 
 /**
  * UI-only actions — registered in Phase A (no agent required).
  * Composer state, help overlay toggle, process exit. Each shows up in
  * the help overlay and in `/`-triggered autocomplete.
  */
-export function registerUiActions(opts: {
-  app: App
-  renderer: Renderer
-  composer: Input
-  toggleHelp: () => void
-}): void {
-  const { app, renderer, composer, toggleHelp } = opts
-  let cancel = false
-  renderer.actions.register({
-    "app.cancel": {
-      desc: "cancel current input or exit on second press",
-      fn: () => {
-        if (cancel) app.exit()
-        else {
-          if ((composer.state.value ?? "").length > 0)
-            return composer.state.set({ cursor: 0, value: "" })
-          cancel = true
-          app.notify("Press `Ctrl-C` again to exit.", {
-            level: "warn",
-            onClose: () => (cancel = false),
-            timeout: 500,
+export function appActions({ app }: { app: App }) {
+  return {
+    "agent.effort": {
+      desc: "set the agent's reasoning effort level",
+      fn: async () => {
+        const items: PickerItem<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
+          label: level,
+          value: level,
+        }))
+        const effort = await app.pick({
+          active: items.findIndex((i) => i.value === app.agent.ctx.reasoning),
+          items,
+        })
+        if (effort) app.agent.ctx.reasoning = effort.value
+      },
+      name: "effort",
+    },
+    "agent.model": {
+      desc: "select a model for the agent",
+      fn: async () => {
+        const { listModels, loadModel } = await import("@zaly/ai")
+        const models = await listModels({ auth: true })
+
+        const items: PickerItem[] = []
+        for (const [id, m] of Object.entries(models)) {
+          items.push({
+            hint: [
+              formatNumber(m.limit.context),
+              m.reasoning ? "reasoning" : undefined,
+              ...m.modalities.input.filter((mod) => mod !== "text").toSorted(),
+            ]
+              .filter(Boolean)
+              .join(", "),
+            label: id,
+            value: id,
           })
         }
+        const ret = await app.pick({ items, sort: true })
+        if (ret) app.agent.ctx.model = await loadModel(ret.value)
       },
+      name: "model",
+    },
+    "app.cancel": {
+      desc: "cancel current input or exit on second press",
+      fn: (() => {
+        let exit = false
+        return () => {
+          if (exit) app.exit()
+          else {
+            if (app.input.length > 0) return (app.input = "")
+            exit = true
+            app.notify("Press `Ctrl-C` again to exit.", {
+              level: "warn",
+              onClose: () => (exit = false),
+              timeout: 500,
+            })
+          }
+        }
+      })(),
       hidden: true,
       keys: ["ctrl-c"],
       name: "cancel",
     },
     "app.clear": {
       desc: "clear the composer",
-      fn: () => {
-        composer.state.set({ cursor: 0, value: "" })
-      },
+      fn: () => (app.input = ""),
       name: "clear",
+    },
+    "app.compact": {
+      desc: "summarize older history to free context space",
+      fn: () => {
+        app.ctx.info("Compacting history...\n")
+        void app.agent
+          .compact()
+          .catch((error) => app.ctx.error(`Compaction failed: ${error}\n`))
+          .finally(() => app.ctx.info("Compaction complete.\n"))
+      },
+      name: "compact",
     },
     "app.help": {
       desc: "toggle help overlay",
-      fn: toggleHelp,
+      fn: (() => {
+        let o: Overlay<[Text]> | undefined
+        return async () => {
+          const { helpOverlay } = await import("../widgets/help.ts")
+          o ??= app.renderer.overlay.add(() => helpOverlay({ actions: app.actions }))
+          o.toggle()
+        }
+      })(),
       keys: ["ctrl-h"],
       name: "help",
     },
@@ -55,51 +108,29 @@ export function registerUiActions(opts: {
       desc: "authorize zaly with your ChatGPT (codex) account",
       fn: () => {
         void runCodexLogin().catch((error) => {
-          console.error(
+          app.ctx.error(
             `[login] failed: ${error instanceof Error ? error.message : String(error)}\n`
           )
         })
       },
       name: "login",
     },
-    "global.quit": { keys: [] },
-  })
-}
-
-/**
- * Agent-dependent actions — registered in Phase B once `buildAgent`
- * resolves. Hot-add to the registry: the help overlay subscribes via
- * `actions.onChange` and re-renders as soon as these appear.
- */
-export function registerAgentActions(opts: { renderer: Renderer; agent: Agent }): void {
-  const { renderer, agent } = opts
-  renderer.actions.register({
-    "app.compact": {
-      desc: "summarize older history to free context space",
-      fn: () => {
-        console.info("Compacting history...\n")
-        void agent
-          .compact()
-          .catch((error) => console.error(`Compaction failed: ${error}\n`))
-          .finally(() => console.info("Compaction complete.\n"))
-      },
-      name: "compact",
-    },
     "app.pwd": {
       desc: "print the agent's current working directory",
       fn: () => {
-        const cwd = prettyPath(agent.ctx.cwd, "~")
-        console.info(`Current working directory: \`${cwd}\``)
+        const cwd = prettyPath(app.agent.ctx.cwd, "~")
+        app.ctx.info(`Current working directory: \`${cwd}\``)
       },
       name: "pwd",
     },
     "app.stop": {
       desc: "abort the current run",
-      fn: () => agent.stop(),
+      fn: () => app.agent.stop(),
       keys: ["esc"],
       name: "stop",
     },
-  })
+    "global.quit": { keys: [] },
+  } as const satisfies Record<string, ActionInfo>
 }
 
 /** Drive the codex PKCE login flow with progress messages streamed to

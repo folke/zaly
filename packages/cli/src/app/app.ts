@@ -1,21 +1,18 @@
 import type { Agent } from "@zaly/agent"
-import type { ActionInfo, Input, Renderer } from "@zaly/tui"
+import type { ActionInfo, Actions, Input, PickerItem, PickerOptions, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 import type { NotifProps } from "../widgets/notify.ts"
 
-import { box, createRef, createRenderer, createStore } from "@zaly/tui"
+import { box, createRef, createRenderer, createStore, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
-import { helpOverlay } from "../widgets/help.ts"
 import { Notifier } from "../widgets/notify.ts"
-import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
-import { registerAgentActions, registerUiActions } from "./actions.ts"
+import { appUi, autocompleteOverlay, pickerOverlay } from "../widgets/ui.ts"
+import { appActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
-import { attachmentParts, canAttach } from "./attachments.ts"
 import { replay } from "./replay.ts"
 import { bindStream } from "./stream.ts"
-import { submit } from "./submit.ts"
 
 /**
  * App = the long-lived glue between Agent and Renderer. Startup is
@@ -44,8 +41,48 @@ export class App {
     usage: { input: 0, output: 0 },
   })
 
+  #acEnabled = signal(true)
+
   private constructor(ctx: Context) {
     this.#ctx = ctx
+  }
+
+  get renderer(): Renderer {
+    return this.#renderer
+  }
+
+  get agent(): Agent {
+    if (!this.#agent) throw new Error("Agent not initialized")
+    return this.#agent
+  }
+
+  get state(): AppState {
+    return this.#state
+  }
+
+  get composer(): Input {
+    return this.#input
+  }
+
+  get input() {
+    return this.composer.state.value ?? ""
+  }
+
+  set input(value: string) {
+    this.composer.state.value = value
+  }
+
+  get actions(): Actions {
+    return this.#renderer.actions
+  }
+
+  get ctx(): Context {
+    return this.#ctx
+  }
+
+  /** Whether the agent has finished loading and the app is ready to accept user input. */
+  get ready(): boolean {
+    return this.#agent !== undefined
   }
 
   static async start(cli: Cli): Promise<App> {
@@ -85,14 +122,15 @@ export class App {
       logger: this.#ctx.logger.child("renderer"),
       theme: await this.#ctx.theme(),
     })
+    this.#renderer.actions.register(appActions({ app: this }), { default: false })
 
     const config = await this.#ctx.config()
-    const bindings: Record<string, ActionInfo> = {}
-    for (const [id, pattern] of Object.entries(config.settings.bindings ?? {})) {
+    const keymap: Record<string, ActionInfo> = {}
+    for (const [id, pattern] of Object.entries(config.settings.keymap ?? {})) {
       const keys = typeof pattern === "string" ? [pattern] : pattern
-      bindings[id] = { keys }
+      keymap[id] = { keys }
     }
-    this.#renderer.actions.register(bindings, { default: false })
+    this.#renderer.actions.register(keymap, { default: false })
 
     this.#notifier = new Notifier(this.#renderer.overlay)
 
@@ -103,45 +141,16 @@ export class App {
     await this.#ctx.flush()
     this.#ctx.logger.detach("cli")
 
-    const help = this.#renderer.overlay.add(() => helpOverlay(this.#renderer))
-
     const composer = createRef<Input>()
-
-    this.#renderer.overlay.add(() =>
-      autocompleteOverlay({ actions: this.#renderer.actions, composer })
-    )
-
-    this.#renderer.ui.add(() =>
-      appUi({ actions: this.#renderer.actions, composer, state: this.#state })
-    )
-
+    this.#renderer.ui.add(() => appUi({ app: this, composer }))
     this.#input = composer()
-    this.#input.canAttach = (att) => canAttach(att, this.#agent?.model)
-    this.#input.format = (text, ctx) =>
-      text
-        .replace(/^(\/\w+)/, (_, slashcmd) => ctx.style.primary(slashcmd))
-        .replace(/(@\S+)/g, (_, file) => ctx.style.mdLink(file))
-
-    registerUiActions({
-      app: this,
-      composer: this.#input,
-      renderer: this.#renderer,
-      toggleHelp: () => help.toggle(),
-    })
-
-    // Submit gated on busy — typing is fine during Phase B, but Enter
-    // waits for the agent to be ready.
-    this.#input.on("submit", async ({ value, attachments }) => {
-      const trimmed = value.trim()
-      if (trimmed === "" || !this.#agent) return
-      if (!this.#agent.model) {
-        this.#ctx.error("No active model. Please use `/model` to select a model and try again.")
-        return
-      }
-      const atts = await attachmentParts(attachments)
-      submit(value, atts, this.#agent, this.#renderer)
-      void this.#agent.waitIdle()
-    })
+    this.#renderer.overlay.add(() =>
+      autocompleteOverlay({
+        actions: this.#renderer.actions,
+        composer,
+        enabled: this.#acEnabled.get,
+      })
+    )
   }
 
   notify(msg: string, opts?: NotifProps) {
@@ -172,9 +181,10 @@ export class App {
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
 
     this.#agent = await buildAgent(this.#ctx)
-    const updateModel = () => (this.#state.model = this.#agent?.model)
-    this.#agent.ctx.on("model", updateModel)
-    updateModel()
+    this.#state.model = this.#agent.model
+    this.#state.reasoning = this.#agent.ctx.reasoning
+    this.#agent.ctx.on("model", () => (this.#state.model = this.#agent?.model))
+    this.#agent.ctx.on("reasoning", () => (this.#state.reasoning = this.#agent?.ctx.reasoning))
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }
@@ -182,11 +192,6 @@ export class App {
     wireAgent(this.#agent, this.#state, opts)
 
     bindStream(this.#renderer, this.#agent, opts)
-
-    registerAgentActions({
-      agent: this.#agent,
-      renderer: this.#renderer,
-    })
 
     this.#agent.session.on(
       "compact",
@@ -200,5 +205,33 @@ export class App {
     // #status from here on.
     this.#state.busy = false
     this.#state.status = "ready"
+  }
+
+  async pick<T extends PickerItem = PickerItem>(
+    opts: Omit<PickerOptions<T>, "input">
+  ): Promise<T | undefined> {
+    const res = Promise.withResolvers<T | undefined>()
+    let settled = false
+    this.#input.consume()
+    const node = this.#renderer.overlay.open(() => pickerOverlay({ ...opts, input: this.#input }))
+    this.#acEnabled.set(false)
+    const menu = node.children[1]
+    const ac = new AbortController()
+
+    const done = (value?: T) => {
+      if (settled) return
+      settled = true
+      ac.abort()
+      this.#acEnabled.set(true)
+      this.#input.consume()
+      res.resolve(value)
+      this.#renderer.overlay.close(node)
+    }
+
+    node.once("unmount", () => done(), { signal: ac.signal })
+    menu.once("cancel", () => done(), { signal: ac.signal })
+    menu.once("select", ({ item }) => done(item), { signal: ac.signal })
+
+    return res.promise
   }
 }

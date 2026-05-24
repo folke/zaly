@@ -42,4 +42,5 @@ export type AppState = {
   model?: Model
   status: string
   usage: Usage
+  reasoning?: ReasoningEffort
 }

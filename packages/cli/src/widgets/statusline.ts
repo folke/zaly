@@ -17,7 +17,11 @@ export const statusline = widget((props: AppState) =>
     text(
       ({ style }) => {
         const dot = style.dim("·")
-        const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(props.model?.id ?? "no model")} ${dot} ${style.accent(props.status)}`
+        const reasoning =
+          props.reasoning && props.model?.spec.reasoning
+            ? style.primary(` ∴ ${props.reasoning}`)
+            : ""
+        const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(props.model?.id ?? "no model")}${reasoning} ${dot} ${style.accent(props.status)}`
         const u = props.usage
         const cacheRead = u.cacheRead ?? 0
         const cacheWrite = u.cacheWrite ?? 0

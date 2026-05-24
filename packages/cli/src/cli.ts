@@ -4,11 +4,9 @@ import type { Settings } from "@zaly/config"
 import type { CmdArgs } from "./types.ts"
 
 import { defineCommand } from "citty"
-import { Context } from "./context.ts"
+import { Context, REASONING_EFFORTS } from "./context.ts"
 
 export type CliArgs = CmdArgs<typeof mainCommand>
-
-const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const
 
 /**
  * `Cli` carries parsed args + lazily-resolved config between citty's

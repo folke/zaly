@@ -11,6 +11,7 @@ import { LazyCache } from "@zaly/shared/cache"
 import { BaseLogger, installLogger, Logger } from "@zaly/shared/logger"
 
 type Slots = { config: Config; theme: Theme; console: CliReporter; session: Session }
+export const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const
 
 export class Context extends BaseLogger {
   #flags?: Flags

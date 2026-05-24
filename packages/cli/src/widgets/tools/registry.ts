@@ -1,5 +1,5 @@
 import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Accessor, Widget } from "@zaly/tui"
+import type { Accessor, Node } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared/registry"
 import { widget } from "@zaly/tui"
@@ -31,7 +31,7 @@ export interface ToolResultProps<T extends Tool = Tool> {
   result: Accessor<ToolResult<MetaOf<T>> | undefined>
 }
 
-export type ToolResultRenderer<T extends Tool = Tool> = Widget<ToolResultProps<T>>
+export type ToolResultRenderer<T extends Tool = Tool> = (props: ToolResultProps<T>) => Node
 export type ToolResultLoader = () => ToolResultRenderer
 
 // Loaders are thunks so the registry shape (`(opts) => V`) matches —

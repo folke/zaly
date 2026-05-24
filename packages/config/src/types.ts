@@ -1,7 +1,7 @@
 import type { PermissionPresetName } from "@zaly/agent"
 import type { ReasoningEffort } from "@zaly/ai"
 import type { ProjectPaths } from "@zaly/shared/paths"
-import type { BuiltinAction, KeyPatterns } from "@zaly/tui"
+import type { KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
 
 export type Settings = {
@@ -24,11 +24,11 @@ export type Settings = {
     themes?: string[] | false
     prompts?: string[] | false
   }
-  bindings?: Partial<Record<BuiltinAction, KeyPatterns>>
+  keymap?: Record<string, KeyPatterns>
 }
 
-export type TypiaSettings = Omit<Settings, "bindings"> & {
-  bindings?: Partial<Record<BuiltinAction, string | string[]>>
+export type TypiaSettings = Omit<Settings, "keymap"> & {
+  keymap?: Record<string, string | string[]>
 }
 
 export type SettingsScope = "user" | "workspace" | "project"

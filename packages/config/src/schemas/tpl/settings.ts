@@ -11,11 +11,11 @@ const validator = typia.createAssertEquals<TypiaSettings>()
 
 export function validateSettings(input: unknown): Settings {
   const ret = validator(input)
-  const bindings: Record<string, KeyPatterns> = {}
-  for (const [action, pattern] of Object.entries(ret.bindings ?? {})) {
-    if (typeof pattern === "string") bindings[action] = canonical(pattern)
-    else if (Array.isArray(pattern)) bindings[action] = pattern.map(canonical)
+  const keymap: Record<string, KeyPatterns> = {}
+  for (const [action, pattern] of Object.entries(ret.keymap ?? {})) {
+    if (typeof pattern === "string") keymap[action] = canonical(pattern)
+    else if (Array.isArray(pattern)) keymap[action] = pattern.map(canonical)
     else throw new TypeError(`invalid key pattern for action ${action}`)
   }
-  return { ...ret, bindings }
+  return { ...ret, keymap }
 }
