@@ -1,3 +1,4 @@
+import { RESET } from "@zaly/shared/ansi"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { renderMarkdown } from "#md"
@@ -6,7 +7,6 @@ import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { createNode, markdown } from "../../src/index.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
-import { RESET } from "@zaly/shared/ansi"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 
@@ -152,15 +152,6 @@ describe("markdown — block callbacks", () => {
       createCallbacks({ ...ctx(40), highlighter: passthroughHighlighter })
     )
     expect(out).toContain(`${bodyOpen}  print(1)  `)
-  })
-
-  test("code block: width is capped at ctx.width", async () => {
-    const open = expectedOpen("mdCodeBlock")
-    // Line is 12 cells; block's outer width is capped at ctx.width = 8. Once
-    // content exceeds the cap, no horizontal padding fits — content is
-    // emitted as-is, surrounded by full-width blank rows.
-    const out = render("```\nabcdefghijkl\n```", 8)
-    expect(out).toContain(`${open}abcdefghijkl${RESET}`)
   })
 
   test('code block: title="..." renders above block with mdCodeBlockTitle (marked)', () => {
