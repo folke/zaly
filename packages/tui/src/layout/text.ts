@@ -2,7 +2,15 @@ import type { Layout } from "../core/state.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 
 import { clamp } from "@zaly/shared"
-import { splitAnsi, stringWidth, truncateAnsi, wrapAnsi } from "@zaly/shared/ansi"
+import {
+  sliceAnsi,
+  splitAnsi,
+  stringWidth,
+  stripAnsi,
+  truncateAnsi,
+  wrapAnsi,
+} from "@zaly/shared/ansi"
+import { ansiBg, styleAnsi } from "../style/ansi.ts"
 
 export type WrapMode = "word" | "char" | "none"
 
@@ -10,7 +18,17 @@ const ELLIPSIS = "…"
 
 export function formatText(
   text: string,
-  opts: { wrap?: WrapMode; width: number; style?: StyleBuilder }
+  opts: {
+    wrap?: WrapMode
+    width: number
+    style?: StyleBuilder
+    /** When wrapping, preserve the indentation of the original text. */
+    indent?: boolean
+    /** When wrapping ANSI-styled text, pad wrapped fragments to `width`
+     *  using the background color active at the fragment's last cell.
+     *  Natural lines that already fit are left unchanged. */
+    wrapBg?: boolean
+  }
 ): string[] {
   const mode = opts.wrap ?? "word"
   const lines = splitAnsi(text)
@@ -18,11 +36,41 @@ export function formatText(
   if (mode === "none") ret.push(...lines)
   else {
     for (const line of lines) {
-      const wrapped = splitAnsi(wrapAnsi(line, opts.width, { mode }))
-      // strip single leading space from wrapped lines after the first
+      const sw = stringWidth(line)
+
+      // Fast path for short lines that don't need wrapping
+      if (sw <= opts.width) {
+        ret.push(line)
+        continue
+      }
+
+      const stripped = stripAnsi(line)
+
+      // Long line that ends in (ansi) whitespace, so just strip
+      if (stripped.slice(opts.width).trim() === "") {
+        ret.push(sliceAnsi(line, 0, opts.width))
+        continue
+      }
+
+      const indentWidth = opts.indent ? stringWidth(stripped.match(/^\s*/)?.[0] ?? "") : 0
+      const indent = indentWidth > 0 ? sliceAnsi(line, 0, indentWidth) : ""
+      const bare = indent ? sliceAnsi(line, indentWidth) : line
+      const wrapped = splitAnsi(wrapAnsi(bare, opts.width - indentWidth, { mode }))
+
+      // * strip single leading space from wrapped lines after the first
+      // * preserve indentation when enabled
+      // * pad wrapped lines with bg color if padding is enabled and the line is short
       for (let r = 0; r < wrapped.length; r++) {
-        const row = r > 0 && wrapped[r].startsWith(" ") ? wrapped[r].slice(1) : wrapped[r]
+        let row = r > 0 && wrapped[r].startsWith(" ") ? wrapped[r].slice(1) : wrapped[r]
         if (row === "" && r > 0 && r < wrapped.length - 1) continue
+        if (indent) row = `${indent}${row}`
+        if (opts.wrapBg) {
+          const rowWidth = stringWidth(row)
+          const bg = rowWidth > 0 ? ansiBg(row, rowWidth - 1) : undefined
+          if (bg && rowWidth < opts.width) {
+            row = `${row}${styleAnsi(" ".repeat(opts.width - rowWidth), { bg })}`
+          }
+        }
         ret.push(row)
       }
     }

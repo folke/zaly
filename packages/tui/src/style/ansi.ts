@@ -1,7 +1,8 @@
 import type { AnsiColor, AnsiStyle } from "./types.ts"
 
+import { sliceAnsi } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
-import { isHexColor, parseHex } from "./color.ts"
+import { isHexColor, parseHex, toHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;
  *  `"char"` hard-wraps mid-word. */
@@ -36,6 +37,25 @@ const ANSI_OFFSET: Record<string, number> = {
   red: 1,
   white: 7,
   yellow: 3,
+}
+
+const ANSI_BG: Record<number, AnsiColor> = {
+  100: "gray", // or "brightBlack" if that exists
+  101: "brightRed",
+  102: "brightGreen",
+  103: "brightYellow",
+  104: "brightBlue",
+  105: "brightMagenta",
+  106: "brightCyan",
+  107: "brightWhite",
+  40: "black",
+  41: "red",
+  42: "green",
+  43: "yellow",
+  44: "blue",
+  45: "magenta",
+  46: "cyan",
+  47: "white",
 }
 
 const notFound = Symbol("not found")
@@ -98,6 +118,13 @@ export function openAnsi(style: AnsiStyle) {
   return `\x1b[${attrs.join(";")}m`
 }
 
+export function styleAnsi(text: string, style?: AnsiStyle): string {
+  if (!style) return text
+  const open = openAnsi(style)
+  if (open === "") return text
+  return `${open}${text}${RESET}`
+}
+
 /**
  * Post-process a styled string so an outer style is re-applied after any
  * inner full-reset (`\x1b[0m`). Without this, a child's reset clobbers
@@ -128,4 +155,27 @@ export function reapplyStyle(s: string, escape: string): string {
     pos = s.indexOf(RESET, lastPos)
   }
   return result + s.slice(lastPos)
+}
+
+export function ansiBg(str: string, idx: number): AnsiColor | undefined {
+  const cell = sliceAnsi(str, idx, idx + 1)
+
+  let bg: AnsiColor | undefined
+
+  for (const match of cell.matchAll(/\x1b\[([0-9;]*)m/g)) {
+    const params = match[1].split(";").map(Number)
+
+    for (let i = 0; i < params.length; i++) {
+      const p = params[i]
+
+      if ((p >= 40 && p <= 47) || (p >= 100 && p <= 107)) {
+        bg = ANSI_BG[p]
+      } else if (p === 48 && params[i + 1] === 2) {
+        bg = toHex(params[i + 2], params[i + 3], params[i + 4])
+        i += 4
+      }
+    }
+  }
+
+  return bg
 }

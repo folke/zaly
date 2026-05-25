@@ -62,9 +62,11 @@ export class Markdown extends Node<MarkdownState> {
       ? this.#renderer.normalizeEol(source, source)
       : await this.#renderer.render(source, { ...ctx, highlighter: this.#highlighter() })
     return formatText(formatted, {
+      indent: true,
       style: this.state.style ? ctx.style.add(this.state.style) : undefined,
       width: ctx.width,
       wrap: this.state.wrap,
+      wrapBg: true,
     })
   }
 

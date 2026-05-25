@@ -1,7 +1,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { MdCallbacks } from "./types.ts"
 
-import { stringWidth } from "@zaly/shared/ansi"
+import { splitAnsi, stringWidth } from "@zaly/shared/ansi"
 
 interface ListState {
   block: boolean
@@ -65,8 +65,8 @@ export function createListCallbacks(ctx: RenderCtx): ListCallbacks {
         const sep = block ? "\n\n" : "\n"
         body = trimmed === "" ? nested.rendered : `${trimmed}${sep}${nested.rendered}`
       }
-      const content = body
-        .split("\n")
+      const lines = splitAnsi(body)
+      const content = lines
         .map((line, l) => {
           if (l === 0) return `${marker} ${line}`
           // Bare empty lines so loose `\n\n` separators stay clean.
