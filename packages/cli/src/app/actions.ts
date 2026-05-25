@@ -15,7 +15,7 @@ export type AppAction = keyof ReturnType<typeof appActions>
 export function appActions({ app }: { app: App }) {
   return {
     "agent.effort": {
-      desc: "set the agent's reasoning effort level",
+      desc: "Change how much reasoning the model uses for future turns.",
       fn: async () => {
         const items: PickerItem<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
           label: level,
@@ -30,7 +30,7 @@ export function appActions({ app }: { app: App }) {
       name: "effort",
     },
     "agent.model": {
-      desc: "select a model for the agent",
+      desc: "Switch the model used for future agent turns.",
       fn: async () => {
         const { listModels, loadModel } = await import("@zaly/ai")
         const models = await listModels({ auth: true })
@@ -55,7 +55,7 @@ export function appActions({ app }: { app: App }) {
       name: "model",
     },
     "app.cancel": {
-      desc: "cancel current input or exit on second press",
+      desc: "Clear the composer, or press twice to exit zaly.",
       fn: (() => {
         let exit = false
         return () => {
@@ -76,12 +76,12 @@ export function appActions({ app }: { app: App }) {
       name: "cancel",
     },
     "app.clear": {
-      desc: "clear the composer",
+      desc: "Clear the current composer input.",
       fn: () => (app.input = ""),
       name: "clear",
     },
     "app.compact": {
-      desc: "summarize older history to free context space",
+      desc: "Summarize older history while preserving recent messages.",
       fn: () => {
         app.ctx.info("Compacting history...\n")
         void app.agent
@@ -92,7 +92,7 @@ export function appActions({ app }: { app: App }) {
       name: "compact",
     },
     "app.help": {
-      desc: "toggle help overlay",
+      desc: "Show or hide the keyboard shortcut help overlay.",
       fn: (() => {
         let o: Overlay<[Text]> | undefined
         return async () => {
@@ -105,7 +105,7 @@ export function appActions({ app }: { app: App }) {
       name: "help",
     },
     "app.login": {
-      desc: "authorize zaly with your ChatGPT (codex) account",
+      desc: "Authorize zaly with your ChatGPT account for Codex models.",
       fn: () => {
         void runCodexLogin().catch((error) => {
           app.ctx.error(
@@ -116,7 +116,7 @@ export function appActions({ app }: { app: App }) {
       name: "login",
     },
     "app.pwd": {
-      desc: "print the agent's current working directory",
+      desc: "Show the workspace directory the agent is running in.",
       fn: () => {
         const cwd = prettyPath(app.agent.ctx.cwd, "~")
         app.ctx.info(`Current working directory: \`${cwd}\``)
@@ -124,13 +124,13 @@ export function appActions({ app }: { app: App }) {
       name: "pwd",
     },
     "app.stop": {
-      desc: "abort the current run",
+      desc: "Stop the current agent turn or running tool batch.",
       fn: () => app.agent.stop(),
       keys: ["esc"],
       name: "stop",
     },
     "app.theme": {
-      desc: "choose a color theme",
+      desc: "Choose a color theme for the current TUI session.",
       fn: async () => {
         const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
         const themes = themeRegistry.keys()
@@ -147,7 +147,11 @@ export function appActions({ app }: { app: App }) {
       },
       name: "theme",
     },
-    "global.quit": { keys: [] },
+    "global.quit": {
+      desc: "Quit zaly.",
+      keys: [],
+      name: "quit",
+    },
   } as const satisfies Record<string, ActionInfo>
 }
 
