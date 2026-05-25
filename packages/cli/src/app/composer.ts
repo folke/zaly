@@ -1,10 +1,18 @@
-import type { Agent } from "@zaly/agent"
-import type { Attachment, ContentPart, Message, Model, TextPart } from "@zaly/ai"
+import type { Agent, ReadTool } from "@zaly/agent"
+import type { Attachment, ContentPart, Message, Model, ParamsOf, TextPart } from "@zaly/ai"
 import type { InputAttachment, Renderer } from "@zaly/tui"
 import type { App } from "./app.ts"
 
+import { normPath, safeStatAsync } from "@zaly/shared"
 import { input } from "@zaly/tui"
 import { userMessage } from "../widgets/user.ts"
+
+export type FileRef = {
+  ref: string
+  path: string
+  from?: number
+  to?: number
+}
 
 export async function attachmentParts(atts: InputAttachment[]): Promise<Attachment[]> {
   const ret = await Promise.all(atts.map((att) => attachmentPart(att)))
@@ -53,7 +61,7 @@ export const createComposer = ({ app }: { app: App }) =>
       return
     }
     const atts = await attachmentParts(attachments)
-    submit(value, atts, app.agent, app.renderer)
+    await submit(value, atts, app.agent, app.renderer)
     void app.agent.waitIdle()
   })
 
@@ -68,14 +76,12 @@ export const createComposer = ({ app }: { app: App }) =>
  * no state. Caller is responsible for clearing the composer + the
  * attachment buffer around this call.
  */
-function submit(
+async function submit(
   text: string,
   attachments: readonly Attachment[],
   agent: Agent,
   renderer: Renderer
-): void {
-  renderer.stream.append(() => userMessage({ attachments, content: text }))
-
+): Promise<void> {
   const message: Message<"user"> =
     attachments.length === 0
       ? { content: text, role: "user" }
@@ -84,5 +90,61 @@ function submit(
           role: "user",
         }
 
-  agent.inject(message)
+  const refs: FileRef[] = []
+  const messages: Message[] = []
+
+  const REF_RE = /@([^\s,;]+)/g
+  const RANGE_RE = /^(.*?)(?::(\d+)(?:-(\d+))?)?$/
+  const CONTEXT = 3
+
+  for (const [, ref] of text.matchAll(REF_RE)) {
+    const match = ref.match(RANGE_RE)
+    if (!match) continue
+
+    const [, file, fromRaw, toRaw] = match
+    const from = fromRaw ? Number(fromRaw) : undefined
+    const to = toRaw ? Number(toRaw) : undefined
+    const path = normPath(file)
+    // oxlint-disable-next-line no-await-in-loop
+    const s = await safeStatAsync(path)
+    if (!s?.isFile()) continue
+    refs.push({ from, path, ref: `@${ref}`, to })
+  }
+
+  if (refs.length > 0) {
+    message.meta ??= {}
+    message.meta.fileRefs = refs
+  }
+
+  renderer.stream.append(() => userMessage({ message }))
+
+  await Promise.all(
+    refs.map(async (ref) => {
+      const { path, from, to } = ref
+
+      let offset: number | undefined
+      let limit: number | undefined
+
+      if (from !== undefined) {
+        if (to === undefined) {
+          offset = Math.max(1, from - CONTEXT)
+          limit = CONTEXT * 2 + 1
+        } else {
+          const start = Math.min(from, to)
+          const end = Math.max(from, to)
+          offset = start
+          limit = end - start + 1
+        }
+      }
+
+      const toolUse = await agent.useTool<ReadTool>(
+        "read",
+        { limit, offset, path } as ParamsOf<ReadTool>,
+        "<auto-injected>File references from the previous user message were read automatically.</auto-injected>"
+      )
+      messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
+    })
+  )
+
+  agent.inject(message, ...messages)
 }

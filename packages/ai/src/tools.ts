@@ -197,7 +197,8 @@ function readToolMeta(ctx: ToolContext): ToolResult["meta"] {
 export async function runTool<I, O>(
   tool: Tool<I, O>,
   rawArgs: unknown,
-  ctx: ToolContext
+  ctx: ToolContext,
+  opts?: { preflight?: boolean }
 ): Promise<ToolResult>
 export async function runTool<I, O>(
   tool: Tool<I, O>,

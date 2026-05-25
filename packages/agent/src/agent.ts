@@ -7,9 +7,12 @@ import type {
   MetaPart,
   Model,
   ModelStreamOptions,
+  ParamsOf,
   TokenCount,
+  Tool,
   ToolCallPart,
   ToolContext,
+  ToolResult,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentContext } from "./context.ts"
@@ -17,7 +20,7 @@ import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./event
 import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, StepResult } from "./types.ts"
 
-import { AiError, isContextOverflow } from "@zaly/ai"
+import { AiError, isContextOverflow, runTool } from "@zaly/ai"
 import { Emitter, toError } from "@zaly/shared"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
@@ -276,11 +279,11 @@ export class Agent extends Emitter<AgentEvents> {
    *  responds. If a loop is currently running, the message lands on the
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
-  send(message: Message<"user" | "system">): void {
+  send(message: Message<"user" | "system">, ...other: Message[]): void {
     // Always queue — keeps `send()` synchronous (session.add is async
     // now). The loop drains the queue at the top of each step() before
     // reading session.messages, so message ordering is preserved.
-    this.#sendQueue.push(message)
+    this.#sendQueue.push(message, ...other)
     if (this.#status === "idle" || this.#status === "paused") void this.run()
   }
 
@@ -290,12 +293,47 @@ export class Agent extends Emitter<AgentEvents> {
    *  Wakeups, notifier messages, swarm-delivered messages, and the
    *  CLI's user submit all flow through here — the model should pick
    *  them up on the next step regardless of agent state. */
-  inject(message: Message<"user" | "system">): void {
+  inject(message: Message<"user" | "system">, ...other: Message[]): void {
     if (this.#status === "idle" || this.#status === "paused") {
-      this.send(message)
+      this.send(message, ...other)
     } else {
-      this.#injectQueue.push(message)
+      this.#injectQueue.push(message, ...other)
     }
+  }
+
+  async useTool<T extends Tool = Tool>(
+    name: T["name"],
+    params: ParamsOf<T>,
+    msg: string
+  ): Promise<{ result: ToolResult; messages: [Message<"assistant">, Message<"tool">] }> {
+    const tools = await this.tools()
+    const tool = tools.find((t) => t.name === name) as T | undefined
+    if (!tool) throw new Error(`cannot inject tool use: no tool named "${name}"`)
+
+    const id = uuidv7()
+    const call: Message<"assistant"> = {
+      content: [
+        { text: msg, type: "text" },
+        { id, name, params, type: "tool-call" },
+      ],
+      role: "assistant",
+    }
+    const ret = await runTool(tool, params, await this.#toolContext(), { preflight: false })
+    const result: Message<"tool"> = {
+      content: [
+        {
+          content: ret.content,
+          error: ret.error,
+          id,
+          isError: ret.isError,
+          meta: ret.meta,
+          name,
+          type: "tool-result",
+        },
+      ],
+      role: "tool",
+    }
+    return { messages: [call, result], result: ret }
   }
 
   notify(type: string, data: Content | Record<string, unknown>): void {

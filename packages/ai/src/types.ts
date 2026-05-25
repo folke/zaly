@@ -171,6 +171,8 @@ type MessageBase = {
   id?: string
   /** Wall-clock commit time (ms). Set by `Session.add`. */
   ts?: number
+  /** Hint for renderers to skip this message. */
+  hidden?: boolean
 } & (
   | {
       role: "system"
@@ -185,6 +187,7 @@ type MessageBase = {
   | {
       role: "user"
       content: string | (TextPart | MetaPart | Attachment | ErrorPart)[]
+      meta?: Record<string, unknown>
     }
   | {
       role: "assistant"

@@ -1,7 +1,7 @@
 import type { Message, ToolResultPart } from "@zaly/ai"
 import type { Node, Renderer } from "@zaly/tui"
 
-import { isAttachment, justText, toParts } from "@zaly/ai"
+import { toParts } from "@zaly/ai"
 import { overlay, toAccessor } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
@@ -56,10 +56,7 @@ function* toWidgets(messages: readonly Message[]): Generator<() => Node> {
 
   for (const m of messages) {
     if (m.role === "user") {
-      const text = justText(m.content)
-      const attachments = toParts(m.content).filter((p) => isAttachment(p))
-      if (text === "" && attachments.length === 0) continue
-      yield () => userMessage({ attachments, content: text })
+      yield () => userMessage({ message: m })
     } else if (m.role === "assistant") {
       yield* renderAssistant(m, results)
     }
