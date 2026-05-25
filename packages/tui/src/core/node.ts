@@ -84,7 +84,6 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   }
 
   get mountSignal(): AbortSignal {
-    if (!this.#ctx) throw new Error("Node is not mounted; mountSignal is unavailable.")
     this.#mountAc ??= new AbortController()
     return this.#mountAc.signal
   }

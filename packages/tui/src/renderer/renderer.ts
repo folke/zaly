@@ -5,7 +5,6 @@ import type { ActionInfo } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../logger/logger.ts"
 import type { Theme } from "../themes/types.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
-import type { UIOptions } from "./ui.ts"
 
 import { Logger } from "@zaly/shared/logger"
 import { createCtx, RenderContext } from "../core/ctx.ts"
@@ -26,8 +25,6 @@ export interface RendererOptions {
   stdin?: TerminalReader
   stdout?: TerminalWriter
   theme?: Theme
-  /** Upper bound on footer height (default: viewport / 3). */
-  uiMaxHeight?: number
   /** Baseline footer height in rows — the size the footer occupies in
    *  "steady state" (no autocomplete, no transient widget growth).
    *  Stream uses `terminal.rows - fixedFooterHeight` as its commit
@@ -126,9 +123,6 @@ export class Renderer {
     // (SIGWINCH handler bumps version + clears `#ctx` below).
     const getCtx = (): RenderCtx => this.ctx
 
-    const uiOpts: UIOptions = {}
-    if (opts.uiMaxHeight !== undefined) uiOpts.maxHeight = opts.uiMaxHeight
-
     // Reactive ambient state — theme is the live source of truth for
     // the components-facing `RenderContext`. Style derives from it via
     // a memo so descendants that read `style()` re-fire on theme swap.
@@ -145,7 +139,7 @@ export class Renderer {
       return useActiveOwner() as Owner
     })
 
-    this.ui = new UI(this.terminal, getCtx, this.#rootOwner, uiOpts)
+    this.ui = new UI(this.terminal, getCtx, this.#rootOwner)
     this.stream = new Stream(this.terminal, getCtx, this.#rootOwner, {
       fixedFooterHeight: opts.fixedFooterHeight,
     })

@@ -21,28 +21,17 @@ import { Surface } from "./surface.ts"
  * which rewrites `DECSTBM`; the stream surface then has less/more room
  * and its next flush naturally fills the new geometry.
  */
-export interface UIOptions {
-  /**
-   * Upper bound on footer height. Renders taller than this are clipped
-   * to the top `maxHeight` rows. Default: one third of viewport.
-   */
-  maxHeight?: number
-}
-
 export class UI extends Surface {
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
-  readonly #maxHeight: number | undefined
   readonly #stale = new Set<number>()
 
   constructor(
     private readonly terminal: Terminal,
     private readonly getCtx: () => RenderCtx,
-    private readonly rootOwner: Owner,
-    opts: UIOptions = {}
+    private readonly rootOwner: Owner
   ) {
     super()
-    this.#maxHeight = opts.maxHeight
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", this.onDirty)
@@ -98,8 +87,8 @@ export class UI extends Surface {
     const run = sync ?? ((fn: () => void) => this.terminal.sync(fn))
     const ctx = this.getCtx()
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
-    const cap = this.#maxHeight ?? Math.max(1, Math.floor(this.terminal.rows / 3))
-    const rows = rendered.slice(0, cap)
+    const visible = Math.max(0, this.terminal.rows - 1)
+    const rows = rendered.length > visible ? rendered.slice(-visible) : rendered
     const stale = new Set(this.#stale)
     this.#stale.clear()
 

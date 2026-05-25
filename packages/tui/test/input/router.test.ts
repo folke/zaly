@@ -23,6 +23,10 @@ function setup() {
       mockMountCtx("ui", {
         actions,
         input: {
+          get terminalFocus() {
+            return router.terminalFocus
+          },
+          events: router,
           bind: (binding) => actions.bind(binding),
           blur: () => router.focus(undefined),
           focus: (n) => router.focus(n),

@@ -149,7 +149,6 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
     hookSignals: false,
     stdin,
     stdout,
-    uiMaxHeight: opts.uiMaxHeight,
   })
   renderer.start()
 
