@@ -12,7 +12,7 @@ import { Value } from "typebox/value"
  *  matches before use.
  */
 export function coerce(schema: {}, value: unknown) {
-  const converted = Value.Convert(schema, value)
-  const defaulted = Value.Default(schema, converted)
-  return Value.Clean(schema, defaulted)
+  const defaulted = Value.Default(schema, value)
+  const converted = Value.Convert(schema, defaulted)
+  return Value.Clean(schema, converted)
 }
