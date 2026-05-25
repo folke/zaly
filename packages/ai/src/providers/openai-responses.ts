@@ -588,11 +588,19 @@ function* handleEvent(
     case "response.output_item.added": {
       const item = evt.item as { type?: string; id?: string; call_id?: string; name?: string }
       if (item.type === "function_call" && typeof item.id === "string") {
-        pendingCalls.set(item.id, {
+        const pending = {
           argsBuffer: "",
           call_id: typeof item.call_id === "string" ? item.call_id : item.id,
           name: typeof item.name === "string" ? item.name : "",
-        })
+        }
+        pendingCalls.set(item.id, pending)
+        yield {
+          args: "",
+          id: pending.call_id,
+          key: item.id,
+          type: "tool-call-delta",
+          ...(pending.name !== "" ? { name: pending.name } : {}),
+        }
       }
       return
     }
@@ -600,7 +608,17 @@ function* handleEvent(
       const itemId = typeof evt.item_id === "string" ? evt.item_id : ""
       const delta = typeof evt.delta === "string" ? evt.delta : ""
       const pending = pendingCalls.get(itemId)
-      if (pending !== undefined && delta !== "") pending.argsBuffer += delta
+      if (pending !== undefined && delta !== "") {
+        pending.argsBuffer += delta
+        yield {
+          args: pending.argsBuffer,
+          delta,
+          id: pending.call_id,
+          key: itemId,
+          type: "tool-call-delta",
+          ...(pending.name !== "" ? { name: pending.name } : {}),
+        }
+      }
       return
     }
     case "response.function_call_arguments.done": {

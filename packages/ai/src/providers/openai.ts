@@ -625,7 +625,16 @@ function* handleChunk(
           if (tc.id !== undefined) entry.id = tc.id
           if (tc.function?.name !== undefined) entry.name = tc.function.name
         }
-        if (tc.function?.arguments !== undefined) entry.argsBuffer += tc.function.arguments
+        const argDelta = tc.function?.arguments
+        if (argDelta !== undefined) entry.argsBuffer += argDelta
+        yield {
+          args: entry.argsBuffer,
+          key: String(tc.index),
+          type: "tool-call-delta",
+          ...(entry.id !== "" ? { id: entry.id } : {}),
+          ...(entry.name !== "" ? { name: entry.name } : {}),
+          ...(argDelta !== undefined && argDelta !== "" ? { delta: argDelta } : {}),
+        }
       }
     }
     if (choice.finish_reason !== undefined && choice.finish_reason !== null) {

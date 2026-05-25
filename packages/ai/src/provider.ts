@@ -118,12 +118,11 @@ export type ResponseFormat =
  * Events emitted while streaming a single assistant turn. The shape
  * is Vercel-AI-SDK-ish: typed union, each event self-describes.
  *
- * Text and reasoning stream as `-delta` events for incremental render;
- * tool calls are emitted whole — adapters buffer provider-side deltas
- * (OpenAI streams JSON-string fragments of `function.arguments`) and
- * emit one `tool-call` when the block is complete. Consumers that want
- * "typing" UI for tool args are rare and expensive to support safely,
- * so v0 normalises on complete.
+ * Text and reasoning stream as `-delta` events for incremental render.
+ * Tool calls also expose optional `tool-call-delta` previews while the
+ * provider streams the argument JSON, followed by one final `tool-call`
+ * when complete. Deltas are side-channel events only; `collect()` does
+ * not include them in the assembled assistant message.
  *
  * `finish` arrives once per stream. `error` is terminal — after it,
  * the iterator ends.
@@ -131,6 +130,19 @@ export type ResponseFormat =
 export type StreamEvent =
   | { type: "text-delta"; delta: string }
   | { type: "reasoning-delta"; delta: string; signature?: string }
+  | {
+      type: "tool-call-delta"
+      /** Stable within one assistant stream; use this to merge partials. */
+      key: string
+      /** Final tool-call id when known. May arrive after early deltas. */
+      id?: string
+      /** Tool name when known. */
+      name?: string
+      /** Raw argument fragment from this provider event. */
+      delta?: string
+      /** Accumulated argument buffer for this tool call so far. */
+      args?: string
+    }
   | { type: "tool-call"; id: string; name: string; params: unknown }
   | { type: "finish"; finishReason: FinishReason; usage: Usage }
   | { type: "error"; error: Error }
@@ -267,6 +279,9 @@ export async function collect(
             openText = { signature: ev.signature, text: ev.delta, type: "reasoning" }
             parts.push(openText)
           }
+          break
+        }
+        case "tool-call-delta": {
           break
         }
         case "tool-call": {

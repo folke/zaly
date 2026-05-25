@@ -659,6 +659,7 @@ function* handleEvent(
       const cb = evt.content_block
       if (cb.type === "tool_use") {
         pendingToolUses.set(evt.index, { argsBuffer: "", id: cb.id, name: cb.name })
+        yield { args: "", id: cb.id, key: String(evt.index), name: cb.name, type: "tool-call-delta" }
       } else if (cb.type === "text" && cb.text !== "") {
         yield { delta: cb.text, type: "text-delta" }
       } else if (cb.type === "thinking" && cb.thinking !== "") {
@@ -686,7 +687,17 @@ function* handleEvent(
         }
         case "input_json_delta": {
           const pending = pendingToolUses.get(evt.index)
-          if (pending !== undefined) pending.argsBuffer += d.partial_json
+          if (pending !== undefined) {
+            pending.argsBuffer += d.partial_json
+            yield {
+              args: pending.argsBuffer,
+              delta: d.partial_json,
+              id: pending.id,
+              key: String(evt.index),
+              name: pending.name,
+              type: "tool-call-delta",
+            }
+          }
           return
         }
       }
