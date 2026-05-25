@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { inspect, isMarkdown } from "../../src/logger/inspect.ts"
+import { inspect, isMarkdown } from "../../src/style/inspect.ts"
 
 describe("isMarkdown", () => {
   test("true for strings with MD markers and no ANSI", () => {

@@ -14,7 +14,7 @@ export default defineConfig({
     "md.node": "src/runtime/md.node.ts",
     "md.bun": "src/runtime/md.bun.ts",
     themes: "src/themes/registry.ts",
-    logger: "src/logger/index.ts",
+    logger: "src/services/logger.ts",
     markdown: "src/markdown/index.ts",
     style: "src/style/index.ts",
     ansi: "src/style/ansi.ts",

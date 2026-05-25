@@ -2,7 +2,7 @@ import type { Node } from "../../src/core/node.ts"
 
 import { installLogger, Logger } from "@zaly/shared/logger"
 import { afterEach, describe, expect, test, vi } from "vitest"
-import { TuiReporter } from "../../src/logger/logger.ts"
+import { TuiReporter } from "../../src/services/logger.ts"
 import { Text } from "../../src/widgets/text.ts"
 
 const fakeStream = () => {

@@ -1,10 +1,10 @@
 import type { LogEntry, LogLevel, LogReporter } from "@zaly/shared/logger"
 import type { Node } from "../core/node.ts"
+import type { InspectOptions } from "../style/inspect.ts"
 import type { LogState } from "../widgets/log.ts"
-import type { InspectOptions } from "./inspect.ts"
 
+import { inspect } from "../style/inspect.ts"
 import { log } from "../widgets/log.ts"
-import { inspect } from "./inspect.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
 export interface LoggerStream {

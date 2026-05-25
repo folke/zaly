@@ -32,7 +32,7 @@
       "default": "./dist/ansi.mjs"
     },
     "./logger": {
-      "bun": "./src/logger/index.ts",
+      "bun": "./src/services/logger.ts",
       "default": "./dist/logger.mjs"
     },
     "./markdown": {
