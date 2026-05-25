@@ -6,11 +6,19 @@ import type { CliArgs } from "./cli.ts"
 import type { CliReporter } from "./reporter.ts"
 import type { Flags } from "./types.ts"
 
-import { normPath } from "@zaly/shared"
+import { normPath, safeReadFile } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
 import { BaseLogger, installLogger, Logger } from "@zaly/shared/logger"
+import { zalyPaths } from "@zaly/shared/paths"
+import { join } from "pathe"
 
-type Slots = { config: Config; theme: Theme; console: CliReporter; session: Session }
+type Slots = {
+  config: Config
+  theme: Theme
+  console: CliReporter
+  session: Session
+  dotenv: Record<string, string[]>
+}
 export const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const
 
 export class Context extends BaseLogger {
@@ -75,8 +83,37 @@ export class Context extends BaseLogger {
     this.#cache.forget(key)
   }
 
+  dotenv(): Promise<Record<string, string[]>> {
+    return this.#cache.need("dotenv", async () => {
+      const { parseEnv } = await import("node:util")
+      const paths = [".env", join(zalyPaths.config, ".env")].map((p) => normPath(p))
+      const ret: Record<string, string[]> = {}
+      const envs = await Promise.all(
+        paths.map(async (p) =>
+          safeReadFile(p)
+            .then((content) => (content ? { ...parseEnv(content) } : {}))
+            .catch(() => ({}))
+        )
+      )
+      for (let i = 0; i < paths.length; i++) {
+        const env = envs[i]
+        const entries = Object.entries(env)
+        if (entries.length === 0) continue
+        const path = paths[i]
+        ret[path] = []
+        for (const [key, value] of entries) {
+          if (value === undefined || process.env[key] !== undefined) continue
+          ret[path].push(key)
+          process.env[key] ??= value
+        }
+      }
+      return ret
+    })
+  }
+
   config(): Promise<Config> {
     return this.#cache.need("config", async () => {
+      await this.dotenv()
       const { loadConfig } = await import("@zaly/config")
       // oxlint-disable-next-line unicorn/consistent-function-scoping
       const falsy = (v?: boolean) => (v === false ? v : undefined)

@@ -3,6 +3,7 @@
 import type { Settings } from "@zaly/config"
 import type { CmdArgs } from "./types.ts"
 
+import { prettyPath } from "@zaly/shared"
 import { defineCommand } from "citty"
 import { Context, REASONING_EFFORTS } from "./context.ts"
 
@@ -48,8 +49,10 @@ export class Cli {
     for (const issue of issues) {
       console.warn(`- **${issue.path}**: ${issue.msg}`)
     }
+    const env = await this.ctx.dotenv()
+    const penv = Object.fromEntries(Object.entries(env).map(([p, v]) => [prettyPath(p), v]))
     const { codeToAnsi } = await import("@zaly/tui/shiki")
-    const json = JSON.stringify(settings, undefined, 2)
+    const json = JSON.stringify({ ...settings, env: penv }, undefined, 2)
     const theme = await this.ctx.theme()
     const str = await codeToAnsi(json, "json", theme.shiki)
     this.ctx.log(str.trim())
