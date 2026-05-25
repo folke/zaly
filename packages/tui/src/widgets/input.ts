@@ -7,7 +7,7 @@ import type { RoutedKey } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 
-import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
+import { sliceAnsi, splitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { fileDetect } from "@zaly/shared/detect"
 import { basename } from "pathe"
 import { Node } from "../core/node.ts"
@@ -85,6 +85,7 @@ export class Input extends Node<InputState, InputEvents> {
 
   override readonly type = Input.type
   #focused = false
+  #preferredCol: number | undefined
   #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
 
   /**
@@ -96,37 +97,44 @@ export class Input extends Node<InputState, InputEvents> {
   override actions = {
     "input.cursorDown": (): void => {
       const v = this.state.value ?? ""
-      const { col, line } = posToLineCol(v, this.state.cursor ?? 0)
+      const { col, line } = posToLineCol(v, this.#cursor())
       if (line >= countLines(v) - 1) return
-      this.state.cursor = lineColToPos(v, line + 1, col)
+      this.#preferredCol ??= col
+      this.state.cursor = lineColToPos(v, line + 1, this.#preferredCol)
     },
     "input.cursorLeft": (): void => {
-      const c = this.state.cursor ?? 0
-      if (c > 0) this.state.cursor = c - 1
+      const c = this.#cursor()
+      this.#preferredCol = undefined
+      this.state.cursor = c > 0 ? c - 1 : c
     },
     "input.cursorLineEnd": (): void => {
       const v = this.state.value ?? ""
-      this.state.cursor = lineEndPos(v, this.state.cursor ?? 0)
+      this.#preferredCol = undefined
+      this.state.cursor = lineEndPos(v, this.#cursor())
     },
     "input.cursorLineStart": (): void => {
       const v = this.state.value ?? ""
-      const { line } = posToLineCol(v, this.state.cursor ?? 0)
+      const { line } = posToLineCol(v, this.#cursor())
+      this.#preferredCol = undefined
       this.state.cursor = lineColToPos(v, line, 0)
     },
     "input.cursorRight": (): void => {
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
-      if (c < v.length) this.state.cursor = c + 1
+      const c = this.#cursor()
+      this.#preferredCol = undefined
+      this.state.cursor = c < v.length ? c + 1 : c
     },
     "input.cursorUp": (): void => {
       const v = this.state.value ?? ""
-      const { col, line } = posToLineCol(v, this.state.cursor ?? 0)
+      const { col, line } = posToLineCol(v, this.#cursor())
       if (line === 0) return
-      this.state.cursor = lineColToPos(v, line - 1, col)
+      this.#preferredCol ??= col
+      this.state.cursor = lineColToPos(v, line - 1, this.#preferredCol)
     },
     "input.deleteCharBack": (): void => {
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
+      const c = this.#cursor()
+      this.#preferredCol = undefined
       if (c === 0) return
       const marker = this.#markerRange(c, "back")
       if (marker) return this.#deleteRange(marker.start, marker.end)
@@ -134,7 +142,8 @@ export class Input extends Node<InputState, InputEvents> {
     },
     "input.deleteCharForward": (): void => {
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
+      const c = this.#cursor()
+      this.#preferredCol = undefined
       if (c >= v.length) return
       const marker = this.#markerRange(c, "forward")
       if (marker) return this.#deleteRange(marker.start, marker.end)
@@ -142,7 +151,8 @@ export class Input extends Node<InputState, InputEvents> {
     },
     "input.deleteWordBack": (): void => {
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
+      const c = this.#cursor()
+      this.#preferredCol = undefined
       let i = c
       while (i > 0 && isWhitespace(v[i - 1])) i--
       while (i > 0 && !isWhitespace(v[i - 1])) i--
@@ -154,7 +164,8 @@ export class Input extends Node<InputState, InputEvents> {
       // logical line onto the new line so continuations stay aligned
       // with the bullet / quote / prefix the user typed.
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
+      const c = this.#cursor()
+      this.#preferredCol = undefined
       let lineStart = c
       while (lineStart > 0 && v[lineStart - 1] !== "\n") lineStart--
       let indent = ""
@@ -175,7 +186,8 @@ export class Input extends Node<InputState, InputEvents> {
       // layout. Soft tabs are the safer default; users wanting real
       // tabs can override the action.
       const v = this.state.value ?? ""
-      const c = this.state.cursor ?? 0
+      const c = this.#cursor()
+      this.#preferredCol = undefined
       const tab = "  "
       this.state.set({ cursor: c + tab.length, value: v.slice(0, c) + tab + v.slice(c) })
     },
@@ -278,7 +290,8 @@ export class Input extends Node<InputState, InputEvents> {
 
   insert(text: string): void {
     const v = this.state.value ?? ""
-    const c = this.state.cursor ?? 0
+    const c = this.#cursor()
+    this.#preferredCol = undefined
     this.state.set({
       cursor: c + text.length,
       value: v.slice(0, c) + text + v.slice(c),
@@ -298,12 +311,19 @@ export class Input extends Node<InputState, InputEvents> {
       } else atts.push(att)
     }
     this.#staged = []
+    this.#preferredCol = undefined
     this.state.set({ cursor: 0, value: "" })
     return { attachments: atts, value }
   }
 
+  #cursor(): number {
+    const v = this.state.value ?? ""
+    return Math.max(0, Math.min(v.length, this.state.cursor ?? 0))
+  }
+
   #deleteRange(start: number, end: number): void {
     const v = this.state.value ?? ""
+    this.#preferredCol = undefined
     this.state.set({ cursor: start, value: v.slice(0, start) + v.slice(end) })
   }
 
@@ -330,7 +350,7 @@ export class Input extends Node<InputState, InputEvents> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const value = this.state.value ?? ""
     const placeholder = this.state.placeholder ?? ""
-    const cursor = Math.max(0, Math.min(value.length, this.state.cursor ?? 0))
+    const cursor = this.#cursor()
     const focused = this.#focused
 
     // Build the styled content string. Layout (word-wrap, split into
@@ -349,14 +369,20 @@ export class Input extends Node<InputState, InputEvents> {
       content = this.state.format ? this.state.format(content, { style: ctx.style }) : content
     }
 
-    // Fake cursor
+    // Fake cursor. `cursor` is an absolute index in the raw value, while
+    // rendering is line-oriented: newlines consume string indices but not
+    // cells in any rendered row. Project the cursor to line/column before
+    // slicing the formatted line.
     if (focused && this.ctx?.input.terminalFocus) {
-      // Inverse-video cursor overlaid on the char at `cursor`; on trailing
-      // cursors (past the last char) we overlay a space so it's visible.
-      const head = sliceAnsi(content, 0, cursor)
-      const at = sliceAnsi(content, cursor, cursor + 1) || " "
-      const tail = sliceAnsi(content, cursor + 1)
-      content = head + ctx.style.inverse(at) + tail
+      const { col, line } = posToLineCol(value, cursor)
+      const lines = splitAnsi(content)
+      const target = Math.max(0, Math.min(line, lines.length - 1))
+      const row = lines[target] ?? ""
+      const head = sliceAnsi(row, 0, col)
+      const at = sliceAnsi(row, col, col + 1) || " "
+      const tail = sliceAnsi(row, col + 1)
+      lines[target] = head + ctx.style.inverse(at) + tail
+      content = lines.join("\n")
     }
 
     return formatText(content, {

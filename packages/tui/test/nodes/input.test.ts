@@ -38,6 +38,13 @@ function paste(text: string): RoutedPaste {
 
 const ctx = (width = 40) => createCtx({ width })
 
+function cursorCtx(width = 40) {
+  const ret = ctx(width)
+  ;(ret.style as { inverse: (s: string) => string }).inverse = (s: string) =>
+    s === " " ? "█" : s.toUpperCase()
+  return ret
+}
+
 describe("Input — initial state", () => {
   test("defaults to empty value and cursor=0", () => {
     const n = input()
@@ -140,6 +147,96 @@ describe("Input.actions — cursor motion", () => {
     expect(n.state.cursor).toBe(4)
     n.actions["input.cursorDown"]()
     expect(n.state.cursor).toBe(4)
+  })
+
+  test("cursorRight moves across a newline into the next line", () => {
+    const n = input({ cursor: 2, value: "ab\ncd" })
+    n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(3)
+    n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(4)
+  })
+
+  test("cursorLeft moves across a newline into the previous line", () => {
+    const n = input({ cursor: 4, value: "ab\ncd" })
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(3)
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(2)
+  })
+
+  test("cursorDown restores the preferred column after moving through a short line", () => {
+    const n = input({ cursor: 3, value: "abcd\nx\nabcd" })
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(6)
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(10)
+  })
+
+  test("cursorUp restores the preferred column after moving through a short line", () => {
+    const n = input({ cursor: 10, value: "abcd\nx\nabcd" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(6)
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(3)
+  })
+
+  test("cursorRight on the last line clamps at the end after repeated presses", () => {
+    const n = input({ cursor: 13, value: "one\ntwo\nthree\nfour" })
+    for (let i = 0; i < 5; i++) n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(18)
+    n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(18)
+  })
+
+  test("cursorLeft on the first line clamps at the start after repeated presses", () => {
+    const n = input({ cursor: 2, value: "one\ntwo\nthree\nfour" })
+    for (let i = 0; i < 5; i++) n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(0)
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(0)
+  })
+
+  test("cursorDown through several lines keeps the visual column", () => {
+    const n = input({ cursor: 2, value: "abcd\nefgh\nijkl\nmnop" })
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(7)
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(12)
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(17)
+  })
+
+  test("cursorUp through several lines keeps the visual column", () => {
+    const n = input({ cursor: 17, value: "abcd\nefgh\nijkl\nmnop" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(12)
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(7)
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(2)
+  })
+
+  test("cursorUp from the last line lands on an empty middle line", () => {
+    const n = input({ cursor: 8, value: "abcd\n\nwxyz" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(5)
+  })
+
+  test("cursorDown clamps to the last line and stays there", () => {
+    const n = input({ cursor: 1, value: "one\ntwo\nthree\nfour" })
+    for (let i = 0; i < 10; i++) n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(15)
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(15)
+  })
+
+  test("cursorUp clamps to the first line and stays there", () => {
+    const n = input({ cursor: 15, value: "one\ntwo\nthree\nfour" })
+    for (let i = 0; i < 10; i++) n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(1)
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(1)
   })
 })
 
@@ -366,6 +463,37 @@ describe("Input — render", () => {
     expect(rows).toHaveLength(2)
     expect(rows[0]).toMatch(/^one/)
     expect(rows[1]).toMatch(/^two/)
+  })
+
+  test("cursor at the start of a later logical line renders on that line", async () => {
+    const n = input({ cursor: 4, value: "one\ntwo" })
+    n.mount(mockMountCtx("ui"))
+    void n.emit("focus")
+    const rows = await n.render(cursorCtx(20))
+    expect(rows).toEqual(["one", "Two"])
+  })
+
+  test("cursorUp from the last line renders on an empty middle line", async () => {
+    const n = input({ cursor: 17, value: "asdasdaddd\nsdss\n\nsss kkkdddd" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(16)
+
+    n.mount(mockMountCtx("ui"))
+    void n.emit("focus")
+    const rows = await n.render(cursorCtx(40))
+    expect(rows).toEqual(["asdasdaddd", "sdss", "█", "sss kkkdddd"])
+  })
+
+  test("cursorLeft from the end of a multiline input visibly moves onto the last char", async () => {
+    const value = "one\ntwo\nthree\nfour"
+    const n = input({ cursor: value.length, value })
+    n.mount(mockMountCtx("ui"))
+    void n.emit("focus")
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(value.length - 1)
+
+    const rows = await n.render(cursorCtx(20))
+    expect(rows).toEqual(["one", "two", "three", "fouR"])
   })
 
   test("word-wraps a long line across multiple rows", async () => {
