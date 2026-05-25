@@ -3,6 +3,7 @@ import type { Actions } from "./actions.ts"
 import type { InputEvent } from "./decoder.ts"
 import type { KeyEvent, KeyPattern } from "./keys.ts"
 
+import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
 import { canonical } from "./keys.ts"
 
@@ -43,6 +44,13 @@ export interface RoutedPaste {
   stop(): void
 }
 
+export type InputRouterEvents = {
+  "terminal-focus": { gained: boolean }
+  key: { event: KeyEvent }
+  focus: { node: Node }
+  blur: { node: Node }
+}
+
 /**
  * Routes decoder events to the right node and/or action.
  *
@@ -61,14 +69,16 @@ export interface RoutedPaste {
  *
  * Paste events follow a simple emit-and-bubble path — no keymap.
  */
-export class InputRouter {
+export class InputRouter extends Emitter<InputRouterEvents> {
   #focused: Node | undefined
   /** Set by the Renderer so keymap-matched action ids can be
    *  dispatched through the catalog. */
   #actions: Actions | undefined
   #logger: Logger
+  #terminalFocus = true
 
   constructor(logger?: Logger) {
+    super()
     this.#logger = logger ?? new Logger()
   }
 
@@ -91,8 +101,18 @@ export class InputRouter {
     if (this.#focused === node) return
     const prev = this.#focused
     this.#focused = node
-    if (prev !== undefined) void prev.emit("blur")
-    if (node !== undefined) void node.emit("focus")
+    if (prev !== undefined) {
+      void prev.emit("blur")
+      void this.emit("blur", { node: prev })
+    }
+    if (node !== undefined) {
+      void node.emit("focus")
+      void this.emit("focus", { node })
+    }
+  }
+
+  get terminalFocus(): boolean {
+    return this.#terminalFocus
   }
 
   /**
@@ -105,10 +125,15 @@ export class InputRouter {
   #dispatch(ev: InputEvent): boolean {
     if (ev.type === "key") return this.#dispatchKey(ev.event)
     if (ev.type === "paste") return this.#dispatchPaste(ev.text)
+    else {
+      this.#terminalFocus = ev.gained
+      void this.emit("terminal-focus", { gained: ev.gained })
+    }
     return false
   }
 
   #dispatchKey(event: KeyEvent): boolean {
+    void this.emit("key", { event })
     // Phase 1 — per-node key bubble. Most-local wins.
     const routed = makeRoutedKey(event)
     for (let node: Node | undefined = this.#focused; node !== undefined; node = node.parent) {

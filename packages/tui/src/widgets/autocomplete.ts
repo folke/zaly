@@ -133,7 +133,6 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
    *  `complete()` can notice it's been superseded and bail before
    *  writing stale items. */
   #refreshSeq = 0
-  #signal?: AbortSignal
   #enabled?: Reactive<boolean>
 
   constructor(opts: AutocompleteOptions) {
@@ -165,11 +164,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       this.#close()
     })
 
-    let ctrl: AbortController | undefined
-
     this.on("mount", () => {
-      ctrl = new AbortController()
-      this.#signal = ctrl.signal
       if (this.#input === undefined && !(this.#inputRef instanceof Input)) {
         // Ref dereferences via `.value`, which throws if it hasn't been
         // wired by a `node.ref(ref)` call on an `Input` somewhere in
@@ -181,7 +176,6 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
         }
       }
     })
-    this.on("unmount", () => ctrl?.abort())
 
     effect(() => {
       if (!this.enabled) {
@@ -213,7 +207,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       (): void => {
         void this.try(() => this.#refresh())
       },
-      { signal: this.#signal }
+      { signal: this.mountSignal }
     )
   }
 

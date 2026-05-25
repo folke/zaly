@@ -371,6 +371,7 @@ export class Renderer {
    *  across surfaces share a single overlay surface, router, etc. */
   #mountCtxFor(surface: SurfaceType): MountCtx {
     const logger = this.logger.child({ name: surface, surface })
+    const input = this.input
     return {
       actions: this.actions,
       findNode: (m) => this.findNode(m),
@@ -378,7 +379,11 @@ export class Renderer {
       input: {
         bind: (binding) => this.actions.bind(binding),
         blur: () => this.input.focus(undefined),
+        events: this.input,
         focus: (node) => this.input.focus(node),
+        get terminalFocus(): boolean {
+          return input.terminalFocus
+        },
       },
       logger,
       overlay: {

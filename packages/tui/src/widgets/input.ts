@@ -238,6 +238,12 @@ export class Input extends Node<InputState, InputEvents> {
       this.#focused = false
       this.invalidate()
     })
+
+    this.on("mount", () => {
+      this.ctx?.input.events.on("terminal-focus", () => this.invalidate(), {
+        signal: this.mountSignal,
+      })
+    })
   }
 
   attach(att: InputAttachment | Paste): void {
@@ -333,13 +339,7 @@ export class Input extends Node<InputState, InputEvents> {
     // span survives wrapping.
     let content: string
     if (value === "") {
-      if (placeholder === "") {
-        content = focused ? ctx.style.inverse(" ") : ""
-      } else {
-        content = focused
-          ? ctx.style.inverse(" ") + ctx.style.quiet(` ${placeholder}`)
-          : ctx.style.quiet(placeholder)
-      }
+      content = placeholder ? ` ${ctx.style.quiet(placeholder)}` : ""
     } else {
       content = value
       for (const att of this.#staged) {
@@ -347,14 +347,16 @@ export class Input extends Node<InputState, InputEvents> {
         content = content.replace(att.marker, ctx.style.accent(att.marker))
       }
       content = this.state.format ? this.state.format(content, { style: ctx.style }) : content
-      if (focused) {
-        // Inverse-video cursor overlaid on the char at `cursor`; on trailing
-        // cursors (past the last char) we overlay a space so it's visible.
-        const head = sliceAnsi(content, 0, cursor)
-        const at = sliceAnsi(content, cursor, cursor + 1) || " "
-        const tail = sliceAnsi(content, cursor + 1)
-        content = head + ctx.style.inverse(at) + tail
-      }
+    }
+
+    // Fake cursor
+    if (focused && this.ctx?.input.terminalFocus) {
+      // Inverse-video cursor overlaid on the char at `cursor`; on trailing
+      // cursors (past the last char) we overlay a space so it's visible.
+      const head = sliceAnsi(content, 0, cursor)
+      const at = sliceAnsi(content, cursor, cursor + 1) || " "
+      const tail = sliceAnsi(content, cursor + 1)
+      content = head + ctx.style.inverse(at) + tail
     }
 
     return formatText(content, {

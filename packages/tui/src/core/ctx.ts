@@ -1,5 +1,7 @@
+import type { Emitter } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
 import type { Actions } from "../input/actions.ts"
+import type { InputRouterEvents } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../themes/types.ts"
@@ -76,6 +78,8 @@ export interface MountCtx {
    *  app-level concerns. Widgets legitimately need to install direct
    *  global key bindings (autocomplete) and move focus. */
   readonly input: {
+    readonly terminalFocus: boolean
+    readonly events: Emitter<InputRouterEvents>
     readonly bind: Actions["bind"]
     /** Move focus to `node`. Mirrors `router.focus(node)`. */
     readonly focus: (node: Node) => void

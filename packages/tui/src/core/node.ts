@@ -60,6 +60,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   #ctx?: MountCtx
   #id?: string
   #actionTargets = new Set<Node>()
+  #mountAc?: AbortController
   actions?: ActionMap
   type?: string
   protected layout?(ctx: RenderCtx): Layout | undefined
@@ -80,6 +81,12 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // "any write invalidates everything" Proxy.
     this.#state = createStore(state)
     children.forEach((c) => this.add(c))
+  }
+
+  get mountSignal(): AbortSignal {
+    if (!this.#ctx) throw new Error("Node is not mounted; mountSignal is unavailable.")
+    this.#mountAc ??= new AbortController()
+    return this.#mountAc.signal
   }
 
   get state(): SignalStore<T> & State<T> {
@@ -367,6 +374,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   unmount(): this {
     if (!this.#ctx) return this
+    this.#mountAc?.abort()
+    this.#mountAc = undefined
     for (const c of this.#children) c.unmount()
     void this.emit("unmount")
     this.#ctx = undefined
