@@ -1,6 +1,6 @@
+import { RESET } from "@zaly/shared/ansi"
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { RESET } from "@zaly/shared/ansi"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { Box } from "../../src/widgets/box.ts"
@@ -105,7 +105,7 @@ describe("Box — column layout (default)", () => {
     b.add(new Text({ content: "wide", visible: false }))
     b.add(new Text({ content: "x" }))
 
-    expect(b.getLayout(ctx(10))).toEqual({ minWidth: 1, width: 1 })
+    expect(await b.getLayout(ctx(10))).toEqual({ minWidth: 1, width: 1 })
     expect(await b.render(ctx(10))).toEqual(["x"])
   })
 })
@@ -239,7 +239,7 @@ describe("Box — row layout", () => {
     b.add(new Text({ content: "hidden", visible: false, width: 6 }))
     b.add(new Text({ content: "b", width: 1 }))
 
-    expect(b.getLayout(ctx(10))).toEqual({ minWidth: 3, width: 3 })
+    expect(await b.getLayout(ctx(10))).toEqual({ minWidth: 3, width: 3 })
     expect(await b.render(ctx(10))).toEqual(["a b       "])
   })
 

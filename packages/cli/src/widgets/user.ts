@@ -6,6 +6,7 @@ import { isAttachment, justText, toParts } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
 import { box, image, text, widget } from "@zaly/tui"
 import { hyperlink } from "@zaly/tui/ansi"
+import { formatInput } from "../app/composer.ts"
 import { bubble } from "./bubble.ts"
 
 /** Single user-turn bubble. Plain text plus optional attachments —
@@ -19,16 +20,7 @@ export const userMessage = widget((props: { message: Message<"user"> }) => {
   const attachments = toParts(m.content).filter((p) => isAttachment(p))
 
   const refs = (m.meta?.fileRefs ?? []) as FileRef[]
-  if (content !== "")
-    children.push(
-      text(({ style }) => {
-        let str = content
-        for (const { ref } of refs) {
-          str = str.replace(ref, style.mdLink(ref))
-        }
-        return str
-      })
-    )
+  if (content !== "") children.push(text(({ style }) => formatInput(content, { refs, style })))
   for (const att of attachments) {
     const info = fileInfo(att)
     if (info.type === "image") {

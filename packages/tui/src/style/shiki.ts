@@ -139,7 +139,7 @@ class Shiki {
       }
       output += "\n"
     }
-    return output
+    return output.replace(/\n$/, "")
   }
 
   highlighter(theme?: ShikiTheme): AnsiHighlighter {

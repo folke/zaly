@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
@@ -25,7 +26,7 @@ import { calcLayout, formatText } from "../layout/text.ts"
  * text(({ style }) => style.ok(`✓ ${count}`)) // ctx-aware
  * ```
  */
-export type TextContent = Reactive<string> | ((ctx: RenderCtx) => Reactive<string>)
+export type TextContent = Reactive<string> | ((ctx: RenderCtx) => MaybePromise<Reactive<string>>)
 
 export interface TextStyle extends Style {
   content: TextContent
@@ -33,8 +34,8 @@ export interface TextStyle extends Style {
 }
 
 export class Text extends Node<TextStyle> {
-  protected _render(ctx: RenderCtx): string[] {
-    const content = textContent(this.state.content, ctx)
+  protected async _render(ctx: RenderCtx): Promise<string[]> {
+    const content = await textContent(this.state.content, ctx)
     return formatText(content, {
       style: ctx.style.add(this.state),
       width: ctx.width,
@@ -42,17 +43,20 @@ export class Text extends Node<TextStyle> {
     })
   }
 
-  override layout(ctx: RenderCtx) {
-    return calcLayout(textContent(this.state.content, ctx))
+  override async layout(ctx: RenderCtx) {
+    return calcLayout(await textContent(this.state.content, ctx))
   }
 }
 
-export function textContent(content: TextContent, ctx: RenderCtx): string
-export function textContent(content: TextContent | undefined, ctx: RenderCtx): undefined
-export function textContent(content: TextContent | undefined, ctx: RenderCtx): string | undefined {
+export function textContent(content: TextContent, ctx: RenderCtx): Promise<string>
+export function textContent(content: TextContent | undefined, ctx: RenderCtx): Promise<undefined>
+export async function textContent(
+  content: TextContent | undefined,
+  ctx: RenderCtx
+): Promise<string | undefined> {
   if (content === undefined) return
   const raw = unwrap(content)
-  return unwrap(typeof raw === "string" ? raw : raw(ctx))
+  return unwrap(typeof raw === "string" ? raw : await raw(ctx))
 }
 
 /**

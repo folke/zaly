@@ -41,7 +41,7 @@ function mount(cols = 20, rows = 10) {
 async function drain() {
   // Sequential awaits (not Promise.all) — each one drains one microtask
   // tick, which is exactly the point.
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 18; i++) await Promise.resolve()
 }
 
 describe("Stream.flush — first render", () => {

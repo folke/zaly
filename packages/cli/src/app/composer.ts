@@ -1,11 +1,11 @@
-import type { Agent, ReadTool } from "@zaly/agent"
+import type { Agent, BashTool, ReadTool } from "@zaly/agent"
 import type { Attachment, ContentPart, Message, Model, ParamsOf, TextPart } from "@zaly/ai"
 import type { InputAttachment, Renderer } from "@zaly/tui"
+import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
 import { normPath, safeStatAsync } from "@zaly/shared"
 import { input } from "@zaly/tui"
-import { userMessage } from "../widgets/user.ts"
 
 export type FileRef = {
   ref: string
@@ -13,6 +13,10 @@ export type FileRef = {
   from?: number
   to?: number
 }
+
+const FILE_REF_RE = /@([^\s,;]+)/g
+const SLASH_CMD_RE = /^\/\w+/
+const BASH_CMD_RE = /^!\s*\w+/
 
 export async function attachmentParts(atts: InputAttachment[]): Promise<Attachment[]> {
   const ret = await Promise.all(atts.map((att) => attachmentPart(att)))
@@ -45,13 +49,28 @@ function canAttach(att: InputAttachment, model?: Model): boolean {
   return false
 }
 
+export async function formatInput(
+  value: string,
+  ctx: { style: StyleBuilder; refs?: FileRef[] }
+): Promise<string> {
+  const s = ctx.style
+  if (BASH_CMD_RE.test(value)) {
+    const { codeToAnsi } = await import("@zaly/tui/shiki")
+    value = await codeToAnsi(value, "bash", s.theme.shiki)
+    return value
+  }
+  value = value.replace(SLASH_CMD_RE, (_, slashcmd) => s.primary(slashcmd))
+
+  if (ctx.refs) {
+    for (const { ref } of ctx.refs) value = value.replace(ref, s.mdLink(ref))
+  } else value = value.replace(FILE_REF_RE, (file) => s.mdLink(file))
+  return value
+}
+
 export const createComposer = ({ app }: { app: App }) =>
   input({
     canAttach: (att) => canAttach(att, app.agent.model),
-    format: (value, ctx) =>
-      value
-        .replace(/^(\/\w+)/, (_, slashcmd) => ctx.style.primary(slashcmd))
-        .replace(/(@\S+)/g, (_, file) => ctx.style.mdLink(file)),
+    format: formatInput,
     placeholder: "Ask zaly anything…",
   }).on("submit", async ({ value, attachments }) => {
     const trimmed = value.trim()
@@ -93,11 +112,10 @@ async function submit(
   const refs: FileRef[] = []
   const messages: Message[] = []
 
-  const REF_RE = /@([^\s,;]+)/g
   const RANGE_RE = /^(.*?)(?::(\d+)(?:-(\d+))?)?$/
   const CONTEXT = 3
 
-  for (const [, ref] of text.matchAll(REF_RE)) {
+  for (const [, ref] of text.matchAll(FILE_REF_RE)) {
     const match = ref.match(RANGE_RE)
     if (!match) continue
 
@@ -116,35 +134,50 @@ async function submit(
     message.meta.fileRefs = refs
   }
 
+  const { userMessage } = await import("../widgets/user.ts")
+
   renderer.stream.append(() => userMessage({ message }))
 
-  await Promise.all(
-    refs.map(async (ref) => {
-      const { path, from, to } = ref
+  if (BASH_CMD_RE.test(text)) {
+    const command = text.replace(/^\s*!\s*/, "")
+    const toolUse = await agent.useTool<BashTool>(
+      "bash",
+      {
+        command,
+        description: "executed by the user via a leading `!`",
+      } as ParamsOf<BashTool>,
+      "<auto-injected>Bash command from the previous user message was executed automatically.</auto-injected>"
+    )
+    messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
+  } else {
+    await Promise.all(
+      refs.map(async (ref) => {
+        const { path, from, to } = ref
 
-      let offset: number | undefined
-      let limit: number | undefined
+        let offset: number | undefined
+        let limit: number | undefined
 
-      if (from !== undefined) {
-        if (to === undefined) {
-          offset = Math.max(1, from - CONTEXT)
-          limit = CONTEXT * 2 + 1
-        } else {
-          const start = Math.min(from, to)
-          const end = Math.max(from, to)
-          offset = start
-          limit = end - start + 1
+        if (from !== undefined) {
+          if (to === undefined) {
+            offset = Math.max(1, from - CONTEXT)
+            limit = CONTEXT * 2 + 1
+          } else {
+            const start = Math.min(from, to)
+            const end = Math.max(from, to)
+            offset = start
+            limit = end - start + 1
+          }
         }
-      }
 
-      const toolUse = await agent.useTool<ReadTool>(
-        "read",
-        { limit, offset, path } as ParamsOf<ReadTool>,
-        "<auto-injected>File references from the previous user message were read automatically.</auto-injected>"
-      )
-      messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
-    })
-  )
+        const toolUse = await agent.useTool<ReadTool>(
+          "read",
+          { limit, offset, path } as ParamsOf<ReadTool>,
+          "<auto-injected>File references from the previous user message were read automatically.</auto-injected>"
+        )
+        messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
+      })
+    )
+  }
 
   agent.inject(message, ...messages)
 }

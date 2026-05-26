@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { DetectedFile } from "@zaly/shared/detect"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
@@ -27,7 +28,7 @@ export interface InputState extends StyleState {
   pasteMaxLines?: number
   pasteMaxChars?: number
   canAttach?: (file: InputAttachment) => boolean
-  format?: (value: string, ctx: { style: StyleBuilder }) => string
+  format?: (value: string, ctx: { style: StyleBuilder }) => MaybePromise<string>
 }
 
 const PASTE_MAX_LINES = 5
@@ -366,7 +367,7 @@ export class Input extends Node<InputState, InputEvents> {
         if (!content.includes(att.marker)) continue
         content = content.replace(att.marker, ctx.style.accent(att.marker))
       }
-      content = this.state.format ? this.state.format(content, { style: ctx.style }) : content
+      content = this.state.format ? await this.state.format(content, { style: ctx.style }) : content
     }
 
     // Fake cursor. `cursor` is an absolute index in the raw value, while

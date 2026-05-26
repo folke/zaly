@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { TryResult } from "@zaly/shared/logger"
 import type { ActionInfo, ActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
@@ -63,7 +64,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   #mountAc?: AbortController
   actions?: ActionMap
   type?: string
-  protected layout?(ctx: RenderCtx): Layout | undefined
+  protected layout?(ctx: RenderCtx): MaybePromise<Layout | undefined>
 
   constructor(state: State<T>, ...children: Node[]) {
     super()
@@ -165,7 +166,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this
   }
 
-  getLayout(ctx: RenderCtx): Layout | undefined {
+  async getLayout(ctx: RenderCtx): Promise<Layout | undefined> {
     if (!this.layout) return
     return this.layout(ctx)
   }

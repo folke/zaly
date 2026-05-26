@@ -5,12 +5,12 @@ import type { RowItem } from "../layout/flex.ts"
 import type { Style } from "../style/types.ts"
 import type { TextContent } from "./text.ts"
 
+import { stringWidth } from "@zaly/shared/ansi"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { drawBorder, resolveBorder } from "../layout/border.ts"
 import { allocateRow, isFixedWidth, padRow, stackColumn, zipRow } from "../layout/flex.ts"
 import { clamp, resolveSize } from "../layout/size.ts"
-import { stringWidth } from "@zaly/shared/ansi"
 import { textContent } from "./text.ts"
 
 export type Padding =
@@ -127,7 +127,7 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     if (bchars) {
       rows = drawBorder(rows, bchars, {
         borderStyle: ctx.style.add(style.borderStyle ?? "border"),
-        title: textContent(style.borderTitle, ctx),
+        title: await textContent(style.borderTitle, ctx),
         titleAlign: style.borderTitleAlign,
         titleStyle: ctx.style.add(style.borderTitleStyle ?? "borderTitle"),
       })
@@ -155,7 +155,7 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
    * smaller intrinsic. That's the safe direction: under-report and
    * let shrink/grow handle slack, never over-report.
    */
-  override layout(ctx: RenderCtx) {
+  override async layout(ctx: RenderCtx) {
     const s = this.state
     const [, padR, , padL] = resolvePadding(s.padding)
     const chrome = padL + padR + (resolveBorder(s.border) ? 2 : 0)
@@ -175,7 +175,8 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     let widthAcc = 0
     let minAcc = 0
     for (const k of kids) {
-      const l = k.getLayout(ctx) ?? { minWidth: 0, width: 0 }
+      // oxlint-disable-next-line no-await-in-loop
+      const l = (await k.getLayout(ctx)) ?? { minWidth: 0, width: 0 }
       if (isRow) {
         widthAcc += l.width
         minAcc += l.minWidth
@@ -224,7 +225,7 @@ export class Box<T extends object = {}> extends Node<BoxStyle & T> {
     // - `layout()` short-circuits — sync, no render.
     // - Fallback: render at the upper bound (innerWidth or fixed spec)
     //   and measure rows.
-    const intrinsics = children.map((c) => c.getLayout(ctx))
+    const intrinsics = await Promise.all(children.map((c) => c.getLayout(ctx)))
     // For children with intrinsic sizing, skip the measure render
     // entirely. Others fall back to render-at-upper-bound (their fixed
     // width, or innerWidth if fluid).
