@@ -19,9 +19,12 @@ export default defineConfig({
       "string-width",
       "strip-ansi",
       "wrap-ansi",
+      "js-yaml",
     ],
   },
   entry: {
+    "ansi.node": "src/runtime/ansi.node.ts",
+    "ansi.bun": "src/runtime/ansi.bun.ts",
     ansi: "src/ansi.ts",
     cache: "src/cache.ts",
     detect: "src/detect/index.ts",
@@ -34,6 +37,7 @@ export default defineConfig({
     process: "src/process/index.ts",
     registry: "src/registry.ts",
     text: "src/text.ts",
+    yaml: "src/yaml.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

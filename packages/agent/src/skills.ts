@@ -76,7 +76,7 @@ export class Skills {
     if (!path.endsWith("SKILL.md")) return
     const dir = dirname(path)
     try {
-      const meta = await readMeta(path)
+      const { meta } = await readSkill(path)
       if (!meta.name || !meta.description || this.catalog.has(meta.name)) return
       this.catalog.set(meta.name, {
         description: meta.description,
@@ -138,7 +138,7 @@ export class Skills {
       })
     }
 
-    const body = await readBody(skill.path)
+    const { body } = await readSkill(skill.path)
     const references = await listReferences(skill.dir)
 
     return [
@@ -165,16 +165,13 @@ export class Skills {
 
 // ── Discovery ──────────────────────────────────────────────────────────
 
-async function readMeta(path: string): Promise<{ name?: string; description?: string }> {
+async function readSkill(
+  path: string
+): Promise<{ meta: { name?: string; description?: string }; body: string }> {
   const raw = await readFile(path, "utf8")
-  const { frontmatter } = parseFrontmatter(raw)
-  return frontmatter
-}
-
-async function readBody(path: string): Promise<string> {
-  const raw = await readFile(path, "utf8")
-  const parsed = parseFrontmatter(raw)
-  return parsed.body.trim()
+  const { parseFrontmatter } = await import("@zaly/shared/yaml")
+  const { fm, body } = await parseFrontmatter(raw)
+  return { body, meta: fm }
 }
 
 async function listReferences(dir: string): Promise<string[]> {
@@ -185,49 +182,4 @@ async function listReferences(dir: string): Promise<string[]> {
     if (out.length >= 200) break
   }
   return out.toSorted()
-}
-
-// ── Frontmatter ────────────────────────────────────────────────────────
-
-interface ParsedFrontmatter {
-  frontmatter: { name?: string; description?: string }
-  body: string
-}
-
-/** Minimal `---`-delimited YAML frontmatter parser. Handles the only
- *  fields we read here (`name`, `description`) as plain string scalars,
- *  with optional surrounding quotes. Tolerant of unquoted values that
- *  contain colons (skills authored for other clients sometimes ship
- *  `description: Use this skill when: …`) — we take everything after
- *  the *first* `:` on a key line as the value. Multi-line block scalars
- *  / list values aren't supported; we don't need them. */
-function parseFrontmatter(raw: string): ParsedFrontmatter {
-  const lines = raw.split(/\r?\n/)
-  if (lines[0] !== "---") return { body: raw, frontmatter: {} }
-  let close = -1
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i] === "---") {
-      close = i
-      break
-    }
-  }
-  if (close === -1) return { body: raw, frontmatter: {} }
-  const fm: { name?: string; description?: string } = {}
-  for (let i = 1; i < close; i++) {
-    const line = lines[i]
-    if (line.trim() === "" || line.trimStart().startsWith("#")) continue
-    const m = line.match(/^([A-Za-z][\w-]*)\s*:\s*(.*)$/)
-    if (!m) continue
-    const [, key, rawValue] = m
-    let value = rawValue.trim()
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1)
-    }
-    if (key === "name" || key === "description") fm[key] = value
-  }
-  const body = lines.slice(close + 1).join("\n")
-  return { body, frontmatter: fm }
 }

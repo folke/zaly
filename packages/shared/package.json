@@ -65,6 +65,10 @@
       "bun": "./src/text.ts",
       "default": "./dist/text.mjs"
     },
+    "./yaml": {
+      "bun": "./src/yaml.ts",
+      "default": "./dist/yaml.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -81,6 +85,7 @@
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
       "./text": "./dist/text.mjs",
+      "./yaml": "./dist/yaml.mjs",
       "./package.json": "./package.json"
     },
     "access": "public"
@@ -95,10 +100,12 @@
     "proper-lockfile": "^4.1.2"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/picomatch": "^4.0.3",
     "@types/proper-lockfile": "^4.1.4",
     "ignore": "^7.0.5",
     "image-meta": "^0.2.2",
+    "js-yaml": "^4.1.1",
     "picomatch": "^4.0.4",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.1",
@@ -112,8 +119,20 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
+    "ansi-regex": "6.2.2",
+    "ansi-styles": "6.2.3",
+    "get-east-asian-width": "1.5.0",
     "ignore": "7.0.5",
     "image-meta": "0.2.2",
-    "picomatch": "4.0.4"
+    "is-fullwidth-code-point": "5.1.0",
+    "js-yaml": "4.1.1",
+    "picomatch": "4.0.4",
+    "slice-ansi": "9.0.0",
+    "string-width": [
+      "8.2.0",
+      "8.2.1"
+    ],
+    "strip-ansi": "7.2.0",
+    "wrap-ansi": "10.0.0"
   }
 }
