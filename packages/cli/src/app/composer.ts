@@ -5,7 +5,7 @@ import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
 import { normPath, safeStatAsync } from "@zaly/shared"
-import { input } from "@zaly/tui"
+import { input, toAccessor } from "@zaly/tui"
 
 export type FileRef = {
   ref: string
@@ -16,7 +16,7 @@ export type FileRef = {
 
 const FILE_REF_RE = /@([^\s,;]+)/g
 const SLASH_CMD_RE = /^\/\w+/
-const BASH_CMD_RE = /^!\s*\w+/
+const BASH_CMD_RE = /^(\s*!\s*)(.*)$/
 
 export async function attachmentParts(atts: InputAttachment[]): Promise<Attachment[]> {
   const ret = await Promise.all(atts.map((att) => attachmentPart(att)))
@@ -54,10 +54,13 @@ export async function formatInput(
   ctx: { style: StyleBuilder; refs?: FileRef[] }
 ): Promise<string> {
   const s = ctx.style
-  if (BASH_CMD_RE.test(value)) {
+  const bashMatch = value.match(BASH_CMD_RE)
+  if (bashMatch) {
+    const prefix = bashMatch[1]
+    const command = bashMatch[2]
     const { codeToAnsi } = await import("@zaly/tui/shiki")
-    value = await codeToAnsi(value, "bash", s.theme.shiki)
-    return value
+    value = await codeToAnsi(command, "bash", s.theme.shiki)
+    return `${s.divider(prefix)}${value}`
   }
   value = value.replace(SLASH_CMD_RE, (_, slashcmd) => s.primary(slashcmd))
 
@@ -138,17 +141,19 @@ async function submit(
 
   renderer.stream.append(() => userMessage({ message }))
 
-  if (BASH_CMD_RE.test(text)) {
-    const command = text.replace(/^\s*!\s*/, "")
+  const bashMatch = text.match(BASH_CMD_RE)
+  if (bashMatch) {
+    const command = bashMatch[2]
     const toolUse = await agent.useTool<BashTool>(
       "bash",
-      {
-        command,
-        description: "executed by the user via a leading `!`",
-      } as ParamsOf<BashTool>,
-      "<auto-injected>Bash command from the previous user message was executed automatically.</auto-injected>"
+      { command } as ParamsOf<BashTool>,
+      "Bash command from the previous user message was executed automatically"
     )
-    messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
+    const { toolCall } = await import("../widgets/tool.ts")
+    renderer.stream.append(() =>
+      toolCall({ call: toolUse.call, result: toAccessor(toolUse.result) })
+    )
+    messages.push(...toolUse.messages)
   } else {
     await Promise.all(
       refs.map(async (ref) => {
@@ -172,7 +177,7 @@ async function submit(
         const toolUse = await agent.useTool<ReadTool>(
           "read",
           { limit, offset, path } as ParamsOf<ReadTool>,
-          "<auto-injected>File references from the previous user message were read automatically.</auto-injected>"
+          "File references from the previous user message were read automatically"
         )
         messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
       })

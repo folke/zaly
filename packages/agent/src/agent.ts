@@ -302,35 +302,46 @@ export class Agent extends Emitter<AgentEvents> {
     name: T["name"],
     params: ParamsOf<T>,
     msg: string
-  ): Promise<{ result: ToolResult; messages: [Message<"assistant">, Message<"tool">] }> {
+  ): Promise<{
+    call: ToolCallPart
+    result: ToolResult
+    messages: Message[]
+  }> {
     const tools = await this.tools()
     const tool = tools.find((t) => t.name === name) as T | undefined
     if (!tool) throw new Error(`cannot inject tool use: no tool named "${name}"`)
 
     const id = uuidv7()
-    const call: Message<"assistant"> = {
-      content: [
-        { text: msg, type: "text" },
-        { id, name, params, type: "tool-call" },
-      ],
+    const call: ToolCallPart = { id, name, params, type: "tool-call" }
+    const result = await runTool(tool, params, await this.#toolContext(), { preflight: false })
+    const messages: Message[] = []
+
+    messages.push({
+      content: [call],
       role: "assistant",
-    }
-    const ret = await runTool(tool, params, await this.#toolContext(), { preflight: false })
-    const result: Message<"tool"> = {
+    })
+
+    messages.push({
       content: [
         {
-          content: ret.content,
-          error: ret.error,
+          content: result.content,
+          error: result.error,
           id,
-          isError: ret.isError,
-          meta: ret.meta,
+          isError: result.isError,
+          meta: result.meta,
           name,
           type: "tool-result",
         },
       ],
       role: "tool",
-    }
-    return { messages: [call, result], result: ret }
+    })
+
+    messages.push({
+      content: [{ content: msg, tag: "auto-injected", type: "meta" }],
+      role: "system",
+    })
+
+    return { call, messages, result }
   }
 
   notify(type: string, data: Content | Record<string, unknown>): void {

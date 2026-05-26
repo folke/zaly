@@ -53,13 +53,15 @@ export const bashTool = defineTool({
     "to terminate one. `timeout` is a real kill deadline.",
   params: Type.Object({
     command: Type.String({ description: "The shell command to run, evaluated by `bash -c`." }),
-    description: Type.String({
-      description:
-        "Short, human-readable description of what this command does. " +
-        "Shown to the user in the TUI alongside the command. Keep it under " +
-        "~10 words. Don't restate the command itself — describe the intent " +
-        '(e.g. "check the test suite passes", not "run bun test").',
-    }),
+    description: Type.Optional(
+      Type.String({
+        description:
+          "Short, human-readable description of what this command does. " +
+          "Shown to the user in the TUI alongside the command. Keep it under " +
+          "~10 words. Don't restate the command itself — describe the intent " +
+          '(e.g. "check the test suite passes", not "run bun test").',
+      })
+    ),
     max_lines: Type.Integer({
       default: 200,
       description:
