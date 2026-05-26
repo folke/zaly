@@ -1,7 +1,7 @@
 import type { Node, RenderCtx } from "@zaly/tui"
 import type { Context } from "./context.ts"
 
-import { TuiReporter } from "@zaly/tui/logger"
+import { TuiReporter } from "@zaly/tui"
 
 /**
  * `Cli` carries parsed args + lazily-resolved config between citty's

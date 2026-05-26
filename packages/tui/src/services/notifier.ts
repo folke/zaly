@@ -1,7 +1,10 @@
 import type { LogLevel } from "@zaly/shared/logger"
-import type { LogState, Overlay, OverlaySurface } from "@zaly/tui"
+import type { OverlaySurface } from "../renderer/overlay.ts"
+import type { LogState } from "../widgets/log.ts"
+import type { Overlay } from "../widgets/overlay.ts"
 
-import { log, overlay } from "@zaly/tui"
+import { log } from "../widgets/log.ts"
+import { overlay } from "../widgets/overlay.ts"
 
 export type NotifProps = Omit<LogState, "content" | "level"> & {
   level?: LogLevel

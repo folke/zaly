@@ -14,7 +14,7 @@ export type PickerResult<T extends PickerItem<unknown> = PickerItem> =
   | readonly T[]
   | Promise<readonly T[]>
 
-export type PickerOptions<T extends PickerItem<unknown> = PickerItem> = Omit<
+export type PickerProps<T extends PickerItem<unknown> = PickerItem> = Omit<
   MenuState<T>,
   "items"
 > & {
@@ -35,29 +35,31 @@ function searchText(item: PickerItem<unknown>): string {
   return ret
 }
 
-export const picker = widget(<T extends PickerItem<unknown> = PickerItem>(props: PickerOptions<T>) => {
-  const input = () => (props.input instanceof Input ? props.input : props.input())
-  const it = props.items
+export const picker = widget(
+  <T extends PickerItem<unknown> = PickerItem>(props: PickerProps<T>) => {
+    const input = () => (props.input instanceof Input ? props.input : props.input())
+    const it = props.items
 
-  const items =
-    typeof it === "function"
-      ? createAsync(
-          async (): Promise<T[]> => {
+    const items =
+      typeof it === "function"
+        ? createAsync(
+            async (): Promise<T[]> => {
+              const query = input().state.value ?? ""
+              const matcher: Matcher = (s) => fuzzyScore(query, s)
+              const ret = await it(query, matcher)
+              return [...ret]
+            },
+            { initialValue: [] }
+          )
+        : memo(() => {
             const query = input().state.value ?? ""
+            if (query === "") return it
             const matcher: Matcher = (s) => fuzzyScore(query, s)
-            const ret = await it(query, matcher)
-            return [...ret]
-          },
-          { initialValue: [] }
-        )
-      : memo(() => {
-          const query = input().state.value ?? ""
-          if (query === "") return it
-          const matcher: Matcher = (s) => fuzzyScore(query, s)
-          const scores = it.map((item) => ({ item, score: matcher(searchText(item)) }))
-          if (props.sort) scores.sort((a, b) => b.score - a.score)
-          return scores.filter(({ score }) => score > 0).map(({ item }) => item)
-        })
+            const scores = it.map((item) => ({ item, score: matcher(searchText(item)) }))
+            if (props.sort) scores.sort((a, b) => b.score - a.score)
+            return scores.filter(({ score }) => score > 0).map(({ item }) => item)
+          })
 
-  return menu<T>({ ...props, items }).bind(props.input)
-})
+    return menu<T>({ ...props, items }).bind(props.input)
+  }
+)

@@ -1,4 +1,4 @@
-import type { Accessor, Actions, Input, Menu, PickerItem, PickerOptions, Ref } from "@zaly/tui"
+import type { Accessor, Actions, Input, Menu, PickerItem, PickerProps, Ref } from "@zaly/tui"
 import type { App } from "../app/app.ts"
 
 import {
@@ -64,30 +64,5 @@ export const autocompleteOverlay = (props: {
     },
     divider({ style: "accent" }),
     ac
-  )
-}
-
-export type PickOpts<T extends PickerItem<unknown> = PickerItem> = PickerOptions<T> & {
-  title?: string
-  ref?: Ref<Menu<T>>
-}
-
-export function pickerOverlay<T extends PickerItem<unknown> = PickerItem>(opts: PickOpts<T>) {
-  return overlay(
-    {
-      padding: [0, 1],
-      relative: "ui",
-      style: "ui",
-      verticalAnchor: "bottom",
-      x: 0,
-      y: 1,
-    },
-    divider({ style: "accent" }),
-    show(
-      { when: !!opts.title },
-      text(opts.title!, { style: "borderTitle" }),
-      divider({ style: "border" })
-    ),
-    picker<T>({ ...opts, maxHeight: 8 }).ref(opts.ref)
   )
 }

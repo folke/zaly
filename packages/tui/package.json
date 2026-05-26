@@ -31,10 +31,6 @@
       "bun": "./src/style/ansi.ts",
       "default": "./dist/ansi.mjs"
     },
-    "./logger": {
-      "bun": "./src/services/logger.ts",
-      "default": "./dist/logger.mjs"
-    },
     "./markdown": {
       "bun": "./src/markdown/index.ts",
       "default": "./dist/markdown.mjs"
@@ -67,7 +63,6 @@
     "exports": {
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
-      "./logger": "./dist/logger.mjs",
       "./markdown": "./dist/markdown.mjs",
       "./shiki": "./dist/shiki.mjs",
       "./style": "./dist/style.mjs",

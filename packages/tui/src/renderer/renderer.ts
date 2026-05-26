@@ -268,11 +268,15 @@ export class Renderer {
    *  from `useContext(RenderContext)` re-fire automatically; primitive
    *  Nodes that compare cache against `ctx.version` need the version
    *  bump that already happens elsewhere on theme-driven invalidation. */
-  setTheme(theme: Theme): void {
+  set theme(theme: Theme) {
     this.#setTheme(theme)
     this.#theme = theme
     this.#ctxVersion++
     this.#schedule()
+  }
+
+  get theme(): Theme {
+    return this.#theme ?? defaultTheme
   }
 
   start(): void {

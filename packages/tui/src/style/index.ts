@@ -1,5 +1,6 @@
 export * from "./builder.ts"
 export * from "./color.ts"
+export * from "./inspect.ts"
 export type * from "./types.ts"
 
 // `shiki` stays private — widget code imports helpers directly. Only
