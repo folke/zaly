@@ -8,11 +8,11 @@ import { join } from "pathe"
 
 export type ResourceType = (typeof types)[number]
 
-const types = ["plugins", "skills", "prompts", "themes"] as const
+const types = ["plugins", "skills", "commands", "themes"] as const
 
 const globs = {
+  commands: "*.md",
   plugins: ["*.{ts,js}", "*/index.{ts,js}"],
-  prompts: "*.md",
   skills: "**/SKILL.md",
   themes: "*.json",
 } as const satisfies Record<ResourceType, string | string[]>
@@ -55,8 +55,8 @@ export abstract class ResourceProvider {
     return this.get("themes")
   }
 
-  async prompts() {
-    return this.get("prompts")
+  async commands() {
+    return this.get("commands")
   }
 
   async skills() {

@@ -32,7 +32,7 @@ export interface Flags {
   session?: string
   skills?: boolean
   themes?: boolean
-  prompts?: boolean
+  commands?: boolean
   plugins?: boolean
   new?: boolean
 }

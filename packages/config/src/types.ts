@@ -22,7 +22,7 @@ export type Settings = {
     plugins?: string[] | false
     skills?: string[] | false
     themes?: string[] | false
-    prompts?: string[] | false
+    commands?: string[] | false
   }
   keymap?: Record<string, KeyPatterns>
 }

@@ -122,8 +122,8 @@ export class Context extends BaseLogger {
           model: this.flags.model,
           reasoning: this.flags.reasoning,
           resources: {
+            commands: falsy(this.flags.commands),
             plugins: falsy(this.flags.plugins),
-            prompts: falsy(this.flags.prompts),
             skills: falsy(this.flags.skills),
             themes: falsy(this.flags.themes),
           },

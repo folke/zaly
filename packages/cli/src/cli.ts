@@ -39,7 +39,7 @@ export class Cli {
       resources: {
         plugins: await config.resources.plugins(),
         themes: await config.resources.themes(),
-        prompts: await config.resources.prompts(),
+        commands: await config.resources.commands(),
         skills: await config.resources.skills(),
         packs: await config.resources.packs(),
       },
@@ -107,9 +107,9 @@ export function mainCommand(cli: Cli) {
         type: "boolean",
         description: "Don't load any themes",
       },
-      "no-prompts": {
+      "no-commands": {
         type: "boolean",
-        description: "Don't load any prompts",
+        description: "Don't load any commands",
       },
       "no-packs": {
         type: "boolean",
