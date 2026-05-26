@@ -135,13 +135,15 @@ export class Context extends BaseLogger {
   }
 
   theme() {
-    return this.#cache.need("theme", async () => {
-      const config = await this.config()
-      const { loadTheme } = await import("@zaly/tui/themes")
-      return await loadTheme({
-        dirs: await config.resources.themes(),
-        name: config.settings.theme,
-      })
+    return this.#cache.need("theme", async () => this.loadTheme())
+  }
+
+  async loadTheme(name?: string): Promise<Theme> {
+    const { loadTheme } = await import("@zaly/tui/themes")
+    const config = await this.config()
+    return await loadTheme({
+      dirs: await config.resources.themes(),
+      name: name ?? config.settings.theme,
     })
   }
 

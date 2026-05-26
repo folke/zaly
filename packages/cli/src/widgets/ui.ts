@@ -1,4 +1,4 @@
-import type { Accessor, Actions, Input, Menu, PickerItem, PickerProps, Ref } from "@zaly/tui"
+import type { Accessor, Actions, Input, Ref } from "@zaly/tui"
 import type { App } from "../app/app.ts"
 
 import {
@@ -9,8 +9,6 @@ import {
   filesSource,
   memo,
   overlay,
-  picker,
-  show,
   text,
 } from "@zaly/tui"
 import { createComposer } from "../app/composer.ts"

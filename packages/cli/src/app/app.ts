@@ -1,15 +1,13 @@
 import type { Agent, PermissionRequest, Suggestion } from "@zaly/agent"
-import type { ActionInfo, Actions, Input, Menu, PickerItem, Renderer } from "@zaly/tui"
+import type { Plugin, PluginHost } from "@zaly/plugin"
+import type { ActionInfo, Actions, Input, PickerItem, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
-import type { NotifProps } from "../widgets/notify.ts"
-import type { PickOpts } from "../widgets/ui.ts"
 
-import { box, createRef, createRenderer, createStore, signal } from "@zaly/tui"
+import { box, createRef, createRenderer, createStore, Notifier, Picker, signal } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
-import { Notifier } from "../widgets/notify.ts"
-import { appUi, autocompleteOverlay, pickerOverlay } from "../widgets/ui.ts"
+import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { appActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
 import { replay } from "./replay.ts"
@@ -30,11 +28,13 @@ export class App {
   #ctx: Context
   #renderer!: Renderer
   #input!: Input
+  #plugins: Plugin[] = []
 
   #agent?: Agent
   #agentLifetime?: AbortController
   #exitPromise!: ReturnType<typeof Promise.withResolvers>
   #notifier!: Notifier
+  #picker!: Picker
 
   #state = createStore<AppState>({
     busy: true,
@@ -47,6 +47,9 @@ export class App {
   private constructor(ctx: Context) {
     this.#ctx = ctx
   }
+
+  notify: Notifier["notify"] = (msg, opts) => this.#notifier.notify(msg, opts)
+  pick: Picker["pick"] = (options) => this.#picker.pick(options)
 
   get renderer(): Renderer {
     return this.#renderer
@@ -145,6 +148,7 @@ export class App {
     const composer = createRef<Input>()
     this.#renderer.ui.add(() => appUi({ app: this, composer }))
     this.#input = composer()
+    this.#picker = new Picker(this.#renderer.overlay, this.#input)
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
         actions: this.#renderer.actions,
@@ -152,10 +156,6 @@ export class App {
         enabled: this.#acEnabled.get,
       })
     )
-  }
-
-  notify(msg: string, opts?: NotifProps) {
-    this.#notifier.notify(msg, opts)
   }
 
   #handleInitError(error: unknown): void {
@@ -206,37 +206,48 @@ export class App {
     // #status from here on.
     this.#state.busy = false
     this.#state.status = "ready"
+
+    void this.loadPlugins()
   }
 
-  async pick<T extends PickerItem<unknown> = PickerItem>(
-    opts: Omit<PickOpts<T>, "input">
-  ): Promise<T | undefined> {
-    const res = Promise.withResolvers<T | undefined>()
-    let settled = false
-    this.#input.consume()
-    const ref = createRef<Menu<T>>()
-    const node = this.#renderer.overlay.open(() =>
-      pickerOverlay({ ...opts, input: this.#input, ref })
-    )
-    this.#acEnabled.set(false)
-    const menu = ref()
-    const ac = new AbortController()
+  async reload(): Promise<void> {
+    const config = await this.#ctx.config()
+    config.resources.refresh()
+    await this.loadPlugins()
+    this.#notifier.notify("Plugins & resources **reloaded**.")
+  }
 
-    const done = (value?: T) => {
-      if (settled) return
-      settled = true
-      ac.abort()
-      this.#acEnabled.set(true)
-      this.#input.consume()
-      res.resolve(value)
-      this.#renderer.overlay.close(node)
+  async loadPlugins(): Promise<void> {
+    if (!this.#agent) throw new Error("Agent not initialized")
+    const config = await this.#ctx.config()
+    for (const plugin of this.#plugins) {
+      try {
+        plugin.dispose()
+      } catch (error) {
+        this.#ctx.logger
+          .child("plugins")
+          .error(`Failed to dispose plugin \`${plugin.path}\`:`, error)
+      }
+    }
+    this.#plugins = []
+    const paths = await config.resources.plugins()
+    const { loadPlugin } = await import("@zaly/plugin")
+
+    const host: PluginHost = {
+      ctx: this.#agent.ctx,
+      loadTheme: (name: string) => this.#ctx.loadTheme(name),
+      log: this.#ctx,
+      logger: this.#ctx.logger.child("plugin"),
+      notify: this.notify,
+      pick: this.pick,
+      renderer: this.#renderer,
     }
 
-    node.once("unmount", () => done(), { signal: ac.signal })
-    menu.once("cancel", () => done(), { signal: ac.signal })
-    menu.once("select", ({ item }) => done(item), { signal: ac.signal })
-
-    return res.promise
+    const results = await Promise.all(paths.map((path) => loadPlugin(path, host)))
+    for (const result of results) {
+      if (result.ok) this.#plugins.push(result.plugin)
+      else this.#ctx.logger.child("plugins").error(`Failed to load plugin:`, result.error)
+    }
   }
 
   async allow(req: PermissionRequest): Promise<boolean> {

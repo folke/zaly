@@ -123,6 +123,11 @@ export function appActions({ app }: { app: App }) {
       },
       name: "pwd",
     },
+    "app.reload": {
+      desc: "Reload plugins & resources",
+      fn: () => void app.reload(),
+      name: "reload",
+    },
     "app.stop": {
       desc: "Stop the current agent turn or running tool batch.",
       fn: () => app.agent.stop(),
@@ -132,6 +137,7 @@ export function appActions({ app }: { app: App }) {
     "app.theme": {
       desc: "Choose a color theme for the current TUI session.",
       fn: async () => {
+        // FIXME: this doesn't use custom theme dirs
         const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
         const themes = themeRegistry.keys()
 
@@ -143,7 +149,7 @@ export function appActions({ app }: { app: App }) {
           })
         }
         const ret = await app.pick({ items, sort: true })
-        if (ret) app.renderer.setTheme(await loadTheme(ret.value))
+        if (ret) app.renderer.theme = await loadTheme(ret.value)
       },
       name: "theme",
     },

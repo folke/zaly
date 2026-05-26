@@ -1,23 +1,72 @@
-import type { AgentContext } from "@zaly/agent"
-import type { AgentApi } from "./agent.ts"
-import type { ModelApi } from "./model.ts"
+import type { Logger } from "@zaly/shared/logger"
+import type { PluginApi } from "./api/api.ts"
+import type { PluginHost } from "./types.ts"
 
-export type PluginApi = {
-  agent: AgentApi
-  model: ModelApi
+import { normPath, toError } from "@zaly/shared"
+
+export type PluginLoadResult = { ok: true; plugin: Plugin } | { ok: false; error: Error }
+export type { Plugin }
+
+export function loadPlugin(path: string, host: PluginHost): Promise<PluginLoadResult> {
+  return Plugin.load(path, host)
 }
 
-export class Plugin {
+class Plugin {
   #cleanup: (() => void)[] = []
-  #ctx: AgentContext
-  #api?: PluginApi
+  #path: string
+  #api!: PluginApi
+  #ac = new AbortController()
+  #host: PluginHost
+  #logger: Logger
 
-  constructor(ctx: AgentContext) {
-    this.#ctx = ctx
+  protected constructor(path: string, host: PluginHost) {
+    this.#path = normPath(path)
+    this.#host = host
+    this.#logger = host.logger.child({ name: `plugin:${this.path}`, plugin: this.path })
+  }
+
+  static async load(path: string, host: PluginHost): Promise<PluginLoadResult> {
+    const plugin = new Plugin(path, host)
+    const { getPluginLoader } = await import("./loader.ts")
+    const { PluginApi } = await import("./api/api.ts")
+    plugin.#api = new PluginApi(plugin)
+    try {
+      const loader = await getPluginLoader(plugin.path)
+      await loader(plugin.api)
+      return { ok: true, plugin }
+    } catch (error) {
+      plugin.dispose()
+      return { error: toError(error), ok: false }
+    }
+  }
+
+  assertLoaded() {
+    if (!this.running) throw new Error(`Plugin ${this.#path} is not loaded`)
+  }
+
+  get running() {
+    return !this.#ac.signal.aborted
+  }
+
+  get logger() {
+    return this.#logger
+  }
+
+  get path() {
+    return this.#path
+  }
+
+  get host() {
+    this.assertLoaded()
+    return this.#host
+  }
+
+  get signal() {
+    return this.#ac.signal
   }
 
   get ctx() {
-    return this.#ctx
+    return this.host.ctx
   }
 
   cleanup(fn: () => void): void {
@@ -25,20 +74,15 @@ export class Plugin {
   }
 
   dispose(): void {
+    if (!this.running) return
     // LIFO so within-plugin override chains unwind correctly
     while (this.#cleanup.length > 0) this.#cleanup.pop()!()
+    this.#cleanup = []
+    this.#ac.abort()
   }
 
-  async api(): Promise<PluginApi> {
-    if (this.#api) return this.#api
-    const [{ AgentApi }, { ModelApi }] = await Promise.all([
-      import("./agent.ts"),
-      import("./model.ts"),
-    ])
-    this.#api = {
-      agent: new AgentApi(this),
-      model: new ModelApi(this),
-    }
+  get api(): PluginApi {
+    this.assertLoaded()
     return this.#api
   }
 }

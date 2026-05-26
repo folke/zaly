@@ -38,5 +38,11 @@
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
+  },
+  "devDependencies": {
+    "jiti": "^2.7.0"
+  },
+  "inlinedDependencies": {
+    "jiti": "2.7.0"
   }
 }

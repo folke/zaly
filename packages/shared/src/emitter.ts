@@ -11,7 +11,7 @@ export type EventMap = Record<string, Record<string, unknown> | { signal?: Abort
  *  keys (declared as `{}`), the second arg can be omitted —
  *  `emit("ready")` instead of `emit("ready", {})`. Events with data
  *  still require the arg. */
-type EmitArgs<E> = keyof E extends never ? [] : [event: E]
+export type EmitArgs<E> = keyof E extends never ? [] : [event: E]
 
 /** Listener for one event type. Receives the payload and the emitter
  *  instance (typed as `Self`, the polymorphic `this` of the class) so
@@ -19,7 +19,11 @@ type EmitArgs<E> = keyof E extends never ? [] : [event: E]
  *  separate reference. */
 export type Listener<E, Self> = (event: E, self: Self, ctx: ListenerCtx) => unknown
 
+export type EventMapOf<E extends Emitter> =
+  E extends Emitter<infer A, infer B, infer C, infer D> ? A & B & C & D : never
+
 export type ListenerCtx = {
+  serial?: boolean
   /** Signal that aborts when the current listener chain should stop */
   signal: AbortSignal
   /** Abort the current listener chain with an optional reason */
@@ -31,6 +35,8 @@ export type ListenerOpts = {
    * aborts, the listener is removed as if by `off()`.*/
   signal?: AbortSignal
 }
+
+export type EventType<T extends EventMap> = keyof T & string
 
 /** Per-key event envelope — the payload plus its discriminator. This is
  *  the shape every listener receives, both typed and wildcard. */
@@ -91,7 +97,7 @@ class BaseEmitter<T extends EventMap = EventMap> {
     return this
   }
 
-  on<K extends keyof T & string>(
+  on<K extends EventType<T>>(
     type: K,
     fn: Listener<EventOf<T, K>, this>,
     opts?: ListenerOpts
@@ -101,7 +107,7 @@ class BaseEmitter<T extends EventMap = EventMap> {
     return this
   }
 
-  once<K extends keyof T & string>(
+  once<K extends EventType<T>>(
     type: K,
     fn: Listener<EventOf<T, K>, this>,
     opts?: ListenerOpts
@@ -121,7 +127,7 @@ class BaseEmitter<T extends EventMap = EventMap> {
    *
    *  Pass the same function reference used with the original
    *  registration. */
-  off<K extends keyof T & string>(type: K, fn: Listener<EventOf<T, K>, this>): this {
+  off<K extends EventType<T>>(type: K, fn: Listener<EventOf<T, K>, this>): this {
     return this.#delete(type, fn as AnyListener)
   }
 
@@ -140,17 +146,17 @@ class BaseEmitter<T extends EventMap = EventMap> {
 
   /** Returns `true` if all listeners completed without abort, `false` if
    *  any listener called `ctx.abort()` or the event's `signal` aborted. */
-  emit<K extends keyof T & string>(type: K, ...args: EmitArgs<T[K]>) {
+  emit<K extends EventType<T>>(type: K, ...args: EmitArgs<T[K]>) {
     return this.#emit(type, { serial: false }, ...args)
   }
 
   /** Returns `true` if all listeners completed without abort, `false` if
    *  any listener called `ctx.abort()` or the event's `signal` aborted. */
-  emitSerial<K extends keyof T & string>(type: K, ...args: EmitArgs<T[K]>) {
+  emitSerial<K extends EventType<T>>(type: K, ...args: EmitArgs<T[K]>) {
     return this.#emit(type, { serial: true }, ...args)
   }
 
-  async #emit<K extends keyof T & string>(
+  async #emit<K extends EventType<T>>(
     type: K,
     opts: { serial?: boolean } = {},
     ...args: EmitArgs<T[K]>
@@ -165,7 +171,7 @@ class BaseEmitter<T extends EventMap = EventMap> {
 
     const ctrl = new AbortController()
     const signal = outer ? AbortSignal.any([outer, ctrl.signal]) : ctrl.signal
-    const ctx: ListenerCtx = { abort: (r) => ctrl.abort(r), signal }
+    const ctx: ListenerCtx = { abort: (r) => ctrl.abort(r), serial: opts.serial, signal }
 
     const run = async (fn: AnyListener) => {
       try {
