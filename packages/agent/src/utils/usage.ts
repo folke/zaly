@@ -19,3 +19,31 @@ export function addUsage(a: TokenCount, b: TokenCount): TokenCount {
   }
   return out
 }
+
+export class TokenUsage {
+  #last: TokenCount = { input: 0, output: 0 }
+  #total: TokenCount = { input: 0, output: 0 }
+
+  add(count: TokenCount): void {
+    this.#last = count
+    this.#total = addUsage(this.#total, count)
+  }
+
+  resetLast(): void {
+    this.#last = { input: 0, output: 0 }
+  }
+
+  get last(): TokenCount {
+    return this.#last
+  }
+
+  get total(): TokenCount {
+    return this.#total
+  }
+
+  get contextSize(): number {
+    return (
+      this.last.input + this.last.output + (this.last.cacheRead ?? 0) + (this.last.cacheWrite ?? 0)
+    )
+  }
+}

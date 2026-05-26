@@ -18,12 +18,13 @@ import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentContext } from "./context.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
 import type { Session } from "./session/session.ts"
-import type { AgentOptions, ContextPressure, StepResult } from "./types.ts"
+import type { AgentOptions, ContextPressure, StepResult, TurnResult } from "./types.ts"
 
 import { AiError, isContextOverflow, runTool } from "@zaly/ai"
 import { Emitter, toError } from "@zaly/shared"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
+import { TokenUsage } from "./utils/usage.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
 const PRESSURE_LEVELS = [0.75, 0.85, 0.95] as const
@@ -67,6 +68,7 @@ export class Agent extends Emitter<AgentEvents> {
   #abortController?: AbortController
   #pauseRequested?: string
   #running?: Promise<AgentStopKind>
+  #usage = new TokenUsage()
 
   /** Pending future-injects scheduled via `scheduleWakeup`. Cleared
    *  whenever the loop becomes active for any reason — the scheduled
@@ -210,24 +212,19 @@ export class Agent extends Emitter<AgentEvents> {
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
   get usage(): TokenCount {
-    return this.#stopPolicy.usage
+    return this.#usage.last
   }
   /** Cumulative token usage across every step in the current run.
    *  Useful for billing-style displays. */
   get totalUsage(): TokenCount {
-    return this.#stopPolicy.totalUsage
+    return this.#usage.total
   }
   /** Logical size of the current conversation in tokens — what the
    *  next request will send as input. Equals the last step's
    *  `input + output` (since the model's reply becomes part of the
    *  next prompt). Returns 0 before any step has run. */
   get contextSize(): number {
-    return (
-      this.usage.input +
-      this.usage.output +
-      (this.usage.cacheRead ?? 0) +
-      (this.usage.cacheWrite ?? 0)
-    )
+    return this.#usage.contextSize
   }
   get pressure(): ContextPressure {
     const used = this.contextSize
@@ -494,6 +491,8 @@ export class Agent extends Emitter<AgentEvents> {
       }
     }
 
+    this.#usage.add(collected.meta.usage)
+
     const result: Omit<StepResult, "kind"> = {
       finishReason: collected.meta.finishReason,
       message: collected,
@@ -544,6 +543,7 @@ export class Agent extends Emitter<AgentEvents> {
   async compact(): Promise<void> {
     const prev = this.#status
     this.#setStatus("compacting")
+    this.#usage.resetLast()
     try {
       const Compaction = await import("./compaction/compactions.ts").then((m) => m.Compaction)
       const opts: Partial<CompactionOptions> = {
@@ -632,27 +632,58 @@ export class Agent extends Emitter<AgentEvents> {
 
   // ── Internals ────────────────────────────────────────────────────────
 
-  async #loop(): Promise<AgentStopKind> {
-    if (!this.#started) await this.start()
-    // Reset per-run counters (steps, consecutive errors, call history).
-    // Token totals stay sticky across resets — they're billing-style
-    // displays, not per-turn caps.
-    this.#stopPolicy.reset()
-
+  async #turn(): Promise<TurnResult> {
     for (let step = 1; ; step++) {
       if (this.#abortController?.signal.aborted)
-        return this.#stop("aborted", this.#abortController.signal.reason)
-      if (this.#pauseRequested !== undefined) return this.#stop("paused", this.#pauseRequested)
+        return { kind: "aborted", reason: this.#abortController.signal.reason }
+      if (this.#pauseRequested !== undefined)
+        return { kind: "paused", reason: this.#pauseRequested }
 
       void this.emit("step-start", { step })
       const outcome = await this.step()
       void this.emit("step-end", { outcome: outcome.kind, step })
 
       if (outcome.kind === "error") {
-        return this.#stop(outcome.error?.name === "AbortError" ? "aborted" : "error", outcome.error)
+        return {
+          kind: outcome.error?.name === "AbortError" ? "aborted" : "error",
+          reason: outcome.error,
+        }
       }
 
       if (outcome.kind === "natural") {
+        return { kind: "natural" }
+      }
+
+      if (outcome.kind === "context-overflow") {
+        // Auto-compaction also gates the overflow recovery path. With
+        // `auto: false`, overflow stops cleanly instead of attempting
+        // a recovery the user explicitly opted out of.
+        if (this.#opts.compaction?.auto === false) return { kind: "context-overflow" }
+        // Compactor mutates the conversation; the rejected message is
+        // not committed — next step retries on the compacted state.
+        await this.compact()
+        continue
+      }
+
+      // outcome.kind === "tool-calls" — consult the policy.
+      const stop = this.#stopPolicy.detect()
+      if (stop) return { kind: stop }
+    }
+  }
+
+  async #loop(): Promise<AgentStopKind> {
+    if (!this.#started) await this.start()
+    // Reset per-run counters (steps, consecutive errors, call history).
+    // Token totals stay sticky across resets — they're billing-style
+    // displays, not per-turn caps.
+    this.#stopPolicy.reset()
+    for (let turn = 1; ; turn++) {
+      void this.emit("turn-start", { turn })
+      const result = await this.#turn()
+      const reason = result.reason ? toError(result.reason).message : undefined
+      void this.emit("turn-end", { outcome: result.kind, reason, turn })
+
+      if (result.kind === "natural") {
         // Drain follow-up queue if anything arrived during the turn.
         if (this.#sendQueue.length > 0) {
           for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
@@ -666,23 +697,8 @@ export class Agent extends Emitter<AgentEvents> {
         // never went through `#cancelAllWakeups`. Continue the loop so
         // `step()` drains them next iteration.
         if (this.#injectQueue.length > 0) continue
-        return this.#stop("natural")
       }
-
-      if (outcome.kind === "context-overflow") {
-        // Auto-compaction also gates the overflow recovery path. With
-        // `auto: false`, overflow stops cleanly instead of attempting
-        // a recovery the user explicitly opted out of.
-        if (this.#opts.compaction?.auto === false) return this.#stop("context-overflow")
-        // Compactor mutates the conversation; the rejected message is
-        // not committed — next step retries on the compacted state.
-        await this.compact()
-        continue
-      }
-
-      // outcome.kind === "tool-calls" — consult the policy.
-      const stop = this.#stopPolicy.detect()
-      if (stop) return this.#stop(stop)
+      return this.#stop(result.kind, result.reason)
     }
   }
 

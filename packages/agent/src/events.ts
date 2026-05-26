@@ -46,6 +46,8 @@ export type AgentEvents = {
   "tool-result": { call: ToolCallPart; result: ToolResult }
   "step-start": { step: number }
   "step-end": { step: number; outcome: StepKind }
+  "turn-start": { turn: number }
+  "turn-end": { turn: number; outcome: AgentStopKind; reason?: string }
   stop: AgentStop & {
     usage: TokenCount
     status: AgentStatus

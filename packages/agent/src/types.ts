@@ -10,7 +10,7 @@ import type {
 } from "@zaly/ai"
 import type { Logger } from "@zaly/shared/logger"
 import type { CompactionOptions } from "./compaction/compactions.ts"
-import type { StepKind } from "./events.ts"
+import type { AgentStopKind, StepKind } from "./events.ts"
 import type { MaskOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
 import type { PermissionScope, PermissionScopes } from "./permissions/handlers/registry.ts"
@@ -118,13 +118,18 @@ export interface ContextPressure {
 /** Outcome of a single step (one provider round-trip + tool batch).
  *  Returned from `step()` so custom drivers can interleave their own
  *  logic between steps. */
-export interface StepResult {
+export type StepResult = {
   kind: StepKind
   message?: AssistantMessage
   toolMessage?: Message<"tool">
   finishReason: FinishReason
   usage: TokenCount
   error?: Error
+}
+
+export type TurnResult = {
+  kind: AgentStopKind
+  reason?: unknown
 }
 
 /** Options for constructing an `Agent`. */

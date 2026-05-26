@@ -24,7 +24,7 @@ type Slots = {
   swarm: Swarm
 }
 
-type AgentContextEvents = {
+export type AgentContextEvents = {
   model: { model?: Model; prev?: Model }
   reasoning: { effort: ReasoningEffort; prev?: ReasoningEffort }
   session: { session: Session; prev?: Session }
