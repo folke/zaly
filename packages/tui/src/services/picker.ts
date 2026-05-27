@@ -19,6 +19,7 @@ export class Picker {
   #ui: OverlaySurface
   #input: Input
   #open = signal(false)
+  #close?: () => void
 
   constructor(ui: OverlaySurface, input: Input) {
     this.#ui = ui
@@ -49,9 +50,15 @@ export class Picker {
     )
   }
 
+  close() {
+    if (this.#close) this.#close()
+    this.#close = undefined
+  }
+
   async pick<T extends PickerItem<unknown> = PickerItem>(
     opts: Omit<PickOpts<T>, "input">
   ): Promise<T | undefined> {
+    this.close()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
     this.#input.consume()
@@ -74,6 +81,8 @@ export class Picker {
     node.once("unmount", () => done(), { signal: ac.signal })
     menu.once("cancel", () => done(), { signal: ac.signal })
     menu.once("select", ({ item }) => done(item), { signal: ac.signal })
+
+    this.#close = done
 
     return res.promise
   }

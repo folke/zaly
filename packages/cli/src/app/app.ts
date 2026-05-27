@@ -42,8 +42,6 @@ export class App {
     usage: { input: 0, output: 0 },
   })
 
-  #acEnabled = signal(true)
-
   private constructor(ctx: Context) {
     this.#ctx = ctx
   }
@@ -153,7 +151,7 @@ export class App {
       autocompleteOverlay({
         actions: this.#renderer.actions,
         composer,
-        enabled: this.#acEnabled.get,
+        enabled: memo(() => !this.#picker.isOpen()),
       })
     )
   }
