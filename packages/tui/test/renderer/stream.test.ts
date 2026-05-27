@@ -157,8 +157,8 @@ describe("Stream.onStart / onStop", () => {
   })
 })
 
-describe("Stream — drain through real surface", () => {
-  test("single append: createAsync resolves before paint, paint shows resolved value", async () => {
+describe("Stream — async rendering", () => {
+  test("single append: initial value paints first, resolved value paints after invalidation", async () => {
     const { stdout, stream } = mount(40, 10)
     let resolveWork: (v: string) => void = () => {}
     const work = new Promise<string>((r) => {
@@ -170,22 +170,20 @@ describe("Stream — drain through real surface", () => {
       return text(formatted, { wrap: "none" })
     })
 
-    // Resolve the work, then flip the state non-live via commit({ keep: 0 }).
-    // Non-live states route through `createRender`, which awaits the
-    // boundary's `whenIdle` before painting — so the drain catches the
-    // resolved value and we see >DONE< in the paint output.
-    resolveWork("DONE")
     await stream.render()
+    expect(stdout.all).toContain(">INIT<")
+    expect(stdout.all).not.toContain(">DONE<")
+
+    stdout.clear()
+    resolveWork("DONE")
+    await drain()
 
     expect(stdout.all).toContain(">DONE<")
-    expect(stdout.all).not.toContain(">INIT<")
   })
 
-  test("two sequential appends — each highlights via its own boundary", async () => {
-    // Reproduces the user's replay scenario: append → render → append → render.
+  test("two sequential appends update independently after async invalidation", async () => {
     const { stdout, stream } = mount(40, 10)
 
-    // ---- first append ----
     let resolveA: (v: string) => void = () => {}
     const workA = new Promise<string>((r) => {
       resolveA = r
@@ -195,12 +193,15 @@ describe("Stream — drain through real surface", () => {
       const formatted = memo(() => `>${body()}<`)
       return text(formatted, { wrap: "none" })
     })
-    resolveA("A:DONE")
-    await stream.render()
 
+    await stream.render()
+    expect(stdout.all).toContain(">A:INIT<")
+
+    stdout.clear()
+    resolveA("A:DONE")
+    await drain()
     expect(stdout.all).toContain(">A:DONE<")
 
-    // ---- second append (the case that fails in replay) ----
     stdout.clear()
     let resolveB: (v: string) => void = () => {}
     const workB = new Promise<string>((r) => {
@@ -211,10 +212,13 @@ describe("Stream — drain through real surface", () => {
       const formatted = memo(() => `>${body()}<`)
       return text(formatted, { wrap: "none" })
     })
-    resolveB("B:DONE")
-    await stream.render()
 
+    await stream.render()
+    expect(stdout.all).toContain(">B:INIT<")
+
+    stdout.clear()
+    resolveB("B:DONE")
+    await drain()
     expect(stdout.all).toContain(">B:DONE<")
-    expect(stdout.all).not.toContain(">B:INIT<")
   })
 })

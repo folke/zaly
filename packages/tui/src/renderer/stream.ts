@@ -17,6 +17,8 @@ export type StreamEvents = {
 }
 
 type RenderState = {
+  dirty: boolean
+  live: boolean
   node: Node
   /** Per-state Suspense boundary. Installed at `append` time inside
    *  the appended subtree's Owner scope, so descendant `createAsync`
@@ -27,6 +29,7 @@ type RenderState = {
   boundary: SuspenseBoundary
   /** Undefined until the first render pass populates it. */
   rows?: string[]
+  freeze: () => void
 }
 
 export type StreamOptions = {
@@ -64,10 +67,8 @@ export type StreamOptions = {
  */
 export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
-  #queue: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
-  #asyncDirtyCheck?: Promise<void>
   /** Bottom row of the live region the last time we painted. Used to
    *  compute where `#rows` actually live on screen when the footer
    *  resizes between renders (scrollBottom moves). Without this we'd
@@ -126,11 +127,31 @@ export class Stream extends Surface<StreamEvents> {
         return node()
       })
     )
-    this.#queue.push({ boundary, node: resolved })
+
+    const invalidate = () => {
+      state.dirty = true
+      this.onDirty()
+    }
+
+    const state = {
+      boundary,
+      dirty: true,
+      freeze: () => {
+        if (state.node.mounted) state.node.unmount()
+        state.node.off("invalidate", invalidate)
+      },
+      get live() {
+        return this.boundary.active() || this.dirty || !!this.node.state.sticky
+      },
+      node: resolved,
+    }
+
+    this.#state.push(state)
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
-    resolved.on("invalidate", this.onDirty)
-    //this.commit({ keep: this.#opts.maxLive, render: false })
+
+    resolved.on("invalidate", invalidate)
+
     void this.emit("dirty")
     return resolved
   }
@@ -142,7 +163,7 @@ export class Stream extends Surface<StreamEvents> {
 
   /** Tracked nodes (oldest first). Used by renderer traversals. */
   get nodes(): readonly Node[] {
-    return [...this.#state.map((s) => s.node), ...this.#queue.map((s) => s.node)]
+    return this.#state.map((s) => s.node)
   }
 
   async waitIdle(): Promise<void> {
@@ -159,41 +180,26 @@ export class Stream extends Surface<StreamEvents> {
     return this.#rows
   }
 
-  async #render(): Promise<string[]> {
+  async #render(): Promise<{ commitLimit: number; rows: string[] }> {
     const ctx = this.getCtx()
 
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
-    while (true) {
-      // Render tracked nodes. Node.render() owns cache invalidation, so clean
-      // nodes return cached rows immediately; Stream only preserves the
-      // previous row count when a node shrinks so stale terminal rows clear.
-      // oxlint-disable-next-line no-await-in-loop
-      await Promise.all(
-        this.#state.map(async (s) => {
-          const len = s.rows?.length ?? 0
-          s.rows = await s.node.render(ctx)
-          if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
-        })
-      )
+    // Render tracked nodes. Node.render() owns cache invalidation, so clean
+    // nodes return cached rows immediately; Stream only preserves the
+    // previous row count when a node shrinks so stale terminal rows clear.
+    await Promise.all(
+      this.#state.map(async (s) => {
+        const len = s.rows?.length ?? 0
+        s.dirty = false
+        s.rows = await s.node.render(ctx)
+        if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
+      })
+    )
 
-      // Keep adding queued nodes until we hit an active boundary (pending async work)
-      if (this.#queue.length && !this.active) this.#state.push(this.#queue.shift()!)
-      else break
-    }
-
-    // If any active boundaries remain, schedule a dirty check
-    if (!this.#asyncDirtyCheck) {
-      const active = this.#state
-        .map((s) => s.boundary)
-        .filter((b) => b.active())
-        .map((b) => b.whenIdle())
-      if (active.length) {
-        this.#asyncDirtyCheck = Promise.race(active).then(() => {
-          this.#asyncDirtyCheck = undefined
-          this.onDirty()
-        })
-      }
-    }
+    // Let promise callbacks scheduled by createAsync during render run before
+    // deciding what can enter scrollback. If a resource resolved immediately,
+    // its setValue() invalidates the node here, keeping this state live for
+    // one more frame instead of committing initial/fallback rows.
+    await Promise.resolve()
 
     // Push sticky nodes to the end so they paint last and end up at the bottom
     const states: RenderState[] = []
@@ -206,14 +212,18 @@ export class Stream extends Surface<StreamEvents> {
     this.#state = [...states]
 
     const rows: string[] = []
-    for (const s of this.#state) if (s.rows) rows.push(...s.rows)
-    return rows
+    let commitLimit: number | undefined
+    for (const s of this.#state) {
+      if (commitLimit === undefined && s.live) commitLimit = rows.length
+      if (s.rows) rows.push(...s.rows)
+    }
+    return { commitLimit: commitLimit ?? rows.length, rows }
   }
 
   async _render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn) => this.terminal.sync(fn))
 
-    const allRows = await this.#render()
+    const { commitLimit, rows: allRows } = await this.#render()
     const liveHeight = this.liveHeight
     const bottom = this.terminal.scrollBottom
     const terminalRows = this.terminal.rows
@@ -230,7 +240,7 @@ export class Stream extends Surface<StreamEvents> {
     // shrinks back. `fixedFooterHeight = 0` reduces to "commit at the
     // full terminal" (old behavior).
     const commitThreshold = Math.max(1, terminalRows - this.#opts.fixedFooterHeight)
-    const newCC = Math.max(oldCC, allRows.length - commitThreshold)
+    const newCC = Math.min(commitLimit, Math.max(oldCC, allRows.length - commitThreshold))
     const commitCount = newCC - oldCC
     // Bottom-anchored slice of (post-commit) addressable: the rows
     // that actually paint in the scroll region.
@@ -335,14 +345,14 @@ export class Stream extends Surface<StreamEvents> {
     // Drop states whose rows have entirely entered scrollback. Any
     // dropped rows leave `allRows` too on the next tick, so decrement
     // `#scrollbackCount` accordingly — it tracks scrollback rows that
-    // are still represented in our state queue.
+    // are still represented in our live state.
     let dropped = 0
     while (this.#state.length > 0) {
       const first = this.#state[0]
       const len = first.rows?.length ?? 0
-      if (dropped + len > newCC) break
+      if (first.live || dropped + len > newCC) break
       this.#state.shift()
-      this.#freeze(first)
+      first.freeze()
       dropped += len
     }
     this.#scrollbackCount = newCC - dropped
@@ -351,18 +361,11 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   get pending() {
-    return this.active || this.#queue.length > 0
+    return this.active
   }
 
   get active() {
     return this.#state.some((s) => s.boundary.active())
-  }
-
-  /** Detach invalidate listener and mark non-live.
-   * Might still render this node if it was never rendered yet */
-  #freeze(state: RenderState): void {
-    if (state.node.mounted) state.node.unmount()
-    state.node.off("invalidate", this.onDirty)
   }
 
   /**
@@ -428,13 +431,11 @@ export class Stream extends Surface<StreamEvents> {
     // the visible paint area) or a diff miss (inside).
     for (let r = 1; r <= this.terminal.scrollBottom; r++) this.#stale.add(r)
     for (const s of this.#state) if (!s.node.mounted) s.node.mount(ctx)
-    for (const s of this.#queue) if (!s.node.mounted) s.node.mount(ctx)
   }
 
   protected unmountAll(): void {
     // Tracked state (`#state`) is preserved so a subsequent `onStart()`
     // finds the same tree and remounts it.
     for (const s of this.#state) if (s.node.mounted) s.node.unmount()
-    for (const s of this.#queue) if (s.node.mounted) s.node.unmount()
   }
 }
