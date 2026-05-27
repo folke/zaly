@@ -1,11 +1,15 @@
 import type { Message } from "@zaly/ai"
-import type { Renderer } from "@zaly/tui"
+import type { App } from "./app.ts"
 
 import { overlay } from "@zaly/tui"
 import { messageWidgets } from "./message.ts"
 
-export async function replay(messages: readonly Message[], renderer: Renderer) {
-  const nodes = messageWidgets(messages).flatMap(({ widgets }) => widgets)
+export async function replay(messages: readonly Message[], app: App) {
+  const renderer = app.renderer
+  const nodes = messageWidgets(messages, {
+    format: app.composer.formatter,
+    pending: false,
+  }).flatMap(({ widgets }) => widgets)
   const len = 8
   const tail = nodes.slice(-len)
 

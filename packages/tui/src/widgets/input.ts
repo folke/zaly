@@ -32,6 +32,8 @@ export interface InputState extends StyleState {
   validate?: (value: string) => boolean
 }
 
+export type InputValue = { value: string; attachments: InputAttachment[] }
+
 const PASTE_MAX_LINES = 5
 const PASTE_MAX_CHARS = 1000
 
@@ -305,7 +307,7 @@ export class Input extends Node<InputState, InputEvents> {
   /** Consume the input's current value and attachments.
    * Pastes are replaced inline with their text; file/image
    * attachments are returned in the `attachments` array and removed from the value. */
-  consume(): { value: string; attachments: InputAttachment[] } {
+  consume(): InputValue {
     let value = this.state.value ?? ""
     const atts: InputAttachment[] = []
     for (const att of this.#staged) {

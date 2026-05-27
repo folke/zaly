@@ -1,12 +1,11 @@
 import type { FilePart, Message } from "@zaly/ai"
 import type { Accessor, Node } from "@zaly/tui"
-import type { FileRef } from "../app/composer.ts"
+import type { FileRef, InputFormatter } from "../app/composer.ts"
 
 import { isAttachment, justText, toParts } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { box, image, text, widget } from "@zaly/tui"
+import { box, createAsync, image, RenderContext, text, useContext, widget } from "@zaly/tui"
 import { hyperlink } from "@zaly/tui/ansi"
-import { formatInput } from "../app/composer.ts"
 import { bubble } from "./bubble.ts"
 
 /** Single user-turn bubble. Plain text plus optional attachments —
@@ -14,14 +13,25 @@ import { bubble } from "./bubble.ts"
  *  link with the file name. Static once committed; no closure
  *  reactivity needed. */
 export const userMessage = widget(
-  (props: { message: Message<"user">; pending?: Accessor<boolean> }) => {
+  (props: { message: Message<"user">; pending?: Accessor<boolean>; format?: InputFormatter }) => {
     const children: Node[] = []
     const m = props.message
     const content = justText(m.content)
     const attachments = toParts(m.content).filter((p) => isAttachment(p))
 
+    const context = useContext(RenderContext)
+
+    const formatted = createAsync(
+      async () => {
+        const style = context?.style()
+        if (!props.format || !style) return content
+        return (await props.format(content, { message: props.message, style })) ?? content
+      },
+      { initialValue: content }
+    )
+
     const refs = (m.meta?.fileRefs ?? []) as FileRef[]
-    if (content !== "") children.push(text(({ style }) => formatInput(content, { refs, style })))
+    if (content !== "") children.push(text(formatted))
     for (const att of attachments) {
       const info = fileInfo(att)
       if (info.type === "image") {

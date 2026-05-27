@@ -1,5 +1,6 @@
 import type { Message, ToolResultPart } from "@zaly/ai"
 import type { Accessor, Node, Setter } from "@zaly/tui"
+import type { InputFormatter } from "./composer.ts"
 
 import { uuidv7 } from "@zaly/agent"
 import { toParts } from "@zaly/ai"
@@ -17,15 +18,15 @@ export type MessageWidgets = {
 
 export function messageWidgets(
   messages: readonly Message[],
-  opts: { pending: true }
+  opts: { pending: true; format?: InputFormatter }
 ): (MessageWidgets & { setPending: Setter<boolean> })[]
 export function messageWidgets(
   messages: readonly Message[],
-  opts?: { pending: false }
+  opts?: { pending: false; format?: InputFormatter }
 ): Omit<MessageWidgets, "setPending">[]
 export function messageWidgets(
   messages: readonly Message[],
-  opts?: { pending?: boolean }
+  opts?: { pending?: boolean; format?: InputFormatter }
 ): MessageWidgets[] {
   const ret: MessageWidgets[] = []
   // Pre-index tool results by call id. Single pass — tool messages
@@ -45,7 +46,7 @@ export function messageWidgets(
       ret.push({
         id: m.id,
         setPending: p?.set,
-        widgets: [() => userMessage({ message: m, pending: p?.get })],
+        widgets: [() => userMessage({ format: opts?.format, message: m, pending: p?.get })],
       })
     } else if (m.role === "assistant") {
       ret.push({

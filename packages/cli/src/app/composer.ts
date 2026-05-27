@@ -1,11 +1,16 @@
-import type { Agent, BashTool, ReadTool } from "@zaly/agent"
-import type { Attachment, ContentPart, Message, Model, ParamsOf, TextPart } from "@zaly/ai"
-import type { InputAttachment } from "@zaly/tui"
+// oxlint-disable no-await-in-loop
+import type { Agent } from "@zaly/agent"
+import type { Message } from "@zaly/ai"
+import type { MaybePromise } from "@zaly/shared"
+import type { CompletionSource, Input, InputValue } from "@zaly/tui"
 import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
-import { normPath, safeStatAsync } from "@zaly/shared"
 import { input } from "@zaly/tui"
+import { ActionsComposer } from "./composer/actions.ts"
+import { BashComposer } from "./composer/bash.ts"
+import { FilesComposer } from "./composer/files.ts"
+import { MessageComposer } from "./composer/message.ts"
 
 export type FileRef = {
   ref: string
@@ -14,167 +19,163 @@ export type FileRef = {
   to?: number
 }
 
-const FILE_REF_RE = /@([^\s,;]+)/g
-const SLASH_CMD_RE = /^\/\w+/
-const BASH_CMD_RE = /^(\s*!\s*)(.*)$/
-
-export async function attachmentParts(atts: InputAttachment[]): Promise<Attachment[]> {
-  const ret = await Promise.all(atts.map((att) => attachmentPart(att)))
-  return ret.filter((a): a is Attachment => a !== undefined)
-}
-
-async function attachmentPart(att: InputAttachment): Promise<Attachment | undefined> {
-  if (att.type === "image") {
-    const { toImagePart } = await import("@zaly/ai")
-    const { imageConvert, imageInfo } = await import("@zaly/shared/image")
-    const info = await imageInfo(att)
-    const ready = await imageConvert(info, ["png", "jpeg", "webp"])
-    if (!ready) {
-      console.error(`couldn't convert \`${att.path}\` (**${info.format}**) to png/jpeg/webp`)
-      return
-    }
-    return toImagePart(ready)
-  }
-
-  if (att.type === "pdf") {
-    const { toPdfPart } = await import("@zaly/ai")
-    return toPdfPart(att.data)
-  }
-}
-
-function canAttach(att: InputAttachment, model?: Model): boolean {
-  if (!model) return false
-  if (att.type === "image" && model.canAttach("image")) return true
-  if (att.type === "pdf" && model.canAttach("pdf")) return true
-  return false
-}
-
-export async function formatInput(
-  value: string,
-  ctx: { style: StyleBuilder; refs?: FileRef[] }
-): Promise<string> {
-  const s = ctx.style
-  const bashMatch = value.match(BASH_CMD_RE)
-  if (bashMatch) {
-    const prefix = bashMatch[1]
-    const command = bashMatch[2]
-    const { codeToAnsi } = await import("@zaly/tui/shiki")
-    value = await codeToAnsi(command, "bash", s.theme.shiki)
-    return `${s.divider(prefix)}${value}`
-  }
-  value = value.replace(SLASH_CMD_RE, (slashcmd) => s.primary(slashcmd))
-
-  if (ctx.refs) {
-    for (const { ref } of ctx.refs) value = value.replace(ref, s.mdLink(ref))
-  } else value = value.replace(FILE_REF_RE, (file) => s.mdLink(file))
-  return value
-}
-
-export const createComposer = ({ app }: { app: App }) =>
-  input({
-    canAttach: (att) => canAttach(att, app.agent.model),
-    format: formatInput,
-    placeholder: "Ask zaly anything…",
-  }).on("submit", async ({ value, attachments }) => {
-    const trimmed = value.trim()
-    if (trimmed === "" || !app.ready) return
-    if (!app.agent.model) {
-      app.ctx.error("No active model. Please use `/model` to select a model and try again.")
-      return
-    }
-    const atts = await attachmentParts(attachments)
-    await submit(value, atts, app.agent)
-    void app.agent.waitIdle()
-  })
-
-/**
- * Submit user text + staged attachments. Appends the user widget to
- * the stream (so the bubble shows the text the user typed, including
- * `[Image #n]` / `[PDF #n]` placeholders that render as inline image
- * / PDF widgets), then injects the equivalent `Message` into the
- * agent.
- *
- * Pure-ish: depends on `renderer.stream` and `agent.inject` but holds
- * no state. Caller is responsible for clearing the composer + the
- * attachment buffer around this call.
- */
-async function submit(
+export type InputFormatter = (
   text: string,
-  attachments: readonly Attachment[],
-  agent: Agent
-): Promise<void> {
-  const message: Message<"user"> =
-    attachments.length === 0
-      ? { content: text, role: "user" }
-      : {
-          content: [{ text, type: "text" } as TextPart, ...attachments] as ContentPart[],
-          role: "user",
-        }
+  ctx: { style: StyleBuilder; message?: Message<"user"> }
+) => MaybePromise<string | undefined>
 
-  agent.send(message, { run: false })
+export type ComposerCtx = {
+  value: string
+  app: App
+  input: Input
+  message?: Message<"user">
+  stop: () => void
+}
 
-  const refs = new Map<string, FileRef>()
-  const messages: Message[] = []
+export type ComposerFormatCtx = ComposerCtx & {
+  style: StyleBuilder
+}
 
-  const RANGE_RE = /^(.*?)(?::(\d+)(?:-(\d+))?)?$/
-  const CONTEXT = 3
-
-  for (const [, ref] of text.matchAll(FILE_REF_RE)) {
-    const match = ref.match(RANGE_RE)
-    if (!match) continue
-
-    const [, file, fromRaw, toRaw] = match
-    const from = fromRaw ? Number(fromRaw) : undefined
-    const to = toRaw ? Number(toRaw) : undefined
-    const path = normPath(file)
-    // oxlint-disable-next-line no-await-in-loop
-    const s = await safeStatAsync(path)
-    if (!s?.isFile()) continue
-    refs.set(path, { from, path, ref: `@${ref}`, to })
+export type ComposerSubmitCtx = ComposerCtx &
+  InputValue & {
+    agent: Agent
   }
 
-  if (refs.size > 0) {
-    message.meta ??= {}
-    message.meta.fileRefs = [...refs.values()]
+export type ComposerPlugin = {
+  complete?: CompletionSource
+  name: string
+  when?: RegExp | ((value: string, ctx: ComposerCtx) => boolean)
+  format?: (value: string, ctx: ComposerFormatCtx) => MaybePromise<string | undefined>
+  validate?: (value: string, ctx: ComposerCtx) => true | string
+  submit?: (value: string, ctx: ComposerSubmitCtx) => MaybePromise<void>
+}
+
+type PluginFeat = "format" | "validate" | "submit"
+
+export class Composer {
+  #app: App
+  #plugins: ComposerPlugin[] = []
+  #input?: Input
+
+  formatter: InputFormatter = async (text, ctx) => this.format(text, ctx)
+
+  constructor(app: App) {
+    this.#app = app
   }
 
-  const bashMatch = text.match(BASH_CMD_RE)
-  if (bashMatch) {
-    const command = bashMatch[2]
-    const toolUse = await agent.useTool<BashTool>(
-      "bash",
-      { command } as ParamsOf<BashTool>,
-      "Bash command from the previous user message was executed automatically"
-    )
-    messages.push(...toolUse.messages)
-  } else {
-    await Promise.all(
-      [...refs.values()].map(async (ref) => {
-        const { path, from, to } = ref
-
-        let offset: number | undefined
-        let limit: number | undefined
-
-        if (from !== undefined) {
-          if (to === undefined) {
-            offset = Math.max(1, from - CONTEXT)
-            limit = CONTEXT * 2 + 1
-          } else {
-            const start = Math.min(from, to)
-            const end = Math.max(from, to)
-            offset = start
-            limit = end - start + 1
-          }
-        }
-
-        const toolUse = await agent.useTool<ReadTool>(
-          "read",
-          { limit, offset, path } as ParamsOf<ReadTool>,
-          "File references from the previous user message were read automatically"
-        )
-        messages.push(...toolUse.messages.map((m) => Object.assign(m, { hidden: true })))
-      })
-    )
+  ctx<T extends { value: string }>(ctx: T): ComposerCtx & T {
+    return {
+      app: this.#app,
+      input: this.input,
+      message: undefined,
+      stop: () => true,
+      ...ctx,
+    }
   }
-  agent.send(messages)
+
+  get input(): Input {
+    if (!this.#input) throw new Error("Composer input is not initialized yet.")
+    return this.#input
+  }
+
+  get value(): string {
+    return this.#input?.state.value ?? ""
+  }
+
+  set value(v: string) {
+    if (!this.#input) throw new Error("Composer input is not initialized yet.")
+    this.#input.state.value = v
+  }
+
+  add(plugin: ComposerPlugin): void {
+    this.#plugins.push(plugin)
+  }
+
+  match<T extends PluginFeat>(
+    feat: T,
+    plugin: ComposerPlugin,
+    ctx: ComposerCtx
+  ): plugin is ComposerPlugin & Record<T, NonNullable<ComposerPlugin[T]>> {
+    if (typeof plugin[feat] !== "function") return false
+    if (plugin.when instanceof RegExp) {
+      plugin.when.lastIndex = 0
+      return plugin.when.test(ctx.value)
+    }
+    if (typeof plugin.when === "function") return plugin.when(ctx.value, ctx)
+    return true
+  }
+
+  *plugins<T extends PluginFeat>(feat: T, ctx: ComposerCtx) {
+    let stopped = false
+    ctx.stop = () => (stopped = true)
+    for (const p of this.#plugins) {
+      if (this.match(feat, p, ctx)) yield p
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
+      if (stopped) {
+        yield false
+        return
+      }
+    }
+  }
+
+  async format(
+    value: string,
+    opts: { style: StyleBuilder; message?: Message<"user"> }
+  ): Promise<string> {
+    const ctx = this.ctx({ value, ...opts })
+    for (const plugin of this.plugins("format", ctx)) {
+      if (plugin === false) break
+      const formatted = await plugin.format(value, ctx)
+      value = formatted ?? value
+    }
+    return value
+  }
+
+  validate(value: string): boolean {
+    const ctx = this.ctx({ value })
+    for (const plugin of this.plugins("validate", ctx)) {
+      if (plugin === false) break
+      const valid = plugin.validate(value, ctx)
+      if (valid !== true) {
+        this.#app.notify(valid, { level: "error" })
+        return false
+      }
+    }
+    return true
+  }
+
+  async submit(value: InputValue): Promise<void> {
+    if (value.value.trim() === "") return
+    const ctx = this.ctx({ ...value, agent: this.#app.agent })
+    for (const plugin of this.plugins("submit", ctx)) {
+      if (plugin === false) return
+      await plugin.submit(value.value, ctx)
+    }
+    this.#app.agent.send()
+    void this.#app.agent.waitIdle()
+  }
+
+  get ui() {
+    return (this.#input = input({
+      canAttach: (att) => {
+        const model = this.#app.agent.model
+        if (!model) return false
+        if (att.type === "image" && model.canAttach("image")) return true
+        if (att.type === "pdf" && model.canAttach("pdf")) return true
+        return false
+      },
+      format: (value, ctx) => this.format(value, ctx),
+      placeholder: "Ask zaly anything…",
+      validate: (value: string) => this.validate(value),
+    }).on("submit", (value) => this.submit(value)))
+  }
+}
+
+export function createComposer(app: App): Composer {
+  const composer = new Composer(app)
+  composer.add(new ActionsComposer())
+  composer.add(new MessageComposer())
+  composer.add(new BashComposer())
+  composer.add(new FilesComposer())
+  return composer
 }

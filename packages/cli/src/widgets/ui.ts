@@ -1,5 +1,6 @@
 import type { Accessor, Actions, Input, Ref } from "@zaly/tui"
 import type { App } from "../app/app.ts"
+import type { Composer } from "../app/composer.ts"
 
 import {
   actionsSource,
@@ -11,7 +12,6 @@ import {
   overlay,
   text,
 } from "@zaly/tui"
-import { createComposer } from "../app/composer.ts"
 import { statusline } from "./statusline.ts"
 
 /**
@@ -19,7 +19,7 @@ import { statusline } from "./statusline.ts"
  * Returned `input` is the composer node so `app.ts` can wire its
  * `submit` / `attach` handlers.
  */
-export const appUi = ({ app, composer }: { app: App; composer: Ref<Input> }) =>
+export const appUi = ({ app, composer }: { app: App; composer: Composer }) =>
   box(
     { padding: [1, 0, 0, 0] },
     box(
@@ -28,7 +28,7 @@ export const appUi = ({ app, composer }: { app: App; composer: Ref<Input> }) =>
       box(
         { flexDirection: "row", gap: 1 },
         text(({ style }) => style.primary("❯"), { width: 1 }),
-        createComposer({ app }).ref(composer).focus()
+        composer.ui.focus()
       ),
       divider(),
       statusline(app.state)

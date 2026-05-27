@@ -63,6 +63,8 @@ export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
   fn?: ActionFn<T>
 }
 
+export type Action<T extends ArgsOpts = ArgsOpts> = ActionDef<T> & { id: string }
+
 export type ActionMap = Record<string, ActionDef>
 
 export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionDef<T>): ActionDef<T> {
@@ -73,15 +75,14 @@ export type ActionFilter = {
   cmd?: string
   id?: string
   hidden?: boolean
-  filter?: (info: ActionDef, id: string) => boolean
+  filter?: (info: Action) => boolean
 }
 
-function filterAction(id: string, info: ActionDef, filter: ActionFilter): boolean {
-  if (filter.cmd && filter.cmd !== info.cmd) return false
-  if (filter.id && filter.id !== id) return false
-  if (filter.hidden !== undefined && filter.hidden !== info.hidden) return false
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument
-  if (filter.filter && !filter.filter(info, id)) return false
+function filterAction(action: Action, filter: ActionFilter): boolean {
+  if (filter.cmd && filter.cmd !== action.cmd) return false
+  if (filter.id && filter.id !== action.id) return false
+  if (filter.hidden !== undefined && filter.hidden !== action.hidden) return false
+  if (filter.filter && !filter.filter(action)) return false
   return true
 }
 
@@ -130,7 +131,7 @@ type ActionEvents = {
  * `list()` returns the catalog for command palette / help enumeration.
  */
 export class Actions extends Emitter<ActionEvents> {
-  readonly #catalog = new Map<string, ActionDef>()
+  readonly #catalog = new Map<string, Action>()
   /** Optional focus-chain walker. Supplied by the Renderer so Actions
    *  doesn't have to know about the router directly. Returns the
    *  starting node (focused by default) so dispatch can walk up. */
@@ -174,12 +175,12 @@ export class Actions extends Emitter<ActionEvents> {
   register(entries: ActionMap, opts: { default?: boolean } = {}): () => void {
     const isDefault = opts.default ?? false
     const ids = Object.keys(entries)
-    const prior = new Map<string, ActionDef | undefined>()
+    const prior = new Map<string, Action | undefined>()
     for (const id of ids) prior.set(id, this.#catalog.get(id))
     for (const [id, info] of Object.entries(entries)) {
       info.keys = info.keys?.map((k) => canonical(k))
       const existing = this.#catalog.get(id)
-      this.#catalog.set(id, isDefault ? { ...info, ...existing } : { ...existing, ...info })
+      this.#catalog.set(id, isDefault ? { ...info, ...existing, id } : { ...existing, ...info, id })
     }
     void this.emit("change")
     return () => {
@@ -201,20 +202,17 @@ export class Actions extends Emitter<ActionEvents> {
     if (changed) void this.emit("change")
   }
 
-  get(id: string): ActionDef | undefined {
+  get(id: string): Action | undefined {
     return this.#catalog.get(id)
   }
 
-  list(opts?: ActionFilter): (ActionDef & { id: string })[] {
-    return (
-      [...this.#catalog.entries()]
-        .filter(([id, info]) => (opts ? filterAction(id, info, opts) : true))
-        // oxlint-disable-next-line oxc/no-map-spread
-        .map(([id, info]) => ({ ...info, id }))
+  list(opts?: ActionFilter): Action[] {
+    return [...this.#catalog.values()].filter((action) =>
+      opts ? filterAction(action, opts) : true
     )
   }
 
-  find(opts?: ActionFilter): (ActionDef & { id: string }) | undefined {
+  find(opts?: ActionFilter): Action | undefined {
     return this.list(opts)[0]
   }
 
@@ -227,13 +225,17 @@ export class Actions extends Emitter<ActionEvents> {
    *      `actions[id]`.
    *   3. Return `false` if nothing consumed.
    */
-  dispatch(id: string, partial: Partial<ActionCtx> = {}): boolean {
-    const info = this.#catalog.get(id)
+  dispatch(id: string, ctx?: Partial<ActionCtx>): boolean
+  // oxlint-disable-next-line typescript/unified-signatures
+  dispatch(action: Action, ctx?: Partial<ActionCtx>): boolean
+  dispatch(idOrAction: string | Action, partial: Partial<ActionCtx> = {}): boolean {
+    const id = typeof idOrAction === "string" ? idOrAction : idOrAction.id
+    const action = typeof idOrAction === "string" ? this.#catalog.get(id) : idOrAction
     const target = partial.target ?? this.#getTarget()
     const source = partial.source ?? "programmatic"
-    if (info?.fn) {
+    if (action?.fn) {
       const ctx: ActionCtx = { id, source, target, ...partial }
-      const fn = info.fn
+      const fn = action.fn
       this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
       return true
     }

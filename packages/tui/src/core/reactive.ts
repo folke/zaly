@@ -803,8 +803,8 @@ export function createAsync<T>(
 
 export type Ref<T> = (() => T) & { value: T }
 
-export function createRef<T>(): Ref<T> {
-  let current: T | undefined
+export function createRef<T>(value?: T): Ref<T> {
+  let current: T | undefined = value
   const get = (): T => {
     if (current === undefined) throw new Error("Ref value accessed before initialization")
     return current

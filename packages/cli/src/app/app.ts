@@ -4,12 +4,14 @@ import type { ActionDef, ActionMap, Actions, Input, PickerItem, Renderer } from 
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
+import type { Composer } from "./composer.ts"
 
 import { box, createRef, createRenderer, createStore, memo, Notifier, Picker } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { appActions } from "./actions.ts"
 import { buildAgent, wireAgent } from "./agent.ts"
+import { createComposer } from "./composer.ts"
 import { replay } from "./replay.ts"
 import { bindStream } from "./stream.ts"
 
@@ -35,6 +37,7 @@ export class App {
   #exitPromise!: ReturnType<typeof Promise.withResolvers>
   #notifier!: Notifier
   #picker!: Picker
+  #composer!: Composer
 
   #state = createStore<AppState>({
     busy: true,
@@ -62,16 +65,16 @@ export class App {
     return this.#state
   }
 
-  get composer(): Input {
-    return this.#input
+  get composer(): Composer {
+    return this.#composer
   }
 
   get input() {
-    return this.composer.state.value ?? ""
+    return this.composer.value
   }
 
   set input(value: string) {
-    this.composer.state.value = value
+    this.composer.value = value
   }
 
   get actions(): Actions {
@@ -143,14 +146,15 @@ export class App {
     await this.#ctx.flush()
     this.#ctx.logger.detach("cli")
 
-    const composer = createRef<Input>()
-    this.#renderer.ui.add(() => appUi({ app: this, composer }))
-    this.#input = composer()
+    this.#composer = createComposer(this)
+    this.#renderer.ui.add(() => appUi({ app: this, composer: this.#composer }))
+
+    this.#input = this.#composer.input
     this.#picker = new Picker(this.#renderer.overlay, this.#input)
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
         actions: this.#renderer.actions,
-        composer,
+        composer: createRef(this.#input),
         enabled: memo(() => !this.#picker.isOpen()),
       })
     )
@@ -176,7 +180,7 @@ export class App {
     // to the model on the next request, just not painted here.
     const tail = session.messages.filter((m) => !m.hidden).slice(-50)
 
-    await replay(tail, this.#renderer)
+    await replay(tail, this)
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
 
     this.#agent = await buildAgent(this)
@@ -210,7 +214,7 @@ export class App {
 
     wireAgent(this.#agent, this.#state, opts)
 
-    bindStream(this.#renderer, this.#agent, opts)
+    bindStream(this)
 
     this.#agent.session.on(
       "compact",

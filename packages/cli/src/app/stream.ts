@@ -1,7 +1,7 @@
-import type { Agent } from "@zaly/agent"
 import type { ToolResult } from "@zaly/ai"
-import type { Renderer, Setter, Signal } from "@zaly/tui"
+import type { Setter, Signal } from "@zaly/tui"
 import type { ToolCallProps } from "../widgets/tool.ts"
+import type { App } from "./app.ts"
 
 import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
@@ -28,11 +28,8 @@ interface ActiveWidget {
  * the live event stream after the agent is wired up. Pass an
  * AbortSignal via `opts` to detach every handler in one shot.
  */
-export function bindStream(
-  renderer: Renderer,
-  agent: Agent,
-  opts?: { signal?: AbortSignal }
-): void {
+export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
+  const { agent, renderer, composer } = app
   let active: ActiveWidget | undefined
   let tools: ActiveTools | undefined
 
@@ -66,7 +63,10 @@ export function bindStream(
     .on(
       "pending",
       ({ messages }) => {
-        for (const mf of messageWidgets(messages, { pending: true })) {
+        for (const mf of messageWidgets(messages, {
+          format: composer.formatter,
+          pending: true,
+        })) {
           pending.set(mf.id, mf.setPending)
           for (const w of mf.widgets) renderer.stream.append(w)
         }
