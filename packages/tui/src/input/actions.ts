@@ -35,7 +35,7 @@ export interface ActionCtx<T extends ArgsOpts = ArgsOpts> {
 
 export type ActionFn<T extends ArgsOpts = ArgsOpts> = (ctx: ActionCtx<T>) => unknown
 
-export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
+export type KeyBinding = Omit<ActionDef, "fn" | "keys"> & {
   id: string
   fn: ActionFn
   keys: string | readonly string[]
@@ -54,7 +54,7 @@ export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
  *   widget instance). When absent, dispatch walks the focus chain
  *   looking for a node with `actions[id]`.
  */
-export interface ActionInfo<T extends ArgsOpts = ArgsOpts> {
+export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
   cmd?: string
   desc?: string
   keys?: readonly string[]
@@ -63,9 +63,9 @@ export interface ActionInfo<T extends ArgsOpts = ArgsOpts> {
   fn?: ActionFn<T>
 }
 
-export type ActionMap = Record<string, ActionInfo>
+export type ActionMap = Record<string, ActionDef>
 
-export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionInfo<T>): ActionInfo<T> {
+export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionDef<T>): ActionDef<T> {
   return action
 }
 
@@ -73,10 +73,10 @@ export type ActionFilter = {
   cmd?: string
   id?: string
   hidden?: boolean
-  filter?: (info: ActionInfo, id: string) => boolean
+  filter?: (info: ActionDef, id: string) => boolean
 }
 
-function filterAction(id: string, info: ActionInfo, filter: ActionFilter): boolean {
+function filterAction(id: string, info: ActionDef, filter: ActionFilter): boolean {
   if (filter.cmd && filter.cmd !== info.cmd) return false
   if (filter.id && filter.id !== id) return false
   if (filter.hidden !== undefined && filter.hidden !== info.hidden) return false
@@ -94,9 +94,7 @@ function filterAction(id: string, info: ActionInfo, filter: ActionFilter): boole
  *  on mount, the metadata (everything except `fn`) is auto-registered
  *  into `ctx.actions` with `extend: false`, so it contributes defaults
  *  without clobbering anything the user already configured. */
-export type NodeAction =
-  | ((ctx: ActionCtx) => void)
-  | (ActionInfo & { fn: (ctx: ActionCtx) => void })
+export type NodeAction = ((ctx: ActionCtx) => void) | (ActionDef & { fn: (ctx: ActionCtx) => void })
 
 /** Shape of a Node's `actions` dict — full action ids as keys. */
 export type NodeActionMap = Record<string, NodeAction>
@@ -132,7 +130,7 @@ type ActionEvents = {
  * `list()` returns the catalog for command palette / help enumeration.
  */
 export class Actions extends Emitter<ActionEvents> {
-  readonly #catalog = new Map<string, ActionInfo>()
+  readonly #catalog = new Map<string, ActionDef>()
   /** Optional focus-chain walker. Supplied by the Renderer so Actions
    *  doesn't have to know about the router directly. Returns the
    *  starting node (focused by default) so dispatch can walk up. */
@@ -176,7 +174,7 @@ export class Actions extends Emitter<ActionEvents> {
   register(entries: ActionMap, opts: { default?: boolean } = {}): () => void {
     const isDefault = opts.default ?? false
     const ids = Object.keys(entries)
-    const prior = new Map<string, ActionInfo | undefined>()
+    const prior = new Map<string, ActionDef | undefined>()
     for (const id of ids) prior.set(id, this.#catalog.get(id))
     for (const [id, info] of Object.entries(entries)) {
       info.keys = info.keys?.map((k) => canonical(k))
@@ -203,11 +201,11 @@ export class Actions extends Emitter<ActionEvents> {
     if (changed) void this.emit("change")
   }
 
-  get(id: string): ActionInfo | undefined {
+  get(id: string): ActionDef | undefined {
     return this.#catalog.get(id)
   }
 
-  list(opts?: ActionFilter): (ActionInfo & { id: string })[] {
+  list(opts?: ActionFilter): (ActionDef & { id: string })[] {
     return (
       [...this.#catalog.entries()]
         .filter(([id, info]) => (opts ? filterAction(id, info, opts) : true))
@@ -216,7 +214,7 @@ export class Actions extends Emitter<ActionEvents> {
     )
   }
 
-  find(opts?: ActionFilter): (ActionInfo & { id: string }) | undefined {
+  find(opts?: ActionFilter): (ActionDef & { id: string }) | undefined {
     return this.list(opts)[0]
   }
 

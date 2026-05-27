@@ -1,5 +1,5 @@
 import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
-import type { ActionInfo, Overlay, PickerItem, Text } from "@zaly/tui"
+import type { ActionDef, Overlay, PickerItem, Text } from "@zaly/tui"
 import type { App } from "./app.ts"
 
 import { formatNumber, prettyPath } from "@zaly/shared"
@@ -169,7 +169,7 @@ export function appActions({ app }: { app: App }) {
       desc: "Quit zaly.",
       keys: [],
     },
-  } as const satisfies Record<string, ActionInfo>
+  } as const satisfies Record<string, ActionDef>
 }
 
 /** Drive the codex PKCE login flow with progress messages streamed to

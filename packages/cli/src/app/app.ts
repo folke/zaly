@@ -1,11 +1,11 @@
 import type { Agent, PermissionRequest, Suggestion } from "@zaly/agent"
 import type { Plugin, PluginHost } from "@zaly/plugin"
-import type { ActionInfo, Actions, Input, PickerItem, Renderer } from "@zaly/tui"
+import type { ActionDef, ActionMap, Actions, Input, PickerItem, Renderer } from "@zaly/tui"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 
-import { box, createRef, createRenderer, createStore, Notifier, Picker, signal } from "@zaly/tui"
+import { box, createRef, createRenderer, createStore, memo, Notifier, Picker } from "@zaly/tui"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { appActions } from "./actions.ts"
@@ -127,7 +127,7 @@ export class App {
     this.#renderer.actions.register(appActions({ app: this }), { default: false })
 
     const config = await this.#ctx.config()
-    const keymap: Record<string, ActionInfo> = {}
+    const keymap: Record<string, ActionDef> = {}
     for (const [id, pattern] of Object.entries(config.settings.keymap ?? {})) {
       const keys = typeof pattern === "string" ? [pattern] : pattern
       keymap[id] = { keys }

@@ -1,5 +1,5 @@
 import type {
-  ActionInfo,
+  ActionDef,
   KeyBinding,
   NotifProps,
   Overlay,
@@ -52,7 +52,7 @@ export class UiApi {
     return off
   }
 
-  registerActions(actions: Record<string, ActionInfo>): () => void {
+  registerActions(actions: Record<string, ActionDef>): () => void {
     const off = this.#renderer.actions.register(actions)
     this.#plugin.cleanup(off)
     return off

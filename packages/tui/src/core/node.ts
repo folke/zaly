@@ -1,6 +1,6 @@
 import type { MaybePromise } from "@zaly/shared"
 import type { TryResult } from "@zaly/shared/logger"
-import type { ActionInfo, NodeActionMap } from "../input/actions.ts"
+import type { ActionDef, NodeActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
@@ -361,7 +361,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
    *  that were registered before the widget mounted. */
   #registerActionMeta(ctx: MountCtx): void {
     if (!this.actions) return
-    const metas: Record<string, ActionInfo> = {}
+    const metas: Record<string, ActionDef> = {}
     let any = false
     for (const [id, entry] of Object.entries(this.actions)) {
       if (typeof entry === "function") continue

@@ -1,7 +1,7 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Owner } from "../core/reactive.ts"
-import type { ActionInfo } from "../input/actions.ts"
+import type { ActionDef } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../services/logger.ts"
 import type { Theme } from "../themes/types.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
@@ -108,7 +108,7 @@ export class Renderer {
         process.exit(0)
       },
     },
-  } satisfies Record<string, ActionInfo>
+  } satisfies Record<string, ActionDef>
 
   constructor(opts: RendererOptions = {}) {
     this.terminal = new Terminal({

@@ -1,4 +1,4 @@
-import type { ActionInfo, Actions } from "../../input/actions.ts"
+import type { ActionDef, Actions } from "../../input/actions.ts"
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
 import type { MenuRender } from "../menu.ts"
 
@@ -8,7 +8,7 @@ import { stringWidth } from "@zaly/shared/ansi"
  *  `ActionInfo` plus the action `id` so the source's `accept` can
  *  dispatch without a secondary lookup. Items match the `MenuItem`
  *  contract loosely via the overlapping `name`/... shape. */
-export type ActionCompletionItem = ActionInfo & { id: string }
+export type ActionCompletionItem = ActionDef & { id: string }
 
 export interface ActionsSourceOptions {
   /** Registry to read from. Usually `renderer.actions`. */
@@ -17,7 +17,7 @@ export interface ActionsSourceOptions {
   trigger?: RegExp
   /** Keep predicate. Default skips `info.hidden`. Return `false` to
    *  drop the entry from the completion list. */
-  filter?: (id: string, info: ActionInfo) => boolean
+  filter?: (id: string, info: ActionDef) => boolean
 }
 
 const defaultRender: MenuRender<ActionCompletionItem> = (item, _active, ctx) => {

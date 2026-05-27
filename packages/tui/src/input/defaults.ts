@@ -1,4 +1,4 @@
-import type { ActionInfo, BuiltinAction } from "./actions.ts"
+import type { ActionDef, BuiltinAction } from "./actions.ts"
 
 /**
  * Catalog of built-in actions with descriptions and default bindings.
@@ -10,7 +10,7 @@ import type { ActionInfo, BuiltinAction } from "./actions.ts"
  * construction; apps compose further catalogs via
  * `renderer.actions.register(...)`.
  */
-export const defaultActions: Record<BuiltinAction, ActionInfo> = {
+export const defaultActions: Record<BuiltinAction, ActionDef> = {
   "global.quit": {
     cmd: "quit",
     desc: "quit",
