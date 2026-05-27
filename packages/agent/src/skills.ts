@@ -1,10 +1,20 @@
-import type { MetaPart, TextPart, Tool } from "@zaly/ai"
+import type { MetaPart, TextPart, Tool, ToolContext } from "@zaly/ai"
+import type { Agent } from "./agent.ts"
 
 import { AiError, defineTool } from "@zaly/ai"
+import { safeStatAsync } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { readFile } from "node:fs/promises"
 import { dirname } from "pathe"
 import { Type } from "typebox"
+
+export type SkillMeta = {
+  name: string
+  mtime: number
+  unchanged?: boolean
+}
+
+export type SkillTool = Tool<{ name: string }, unknown, SkillMeta>
 
 /**
  * Agent Skills support — discovery, catalog, and the activation tool.
@@ -34,6 +44,8 @@ import { Type } from "typebox"
 export interface SkillEntry {
   name: string
   description: string
+  mtime: number
+  body: string
   /** Absolute path to the SKILL.md file. */
   path: string
   /** Absolute path to the skill's base directory (parent of SKILL.md).
@@ -72,18 +84,22 @@ export class Skills {
     return this
   }
 
-  async add(path: string): Promise<void> {
+  async add(path: string): Promise<SkillEntry | undefined> {
     if (!path.endsWith("SKILL.md")) return
     const dir = dirname(path)
     try {
-      const { meta } = await readSkill(path)
+      const { meta, mtime, body } = await readSkill(path)
       if (!meta.name || !meta.description || this.catalog.has(meta.name)) return
-      this.catalog.set(meta.name, {
+      const skill: SkillEntry = {
+        body,
         description: meta.description,
         dir,
+        mtime,
         name: meta.name,
         path,
-      })
+      }
+      this.catalog.set(meta.name, skill)
+      return skill
     } catch {}
   }
 
@@ -103,7 +119,7 @@ export class Skills {
     return (this.#tool ??= this.#buildTool())
   }
 
-  #buildTool(): Tool {
+  #buildTool(): SkillTool {
     const names = [...this.catalog.keys()]
     // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
     return defineTool({
@@ -123,12 +139,12 @@ export class Skills {
           }
         ),
       }),
-      call: (args) => this.#call(args.name as string),
+      call: (args, ctx: ToolContext<SkillMeta>) => this.#call(args.name as string, ctx),
     })
   }
 
-  async #call(requested: string): Promise<(MetaPart | TextPart)[]> {
-    const skill = this.catalog.get(requested)
+  async #call(requested: string, ctx: ToolContext<SkillMeta>): Promise<(MetaPart | TextPart)[]> {
+    let skill = this.catalog.get(requested)
     if (!skill) {
       const available = [...this.catalog.keys()]
       throw new AiError({
@@ -138,7 +154,23 @@ export class Skills {
       })
     }
 
-    const { body } = await readSkill(skill.path)
+    // Refresh the skill entry so we have an up-to-date mtime for staleness checks in `isActivated`.
+    skill = (await this.add(skill.path)) ?? skill
+
+    const activated = await this.isActivated(skill, ctx)
+    if (activated) {
+      ctx.meta = { mtime: skill.mtime, name: skill.name, unchanged: true }
+      // Already activated and fresh — no need to reload or update the tool result.
+      return [
+        {
+          content: `skill "${skill.name}" unchanged since last read: ${skill.path}`,
+          tag: "unchanged",
+          type: "meta",
+        },
+      ]
+    }
+    ctx.meta = { mtime: skill.mtime, name: skill.name }
+
     const references = await listReferences(skill.dir)
 
     return [
@@ -147,8 +179,40 @@ export class Skills {
         tag: "skill",
         type: "meta",
       },
-      { text: body, type: "text" },
+      { text: skill.body, type: "text" },
     ]
+  }
+
+  // FIXME: tool find meta util
+  async isActivated(skill: SkillEntry, ctx: ToolContext<SkillMeta>): Promise<boolean> {
+    const messages = ctx.messages ?? []
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      const id = m.id
+      if (!id || m.role !== "tool") continue
+      for (let p = 0; p < m.content.length; p++) {
+        if (ctx.isMasked?.(id, p)) continue
+        const part = m.content[p]
+        if (part.name !== "skill") continue
+        const meta = m.content[p].meta as SkillMeta | undefined
+        if (meta?.unchanged) continue
+        if (meta?.name === skill.name) {
+          if (meta.mtime === skill.mtime) return true // Fresh! The skill's mtime matches what we saw at read time.
+          return false // Stale! The skill file has changed since we read it, so the loaded instructions may be out of date. Force a reload to pick up the change.
+        }
+      }
+    }
+    return false
+  }
+
+  async activate(name: string, agent: Agent) {
+    const ret = await agent.useTool<SkillTool>(
+      "skill",
+      { name },
+      `Skill "${name}" was activated by the user.`
+    )
+    if (ret.result.meta?.unchanged) return
+    return ret
   }
 
   #buildCatalogDesc(): string {
@@ -167,11 +231,13 @@ export class Skills {
 
 async function readSkill(
   path: string
-): Promise<{ meta: { name?: string; description?: string }; body: string }> {
+): Promise<{ meta: { name?: string; description?: string }; body: string; mtime: number }> {
+  const s = await safeStatAsync(path)
+  if (!s?.isFile()) throw new Error(`Skill file not found at ${path}`)
   const raw = await readFile(path, "utf8")
   const { parseFrontmatter } = await import("@zaly/shared/yaml")
   const { fm, body } = await parseFrontmatter(raw)
-  return { body, meta: fm }
+  return { body, meta: fm, mtime: s.mtimeMs }
 }
 
 async function listReferences(dir: string): Promise<string[]> {

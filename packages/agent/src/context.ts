@@ -29,6 +29,7 @@ export type AgentContextEvents = {
   reasoning: { effort: ReasoningEffort; prev?: ReasoningEffort }
   session: { session: Session; prev?: Session }
   cwd: { cwd: string; prev?: string }
+  skills: { skills: Skills }
 }
 
 export class AgentContext extends Emitter<AgentContextEvents> {
@@ -240,7 +241,9 @@ export class AgentContext extends Emitter<AgentContextEvents> {
       "skills",
       async (opts?: SkillsOptions) => {
         const { Skills } = await import("./skills.ts")
-        return await Skills.load(opts)
+        const ret = await Skills.load(opts)
+        await this.emitSerial("skills", { skills: ret })
+        return ret
       },
       this.#opts.skills
     )
