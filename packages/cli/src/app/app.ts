@@ -184,6 +184,26 @@ export class App {
     this.#state.reasoning = this.#agent.ctx.reasoning
     this.#agent.ctx.on("model", () => (this.#state.model = this.#agent?.model))
     this.#agent.ctx.on("reasoning", () => (this.#state.reasoning = this.#agent?.ctx.reasoning))
+    this.#agent.ctx.on("skills", ({ skills }) => {
+      const actions: ActionMap = {}
+      for (const skill of skills.catalog.values()) {
+        actions[`skill.${skill.name}`] = {
+          cmd: `skill:${skill.name}`,
+          desc: skill.description,
+          fn: async () => {
+            const toolUse = await skills.activate(skill.name, this.agent)
+            if (!toolUse)
+              this.notify(`Skill \`${skill.name}\` already activated.`, { level: "warn" })
+            else {
+              this.agent.send(toolUse.messages)
+              this.notify(`Activated skill \`${skill.name}\`...`, { level: "success" })
+            }
+          },
+        }
+      }
+      this.#renderer.actions.register(actions, { default: false })
+    })
+    void this.#agent.ctx.skills()
 
     this.#agentLifetime = new AbortController()
     const opts = { signal: this.#agentLifetime.signal }
