@@ -297,6 +297,30 @@ describe("Input.actions — submit + newline", () => {
     expect(n.state.value).toBe("")
   })
 
+  test("submit appends to history and emits history", () => {
+    const n = input({ value: "hi" })
+    const seen: string[][] = []
+    n.on("history", ({ history }) => seen.push(history))
+    n.actions["input.submit"]()
+    expect(seen).toEqual([["hi"]])
+  })
+
+  test("cursorUp navigates initial history on the first line", () => {
+    const n = input({ history: ["one", "two"] })
+    n.actions["input.cursorUp"]()
+    expect(n.state.value).toBe("two")
+    n.actions["input.cursorUp"]()
+    expect(n.state.value).toBe("one")
+  })
+
+  test("cursorDown past newest restores the draft", () => {
+    const n = input({ history: ["one"], value: "draft" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.value).toBe("one")
+    n.actions["input.cursorDown"]()
+    expect(n.state.value).toBe("draft")
+  })
+
   test(String.raw`insertNewline inserts \n at the cursor`, () => {
     const n = input({ cursor: 5, value: "hello" })
     n.actions["input.insertNewline"]()

@@ -6,6 +6,7 @@ import type { CompletionSource, Input, InputValue } from "@zaly/tui"
 import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
+import { loadState, updateState } from "@zaly/config"
 import { input } from "@zaly/tui"
 import { ActionsComposer } from "./composer/actions.ts"
 import { BashComposer } from "./composer/bash.ts"
@@ -156,7 +157,7 @@ export class Composer {
   }
 
   get ui() {
-    return (this.#input = input({
+    const ret = (this.#input = input({
       canAttach: (att) => {
         const model = this.#app.agent.model
         if (!model) return false
@@ -167,7 +168,17 @@ export class Composer {
       format: (value, ctx) => this.format(value, ctx),
       placeholder: "Ask zaly anything…",
       validate: (value: string) => this.validate(value),
-    }).on("submit", (value) => this.submit(value)))
+    }).on("submit", (value) => this.submit(value))).on("history", ({ added }) =>
+      updateState((s) => {
+        const history = [...(s?.inputHistory ?? []), added]
+        return { ...s, inputHistory: history.slice(-100) }
+      })
+    )
+
+    void loadState().then((state) => {
+      ret.history = [...(state.inputHistory ?? []), ...ret.history]
+    })
+    return this.#input
   }
 }
 

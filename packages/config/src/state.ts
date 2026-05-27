@@ -10,6 +10,9 @@ export async function loadState(): Promise<State> {
   return validateState(ret)
 }
 
-export async function updateState(state: State): Promise<State> {
-  return await writeJson<State>(zalyPaths.state, (prev) => merge({}, state, prev))
+export async function updateState(state: State | ((prev?: State) => State)): Promise<State> {
+  return await writeJson<State>(
+    zalyPaths.state,
+    typeof state === "function" ? state : (prev) => merge({}, state, prev)
+  )
 }

@@ -50,4 +50,5 @@ export type Config = {
 
 export type State = {
   lastModel?: string
+  inputHistory?: string[]
 }

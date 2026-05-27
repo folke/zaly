@@ -129,7 +129,7 @@
             }
           ]
         },
-        "prompts": {
+        "commands": {
           "oneOf": [
             {
               "type": "array",

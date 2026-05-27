@@ -1,8 +1,8 @@
 import * as __typia_transform__assertGuard from "typia/lib/internal/_assertGuard";
 import * as __typia_transform__accessExpressionAsString from "typia/lib/internal/_accessExpressionAsString";
 import type { State } from "../../types.ts";
-const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.lastModel || "string" === typeof input.lastModel) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-    if (["lastModel"].some((prop: any) => key === prop))
+const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.lastModel || "string" === typeof input.lastModel) && (undefined === input.inputHistory || Array.isArray(input.inputHistory) && input.inputHistory.every((elem: any, _index1: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    if (["lastModel", "inputHistory"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -13,8 +13,23 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".lastModel",
     expected: "(string | undefined)",
     value: input.lastModel
+}, _errorFactory)) && (undefined === input.inputHistory || (Array.isArray(input.inputHistory) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".inputHistory",
+    expected: "(Array<string> | undefined)",
+    value: input.inputHistory
+}, _errorFactory)) && input.inputHistory.every((elem: any, _index2: number) => "string" === typeof elem || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".inputHistory[" + _index2 + "]",
+    expected: "string",
+    value: elem
+}, _errorFactory)) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".inputHistory",
+    expected: "(Array<string> | undefined)",
+    value: input.inputHistory
 }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-    if (["lastModel"].some((prop: any) => key === prop))
+    if (["lastModel", "inputHistory"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)

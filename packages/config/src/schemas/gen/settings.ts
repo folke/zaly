@@ -17,8 +17,8 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     if (undefined === value)
         return true;
     return false;
-})); const _io2 = (input: any, _exceptionable: boolean = true): boolean => null !== input.packs && (undefined === input.packs || false === input.packs || Array.isArray(input.packs) && input.packs.every((elem: any, _index5: number) => "string" === typeof elem)) && (null !== input.plugins && (undefined === input.plugins || false === input.plugins || Array.isArray(input.plugins) && input.plugins.every((elem: any, _index6: number) => "string" === typeof elem))) && (null !== input.skills && (undefined === input.skills || false === input.skills || Array.isArray(input.skills) && input.skills.every((elem: any, _index7: number) => "string" === typeof elem))) && (null !== input.themes && (undefined === input.themes || false === input.themes || Array.isArray(input.themes) && input.themes.every((elem: any, _index8: number) => "string" === typeof elem))) && (null !== input.prompts && (undefined === input.prompts || false === input.prompts || Array.isArray(input.prompts) && input.prompts.every((elem: any, _index9: number) => "string" === typeof elem))) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-    if (["packs", "plugins", "skills", "themes", "prompts"].some((prop: any) => key === prop))
+})); const _io2 = (input: any, _exceptionable: boolean = true): boolean => null !== input.packs && (undefined === input.packs || false === input.packs || Array.isArray(input.packs) && input.packs.every((elem: any, _index5: number) => "string" === typeof elem)) && (null !== input.plugins && (undefined === input.plugins || false === input.plugins || Array.isArray(input.plugins) && input.plugins.every((elem: any, _index6: number) => "string" === typeof elem))) && (null !== input.skills && (undefined === input.skills || false === input.skills || Array.isArray(input.skills) && input.skills.every((elem: any, _index7: number) => "string" === typeof elem))) && (null !== input.themes && (undefined === input.themes || false === input.themes || Array.isArray(input.themes) && input.themes.every((elem: any, _index8: number) => "string" === typeof elem))) && (null !== input.commands && (undefined === input.commands || false === input.commands || Array.isArray(input.commands) && input.commands.every((elem: any, _index9: number) => "string" === typeof elem))) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    if (["packs", "plugins", "skills", "themes", "commands"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -248,28 +248,28 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".themes",
     expected: "(Array<string> | false | undefined)",
     value: input.themes
-}, _errorFactory))) && ((null !== input.prompts || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory))) && ((null !== input.commands || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".prompts",
+    path: _path + ".commands",
     expected: "(Array<string> | false | undefined)",
-    value: input.prompts
-}, _errorFactory)) && (undefined === input.prompts || false === input.prompts || (Array.isArray(input.prompts) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    value: input.commands
+}, _errorFactory)) && (undefined === input.commands || false === input.commands || (Array.isArray(input.commands) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".prompts",
+    path: _path + ".commands",
     expected: "(Array<string> | false | undefined)",
-    value: input.prompts
-}, _errorFactory)) && input.prompts.every((elem: any, _index19: number) => "string" === typeof elem || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    value: input.commands
+}, _errorFactory)) && input.commands.every((elem: any, _index19: number) => "string" === typeof elem || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".prompts[" + _index19 + "]",
+    path: _path + ".commands[" + _index19 + "]",
     expected: "string",
     value: elem
 }, _errorFactory)) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".prompts",
+    path: _path + ".commands",
     expected: "(Array<string> | false | undefined)",
-    value: input.prompts
+    value: input.commands
 }, _errorFactory))) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-    if (["packs", "plugins", "skills", "themes", "prompts"].some((prop: any) => key === prop))
+    if (["packs", "plugins", "skills", "themes", "commands"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)

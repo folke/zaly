@@ -24,6 +24,8 @@ export interface InputState extends StyleState {
   cursor?: number
   /** Render width. Defaults to `fill`. */
   width?: Size
+  /** Submitted input history, newest last. */
+  history?: readonly string[]
   /** Threshold for showing pasted content as an attachment rather than raw text */
   pasteMaxLines?: number
   pasteMaxChars?: number
@@ -44,6 +46,8 @@ type Paste = { type: "paste"; text: string }
 export type InputAttachment = DetectedFile & { path: string }
 
 export type InputEvents = BaseEvents & {
+  /** Fired when the submitted history changes. */
+  history: { history: string[]; added: string }
   /** Fired when plain Enter is pressed. Payload is the current value. */
   submit: { value: string; attachments: InputAttachment[] }
   /** Fired when the user pastes a non-text resource via the
@@ -89,6 +93,9 @@ export class Input extends Node<InputState, InputEvents> {
 
   override readonly type = Input.type
   #focused = false
+  #history: string[] = []
+  #historyDraft = ""
+  #historyIndex: number | undefined
   #preferredCol: number | undefined
   #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
 
@@ -102,7 +109,10 @@ export class Input extends Node<InputState, InputEvents> {
     "input.cursorDown": (): void => {
       const v = this.state.value ?? ""
       const { col, line } = posToLineCol(v, this.#cursor())
-      if (line >= countLines(v) - 1) return
+      if (line >= countLines(v) - 1) {
+        this.#historyNext()
+        return
+      }
       this.#preferredCol ??= col
       this.state.cursor = lineColToPos(v, line + 1, this.#preferredCol)
     },
@@ -131,7 +141,10 @@ export class Input extends Node<InputState, InputEvents> {
     "input.cursorUp": (): void => {
       const v = this.state.value ?? ""
       const { col, line } = posToLineCol(v, this.#cursor())
-      if (line === 0) return
+      if (line === 0) {
+        this.#historyPrev()
+        return
+      }
       this.#preferredCol ??= col
       this.state.cursor = lineColToPos(v, line - 1, this.#preferredCol)
     },
@@ -140,6 +153,7 @@ export class Input extends Node<InputState, InputEvents> {
       const c = this.#cursor()
       this.#preferredCol = undefined
       if (c === 0) return
+      this.#historyEdit()
       const marker = this.#markerRange(c, "back")
       if (marker) return this.#deleteRange(marker.start, marker.end)
       this.state.set({ cursor: c - 1, value: v.slice(0, c - 1) + v.slice(c) })
@@ -149,6 +163,7 @@ export class Input extends Node<InputState, InputEvents> {
       const c = this.#cursor()
       this.#preferredCol = undefined
       if (c >= v.length) return
+      this.#historyEdit()
       const marker = this.#markerRange(c, "forward")
       if (marker) return this.#deleteRange(marker.start, marker.end)
       this.state.value = v.slice(0, c) + v.slice(c + 1)
@@ -161,6 +176,7 @@ export class Input extends Node<InputState, InputEvents> {
       while (i > 0 && isWhitespace(v[i - 1])) i--
       while (i > 0 && !isWhitespace(v[i - 1])) i--
       if (i === c) return
+      this.#historyEdit()
       this.state.set({ cursor: i, value: v.slice(0, i) + v.slice(c) })
     },
     "input.insertNewline": (): void => {
@@ -179,6 +195,7 @@ export class Input extends Node<InputState, InputEvents> {
         else break
       }
       const insert = `\n${indent}`
+      this.#historyEdit()
       this.state.set({
         cursor: c + insert.length,
         value: v.slice(0, c) + insert + v.slice(c),
@@ -193,6 +210,7 @@ export class Input extends Node<InputState, InputEvents> {
       const c = this.#cursor()
       this.#preferredCol = undefined
       const tab = "  "
+      this.#historyEdit()
       this.state.set({ cursor: c + tab.length, value: v.slice(0, c) + tab + v.slice(c) })
     },
     // `ctrl-v` queries the OS clipboard (via xclip / wl-paste / pbpaste /
@@ -234,13 +252,16 @@ export class Input extends Node<InputState, InputEvents> {
     "input.submit": (): void => {
       const value = this.state.value ?? ""
       if (this.state.validate?.(value) === false) return
-      void this.emit("submit", this.consume())
+      const ret = this.consume()
+      this.#historyAdd(ret.value)
+      void this.emit("submit", ret)
     },
   } satisfies NodeActionMap
 
   constructor(initial: InputState = {}) {
     const value = initial.value ?? ""
     super({ cursor: value.length, value, ...initial })
+    this.#history = [...(initial.history ?? [])]
     this.on("key", ({ key }) => {
       this.#handleKey(key)
     })
@@ -262,6 +283,15 @@ export class Input extends Node<InputState, InputEvents> {
         signal: this.mountSignal,
       })
     })
+  }
+
+  get history(): readonly string[] {
+    return this.#history
+  }
+
+  set history(v: readonly string[]) {
+    this.#history = [...v]
+    this.#historyIndex = undefined
   }
 
   attach(att: InputAttachment | Paste): void {
@@ -297,6 +327,7 @@ export class Input extends Node<InputState, InputEvents> {
   insert(text: string): void {
     const v = this.state.value ?? ""
     const c = this.#cursor()
+    this.#historyEdit()
     this.#preferredCol = undefined
     this.state.set({
       cursor: c + text.length,
@@ -329,8 +360,51 @@ export class Input extends Node<InputState, InputEvents> {
 
   #deleteRange(start: number, end: number): void {
     const v = this.state.value ?? ""
+    this.#historyEdit()
     this.#preferredCol = undefined
     this.state.set({ cursor: start, value: v.slice(0, start) + v.slice(end) })
+  }
+
+  #historyAdd(value: string): void {
+    if (value.trim() === "") return
+    if (this.#history.at(-1) !== value) {
+      this.#history.push(value)
+      void this.emit("history", { added: value, history: [...this.#history] })
+    }
+    this.#historyDraft = ""
+    this.#historyIndex = undefined
+  }
+
+  #historyEdit(): void {
+    this.#historyDraft = ""
+    this.#historyIndex = undefined
+  }
+
+  #historyNext(): void {
+    if (this.#historyIndex === undefined) return
+    const next = this.#historyIndex + 1
+    if (next >= this.#history.length) {
+      this.#historySet(this.#historyDraft)
+      this.#historyDraft = ""
+      this.#historyIndex = undefined
+      return
+    }
+    this.#historyIndex = next
+    this.#historySet(this.#history[next])
+  }
+
+  #historyPrev(): void {
+    if (this.#history.length === 0) return
+    if (this.#historyIndex === undefined) {
+      this.#historyDraft = this.state.value ?? ""
+      this.#historyIndex = this.#history.length - 1
+    } else if (this.#historyIndex > 0) this.#historyIndex--
+    this.#historySet(this.#history[this.#historyIndex])
+  }
+
+  #historySet(value: string): void {
+    this.#preferredCol = undefined
+    this.state.set({ cursor: value.length, value })
   }
 
   #markerRange(pos: number, dir: "back" | "forward"): { start: number; end: number } | undefined {

@@ -133,7 +133,7 @@ export const SettingsSchema = {
                                     }
                                 ]
                             },
-                            prompts: {
+                            commands: {
                                 oneOf: [
                                     {
                                         type: "array",
