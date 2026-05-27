@@ -29,6 +29,7 @@ export interface InputState extends StyleState {
   pasteMaxChars?: number
   canAttach?: (file: InputAttachment) => boolean
   format?: (value: string, ctx: { style: StyleBuilder }) => MaybePromise<string>
+  validate?: (value: string) => boolean
 }
 
 const PASTE_MAX_LINES = 5
@@ -229,6 +230,8 @@ export class Input extends Node<InputState, InputEvents> {
       })()
     },
     "input.submit": (): void => {
+      const value = this.state.value ?? ""
+      if (this.state.validate?.(value) === false) return
       void this.emit("submit", this.consume())
     },
   } satisfies NodeActionMap
