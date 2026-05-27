@@ -53,4 +53,5 @@ export type AgentEvents = {
     status: AgentStatus
   }
   context: { prompt: string[]; tools: Tool[]; messages: Message[] }
+  pending: { messages: Message[] }
 }

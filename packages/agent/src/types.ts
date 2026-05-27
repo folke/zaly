@@ -25,6 +25,8 @@ import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
 import type { AnyTool } from "./tools/registry.ts"
 
+export type SendMode = "inject" | "append"
+
 // Declaration-merge agent-side capabilities into ToolContext. Importing
 // any agent code (which any consumer ultimately does) loads this file,
 // so tools see properly-typed access to these keys without casts. Each

@@ -4,12 +4,17 @@ import type {
   AnyPrompt,
   AnyTool,
   PromptLoader,
+  SendMode,
   ToolLoader,
 } from "@zaly/agent"
 import type { Content, Message, TokenCount, Tool } from "@zaly/ai"
 import type { Plugin } from "../plugin.ts"
 
 import { toLoader } from "../plugin.ts"
+
+function isMessage(obj: unknown): obj is Message {
+  return typeof obj === "object" && obj !== null && "role" in obj && "content" in obj
+}
 
 export class AgentApi {
   #plugin: Plugin
@@ -58,11 +63,18 @@ export class AgentApi {
     return this.#ctx.agent.lastStop
   }
 
-  send(content: Content, opts: { queue?: boolean } = {}): void {
+  send(
+    content: Content | Message | Message[],
+    opts: { mode?: SendMode; run?: boolean } = {}
+  ): void {
     this.#plugin.assertLoaded()
-    const message: Message<"user"> = { content, role: "user" }
-    if (opts.queue) this.#ctx.agent.send(message)
-    else this.#ctx.agent.inject(message)
+    const messages: Message[] = []
+    if (typeof content === "string") messages.push({ content, role: "user" })
+    else if (Array.isArray(content)) {
+      if (content.every(isMessage)) messages.push(...content)
+      else messages.push({ content, role: "user" })
+    } else messages.push(content)
+    this.#ctx.agent.send(messages, opts)
   }
 
   notify(type: string, data: Content | Record<string, unknown>): void {

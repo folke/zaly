@@ -169,7 +169,7 @@ export class Swarm {
     const message: Message<"user" | "system"> = isUser
       ? { content, role: "user" }
       : { content: [meta, { text: content, type: "text" }], role: "system" }
-    to.inject(message)
+    to.send(message)
   }
 
   /** Stop a registered subagent. Aborts its in-flight run and removes

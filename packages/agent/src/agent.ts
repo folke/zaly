@@ -18,7 +18,7 @@ import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentContext } from "./context.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
 import type { Session } from "./session/session.ts"
-import type { AgentOptions, ContextPressure, StepResult, TurnResult } from "./types.ts"
+import type { AgentOptions, ContextPressure, SendMode, StepResult, TurnResult } from "./types.ts"
 
 import { AiError, isContextOverflow, runTool } from "@zaly/ai"
 import { Emitter, toError } from "@zaly/shared"
@@ -61,7 +61,7 @@ export class Agent extends Emitter<AgentEvents> {
   #parent?: Agent
 
   #injectQueue: Message[] = []
-  #sendQueue: Message[] = []
+  #appendQueue: Message[] = []
   #notifyQueue: MetaPart[] = []
 
   #status: AgentStatus = "idle"
@@ -108,14 +108,14 @@ export class Agent extends Emitter<AgentEvents> {
     // step, surfacing the result to the model. Round-internal completions
     // are folded into the round's returned parts and don't fire here.
     this.#tasks.on("task-done", ({ task }) => {
-      this.inject(taskCompletionMessage(task))
+      this.send(taskCompletionMessage(task))
     })
     // Heartbeats keep the agent loop alive while long-running tasks are
     // in flight. Each pulse injects a small system note listing what's
     // still going. Tasks with incremental output ready to read get a
     // `*new*` marker so the model knows to call `task_poll` if it cares.
     this.#tasks.on("heartbeat", ({ running }) => {
-      this.inject({
+      this.send({
         content: [{ content: [taskInfoPart(running)], tag: "heartbeat", type: "meta" }],
         role: "system",
       })
@@ -272,40 +272,34 @@ export class Agent extends Emitter<AgentEvents> {
 
   // ── Input ────────────────────────────────────────────────────────────
 
+  #enqueue(message: Message | Message[], opts: { mode?: SendMode } = {}): void {
+    const messages = Array.isArray(message) ? message : [message]
+    if (!messages.length) return
+    for (const m of messages) m.id ??= uuidv7()
+    const queue = opts.mode === "append" ? this.#appendQueue : this.#injectQueue
+    queue.push(...messages)
+    void this.emit("pending", { messages })
+  }
+
   /** Append a message and (re)start the loop. The user spoke; the agent
    *  responds. If a loop is currently running, the message lands on the
    *  follow-up queue and is processed after the current turn naturally
    *  stops. Otherwise the loop starts immediately. */
-  send(message: Message<"user" | "system">, ...other: Message[]): void {
-    // Always queue — keeps `send()` synchronous (session.add is async
-    // now). The loop drains the queue at the top of each step() before
-    // reading session.messages, so message ordering is preserved.
-    this.#sendQueue.push(message, ...other)
+  send(message?: Message | Message[], opts: { mode?: SendMode; run?: boolean } = {}): void {
+    this.#enqueue(message ?? [], opts)
+    if (opts.run === false) return
     if (this.#status === "idle" || this.#status === "paused") void this.run()
-  }
-
-  /** Inject a message into the *current* turn — flushed into the
-   *  conversation right before the next step's stream. If the agent
-   *  is idle/paused, behaves like `send`: queues and triggers a run.
-   *  Wakeups, notifier messages, swarm-delivered messages, and the
-   *  CLI's user submit all flow through here — the model should pick
-   *  them up on the next step regardless of agent state. */
-  inject(message: Message<"user" | "system">, ...other: Message[]): void {
-    if (this.#status === "idle" || this.#status === "paused") {
-      this.send(message, ...other)
-    } else {
-      this.#injectQueue.push(message, ...other)
-    }
   }
 
   async useTool<T extends Tool = Tool>(
     name: T["name"],
     params: ParamsOf<T>,
-    msg: string
+    msg: string,
+    opts: { hidden?: boolean } = {}
   ): Promise<{
-    call: ToolCallPart
-    result: ToolResult
-    messages: Message[]
+    call: ToolCallPart<T["name"], ParamsOf<T>>
+    result: ToolResult<NonNullable<T["_types"]>["meta"]>
+    messages: [Message<"system">, Message<"assistant">, Message<"tool">]
   }> {
     const tools = await this.tools()
     const tool = tools.find((t) => t.name === name) as T | undefined
@@ -314,32 +308,39 @@ export class Agent extends Emitter<AgentEvents> {
     const id = uuidv7()
     const call: ToolCallPart = { id, name, params, type: "tool-call" }
     const result = await runTool(tool, params, await this.#toolContext(), { preflight: false })
-    const messages: Message[] = []
+    const messages: [Message<"system">, Message<"assistant">, Message<"tool">] = [
+      {
+        content: [
+          {
+            content: msg,
+            data: { tool: name },
+            tag: "user-tool-use",
+            type: "meta",
+          },
+        ],
+        role: "system",
+      },
+      {
+        content: [call],
+        role: "assistant",
+      },
+      {
+        content: [
+          {
+            content: result.content,
+            error: result.error,
+            id,
+            isError: result.isError,
+            meta: result.meta,
+            name,
+            type: "tool-result",
+          },
+        ],
+        role: "tool",
+      },
+    ]
 
-    messages.push({
-      content: [call],
-      role: "assistant",
-    })
-
-    messages.push({
-      content: [
-        {
-          content: result.content,
-          error: result.error,
-          id,
-          isError: result.isError,
-          meta: result.meta,
-          name,
-          type: "tool-result",
-        },
-      ],
-      role: "tool",
-    })
-
-    messages.push({
-      content: [{ content: msg, tag: "auto-injected", type: "meta" }],
-      role: "system",
-    })
+    if (opts.hidden) for (const m of messages) m.hidden = true
 
     return { call, messages, result }
   }
@@ -372,7 +373,7 @@ export class Agent extends Emitter<AgentEvents> {
     const id = uuidv7()
     const timer = setTimeout(() => {
       this.#wakeups.delete(id)
-      this.inject({
+      this.send({
         content: [{ data: { hint: opts.hint, id }, tag: "wakeup", type: "meta" }],
         role: "system",
       })
@@ -483,7 +484,7 @@ export class Agent extends Emitter<AgentEvents> {
     // queue (notifier / wakeup / hooks). Sequential await preserves
     // chronological order on the session.
     for (const m of this.#injectQueue.splice(0)) await this.session.add(m)
-    for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
+    for (const m of this.#appendQueue.splice(0)) await this.session.add(m)
 
     this.#setStatus("streaming")
 
@@ -696,8 +697,8 @@ export class Agent extends Emitter<AgentEvents> {
 
       if (result.kind === "natural") {
         // Drain follow-up queue if anything arrived during the turn.
-        if (this.#sendQueue.length > 0) {
-          for (const m of this.#sendQueue.splice(0)) await this.session.add(m)
+        if (this.#appendQueue.length > 0) {
+          for (const m of this.#appendQueue.splice(0)) await this.session.add(m)
           continue
         }
         // Wakeups (or any other inject) that fired while the agent was

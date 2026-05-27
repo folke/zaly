@@ -61,7 +61,7 @@ describe("Agent — send/inject queueing", () => {
     while (m.pending === 0) await tick()
 
     // Inject — should be queued for the next step (not the current one).
-    agent.inject({ content: "skip tests", role: "user" })
+    agent.send({ content: "skip tests", role: "user" })
 
     // First turn ends with a tool call so the loop doesn't stop naturally.
     m.release([
