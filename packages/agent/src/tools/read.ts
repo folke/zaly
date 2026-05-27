@@ -1,7 +1,7 @@
 import type { Content, ToolContext } from "@zaly/ai"
 import type { ToolInit } from "./registry.ts"
 
-import { AiError, defineTool, toAttachment } from "@zaly/ai"
+import { AiError, defineTool, extractToolResults, toAttachment } from "@zaly/ai"
 import { normPath, safeStat } from "@zaly/shared"
 import { fileDetect } from "@zaly/shared/detect"
 import { normalizeEol } from "@zaly/shared/text"
@@ -202,18 +202,13 @@ export function checkFresh(
     return new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })
   const messages = ctx.messages ?? []
   let ret: AiError = freshnessError(path, "NOT_READ")
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i]
+
+  for (const { m, $p, p } of extractToolResults<FileMeta>(messages)) {
     const id = m.id
-    if (!id || m.role !== "tool") continue
-    for (let p = 0; p < m.content.length; p++) {
-      if (ctx.isMasked?.(id, p)) continue
-      const meta = m.content[p].meta
-      if (!isFileMeta(meta) || meta.path !== path) continue
-      if (opts.full && !meta.full) continue
-      if (meta.mtime === mtime) return true // Fresh! The file's mtime matches what we saw at read time.
-      ret = freshnessError(path, "STALE")
-    }
+    if (!id || !isFileMeta(p.meta) || ctx.isMasked?.(id, $p)) continue
+    if (opts.full && !p.meta.full) continue
+    if (p.meta.mtime === mtime) return true // Fresh! The file's mtime matches what we saw at read time.
+    ret = freshnessError(path, "STALE")
   }
   return ret
 }

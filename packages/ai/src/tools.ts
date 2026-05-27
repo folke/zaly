@@ -89,27 +89,29 @@ export function pairedToolIds(messages: readonly Message[]) {
 export function* extractToolCalls<T extends string = string>(
   messages: readonly Message[],
   tools?: T[]
-): Generator<{ call: ToolCallPart<T>; idx: number; message: Message }> {
-  for (let idx = messages.length - 1; idx >= 0; idx--) {
-    const m = messages[idx]
+): Generator<{ p: ToolCallPart<T>; $m: number; m: Message; $p: number }> {
+  for (let $m = messages.length - 1; $m >= 0; $m--) {
+    const m = messages[$m]
     if (m.role !== "assistant" || typeof m.content === "string") continue
-    for (const p of m.content) {
+    for (let $p = m.content.length - 1; $p >= 0; $p--) {
+      const p = m.content[$p]
       if (p.type === "tool-call" && (tools === undefined || tools.includes(p.name as T)))
-        yield { call: p as ToolCallPart<T>, idx, message: m }
+        yield { $m, $p, m, p: p as ToolCallPart<T> }
     }
   }
 }
 
-export function* extractToolResults<M extends object = object>(
+export function* extractToolResults<M extends object = object, T extends string = string>(
   messages: readonly Message[],
-  tools?: string[]
-): Generator<{ result: ToolResultPart<string, M>; idx: number; message: Message }> {
-  for (let idx = messages.length - 1; idx >= 0; idx--) {
-    const m = messages[idx]
+  tools?: T[]
+): Generator<{ p: ToolResultPart<T, M>; $m: number; m: Message; $p: number }> {
+  for (let $m = messages.length - 1; $m >= 0; $m--) {
+    const m = messages[$m]
     if (m.role !== "tool") continue
-    for (const p of m.content) {
-      if (tools === undefined || tools.includes(p.name))
-        yield { idx, message: m, result: p as ToolResultPart<string, M> }
+    for (let $p = m.content.length - 1; $p >= 0; $p--) {
+      const p = m.content[$p]
+      if (tools === undefined || tools.includes(p.name as T))
+        yield { $m, $p, m, p: p as ToolResultPart<T, M> }
     }
   }
 }

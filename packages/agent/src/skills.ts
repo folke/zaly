@@ -1,7 +1,7 @@
 import type { MetaPart, TextPart, Tool, ToolContext } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 
-import { AiError, defineTool } from "@zaly/ai"
+import { AiError, defineTool, extractToolResults } from "@zaly/ai"
 import { safeStatAsync } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { readFile } from "node:fs/promises"
@@ -183,24 +183,13 @@ export class Skills {
     ]
   }
 
-  // FIXME: tool find meta util
   async isActivated(skill: SkillEntry, ctx: ToolContext<SkillMeta>): Promise<boolean> {
     const messages = ctx.messages ?? []
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i]
+    for (const { m, $p, p } of extractToolResults<SkillMeta, "skill">(messages, ["skill"])) {
       const id = m.id
-      if (!id || m.role !== "tool") continue
-      for (let p = 0; p < m.content.length; p++) {
-        if (ctx.isMasked?.(id, p)) continue
-        const part = m.content[p]
-        if (part.name !== "skill") continue
-        const meta = m.content[p].meta as SkillMeta | undefined
-        if (meta?.unchanged) continue
-        if (meta?.name === skill.name) {
-          if (meta.mtime === skill.mtime) return true // Fresh! The skill's mtime matches what we saw at read time.
-          return false // Stale! The skill file has changed since we read it, so the loaded instructions may be out of date. Force a reload to pick up the change.
-        }
-      }
+      if (!id || !p.meta || ctx.isMasked?.(id, $p)) continue
+      if (p.meta.unchanged) continue
+      if (p.meta.name === skill.name) return p.meta.mtime === skill.mtime
     }
     return false
   }
