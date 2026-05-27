@@ -124,9 +124,10 @@ export function extractFileUsage(
   const map = new Map<string, FileUsage>()
   const { turns, weights } = turnInfo(messages)
 
-  for (const { m: m, p: p, $m: idx } of extractToolResults<
-    EditToolMeta | ReadToolMeta | WriteToolMeta
-  >(messages, ["read", "write", "edit"])) {
+  for (const { m, p, $m: idx } of extractToolResults<EditToolMeta | ReadToolMeta | WriteToolMeta>(
+    messages,
+    ["read", "write", "edit"]
+  )) {
     const path = p.meta?.path
     if (!path) continue
     const entry = map.get(path) ?? {
@@ -163,7 +164,7 @@ export function extractBashUsage(
   opts = { minCount: 2, minScore: 0.5, ...opts } // bash commands are noisier, so default to minCount=2
   const { turns, weights } = turnInfo(messages)
   const map = new Map<string, BashUsage>()
-  for (const { m: m, p: p, $m: idx } of extractToolCalls(messages, ["bash"])) {
+  for (const { m, p, $m: idx } of extractToolCalls(messages, ["bash"])) {
     const params = safeParseToolParams<BashTool>(p.params)
     const cmd = params?.command
     if (!cmd) continue
