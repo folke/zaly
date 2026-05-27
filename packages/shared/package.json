@@ -25,6 +25,10 @@
       "bun": "./src/ansi.ts",
       "default": "./dist/ansi.mjs"
     },
+    "./args": {
+      "bun": "./src/args.ts",
+      "default": "./dist/args.mjs"
+    },
     "./cache": {
       "bun": "./src/cache.ts",
       "default": "./dist/cache.mjs"
@@ -61,6 +65,10 @@
       "bun": "./src/registry.ts",
       "default": "./dist/registry.mjs"
     },
+    "./shell": {
+      "bun": "./src/shell.ts",
+      "default": "./dist/shell.mjs"
+    },
     "./text": {
       "bun": "./src/text.ts",
       "default": "./dist/text.mjs"
@@ -75,6 +83,7 @@
     "exports": {
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
+      "./args": "./dist/args.mjs",
       "./cache": "./dist/cache.mjs",
       "./detect": "./dist/detect.mjs",
       "./env": "./dist/env.mjs",
@@ -84,6 +93,7 @@
       "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
+      "./shell": "./dist/shell.mjs",
       "./text": "./dist/text.mjs",
       "./yaml": "./dist/yaml.mjs",
       "./package.json": "./package.json"
@@ -103,10 +113,12 @@
     "@types/js-yaml": "^4.0.9",
     "@types/picomatch": "^4.0.3",
     "@types/proper-lockfile": "^4.1.4",
+    "@types/shell-quote": "^1.7.5",
     "ignore": "^7.0.5",
     "image-meta": "^0.2.2",
     "js-yaml": "^4.1.1",
     "picomatch": "^4.0.4",
+    "shell-quote": "^1.8.4",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.1",
     "wrap-ansi": "^10.0.0"
@@ -127,6 +139,7 @@
     "is-fullwidth-code-point": "5.1.0",
     "js-yaml": "4.1.1",
     "picomatch": "4.0.4",
+    "shell-quote": "1.8.4",
     "slice-ansi": "9.0.0",
     "string-width": [
       "8.2.0",
