@@ -3,7 +3,7 @@ import type { Node } from "../core/node.ts"
 import type { InspectOptions } from "../style/inspect.ts"
 import type { LogState } from "../widgets/log.ts"
 
-import { inspect } from "../style/inspect.ts"
+import { inspect, isMarkdown } from "../style/inspect.ts"
 import { log } from "../widgets/log.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
@@ -70,8 +70,9 @@ export class TuiReporter implements LogReporter {
 
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const str = inspect(msg, this.#opts)
+    const markdown = (this.#opts.markdown ?? true) && isMarkdown(str)
     const overrides = this.#opts.styles?.[level] ?? {}
-    return log({ content: str, level, markdown: this.#opts.markdown, ...overrides })
+    return log({ content: str, level, markdown, ...overrides })
   }
 
   /** String path for the no-stream fallback — builds a plain inspected
