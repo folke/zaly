@@ -1,6 +1,6 @@
 import type { MaybePromise } from "@zaly/shared"
 import type { TryResult } from "@zaly/shared/logger"
-import type { ActionInfo, ActionMap } from "../input/actions.ts"
+import type { ActionInfo, NodeActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
@@ -62,7 +62,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   #id?: string
   #actionTargets = new Set<Node>()
   #mountAc?: AbortController
-  actions?: ActionMap
+  actions?: NodeActionMap
   type?: string
   protected layout?(ctx: RenderCtx): MaybePromise<Layout | undefined>
 

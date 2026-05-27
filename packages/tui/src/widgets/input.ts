@@ -3,7 +3,7 @@ import type { DetectedFile } from "@zaly/shared/detect"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { StyleState } from "../core/state.ts"
-import type { ActionMap } from "../input/actions.ts"
+import type { NodeActionMap } from "../input/actions.ts"
 import type { RoutedKey } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 import type { StyleBuilder } from "../style/builder.ts"
@@ -231,7 +231,7 @@ export class Input extends Node<InputState, InputEvents> {
     "input.submit": (): void => {
       void this.emit("submit", this.consume())
     },
-  } satisfies ActionMap
+  } satisfies NodeActionMap
 
   constructor(initial: InputState = {}) {
     const value = initial.value ?? ""

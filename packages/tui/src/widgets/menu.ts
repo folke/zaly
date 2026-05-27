@@ -1,7 +1,7 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { Reactive, Ref } from "../core/reactive.ts"
-import type { ActionMap } from "../input/actions.ts"
+import type { NodeActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/types.ts"
 
@@ -77,7 +77,10 @@ export interface MenuEvents<T = MenuItem> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
+export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
+  MenuState<T>,
+  MenuEvents<T>
+> {
   static readonly type = "menu"
   override readonly type = Menu.type
 
@@ -110,7 +113,7 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<MenuState
       const i = this.#active()
       void this.emit("select", { item: items[i] })
     },
-  } satisfies ActionMap
+  } satisfies NodeActionMap
 
   /** Grow-only height counter. `state.sticky` consults this so filter-
    *  driven shrinks don't jitter the surrounding layout. */

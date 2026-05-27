@@ -59,6 +59,7 @@ export interface ActionInfo {
   hidden?: boolean
   fn?: ActionFn
 }
+export type ActionMap = Record<string, ActionInfo>
 
 /** A single entry in a Node's `actions` dict.
  *
@@ -74,7 +75,7 @@ export type NodeAction =
   | (ActionInfo & { fn: (ctx: ActionCtx) => void })
 
 /** Shape of a Node's `actions` dict — full action ids as keys. */
-export type ActionMap = Record<string, NodeAction>
+export type NodeActionMap = Record<string, NodeAction>
 
 /**
  * Union of every built-in action id. Derived from widget `actions`
@@ -148,7 +149,7 @@ export class Actions extends Emitter<ActionEvents> {
    *
    * Returns an unregister function that rolls this call back.
    */
-  register(entries: Record<string, ActionInfo>, opts: { default?: boolean } = {}): () => void {
+  register(entries: ActionMap, opts: { default?: boolean } = {}): () => void {
     const isDefault = opts.default ?? false
     const ids = Object.keys(entries)
     const prior = new Map<string, ActionInfo | undefined>()
