@@ -12,7 +12,10 @@ import type { Reactive } from "./reactive.ts"
  *     visibility from shared state. `Node.render` unwraps it at render
  *     time so the subscription goes through the usual tracking ctx.
  */
-interface BaseState extends FlexState, LayoutState {}
+interface BaseState extends FlexState, LayoutState {
+  /** Sticky nodes stay at the bottom of the stream and don't scroll up with the rest of the content. */
+  sticky?: boolean
+}
 
 export type State<T extends object = object> = T & BaseState
 

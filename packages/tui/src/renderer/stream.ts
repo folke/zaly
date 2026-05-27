@@ -67,7 +67,6 @@ export class Stream extends Surface<StreamEvents> {
   #queue: RenderState[] = []
   #scrollbackCount = 0
   #rows: string[] = []
-  // oxlint-disable-next-line no-unused-private-class-members
   #asyncDirtyCheck?: Promise<void>
   /** Bottom row of the live region the last time we painted. Used to
    *  compute where `#rows` actually live on screen when the footer
@@ -160,44 +159,61 @@ export class Stream extends Surface<StreamEvents> {
     return this.#rows
   }
 
-  async _render(sync?: (fn: () => void) => void): Promise<void> {
-    const run = sync ?? ((fn) => this.terminal.sync(fn))
-
-    // Snapshot in case new appends land mid-render.
-    const states = [...this.#state]
+  async #render(): Promise<string[]> {
     const ctx = this.getCtx()
 
-    // Render tracked nodes. Node.render() owns cache invalidation, so clean
-    // nodes return cached rows immediately; Stream only preserves the
-    // previous row count when a node shrinks so stale terminal rows clear.
-    await Promise.all(
-      states.map(async (s) => {
-        const len = s.rows?.length ?? 0
-        s.rows = await s.node.render(ctx)
-        if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
-      })
-    )
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    while (true) {
+      // Render tracked nodes. Node.render() owns cache invalidation, so clean
+      // nodes return cached rows immediately; Stream only preserves the
+      // previous row count when a node shrinks so stale terminal rows clear.
+      // oxlint-disable-next-line no-await-in-loop
+      await Promise.all(
+        this.#state.map(async (s) => {
+          const len = s.rows?.length ?? 0
+          s.rows = await s.node.render(ctx)
+          if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
+        })
+      )
 
-    // Keep adding queued nodes until we hit an active boundary (pending async work)
-    while (this.#queue.length) {
-      const active = this.#state.filter((s) => s.boundary.active())
+      // Keep adding queued nodes until we hit an active boundary (pending async work)
+      if (this.#queue.length && !this.active) this.#state.push(this.#queue.shift()!)
+      else break
+    }
+
+    // If any active boundaries remain, schedule a dirty check
+    if (!this.#asyncDirtyCheck) {
+      const active = this.#state
+        .map((s) => s.boundary)
+        .filter((b) => b.active())
+        .map((b) => b.whenIdle())
       if (active.length) {
-        this.#asyncDirtyCheck ??= Promise.all(active.map((s) => s.boundary.whenIdle())).then(() => {
+        this.#asyncDirtyCheck = Promise.race(active).then(() => {
           this.#asyncDirtyCheck = undefined
           this.onDirty()
         })
-        break
       }
-      const next = this.#queue.shift()!
-      this.#state.push(next)
-      states.push(next)
-      // oxlint-disable-next-line no-await-in-loop
-      next.rows = await next.node.render(ctx)
     }
 
-    const allRows: string[] = []
-    for (const s of states) if (s.rows) allRows.push(...s.rows)
+    // Push sticky nodes to the end so they paint last and end up at the bottom
+    const states: RenderState[] = []
+    const sticky: RenderState[] = []
+    for (const s of this.#state) {
+      if (s.node.state.sticky) sticky.push(s)
+      else states.push(s)
+    }
+    states.push(...sticky)
+    this.#state = [...states]
 
+    const rows: string[] = []
+    for (const s of this.#state) if (s.rows) rows.push(...s.rows)
+    return rows
+  }
+
+  async _render(sync?: (fn: () => void) => void): Promise<void> {
+    const run = sync ?? ((fn) => this.terminal.sync(fn))
+
+    const allRows = await this.#render()
     const liveHeight = this.liveHeight
     const bottom = this.terminal.scrollBottom
     const terminalRows = this.terminal.rows
@@ -335,7 +351,11 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   get pending() {
-    return this.#state.some((s) => s.boundary.active()) || this.#queue.length > 0
+    return this.active || this.#queue.length > 0
+  }
+
+  get active() {
+    return this.#state.some((s) => s.boundary.active())
   }
 
   /** Detach invalidate listener and mark non-live.
