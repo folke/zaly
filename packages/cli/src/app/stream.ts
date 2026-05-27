@@ -7,6 +7,7 @@ import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
 import { toolCalls } from "../widgets/tool.ts"
+import { messageWidgets } from "./message.ts"
 
 interface ActiveTools {
   done: Signal<boolean>
@@ -35,6 +36,8 @@ export function bindStream(
   let active: ActiveWidget | undefined
   let tools: ActiveTools | undefined
 
+  const pending = new Map<string, Setter<boolean>>()
+
   const update = (type: "text" | "reasoning", delta: string): void => {
     if (active?.type !== type) active = undefined
     if (!active) {
@@ -47,7 +50,29 @@ export function bindStream(
     active.setContent((prev) => prev + delta)
   }
 
+  agent.session.on(
+    "node",
+    ({ node }) => {
+      if (node.type !== "message") return
+      const id = node.message.id
+      if (!id) return
+      pending.get(id)?.(false)
+      pending.delete(id)
+    },
+    opts
+  )
+
   agent
+    .on(
+      "pending",
+      ({ messages }) => {
+        for (const mf of messageWidgets(messages, { pending: true })) {
+          pending.set(mf.id, mf.setPending)
+          for (const w of mf.widgets) renderer.stream.append(w)
+        }
+      },
+      opts
+    )
     .on(
       "stream-event",
       ({ event }) => {

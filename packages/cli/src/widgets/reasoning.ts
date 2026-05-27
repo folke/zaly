@@ -1,4 +1,4 @@
-import type { Reactive } from "@zaly/tui"
+import type { Accessor, Reactive } from "@zaly/tui"
 
 import { markdown, widget } from "@zaly/tui"
 import { bubble } from "./bubble.ts"
@@ -16,9 +16,14 @@ import { bubble } from "./bubble.ts"
  * delta-driven write re-renders only this bubble (not the whole stream).
  */
 
-export const reasoningMessage = widget((props: { content: Reactive<string> }) =>
-  bubble(
-    { style: { dim: true, italic: true, style: "quiet" }, type: "reasoning" },
-    markdown(props.content)
-  )
+export const reasoningMessage = widget(
+  (props: { content: Reactive<string>; pending?: Accessor<boolean> }) =>
+    bubble(
+      {
+        pending: props.pending,
+        style: { dim: true, italic: true, style: "quiet" },
+        type: "reasoning",
+      },
+      markdown(props.content)
+    )
 )

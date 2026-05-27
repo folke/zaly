@@ -12,6 +12,7 @@ export type ToolCallProps = {
   call: ToolCallPart
   result: Accessor<ToolResult | undefined>
   summary?: Accessor<boolean>
+  pending?: Accessor<boolean>
 }
 
 /**
@@ -41,7 +42,7 @@ export const toolCall = widget((props: ToolCallProps) => {
   const full = memo(() => !(unwrap(props.summary) ?? false))
 
   return bubble(
-    { type: status },
+    { pending: props.pending, type: status },
     box(
       { flexDirection: "column" },
       // Tool name + params preview

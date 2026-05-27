@@ -1,11 +1,11 @@
 import type { Agent, BashTool, ReadTool } from "@zaly/agent"
 import type { Attachment, ContentPart, Message, Model, ParamsOf, TextPart } from "@zaly/ai"
-import type { InputAttachment, Renderer } from "@zaly/tui"
+import type { InputAttachment } from "@zaly/tui"
 import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
 import { normPath, safeStatAsync } from "@zaly/shared"
-import { input, toAccessor } from "@zaly/tui"
+import { input } from "@zaly/tui"
 
 export type FileRef = {
   ref: string
@@ -62,7 +62,7 @@ export async function formatInput(
     value = await codeToAnsi(command, "bash", s.theme.shiki)
     return `${s.divider(prefix)}${value}`
   }
-  value = value.replace(SLASH_CMD_RE, (_, slashcmd) => s.primary(slashcmd))
+  value = value.replace(SLASH_CMD_RE, (slashcmd) => s.primary(slashcmd))
 
   if (ctx.refs) {
     for (const { ref } of ctx.refs) value = value.replace(ref, s.mdLink(ref))
@@ -83,7 +83,7 @@ export const createComposer = ({ app }: { app: App }) =>
       return
     }
     const atts = await attachmentParts(attachments)
-    await submit(value, atts, app.agent, app.renderer)
+    await submit(value, atts, app.agent)
     void app.agent.waitIdle()
   })
 
@@ -101,8 +101,7 @@ export const createComposer = ({ app }: { app: App }) =>
 async function submit(
   text: string,
   attachments: readonly Attachment[],
-  agent: Agent,
-  renderer: Renderer
+  agent: Agent
 ): Promise<void> {
   const message: Message<"user"> =
     attachments.length === 0
@@ -112,7 +111,9 @@ async function submit(
           role: "user",
         }
 
-  const refs: FileRef[] = []
+  agent.send(message, { run: false })
+
+  const refs = new Map<string, FileRef>()
   const messages: Message[] = []
 
   const RANGE_RE = /^(.*?)(?::(\d+)(?:-(\d+))?)?$/
@@ -129,17 +130,13 @@ async function submit(
     // oxlint-disable-next-line no-await-in-loop
     const s = await safeStatAsync(path)
     if (!s?.isFile()) continue
-    refs.push({ from, path, ref: `@${ref}`, to })
+    refs.set(path, { from, path, ref: `@${ref}`, to })
   }
 
-  if (refs.length > 0) {
+  if (refs.size > 0) {
     message.meta ??= {}
-    message.meta.fileRefs = refs
+    message.meta.fileRefs = [...refs.values()]
   }
-
-  const { userMessage } = await import("../widgets/user.ts")
-
-  renderer.stream.append(() => userMessage({ message }))
 
   const bashMatch = text.match(BASH_CMD_RE)
   if (bashMatch) {
@@ -149,14 +146,10 @@ async function submit(
       { command } as ParamsOf<BashTool>,
       "Bash command from the previous user message was executed automatically"
     )
-    const { toolCall } = await import("../widgets/tool.ts")
-    renderer.stream.append(() =>
-      toolCall({ call: toolUse.call, result: toAccessor(toolUse.result) })
-    )
     messages.push(...toolUse.messages)
   } else {
     await Promise.all(
-      refs.map(async (ref) => {
+      [...refs.values()].map(async (ref) => {
         const { path, from, to } = ref
 
         let offset: number | undefined
@@ -183,6 +176,5 @@ async function submit(
       })
     )
   }
-
-  agent.inject(message, ...messages)
+  agent.send(messages)
 }

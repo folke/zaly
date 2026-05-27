@@ -1,6 +1,6 @@
-import type { AnyStyle, Node, Reactive } from "@zaly/tui"
+import type { Accessor, AnyStyle, Node, Reactive } from "@zaly/tui"
 
-import { box, memo, spinner, text, unwrap, widget } from "@zaly/tui"
+import { box, effect, memo, spinner, text, unwrap, widget } from "@zaly/tui"
 
 type Bubble = {
   icon: string
@@ -22,14 +22,15 @@ export type BubbleType = keyof typeof bubbles
 
 export type BubbleProps = {
   type: Reactive<BubbleType>
+  pending?: Accessor<boolean>
   style?: AnyStyle
 }
 
 export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) => {
   const b = memo(() => bubbles[unwrap(props.type)] as Bubble)
-  const spin = memo(() => b().spinner ?? false)
+  const spin = memo(() => b().spinner ?? unwrap(props.pending) ?? false)
   const tvpad = b().highlight ? 1 : 0
-  return box(
+  const ret = box(
     { padding: [1, 0, 0, 0], width: "fill" },
     box(
       { flexDirection: "row", padding: [tvpad, 0, tvpad, 1], style: b().highlight, width: "fill" },
@@ -45,4 +46,8 @@ export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) 
       box({ flexDirection: "column", padding: [0, 1], style: props.style }, ...children)
     )
   )
+  effect(() => {
+    ret.state.sticky = unwrap(props.pending) ?? false
+  })
+  return ret
 })
