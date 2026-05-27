@@ -27,9 +27,9 @@ export const helpOverlay = (props: { actions: Actions }) => {
     text(
       ({ style }) => {
         const rows: string[] = []
-        for (const [id, info] of actions()) {
-          if (info.hidden || !id.startsWith("app.")) continue
-          const name = (info.name ?? id).padEnd(8)
+        for (const info of actions()) {
+          if (info.hidden || !info.id.startsWith("app.")) continue
+          const name = (info.cmd ?? info.id).padEnd(8)
           const desc = (info.desc ?? "").padEnd(28)
           const keys = (info.keys ?? []).join(", ")
           rows.push(`${style.accent(`/ ${name}`)} ${style.dim(desc)} ${style.primary(keys)}`)

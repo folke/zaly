@@ -12,9 +12,9 @@ import type { ActionInfo, BuiltinAction } from "./actions.ts"
  */
 export const defaultActions: Record<BuiltinAction, ActionInfo> = {
   "global.quit": {
+    cmd: "quit",
     desc: "quit",
     keys: ["ctrl-c"],
-    name: "quit",
   },
   "input.cursorDown": {
     desc: "move cursor down one line",

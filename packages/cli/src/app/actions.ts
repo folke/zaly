@@ -3,6 +3,7 @@ import type { ActionInfo, Overlay, PickerItem, Text } from "@zaly/tui"
 import type { App } from "./app.ts"
 
 import { formatNumber, prettyPath } from "@zaly/shared"
+import { defineAction } from "@zaly/tui"
 import { REASONING_EFFORTS } from "../context.ts"
 
 export type AppAction = keyof ReturnType<typeof appActions>
@@ -15,6 +16,7 @@ export type AppAction = keyof ReturnType<typeof appActions>
 export function appActions({ app }: { app: App }) {
   return {
     "agent.effort": {
+      cmd: "effort",
       desc: "Change how much reasoning the model uses for future turns.",
       fn: async () => {
         const items: PickerItem<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
@@ -27,13 +29,23 @@ export function appActions({ app }: { app: App }) {
         })
         if (effort) app.agent.ctx.reasoning = effort.value
       },
-      name: "effort",
     },
-    "agent.model": {
+    "agent.model": defineAction({
+      args: {
+        all: {
+          short: "a",
+          type: "boolean",
+        },
+      },
+      cmd: "model",
       desc: "Switch the model used for future agent turns.",
-      fn: async () => {
+      fn: async (ctx) => {
         const { listModels, loadModel } = await import("@zaly/ai")
-        const models = await listModels({ auth: true })
+        const filter = ctx.args?._.join(" ") ?? ""
+        const models = await listModels({
+          auth: ctx.args?.all ? undefined : true,
+          filter: filter.length > 0 ? filter : undefined,
+        })
 
         const items: PickerItem[] = []
         for (const [id, m] of Object.entries(models)) {
@@ -52,9 +64,9 @@ export function appActions({ app }: { app: App }) {
         const ret = await app.pick({ items, sort: true })
         if (ret) app.agent.ctx.model = await loadModel(ret.value)
       },
-      name: "model",
-    },
+    }),
     "app.cancel": {
+      cmd: "cancel",
       desc: "Clear the composer, or press twice to exit zaly.",
       fn: (() => {
         let exit = false
@@ -73,14 +85,14 @@ export function appActions({ app }: { app: App }) {
       })(),
       hidden: true,
       keys: ["ctrl-c"],
-      name: "cancel",
     },
     "app.clear": {
+      cmd: "clear",
       desc: "Clear the current composer input.",
       fn: () => (app.input = ""),
-      name: "clear",
     },
     "app.compact": {
+      cmd: "compact",
       desc: "Summarize older history while preserving recent messages.",
       fn: () => {
         app.ctx.info("Compacting history...\n")
@@ -89,9 +101,9 @@ export function appActions({ app }: { app: App }) {
           .catch((error) => app.ctx.error(`Compaction failed: ${error}\n`))
           .finally(() => app.ctx.info("Compaction complete.\n"))
       },
-      name: "compact",
     },
     "app.help": {
+      cmd: "help",
       desc: "Show or hide the keyboard shortcut help overlay.",
       fn: (() => {
         let o: Overlay<[Text]> | undefined
@@ -102,9 +114,9 @@ export function appActions({ app }: { app: App }) {
         }
       })(),
       keys: ["ctrl-h"],
-      name: "help",
     },
     "app.login": {
+      cmd: "login",
       desc: "Authorize zaly with your ChatGPT account for Codex models.",
       fn: () => {
         void runCodexLogin().catch((error) => {
@@ -113,28 +125,28 @@ export function appActions({ app }: { app: App }) {
           )
         })
       },
-      name: "login",
     },
     "app.pwd": {
+      cmd: "pwd",
       desc: "Show the workspace directory the agent is running in.",
       fn: () => {
         const cwd = prettyPath(app.agent.ctx.cwd, "~")
         app.ctx.info(`Current working directory: \`${cwd}\``)
       },
-      name: "pwd",
     },
     "app.reload": {
+      cmd: "reload",
       desc: "Reload plugins & resources",
       fn: () => void app.reload(),
-      name: "reload",
     },
     "app.stop": {
+      cmd: "stop",
       desc: "Stop the current agent turn or running tool batch.",
       fn: () => app.agent.stop(),
       keys: ["esc"],
-      name: "stop",
     },
     "app.theme": {
+      cmd: "theme",
       desc: "Choose a color theme for the current TUI session.",
       fn: async () => {
         // FIXME: this doesn't use custom theme dirs
@@ -151,12 +163,11 @@ export function appActions({ app }: { app: App }) {
         const ret = await app.pick({ items, sort: true })
         if (ret) app.renderer.theme = await loadTheme(ret.value)
       },
-      name: "theme",
     },
     "global.quit": {
+      cmd: "quit",
       desc: "Quit zaly.",
       keys: [],
-      name: "quit",
     },
   } as const satisfies Record<string, ActionInfo>
 }

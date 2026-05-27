@@ -37,39 +37,39 @@ const { logger: log } = renderer
 // without clobbering them.
 renderer.actions.register({
   "app.clear": {
+    cmd: "clear",
     desc: "clear the stream surface",
     fn: () => {
       log.success("stream cleared (demo — no-op)")
     },
-    name: "clear",
   },
   "app.greet": {
+    cmd: "greet",
     desc: "say hello back",
     fn: () => {
       log.info("hello! 👋")
     },
-    name: "greet",
   },
   "app.model": {
+    cmd: "model",
     desc: "pick the active model",
     fn: () => {
       log.info("would open model picker")
     },
-    name: "model",
   },
   "app.theme": {
+    cmd: "theme",
     desc: "switch between bundled themes",
     fn: () => {
       log.info("would open theme switcher")
     },
-    name: "theme",
   },
   "app.tokens": {
+    cmd: "tokens",
     desc: "show token usage for this session",
     fn: () => {
       log.info("tokens: 1,234 in / 789 out (demo)")
     },
-    name: "tokens",
   },
 })
 

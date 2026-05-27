@@ -1,3 +1,4 @@
+import type { ArgsOpts, ArgsResult } from "@zaly/shared/args"
 import type { Node } from "../core/node.ts"
 import type { Renderer } from "../renderer/renderer.ts"
 import type { Input } from "../widgets/input.ts"
@@ -14,7 +15,7 @@ import { canonical } from "./keys.ts"
  * fired by a key, programmatic dispatch, command palette, or a plugin,
  * handlers see a uniform payload.
  */
-export interface ActionCtx {
+export interface ActionCtx<T extends ArgsOpts = ArgsOpts> {
   /** The action id being dispatched. */
   readonly id: string
   /** The node whose `actions[id]` handler matched, or `undefined` when
@@ -29,9 +30,10 @@ export interface ActionCtx {
   readonly source: "key" | "programmatic" | (string & {})
   /** When `source === "key"`, the originating routed key event. */
   readonly key?: RoutedKey
+  args?: ArgsResult<T>
 }
 
-export type ActionFn = (ctx: ActionCtx) => unknown
+export type ActionFn<T extends ArgsOpts = ArgsOpts> = (ctx: ActionCtx<T>) => unknown
 
 export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
   id: string
@@ -52,14 +54,36 @@ export type KeyBinding = Omit<ActionInfo, "fn" | "keys"> & {
  *   widget instance). When absent, dispatch walks the focus chain
  *   looking for a node with `actions[id]`.
  */
-export interface ActionInfo {
-  name?: string
+export interface ActionInfo<T extends ArgsOpts = ArgsOpts> {
+  cmd?: string
   desc?: string
   keys?: readonly string[]
   hidden?: boolean
-  fn?: ActionFn
+  args?: T
+  fn?: ActionFn<T>
 }
+
 export type ActionMap = Record<string, ActionInfo>
+
+export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionInfo<T>): ActionInfo<T> {
+  return action
+}
+
+export type ActionFilter = {
+  cmd?: string
+  id?: string
+  hidden?: boolean
+  filter?: (info: ActionInfo, id: string) => boolean
+}
+
+function filterAction(id: string, info: ActionInfo, filter: ActionFilter): boolean {
+  if (filter.cmd && filter.cmd !== info.cmd) return false
+  if (filter.id && filter.id !== id) return false
+  if (filter.hidden !== undefined && filter.hidden !== info.hidden) return false
+  // oxlint-disable-next-line unicorn/no-array-method-this-argument
+  if (filter.filter && !filter.filter(info, id)) return false
+  return true
+}
 
 /** A single entry in a Node's `actions` dict.
  *
@@ -183,9 +207,17 @@ export class Actions extends Emitter<ActionEvents> {
     return this.#catalog.get(id)
   }
 
-  /** All catalog entries, in insertion order. */
-  list(): (readonly [id: string, info: ActionInfo])[] {
-    return [...this.#catalog.entries()]
+  list(opts?: ActionFilter): (ActionInfo & { id: string })[] {
+    return (
+      [...this.#catalog.entries()]
+        .filter(([id, info]) => (opts ? filterAction(id, info, opts) : true))
+        // oxlint-disable-next-line oxc/no-map-spread
+        .map(([id, info]) => ({ ...info, id }))
+    )
+  }
+
+  find(opts?: ActionFilter): (ActionInfo & { id: string }) | undefined {
+    return this.list(opts)[0]
   }
 
   /**
@@ -202,7 +234,7 @@ export class Actions extends Emitter<ActionEvents> {
     const target = partial.target ?? this.#getTarget()
     const source = partial.source ?? "programmatic"
     if (info?.fn) {
-      const ctx = { id, source, target, ...partial }
+      const ctx: ActionCtx = { id, source, target, ...partial }
       const fn = info.fn
       this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
       return true
@@ -212,7 +244,7 @@ export class Actions extends Emitter<ActionEvents> {
       const entry = node.actions?.[id]
       const fn = typeof entry === "function" ? entry : entry?.fn
       if (typeof fn === "function") {
-        const ctx = { id, node, source, target, ...partial }
+        const ctx: ActionCtx = { id, node, source, target, ...partial }
         this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
         return true
       }

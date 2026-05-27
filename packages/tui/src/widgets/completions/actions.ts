@@ -21,7 +21,7 @@ export interface ActionsSourceOptions {
 }
 
 const defaultRender: MenuRender<ActionCompletionItem> = (item, _active, ctx) => {
-  const name = item.name ?? item.id
+  const name = item.cmd ?? item.id
   const desc = item.desc ?? ""
   const gap = 2
   // Label column: widest name wins; capped at half width so a long
@@ -58,11 +58,11 @@ export function actionsSource(opts: ActionsSourceOptions): CompletionSource<Acti
     },
     complete(_query: string, match: Matcher): ActionCompletionItem[] {
       const out: ActionCompletionItem[] = []
-      for (const [id, info] of opts.actions.list()) {
-        if (!filter(id, info)) continue
-        const name = info.name ?? id
+      for (const info of opts.actions.list()) {
+        if (!filter(info.id, info)) continue
+        const name = info.cmd ?? info.id
         if (!match(name)) continue
-        out.push({ ...info, id })
+        out.push({ ...info, id: info.id })
       }
       return out
     },

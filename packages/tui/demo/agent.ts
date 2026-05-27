@@ -54,9 +54,9 @@ const help = overlay(
   text(
     ({ style }) => {
       const rows: string[] = []
-      for (const [id, info] of renderer.actions.list()) {
-        if (info.hidden || !id.startsWith("app.")) continue
-        const name = (info.name ?? id).padEnd(10)
+      for (const info of renderer.actions.list()) {
+        if (info.hidden || !info.id.startsWith("app.")) continue
+        const name = (info.cmd ?? info.id).padEnd(10)
         const desc = (info.desc ?? "").padEnd(26)
         const keys = (info.keys ?? []).join(", ")
         rows.push(`${style.accent(`/ ${name}`)} ${style.dim(desc)} ${style.primary(keys)}`)
@@ -80,19 +80,19 @@ renderer.overlay.add(() => help)
 
 renderer.actions.register({
   "app.clear": {
+    cmd: "clear",
     desc: "clear the composer",
     fn: () => composer.state.set({ cursor: 0, value: "" }),
-    name: "clear",
   },
   "app.help": {
+    cmd: "help",
     desc: "toggle help overlay",
     fn: () => help.toggle(),
     keys: ["ctrl-h"],
-    name: "help",
   },
-  "app.plan": { desc: "draft a tiny plan", fn: () => dispatchReply("plan"), name: "plan" },
-  "app.review": { desc: "review the API shape", fn: () => dispatchReply("review"), name: "review" },
-  "app.ship": { desc: "write a release note", fn: () => dispatchReply("ship"), name: "ship" },
+  "app.plan": { cmd: "plan", desc: "draft a tiny plan", fn: () => dispatchReply("plan") },
+  "app.review": { cmd: "review", desc: "review the API shape", fn: () => dispatchReply("review") },
+  "app.ship": { cmd: "ship", desc: "write a release note", fn: () => dispatchReply("ship") },
 })
 
 // ── Autocomplete ─────────────────────────────────────────────────────
