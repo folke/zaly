@@ -60,6 +60,7 @@ export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
   keys?: readonly string[]
   hidden?: boolean
   args?: T
+  source?: string
   fn?: ActionFn<T>
 }
 
@@ -71,6 +72,7 @@ export type ActionFilter = {
   cmd?: string
   id?: string
   hidden?: boolean
+  source?: string
   filter?: (info: Action) => boolean
 }
 
@@ -79,6 +81,7 @@ function filterAction(action: Action, filter: ActionFilter): boolean {
   if (filter.id && filter.id !== action.id) return false
   if (filter.hidden !== undefined && filter.hidden !== action.hidden) return false
   if (filter.filter && !filter.filter(action)) return false
+  if (filter.source && filter.source !== action.source) return false
   return true
 }
 
@@ -168,7 +171,10 @@ export class Actions extends Emitter<ActionEvents> {
    *
    * Returns an unregister function that rolls this call back.
    */
-  register(entries: ActionMap, opts: { default?: boolean } = {}): () => void {
+  register(actions: ActionMap | Action[], opts: { default?: boolean } = {}): () => void {
+    const entries = Array.isArray(actions)
+      ? Object.fromEntries(actions.map((a) => [a.id, a]))
+      : actions
     const isDefault = opts.default ?? false
     const ids = Object.keys(entries)
     const prior = new Map<string, Action | undefined>()

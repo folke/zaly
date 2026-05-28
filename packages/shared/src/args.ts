@@ -1,7 +1,12 @@
 import type { parseArgs, ParseArgsConfig, ParseArgsOptionsConfig } from "node:util"
 
 export type ParsedArgs<T extends ParseArgsConfig> = ReturnType<typeof parseArgs<T>>
-export type ArgsOpts = ParseArgsOptionsConfig
+type ParseArgOption = ParseArgsOptionsConfig[string]
+
+export type ArgsOption = ParseArgOption & {
+  desc?: string
+}
+export type ArgsOpts = Record<string, ArgsOption>
 
 export type ParsedArgsResult<T extends ParseArgsConfig> = ParsedArgs<T>["values"] & {
   _: string[]
@@ -35,7 +40,7 @@ export async function argsParse<T extends ArgsOpts>(
   return { ...parsed.values, $: cmd, _: parsed.positionals } as ArgsResult<T>
 }
 
-export function argsUsage(name: string, opts: ParseArgsOptionsConfig): string {
+export function argsUsage(name: string, opts: ArgsOpts): string {
   const flags = Object.entries(opts).map(([opt, config]) => {
     const neg = config.type === "boolean" && config.default === true
     const flag = `--${neg ? `no-${opt}` : opt}`

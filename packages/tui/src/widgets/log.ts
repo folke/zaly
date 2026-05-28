@@ -5,8 +5,9 @@ import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { Color } from "../style/types.ts"
 
-import { hasColors } from "@zaly/shared/env"
 import { stringWidth } from "@zaly/shared/ansi"
+import { hasColors } from "@zaly/shared/env"
+import { memo, unwrap } from "../core/reactive.ts"
 import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
 import { text } from "./text.ts"
@@ -106,7 +107,15 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
   const color: Color = state.color ?? base.color ?? "inherit"
   const textColor = state.textColor ?? base.textColor
   const s = state
-  const style = { style: textColor ? { fg: textColor } : undefined, width: "fill" } as const
+  const style = {
+    style: textColor
+      ? {
+          fg: textColor,
+        }
+      : undefined,
+    visible: memo(() => unwrap(state.content).trim() !== ""),
+    width: "fill",
+  } as const
   return box(
     {
       ...(s.style === "notif"
@@ -125,7 +134,10 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
       visible: state.visible,
     },
     s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx)),
-    (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
-    ...children
+    box(
+      { flexDirection: "column", gap: 1 },
+      (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
+      ...children
+    )
   )
 })

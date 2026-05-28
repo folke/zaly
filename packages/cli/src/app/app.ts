@@ -1,6 +1,6 @@
 import type { Agent, PermissionRequest, Suggestion } from "@zaly/agent"
 import type { Plugin, PluginHost } from "@zaly/plugin"
-import type { ActionDef, ActionMap, Actions, Renderer } from "@zaly/tui"
+import type { Action, ActionDef, ActionMap, Actions, Renderer } from "@zaly/tui"
 import type { Input } from "@zaly/tui/widgets/input"
 import type { PickerItem } from "@zaly/tui/widgets/picker"
 import type { Cli } from "../cli.ts"
@@ -219,6 +219,7 @@ export class App {
               this.notify(`Activated skill \`${skill.name}\`...`, { level: "success" })
             }
           },
+          source: "skills",
         }
       }
       this.#renderer.actions.register(actions, { default: false })
@@ -243,16 +244,26 @@ export class App {
   async loadCommands(): Promise<void> {
     const config = await this.#ctx.config()
     const paths = await config.resources.commands()
+    const actions = this.#renderer.actions
 
     const { Commands } = await import("@zaly/agent")
     const commands = new Commands({
       logger: this.#ctx.logger.child("commands"),
       paths,
     })
+
+    // Unregister existing commands before loading new ones
+    const existing = actions
+      .list()
+      .filter((a) => a.source === "commands")
+      .map((a) => a.id)
+    actions.unregister(...existing)
+
     await commands.load()
-    const actions: ActionMap = {}
+
+    const ret: Action[] = []
     for (const cmd of commands.catalog.values()) {
-      actions[`command.${cmd.name}`] = {
+      ret.push({
         args: cmd.args,
         cmd: `command:${cmd.name}`,
         desc: cmd.description,
@@ -260,9 +271,11 @@ export class App {
           const text = await commands.format(args ?? "", cmd)
           console.log(text)
         },
-      }
+        id: `command.${cmd.name}`,
+        source: "commands",
+      })
     }
-    this.#renderer.actions.register(actions, { default: false })
+    this.#renderer.actions.register(ret, { default: false })
   }
 
   async reload(): Promise<void> {

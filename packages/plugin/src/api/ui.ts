@@ -1,4 +1,4 @@
-import type { ActionDef, KeyBinding, Renderer, Theme } from "@zaly/tui"
+import type { Action, ActionDef, KeyBinding, Renderer, Theme } from "@zaly/tui"
 import type { NotifProps } from "@zaly/tui/services/notifier"
 import type { PickOpts } from "@zaly/tui/services/picker"
 import type { ThemeLoader } from "@zaly/tui/themes"
@@ -47,7 +47,7 @@ export class UiApi {
     return off
   }
 
-  registerActions(actions: Record<string, ActionDef>): () => void {
+  registerActions(actions: Action[]): () => void {
     const off = this.#renderer.actions.register(actions)
     this.#plugin.cleanup(off)
     return off

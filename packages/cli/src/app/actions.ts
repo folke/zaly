@@ -36,6 +36,7 @@ export function appActions({ app }: { app: App }) {
     "agent.model": defineAction({
       args: {
         all: {
+          desc: "Show all models, including non-authenticated ones",
           short: "a",
           type: "boolean",
         },
