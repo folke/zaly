@@ -6,6 +6,7 @@ import { safeParseToolParams } from "@zaly/ai"
 import { truncateAnsi } from "@zaly/shared/ansi"
 import { inspect, memo, unwrap } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
+import { log } from "@zaly/tui/widgets/log"
 import { show } from "@zaly/tui/widgets/show"
 import { text } from "@zaly/tui/widgets/text"
 import { widget } from "@zaly/tui/widgets/widget"
@@ -65,13 +66,18 @@ export const toolCall = widget((props: ToolCallProps) => {
       show(
         { when: full },
         // Result body, once it arrives
-        toolResult({ call: props.call, params, result: props.result }),
-        text(
-          ({ style }) =>
-            style.error(
-              `${props.result()?.error?.code}: ${props.result()?.error?.message ?? "Unknown error"}`
-            ),
-          { visible: isError }
+        log({
+          content: memo(() => props.result()?.error?.message ?? "Unknown error"),
+          level: "error",
+          visible: isError,
+        }),
+        show(
+          { when: memo(() => !isError()) },
+          toolResult({
+            call: props.call,
+            params,
+            result: props.result,
+          })
         )
       )
     )
