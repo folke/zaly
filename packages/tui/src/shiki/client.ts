@@ -1,10 +1,10 @@
 import type {
-  ShikiRequest,
   ShikiJob,
+  ShikiRequest,
   ShikiResult,
+  ShikiTheme,
   ShikiWorkerRequest,
   ShikiWorkerResponse,
-  ShikiTheme,
 } from "./types.ts"
 
 import { hash } from "@zaly/shared"
@@ -26,6 +26,9 @@ export class ShikiWorkerClient {
     }
   >()
   #worker?: Worker
+  #completed: (() => void)[] = []
+  // oxlint-disable-next-line no-unused-private-class-members
+  #flushScheduled: Promise<void> | undefined = undefined
 
   key(req: ShikiRequest): string {
     return req.key ?? hash(`${req.lang}:${req.code}:${req.theme ?? "default"}`)
@@ -98,12 +101,24 @@ export class ShikiWorkerClient {
       const pending = this.#pending.get(event.data.id)
       if (!pending) return
       this.#pending.delete(event.data.id)
-      pending.resolve(event.data.results)
+      this.#completed.push(() => pending.resolve(event.data.results))
+      this.#flushScheduled ??= this.#flush().finally(() => {
+        this.#flushScheduled = undefined
+      })
     })
     worker.addEventListener("error", (event) => {
       this.#rejectAll(event.error ?? new Error(event.message))
     })
     return worker
+  }
+
+  async #flush() {
+    while (this.#completed.length) {
+      const next = this.#completed.shift()
+      next?.()
+      // oxlint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setImmediate(resolve)) // yield to event loop between batches
+    }
   }
 
   #rejectAll(error: unknown): void {
