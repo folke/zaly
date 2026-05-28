@@ -63,7 +63,7 @@ function importSpecs(pkgDir: string): string[] {
   specs = specs.filter((s) => !s.startsWith("@types/"))
   if (pkg.name) {
     for (const sub of Object.keys(pkg.exports ?? {})) {
-      if (sub === "./package.json") continue
+      if (sub === "./package.json" || sub.startsWith("./zaly")) continue
       specs.push(sub === "." ? pkg.name : `${pkg.name}${sub.slice(1)}`)
     }
   }

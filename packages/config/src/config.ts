@@ -7,7 +7,6 @@ import { join } from "pathe"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
 import { settingsReviver } from "./reviver.ts"
-import { validateSettings } from "./schemas/gen/settings.ts"
 import { merge } from "./utils.ts"
 
 function settingsPath(dir: string) {
@@ -15,6 +14,7 @@ function settingsPath(dir: string) {
 }
 
 export async function loadSettings(dir: string): Promise<Settings | undefined> {
+  const { validateSettings } = await import("./schemas/gen/settings.ts")
   const path = settingsPath(dir)
   const s = await stat(path).catch(() => undefined)
   if (!s?.isFile()) return
