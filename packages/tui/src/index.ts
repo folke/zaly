@@ -5,7 +5,6 @@ export type * from "./themes/types.ts"
 
 export { defineAction } from "./input/index.ts"
 export * from "./core/index.ts"
-export * from "./layout/text.ts"
 export * from "./renderer/index.ts"
 export * from "./input/keys.ts"
 export * from "./style/inspect.ts"

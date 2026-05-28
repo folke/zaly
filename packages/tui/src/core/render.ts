@@ -1,10 +1,32 @@
+import type { StyleBuilder } from "../style/builder.ts"
+import type { Theme } from "../themes/types.ts"
 import type { RenderCtx } from "./ctx.ts"
 // oxlint-disable no-await-in-loop
 import type { Node } from "./node.ts"
-import type { SuspenseBoundary } from "./reactive.ts"
+import type { Accessor, SuspenseBoundary } from "./reactive.ts"
 
 import { createCtx } from "./ctx.ts"
-import { createRoot, createSuspenseBoundary, provideContext, SuspenseContext } from "./reactive.ts"
+import {
+  createContext,
+  createRoot,
+  createSuspenseBoundary,
+  provideContext,
+  SuspenseContext,
+} from "./reactive.ts"
+
+/** Components-facing slice of the render environment — reactive
+ *  accessors a widget body reads via `useContext(RenderContext)`. Use
+ *  this when a widget needs ambient theme/style outside an `_render`
+ *  call (the place where `RenderCtx` is threaded in). Width is
+ *  deliberately omitted — that's a per-render allotted-size concept,
+ *  not an ambient one. */
+export type RenderContextValue = {
+  /** Active theme. Tracked — widgets that read it re-fire on swap. */
+  theme: Accessor<Theme>
+  /** Theme-bound chainable style builder. Derived memo over `theme`. */
+  style: Accessor<StyleBuilder>
+}
+export const RenderContext = createContext<RenderContextValue>()
 
 /**
  * Render a Node, draining `createAsync` work in its subtree before

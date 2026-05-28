@@ -3,8 +3,6 @@
 import type { Settings } from "@zaly/config"
 import type { CmdArgs } from "./types.ts"
 
-import { prettyPath } from "@zaly/shared"
-import { codeToAnsi } from "@zaly/tui"
 import { defineCommand } from "citty"
 import { Context, REASONING_EFFORTS } from "./context.ts"
 
@@ -45,7 +43,11 @@ export class Cli {
         packs: await config.resources.packs(),
       },
     }
-    const { settingsReviverIssues } = await import("@zaly/config")
+    const [{ settingsReviverIssues }, { codeToAnsi }, { prettyPath }] = await Promise.all([
+      import("@zaly/config"),
+      import("@zaly/tui"),
+      import("@zaly/shared"),
+    ])
     const issues = settingsReviverIssues(settings)
     for (const issue of issues) {
       console.warn(`- **${issue.path}**: ${issue.msg}`)

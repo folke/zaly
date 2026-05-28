@@ -20,6 +20,7 @@ export default defineConfig({
     "widgets/*": "src/widgets/*.ts",
     "widgets/completions/*": "src/widgets/completions/*.ts",
     "services/*": "src/services/*.ts",
+    text: "src/layout/text.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

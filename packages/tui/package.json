@@ -51,6 +51,10 @@
       "bun": "./src/style/index.ts",
       "default": "./dist/style.mjs"
     },
+    "./text": {
+      "bun": "./src/layout/text.ts",
+      "default": "./dist/text.mjs"
+    },
     "./themes": {
       "bun": "./src/themes/registry.ts",
       "default": "./dist/themes.mjs"
@@ -164,6 +168,7 @@
       "./services/notifier": "./dist/services/notifier.mjs",
       "./services/picker": "./dist/services/picker.mjs",
       "./style": "./dist/style.mjs",
+      "./text": "./dist/text.mjs",
       "./themes": "./dist/themes.mjs",
       "./widgets/autocomplete": "./dist/widgets/autocomplete.mjs",
       "./widgets/box": "./dist/widgets/box.mjs",

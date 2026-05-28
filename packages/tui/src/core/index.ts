@@ -8,7 +8,6 @@ export type * from "./state.ts"
 
 export * from "./reactive.ts"
 export * from "./render.ts"
-export { RenderContext } from "./ctx.ts"
 
 export async function createCtx(
   opts: Partial<RenderCtx> & { theme?: Theme } = {}
