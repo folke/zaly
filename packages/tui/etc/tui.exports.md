@@ -1,16 +1,22 @@
-# @zaly/tui (153)
+# @zaly/tui (197)
 
-## Classes (1)
+## Classes (5)
 
+- KeyPatternError
+- Notifier
 - Owner
+- Picker
+- TuiReporter
 
-## Functions (49)
+## Functions (58)
 
 - actionsSource
 - autocomplete
 - box
 - calcLayout
+- canonical
 - code
+- codeToAnsi
 - countLines
 - createAsync
 - createContext
@@ -22,7 +28,9 @@
 - createRoot
 - createStore
 - createSuspenseBoundary
+- defineAction
 - diff
+- divider
 - effect
 - filesSource
 - formatLines
@@ -32,13 +40,18 @@
 - image
 - inRenderContextOf
 - input
+- inspect
 - isAccessor
+- isKeyPattern
+- isMarkdown
+- keyMatches
 - log
 - markdown
 - memo
 - menu
 - onCleanup
 - overlay
+- picker
 - progress
 - provideContext
 - rank
@@ -70,7 +83,7 @@
 - Diff
 - Image
 - Input
-- Log
+- InputRouter
 - Markdown
 - Menu
 - Node
@@ -84,23 +97,22 @@
 - Text
 - UI
 
-## Types Functions (1)
+## Types Functions (2)
 
 - isNode
+- textContent
 
-## Types Constants (1)
-
-- defaultActions
-
-## Types (79)
+## Types (110)
 
 - AcceptFn
 - Accessor
+- Action
 - ActionCompletionItem
 - ActionCtx
-- ActionInfo
+- ActionDef
+- ActionFilter
+- ActionFn
 - ActionMap
-- ActionsListener
 - ActionsSourceOptions
 - AnsiColor
 - AnsiColorName
@@ -120,6 +132,7 @@
 - CompletionSource
 - Context
 - DiffState
+- DividerState
 - FilesSourceOptions
 - FlexState
 - GithubFetcher
@@ -130,11 +143,24 @@
 - ImageState
 - InputAttachment
 - InputEvents
+- InputRouterEvents
 - InputState
+- InputValue
+- InspectOptions
+- KeyBinding
+- KeyEvent
+- KeyHandler
+- KeyModifier
+- KeyPattern
+- KeyPatterns
+- KeymapEntry
 - Layout
 - LayoutState
+- LogEntryFactory
 - LogState
 - LogStyle
+- LogStyleOverride
+- LoggerStream
 - MarkdownState
 - Matcher
 - MenuEvents
@@ -143,10 +169,16 @@
 - MenuState
 - MountCtx
 - NodeAction
+- NodeActionMap
 - NodeVisitor
+- NotifProps
 - Overlay
 - OverlayState
 - Padding
+- PickOpts
+- PickerItem
+- PickerProps
+- PickerResult
 - ProgressState
 - Props
 - RGB
@@ -154,10 +186,20 @@
 - Ref
 - RenderCtx
 - RendererOptions
+- RoutedKey
+- RoutedPaste
 - Setter
+- ShikiJob
+- ShikiLanguage
+- ShikiRequest
+- ShikiResult
+- ShikiTheme
+- ShikiWorkerRequest
+- ShikiWorkerResponse
 - ShowState
 - Signal
 - SignalStore
+- SpecialKeyName
 - SpinnerState
 - SpinnerStyle
 - State
@@ -170,6 +212,5 @@
 - Theme
 - ThemeKey
 - ThemeValue
-- Widget
-- WidgetFactory
+- TuiReporterOpts
 - WrapMode

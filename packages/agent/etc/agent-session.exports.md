@@ -1,4 +1,4 @@
-# @zaly/agent/session (23)
+# @zaly/agent/session (22)
 
 ## Classes (4)
 
@@ -7,27 +7,26 @@
 - MemoryStore
 - Session
 
-## Functions (5)
+## Functions (4)
 
-- projectScope
-- sessionCreate
-- sessionList
-- sessionLoad
-- sessionResume
+- listSessions
+- loadSession
+- resumeSession
+- sessionInfo
 
 ## Types (14)
 
-- InternalMeta
-- ManagedSession
-- PersistedMeta
-- PersistedNode
+- PartialNode
 - SessionEvents
+- SessionFilter
+- SessionInfo
 - SessionInit
+- SessionListOpts
 - SessionMessage
-- SessionMeta
 - SessionNode
 - SessionNodeView
 - SessionOptions
-- SessionScope
+- SessionSettings
 - SessionStore
+- SessionUpdate
 - SessionView

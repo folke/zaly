@@ -1,13 +1,15 @@
-# @zaly/tui/style (18)
+# @zaly/tui/style (19)
 
-## Functions (4)
+## Functions (6)
 
+- inspect
 - isHexColor
+- isMarkdown
 - parseHex
 - style
 - toHex
 
-## Types (14)
+## Types (13)
 
 - AnsiColor
 - AnsiColorName
@@ -17,9 +19,8 @@
 - Color
 - ColorLightness
 - HexColor
+- InspectOptions
 - RGB
-- ShikiLanguage
-- ShikiTheme
 - Style
 - StyleBuilder
 - ThemeKey

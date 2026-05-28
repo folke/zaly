@@ -1,4 +1,4 @@
-# @zaly/tui/themes (5)
+# @zaly/tui/themes (6)
 
 ## Functions (1)
 
@@ -9,7 +9,8 @@
 - defaultTheme
 - themeRegistry
 
-## Types (2)
+## Types (3)
 
 - AnyTheme
 - BuiltinTheme
+- ThemeLoader

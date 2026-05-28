@@ -1,14 +1,17 @@
-# @zaly/agent (50)
+# @zaly/agent (66)
 
-## Functions (1)
+## Functions (4)
 
 - createAgent
+- isUuidv7
+- isUuidv7Like
+- uuidv7
 
 ## Constants (3)
 
 - handlerRegistry
+- promptRegistry
 - toolRegistry
-- zalyPaths
 
 ## Types Classes (5)
 
@@ -24,16 +27,20 @@
 - taskCompletionMessage
 - taskInfoPart
 
-## Types (38)
+## Types (51)
 
+- AgentContextEvents
 - AgentEvents
 - AgentInit
 - AgentOptions
 - AgentStatus
-- AgentStopReason
+- AgentStop
+- AgentStopKind
+- AnyPrompt
 - AnyScope
 - AnyTool
 - BashTool
+- BuiltinPrompt
 - BuiltinScope
 - BuiltinTool
 - CheckResult
@@ -41,6 +48,10 @@
 - DoneTaskInfo
 - EditTool
 - EditToolMeta
+- FindTool
+- FindToolMeta
+- GrepTool
+- GrepToolMeta
 - PermissionContext
 - PermissionHandler
 - PermissionOptions
@@ -49,9 +60,12 @@
 - PermissionRequest
 - PermissionScope
 - PermissionScopes
+- PromptCtx
+- PromptLoader
 - ReadTool
 - ReadToolMeta
 - Rule
+- SendMode
 - StepKind
 - StepResult
 - StopOptions
@@ -61,6 +75,8 @@
 - TaskStatus
 - TasksEvents
 - ToolInit
+- ToolLoader
+- TurnResult
 - Verdict
 - WriteTool
 - WriteToolMeta

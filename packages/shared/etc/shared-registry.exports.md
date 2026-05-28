@@ -1,15 +1,15 @@
 # @zaly/shared/registry (5)
 
-## Classes (1)
-
-- Registry
-
 ## Functions (1)
 
 - createRegistry
 
+## Types Classes (1)
+
+- Registry
+
 ## Types (3)
 
+- AnyKey
 - Loader
 - LoaderMap
-- Resolved

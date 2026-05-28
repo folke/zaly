@@ -1,18 +1,13 @@
-# @zaly/tui/ansi (13)
+# @zaly/tui/ansi (8)
 
-## Functions (11)
+## Functions (6)
 
+- ansiBg
 - ansiColor
-- hasAnsi
 - hyperlink
 - openAnsi
 - reapplyStyle
-- sliceAnsi
-- splitAnsi
-- stringWidth
-- stripAnsi
-- truncateAnsi
-- wrapAnsi
+- styleAnsi
 
 ## Constants (1)
 

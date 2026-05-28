@@ -1,4 +1,4 @@
-# @zaly/ai (116)
+# @zaly/ai (122)
 
 ## Classes (3)
 
@@ -6,7 +6,7 @@
 - ContentTransform
 - Model
 
-## Functions (48)
+## Functions (51)
 
 - addModels
 - attachmentToMeta
@@ -20,6 +20,7 @@
 - errorToMeta
 - errorToMetaPart
 - extractToolCalls
+- extractToolResults
 - fileToMetaPart
 - filterModel
 - getModel
@@ -41,6 +42,7 @@
 - pairedToolIds
 - parseJson
 - parseModelId
+- registerModel
 - renderMetaPart
 - runTool
 - safeParseToolParams
@@ -55,6 +57,7 @@
 - toPdfPart
 - toXml
 - transformMeta
+- truncateText
 - withRetry
 
 ## Constants (1)
@@ -65,7 +68,7 @@
 
 - collect
 
-## Types (63)
+## Types (66)
 
 - AnyAuthProvider
 - AnyPart
@@ -73,6 +76,7 @@
 - Attachment
 - AudioPart
 - AuthCredentials
+- AuthLoader
 - AuthProvider
 - BuiltinAuthProvider
 - CollectOptions
@@ -111,10 +115,12 @@
 - ProviderOptions
 - ProviderRequest
 - Quirks
+- ReasoningEffort
 - ReasoningOptions
 - ReasoningPart
 - ResponseFormat
 - RetryOptions
+- Role
 - StreamEvent
 - StreamOptions
 - Streamable

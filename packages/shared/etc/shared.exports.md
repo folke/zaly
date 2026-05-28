@@ -1,47 +1,60 @@
-# @zaly/shared (37)
+# @zaly/shared (50)
 
-## Classes (2)
+## Classes (1)
 
-- AsyncEmitter
 - Emitter
 
-## Functions (28)
+## Functions (32)
 
+- atomicWriteFile
 - clamp
-- cleanText
-- cleanTextAgent
-- cleanTextTui
 - compareNaturalDescNumbers
 - decodePath
-- detectEol
 - encodePath
 - findUp
+- formatDuration
+- formatNumber
+- formatRelTime
+- formatSize
 - gitRoot
 - hash
+- isInstance
+- isPromiseLike
 - normPath
-- normalizeEol
 - prettyPath
 - randomHash
-- safeAsyncFn
+- readJson
 - safeFn
 - safeParseJson
 - safeReadFile
 - safeReadFileSync
+- safeReadJson
 - safeStat
+- safeStatAsync
 - safeStringify
-- since
-- stripAdversarial
-- stripAnsi
-- stripBinary
+- safeWriteJson
 - toError
 - withError
+- withLock
+- wrapError
+- writeJson
 
-## Types (7)
+## Types (17)
 
 - AnyFn
-- CleanTextOpts
-- EOL
+- EmitArgs
 - Envelope
 - EventMap
+- EventMapOf
 - EventOf
+- EventType
+- FindUpOpts
+- JsonArray
+- JsonObject
+- JsonPrimitive
+- JsonReviver
+- JsonValue
 - Listener
+- ListenerCtx
+- ListenerOpts
+- MaybePromise
