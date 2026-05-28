@@ -4,8 +4,12 @@ import type { FileRef, InputFormatter } from "../app/composer.ts"
 
 import { isAttachment, justText, toParts } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { box, createAsync, image, RenderContext, text, useContext, widget } from "@zaly/tui"
+import { createAsync, RenderContext, useContext } from "@zaly/tui"
 import { hyperlink } from "@zaly/tui/ansi"
+import { box } from "@zaly/tui/widgets/box"
+import { image } from "@zaly/tui/widgets/image"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
 
 /** Single user-turn bubble. Plain text plus optional attachments —

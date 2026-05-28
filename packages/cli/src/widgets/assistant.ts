@@ -1,6 +1,7 @@
 import type { Accessor, Reactive } from "@zaly/tui"
 
-import { markdown, widget } from "@zaly/tui"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
 
 /** Assistant bubble. Live-streaming usage passes a `Reactive<string>`

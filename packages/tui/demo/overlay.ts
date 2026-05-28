@@ -1,14 +1,10 @@
-import {
-  box,
-  createRenderer,
-  markdown,
-  memo,
-  overlay,
-  progress,
-  signal,
-  spinner,
-  text,
-} from "@zaly/tui"
+import { createRenderer, memo, signal } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { overlay } from "@zaly/tui/widgets/overlay"
+import { progress } from "@zaly/tui/widgets/progress"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Overlay demo. Streams markdown into the scroll region while a help

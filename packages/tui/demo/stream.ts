@@ -1,4 +1,9 @@
-import { box, createRenderer, markdown, progress, signal, spinner, text } from "@zaly/tui"
+import { createRenderer, signal } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { progress } from "@zaly/tui/widgets/progress"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Simulates an agent streaming markdown responses into the stream

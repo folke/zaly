@@ -2,7 +2,7 @@ import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Accessor, Node } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared/registry"
-import { widget } from "@zaly/tui"
+import { widget } from "@zaly/tui/widgets/widget"
 import { bashResult } from "./bash.ts"
 import { defaultResult } from "./default.ts"
 import { editResult } from "./edit.ts"

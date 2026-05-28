@@ -1,7 +1,10 @@
-import type { Input } from "@zaly/tui"
+import type { Input } from "@zaly/tui/widgets/input"
 
 import { installLogger, Logger } from "@zaly/shared/logger"
-import { box, createRef, createRenderer, input, picker } from "@zaly/tui"
+import { createRef, createRenderer } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { input } from "@zaly/tui/widgets/input"
+import { picker } from "@zaly/tui/widgets/picker"
 
 /**
  * Demo for the logger surface.

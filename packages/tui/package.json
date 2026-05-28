@@ -35,6 +35,18 @@
       "bun": "./src/markdown/index.ts",
       "default": "./dist/markdown.mjs"
     },
+    "./services/logger": {
+      "bun": "./src/services/logger.ts",
+      "default": "./dist/services/logger.mjs"
+    },
+    "./services/notifier": {
+      "bun": "./src/services/notifier.ts",
+      "default": "./dist/services/notifier.mjs"
+    },
+    "./services/picker": {
+      "bun": "./src/services/picker.ts",
+      "default": "./dist/services/picker.mjs"
+    },
     "./style": {
       "bun": "./src/style/index.ts",
       "default": "./dist/style.mjs"
@@ -42,6 +54,94 @@
     "./themes": {
       "bun": "./src/themes/registry.ts",
       "default": "./dist/themes.mjs"
+    },
+    "./widgets/autocomplete": {
+      "bun": "./src/widgets/autocomplete.ts",
+      "default": "./dist/widgets/autocomplete.mjs"
+    },
+    "./widgets/box": {
+      "bun": "./src/widgets/box.ts",
+      "default": "./dist/widgets/box.mjs"
+    },
+    "./widgets/code": {
+      "bun": "./src/widgets/code.ts",
+      "default": "./dist/widgets/code.mjs"
+    },
+    "./widgets/completions": {
+      "bun": "./src/widgets/completions/index.ts",
+      "default": "./dist/widgets/completions/index.mjs"
+    },
+    "./widgets/completions/actions": {
+      "bun": "./src/widgets/completions/actions.ts",
+      "default": "./dist/widgets/completions/actions.mjs"
+    },
+    "./widgets/completions/files": {
+      "bun": "./src/widgets/completions/files.ts",
+      "default": "./dist/widgets/completions/files.mjs"
+    },
+    "./widgets/completions/fuzzy": {
+      "bun": "./src/widgets/completions/fuzzy.ts",
+      "default": "./dist/widgets/completions/fuzzy.mjs"
+    },
+    "./widgets/completions/github": {
+      "bun": "./src/widgets/completions/github.ts",
+      "default": "./dist/widgets/completions/github.mjs"
+    },
+    "./widgets/diff": {
+      "bun": "./src/widgets/diff.ts",
+      "default": "./dist/widgets/diff.mjs"
+    },
+    "./widgets/divider": {
+      "bun": "./src/widgets/divider.ts",
+      "default": "./dist/widgets/divider.mjs"
+    },
+    "./widgets/image": {
+      "bun": "./src/widgets/image.ts",
+      "default": "./dist/widgets/image.mjs"
+    },
+    "./widgets/input": {
+      "bun": "./src/widgets/input.ts",
+      "default": "./dist/widgets/input.mjs"
+    },
+    "./widgets/log": {
+      "bun": "./src/widgets/log.ts",
+      "default": "./dist/widgets/log.mjs"
+    },
+    "./widgets/markdown": {
+      "bun": "./src/widgets/markdown.ts",
+      "default": "./dist/widgets/markdown.mjs"
+    },
+    "./widgets/menu": {
+      "bun": "./src/widgets/menu.ts",
+      "default": "./dist/widgets/menu.mjs"
+    },
+    "./widgets/overlay": {
+      "bun": "./src/widgets/overlay.ts",
+      "default": "./dist/widgets/overlay.mjs"
+    },
+    "./widgets/picker": {
+      "bun": "./src/widgets/picker.ts",
+      "default": "./dist/widgets/picker.mjs"
+    },
+    "./widgets/progress": {
+      "bun": "./src/widgets/progress.ts",
+      "default": "./dist/widgets/progress.mjs"
+    },
+    "./widgets/show": {
+      "bun": "./src/widgets/show.ts",
+      "default": "./dist/widgets/show.mjs"
+    },
+    "./widgets/spinner": {
+      "bun": "./src/widgets/spinner.ts",
+      "default": "./dist/widgets/spinner.mjs"
+    },
+    "./widgets/text": {
+      "bun": "./src/widgets/text.ts",
+      "default": "./dist/widgets/text.mjs"
+    },
+    "./widgets/widget": {
+      "bun": "./src/widgets/widget.ts",
+      "default": "./dist/widgets/widget.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -60,8 +160,33 @@
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
       "./markdown": "./dist/markdown.mjs",
+      "./services/logger": "./dist/services/logger.mjs",
+      "./services/notifier": "./dist/services/notifier.mjs",
+      "./services/picker": "./dist/services/picker.mjs",
       "./style": "./dist/style.mjs",
       "./themes": "./dist/themes.mjs",
+      "./widgets/autocomplete": "./dist/widgets/autocomplete.mjs",
+      "./widgets/box": "./dist/widgets/box.mjs",
+      "./widgets/code": "./dist/widgets/code.mjs",
+      "./widgets/completions": "./dist/widgets/completions/index.mjs",
+      "./widgets/completions/actions": "./dist/widgets/completions/actions.mjs",
+      "./widgets/completions/files": "./dist/widgets/completions/files.mjs",
+      "./widgets/completions/fuzzy": "./dist/widgets/completions/fuzzy.mjs",
+      "./widgets/completions/github": "./dist/widgets/completions/github.mjs",
+      "./widgets/diff": "./dist/widgets/diff.mjs",
+      "./widgets/divider": "./dist/widgets/divider.mjs",
+      "./widgets/image": "./dist/widgets/image.mjs",
+      "./widgets/input": "./dist/widgets/input.mjs",
+      "./widgets/log": "./dist/widgets/log.mjs",
+      "./widgets/markdown": "./dist/widgets/markdown.mjs",
+      "./widgets/menu": "./dist/widgets/menu.mjs",
+      "./widgets/overlay": "./dist/widgets/overlay.mjs",
+      "./widgets/picker": "./dist/widgets/picker.mjs",
+      "./widgets/progress": "./dist/widgets/progress.mjs",
+      "./widgets/show": "./dist/widgets/show.mjs",
+      "./widgets/spinner": "./dist/widgets/spinner.mjs",
+      "./widgets/text": "./dist/widgets/text.mjs",
+      "./widgets/widget": "./dist/widgets/widget.mjs",
       "./package.json": "./package.json"
     },
     "access": "public"

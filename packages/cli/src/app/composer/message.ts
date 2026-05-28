@@ -1,5 +1,5 @@
 import type { Attachment, ContentPart, Message, TextPart } from "@zaly/ai"
-import type { InputAttachment } from "@zaly/tui"
+import type { InputAttachment } from "@zaly/tui/widgets/input"
 import type { ComposerCtx, ComposerPlugin, ComposerSubmitCtx } from "../composer.ts"
 
 export class MessageComposer implements ComposerPlugin {

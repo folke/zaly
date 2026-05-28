@@ -1,14 +1,9 @@
-import type {
-  ActionDef,
-  KeyBinding,
-  NotifProps,
-  Overlay,
-  PickerItem,
-  PickOpts,
-  Renderer,
-  Theme,
-} from "@zaly/tui"
+import type { ActionDef, KeyBinding, Renderer, Theme } from "@zaly/tui"
+import type { NotifProps } from "@zaly/tui/services/notifier"
+import type { PickOpts } from "@zaly/tui/services/picker"
 import type { ThemeLoader } from "@zaly/tui/themes"
+import type { Overlay } from "@zaly/tui/widgets/overlay"
+import type { PickerItem } from "@zaly/tui/widgets/picker"
 import type { Plugin } from "../plugin.ts"
 
 import { toLoader } from "../plugin.ts"

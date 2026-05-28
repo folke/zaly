@@ -1,5 +1,8 @@
 import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
-import type { ActionDef, Overlay, PickerItem, Text } from "@zaly/tui"
+import type { ActionDef } from "@zaly/tui"
+import type { Overlay } from "@zaly/tui/widgets/overlay"
+import type { PickerItem } from "@zaly/tui/widgets/picker"
+import type { Text } from "@zaly/tui/widgets/text"
 import type { App } from "./app.ts"
 
 import { formatNumber, prettyPath } from "@zaly/shared"

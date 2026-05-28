@@ -1,6 +1,8 @@
 import type { AgentContext } from "@zaly/agent"
 import type { LogApi, Logger } from "@zaly/shared/logger"
-import type { Notifier, Picker, Renderer, Theme } from "@zaly/tui"
+import type { Renderer, Theme } from "@zaly/tui"
+import type { Notifier } from "@zaly/tui/services/notifier"
+import type { Picker } from "@zaly/tui/services/picker"
 
 /** Internal host capabilities used to implement PluginApi.
  *  Never exposed directly to plugin code.

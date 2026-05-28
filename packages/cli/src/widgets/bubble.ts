@@ -1,6 +1,10 @@
 import type { Accessor, AnyStyle, Node, Reactive } from "@zaly/tui"
 
-import { box, effect, memo, spinner, text, unwrap, widget } from "@zaly/tui"
+import { effect, memo, unwrap } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 
 type Bubble = {
   icon: string

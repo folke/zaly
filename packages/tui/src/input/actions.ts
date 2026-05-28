@@ -67,10 +67,6 @@ export type Action<T extends ArgsOpts = ArgsOpts> = ActionDef<T> & { id: string 
 
 export type ActionMap = Record<string, ActionDef>
 
-export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionDef<T>): ActionDef<T> {
-  return action
-}
-
 export type ActionFilter = {
   cmd?: string
   id?: string

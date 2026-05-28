@@ -1,7 +1,9 @@
 import type { ToolResultProps } from "./registry.ts"
 
 import { stringifyContent } from "@zaly/ai"
-import { text, unwrap, widget } from "@zaly/tui"
+import { unwrap } from "@zaly/tui"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 
 /** Generic fallback renderer — dim text preview of the result content,
  *  truncated to 500 chars. Used for any tool that doesn't have a

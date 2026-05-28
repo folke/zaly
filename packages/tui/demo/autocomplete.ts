@@ -1,17 +1,12 @@
-import type { Input } from "@zaly/tui"
+import type { Input } from "@zaly/tui/widgets/input"
 
-import {
-  actionsSource,
-  autocomplete,
-  box,
-  createRef,
-  createRenderer,
-  filesSource,
-  githubSource,
-  input,
-  markdown,
-  text,
-} from "@zaly/tui"
+import { createRef, createRenderer } from "@zaly/tui"
+import { autocomplete } from "@zaly/tui/widgets/autocomplete"
+import { box } from "@zaly/tui/widgets/box"
+import { actionsSource, filesSource, githubSource } from "@zaly/tui/widgets/completions"
+import { input } from "@zaly/tui/widgets/input"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Autocomplete demo wired to the built-in completion sources:

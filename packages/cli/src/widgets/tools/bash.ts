@@ -3,7 +3,11 @@ import type { ParamsOf } from "@zaly/ai"
 import type { ToolResultProps } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
-import { box, code, memo, text, widget, formatLines } from "@zaly/tui"
+import { formatLines, memo } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { code } from "@zaly/tui/widgets/code"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 
 const PREVIEW_LINE_LIMIT = 10
 

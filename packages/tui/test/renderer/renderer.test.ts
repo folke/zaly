@@ -1,7 +1,10 @@
 import type { Node } from "../../src/core/node.ts"
 
 import { describe, expect, test } from "vitest"
-import { box, createRenderer, input, text } from "../../src/index.ts"
+import { createRenderer } from "../../src/index.ts"
+import { box } from "../../src/widgets/box.ts"
+import { input } from "../../src/widgets/input.ts"
+import { text } from "../../src/widgets/text.ts"
 import { MockReader, MockWriter } from "./mock.ts"
 
 async function renderer() {

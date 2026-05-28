@@ -4,7 +4,11 @@ import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
 import { truncateAnsi } from "@zaly/shared/ansi"
-import { box, inspect, memo, show, text, unwrap, widget } from "@zaly/tui"
+import { inspect, memo, unwrap } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { show } from "@zaly/tui/widgets/show"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
 import { toolResult } from "./tools/registry.ts"
 

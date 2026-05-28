@@ -2,7 +2,11 @@ import type { ThemeKey } from "@zaly/tui"
 import type { AppState } from "../types.ts"
 
 import { formatNumber as fmt } from "@zaly/shared"
-import { box, memo, spinner, text, widget } from "@zaly/tui"
+import { memo } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
+import { widget } from "@zaly/tui/widgets/widget"
 
 /**
  * Single-line status: spinner · zaly · model · status · ctx · usage.

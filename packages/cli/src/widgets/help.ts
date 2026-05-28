@@ -1,6 +1,8 @@
 import type { Actions } from "@zaly/tui"
 
-import { overlay, signal, text } from "@zaly/tui"
+import { signal } from "@zaly/tui"
+import { overlay } from "@zaly/tui/widgets/overlay"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Help overlay. Reads `renderer.actions` reactively — the list re-

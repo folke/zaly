@@ -1,4 +1,6 @@
-import { box, createCtx, text } from "@zaly/tui"
+import { createCtx } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { text } from "@zaly/tui/widgets/text"
 import { loadTheme, themeRegistry } from "@zaly/tui/themes"
 
 /**

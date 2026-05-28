@@ -1,5 +1,8 @@
 import { installLogger, Logger } from "@zaly/shared/logger"
-import { box, createRenderer, spinner, text } from "@zaly/tui"
+import { createRenderer } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Demo for the logger surface.

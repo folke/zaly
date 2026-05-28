@@ -2,7 +2,9 @@ import type { WriteTool } from "@zaly/agent"
 import type { ToolResultProps } from "./registry.ts"
 
 import { prettyPath } from "@zaly/shared"
-import { diff, memo, widget } from "@zaly/tui"
+import { memo } from "@zaly/tui"
+import { diff } from "@zaly/tui/widgets/diff"
+import { widget } from "@zaly/tui/widgets/widget"
 
 /** Result renderer for the `write` tool. Renders a unified diff between
  *  the pre-write content (`meta.original`, empty for new files) and

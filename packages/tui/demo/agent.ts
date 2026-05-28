@@ -1,17 +1,13 @@
-import {
-  actionsSource,
-  autocomplete,
-  box,
-  createRenderer,
-  filesSource,
-  input,
-  markdown,
-  overlay,
-  progress,
-  signal,
-  spinner,
-  text,
-} from "@zaly/tui"
+import { createRenderer, signal } from "@zaly/tui"
+import { autocomplete } from "@zaly/tui/widgets/autocomplete"
+import { box } from "@zaly/tui/widgets/box"
+import { actionsSource, filesSource } from "@zaly/tui/widgets/completions"
+import { input } from "@zaly/tui/widgets/input"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { overlay } from "@zaly/tui/widgets/overlay"
+import { progress } from "@zaly/tui/widgets/progress"
+import { spinner } from "@zaly/tui/widgets/spinner"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Agent harness — a compact coding-assistant shell built on @zaly/tui.

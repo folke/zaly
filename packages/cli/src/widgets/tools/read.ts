@@ -3,7 +3,12 @@ import type { ToolResultProps } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { box, code, log, memo, show, widget } from "@zaly/tui"
+import { memo } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { code } from "@zaly/tui/widgets/code"
+import { log } from "@zaly/tui/widgets/log"
+import { show } from "@zaly/tui/widgets/show"
+import { widget } from "@zaly/tui/widgets/widget"
 
 const PREVIEW_LINE_LIMIT = 10
 

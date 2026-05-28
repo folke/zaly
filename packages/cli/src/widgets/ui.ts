@@ -1,17 +1,15 @@
-import type { Accessor, Actions, Input, Ref } from "@zaly/tui"
+import type { Accessor, Actions, Ref } from "@zaly/tui"
+import type { Input } from "@zaly/tui/widgets/input"
 import type { App } from "../app/app.ts"
 import type { Composer } from "../app/composer.ts"
 
-import {
-  actionsSource,
-  autocomplete,
-  box,
-  divider,
-  filesSource,
-  memo,
-  overlay,
-  text,
-} from "@zaly/tui"
+import { memo } from "@zaly/tui"
+import { autocomplete } from "@zaly/tui/widgets/autocomplete"
+import { box } from "@zaly/tui/widgets/box"
+import { actionsSource, filesSource } from "@zaly/tui/widgets/completions"
+import { divider } from "@zaly/tui/widgets/divider"
+import { overlay } from "@zaly/tui/widgets/overlay"
+import { text } from "@zaly/tui/widgets/text"
 import { statusline } from "./statusline.ts"
 
 /**

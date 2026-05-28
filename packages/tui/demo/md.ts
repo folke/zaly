@@ -1,6 +1,8 @@
 import type { RenderMarkdown } from "@zaly/tui/markdown"
 
-import { box, createCtx, markdown } from "@zaly/tui"
+import { createCtx } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { markdown } from "@zaly/tui/widgets/markdown"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 // oxlint-disable-next-line no-restricted-imports

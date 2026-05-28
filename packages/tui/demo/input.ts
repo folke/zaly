@@ -1,4 +1,9 @@
-import { box, createRenderer, image, input, markdown, text } from "@zaly/tui"
+import { createRenderer } from "@zaly/tui"
+import { box } from "@zaly/tui/widgets/box"
+import { image } from "@zaly/tui/widgets/image"
+import { input } from "@zaly/tui/widgets/input"
+import { markdown } from "@zaly/tui/widgets/markdown"
+import { text } from "@zaly/tui/widgets/text"
 
 /**
  * Minimal echo chat. Type a message, press Enter — it's appended to the
