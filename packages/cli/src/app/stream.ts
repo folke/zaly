@@ -1,5 +1,5 @@
 import type { Message, ToolResult } from "@zaly/ai"
-import type { Setter, Signal } from "@zaly/tui"
+import type { Setter } from "@zaly/tui"
 import type { ToolCallProps } from "../widgets/tool.ts"
 import type { App } from "./app.ts"
 
@@ -10,13 +10,14 @@ import { toolCalls } from "../widgets/tool.ts"
 import { messageWidgets } from "./message.ts"
 
 interface ActiveTools {
-  done: Signal<boolean>
+  setDone: Setter<boolean>
   results: Map<string, Setter<ToolResult | undefined>>
 }
 
 interface ActiveWidget {
   type: "text" | "reasoning"
   setContent: Setter<string>
+  setPending?: Setter<boolean>
 }
 
 /**
@@ -33,19 +34,27 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
   let active: ActiveWidget | undefined
   let tools: ActiveTools | undefined
 
-  const pending = new Map<
+  const pendingMessages = new Map<
     string,
     { setPending?: Setter<boolean>; setMessage?: Setter<Message<"user">> }
   >()
 
+  const clearActive = (): void => {
+    active?.setPending?.(false)
+    active = undefined
+  }
+
   const update = (type: "text" | "reasoning", delta: string): void => {
-    if (active?.type !== type) active = undefined
+    if (active?.type !== type) clearActive()
     if (!active) {
       const [content, setContent] = signal("")
+      const [pending, setPending] = signal(true)
       renderer.stream.append(() =>
-        type === "text" ? assistantMessage({ content }) : reasoningMessage({ content })
+        type === "text"
+          ? assistantMessage({ content, pending })
+          : reasoningMessage({ content, pending })
       )
-      active = { setContent, type }
+      active = { setContent, setPending, type }
     }
     active.setContent((prev) => prev + delta)
   }
@@ -56,9 +65,9 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
       if (node.type !== "message") return
       const id = node.message.id
       if (!id) return
-      pending.get(id)?.setPending?.(false)
-      if (node.message.role === "user") pending.get(id)?.setMessage?.(node.message)
-      pending.delete(id)
+      pendingMessages.get(id)?.setPending?.(false)
+      if (node.message.role === "user") pendingMessages.get(id)?.setMessage?.(node.message)
+      pendingMessages.delete(id)
     },
     opts
   )
@@ -71,7 +80,7 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
           composer,
           pending: true,
         })) {
-          pending.set(mf.id, { setMessage: mf.setMessage, setPending: mf.setPending })
+          pendingMessages.set(mf.id, { setMessage: mf.setMessage, setPending: mf.setPending })
           for (const w of mf.widgets) renderer.stream.append(w)
         }
       },
@@ -91,9 +100,9 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
     .on(
       "tool-calls",
       ({ calls }) => {
-        active = undefined
-        const done = signal(false)
-        tools = { done, results: new Map() }
+        clearActive()
+        const [done, setDone] = signal(false)
+        tools = { results: new Map(), setDone }
         const children: ToolCallProps[] = []
 
         for (const call of calls) {
@@ -101,7 +110,7 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
           tools.results.set(call.id, setResult)
           children.push({ call, result })
         }
-        renderer.stream.append(() => toolCalls({ calls: children, done: done.get }))
+        renderer.stream.append(() => toolCalls({ calls: children, done }))
       },
       opts
     )
@@ -109,8 +118,8 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
     .on(
       "step-end",
       () => {
-        active = undefined
-        tools?.done.set(true)
+        clearActive()
+        tools?.setDone(true)
         tools = undefined
       },
       opts
