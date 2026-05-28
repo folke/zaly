@@ -1,4 +1,4 @@
-import type { Action, ActionDef, KeyBinding, Renderer, Theme } from "@zaly/tui"
+import type { Action, KeyBinding, Renderer, Theme } from "@zaly/tui"
 import type { NotifProps } from "@zaly/tui/services/notifier"
 import type { PickOpts } from "@zaly/tui/services/picker"
 import type { ThemeLoader } from "@zaly/tui/themes"

@@ -8,7 +8,7 @@ import { stringWidth } from "@zaly/shared/ansi"
  *  `ActionInfo` plus the action `id` so the source's `accept` can
  *  dispatch without a secondary lookup. Items match the `MenuItem`
  *  contract loosely via the overlapping `name`/... shape. */
-export type ActionCompletionItem = ActionDef & { id: string }
+export type ActionCompletionItem = ActionDef & { id: string; value: string }
 
 export interface ActionsSourceOptions {
   /** Registry to read from. Usually `renderer.actions`. */
@@ -62,7 +62,7 @@ export function actionsSource(opts: ActionsSourceOptions): CompletionSource<Acti
         if (!filter(info.id, info)) continue
         const name = info.cmd ?? info.id
         if (!match(name)) continue
-        out.push({ ...info, id: info.id })
+        out.push({ ...info, id: info.id, value: name })
       }
       return out
     },

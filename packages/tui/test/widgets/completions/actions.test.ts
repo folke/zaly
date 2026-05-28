@@ -18,6 +18,7 @@ describe("actionsSource", () => {
     const commit = items.find((i) => i.id === "app.commit")!
     expect(commit.cmd).toBe("commit")
     expect(commit.desc).toBe("commit changes")
+    expect(commit.value).toBe("commit")
   })
 
   test("falls back to id when info.name is absent (fuzzy-matches on id)", async () => {
@@ -28,6 +29,7 @@ describe("actionsSource", () => {
     expect(items).toHaveLength(1)
     expect(items[0].id).toBe("app.foo")
     expect(items[0].cmd).toBeUndefined()
+    expect(items[0].value).toBe("app.foo")
   })
 
   test("fuzzy-matches the displayed name", async () => {
@@ -58,7 +60,7 @@ describe("actionsSource", () => {
     const fn = vi.fn()
     actions.register({ "app.quit": { fn, cmd: "quit" } })
     const src = actionsSource({ actions })
-    const item = { id: "app.quit", name: "quit" }
+    const item = { id: "app.quit", name: "quit", value: "quit" }
     const result = src.accept!(item, "quit")
     expect(result).toBeUndefined()
     expect(fn).toHaveBeenCalled()

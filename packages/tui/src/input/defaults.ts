@@ -86,6 +86,11 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["esc"],
   },
+  "menu.complete": {
+    desc: "complete the active item",
+    hidden: true,
+    keys: ["tab"],
+  },
   "menu.first": {
     desc: "jump to the first item",
     hidden: true,
@@ -109,6 +114,6 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
   "menu.select": {
     desc: "select the active item",
     hidden: true,
-    keys: ["enter", "tab"],
+    keys: ["enter"],
   },
 }

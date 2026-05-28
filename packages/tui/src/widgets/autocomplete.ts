@@ -83,6 +83,8 @@ interface Match {
   source: string
   /** Absolute start index of the trigger in the input value. */
   start: number
+  /** Absolute end index of the trigger in the input value. */
+  end: number
   /** The query (text between trigger-end and cursor). */
   query: string
 }
@@ -155,7 +157,11 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // wired via `node.ref(ref)`.
     if (this.#inputRef instanceof Input) this.#bindInput(this.#inputRef)
 
-    // Bridge menu events to input rewrite.
+    // Bridge menu events to input rewrite. Tab completes by inserting the
+    // item's value; Enter selects, giving the source a chance to execute.
+    this.menu.on("complete", ({ item }) => {
+      this.#complete(item)
+    })
     this.menu.on("select", ({ item }) => {
       this.#accept(item)
     })
@@ -280,33 +286,45 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
         // whitespace between them — that means the trigger word is over.
         const query = before.slice(best.end)
         if (/\s/.test(query)) continue
-        return { query, source: name, start: best.start }
+        return { end: best.end, query, source: name, start: best.start }
       }
     }
     return undefined
   }
 
+  #complete(item: unknown): void {
+    const match = this.#match
+    if (match === undefined) return
+    // Completion keeps the trigger (`/`, `@`, ...) and only replaces the query.
+    this.#replace(item, defaultAccept(item), match.end)
+  }
+
   #accept(item: unknown): void {
     const match = this.#match
-    if (match === undefined || !this.#input) return
+    if (match === undefined) return
     const source = this.#sources[match.source]
+    // Source-provided accept wins on Enter; default is `item.value + " "` when
+    // the item looks MenuItem-shaped, otherwise a no-op clear.
+    this.#replace(item, source.accept ? source.accept(item, match.query) : defaultAccept(item), match.start)
+  }
+
+  #replace(item: unknown, accepted: string | undefined, start: number): void {
+    const match = this.#match
+    if (match === undefined || !this.#input) return
     const value = this.#input.state.value ?? ""
     const cursor = this.#input.state.cursor ?? 0
     const tail = value.slice(cursor)
-    // Source-provided accept wins; default is `item.value + " "` when
-    // the item looks MenuItem-shaped, otherwise a no-op clear.
-    const accepted = source.accept ? source.accept(item, match.query) : defaultAccept(item)
     if (accepted === undefined) {
       // Source handled the selection itself (dispatched an action,
-      // etc.) — just clear the trigger..cursor range.
+      // etc.) — just clear the selected range.
       this.#input.state.set({
-        cursor: match.start,
-        value: value.slice(0, match.start) + tail,
+        cursor: start,
+        value: value.slice(0, start) + tail,
       })
     } else {
       this.#input.state.set({
-        cursor: match.start + accepted.length,
-        value: value.slice(0, match.start) + accepted + tail,
+        cursor: start + accepted.length,
+        value: value.slice(0, start) + accepted + tail,
       })
     }
     void this.emit("complete", { item, source: match.source })

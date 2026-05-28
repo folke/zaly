@@ -62,6 +62,8 @@ export interface MenuState<T = MenuItem> extends Style {
 }
 
 export interface MenuEvents<T = MenuItem> extends BaseEvents {
+  /** Fired when the user completes the active item. Payload is the item. */
+  complete: { item: T }
   /** Fired when the user picks the active item. Payload is the item. */
   select: { item: T }
   /** Fired when the user cancels (esc). */
@@ -87,6 +89,12 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
   override actions = {
     "menu.cancel": (): void => {
       void this.emit("cancel")
+    },
+    "menu.complete": (): void => {
+      const items = this.#items()
+      if (items.length === 0) return
+      const i = this.#active()
+      void this.emit("complete", { item: items[i] })
     },
     "menu.first": (): void => {
       if (this.#items().length === 0) return
