@@ -1,6 +1,6 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Accessor, Reactive } from "../core/reactive.ts"
-import type { Layout } from "../core/state.ts"
+import type { Layout, State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 
 import { splitAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
@@ -109,8 +109,9 @@ export class Diff extends Node<DiffState> {
   }
 
   override layout(): Layout {
-    const original = calcLayout(unwrap(this.state.original), { wrap: this.state.wrap })
-    const modified = calcLayout(unwrap(this.state.modified), { wrap: this.state.wrap })
+    const input = this.input
+    const original = calcLayout(input.original, { wrap: this.state.wrap })
+    const modified = calcLayout(input.modified, { wrap: this.state.wrap })
     const numWidth = Math.max(
       1,
       countLines(unwrap(this.state.original)),
@@ -135,7 +136,7 @@ export class Diff extends Node<DiffState> {
  * })
  * ```
  */
-export function diff(state: DiffState): Diff {
+export function diff(state: State<DiffState>): Diff {
   return new Diff(state)
 }
 
