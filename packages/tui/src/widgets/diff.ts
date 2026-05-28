@@ -94,10 +94,12 @@ export class Diff extends Node<DiffState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const highlighted = this.#highlighted()
     const input = this.input
+    const layout = this.layout()
+    const width = Math.min(ctx.width, layout.width)
 
     const opts: DiffOpts = {
       context: this.state.context ?? 3,
-      ctx,
+      ctx: { ...ctx, width },
       modified: input.modified.split("\n"),
       modifiedHi: highlighted.modified.split("\n"),
       original: input.original.split("\n"),
