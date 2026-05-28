@@ -2,9 +2,10 @@
 import type { Agent } from "@zaly/agent"
 import type { Message } from "@zaly/ai"
 import type { MaybePromise } from "@zaly/shared"
+import type { Node } from "@zaly/tui"
+import type { StyleBuilder } from "@zaly/tui/style"
 import type { CompletionSource } from "@zaly/tui/widgets/autocomplete"
 import type { Input, InputValue } from "@zaly/tui/widgets/input"
-import type { StyleBuilder } from "@zaly/tui/style"
 import type { App } from "./app.ts"
 
 import { loadState, updateState } from "@zaly/config"
@@ -21,11 +22,6 @@ export type FileRef = {
   to?: number
 }
 
-export type InputFormatter = (
-  text: string,
-  ctx: { style: StyleBuilder; message?: Message<"user"> }
-) => MaybePromise<string | undefined>
-
 export type ComposerCtx = {
   value: string
   app: App
@@ -36,6 +32,10 @@ export type ComposerCtx = {
 
 export type ComposerFormatCtx = ComposerCtx & {
   style: StyleBuilder
+}
+
+export type ComposerRenderCtx = Omit<ComposerCtx, "message"> & {
+  message: Message<"user">
 }
 
 export type ComposerSubmitCtx = ComposerCtx &
@@ -50,16 +50,15 @@ export type ComposerPlugin = {
   format?: (value: string, ctx: ComposerFormatCtx) => MaybePromise<string | undefined>
   validate?: (value: string, ctx: ComposerCtx) => true | string
   submit?: (value: string, ctx: ComposerSubmitCtx) => MaybePromise<void>
+  render?: (ctx: ComposerRenderCtx) => MaybePromise<Node | Node[] | undefined>
 }
 
-type PluginFeat = "format" | "validate" | "submit"
+type PluginFeat = "format" | "validate" | "submit" | "render"
 
 export class Composer {
   #app: App
   #plugins: ComposerPlugin[] = []
   #input?: Input
-
-  formatter: InputFormatter = async (text, ctx) => this.format(text, ctx)
 
   constructor(app: App) {
     this.#app = app
@@ -144,6 +143,20 @@ export class Composer {
       }
     }
     return true
+  }
+
+  async render(
+    value: string,
+    opts: { style: StyleBuilder; message: Message<"user"> }
+  ): Promise<Node[]> {
+    const ctx = this.ctx({ value, ...opts })
+    const nodes: Node[] = []
+    for (const plugin of this.plugins("render", ctx)) {
+      if (plugin === false) break
+      const ret = await plugin.render(ctx)
+      if (ret) nodes.push(...(Array.isArray(ret) ? ret : [ret]))
+    }
+    return nodes
   }
 
   async submit(value: InputValue): Promise<void> {

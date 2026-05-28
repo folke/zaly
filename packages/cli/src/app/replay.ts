@@ -6,7 +6,7 @@ import { messageWidgets } from "./message.ts"
 export async function replay(messages: readonly Message[], app: App) {
   const renderer = app.renderer
   const nodes = messageWidgets(messages, {
-    format: app.composer.formatter,
+    composer: app.composer,
     pending: false,
   }).flatMap(({ widgets }) => widgets)
 

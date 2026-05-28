@@ -1,4 +1,4 @@
-import type { ToolResult } from "@zaly/ai"
+import type { Message, ToolResult } from "@zaly/ai"
 import type { Setter, Signal } from "@zaly/tui"
 import type { ToolCallProps } from "../widgets/tool.ts"
 import type { App } from "./app.ts"
@@ -33,7 +33,10 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
   let active: ActiveWidget | undefined
   let tools: ActiveTools | undefined
 
-  const pending = new Map<string, Setter<boolean>>()
+  const pending = new Map<
+    string,
+    { setPending?: Setter<boolean>; setMessage?: Setter<Message<"user">> }
+  >()
 
   const update = (type: "text" | "reasoning", delta: string): void => {
     if (active?.type !== type) active = undefined
@@ -53,7 +56,8 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
       if (node.type !== "message") return
       const id = node.message.id
       if (!id) return
-      pending.get(id)?.(false)
+      pending.get(id)?.setPending?.(false)
+      if (node.message.role === "user") pending.get(id)?.setMessage?.(node.message)
       pending.delete(id)
     },
     opts
@@ -64,10 +68,10 @@ export function bindStream(app: App, opts?: { signal?: AbortSignal }): void {
       "pending",
       ({ messages }) => {
         for (const mf of messageWidgets(messages, {
-          format: composer.formatter,
+          composer,
           pending: true,
         })) {
-          pending.set(mf.id, mf.setPending)
+          pending.set(mf.id, { setMessage: mf.setMessage, setPending: mf.setPending })
           for (const w of mf.widgets) renderer.stream.append(w)
         }
       },

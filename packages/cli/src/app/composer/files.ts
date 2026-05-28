@@ -1,6 +1,12 @@
 import type { ReadTool } from "@zaly/agent"
 import type { Message, ParamsOf } from "@zaly/ai"
-import type { ComposerFormatCtx, ComposerPlugin, ComposerSubmitCtx } from "../composer.ts"
+import type { Node } from "@zaly/tui"
+import type {
+  ComposerFormatCtx,
+  ComposerPlugin,
+  ComposerRenderCtx,
+  ComposerSubmitCtx,
+} from "../composer.ts"
 
 import { normPath, safeStatAsync } from "@zaly/shared"
 
@@ -90,5 +96,28 @@ export class FilesComposer implements ComposerPlugin {
       })
     )
     ctx.agent.send(messages, { run: false })
+  }
+
+  async render(ctx: ComposerRenderCtx): Promise<Node[]> {
+    const m = ctx.message
+    const refs = (m.meta?.fileRefs ?? []) as FileRef[]
+    if (refs.length === 0) return []
+
+    const { text } = await import("@zaly/tui/widgets/text")
+    const { hyperlink } = await import("@zaly/tui/ansi")
+    const children: Node[] = []
+
+    for (let i = 0; i < refs.length; i++) {
+      const ref = refs[i]
+      const link = hyperlink(ref.path, ref.ref)
+      const prefix = i === refs.length - 1 ? "└╴" : "├╴"
+      children.push(
+        text(
+          ({ style }) =>
+            `${style.border(prefix)}${style.primary.bold("read")}(${style.success(`"${link}"`)})`
+        )
+      )
+    }
+    return children
   }
 }

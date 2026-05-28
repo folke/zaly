@@ -1,4 +1,5 @@
-import type { Accessor, AnyStyle, Node, Reactive } from "@zaly/tui"
+import type { Accessor, AnyStyle, Node, Reactive, Ref } from "@zaly/tui"
+import type { Box } from "@zaly/tui/widgets/box"
 
 import { effect, memo, unwrap } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
@@ -28,6 +29,7 @@ export type BubbleProps = {
   type: Reactive<BubbleType>
   pending?: Accessor<boolean>
   style?: AnyStyle
+  childrenBox?: Ref<Box>
 }
 
 export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) => {
@@ -50,7 +52,7 @@ export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) 
       box(
         { flexDirection: "column", padding: [0, 1], style: props.style, width: "fill" },
         ...children
-      )
+      ).ref(props.childrenBox)
     )
   )
   effect(() => {

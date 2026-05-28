@@ -9,7 +9,7 @@ import type {
 import { sliceAnsi } from "@zaly/shared/ansi"
 import { codeToAnsi } from "@zaly/tui"
 
-const actionRe = () => /^\s*\/([a-zA-Z_-]+)(?:\s+(.*))?$/
+const actionRe = () => /^\s*\/([a-zA-Z_:-]+)(?:\s+(.*))?$/
 
 export class ActionsComposer implements ComposerPlugin {
   name = "actions"

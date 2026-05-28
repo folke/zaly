@@ -1,6 +1,6 @@
 import type { Message, ToolResultPart } from "@zaly/ai"
 import type { Accessor, Node, Setter } from "@zaly/tui"
-import type { InputFormatter } from "./composer.ts"
+import type { Composer } from "./composer.ts"
 
 import { uuidv7 } from "@zaly/agent"
 import { toParts } from "@zaly/ai"
@@ -14,19 +14,12 @@ export type MessageWidgets = {
   id: string
   widgets: (() => Node)[]
   setPending?: Setter<boolean>
+  setMessage?: Setter<Message<"user">>
 }
 
 export function messageWidgets(
   messages: readonly Message[],
-  opts: { pending: true; format?: InputFormatter }
-): (MessageWidgets & { setPending: Setter<boolean> })[]
-export function messageWidgets(
-  messages: readonly Message[],
-  opts?: { pending: false; format?: InputFormatter }
-): Omit<MessageWidgets, "setPending">[]
-export function messageWidgets(
-  messages: readonly Message[],
-  opts?: { pending?: boolean; format?: InputFormatter }
+  opts?: { pending?: boolean; composer?: Composer }
 ): MessageWidgets[] {
   const ret: MessageWidgets[] = []
   // Pre-index tool results by call id. Single pass — tool messages
@@ -41,18 +34,27 @@ export function messageWidgets(
   for (const m of messages) {
     if (m.hidden) continue
     m.id ??= uuidv7()
-    const p = opts?.pending ? signal(true) : undefined
+    const [pending, setPending] = opts?.pending ? signal(true) : []
     if (m.role === "user") {
+      const [message, setMessage] = signal<Message<"user">>(m)
       ret.push({
         id: m.id,
-        setPending: p?.set,
-        widgets: [() => userMessage({ format: opts?.format, message: m, pending: p?.get })],
+        setMessage,
+        setPending,
+        widgets: [
+          () =>
+            userMessage({
+              composer: opts?.composer,
+              message,
+              pending,
+            }),
+        ],
       })
     } else if (m.role === "assistant") {
       ret.push({
         id: m.id,
-        setPending: p?.set,
-        widgets: [...renderAssistant(m, results, p?.get)],
+        setPending,
+        widgets: [...renderAssistant(m, results, pending)],
       })
     }
   }
