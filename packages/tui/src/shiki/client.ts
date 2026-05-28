@@ -97,6 +97,7 @@ export class ShikiWorkerClient {
 
   #createWorker(): Worker {
     const worker = new Worker(new URL("worker.ts", import.meta.url), { type: "module" })
+    worker.unref()
     worker.addEventListener("message", (event: MessageEvent<ShikiWorkerResponse>) => {
       const pending = this.#pending.get(event.data.id)
       if (!pending) return
