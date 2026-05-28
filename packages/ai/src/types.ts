@@ -24,6 +24,11 @@ export interface TextPart {
   format?: string
 }
 
+export type WirePart = {
+  /** Provider specific private wire data that travels with the message */
+  wire?: Record<string, unknown>
+}
+
 /** Structured metadata embedded in tool-result content (and potentially
  *  other places). Survives end-to-end as a structured part so the TUI
  *  can render it richly; collapses to a `<tag>JSON</tag>` `TextPart` at
@@ -78,7 +83,7 @@ export type Attachment = ImagePart | PdfPart | AudioPart | VideoPart
 
 /** Assistant-emitted tool invocation. `args` is the decoded argument
  *  object — adapters JSON-encode when a provider expects a string. */
-export interface ToolCallPart<N extends string = string, A = unknown> {
+export interface ToolCallPart<N extends string = string, A = unknown> extends WirePart {
   type: "tool-call"
   id: string
   name: N
@@ -581,6 +586,7 @@ export interface Quirks {
   /** Friendly-error formatting for known endpoint shapes. `"codex"`
    *  parses ChatGPT usage-limit responses into a human message. */
   friendlyErrors?: "codex"
+  toolCallExtraContent?: string
 }
 
 /** Everything needed to construct a `Model`. For catalog ids this is

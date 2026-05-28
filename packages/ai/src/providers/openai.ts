@@ -452,6 +452,7 @@ async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
             function: { arguments: argStr, name: part.name },
             id: part.id,
             type: "function",
+            ...part.wire,
           })
         }
       }
@@ -592,12 +593,16 @@ interface OpenAIDelta {
     index: number
     id?: string
     function?: { name?: string; arguments?: string }
+    extra_content?: Record<string, unknown>
   }[]
 }
 
 function* handleChunk(
   raw: unknown,
-  pendingToolCalls: Map<number, { id: string; name: string; argsBuffer: string }>,
+  pendingToolCalls: Map<
+    number,
+    { id: string; name: string; argsBuffer: string; extra_content?: Record<string, unknown> }
+  >,
   quirks: Quirks | undefined
 ): Iterable<StreamEvent> {
   const chunk = raw as OpenAIChunk
@@ -620,10 +625,12 @@ function* handleChunk(
         let entry = pendingToolCalls.get(tc.index)
         if (entry === undefined) {
           entry = { argsBuffer: "", id: tc.id ?? "", name: tc.function?.name ?? "" }
+          if (tc.extra_content !== undefined) entry.extra_content = tc.extra_content
           pendingToolCalls.set(tc.index, entry)
         } else {
           if (tc.id !== undefined) entry.id = tc.id
           if (tc.function?.name !== undefined) entry.name = tc.function.name
+          if (tc.extra_content !== undefined) entry.extra_content = tc.extra_content
         }
         const argDelta = tc.function?.arguments
         if (argDelta !== undefined) entry.argsBuffer += argDelta
@@ -647,6 +654,9 @@ function* handleChunk(
           name: pending.name,
           params: pending.argsBuffer,
           type: "tool-call",
+          ...(pending.extra_content !== undefined
+            ? { wire: { extra_content: pending.extra_content } }
+            : {}),
         }
         pendingToolCalls.delete(index)
       }
