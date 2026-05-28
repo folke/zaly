@@ -25,7 +25,7 @@
 
 import { barplot, bench, do_not_optimize, summary } from "mitata"
 import { isShikiLang } from "../src/schemas/gen/shiki.ts"
-import { shiki } from "../src/style/shiki.ts"
+import { shiki } from "../src/shiki/api.ts"
 
 // Fixtures — small/medium/large code blocks across the langs that
 // actually show up in zaly sessions.
@@ -60,14 +60,14 @@ const JSON_BLOCK = `{
 
 async function createAnsiHighlighter(opts: { langs: string[] }) {
   await shiki.load(opts.langs)
-  return shiki.highlighter()
+  return (code: string, lang: string) => shiki.highlight(code, lang)
 }
 
 // Pre-warm path: kick off cold bootstrap so subsequent benches measure
 // the warm code path. Without this, the first iteration of the first
 // bench would absorb the ~30ms one-time cost and look catastrophic.
 const warmup = await createAnsiHighlighter({ langs: ["typescript"] })
-warmup(SMALL_TS, "typescript")
+await warmup(SMALL_TS, "typescript")
 
 barplot(async () => {
   summary(async () => {
@@ -102,17 +102,17 @@ barplot(async () => {
     // `createAsync` body once shiki is loaded. `do_not_optimize` keeps
     // the highlighted output from being treated as dead by V8.
     const highlight = warmup
-    bench("highlight(SMALL_TS, ts)", () => do_not_optimize(highlight(SMALL_TS, "typescript")))
-    bench("highlight(MEDIUM_TS, ts)", () => do_not_optimize(highlight(MEDIUM_TS, "typescript")))
-    bench("highlight(LARGE_TS, ts)", () => do_not_optimize(highlight(LARGE_TS, "typescript")))
+    bench("highlight(SMALL_TS, ts)", async () => do_not_optimize(await highlight(SMALL_TS, "typescript")))
+    bench("highlight(MEDIUM_TS, ts)", async () => do_not_optimize(await highlight(MEDIUM_TS, "typescript")))
+    bench("highlight(LARGE_TS, ts)", async () => do_not_optimize(await highlight(LARGE_TS, "typescript")))
 
     // Other langs — same length, different grammars. Bash is regex-heavy
     // (lots of lookahead); JSON is simple. Worth seeing whether grammar
     // complexity matters for typical TUI snippets.
     const hBash = await createAnsiHighlighter({ langs: ["bash"] })
     const hJson = await createAnsiHighlighter({ langs: ["json"] })
-    bench("highlight(BASH, bash)", () => do_not_optimize(hBash(BASH, "bash")))
-    bench("highlight(JSON_BLOCK, json)", () => do_not_optimize(hJson(JSON_BLOCK, "json")))
+    bench("highlight(BASH, bash)", async () => do_not_optimize(await hBash(BASH, "bash")))
+    bench("highlight(JSON_BLOCK, json)", async () => do_not_optimize(await hJson(JSON_BLOCK, "json")))
   })
 })
 

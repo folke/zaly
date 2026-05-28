@@ -180,9 +180,20 @@ export class App {
     // to the model on the next request, just not painted here.
     const tail = session.messages.filter((m) => !m.hidden).slice(-50)
 
-    await replay(tail, this)
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
+    await Promise.all([this.initAgent(), replay(tail, this)])
 
+    // Hand control to the status signal — flip from "loading" to
+    // whatever the agent's authoritative state is (almost always
+    // "ready"). wireAgent's onStatus handler drives both #busy and
+    // #status from here on.
+    this.#state.busy = false
+    this.#state.status = "ready"
+
+    void this.loadPlugins()
+  }
+
+  async initAgent(): Promise<void> {
     this.#agent = await buildAgent(this)
     this.#state.model = this.#agent.model
     this.#state.reasoning = this.#agent.ctx.reasoning
@@ -221,15 +232,6 @@ export class App {
       () => this.#renderer.stream.append(() => compactionMarker()),
       opts
     )
-
-    // Hand control to the status signal — flip from "loading" to
-    // whatever the agent's authoritative state is (almost always
-    // "ready"). wireAgent's onStatus handler drives both #busy and
-    // #status from here on.
-    this.#state.busy = false
-    this.#state.status = "ready"
-
-    void this.loadPlugins()
   }
 
   async reload(): Promise<void> {

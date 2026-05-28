@@ -4,15 +4,16 @@ import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 import type { MarkdownRenderer } from "../markdown/renderer.ts"
 import type { MdOptions } from "../markdown/types.ts"
-import type { AnsiHighlighter } from "../style/shiki.ts"
+import type { ShikiTheme } from "../shiki/types.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Image } from "./image.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
-import { memo, unwrap } from "../core/reactive.ts"
+import { createAsync, signal, unwrap } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
-import { shiki, markdownCodeLangs } from "../style/shiki.ts"
+import { shikiWorker } from "../shiki/client.ts"
+import { codeToAnsi } from "../shiki/shiki.ts"
 
 export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
@@ -32,6 +33,15 @@ export interface MarkdownState {
   style?: AnyStyle
 }
 
+type ShikiCode = {
+  key: string
+  code: string
+  lang: string
+  theme?: ShikiTheme
+  inflight?: Promise<string>
+  result?: string
+}
+
 export class Markdown extends Node<MarkdownState> {
   // Image nodes cached per-src per-Markdown-instance. Re-rendering the
   // same markdown (streaming updates) reuses the same `Image` — same
@@ -40,16 +50,37 @@ export class Markdown extends Node<MarkdownState> {
   readonly images = new Map<string, Image>()
 
   #renderer?: MarkdownRenderer
-  #highlighter: Accessor<AnsiHighlighter | undefined>
+  #code = new Map<string, ShikiCode>()
+  #update = signal(0)
+  #worker: Accessor<number>
 
   constructor(state: State<MarkdownState>) {
     super(state)
 
-    const langs = memo(() =>
-      this.state.syntax === false ? [] : markdownCodeLangs(unwrap(this.state.content))
+    this.#worker = createAsync(
+      async () => {
+        const update = this.#update.get() // track
+        const todo = [...this.#code.values()]
+        if (!todo.length) return update // nothing to do, skip
+        await Promise.all(
+          todo.map(async (req) => {
+            req.inflight ??= codeToAnsi(req.code, req.lang, req.theme)
+            req.result = await req.inflight
+          })
+        )
+        return update + 1
+      },
+      { initialValue: 0 }
     )
+  }
 
-    this.#highlighter = shiki.createLoader(() => langs())
+  #highlight(code: string, lang?: string, theme?: ShikiTheme): string {
+    if (!lang) return code
+    const key = shikiWorker.key({ code, lang, theme })
+    const ret = this.#code.get(key)
+    if (ret?.result) return ret.result
+    else if (!ret) this.#code.set(key, { code, key, lang, theme })
+    return code
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
@@ -58,9 +89,21 @@ export class Markdown extends Node<MarkdownState> {
       this.#renderer = new MarkdownRenderer({ ...this.state.options, parent: this })
     }
     const source = unwrap(this.state.content) // tracked
-    const formatted = !hasColors
-      ? this.#renderer.normalizeEol(source, source)
-      : await this.#renderer.render(source, { ...ctx, highlighter: this.#highlighter() })
+    let formatted: string
+
+    if (!hasColors) formatted = this.#renderer.normalizeEol(source, source)
+    else {
+      formatted = await this.#renderer.render(source, {
+        ...ctx,
+        highlight: (code, lang) => this.#highlight(code, lang, ctx.style.theme.shiki),
+      })
+
+      if (this.#code.values().some((c) => !c.inflight)) {
+        this.#update.set(this.#update.get() + 1) // trigger worker
+        this.#worker() // tracked
+      } // trigger worker
+    }
+
     return formatText(formatted, {
       indent: true,
       style: this.state.style ? ctx.style.add(this.state.style) : undefined,

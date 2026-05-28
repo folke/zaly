@@ -1,6 +1,6 @@
 import * as __typia_transform__assertGuard from "typia/lib/internal/_assertGuard";
 import * as __typia_transform__accessExpressionAsString from "typia/lib/internal/_accessExpressionAsString";
-import type { ShikiTheme } from "../../style/shiki.ts";
+import type { ShikiTheme } from "../../shiki/types.ts";
 import type { AnsiColorName, BrightAnsiColorName, Color, HexColor, Style, ThemeKey, } from "../../style/types.ts";
 import type { Theme } from "../../themes/types.ts";
 type UserStyle = Omit<Style, "fg" | "bg" | "style"> & {

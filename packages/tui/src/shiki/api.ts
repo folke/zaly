@@ -1,21 +1,11 @@
-import type {
-  BundledLanguage,
-  BundledTheme,
-  DynamicImportLanguageRegistration,
-  HighlighterCore,
-} from "shiki/types"
-import type { AnsiStyle, HexColor } from "./types.ts"
+import type { AnsiStyle, HexColor } from "../style/types.ts"
+import type { ShikiLanguage, ShikiTheme } from "./types.ts"
 
-import { hasColors } from "@zaly/shared/env"
-import { RenderContext } from "../core/ctx.ts"
-import { createAsync, useContext } from "../core/reactive.ts"
+import { createHighlighterCore } from "shiki/core"
+import { createOnigurumaEngine } from "shiki/engine/oniguruma"
+import { bundledLanguages as bundled } from "shiki/langs"
 import { isShikiLang, isShikiTheme } from "../schemas/gen/shiki.ts"
-import { openAnsi, RESET } from "./ansi.ts"
-
-export type CodeToAnsiOptions = {
-  theme?: T
-  langs: string[]
-}
+import { openAnsi, RESET } from "../style/ansi.ts"
 
 export type AnsiHighlighter = (code: string, lang?: string) => string
 
@@ -23,13 +13,10 @@ export type ShikiStatus =
   | { loaded: true }
   | { loaded: false; missing: { langs: string[]; themes: string[] } }
 
-type L = BundledLanguage
-type T = BundledTheme
+type L = ShikiLanguage
+type T = ShikiTheme
 
-export type ShikiTheme = T
-export type ShikiLanguage = L
-
-const THEME: T = "tokyo-night"
+const THEME: ShikiTheme = "tokyo-night"
 
 // See: https://github.com/shikijs/vscode-textmate/blob/19dc9b889aa47df91027e857cdad518760b5a026/src/theme.ts#L326
 const enum FontStyle {
@@ -41,11 +28,15 @@ const enum FontStyle {
   Strikethrough = 8,
 }
 
+const highlighter = await createHighlighterCore({
+  engine: await createOnigurumaEngine(import("shiki/wasm")),
+  langs: [],
+  themes: [],
+  warnings: false,
+})
+
 class Shiki {
-  #highlighter?: HighlighterCore
   #loading?: Promise<void>
-  #highligterPromise?: Promise<HighlighterCore>
-  #bundledLangs?: Promise<Record<BundledLanguage, DynamicImportLanguageRegistration>>
   #langs = { loaded: new Set<L>(), wanted: new Set<L>() }
   #themes = { loaded: new Set<T>(), wanted: new Set<T>() }
 
@@ -66,10 +57,6 @@ class Shiki {
     for (const l of status.missing.langs) this.#langs.wanted.add(l as L)
     for (const t of status.missing.themes) this.#themes.wanted.add(t as T)
 
-    const highlighter = (this.#highlighter ??= await this.#loadHighlighter())
-    const bundled = await (this.#bundledLangs ??= import("shiki/langs").then(
-      (m) => m.bundledLanguages
-    ))
     if (this.status(langs, themes).loaded) return
 
     const load = async () => {
@@ -96,31 +83,15 @@ class Shiki {
     await this.#loading
   }
 
-  async #loadHighlighter() {
-    this.#highligterPromise ??= (async () => {
-      const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
-        import("shiki/core"),
-        import("shiki/engine/oniguruma"),
-      ])
-      return createHighlighterCore({
-        engine: await createOnigurumaEngine(import("shiki/wasm")),
-        langs: [],
-        themes: [],
-        warnings: false,
-      })
-    })()
-    return await this.#highligterPromise
-  }
+  async highlight(code: string, lang: string, theme = THEME) {
+    await this.load(lang, theme)
 
-  highlight(code: string, lang: string, theme = THEME) {
-    if (!this.#highlighter) throw new Error("Highlighter not loaded")
     if (!this.#themes.loaded.has(theme)) throw new Error(`Theme ${theme} not loaded`)
-
     if (!this.#langs.loaded.has(lang as L)) return code
 
-    const t = this.#highlighter.getTheme(theme)
+    const t = highlighter.getTheme(theme)
     let output = ""
-    const lines = this.#highlighter.codeToTokensBase(code, { lang: lang as L })
+    const lines = highlighter.codeToTokensBase(code, { lang: lang as L })
 
     for (const line of lines) {
       for (const token of line) {
@@ -139,11 +110,7 @@ class Shiki {
       }
       output += "\n"
     }
-    return output.replace(/\n$/, "")
-  }
-
-  highlighter(theme?: ShikiTheme): AnsiHighlighter {
-    return (code: string, lang?: string) => (lang ? this.highlight(code, lang, theme) : code)
+    return output.replace(/\n+$/, "")
   }
 
   isLang(lang: string): lang is ShikiLanguage {
@@ -153,43 +120,6 @@ class Shiki {
   isTheme(theme: string): theme is ShikiTheme {
     return isShikiTheme(theme)
   }
-
-  /** Must be called from inside a widget body (or any scope under the
-   *  Renderer's root Owner) — uses `useContext(RenderContext)` to read
-   *  the current theme. Outside such scope, falls back to default theme. */
-  createLoader(lang: () => string | string[] | undefined) {
-    const context = useContext(RenderContext)
-    return createAsync(async () => {
-      if (!hasColors) return
-      let langs = lang() ?? []
-      langs = Array.isArray(langs) ? langs : [langs]
-      if (langs.length === 0) return
-      const theme = context?.style().theme.shiki
-      const status = this.status(langs, theme)
-      if (!status.loaded) await this.load(status.missing.langs, status.missing.themes)
-      return this.highlighter(theme)
-    })
-  }
 }
 
 export const shiki = new Shiki()
-
-export async function codeToAnsi(code: string, lang: string, theme: T = THEME): Promise<string> {
-  await shiki.load([lang], [theme])
-  return shiki.highlight(code, lang, theme)
-}
-
-/**
- * Collect all fenced-block languages from a markdown source. First
- * whitespace-delimited token of each info-string is the language; duplicates
- * are deduped. Unknown-to-shiki names pass through and get filtered out by
- * `createAnsiHighlighter`.
- */
-export function markdownCodeLangs(md: string): ShikiLanguage[] {
-  const langs = new Set<string>()
-  for (const m of md.matchAll(/^\s*`{3,}([^\n]+)$/gm)) {
-    const lang = m[1].trim().split(/\s/)[0]
-    if (lang !== "") langs.add(lang)
-  }
-  return [...langs].filter((l) => shiki.isLang(l))
-}

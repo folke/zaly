@@ -1,6 +1,5 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { AnsiHighlighter } from "../style/shiki.ts"
 import type { Image } from "../widgets/image.ts"
 import type { MdOptions, RenderMarkdown } from "./types.ts"
 
@@ -9,8 +8,8 @@ export type MarkdownOptions = MdOptions & {
 }
 
 export type MarkdownCtx = RenderCtx & {
-  highlighter?: AnsiHighlighter | boolean
   images?: boolean
+  highlight?: (code: string, lang?: string) => string
 }
 
 export class MarkdownRenderer {
@@ -33,10 +32,7 @@ export class MarkdownRenderer {
       import("./image.ts"),
     ])
 
-    const callbacks = createCallbacks({
-      ...ctx,
-      highlighter: await this.#highlighter(source, ctx),
-    })
+    const callbacks = createCallbacks(ctx)
 
     // Image handling: the callback emits `<img id=N>` markers during
     // rendering; a post-processing resolver then renders the referenced
@@ -68,17 +64,5 @@ export class MarkdownRenderer {
     rendered = rendered.replace(/\n\n+/g, "\n\n")
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
     return rendered.replace(/\n+$/, trailing)
-  }
-
-  async #highlighter(source: string, ctx: MarkdownCtx) {
-    if (ctx.highlighter === false) return
-    if (ctx.highlighter === true) {
-      const { shiki, markdownCodeLangs } = await import("../style/shiki.ts")
-      const langs = markdownCodeLangs(source)
-      const theme = ctx.style.theme.shiki
-      await shiki.load(langs, theme)
-      return shiki.highlighter(theme)
-    }
-    return ctx.highlighter
   }
 }

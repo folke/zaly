@@ -17,7 +17,6 @@ export default defineConfig({
     markdown: "src/markdown/index.ts",
     style: "src/style/index.ts",
     ansi: "src/style/ansi.ts",
-    shiki: "src/style/shiki.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

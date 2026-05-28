@@ -7,6 +7,7 @@ import type {
 } from "../composer.ts"
 
 import { sliceAnsi } from "@zaly/shared/ansi"
+import { codeToAnsi } from "@zaly/tui"
 
 const actionRe = () => /^\s*\/([a-zA-Z_-]+)(?:\s+(.*))?$/
 
@@ -22,7 +23,6 @@ export class ActionsComposer implements ComposerPlugin {
     const s = ctx.style
     const cmd = actionMatch[1]
     const args = actionMatch[2] || ""
-    const { codeToAnsi } = await import("@zaly/tui/shiki")
     value = await codeToAnsi(`${cmd} ${args}`, "bash", s.theme.shiki)
     value = s.primary(cmd) + sliceAnsi(value, cmd.length)
     return `${s.divider("/")}${value}`

@@ -14,7 +14,7 @@
 
 import type { ThemeRegistrationResolved } from "shiki"
 import type { Color, HexColor, Style } from "../src/index.ts"
-import type { ShikiTheme } from "../src/style/shiki.ts"
+import type { ShikiTheme } from "../src/shiki/types.ts"
 import type { Theme } from "../src/themes/types.ts"
 
 import { writeFileSync } from "node:fs"

@@ -139,7 +139,7 @@ describe("markdown — block callbacks", () => {
     const bodyOpen = expectedOpen("mdCodeBlock")
     const out = renderMarkdown(
       "```ts\nconst x = 1\n```",
-      createCallbacks({ ...ctx(40), highlighter: fakeHighlighter })
+      createCallbacks({ ...ctx(40), highlight: fakeHighlighter })
     )
     expect(out).toContain("\x1b[33mconst x = 1\x1b[0m")
     expect(out).not.toContain(`${bodyOpen}const`)
@@ -149,7 +149,7 @@ describe("markdown — block callbacks", () => {
     const bodyOpen = expectedOpen("mdCodeBlock")
     const out = renderMarkdown(
       "```mystery\nprint(1)\n```",
-      createCallbacks({ ...ctx(40), highlighter: passthroughHighlighter })
+      createCallbacks({ ...ctx(40), highlight: passthroughHighlighter })
     )
     expect(out).toContain(`${bodyOpen}  print(1)  `)
   })

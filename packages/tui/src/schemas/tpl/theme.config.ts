@@ -1,5 +1,5 @@
 // oxlint-disable import/no-named-as-default-member
-import type { ShikiTheme } from "../../style/shiki.ts"
+import type { ShikiTheme } from "../../shiki/types.ts"
 import type {
   AnsiColorName,
   BrightAnsiColorName,

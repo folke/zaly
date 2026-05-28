@@ -1,5 +1,5 @@
 // oxlint-disable import/no-named-as-default-member
-import type { ShikiLanguage, ShikiTheme } from "../../style/shiki.ts"
+import type { ShikiLanguage, ShikiTheme } from "../../shiki/types.ts"
 
 // full import, otherwise typia's code gen includes the import
 import typia from "typia"

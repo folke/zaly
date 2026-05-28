@@ -1,4 +1,4 @@
-import type { ShikiTheme } from "../style/shiki.ts"
+import type { ShikiTheme } from "../shiki/types.ts"
 import type { Color, Style } from "../style/types.ts"
 
 /**

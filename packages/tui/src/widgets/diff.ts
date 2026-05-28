@@ -2,16 +2,15 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { Accessor, Reactive } from "../core/reactive.ts"
 import type { Layout } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
-import type { AnsiHighlighter } from "../style/shiki.ts"
 
+import { splitAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
 import { basename, extname } from "pathe"
 // oxlint-disable no-nested-ternary
 // oxlint-disable typescript/no-unnecessary-condition
 import { Node } from "../core/node.ts"
-import { memo, unwrap } from "../core/reactive.ts"
+import { createAsync, memo, unwrap } from "../core/reactive.ts"
 import { calcLayout, countLines } from "../layout/text.ts"
-import { splitAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
-import { shiki } from "../style/shiki.ts"
+import { codeToAnsi } from "../shiki/shiki.ts"
 
 export interface DiffState {
   /** Pre-state file content. Plain string or reactive accessor —
@@ -32,7 +31,14 @@ export interface DiffState {
   wrap?: WrapMode
 }
 
-type DiffHighlighter = (code: string) => string
+type DiffOpts = {
+  original: string[]
+  originalHi: string[]
+  modified: string[]
+  modifiedHi: string[]
+  context: number
+  ctx: RenderCtx
+}
 
 /**
  * Show a unified diff between two file contents with syntax-highlighted
@@ -46,8 +52,8 @@ type DiffHighlighter = (code: string) => string
  * don't get truncated by the hunk window.
  */
 export class Diff extends Node<DiffState> {
-  #highlighter: Accessor<AnsiHighlighter | undefined>
   #lang: Accessor<string | undefined>
+  #highlighted: Accessor<{ original: string; modified: string }>
 
   constructor(state: DiffState) {
     super({ wrap: "word", ...state })
@@ -57,17 +63,49 @@ export class Diff extends Node<DiffState> {
       return this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
     })
 
-    this.#highlighter = shiki.createLoader(() => this.#lang())
+    this.#highlighted = createAsync(
+      async () => {
+        const lang = this.#lang()
+        const input = this.input
+        if (!lang) return input
+        const [original, modified] = await Promise.all([
+          codeToAnsi(input.original, lang),
+          codeToAnsi(input.modified, lang),
+        ])
+        return { modified, original }
+      },
+      {
+        initialValue: this.input,
+      }
+    )
+  }
+
+  #norm(s: string): string {
+    return s.replaceAll("\r\n", "\n").replaceAll("\r", "")
+  }
+
+  get input(): { original: string; modified: string } {
+    return {
+      modified: this.#norm(unwrap(this.state.modified)),
+      original: this.#norm(unwrap(this.state.original)),
+    }
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
-    this.state.wrap ??= "word"
-    const hl = this.#highlighter()
-    return await buildDiffRows(
+    const highlighted = this.#highlighted()
+    const input = this.input
+
+    const opts: DiffOpts = {
+      context: this.state.context ?? 3,
       ctx,
-      this.state,
-      hl ? (code: string) => hl(code, this.#lang()) : undefined
-    )
+      modified: input.modified.split("\n"),
+      modifiedHi: highlighted.modified.split("\n"),
+      original: input.original.split("\n"),
+      originalHi: highlighted.original.split("\n"),
+    }
+
+    this.state.wrap ??= "word"
+    return await buildDiffRows(opts)
   }
 
   override layout(): Layout {
@@ -108,28 +146,20 @@ type DiffRow =
   | { type: "remove"; origNum: number; content: string }
   | { type: "add"; newNum: number; content: string }
 
-async function buildDiffRows(
-  ctx: RenderCtx,
-  state: DiffState,
-  highlight?: DiffHighlighter
-): Promise<string[]> {
-  const context = state.context ?? 3
-  // Normalize line endings on both sides — a CRLF-vs-LF mismatch would
-  // otherwise show every "unchanged" line as both removed and added.
-  const original = unwrap(state.original).replaceAll("\r\n", "\n")
-  const modified = unwrap(state.modified).replaceAll("\r\n", "\n")
-  const origLines = original.split("\n")
-  const modLines = modified.split("\n")
-
+async function buildDiffRows(opts: DiffOpts): Promise<string[]> {
+  const context = opts.context
   // Async-import keeps cold start snappy — only the diff widget pulls
   // in the library, and it lands at first render rather than at module
   // load.
   const { diffArrays } = await import("diff")
-  const segments = diffArrays(origLines, modLines)
-
-  const { origHi, editedHi: modHi } = highlight
-    ? await highlightPair(highlight, origLines, modLines)
-    : { editedHi: modLines, origHi: origLines }
+  const segments = diffArrays(opts.original, opts.modified)
+  const {
+    original: origLines,
+    modified: modLines,
+    originalHi: origHi,
+    modifiedHi: modHi,
+    ctx,
+  } = opts
 
   // Annotate each line in the diff with its kind + (orig, mod) indices.
   // The flattened list is the row-order the diff would print without
@@ -195,24 +225,6 @@ async function buildDiffRows(
   }
 
   return renderRows(ctx, rows, origLines.length, modLines.length)
-}
-
-async function highlightPair(
-  highlight: DiffHighlighter,
-  origLines: string[],
-  modLines: string[]
-): Promise<{ origHi: string[]; editedHi: string[] }> {
-  try {
-    const splitHi = (src: string[]): string[] => {
-      const out = highlight(src.join("\n"))
-      // Shiki appends a trailing "\n"; drop it so split yields the same
-      // number of lines as the input.
-      return out.replace(/\n$/, "").split("\n")
-    }
-    return { editedHi: splitHi(modLines), origHi: splitHi(origLines) }
-  } catch {
-    return { editedHi: modLines, origHi: origLines }
-  }
 }
 
 function renderRows(

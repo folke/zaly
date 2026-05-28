@@ -35,10 +35,6 @@
       "bun": "./src/markdown/index.ts",
       "default": "./dist/markdown.mjs"
     },
-    "./shiki": {
-      "bun": "./src/style/shiki.ts",
-      "default": "./dist/shiki.mjs"
-    },
     "./style": {
       "bun": "./src/style/index.ts",
       "default": "./dist/style.mjs"
@@ -64,7 +60,6 @@
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
       "./markdown": "./dist/markdown.mjs",
-      "./shiki": "./dist/shiki.mjs",
       "./style": "./dist/style.mjs",
       "./themes": "./dist/themes.mjs",
       "./package.json": "./package.json"

@@ -4,9 +4,9 @@ import type { AnyStyle } from "../style/types.ts"
 
 import { extname } from "pathe"
 import { RenderContext } from "../core/ctx.ts"
-import { memo, unwrap, useContext } from "../core/reactive.ts"
+import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { formatLines } from "../layout/text.ts"
-import { shiki } from "../style/shiki.ts"
+import { codeToAnsi } from "../shiki/shiki.ts"
 import { box } from "./box.ts"
 import { show } from "./show.ts"
 import { text } from "./text.ts"
@@ -64,16 +64,18 @@ export const code = widget((props: State<CodeState>) => {
 
   const context = useContext(RenderContext)
 
-  const highlighter = shiki.createLoader(() => (syntax && lang ? [lang] : []))
-
   const title = memo(() => unwrap(props.title) ?? path)
 
-  const body = memo(() => {
-    const source = unwrap(props.code) // tracked
-    const hl = highlighter()
-    const out = hl ? hl(source.replace(/\n+$/, ""), lang) : source
-    return out.replace(/\n+$/, "")
-  })
+  const plain = () => unwrap(props.code).replace(/\n+$/, "")
+
+  const body = createAsync(
+    async () => {
+      const source = plain()
+      if (!lang || !syntax) return source
+      return await codeToAnsi(source, lang, context?.style().theme.shiki)
+    },
+    { initialValue: plain() }
+  )
 
   const formatted = memo(() =>
     formatLines(body(), {

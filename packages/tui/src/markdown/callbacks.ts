@@ -1,5 +1,4 @@
-import type { RenderCtx } from "../core/ctx.ts"
-import type { AnsiHighlighter } from "../style/shiki.ts"
+import type { MarkdownCtx } from "./renderer.ts"
 import type { MdCallbacks } from "./types.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
@@ -13,10 +12,6 @@ const icons = {
   quote: "│",
 } as const
 
-export type MarkdownCbCtx = RenderCtx & {
-  highlighter?: AnsiHighlighter
-}
-
 /**
  * Build the `MdCallbacks` that drive the theme-aware rendering. Exposed so
  * callers can invoke `renderMarkdown` directly when they need the string
@@ -24,7 +19,7 @@ export type MarkdownCbCtx = RenderCtx & {
  * a custom `Text` content function).
  * @internal
  */
-export function createCallbacks(ctx: MarkdownCbCtx): MdCallbacks {
+export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
   const s = ctx.style
 
   return {
