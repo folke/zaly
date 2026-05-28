@@ -143,7 +143,7 @@ export type StreamEvent =
       /** Accumulated argument buffer for this tool call so far. */
       args?: string
     }
-  | { type: "tool-call"; id: string; name: string; params: unknown }
+  | { type: "tool-call"; id: string; name: string; params: unknown; wire?: Record<string, unknown> }
   | { type: "finish"; finishReason: FinishReason; usage: Usage }
   | { type: "error"; error: Error }
 
@@ -286,7 +286,13 @@ export async function collect(
         }
         case "tool-call": {
           openText = undefined
-          parts.push({ id: ev.id, name: ev.name, params: ev.params, type: "tool-call" })
+          parts.push({
+            id: ev.id,
+            name: ev.name,
+            params: ev.params,
+            type: "tool-call",
+            ...(ev.wire ? { wire: ev.wire } : {}),
+          })
           break
         }
         case "finish": {
