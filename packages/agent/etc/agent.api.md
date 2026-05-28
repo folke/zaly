@@ -6,17 +6,25 @@
 
 import * as _$_zaly_ai0 from '@zaly/ai';
 import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
+import { AnyKey } from '@zaly/shared/registry';
 import { AssistantMessage } from '@zaly/ai';
+import { Attachment } from '@zaly/ai';
 import { CollectOptions } from '@zaly/ai';
+import { Content } from '@zaly/ai';
 import { Emitter } from '@zaly/shared';
 import { Envelope } from '@zaly/shared';
 import { FinishReason } from '@zaly/ai';
+import { Logger } from '@zaly/shared/logger';
 import { Message } from '@zaly/ai';
 import { MetaPart } from '@zaly/ai';
 import { Model } from '@zaly/ai';
+import { ParamsOf } from '@zaly/ai';
+import { ReasoningEffort } from '@zaly/ai';
 import { ReasoningOptions } from '@zaly/ai';
+import { Role } from '@zaly/ai';
 import { StreamEvent } from '@zaly/ai';
 import { StreamOptions } from '@zaly/ai';
+import { TextPart } from '@zaly/ai';
 import { TokenCount } from '@zaly/ai';
 import { Tool } from '@zaly/ai';
 import { ToolCallPart } from '@zaly/ai';
@@ -27,7 +35,6 @@ import { ToolResultPart } from '@zaly/ai';
 // @public
 export class Agent extends Emitter<AgentEvents> {
     constructor(ctx: AgentContext);
-    abort(): void;
     child(overrides?: Partial<AgentOptions>): Promise<Agent>;
     // (undocumented)
     compact(): Promise<void>;
@@ -38,103 +45,132 @@ export class Agent extends Emitter<AgentEvents> {
     get cwd(): string;
     readonly depth: number;
     dispose(): Promise<void>;
-    inject(message: Message<"user" | "system">): void;
     // (undocumented)
-    get lastError(): Error | undefined;
-    // (undocumented)
-    get lastStopReason(): AgentStopReason | undefined;
+    get lastStop(): AgentStop | undefined;
     readonly maxDepth: number;
     get messages(): readonly Message[];
     // (undocumented)
-    get model(): Model;
+    get model(): Model | undefined;
     // (undocumented)
-    notify(meta: Omit<MetaPart, "type">): void;
-    // (undocumented)
-    notify(msg: string, tag?: string): void;
+    notify(type: string, data: Content | Record<string, unknown>): void;
     // (undocumented)
     get parent(): Agent | undefined;
-    pause(): void;
     // (undocumented)
     get pressure(): ContextPressure;
     // (undocumented)
-    get prompt(): string[];
-    run(): Promise<AgentStopReason>;
+    prompt(): Promise<string[]>;
+    run(): Promise<AgentStopKind>;
     scheduleWakeup(opts: {
         delayMs: number;
         hint?: string;
     }): string;
-    send(message: Message<"user" | "system">): void;
+    send(message?: Message | Message[], opts?: {
+        mode?: SendMode;
+        run?: boolean;
+    }): void;
     // (undocumented)
     get session(): Session;
     // (undocumented)
-    get skills(): Skills | undefined;
-    // (undocumented)
-    start(): Promise<void>;
-    // (undocumented)
-    get status(): AgentStatus;
-    step(): Promise<StepResult>;
-    // (undocumented)
-    get steps(): number;
-    get tasks(): Tasks;
-    // (undocumented)
-    get tools(): _$_zaly_ai0.Tool<unknown, unknown, object>[];
-    get totalUsage(): TokenCount;
-    get usage(): TokenCount;
-    waitIdle(): Promise<AgentStatus>;
-}
-
-// @public (undocumented)
-export class AgentContext {
-    constructor(opts: AgentOptions);
-    // (undocumented)
-    get agent(): Agent;
-    set agent(a: Agent);
-    // (undocumented)
-    assert(k: string, v: unknown): asserts v;
-    // (undocumented)
-    attach(): void;
-    // (undocumented)
-    get cwd(): string;
-    // (undocumented)
-    loadPrompt(opts?: AgentOptions["prompt"]): Promise<string[]>;
-    // (undocumented)
-    loadSession(opts?: AgentOptions["session"]): Promise<Session>;
-    // (undocumented)
-    loadSkills(opts?: AgentOptions["skills"]): Promise<Skills | undefined>;
-    // (undocumented)
-    loadTools(opts?: AgentOptions["tools"]): Promise<Tool[]>;
-    // (undocumented)
-    get messages(): readonly Message[];
-    // (undocumented)
-    get model(): Model;
-    set model(m: Model);
-    // (undocumented)
-    get notifier(): Notifier | undefined;
-    // (undocumented)
-    get opts(): AgentOptions;
-    // (undocumented)
-    get permissions(): PermissionManager;
-    set prompt(prompt: string[]);
-    // (undocumented)
-    get prompt(): string[];
-    // (undocumented)
-    get session(): Session;
-    set session(s: Session);
-    // (undocumented)
-    get skills(): Skills | undefined;
-    set skills(s: Skills | undefined);
+    get signal(): AbortSignal | undefined;
     // (undocumented)
     start(): Promise<void>;
     // (undocumented)
     get started(): boolean;
     // (undocumented)
-    get streamMessages(): readonly Message[];
+    get status(): AgentStatus;
+    step(): Promise<StepResult>;
     // (undocumented)
-    get swarm(): Swarm | undefined;
-    set tools(tools: Tool[]);
+    get steps(): number;
+    stop(opts?: {
+        abort?: boolean;
+        reason?: string;
+    }): void;
+    get tasks(): Tasks;
     // (undocumented)
-    get tools(): Tool[];
+    tools(): Promise<Tool<unknown, unknown, object>[]>;
+    get totalUsage(): TokenCount;
+    get usage(): TokenCount;
+    // (undocumented)
+    useTool<T extends Tool = Tool>(name: T["name"], params: ParamsOf<T>, msg: string, opts?: {
+        hidden?: boolean;
+    }): Promise<{
+        call: ToolCallPart<T["name"], ParamsOf<T>>;
+        result: ToolResult<NonNullable<T["_types"]>["meta"]>;
+        messages: [Message<"system">, Message<"assistant">, Message<"tool">];
+    }>;
+    waitIdle(timeout?: number): Promise<AgentStatus>;
 }
+
+// @public (undocumented)
+export class AgentContext extends Emitter<AgentContextEvents> {
+    // (undocumented)
+    $prompt: (string | {
+        template: AnyPrompt;
+    })[];
+    // (undocumented)
+    $tools: (Tool | AnyTool)[];
+    constructor(opts: AgentContextOpts);
+    // (undocumented)
+    get agent(): Agent;
+    // (undocumented)
+    attach(agent: Agent): void;
+    // (undocumented)
+    get cwd(): string;
+    set cwd(c: string);
+    // (undocumented)
+    masker(): Promise<Masker | undefined>;
+    // (undocumented)
+    get messages(): readonly _$_zaly_ai0.Message[];
+    // (undocumented)
+    get model(): Model | undefined;
+    set model(m: Model | undefined);
+    // (undocumented)
+    get opts(): AgentOptions;
+    // (undocumented)
+    permissions(): Promise<PermissionManager>;
+    // (undocumented)
+    prompt(): Promise<string[]>;
+    // (undocumented)
+    get reasoning(): ReasoningEffort;
+    set reasoning(r: ReasoningEffort);
+    // (undocumented)
+    get session(): Session;
+    // (undocumented)
+    get signal(): AbortSignal | undefined;
+    // (undocumented)
+    skills(): Promise<Skills | undefined>;
+    // (undocumented)
+    get status(): AgentStatus | undefined;
+    // (undocumented)
+    swarm(): Promise<Swarm>;
+    // (undocumented)
+    tools(): Promise<Tool[]>;
+    // (undocumented)
+    useSession(s: Session): Promise<void>;
+}
+
+// @public (undocumented)
+export type AgentContextEvents = {
+    model: {
+        model?: Model;
+        prev?: Model;
+    };
+    reasoning: {
+        effort: ReasoningEffort;
+        prev?: ReasoningEffort;
+    };
+    session: {
+        session: Session;
+        prev?: Session;
+    };
+    cwd: {
+        cwd: string;
+        prev?: string;
+    };
+    skills: {
+        skills: Skills;
+    };
+};
 
 // @public
 export type AgentEvents = {
@@ -162,9 +198,25 @@ export type AgentEvents = {
         step: number;
         outcome: StepKind;
     };
-    stop: {
-        reason: AgentStopReason;
+    "turn-start": {
+        turn: number;
+    };
+    "turn-end": {
+        turn: number;
+        outcome: AgentStopKind;
+        reason?: string;
+    };
+    stop: AgentStop & {
         usage: TokenCount;
+        status: AgentStatus;
+    };
+    context: {
+        prompt: string[];
+        tools: Tool[];
+        messages: Message[];
+    };
+    pending: {
+        messages: Message[];
     };
 };
 
@@ -191,6 +243,7 @@ export interface AgentOptions extends CollectOptions {
     cwd?: string;
     depth?: number;
     heartbeatMs?: number;
+    logger?: Logger;
     mask?: boolean | MaskOptions;
     maxDepth?: number;
     messages?: Message[];
@@ -199,11 +252,11 @@ export interface AgentOptions extends CollectOptions {
     notify?: boolean | NotifyOptions;
     permissions?: Omit<PermissionOptions, "cwd"> | PermissionManager;
     prompt?: (string | {
-        use: AnyPrompt;
+        template: AnyPrompt;
     })[];
     request?: StreamOptions;
     session?: Session | SessionOptions;
-    skills?: boolean | Skills;
+    skills?: SkillsOptions | Skills;
     stop?: StopOptions;
     swarm?: Swarm;
     tools?: (Tool | AnyTool)[];
@@ -212,20 +265,33 @@ export interface AgentOptions extends CollectOptions {
 // @public
 export type AgentStatus = "idle" | "streaming" | "running-tools" | "compacting" | "paused";
 
+// @public (undocumented)
+export type AgentStop = {
+    kind: AgentStopKind;
+    reason?: string;
+    error?: Error;
+};
+
 // @public
-export type AgentStopReason = "natural" | "max-steps" | "token-budget" | "loop-detected" | "max-tool-errors" | "context-overflow" | "paused" | "aborted" | "error";
+export type AgentStopKind = "natural" | "max-steps" | "token-budget" | "loop-detected" | "max-tool-errors" | "context-overflow" | "paused" | "aborted" | "error";
+
+// @public (undocumented)
+export type AnyPrompt = BuiltinPrompt | (string & {});
 
 // @public (undocumented)
 export type AnyScope = PermissionScope | (string & {});
 
 // @public (undocumented)
-export type AnyTool = BuiltinTool | (string & {});
+export type AnyTool = AnyKey<BuiltinTool>;
 
 // @public (undocumented)
 export type BashTool = typeof bashTool;
 
 // @public (undocumented)
-export type BuiltinScope = keyof typeof builtin$1;
+export type BuiltinPrompt = keyof typeof builtin$1;
+
+// @public (undocumented)
+export type BuiltinScope = keyof typeof builtin;
 
 // @public (undocumented)
 export type BuiltinTool = keyof typeof builtin$2;
@@ -234,8 +300,13 @@ export type BuiltinTool = keyof typeof builtin$2;
 export type CheckResult = {
     verdict: "allow";
 } | {
-    verdict: Exclude<Verdict, "allow">;
+    verdict: "deny";
     reason: string;
+    suggestions?: Suggestion[];
+} | {
+    verdict: "ask";
+    reason: string;
+    ask: string;
     suggestions?: Suggestion[];
 };
 
@@ -251,9 +322,7 @@ export interface ContextPressure {
 export function createAgent(opts: AgentOptions): Promise<Agent>;
 
 // @public (undocumented)
-export function createAgentContext(opts: AgentOptions & {
-    load?: boolean;
-}): Promise<AgentContext>;
+export function createAgentContext(opts: AgentOptions): Promise<AgentContext>;
 
 // @public
 export type DoneTaskInfo = Extract<TaskInfo, {
@@ -270,12 +339,41 @@ export type EditToolMeta = FileMeta & {
 };
 
 // @public (undocumented)
-export const handlerRegistry: _$_zaly_shared_registry0.Registry<PermissionHandler<string>, void, {
+export type FindTool = typeof findTool;
+
+// @public (undocumented)
+export type FindToolMeta = {
+    cwd: string;
+    pattern: string;
+    matches: number;
+    truncated: boolean;
+    cmd: string[];
+};
+
+// @public (undocumented)
+export type GrepTool = typeof grepTool;
+
+// @public (undocumented)
+export type GrepToolMeta = {
+    cwd: string;
+    pattern: string;
+    truncated: boolean;
+    cmd: string[];
+};
+
+// @public (undocumented)
+export const handlerRegistry: _$_zaly_shared_registry0.Registry<HandlerLoader, {
     readonly bash: () => PermissionHandler<"bash">;
     readonly read: () => PermissionHandler<"read" | "write">;
     readonly tool: () => PermissionHandler<"tool">;
     readonly write: () => PermissionHandler<"read" | "write">;
 }>;
+
+// @public (undocumented)
+export function isUuidv7(s: string): boolean;
+
+// @public (undocumented)
+export function isUuidv7Like(s: string): boolean;
 
 // @public (undocumented)
 export interface PermissionContext<T extends string> {
@@ -302,7 +400,6 @@ export class PermissionManager {
     // (undocumented)
     readonly cwd: string;
     get invalidRules(): readonly Rule[];
-    register: (name: string, loader: _$_zaly_shared_registry0.Loader<PermissionHandler<string>, void>) => () => void;
     // (undocumented)
     removeWorkspace(path: string): void;
     // (undocumented)
@@ -317,7 +414,7 @@ export class PermissionManager {
 export type PermissionOptions = {
     cwd?: string;
     preset?: PermissionPresetName;
-    rules?: Rule[] | Partial<Record<Verdict, string[]>>;
+    rules?: Rule[] | Partial<Record<Verdict, string[] | undefined>>;
     workspaces?: readonly string[];
 };
 
@@ -334,6 +431,8 @@ export type PermissionPresetName = "strict" | "readonly" | "permissive" | "yolo"
 
 // @public
 export interface PermissionRequest {
+    // (undocumented)
+    ask: string;
     // (undocumented)
     input: string;
     // (undocumented)
@@ -360,6 +459,26 @@ export interface PermissionScopes {
 }
 
 // @public (undocumented)
+export interface PromptCtx {
+    // (undocumented)
+    cwd: string;
+    // (undocumented)
+    model: Model;
+}
+
+// @public (undocumented)
+export type PromptLoader = (ctx: PromptCtx) => Promise<string>;
+
+// @public (undocumented)
+export const promptRegistry: _$_zaly_shared_registry0.Registry<PromptLoader, {
+    readonly "AGENTS.md": (ctx: PromptCtx) => Promise<string>;
+    readonly "MEMORY.md": (ctx: PromptCtx) => Promise<string>;
+    readonly agent: () => Promise<string>;
+    readonly env: (ctx: PromptCtx) => Promise<string>;
+    readonly model: (ctx: PromptCtx) => Promise<string>;
+}>;
+
+// @public (undocumented)
 export type ReadTool = ReturnType<typeof createReadTool>;
 
 // @public (undocumented)
@@ -375,24 +494,21 @@ export type Rule<T extends string = string> = {
     policy: Verdict;
 };
 
+// @public (undocumented)
+export type SendMode = "inject" | "append";
+
 // @public
 export type StepKind = "natural" | "tool-calls" | "context-overflow" | "error";
 
 // @public
-export interface StepResult {
-    // (undocumented)
-    error?: Error;
-    // (undocumented)
-    finishReason: FinishReason;
-    // (undocumented)
+export type StepResult = {
     kind: StepKind;
-    // (undocumented)
     message?: AssistantMessage;
-    // (undocumented)
     toolMessage?: Message<"tool">;
-    // (undocumented)
+    finishReason: FinishReason;
     usage: TokenCount;
-}
+    error?: Error;
+};
 
 // @public
 export interface StopOptions {
@@ -411,7 +527,7 @@ export class StopPolicy {
     get calls(): readonly ToolCallPart[];
     // (undocumented)
     get consecutiveErrors(): number;
-    detect(): AgentStopReason | undefined;
+    detect(): AgentStopKind | undefined;
     handle(event: Envelope<AgentEvents>): void;
     reset(opts?: {
         keepUsage?: boolean;
@@ -474,6 +590,8 @@ export interface TaskMeta {
 
 // @public
 export class Tasks extends Emitter<TasksEvents> {
+    // (undocumented)
+    set $tools(tools: (() => Promise<readonly Tool[]>) | Tool[]);
     abort(id: string, reason?: string): void;
     done(id: string, result: ToolResult): void;
     finished(): readonly DoneTaskInfo[];
@@ -493,8 +611,7 @@ export class Tasks extends Emitter<TasksEvents> {
     run(calls: readonly ToolCallPart[], ctx: ToolContext): Promise<ToolResultPart[]>;
     running(): readonly TaskInfo[];
     // (undocumented)
-    get tools(): readonly Tool[];
-    set tools(tools: (() => readonly Tool[]) | Tool[]);
+    tools(): Promise<readonly Tool[]>;
 }
 
 // @public
@@ -525,7 +642,10 @@ export interface ToolInit {
 }
 
 // @public (undocumented)
-export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknown, unknown, object>>, ToolInit, {
+export type ToolLoader = (init: ToolInit) => Promise<Tool>;
+
+// @public (undocumented)
+export const toolRegistry: _$_zaly_shared_registry0.Registry<ToolLoader, {
     readonly agent_send: () => Promise<Tool<unknown, unknown, object> | Tool<{
         to: string;
         content: string;
@@ -538,7 +658,7 @@ export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknow
     }, unknown, object>>;
     readonly bash: () => Promise<Tool<unknown, unknown, object> | Tool<{
         command: string;
-        description: string;
+        description?: string | undefined;
         max_lines: number;
         timeout: number;
     }, unknown, object>>;
@@ -550,6 +670,33 @@ export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknow
         }[];
     }, unknown, EditToolMeta>>;
     readonly fetch: (init: ToolInit) => Promise<Tool<unknown, unknown, object>>;
+    readonly find: () => Promise<Tool<unknown, unknown, object> | Tool<{
+        pattern: string;
+        cwd?: string | undefined;
+        paths?: string[] | undefined;
+        type: "any" | "dir" | "file";
+        file_type?: string[] | undefined;
+        exclude?: string[] | undefined;
+        hidden: boolean;
+        ignore: boolean;
+        follow: boolean;
+        limit: number;
+    }, unknown, FindToolMeta>>;
+    readonly grep: () => Promise<Tool<unknown, unknown, object> | Tool<{
+        pattern: string;
+        cwd?: string | undefined;
+        paths?: string[] | undefined;
+        glob?: string[] | undefined;
+        exclude?: string[] | undefined;
+        file_type?: string[] | undefined;
+        fixed_strings: boolean;
+        case_sensitive: boolean;
+        hidden: boolean;
+        ignore: boolean;
+        follow: boolean;
+        context: number;
+        limit: number;
+    }, unknown, GrepToolMeta>>;
     readonly read: (init: ToolInit) => Promise<Tool<unknown, unknown, object> | Tool<{
         path: string;
         offset: number;
@@ -585,6 +732,15 @@ export const toolRegistry: _$_zaly_shared_registry0.Registry<Promise<Tool<unknow
     }, unknown, WriteToolMeta>>;
 }>;
 
+// @public (undocumented)
+export type TurnResult = {
+    kind: AgentStopKind;
+    reason?: unknown;
+};
+
+// @public
+export function uuidv7(): string;
+
 // @public
 export type Verdict = "allow" | "deny" | "ask";
 
@@ -594,18 +750,6 @@ export type WriteTool = typeof writeTool;
 // @public (undocumented)
 export type WriteToolMeta = FileMeta & {
     original?: string;
-};
-
-// @public (undocumented)
-export const zalyPaths: {
-    readonly cache: string;
-    readonly config: string;
-    readonly logs: string;
-    readonly memory: string;
-    readonly root: string;
-    readonly sessions: string;
-    readonly state: string;
-    readonly tmp: string;
 };
 
 // (No @packageDocumentation comment for this package)

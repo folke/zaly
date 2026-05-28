@@ -4,8 +4,8 @@
 
 ```ts
 
-import { BundledLanguage } from 'shiki/types';
 import { BundledTheme } from 'shiki/types';
+import { InspectOptions as InspectOptions_2 } from 'node:util';
 
 // @public (undocumented)
 export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inherit";
@@ -48,20 +48,26 @@ export type ColorLightness = `${number}`;
 // @public
 export type HexColor = `#${string}`;
 
+// @public
+export function inspect(msg: unknown[], opts?: InspectOptions): string;
+
+// @public (undocumented)
+export interface InspectOptions {
+    inspect?: InspectOptions_2;
+    stacktrace?: boolean;
+}
+
 // @public (undocumented)
 export function isHexColor(s: string): s is HexColor;
+
+// @public
+export function isMarkdown(s: string): boolean;
 
 // @public (undocumented)
 export function parseHex(hex: string): RGB;
 
 // @public (undocumented)
 export type RGB = [r: number, g: number, b: number];
-
-// @public (undocumented)
-export type ShikiLanguage = L;
-
-// @public (undocumented)
-export type ShikiTheme = T;
 
 // @public
 export type Style = Omit<AnsiStyle, "fg" | "bg"> & {

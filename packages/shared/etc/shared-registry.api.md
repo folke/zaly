@@ -4,30 +4,32 @@
 
 ```ts
 
+// @public (undocumented)
+export type AnyKey<T extends string> = T | (string & {});
+
 // @public
-export function createRegistry<V, O = void>(label: string): Registry<V, O>;
+export function createRegistry<L extends Loader_2>(label: string): Registry<L>;
 
 // @public (undocumented)
-type Loader_2<V, O = void> = (opts: O) => V;
+type Loader_2 = (args?: any) => any;
 export { Loader_2 as Loader }
 
 // @public (undocumented)
-export type LoaderMap<V, O = void> = Record<string, Loader_2<V, O>>;
+export type LoaderMap<L extends Loader_2> = Record<string, L>;
 
 // @public (undocumented)
-export class Registry<V, O = void, I extends LoaderMap<V, O> = LoaderMap<V, O>> {
+export class Registry<L extends Loader_2, I extends LoaderMap<L> = LoaderMap<L>> {
     constructor(label: string);
-    from<const E extends LoaderMap<V, O>>(entries: E): Registry<V, O, E>;
+    from<const E extends LoaderMap<L>>(entries: E): Registry<L, E>;
     // (undocumented)
-    has(name: string): boolean;
+    has(name: AnyRegKey<I>): boolean;
     // (undocumented)
-    keys(): string[];
-    load<N extends (keyof I & string) | (string & {})>(name: N, ...args: LoadArgs<O>): N extends keyof I ? Resolved<I[N]> : V;
-    register(name: string, loader: Loader_2<V, O>): () => void;
+    keys(): AnyRegKey<I>[];
+    load<N extends keyof I>(name: N, ...args: LoadArgs<L>): ReturnType<I[N]>;
+    // (undocumented)
+    load(name: string, ...args: LoadArgs<L>): ReturnType<L>;
+    register(name: string, loader: L): () => void;
 }
-
-// @public
-export type Resolved<L> = L extends Loader_2<infer V, infer _O> ? V : never;
 
 // (No @packageDocumentation comment for this package)
 

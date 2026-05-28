@@ -10,33 +10,10 @@ import * as _$node_fs0 from 'node:fs';
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R;
 
 // @public
-export const AsyncEmitter: new <A extends EventMap_2 = never, B extends EventMap_2 = never, C extends EventMap_2 = never, D extends EventMap_2 = never>() => AsyncEmitter<A, B, C, D>;
-
-// @public (undocumented)
-export type AsyncEmitter<A extends EventMap_2 = never, B extends EventMap_2 = never, C extends EventMap_2 = never, D extends EventMap_2 = never> = InstanceType<typeof BaseEmitter<A, Promise<void>>> & InstanceType<typeof BaseEmitter<B, Promise<void>>> & InstanceType<typeof BaseEmitter<C, Promise<void>>> & InstanceType<typeof BaseEmitter<D, Promise<void>>>;
+export function atomicWriteFile(path: string, data: string): Promise<void>;
 
 // @public (undocumented)
 export function clamp(num: number, min?: number, max?: number): number;
-
-// @public
-export function cleanText(s: string, opts?: CleanTextOpts): string;
-
-// @public
-export const cleanTextAgent: (s: string, opts?: CleanTextOpts) => string;
-
-// @public (undocumented)
-export type CleanTextOpts = {
-    keepStyles?: boolean; /** Run `stripAnsi`. Default `true`. */
-    ansi?: boolean; /** Run `stripBinary`. Default `true`. */
-    binary?: boolean;
-    adversarial?: boolean; /** Run `normalizeEol`. Default `true`. */
-    eol?: boolean; /** Apply `String.prototype.normalize("NFC")`. Default `true`. */
-    unicode?: boolean;
-    nul?: string;
-};
-
-// @public
-export const cleanTextTui: (s: string, opts?: CleanTextOpts) => string;
 
 // @public
 export function compareNaturalDescNumbers(a: string, b: string): number;
@@ -45,10 +22,7 @@ export function compareNaturalDescNumbers(a: string, b: string): number;
 export function decodePath(encoded: string): string;
 
 // @public
-export function detectEol(input: string | {
-    path: string;
-    text?: string;
-}): EOL;
+export type EmitArgs<E> = keyof E extends never ? [] : [event: E];
 
 // @public
 export const Emitter: new <A extends EventMap_2 = never, B extends EventMap_2 = never, C extends EventMap_2 = never, D extends EventMap_2 = never>() => Emitter<A, B, C, D>;
@@ -62,12 +36,14 @@ export function encodePath(path: string): string;
 // @public
 export type Envelope<T extends EventMap_2> = { [K in keyof T & string]: EventOf<T, K> }[keyof T & string];
 
-// @public (undocumented)
-export type EOL = "\n" | "\r\n";
-
 // @public
-type EventMap_2 = Record<string, Record<string, unknown>>;
+type EventMap_2 = Record<string, Record<string, unknown> | {
+    signal?: AbortSignal;
+}>;
 export { EventMap_2 as EventMap }
+
+// @public (undocumented)
+export type EventMapOf<E extends Emitter> = E extends Emitter<infer A, infer B, infer C, infer D> ? A & B & C & D : never;
 
 // @public
 export type EventOf<T extends EventMap_2, K extends keyof T & string> = {
@@ -75,7 +51,38 @@ export type EventOf<T extends EventMap_2, K extends keyof T & string> = {
 } & T[K];
 
 // @public (undocumented)
-export function findUp(root: string, name: string, stop?: string): string | undefined;
+export type EventType<T extends EventMap_2> = keyof T & string;
+
+// @public
+export function findUp(root: string, name: string | string[], opts?: Partial<FindUpOpts<false>>): string | undefined;
+
+// @public (undocumented)
+export function findUp(root: string, name: string | string[], opts: FindUpOpts<true>): string[];
+
+// @public (undocumented)
+export type FindUpOpts<T extends boolean = boolean> = {
+    stop?: string | string[];
+    all?: T;
+    type?: "file" | "dir";
+};
+
+// @public
+export function formatDuration(from: number, opts?: {
+    to?: number;
+    nowThreshold?: number;
+}): string;
+
+// @public (undocumented)
+export function formatNumber(n: number): string;
+
+// @public (undocumented)
+export function formatRelTime(from: number, opts?: {
+    to?: number;
+    nowThreshold?: number;
+}): string;
+
+// @public (undocumented)
+export function formatSize(bytes: number): string;
 
 // @public (undocumented)
 export function gitRoot(path: string): string | undefined;
@@ -83,29 +90,59 @@ export function gitRoot(path: string): string | undefined;
 // @public (undocumented)
 export function hash(content: string | Uint8Array, len?: number): string;
 
-// @public
-export type Listener<E, Self, R extends void | Promise<void> = void> = (event: E, self: Self) => R;
+// @public (undocumented)
+export const isInstance: <T>(v: unknown) => v is T;
+
+// @public (undocumented)
+export function isPromiseLike(value: unknown): value is PromiseLike<unknown>;
+
+// @public (undocumented)
+export type JsonArray = JsonValue[] | readonly JsonValue[];
+
+// @public (undocumented)
+export type JsonObject = { [Key in string]: JsonValue };
+
+// @public (undocumented)
+export type JsonPrimitive = string | number | boolean | null;
 
 // @public
-export function normalizeEol(s: string, opts?: {
-    loneCr?: string;
-    eol?: EOL;
-}): string;
+export type JsonReviver = (this: unknown, key: string, value: unknown) => unknown;
+
+// @public (undocumented)
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+// @public
+export type Listener<E, Self> = (event: E, self: Self, ctx: ListenerCtx) => unknown;
+
+// @public (undocumented)
+export type ListenerCtx = {
+    serial?: boolean; /** Signal that aborts when the current listener chain should stop */
+    signal: AbortSignal; /** Abort the current listener chain with an optional reason */
+    abort(reason?: unknown): void;
+};
+
+// @public (undocumented)
+export type ListenerOpts = {
+    signal?: AbortSignal;
+};
+
+// @public (undocumented)
+export type MaybePromise<T> = T | Promise<T>;
 
 // @public (undocumented)
 export function normPath(...paths: (string | undefined)[]): string;
 
 // @public (undocumented)
-export function prettyPath(path: string): string;
+export function prettyPath(path: string, to?: string): string;
 
 // @public (undocumented)
 export function randomHash(len?: number): string;
 
 // @public (undocumented)
-export function safeAsyncFn<T extends AnyFn<any[], Promise<any>>>(fn: T): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined>;
+export function readJson<T extends JsonObject = JsonObject>(path: string, reviver?: JsonReviver): Promise<T>;
 
 // @public (undocumented)
-export function safeFn<T extends AnyFn>(fn: T): (...args: Parameters<T>) => ReturnType<T> | undefined;
+export function safeFn<T extends AnyFn>(fn: T): (...args: Parameters<T>) => SafeReturn<T>;
 
 // @public (undocumented)
 export function safeParseJson(v: unknown): unknown;
@@ -117,33 +154,34 @@ export const safeReadFile: (p: string) => Promise<string | undefined>;
 export const safeReadFileSync: (path: string) => string | undefined;
 
 // @public (undocumented)
+export function safeReadJson<T extends JsonObject = JsonObject>(path: string, reviver?: JsonReviver): Promise<T | undefined>;
+
+// @public (undocumented)
 export const safeStat: (path: _$node_fs0.PathLike, options?: _$node_fs0.StatOptions | undefined) => _$node_fs0.BigIntStats | _$node_fs0.Stats | undefined;
 
-// @public
-export function safeStringify(value: unknown, replacer?: (key: string, value: unknown) => unknown): string;
+// @public (undocumented)
+export const safeStatAsync: (p: string) => Promise<_$node_fs0.Stats | undefined>;
 
 // @public
-export function since(from: number, to?: number): string;
+export function safeStringify(value: unknown, replacer?: (key: string, value: unknown) => unknown, space?: string | number): string;
 
-// @public
-export function stripAdversarial(s: string): string;
-
-// @public
-export function stripAnsi(s: string, opts?: {
-    keepStyles?: boolean;
-}): string;
-
-// @public
-export function stripBinary(s: string, opts?: {
-    keepStyles?: boolean;
-    nul?: string;
-}): string;
+// @public (undocumented)
+export function safeWriteJson<T extends JsonObject = JsonObject>(path: string, data: T | ((prev?: T) => T)): Promise<T | undefined>;
 
 // @public (undocumented)
 export function toError(err: unknown): Error;
 
 // @public (undocumented)
 export function withError<T>(fn: () => T, errorMsg: string): T;
+
+// @public (undocumented)
+export function withLock<T>(path: string, fn: () => Promise<T>): Promise<T>;
+
+// @public (undocumented)
+export function wrapError(msg: string, cause: unknown): Error;
+
+// @public
+export function writeJson<T extends JsonObject = JsonObject>(path: string, data: T | ((prev?: T) => T)): Promise<T>;
 
 // (No @packageDocumentation comment for this package)
 

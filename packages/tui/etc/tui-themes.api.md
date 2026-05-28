@@ -11,7 +11,7 @@ import { BundledTheme } from 'shiki/types';
 export type AnyTheme = BuiltinTheme | (string & {});
 
 // @public
-export type BuiltinTheme = BuiltinThemeName | "ansi";
+export type BuiltinTheme = keyof typeof builtin | "ansi";
 
 // @public
 export const defaultTheme: Theme;
@@ -21,7 +21,7 @@ export function loadTheme(name?: string): Promise<Theme>;
 
 // @public (undocumented)
 export function loadTheme(opts: {
-    name: string;
+    name?: string;
     dirs?: string[];
 }): Promise<Theme>;
 
@@ -30,8 +30,11 @@ export function loadTheme(opts: {
     path: string;
 }): Promise<Theme>;
 
+// @public (undocumented)
+export type ThemeLoader = () => Promise<Partial<Theme>>;
+
 // @public
-export const themeRegistry: _$_zaly_shared_registry0.Registry<Promise<Partial<Theme>>, void, {
+export const themeRegistry: _$_zaly_shared_registry0.Registry<ThemeLoader, {
     readonly "ayu-dark": () => Promise<Partial<Theme>>;
     readonly "catppuccin-frappe": () => Promise<Partial<Theme>>;
     readonly "catppuccin-latte": () => Promise<Partial<Theme>>;

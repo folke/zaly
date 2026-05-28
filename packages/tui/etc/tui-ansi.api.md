@@ -5,10 +5,10 @@
 ```ts
 
 // @public (undocumented)
-export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined;
+export function ansiBg(str: string, idx: number): AnsiColor | undefined;
 
-// @public
-export function hasAnsi(text: string): boolean;
+// @public (undocumented)
+export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined;
 
 // @internal
 export function hyperlink(url: string, text: string): string;
@@ -19,26 +19,11 @@ export function openAnsi(style: AnsiStyle): string;
 // @internal
 export function reapplyStyle(s: string, escape: string): string;
 
-// @internal (undocumented)
+// @public (undocumented)
 export const RESET = "\u001B[0m";
 
-// @public
-export function sliceAnsi(s: string, start: number, end?: number): string;
-
-// @public
-export function splitAnsi(s: string): string[];
-
-// @public
-export function stringWidth(s: string): number;
-
-// @public
-export function stripAnsi(s: string): string;
-
 // @public (undocumented)
-export const truncateAnsi: (s: string, maxLength: number, ellipsis?: string) => string;
-
-// @public
-export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string;
+export function styleAnsi(text: string, style?: AnsiStyle): string;
 
 // @public
 export interface WrapOpts {

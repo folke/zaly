@@ -65,14 +65,17 @@ export interface AuthCredentials {
 export function authenticate(model: ModelSpec, auth?: AuthProvider): Promise<AuthCredentials | undefined>;
 
 // @public
+export type AuthLoader = () => Promise<AuthProvider>;
+
+// @public
 export interface AuthProvider {
     // (undocumented)
     getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>;
 }
 
 // @public (undocumented)
-export const authRegistry: _$_zaly_shared_registry0.Registry<Promise<AuthProvider>, void, {
-    readonly codex: () => Promise<OAuthProvider>;
+export const authRegistry: _$_zaly_shared_registry0.Registry<AuthLoader, {
+    readonly codex: () => Promise<AuthProvider | OAuthProvider>;
     readonly env: () => Promise<AuthProvider>;
 }>;
 
@@ -166,6 +169,7 @@ export function createTransform<T extends AnyPart = ContentPart>(): ContentTrans
 export function defineTool<Params extends TObject, Result extends TSchema = TSchema, Meta extends object = object>(def: {
     desc?: string;
     call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>;
+    preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>;
     name: string;
     params: Params;
     parallel?: boolean;
@@ -232,9 +236,18 @@ export type ExperimentalModes = Record<string, {
 
 // @public (undocumented)
 export function extractToolCalls<T extends string = string>(messages: readonly Message[], tools?: T[]): Generator<{
-    call: ToolCallPart<T>;
-    idx: number;
-    message: Message;
+    p: ToolCallPart<T>;
+    $m: number;
+    m: Message;
+    $p: number;
+}>;
+
+// @public (undocumented)
+export function extractToolResults<M extends object = object, T extends string = string>(messages: readonly Message[], tools?: T[]): Generator<{
+    p: ToolResultPart<T, M>;
+    $m: number;
+    m: Message;
+    $p: number;
 }>;
 
 // @public
@@ -330,7 +343,7 @@ export function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec
 export function loadModel(source: string | ModelSpec, overrides?: Partial<ModelSpec>, auth?: AuthProvider): Promise<Model>;
 
 // @public
-export type Message<T extends MessageBase["role"] = MessageBase["role"]> = Extract<MessageBase, {
+export type Message<T extends Role = Role> = Extract<MessageBase, {
     role: T;
 }>;
 
@@ -568,12 +581,15 @@ export interface Quirks {
     thinkingFormat?: "openai" | "openrouter" | "deepseek" | "zai" | "qwen" | "qwen-chat-template";
 }
 
+// @public (undocumented)
+export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+
 // @public
 export interface ReasoningOptions {
     // (undocumented)
     budget?: number;
     // (undocumented)
-    effort?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+    effort?: ReasoningEffort;
 }
 
 // @public
@@ -584,6 +600,9 @@ export interface ReasoningPart {
     // (undocumented)
     type: "reasoning";
 }
+
+// @public (undocumented)
+export function registerModel(id: string, opts: ModelSpec): () => void;
 
 // @public
 export function renderMetaPart(m: MetaPart): string;
@@ -615,11 +634,17 @@ export interface RetryOptions {
     }) => boolean;
 }
 
+// @public (undocumented)
+export type Role = MessageBase["role"];
+
 // @public
-export function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown, ctx: ToolContext): Promise<ToolResult>;
+export function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown, ctx: ToolContext, opts?: {
+    preflight?: boolean;
+}): Promise<ToolResult>;
 
 // @public (undocumented)
 export function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown, ctx: ToolContext, opts: {
+    preflight?: boolean;
     streaming: true;
 }): Promise<ToolResult | Streamable>;
 
@@ -657,6 +682,13 @@ export type StreamEvent = {
     type: "reasoning-delta";
     delta: string;
     signature?: string;
+} | {
+    type: "tool-call-delta"; /** Stable within one assistant stream; use this to merge partials. */
+    key: string; /** Final tool-call id when known. May arrive after early deltas. */
+    id?: string; /** Tool name when known. */
+    name?: string; /** Raw argument fragment from this provider event. */
+    delta?: string; /** Accumulated argument buffer for this tool call so far. */
+    args?: string;
 } | {
     type: "tool-call";
     id: string;
@@ -739,6 +771,8 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
     // (undocumented)
     params: unknown;
     // (undocumented)
+    preflight?(params: Params, ctx: ToolContext<Meta>): void | Promise<void>;
+    // (undocumented)
     result?: unknown;
     // (undocumented)
     _types?: {
@@ -812,6 +846,15 @@ export function toXml(data: unknown, tag?: string, opts?: {
 
 // @public
 export function transformMeta<T extends Content>(content: T): WithoutPart<MetaPart, T>;
+
+// @public
+export function truncateText(maxLen?: number): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<Exclude<T, {
+    type: "text";
+}> | (Extract<T, {
+    type: "text";
+}> & {
+    text: string;
+})>;
 
 // @public
 export interface Usage extends TokenCount {

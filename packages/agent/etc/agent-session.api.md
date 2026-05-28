@@ -6,12 +6,7 @@
 
 import { Emitter } from '@zaly/shared';
 import { Message } from '@zaly/ai';
-
-// @public (undocumented)
-export type InternalMeta = {
-    version?: number;
-    sessionId?: string;
-};
+import { ReasoningEffort } from '@zaly/ai';
 
 // @public (undocumented)
 export class JsonlReader<T> {
@@ -43,14 +38,10 @@ export class JsonlStore implements SessionStore {
 }
 
 // @public (undocumented)
-export type ManagedSession = {
-    id: string;
-    scope: string;
-    path: string;
-    dir: string;
-    cwd?: string;
-    mtime?: number;
-};
+export function listSessions(opts?: SessionListOpts): Promise<SessionInfo[]>;
+
+// @public (undocumented)
+export function loadSession(opts?: Partial<SessionInfo>): Promise<Session>;
 
 // @public
 export class MemoryStore implements SessionStore {
@@ -66,13 +57,10 @@ export class MemoryStore implements SessionStore {
 }
 
 // @public (undocumented)
-export type PersistedMeta = InternalMeta & SessionMeta;
-
-// @public
-export type PersistedNode = SessionNode;
+export type PartialNode = DistributiveOmit<SessionNode, "parentUuid" | "uuid" | "ts">;
 
 // @public (undocumented)
-export function projectScope(cwd?: string): string;
+export function resumeSession(filter: string | SessionFilter): Promise<Session | undefined>;
 
 // @public
 export class Session<T extends SessionStore = SessionStore> extends Emitter<SessionEvents> {
@@ -87,13 +75,12 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
         summary: Message<"system">;
     }): Promise<string>;
     // (undocumented)
-    get cwd(): string;
-    // (undocumented)
     get dir(): string;
     get head(): string | undefined;
     history(limit?: number): Promise<readonly Message[]>;
     // (undocumented)
     get id(): string;
+    static lastMessage(opts?: SessionOptions): Promise<Message<"user"> | undefined>;
     static load<T extends SessionStore = SessionStore>(opts: SessionOptions<T> & {
         store: T;
     }): Promise<Session<T>>;
@@ -104,7 +91,6 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     // (undocumented)
     static load(opts?: SessionOptions & {}): Promise<Session<MemoryStore>>;
     get messages(): readonly Message[];
-    get meta(): SessionMeta;
     node(id?: string | Message): Promise<(SessionNodeView & {
         type: "message";
     }) | undefined>;
@@ -113,15 +99,13 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     get path(): string | undefined;
     // (undocumented)
     get root(): SessionNode | undefined;
-    start(meta?: SessionMeta): Promise<string | undefined>;
+    get settings(): SessionSettings;
+    start(settings?: SessionUpdate): Promise<string | undefined>;
     // (undocumented)
-    update(meta: SessionMeta, opts?: {
+    update(settings: SessionUpdate, opts?: {
         force?: boolean;
     }): Promise<string>;
 }
-
-// @public (undocumented)
-export function sessionCreate(opts: SessionScope): Promise<Session<SessionStore>>;
 
 // @public
 export type SessionEvents = {
@@ -137,41 +121,54 @@ export type SessionEvents = {
     };
     cwd: {
         cwd: string;
+        prev?: string;
     };
-    meta: {
-        meta: SessionMeta;
-        prev: SessionMeta;
-        changes: Partial<Omit<SessionMeta, "cwd">>;
+    model: {
+        model: string;
+        prev?: string;
+    };
+    reasoning: {
+        effort: ReasoningEffort;
+        prev?: ReasoningEffort;
     };
     "session-start": {};
     "session-resume": {};
 };
 
 // @public (undocumented)
-export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions & {
-    store: T;
-    meta?: PersistedMeta;
+export type SessionFilter = {
+    id?: string; /** sessions with this workspace */
+    workspace?: string; /** glob pattern matching any workspace sessions */
+    pattern?: string;
 };
 
 // @public (undocumented)
-export function sessionList(opts?: Partial<SessionScope> & {
-    sort?: boolean;
-}): Promise<ManagedSession[]>;
+export type SessionInfo = {
+    id: string; /** Absolute path to the session file. Typically within `zalyPaths.sessions`. */
+    path: string; /** Data directory used for session artifacts */
+    dir: string; /** The session's workspace containing its .zaly/ resources */
+    workspace: string; /** Populated when listing with `sort: true` */
+    mtime?: number;
+};
 
 // @public (undocumented)
-export function sessionLoad(opts: ManagedSession): Promise<Session>;
+export function sessionInfo(opts?: Partial<SessionInfo>): SessionInfo;
+
+// @public (undocumented)
+export type SessionInit<T extends SessionStore = SessionStore> = SessionOptions & {
+    store: T;
+};
+
+// @public (undocumented)
+export type SessionListOpts = {
+    filter?: string | SessionFilter;
+    sort?: boolean;
+};
 
 // @public (undocumented)
 export type SessionMessage = Message & {
     ts: number;
     id: string;
-};
-
-// @public (undocumented)
-export type SessionMeta = {
-    cwd?: string;
-    modelId?: string;
-    prompt?: string[];
 };
 
 // @public (undocumented)
@@ -181,31 +178,26 @@ export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<S
 
 // @public
 export type SessionNodeView = SessionNode & {
-    meta: PersistedMeta;
+    settings: SessionSettings;
 };
 
 // @public (undocumented)
 export type SessionOptions<T extends SessionStore = SessionStore> = {
-    id?: string;
-    cwd?: string;
     store?: T;
     path?: string;
     dir?: string;
+    defaults?: Omit<SessionSettings, "version">;
 };
 
 // @public (undocumented)
-export function sessionResume(opts: SessionScope): Promise<Session | undefined>;
-
-// @public (undocumented)
-export type SessionScope = {
-    id?: string;
-    scope?: string;
+export type SessionSettings = {
+    version?: number;
+    sessionId?: string;
     cwd?: string;
-} & ({
-    scope: string;
-} | {
-    cwd: string;
-});
+    workspace?: string;
+    modelId?: string;
+    reasoning?: ReasoningEffort;
+};
 
 // @public
 export interface SessionStore {
@@ -217,10 +209,12 @@ export interface SessionStore {
 }
 
 // @public (undocumented)
+export type SessionUpdate = Omit<SessionSettings, "version" | "sessionId">;
+
+// @public (undocumented)
 export type SessionView = {
     messages: Message[];
     nodes: Map<string, SessionNodeView>;
-    meta: PersistedMeta;
     compact?: SessionNode<"compact">;
 };
 
