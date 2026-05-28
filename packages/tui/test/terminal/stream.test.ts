@@ -2,6 +2,38 @@ import { describe, expect, test } from "vitest"
 import { text } from "../../src/widgets/text.ts"
 import { makeHarness } from "./harness.ts"
 
+async function mutatePartiallyCommittedNode(
+  t: ReturnType<typeof text>,
+  h: Awaited<ReturnType<typeof makeHarness>>
+) {
+  const lines: string[] = []
+  const commit = async () => {
+    t.state.content = lines.join("\n")
+    await h.flush()
+  }
+
+  lines.push("L0")
+  await commit()
+  lines.unshift("P1")
+  await commit()
+  lines.splice(1, 0, "I2")
+  await commit()
+  lines.push("L3")
+  await commit()
+  lines.unshift("P4")
+  await commit()
+  lines[2] += "x5"
+  await commit()
+  lines.push("L6")
+  await commit()
+
+  lines.splice(1, 0, "I7")
+  await commit()
+
+  lines.unshift("P8")
+  await commit()
+}
+
 describe("Stream — viewport correctness", () => {
   test("single append lands at the bottom", async () => {
     const h = await makeHarness({ cols: 20, rows: 5 })
@@ -117,6 +149,37 @@ describe("Stream — retained nodes", () => {
     third.state.content = "THIRD!"
     await h.flush()
     expect(h.viewport().slice(-4)).toEqual(["FIRST!", "second", "THIRD!", "fourth"])
+
+    h.dispose()
+  })
+
+  test("does not duplicate rows when a partially-committed node changes above the boundary", async () => {
+    const h = await makeHarness({ cols: 12, rows: 5 })
+    const t = text("", { wrap: "word" })
+    h.renderer.stream.append(() => t)
+
+    await mutatePartiallyCommittedNode(t, h)
+    const sb = h.scrollback().filter((r) => r !== "")
+    expect(sb).not.toEqual(["P4", "I7", "I7"])
+    expect(sb).toEqual([...new Set(sb)])
+
+    h.dispose()
+  })
+
+  test("sticky streaming node does not commit duplicate rows once released", async () => {
+    const h = await makeHarness({ cols: 12, rows: 5 })
+    const t = text("", { sticky: true, wrap: "word" })
+    h.renderer.stream.append(() => t)
+
+    await mutatePartiallyCommittedNode(t, h)
+    expect(h.scrollback().filter((r) => r !== "")).toEqual([])
+
+    t.state.sticky = false
+    await h.flush()
+
+    const sb = h.scrollback().filter((r) => r !== "")
+    expect(sb).toEqual(["P8", "P4", "I7"])
+    expect(h.viewport()).toEqual(["P1", "I2x5", "L0", "L3", "L6"])
 
     h.dispose()
   })

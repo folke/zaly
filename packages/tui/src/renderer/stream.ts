@@ -17,6 +17,10 @@ export type StreamEvents = {
 }
 
 type RenderState = {
+  /** Rows from this state that have already entered terminal scrollback.
+   *  Scrollback is immutable, so later renders may only replace rows after
+   *  this committed prefix. */
+  commit: number
   dirty: boolean
   live: boolean
   node: Node
@@ -65,9 +69,23 @@ export type StreamOptions = {
  * promotion). So growth of the stream always flows through the bottom
  * row with a `\n`-prefix write per new row.
  */
+function findFrozenPrefixEnd(rendered: string[], frozen: string[]): number {
+  if (frozen.length === 0) return 0
+  for (let start = 0; start <= rendered.length - frozen.length; start++) {
+    let match = true
+    for (let i = 0; i < frozen.length; i++) {
+      if (rendered[start + i] !== frozen[i]) {
+        match = false
+        break
+      }
+    }
+    if (match) return start + frozen.length
+  }
+  return frozen.length
+}
+
 export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
-  #scrollbackCount = 0
   #rows: string[] = []
   /** Bottom row of the live region the last time we painted. Used to
    *  compute where `#rows` actually live on screen when the footer
@@ -135,6 +153,7 @@ export class Stream extends Surface<StreamEvents> {
 
     const state = {
       boundary,
+      commit: 0,
       dirty: true,
       freeze: () => {
         if (state.node.mounted) state.node.unmount()
@@ -188,9 +207,13 @@ export class Stream extends Surface<StreamEvents> {
     // previous row count when a node shrinks so stale terminal rows clear.
     await Promise.all(
       this.#state.map(async (s) => {
-        const len = s.rows?.length ?? 0
+        const prev = s.rows ?? []
+        const len = prev.length
+        const frozen = prev.slice(0, s.commit)
         s.dirty = false
-        s.rows = await s.node.render(ctx)
+        const rendered = await s.node.render(ctx)
+        const mutableStart = s.commit === 0 ? 0 : findFrozenPrefixEnd(rendered, frozen)
+        s.rows = [...frozen, ...rendered.slice(mutableStart)]
         if (s.rows.length < len) s.rows.push(...Array(len - s.rows.length).fill(""))
       })
     )
@@ -227,7 +250,7 @@ export class Stream extends Surface<StreamEvents> {
     const liveHeight = this.liveHeight
     const bottom = this.terminal.scrollBottom
     const terminalRows = this.terminal.rows
-    const oldCC = this.#scrollbackCount
+    const oldCC = this.#committedRows()
     const oldVisible = this.#rows
     const oldBottom = this.#prevBottom ?? bottom
     const oldTopRow = oldBottom - oldVisible.length + 1
@@ -342,22 +365,36 @@ export class Stream extends Surface<StreamEvents> {
     this.#rows = newVisible
     this.#prevBottom = bottom
 
-    // Drop states whose rows have entirely entered scrollback. Any
-    // dropped rows leave `allRows` too on the next tick, so decrement
-    // `#scrollbackCount` accordingly — it tracks scrollback rows that
-    // are still represented in our live state.
-    let dropped = 0
+    // Mark newly-promoted rows on their owning states. This keeps the
+    // immutable scrollback boundary local to each retained node, so later
+    // mutations above the boundary can't shift already-promoted rows and
+    // make us write the same semantic row to scrollback again.
+    let remaining = commitCount
+    for (const s of this.#state) {
+      if (remaining <= 0) break
+      const len = s.rows?.length ?? 0
+      const n = Math.min(remaining, Math.max(0, len - s.commit))
+      s.commit += n
+      remaining -= n
+    }
+
+    // Drop states whose rows have entirely entered scrollback. Their
+    // committed rows leave `allRows` on the next tick; the global committed
+    // count is derived from retained states, so no separate adjustment is
+    // needed.
     while (this.#state.length > 0) {
       const first = this.#state[0]
       const len = first.rows?.length ?? 0
-      if (first.live || dropped + len > newCC) break
+      if (first.live || first.commit < len) break
       this.#state.shift()
       first.freeze()
-      dropped += len
     }
-    this.#scrollbackCount = newCC - dropped
 
     if (!this.pending) void this.emit("idle")
+  }
+
+  #committedRows(): number {
+    return this.#state.reduce((sum, s) => sum + s.commit, 0)
   }
 
   get pending() {
@@ -381,8 +418,8 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Terminal was resized. The paint bookkeeping (`#rows`,
-   * `#scrollbackCount`, stale-row set) was sized against the old
+   * Terminal was resized. The paint bookkeeping (`#rows`, per-state
+   * committed prefixes, stale-row set) was sized against the old
    * column/row geometry — after a `SIGWINCH` the real terminal has
    * re-wrapped scrollback and `scrollBottom` now points at a different
    * row. We can't reconstruct where each pre-resize row "actually"
@@ -397,7 +434,7 @@ export class Stream extends Surface<StreamEvents> {
    */
   onResize(): void {
     this.#rows = []
-    this.#scrollbackCount = 0
+    for (const s of this.#state) s.commit = 0
     this.#stale.clear()
     this.#prevBottom = undefined
     void this.emit("dirty")
