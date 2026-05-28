@@ -8,7 +8,7 @@ export type ParsedArgsResult<T extends ParseArgsConfig> = ParsedArgs<T>["values"
   $: string
 }
 
-export type ArgsResult<T extends ArgsOpts> = ParsedArgsResult<{
+export type ArgsResult<T extends ArgsOpts = ArgsOpts> = ParsedArgsResult<{
   allowPositionals: true
   options: T
 }>

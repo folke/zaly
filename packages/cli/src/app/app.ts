@@ -237,6 +237,32 @@ export class App {
       () => this.#renderer.stream.append(() => compactionMarker()),
       opts
     )
+    void this.loadCommands()
+  }
+
+  async loadCommands(): Promise<void> {
+    const config = await this.#ctx.config()
+    const paths = await config.resources.commands()
+
+    const { Commands } = await import("@zaly/agent")
+    const commands = new Commands({
+      logger: this.#ctx.logger.child("commands"),
+      paths,
+    })
+    await commands.load()
+    const actions: ActionMap = {}
+    for (const cmd of commands.catalog.values()) {
+      actions[`command.${cmd.name}`] = {
+        args: cmd.args,
+        cmd: `command:${cmd.name}`,
+        desc: cmd.description,
+        fn: async ({ args }) => {
+          const text = await commands.format(args ?? "", cmd)
+          console.log(text)
+        },
+      }
+    }
+    this.#renderer.actions.register(actions, { default: false })
   }
 
   async reload(): Promise<void> {
