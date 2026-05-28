@@ -43,7 +43,10 @@ export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) 
       text(({ style }) => style.add(b().style)(b().icon), {
         visible: memo(() => !spin()),
       }),
-      box({ flexDirection: "column", padding: [0, 1], style: props.style }, ...children)
+      box(
+        { flexDirection: "column", padding: [0, 1], style: props.style, width: "fill" },
+        ...children
+      )
     )
   )
   effect(() => {
