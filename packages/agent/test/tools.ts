@@ -7,7 +7,7 @@ for (const name of toolRegistry.keys()) {
   const tool = await toolRegistry.load(name, {
     model: {
       canAttach: () => true,
-    } as Model,
+    } as unknown as Model,
     cwd: process.cwd(),
   })
   console.log(tool.params)

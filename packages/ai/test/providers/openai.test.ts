@@ -425,6 +425,7 @@ describe("openai: request translation", () => {
       params: { properties: { city: { type: "string" } }, type: "object" },
       name: "get_weather",
       validator: {
+        cleanParams: async (x: unknown) => x,
         validateParams: async (x: unknown) => x,
         validateResult: async (x: unknown) => x,
       },
@@ -460,6 +461,7 @@ describe("openai: request translation", () => {
       params: { type: "object" },
       name: "t",
       validator: {
+        cleanParams: async (x: unknown) => x,
         validateParams: async (x: unknown) => x,
         validateResult: async (x: unknown) => x,
       },
@@ -485,6 +487,7 @@ describe("openai: request translation", () => {
       params: { type: "object" },
       name: "t",
       validator: {
+        cleanParams: async (x: unknown) => x,
         validateParams: async (x: unknown) => x,
         validateResult: async (x: unknown) => x,
       },
@@ -513,6 +516,7 @@ describe("openai: request translation", () => {
       params: { type: "object" },
       name: "t",
       validator: {
+        cleanParams: async (x: unknown) => x,
         validateParams: async (x: unknown) => x,
         validateResult: async (x: unknown) => x,
       },

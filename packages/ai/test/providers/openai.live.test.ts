@@ -72,6 +72,7 @@ describe.skipIf(!enabled)("openai: live", () => {
       },
       name: "get_weather",
       validator: {
+        cleanParams: async (x: unknown) => x,
         validateParams: async (x: unknown) => x,
         validateResult: async (x: unknown) => x,
       },

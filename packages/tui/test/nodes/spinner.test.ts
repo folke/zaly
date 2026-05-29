@@ -43,7 +43,7 @@ describe("Spinner.tick", () => {
 describe("spinner()", () => {
   test("picks a frame based on wall time, not render count", async () => {
     const ctx = createCtx({ width: 40 })
-    const s = spinner({ frames: ["A", "B", "C", "D"], speed: 100 })
+    const s = spinner({ frames: ["A", "B", "C", "D"] })
 
     setTime(0)
     const [row0] = await s.render(ctx)
@@ -51,7 +51,7 @@ describe("spinner()", () => {
 
     // Render five more times at t=0 — still frame 0.
     for (let i = 0; i < 5; i++) await s.render(ctx)
-    setTime(250) // 2.5 ticks at speed=100 → frame index 2 → "C"
+    setTime(160) // 2 ticks at speed=80 → frame index 2 → "C"
     s.invalidate()
     const [rowLate] = await s.render(ctx)
     expect(rowLate).toContain("C")
@@ -59,7 +59,7 @@ describe("spinner()", () => {
     s.stop()
   })
 
-  test("defaults: dots frames, speed 80, primary color wrapper", async () => {
+  test("defaults: dots frames and primary color wrapper", async () => {
     const ctx = createCtx({ width: 40 })
     const s = spinner()
     setTime(0)
@@ -73,7 +73,7 @@ describe("spinner()", () => {
   })
 
   test("mount auto-starts the interval; unmount cancels it", () => {
-    const s = spinner({ speed: 50 })
+    const s = spinner()
     const spy = vi.spyOn(s, "invalidate")
 
     // Mount → interval starts; timer ticks fire invalidate.

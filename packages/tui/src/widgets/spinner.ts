@@ -100,7 +100,7 @@ export class Spinner extends Node<SpinnerState> {
     // invisible nodes skip rendering, but still need their interval stopped.
     // Unmount always clears.
     this.on("mount", () => this.#check())
-    this.on("unmount", () => this.#check())
+    this.on("unmount", () => animator.del(this))
 
     effect(() => this.#check())
   }

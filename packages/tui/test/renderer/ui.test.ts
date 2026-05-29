@@ -1,24 +1,14 @@
 import { describe, expect, test } from "vitest"
-import { createCtx } from "../../src/core/ctx.ts"
-import { createRoot, useActiveOwner } from "../../src/core/reactive.ts"
-import { Terminal } from "../../src/renderer/terminal.ts"
-import { UI } from "../../src/renderer/ui.ts"
+import { Renderer } from "../../src/renderer/renderer.ts"
 import { text } from "../../src/widgets/text.ts"
 import { MockReader, MockWriter } from "./mock.ts"
 
 function mount(cols = 20, rows = 10) {
   const stdout = new MockWriter(cols, rows)
-  const terminal = new Terminal({
-    hookSignals: false,
-    reserveBottom: 0,
-    stdin: new MockReader(),
-    stdout,
-  })
+  const renderer = new Renderer({ hookSignals: false, stdin: new MockReader(), stdout })
+  const { terminal, ui } = renderer
   terminal.start()
   stdout.clear()
-  const ctx = createCtx({ width: terminal.cols })
-  const rootOwner = createRoot(() => useActiveOwner()!)
-  const ui = new UI(terminal, () => ctx, rootOwner)
   return { stdout, terminal, ui }
 }
 
