@@ -183,7 +183,7 @@ export class App {
     // Replay the tail of a resumed conversation. 50 messages ≈ several
     // recent exchanges; older history stays in the session and is sent
     // to the model on the next request, just not painted here.
-    const tail = session.messages.filter((m) => !m.hidden).slice(-50)
+    const tail = session.messages.filter((m) => !m.hidden).slice(-100)
 
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
     await Promise.all([
