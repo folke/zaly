@@ -115,7 +115,6 @@ function date(value: Date | string): string {
 
 export default async function OllamaPlugin(api: PluginApi) {
   const models = await fetchModels()
-  console.log(models)
   for (const model of models) {
     await api.model.register(`ollama/${model.id}`, model)
   }

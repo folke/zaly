@@ -87,7 +87,6 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
 
 export default async function LMStudioPlugin(api: PluginApi) {
   const models = await fetchModels()
-  console.log(`Registering ${models.length} LM Studio models`, models)
   for (const model of models) {
     await api.model.register(`lm-studio/${model.id}`, model)
   }
