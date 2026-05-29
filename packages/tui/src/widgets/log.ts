@@ -88,7 +88,7 @@ function renderPrefix(s: LogState, ctx: RenderCtx): string {
   }
 
   if (s.prefix) styledPrefix = s.prefix + styledPrefix
-  if (s.title) styledPrefix += style.bold(` ${s.title}`)
+  if (s.title && ls !== "notif") styledPrefix += style.bold(` ${s.title}`)
   return styledPrefix
 }
 

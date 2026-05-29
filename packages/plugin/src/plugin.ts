@@ -3,8 +3,12 @@ import type { PluginApi } from "./api/api.ts"
 import type { PluginHost } from "./types.ts"
 
 import { normPath, toError } from "@zaly/shared"
+// oxlint-disable-next-line no-restricted-imports
+import { basename, parse } from "node:path"
 
-export type PluginLoadResult = { ok: true; plugin: Plugin } | { ok: false; error: Error }
+export type PluginLoadResult =
+  | { ok: true; plugin: Plugin }
+  | { ok: false; error: Error; plugin: Plugin }
 export type { Plugin }
 
 export function loadPlugin(path: string, host: PluginHost): Promise<PluginLoadResult> {
@@ -36,8 +40,13 @@ class Plugin {
       return { ok: true, plugin }
     } catch (error) {
       plugin.dispose()
-      return { error: toError(error), ok: false }
+      return { error: toError(error), ok: false, plugin }
     }
+  }
+
+  get name() {
+    const p = parse(this.path)
+    return p.name === "index" ? basename(p.dir) : p.name
   }
 
   assertLoaded() {

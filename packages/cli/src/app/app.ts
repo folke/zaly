@@ -144,10 +144,6 @@ export class App {
 
     this.#notifier = new Notifier(this.#renderer.overlay)
 
-    setTimeout(() => {
-      this.#notifier.notify("Welcome to zaly! Use Ctrl-H for help.")
-    }, 1000)
-
     await this.#ctx.flush()
     this.#ctx.logger.detach("cli")
 
@@ -287,6 +283,7 @@ export class App {
     const config = await this.#ctx.config()
     config.resources.refresh()
     await this.loadPlugins()
+    await this.loadCommands()
     this.#notifier.notify("Plugins & resources **reloaded**.")
   }
 
@@ -319,7 +316,12 @@ export class App {
     const results = await Promise.all(paths.map((path) => loadPlugin(path, host)))
     for (const result of results) {
       if (result.ok) this.#plugins.push(result.plugin)
-      else this.#ctx.logger.child("plugins").error(`Failed to load plugin:`, result.error)
+      else
+        this.notify(`Failed to load plugin **${result.plugin.name}**:\n${result.error.message}`, {
+          level: "error",
+          textColor: "inherit",
+          title: `Plugin ${result.plugin.name}`,
+        })
     }
   }
 
