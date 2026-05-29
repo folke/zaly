@@ -90,17 +90,20 @@ export class Model<T extends AnyProvider = string> {
    *  If the model has catalog cost data, `finish` events get a
    *  populated `usage.cost` breakdown. */
   #stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
-    // Auto-apply the catalog's max-output budget when the caller didn't
-    // override it. Matters for OpenAI: without this the adapter omits
-    // `max_tokens` / `max_completion_tokens` and reasoning models burn
-    // their implicit cap on thinking, leaving little for the visible
-    // reply. Anthropic's adapter has its own internal `?? 4096` fallback
-    // — we set the catalog value here so it wins over that default.
-    const limit = this.spec.maxTokens ?? this.spec.limit.output
+    // `opts.maxTokens` is the only thing that puts a value on the wire.
+    // `spec.maxTokens` (catalog override) is treated as a hard cap that
+    // clamps a too-large caller value — never auto-applied as a default,
+    // because catalogs almost always set `spec.maxTokens == limit.output`
+    // and for models where output == context that would produce an
+    // invalid request (no room left for the prompt). Adapters that
+    // require a value on the wire (Anthropic) default from
+    // `spec.limit.output` themselves.
+    const limit = Math.min(this.spec.maxTokens ?? this.spec.limit.output, this.spec.limit.output)
+
     const streamOpts: StreamOptions = {
       ...opts,
       caching: opts.caching ?? true,
-      maxTokens: Math.min(opts.maxTokens ?? limit, limit),
+      maxTokens: opts.maxTokens ? Math.min(opts.maxTokens, limit) : undefined,
       reasoning: this.spec.reasoning ? opts.reasoning : undefined,
     }
 
@@ -112,9 +115,8 @@ export class Model<T extends AnyProvider = string> {
 
     return this.provider.stream({
       ctx: { ...ctx, messages },
-      model: this.spec.id,
+      model: this.spec,
       opts: streamOpts,
-      quirks: this.spec.quirks,
     })
   }
 

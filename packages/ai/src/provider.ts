@@ -1,4 +1,4 @@
-import type { Message, Quirks, ReasoningPart, TextPart, Tool, ToolCallPart } from "./types.ts"
+import type { Message, ModelSpec, ReasoningPart, TextPart, Tool, ToolCallPart } from "./types.ts"
 
 /** Conversational input — what's being conversed about. Stable across
  *  the run (mutated turn-by-turn as the conversation grows); separate
@@ -48,15 +48,16 @@ export interface StreamOptions {
 
 /** What a `Provider` adapter receives. Internal — assembled by
  *  `Model.stream` from a `Context`, `StreamOptions`, and the model's
- *  routing metadata (id + quirks). Callers never construct this
- *  directly; they go through `Model.stream(ctx, opts)`. */
+ *  catalog spec. Adapters read `model.id` for the wire model id and
+ *  `model.quirks` for adapter-dispatch quirks. Other spec fields
+ *  (`limit.output`, `reasoning`, …) are available for adapter-side
+ *  defaulting. Callers never construct this directly; they go through
+ *  `Model.stream(ctx, opts)`. */
 export interface ProviderRequest {
-  /** Model id local to the adapter (no `provider/` prefix). */
-  model: string
   ctx: Context
   opts: StreamOptions
-  /** Adapter-dispatch quirks resolved from the catalog or per-model. */
-  quirks?: Quirks
+  /** Resolved catalog spec for the model being streamed. */
+  model: ModelSpec
 }
 
 /**

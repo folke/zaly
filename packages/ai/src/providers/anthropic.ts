@@ -197,12 +197,11 @@ interface AnthropicTool {
 }
 
 async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
-  const { ctx, opts } = req
+  const { ctx, model, opts } = req
   const caching = opts.caching ?? true
-  // Anthropic requires max_tokens. Fall back to a generous default if
-  // the caller didn't set one — `Model.stream` fills this from
-  // `limit.output` for catalog-routed calls.
-  const maxTokens = opts.maxTokens ?? 4096
+  // Anthropic requires max_tokens. Default to the catalog's output cap
+  // when the caller didn't set one.
+  const maxTokens = opts.maxTokens ?? model.limit.output
 
   // The durable `prompt[]` is the only thing that lands in Anthropic's
   // top-level `system` slot. Mid-conversation `role: "system"` messages
@@ -224,7 +223,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
     messages: await toAnthropicMessages(conversational, caching),
-    model: req.model,
+    model: model.id,
     stream: true,
   }
 
@@ -250,7 +249,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  applyThinking(out, req.model, opts.reasoning, maxTokens)
+  applyThinking(out, model.id, opts.reasoning, maxTokens)
 
   return out
 }

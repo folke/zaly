@@ -4,14 +4,18 @@
  * the network.
  */
 import type { ProviderRequest, StreamOptions } from "../../src/provider.ts"
-import type { FetchLike, Message, Quirks, Tool } from "../../src/types.ts"
+import type { FetchLike, Message, ModelSpec, Quirks, Tool } from "../../src/types.ts"
 
 /** Build a `ProviderRequest` from a flat options shape — convenient for
  *  tests that don't care about the `ctx` / `opts` split.
  *
  *  Defaults `caching: false` so request-shape assertions stay focused
  *  on translation rather than cache-marker noise. Caching-specific
- *  tests pass `caching: true` explicitly. */
+ *  tests pass `caching: true` explicitly.
+ *
+ *  `model` is the bare model id; we synthesize a minimal `ModelSpec`
+ *  around it. Adapters only read `id`, `quirks`, and `limit.output`,
+ *  so the rest can stay defaulted. */
 export function streamReq(
   flat: {
     model: string
@@ -23,7 +27,15 @@ export function streamReq(
 ): ProviderRequest {
   const { model, messages, prompt, tools, quirks, ...rest } = flat
   const opts: StreamOptions = { caching: false, ...rest }
-  return { ctx: { messages, prompt, tools }, model, opts, quirks }
+  // `limit.output: 4096` matches the old hard-coded Anthropic fallback,
+  // so request-shape tests that don't pass `maxTokens` keep their
+  // previous wire-level assertions.
+  const spec = {
+    id: model,
+    limit: { context: 200_000, output: 4096 },
+    quirks,
+  } as unknown as ModelSpec
+  return { ctx: { messages, prompt, tools }, model: spec, opts }
 }
 
 /** Build a `ReadableStream<Uint8Array>` carrying the given JSON
