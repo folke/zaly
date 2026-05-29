@@ -156,7 +156,7 @@ export default defineConfig({
       },
     },
     {
-      files: ["demo/**/*.ts"],
+      files: ["demo/**/*.ts", "plugins/**/*.ts"],
       rules: {
         "sort-keys": ["warn", "asc", { caseSensitive: true, natural: false }],
         "no-restricted-imports": ["error", restrictedImports({ allowSrc: false, allowPath: true })],

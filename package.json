@@ -8,7 +8,8 @@
     "url": "https://github.com/folke/zaly"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "plugins"
   ],
   "type": "module",
   "scripts": {
