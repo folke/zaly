@@ -23,6 +23,7 @@ import { Value } from "typebox/value"
  *  `// Unmappable errors:` block so the LLM still sees them.
  *
  *  Paths follow JSON Pointer (RFC 6901) — the same encoding TypeBox emits.
+ *  FIXME: check if works with optional and defaults
  */
 export function stringifyErrors(
   schema: {},
@@ -40,8 +41,29 @@ export function stringifyErrors(
     else errorsByTarget.set(path, [source])
   }
 
+  const enumMessages = enumLikeMessages(errors)
+  addUnionDiscriminatorMessages(errors, enumMessages)
+  const unionPaths = new Set(errors.filter((e) => e.keyword === "anyOf").map((e) => e.instancePath))
+  const placedEnums = new Set<string>()
+
   for (const err of errors) {
-    if (err.keyword === "required") {
+    const enumMessage = enumMessages.get(err.instancePath)
+    if (shouldSkipBranchError(err, unionPaths, enumMessages)) {
+      continue
+    } else if (enumMessage && (err.keyword === "const" || err.keyword === "enum" || err.keyword === "anyOf")) {
+      if (!placedEnums.has(err.instancePath)) {
+        place(err.instancePath, enumMessage, err)
+        const list = errorsByTarget.get(err.instancePath)!
+        for (const source of errors) {
+          if (
+            isCoveredByEnumMessage(source, err.instancePath, enumMessages) &&
+            !list.includes(source)
+          )
+            list.push(source)
+        }
+        placedEnums.add(err.instancePath)
+      }
+    } else if (err.keyword === "required") {
       const parent = walkSchema(schema, err.instancePath)
       for (const prop of err.params.requiredProperties) {
         const sub = parent?.properties?.[prop]
@@ -104,6 +126,102 @@ function walkSchema(schema: SchemaLike, path: string): SchemaLike | undefined {
     else return undefined
   }
   return node
+}
+
+function enumLikeMessages(errors: readonly TLocalizedValidationError[]): Map<string, string> {
+  const values = new Map<string, unknown[]>()
+  const hasAnyOf = new Set<string>()
+
+  for (const err of errors) {
+    if (err.keyword === "anyOf") hasAnyOf.add(err.instancePath)
+    else if (err.keyword === "const" && "allowedValue" in err.params) {
+      const list = values.get(err.instancePath) ?? []
+      list.push(err.params.allowedValue)
+      values.set(err.instancePath, list)
+    } else if (err.keyword === "enum" && "allowedValues" in err.params) {
+      values.set(err.instancePath, err.params.allowedValues)
+    }
+  }
+
+  const ret = new Map<string, string>()
+  for (const [path, list] of values) {
+    if (list.length < 2 || (!hasAnyOf.has(path) && !errors.some((e) => e.keyword === "enum" && e.instancePath === path)))
+      continue
+    ret.set(path, `must be one of: ${list.map((v) => JSON.stringify(v)).join(", ")}`)
+  }
+  return ret
+}
+
+function isCoveredByEnumMessage(
+  error: TLocalizedValidationError,
+  enumPath: string,
+  enumMessages: Map<string, string>
+): boolean {
+  if (error.instancePath === enumPath)
+    return error.keyword === "const" || error.keyword === "enum" || error.keyword === "anyOf"
+  const parent = parentPath(enumPath)
+  if (error.instancePath !== parent) return false
+  return (error.keyword === "required" || error.keyword === "anyOf") && hasNestedEnumMessage(parent, enumMessages)
+}
+
+function parentPath(path: string): string {
+  const index = path.lastIndexOf("/")
+  return index <= 0 ? "" : path.slice(0, index)
+}
+
+function addUnionDiscriminatorMessages(
+  errors: readonly TLocalizedValidationError[],
+  enumMessages: Map<string, string>
+): void {
+  const unionPaths = new Set(errors.filter((e) => e.keyword === "anyOf").map((e) => e.instancePath))
+  const constsByPath = new Map<string, unknown[]>()
+
+  for (const err of errors) {
+    if (err.keyword !== "const" || !("allowedValue" in err.params)) continue
+    for (const unionPath of unionPaths) {
+      const prefix = unionPath === "" ? "/" : `${unionPath}/`
+      if (!err.instancePath.startsWith(prefix)) continue
+      const list = constsByPath.get(err.instancePath) ?? []
+      list.push(err.params.allowedValue)
+      constsByPath.set(err.instancePath, list)
+    }
+  }
+
+  for (const [path, list] of constsByPath) {
+    if (list.length < 2 || enumMessages.has(path)) continue
+    enumMessages.set(path, `must be one of: ${list.map((v) => JSON.stringify(v)).join(", ")}`)
+  }
+}
+
+function shouldSkipBranchError(
+  error: TLocalizedValidationError,
+  unionPaths: Set<string>,
+  enumMessages: Map<string, string>
+): boolean {
+  if (error.keyword === "required") {
+    if (hasInvalidUnionDiscriminator(error.instancePath, unionPaths, enumMessages)) return true
+    return hasNestedEnumMessage(error.instancePath, enumMessages)
+  }
+  if (error.keyword === "anyOf") {
+    if (hasInvalidUnionDiscriminator(error.instancePath, unionPaths, enumMessages)) return true
+    return hasNestedEnumMessage(error.instancePath, enumMessages)
+  }
+  return false
+}
+
+function hasNestedEnumMessage(path: string, enumMessages: Map<string, string>): boolean {
+  const prefix = path === "" ? "/" : `${path}/`
+  return [...enumMessages.keys()].some((key) => key.startsWith(prefix))
+}
+
+function hasInvalidUnionDiscriminator(
+  path: string,
+  unionPaths: Set<string>,
+  enumMessages: Map<string, string>
+): boolean {
+  if (!unionPaths.has(path)) return false
+  const prefix = path === "" ? "/" : `${path}/`
+  return [...enumMessages.keys()].some((key) => key.startsWith(prefix))
 }
 
 function missingMessage(sub: SchemaLike | undefined): string {

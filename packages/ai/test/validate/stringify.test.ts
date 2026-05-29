@@ -58,6 +58,53 @@ describe("stringifyErrors — additional properties", () => {
   })
 })
 
+describe("stringifyErrors — optional/default schemas", () => {
+  test("does not report missing optional fields with defaults", () => {
+    const schema = Type.Object({
+      limit: Type.Optional(Type.Integer({ default: 10 })),
+      query: Type.String(),
+    })
+    const errors = Value.Errors(schema, { query: "zaly" })
+    expect(errors).toEqual([])
+  })
+
+  test("summarizes literal unions as allowed values", () => {
+    const schema = Type.Object({
+      type: Type.Optional(
+        Type.Union([Type.Literal("file"), Type.Literal("dir"), Type.Literal("any")], {
+          default: "file",
+        })
+      ),
+    })
+    const out = annotate(schema, { type: "all" })
+    expect(out).toContain('"type": "all"')
+    expect(out).toContain('must be one of: "file", "dir", "any"')
+    expect(out).not.toContain("must match a schema in anyOf")
+  })
+
+  test("summarizes enums as allowed values", () => {
+    const schema = Type.Object({ mode: Type.Enum({ Auto: "auto", Manual: "manual" }) })
+    const out = annotate(schema, { mode: "invalid" })
+    expect(out).toContain('"mode": "invalid"')
+    expect(out).toContain('must be one of: "auto", "manual"')
+  })
+
+  test("summarizes invalid discriminators without branch noise", () => {
+    const schema = Type.Object({
+      value: Type.Union([
+        Type.Object({ kind: Type.Literal("a"), text: Type.String() }),
+        Type.Object({ count: Type.Number(), kind: Type.Literal("b") }),
+      ]),
+    })
+    const out = annotate(schema, { value: { kind: "c" } })
+    expect(out).toContain('"kind": "c"')
+    expect(out).toContain('must be one of: "a", "b"')
+    expect(out).not.toContain('"text": undefined')
+    expect(out).not.toContain('"count": undefined')
+    expect(out).not.toContain("must match a schema in anyOf")
+  })
+})
+
 describe("stringifyErrors — unmappable errors", () => {
   test("appends an unmappable-errors block for errors not placed in the tree", () => {
     const schema = Type.Object({ x: Type.Number() })
