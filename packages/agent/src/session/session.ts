@@ -381,7 +381,9 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     for (const n of messageNodes) {
       // add `id`, `ts` and `modelId` (if assistant turn) to the message
       const m = { ...n.message, id: n.uuid, ts: n.ts }
-      if (m.role === "assistant") m.meta = { ...m.meta, modelId: settings.modelId }
+      const nodeSettings = nodes.get(n.uuid)?.settings ?? settings
+      if (m.role === "assistant")
+        m.meta = { ...m.meta, modelId: m.meta?.modelId ?? nodeSettings.modelId }
       n.message = m
       messages.push(m)
     }

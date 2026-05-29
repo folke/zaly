@@ -477,4 +477,22 @@ describe("Session — meta on disk", () => {
     })
     await loaded.close()
   })
+
+  test("assistant messages inherit the model from their own position in the chain", async () => {
+    const file = tmpPath("message-model")
+    const s = await Session.load({ path: file })
+    await s.start({ modelId: "openai/gpt-4o" })
+    await s.add(a("one"))
+    await s.update({ modelId: "anthropic/claude" })
+    await s.add(a("two"))
+    await s.close()
+
+    const loaded = await Session.load({ path: file })
+    const assistants = loaded.messages.filter((m): m is Message<"assistant"> => m.role === "assistant")
+    expect(assistants.map((m) => m.meta?.modelId)).toEqual([
+      "openai/gpt-4o",
+      "anthropic/claude",
+    ])
+    await loaded.close()
+  })
 })
