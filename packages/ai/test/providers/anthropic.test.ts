@@ -76,6 +76,38 @@ describe("anthropic: request translation", () => {
     expect((recorded[0].body as { max_tokens: number }).max_tokens).toBe(256)
   })
 
+  test("empty prompt[] entries are omitted from the system slot", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [{ content: "hi", role: "user" }],
+          model: "m",
+          prompt: ["", "You are a tutor.", ""],
+        })
+      )
+    )
+    const body = recorded[0].body as { system?: unknown }
+    expect(body.system).toBe("You are a tutor.")
+  })
+
+  test("empty prompt[] omits the system slot entirely", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [{ content: "hi", role: "user" }],
+          model: "m",
+          prompt: ["", ""],
+        })
+      )
+    )
+    const body = recorded[0].body as { system?: unknown }
+    expect(body.system).toBeUndefined()
+  })
+
   test("prompt[] populates the system slot; mid-convo system messages stay in conversation", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })

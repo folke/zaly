@@ -222,7 +222,9 @@ export class AgentContext extends Emitter<AgentContextEvents> {
         })
       )
     }
-    return spec.map((p) => (typeof p === "string" ? p : this.#prompt.get(p.template)!))
+    return spec
+      .map((p) => (typeof p === "string" ? p : this.#prompt.get(p.template)!))
+      .filter((text) => text.trim() !== "")
   }
 
   async swarm() {

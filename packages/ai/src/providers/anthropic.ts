@@ -213,7 +213,9 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   // note" signal while staying inside user/assistant alternation.
   const systemBlocks: AnthropicTextBlock[] = []
   if (ctx.prompt && ctx.prompt.length > 0) {
-    systemBlocks.push(...ctx.prompt.map((text) => ({ text, type: "text" as const })))
+    systemBlocks.push(
+      ...ctx.prompt.filter((text) => text !== "").map((text) => ({ text, type: "text" as const }))
+    )
   }
   const conversational: Message[] = ctx.messages.map((msg) =>
     msg.role === "system" ? systemToUser(msg) : msg
