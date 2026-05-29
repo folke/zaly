@@ -6,13 +6,7 @@ import { Spawn, TextStream } from "@zaly/shared/process"
 import { cleanTextTui } from "@zaly/shared/text"
 import { platform } from "node:process"
 import { Type } from "typebox"
-import {
-  bin,
-  compactPath,
-  defaultExcludes,
-  fileTypeExtensions,
-  fileTypeGlobs,
-} from "../utils/search.ts"
+import { bin, compactPath, defaultExcludes } from "../utils/search.ts"
 import { truncate } from "../utils/truncate.ts"
 
 const MAX_BUFFER = 512 * 1024
@@ -22,7 +16,7 @@ const MAX_LIMIT = 1000
 export type FindTool = typeof findTool
 export type FindToolMeta = {
   cwd: string
-  pattern: string
+  glob: string | string[]
   matches: number
   truncated: boolean
   cmd: string[]
@@ -32,13 +26,18 @@ export type FindToolMeta = {
 export const findTool = defineTool({
   name: "find",
   desc:
-    "Find files using fd/fdfind or rg --files. Respects .gitignore by default; " +
-    "prefer this over bash find for file discovery.",
+    "Find files using fd/fdfind or rg --files. `glob` is a filename/path glob, " +
+    "array of globs, or plain substring; empty, `*`, or `**/*` lists all files. " +
+    "Respects .gitignore by default; prefer this over bash find for file discovery.",
   parallel: true,
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
-    pattern: Type.Optional(
-      Type.String({ default: "", description: "Filename/path pattern to search for." })
+    glob: Type.Optional(
+      Type.Union([Type.String(), Type.Array(Type.String())], {
+        default: "",
+        description:
+          "Filename/path glob, array of globs, or plain substring. Empty, `*`, or `**/*` lists all files.",
+      })
     ),
     cwd: Type.Optional(Type.String({ description: "Directory to search from. Defaults to cwd." })),
     paths: Type.Optional(
@@ -50,12 +49,6 @@ export const findTool = defineTool({
       Type.Union([Type.Literal("file"), Type.Literal("dir"), Type.Literal("any")], {
         default: "file",
         description: "Entry type to return. `dir` requires fd/fdfind or find fallback.",
-      })
-    ),
-    file_type: Type.Optional(
-      Type.Array(Type.String(), {
-        description:
-          "File types/extensions to include. Known rg-style types like `ts`, `rust`, `markdown` expand to common extensions; unknown values are treated as extensions.",
       })
     ),
     exclude: Type.Optional(
@@ -135,8 +128,8 @@ export const findTool = defineTool({
     ctx.meta = {
       cmd: [command.cmd, ...cmdArgs],
       cwd,
+      glob: args.glob ?? "",
       matches: summary.origLines,
-      pattern: args.pattern ?? "",
       truncated,
     }
 
@@ -180,6 +173,7 @@ function buildArgs(kind: Finder["kind"], args: FindArgs, paths: string[]): strin
 }
 
 function fdArgs(args: FindArgs, paths: string[]): string[] {
+  const globs = normalizeGlobs(args.glob)
   const ret = ["--color", "always", "--max-results", String(args.limit ?? DEFAULT_LIMIT)]
   if (args.type === "file") ret.push("--type", "file", "--type", "symlink")
   else if (args.type === "dir") ret.push("--type", "directory")
@@ -187,37 +181,53 @@ function fdArgs(args: FindArgs, paths: string[]): string[] {
   if (!args.ignore) ret.push("--no-ignore")
   if (args.follow) ret.push("--follow")
   for (const e of [...defaultExcludes(paths), ...(args.exclude ?? [])]) ret.push("--exclude", e)
-  for (const t of args.file_type ?? []) {
-    for (const e of fileTypeExtensions(t)) ret.push("--extension", e)
-  }
-  ret.push(args.pattern ?? ".", ...paths)
+  ret.push("--glob", fdGlob(globs), ...paths)
   return ret
 }
 
 function rgFilesArgs(args: FindArgs, paths: string[]): string[] {
+  const globs = normalizeGlobs(args.glob)
   const ret = ["--files", "--no-messages", "--color", "never"]
   if (args.hidden) ret.push("--hidden")
   if (!args.ignore) ret.push("--no-ignore")
   if (args.follow) ret.push("--follow")
   for (const e of [...defaultExcludes(paths), ...(args.exclude ?? [])]) ret.push("--glob", `!${e}`)
-  for (const t of args.file_type ?? []) {
-    for (const g of fileTypeGlobs(t)) ret.push("--glob", g)
-  }
-  if (args.pattern) ret.push("--glob", args.pattern)
+  for (const glob of globs) ret.push("--glob", glob)
   ret.push(...paths)
   return ret
 }
 
 function findArgs(args: FindArgs, paths: string[]): string[] {
+  const globs = normalizeGlobs(args.glob)
   const ret = [...paths]
   if (args.type === "file") ret.push("-type", "f")
   else if (args.type === "dir") ret.push("-type", "d")
   if (!args.hidden) ret.push("-not", "-path", "*/.*")
   for (const e of defaultExcludes(paths)) ret.push("-not", "-path", `*/${e}/*`)
-  if (args.pattern) ret.push("-name", args.pattern)
-  for (const t of args.file_type ?? []) {
-    for (const g of fileTypeGlobs(t)) ret.push("-name", g)
+  if (globs.length === 1) ret.push("-path", `*/${globs[0]}`)
+  else if (globs.length > 1) {
+    ret.push("(", "-path", `*/${globs[0]}`)
+    for (const glob of globs.slice(1)) ret.push("-o", "-path", `*/${glob}`)
+    ret.push(")")
   }
   for (const e of args.exclude ?? []) ret.push("-not", "-path", e)
   return ret
+}
+
+function normalizeGlobs(glob: string | string[] | undefined): string[] {
+  const values = Array.isArray(glob) ? glob : [glob]
+  return values
+    .map((value) => value?.trim())
+    .filter((value): value is string => !!value && value !== "." && value !== "*" && value !== "**/*")
+    .map((value) => (hasGlob(value) ? value : `*${value}*`))
+}
+
+function fdGlob(globs: string[]): string {
+  if (globs.length === 0) return "*"
+  if (globs.length === 1) return globs[0]
+  return `{${globs.join(",")}}`
+}
+
+function hasGlob(pattern: string): boolean {
+  return /[*?[{]/.test(pattern)
 }
