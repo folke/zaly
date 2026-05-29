@@ -3,9 +3,9 @@ import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { AnyStyle } from "../style/types.ts"
 
-import { Node } from "../core/node.ts"
-import { untrack, unwrap } from "../core/reactive.ts"
 import { stringWidth } from "@zaly/shared/ansi"
+import { Node } from "../core/node.ts"
+import { effect, untrack, unwrap } from "../core/reactive.ts"
 
 /**
  * Frame sets from the common terminal-spinner vocabulary. Pick one to taste.
@@ -24,8 +24,6 @@ export type SpinnerStyle = keyof typeof spinnerFrames
 export interface SpinnerState {
   /** Frame glyphs, cycled in order. Defaults to `dots`. */
   frames?: SpinnerStyle | readonly string[]
-  /** Milliseconds per frame. Defaults to 80. */
-  speed?: number
   /** Foreground theme slot or explicit color. Defaults to `primary`. */
   color?: Reactive<AnyStyle>
   /** Whether the animation is ticking. Defaults to `true`. Accepts a
@@ -35,6 +33,44 @@ export interface SpinnerState {
   running?: Reactive<boolean>
   idle?: string
 }
+
+const SPEED = 80
+
+class Animator {
+  #timer?: ReturnType<typeof setInterval>
+  #spinners = new Set<Spinner>()
+
+  #start(): void {
+    if (this.#timer !== undefined) return
+    // `untracked` so the interval callback doesn't inherit the render's tracking ctx.
+    this.#timer = untrack(() =>
+      setInterval(() => this.#spinners.forEach((s) => s.invalidate()), SPEED)
+    )
+    // Don't pin the event loop — a forgotten spinner should never
+    // prevent the process from exiting.
+    this.#timer.unref()
+  }
+
+  #stop(): void {
+    if (this.#timer === undefined) return
+    clearInterval(this.#timer)
+    this.#timer = undefined
+  }
+
+  add(node: Spinner) {
+    if (this.#spinners.has(node)) return
+    this.#spinners.add(node)
+    this.#start()
+  }
+
+  del(node: Spinner) {
+    if (!this.#spinners.has(node)) return
+    this.#spinners.delete(node)
+    if (this.#spinners.size === 0) this.#stop()
+  }
+}
+
+const animator = new Animator()
 
 /**
  * An animated spinner. Its *frame* is always a pure function of wall
@@ -49,9 +85,10 @@ export interface SpinnerState {
  * spinners with the same `speed` stay in lockstep even if only one of
  * them gets invalidated.
  *
- * Each spinner owns an `unref()`'d interval that invalidates it at
- * `speed` cadence; the interval auto-starts on first render so you
- * don't have to remember a `.start()` call. Forgetting to `.stop()`
+ * Each spinner owns an `unref()`'d interval while it is mounted,
+ * visible, and running. The interval is reconciled from reactive
+ * state/lifecycle, not from `_render`, so hiding a spinner stops it
+ * even though invisible nodes skip rendering. Forgetting to `.stop()`
  * is harmless — the unref'd timer doesn't pin the event loop.
  */
 export class Spinner extends Node<SpinnerState> {
@@ -59,12 +96,13 @@ export class Spinner extends Node<SpinnerState> {
 
   constructor(state: SpinnerState) {
     super(state)
-    // Timer lifecycle is driven by state: `_render` reconciles the
-    // interval on every render, and we reconcile on mount too so a
-    // spinner that's never rendered (tests, offscreen trees) still
-    // obeys its `running` flag. Unmount always clears.
-    this.on("mount", () => this.#reconcile())
-    this.on("unmount", () => this.#stopTimer())
+    // Timer lifecycle is driven by mount + reactive state, not `_render`:
+    // invisible nodes skip rendering, but still need their interval stopped.
+    // Unmount always clears.
+    this.on("mount", () => this.#check())
+    this.on("unmount", () => this.#check())
+
+    effect(() => this.#check())
   }
 
   /** Global tick index for a given `speed`. Shared across all callers. */
@@ -84,41 +122,19 @@ export class Spinner extends Node<SpinnerState> {
     return this
   }
 
-  #startTimer(): void {
-    if (this.#timer !== undefined) return
-    const speed = this.state.speed ?? 80
-    // `untracked` so the interval callback doesn't inherit the render's
-    // tracking ctx. `#startTimer` is reachable from `_render` via
-    // `#reconcile`; without escaping, every timer tick would run as if
-    // it were "inside" this spinner's own render — and `invalidate`
-    // would be silently suppressed by `inRenderContextOf` self-check.
-    this.#timer = untrack(() => setInterval(() => this.invalidate(), speed))
-    // Don't pin the event loop — a forgotten spinner should never
-    // prevent the process from exiting.
-    this.#timer.unref()
-  }
-
-  #stopTimer(): void {
-    if (this.#timer === undefined) return
-    clearInterval(this.#timer)
-    this.#timer = undefined
-  }
-
   /** Sync the interval to the current `running` state. Reading through
    *  `unwrap` during a render subscribes the spinner to a signal
    *  accessor so flips from elsewhere in the app retrigger this. */
-  #reconcile(): void {
-    const running = unwrap(this.state.running ?? true)
-    if (running) this.#startTimer()
-    else this.#stopTimer()
+  #check(): void {
+    const enabled = unwrap(this.state.running ?? true) && this.visible && this.mounted // track
+    if (!enabled) return animator.del(this)
+    if (this.#timer === undefined) animator.add(this)
   }
 
   protected _render(ctx: RenderCtx): string[] {
-    this.#reconcile()
-
     const f = this.state.frames
     const frames = (typeof f === "string" ? spinnerFrames[f] : f) ?? spinnerFrames.dots
-    let frame = frames[Spinner.tick(this.state.speed ?? 80) % frames.length]
+    let frame = frames[Spinner.tick(SPEED) % frames.length]
     // When stopped, hold the slot open with blank space of the same
     // cell width so surrounding layout doesn't jump as the spinner
     // toggles. Stable-width frame sets (dots, line, circle) look the
