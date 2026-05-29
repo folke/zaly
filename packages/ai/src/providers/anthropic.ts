@@ -127,7 +127,8 @@ interface AnthropicRequest {
   tool_choice?: { type: "auto" | "any" | "none" } | { type: "tool"; name: string }
   temperature?: number
   stop_sequences?: string[]
-  thinking?: { type: "enabled"; budget_tokens: number }
+  thinking?: { type: "enabled"; budget_tokens: number } | { type: "adaptive" } | { type: "disabled" }
+  output_config?: { effort: "low" | "medium" | "high" | "xhigh" | "max" }
   stream: true
 }
 
@@ -247,8 +248,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  const thinking = thinkingBudget(opts.reasoning, maxTokens)
-  if (thinking !== undefined) out.thinking = thinking
+  applyThinking(out, req.model, opts.reasoning, maxTokens)
 
   return out
 }
@@ -274,10 +274,29 @@ function toAnthropicToolChoice(
  *  Anthropic's `thinking.budget_tokens`. Effort levels follow the same
  *  monotonic ordering used elsewhere; budgets are coarse buckets that
  *  have proven reasonable in practice. `budget_tokens` must be < max_tokens. */
+function applyThinking(
+  out: AnthropicRequest,
+  model: string,
+  reasoning: ReasoningOptions | undefined,
+  maxTokens: number
+): void {
+  if (reasoning?.effort === "off") {
+    if (isMythos(model)) out.thinking = { type: "disabled" }
+    return
+  }
+  if (supportsAdaptiveThinking(model)) {
+    out.thinking = { type: "adaptive" }
+    out.output_config = { effort: adaptiveEffort(model, reasoning?.effort) }
+    return
+  }
+  const thinking = thinkingBudget(reasoning, maxTokens)
+  if (thinking !== undefined) out.thinking = thinking
+}
+
 function thinkingBudget(
   reasoning: ReasoningOptions | undefined,
   maxTokens: number
-): AnthropicRequest["thinking"] {
+): Extract<AnthropicRequest["thinking"], { type: "enabled" }> | undefined {
   if (reasoning === undefined) return undefined
   if (reasoning.effort === "off") return undefined
   let budget = reasoning.budget
@@ -306,12 +325,56 @@ function thinkingBudget(
         budget = 32_768
         break
       }
+      case "max": {
+        budget = maxTokens - 1
+        break
+      }
     }
   }
   // Anthropic requires budget < max_tokens; clamp with a small headroom
   // so the model can still produce a final answer.
   const clamped = Math.min(budget, Math.max(1024, maxTokens - 1))
   return { budget_tokens: clamped, type: "enabled" }
+}
+
+function supportsAdaptiveThinking(model: string): boolean {
+  if (isMythos(model)) return true
+  const parsed = parseClaudeVersion(model)
+  return parsed !== undefined && parsed.major >= 4 && parsed.minor >= 6
+}
+
+function adaptiveEffort(
+  model: string,
+  effort: ReasoningOptions["effort"]
+): NonNullable<AnthropicRequest["output_config"]>["effort"] {
+  if (effort === "minimal" || effort === "low") return "low"
+  if (effort === "medium") return "medium"
+  if (effort === "xhigh") return supportsXHighEffort(model) ? "xhigh" : "high"
+  if (effort === "max") return supportsMaxEffort(model) ? "max" : "high"
+  return "high"
+}
+
+function supportsXHighEffort(model: string): boolean {
+  const parsed = parseClaudeVersion(model)
+  return parsed?.family === "opus" && parsed.major === 4 && (parsed.minor === 7 || parsed.minor === 8)
+}
+
+function supportsMaxEffort(model: string): boolean {
+  if (isMythos(model)) return true
+  const parsed = parseClaudeVersion(model)
+  if (parsed?.major !== 4) return false
+  if (parsed.family === "opus") return parsed.minor >= 6 && parsed.minor <= 8
+  return parsed.family === "sonnet" && parsed.minor === 6
+}
+
+function isMythos(model: string): boolean {
+  return model === "claude-mythos-preview"
+}
+
+function parseClaudeVersion(model: string): { family: string; major: number; minor: number } | undefined {
+  const match = /^claude-([a-z]+)-(\d+)-(\d+)(?:-|$)/.exec(model)
+  if (!match) return undefined
+  return { family: match[1], major: Number(match[2]), minor: Number(match[3]) }
 }
 
 async function toAnthropicMessages(

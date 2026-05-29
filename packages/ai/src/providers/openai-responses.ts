@@ -261,10 +261,10 @@ function buildReasoning(
     // the model default.
     return undefined
   }
-  // `xhigh` collapses to `"high"` — the public Responses API tops out
-  // there. Codex backend supports `xhigh` via per-model clamping
+  // `xhigh` / `max` collapse to `"high"` — the public Responses API tops
+  // out there. Codex backend supports `xhigh` via per-model clamping
   // applied through `reasoningLevels`, which is handled above.
-  const native = clamped === "xhigh" ? "high" : clamped
+  const native = clamped === "xhigh" || clamped === "max" ? "high" : clamped
   const out: NonNullable<ResponsesRequest["reasoning"]> = { effort: native }
   if (summary !== "off") out.summary = summary
   return out
@@ -278,7 +278,14 @@ function clampEffort(
   if (levels === undefined) return effort
   if (levels.includes(effort)) return effort
   if (effort === "off") return levels.find((l) => l !== "off")
-  const ordered: (typeof effort)[] = ["minimal", "low", "medium", "high", "xhigh"]
+  const ordered: Exclude<NonNullable<typeof effort>, "off">[] = [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+  ]
   const idx = ordered.indexOf(effort)
   for (let i = idx; i >= 0; i--) {
     if (levels.includes(ordered[i])) return ordered[i]

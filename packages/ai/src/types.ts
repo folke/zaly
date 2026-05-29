@@ -545,7 +545,7 @@ export interface Quirks {
    *  unsupported values to the nearest supported one — `"xhigh"` on
    *  pre-GPT-5.4 → `"high"`, `"minimal"` on o1/o3 → `"low"`. Unset
    *  means any level is accepted. */
-  reasoningLevels?: ("off" | "minimal" | "low" | "medium" | "high" | "xhigh")[]
+  reasoningLevels?: ("off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max")[]
 
   /** Streaming delta field that carries reasoning tokens.
    *  - `"reasoning"` (OpenRouter, most third-parties)

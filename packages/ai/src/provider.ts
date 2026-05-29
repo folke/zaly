@@ -81,7 +81,7 @@ export interface Provider<T extends string = string> {
  *  for this turn; `"auto"` (default) lets the model decide. */
 export type ToolChoice = "auto" | "required" | "none" | { name: string }
 
-export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh"
+export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
 
 /** Reasoning / thinking configuration.
  *
@@ -96,6 +96,9 @@ export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "x
  *    - `"xhigh"`    — beyond OpenAI's `"high"` ceiling where the provider
  *                     allows it (Anthropic, Google); falls back to `"high"`
  *                     on providers capped there.
+ *    - `"max"`      — provider maximum where available (currently Anthropic
+ *                     adaptive thinking); falls back to the highest supported
+ *                     budget/effort elsewhere.
  *
  *  `budget` overrides the effort-derived budget with an explicit token
  *  count — power-user path for providers that accept a number

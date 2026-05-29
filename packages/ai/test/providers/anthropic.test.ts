@@ -677,7 +677,7 @@ describe("anthropic: request translation", () => {
     }
   })
 
-  test("reasoning.effort maps to thinking budget_tokens", async () => {
+  test("reasoning.effort maps to thinking budget_tokens for legacy models", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -685,7 +685,7 @@ describe("anthropic: request translation", () => {
         streamReq({
           maxTokens: 100_000,
           messages: [{ content: "x", role: "user" }],
-          model: "m",
+          model: "claude-sonnet-4-5",
           reasoning: { effort: "high" },
         })
       )
@@ -694,6 +694,64 @@ describe("anthropic: request translation", () => {
       budget_tokens: 16_384,
       type: "enabled",
     })
+  })
+
+  test("Claude 4.6+ uses adaptive thinking and output effort", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "claude-sonnet-4-6",
+          reasoning: { effort: "medium" },
+        })
+      )
+    )
+    const body = recorded[0].body as { output_config: unknown; thinking: unknown }
+    expect(body.thinking).toEqual({ type: "adaptive" })
+    expect(body.output_config).toEqual({ effort: "medium" })
+  })
+
+  test("Claude adaptive thinking defaults to high effort", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "claude-opus-4-8",
+        })
+      )
+    )
+    const body = recorded[0].body as { output_config: unknown; thinking: unknown }
+    expect(body.thinking).toEqual({ type: "adaptive" })
+    expect(body.output_config).toEqual({ effort: "high" })
+  })
+
+  test("Claude adaptive thinking clamps unavailable effort levels", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    for (const model of ["claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-6"]) {
+      await drain(
+        provider.stream(
+          streamReq({
+            messages: [{ content: "x", role: "user" }],
+            model,
+            reasoning: { effort: "max" },
+          })
+        )
+      )
+    }
+    expect((recorded[0].body as { output_config: { effort: string } }).output_config.effort).toBe(
+      "max"
+    )
+    expect((recorded[1].body as { output_config: { effort: string } }).output_config.effort).toBe(
+      "max"
+    )
+    expect((recorded[2].body as { output_config: { effort: string } }).output_config.effort).toBe(
+      "high"
+    )
   })
 
   test("reasoning.budget overrides effort-derived bucket", async () => {
@@ -714,19 +772,29 @@ describe("anthropic: request translation", () => {
     ).toBe(2048)
   })
 
-  test("reasoning.effort: 'off' omits thinking", async () => {
+  test("reasoning.effort: 'off' omits thinking except for Mythos", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
           messages: [{ content: "x", role: "user" }],
-          model: "m",
+          model: "claude-opus-4-8",
+          reasoning: { effort: "off" },
+        })
+      )
+    )
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [{ content: "x", role: "user" }],
+          model: "claude-mythos-preview",
           reasoning: { effort: "off" },
         })
       )
     )
     expect((recorded[0].body as { thinking?: unknown }).thinking).toBeUndefined()
+    expect((recorded[1].body as { thinking?: unknown }).thinking).toEqual({ type: "disabled" })
   })
 
   test("auth + version + custom headers are merged", async () => {

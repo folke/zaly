@@ -264,8 +264,8 @@ function writeThinking(
     return
   }
 
-  // `xhigh` collapses to `"high"` on every OpenAI-shaped wire.
-  const native = clamped === "xhigh" ? "high" : clamped
+  // `xhigh` / `max` collapse to `"high"` on every OpenAI-shaped wire.
+  const native = clamped === "xhigh" || clamped === "max" ? "high" : clamped
   switch (format) {
     case "openai": {
       out.reasoning_effort = native
@@ -308,7 +308,14 @@ function clampEffort(
     const nonOff = levels.find((l) => l !== "off")
     return nonOff
   }
-  const ordered: (typeof effort)[] = ["minimal", "low", "medium", "high", "xhigh"]
+  const ordered: Exclude<NonNullable<typeof effort>, "off">[] = [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+  ]
   const requestedIdx = ordered.indexOf(effort)
   // Walk down to the next supported level below.
   for (let i = requestedIdx; i >= 0; i--) {
