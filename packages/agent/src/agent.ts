@@ -498,6 +498,7 @@ export class Agent extends Emitter<AgentEvents> {
     } catch (error) {
       const err = toError(error)
       const overflow = isContextOverflow({ message: err.message })
+      if (overflow) this.#opts.logger?.warn("Context overflow detected:", err)
       return {
         error: err,
         finishReason: overflow ? "length" : "error",
@@ -676,6 +677,11 @@ export class Agent extends Emitter<AgentEvents> {
         if (this.#opts.compaction?.auto === false) return { kind: "context-overflow" }
         // Compactor mutates the conversation; the rejected message is
         // not committed — next step retries on the compacted state.
+        this.#opts.logger
+          ?.child("compaction")
+          .warn(
+            `context overflow detected (size ${this.contextSize}, limit ${this.pressure.limit}); running compaction`
+          )
         await this.compact()
         continue
       }
