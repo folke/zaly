@@ -105,8 +105,8 @@ function renderPrefix(s: LogState, ctx: RenderCtx): string {
 export const log = widget((state: State<LogState>, ...children: Node[]) => {
   const base = defaultLogStyles[state.level]
   const color: Color = state.color ?? base.color ?? "inherit"
-  const textColor = state.textColor ?? base.textColor
   const s = state
+  const textColor = state.textColor ?? (s.style === "notif" ? "inherit" : base.textColor)
   const style = {
     style: textColor
       ? {

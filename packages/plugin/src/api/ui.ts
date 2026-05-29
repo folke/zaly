@@ -30,7 +30,7 @@ export class UiApi {
   }
 
   notify(msg: string, opts?: NotifProps): Overlay {
-    return this.#host.notify(msg, opts)
+    return this.#host.notify(msg, { title: `Plugin ${this.#plugin.name}`, ...opts })
   }
 
   get theme(): Theme {

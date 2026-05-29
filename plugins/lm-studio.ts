@@ -86,8 +86,15 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
 }
 
 export default async function LMStudioPlugin(api: PluginApi) {
-  const models = await fetchModels()
-  for (const model of models) {
-    await api.model.register(`lm-studio/${model.id}`, model)
+  try {
+    const models = await fetchModels()
+    for (const model of models) {
+      await api.model.register(`lm-studio/${model.id}`, model)
+    }
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error))
+    api.ui.notify(`Failed to fetch models. Is LM Studio running?\n* ${err.message}`, {
+      level: "warn",
+    })
   }
 }

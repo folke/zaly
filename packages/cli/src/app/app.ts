@@ -319,7 +319,6 @@ export class App {
       else
         this.notify(`Failed to load plugin **${result.plugin.name}**:\n${result.error.message}`, {
           level: "error",
-          textColor: "inherit",
           title: `Plugin ${result.plugin.name}`,
         })
     }
