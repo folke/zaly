@@ -3,8 +3,20 @@ import type { Node } from "../core/node.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Renderer } from "./renderer.ts"
 
+import { stringWidth } from "@zaly/shared/ansi"
 import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
+
+export type OverlayRenderState = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export type OverlaySurfaceEvents = {
+  "render-node": { node: Node } & OverlayRenderState
+}
 
 /**
  * Overlay surface — paints absolute-positioned `Overlay` nodes on top
@@ -23,7 +35,7 @@ import { Surface } from "./surface.ts"
  *     sizing / positioning sensibly. The stream lives inside DECSTBM,
  *     so overlays that touch row 0 can disrupt scrollback.
  */
-export class OverlaySurface extends Surface {
+export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
   readonly #overlays: Overlay[] = []
 
   constructor(renderer: Renderer) {
@@ -99,33 +111,40 @@ export class OverlaySurface extends Surface {
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.$r.ctx
     await Promise.all(
-      this.active.map(async (o) => {
+      this.active.map(async (node) => {
         // Width and height are honoured by the box layout itself
         // (`width: "fit" | number` and the `height` + `verticalAlign`
         // pair on `BoxStyle`). We pass ctx unchanged and trust the
         // overlay's own state to size correctly.
-        const rows = await o.render(ctx)
-        let x = o.state.x
-        let y = o.state.y
+        const rows = await node.render(ctx)
+        let x = node.state.x
+        let y = node.state.y
         if (x < 0) x = this.$r.terminal.cols + x // Allow negative x to position relative to right edge
 
         let refY = 1
         let refHeight = this.$r.terminal.rows
 
-        if (o.state.relative === "ui") {
+        if (node.state.relative === "ui") {
           refHeight = this.$r.ui.height
           refY = this.$r.terminal.footerTop
-        } else if (o.state.relative === "stream") {
+        } else if (node.state.relative === "stream") {
           refHeight = this.$r.stream.liveHeight
         }
 
         const anchorY = y < 0 ? refY + refHeight + y : refY + y - 1
 
-        const a = o.state.verticalAnchor ?? "top"
+        const a = node.state.verticalAnchor ?? "top"
         if (a === "bottom") y = anchorY - rows.length + 1
         else if (a === "center") y = anchorY - Math.floor(rows.length / 2)
         else y = anchorY
         painted.push({ rows, x, y })
+        void this.emit("render-node", {
+          height: rows.length,
+          node,
+          width: Math.max(...rows.map((r) => stringWidth(r))),
+          x,
+          y,
+        })
       })
     )
     run(() => {
