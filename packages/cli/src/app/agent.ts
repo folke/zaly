@@ -99,9 +99,5 @@ export function wireAgent(agent: Agent, state: AppState, opts?: { signal?: Abort
       },
       opts
     )
-
-  // Seed usage from the tail of any resumed conversation.
-  const last = agent.messages.at(-1)
-  const usage = last?.role === "assistant" ? last.meta?.usage : undefined
-  if (usage) state.usage = usage
+  state.usage = agent.usage
 }

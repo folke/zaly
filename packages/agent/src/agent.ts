@@ -68,7 +68,7 @@ export class Agent extends Emitter<AgentEvents> {
   #abortController?: AbortController
   #pauseRequested?: string
   #running?: Promise<AgentStopKind>
-  #usage = new TokenUsage()
+  #usage: TokenUsage
 
   /** Pending future-injects scheduled via `scheduleWakeup`. Cleared
    *  whenever the loop becomes active for any reason — the scheduled
@@ -125,6 +125,9 @@ export class Agent extends Emitter<AgentEvents> {
     this.#stopPolicy.attach(this)
     this.onEmitError = (error) => opts.logger?.child("events").error(error)
     this.#ctx.attach(this)
+
+    // Seed usage
+    this.#usage = new TokenUsage(this.messages)
   }
 
   /** Spawn a child agent that inherits this agent's runtime defaults —
