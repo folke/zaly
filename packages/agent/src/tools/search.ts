@@ -57,12 +57,14 @@ export const searchTool = defineTool({
       maxLength: 400,
       minLength: 1,
     }),
-    count: Type.Integer({
-      default: 10,
-      description: "Maximum number of source URLs in the response.",
-      maximum: 50,
-      minimum: 1,
-    }),
+    count: Type.Optional(
+      Type.Integer({
+        default: 10,
+        description: "Maximum number of source URLs in the response.",
+        maximum: 50,
+        minimum: 1,
+      })
+    ),
     freshness: Type.Optional(
       Type.Union([Type.Literal("pd"), Type.Literal("pw"), Type.Literal("pm"), Type.Literal("py")], {
         description:
@@ -70,10 +72,12 @@ export const searchTool = defineTool({
           "`pm` = past month, `py` = past year. Omit for no filter.",
       })
     ),
-    country: Type.String({
-      default: "us",
-      description: "Two-letter country code for region-specific results.",
-    }),
+    country: Type.Optional(
+      Type.String({
+        default: "us",
+        description: "Two-letter country code for region-specific results.",
+      })
+    ),
   }),
 
   async call(args): Promise<(MetaPart | TextPart)[]> {
@@ -89,8 +93,8 @@ export const searchTool = defineTool({
 
     const url = new URL(ENDPOINT)
     url.searchParams.set("q", args.query)
-    url.searchParams.set("count", String(args.count))
-    url.searchParams.set("country", args.country)
+    url.searchParams.set("count", String(args.count ?? 10))
+    url.searchParams.set("country", args.country ?? "us")
     if (args.freshness !== undefined) url.searchParams.set("freshness", args.freshness)
 
     const t0 = Date.now()

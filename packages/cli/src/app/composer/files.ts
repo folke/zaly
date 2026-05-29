@@ -1,5 +1,5 @@
 import type { ReadTool } from "@zaly/agent"
-import type { Message, ParamsOf } from "@zaly/ai"
+import type { Message } from "@zaly/ai"
 import type { Node } from "@zaly/tui"
 import type {
   ComposerFormatCtx,
@@ -88,7 +88,7 @@ export class FilesComposer implements ComposerPlugin {
 
         const toolUse = await ctx.agent.useTool<ReadTool>(
           "read",
-          { limit, offset, path } as ParamsOf<ReadTool>,
+          { limit, offset, path },
           "File references from the previous user message were read automatically",
           { hidden: true }
         )

@@ -79,20 +79,24 @@ export function createReadTool(init: ToolInit) {
     // oxlint-disable-next-line sort-keys -- semantic param order
     params: Type.Object({
       path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
-      offset: Type.Integer({
-        default: 1,
-        description:
-          "1-based line number to start at. Negative values count from " +
-          "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
-          "with the default limit returns the last 50 lines, like " +
-          "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
-          "starting 50 from the end.",
-      }),
-      limit: Type.Integer({
-        default: DEFAULT_LIMIT,
-        description: "Maximum number of lines to return.",
-        minimum: 1,
-      }),
+      offset: Type.Optional(
+        Type.Integer({
+          default: 1,
+          description:
+            "1-based line number to start at. Negative values count from " +
+            "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
+            "with the default limit returns the last 50 lines, like " +
+            "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
+            "starting 50 from the end.",
+        })
+      ),
+      limit: Type.Optional(
+        Type.Integer({
+          default: DEFAULT_LIMIT,
+          description: "Maximum number of lines to return.",
+          minimum: 1,
+        })
+      ),
     }),
 
     async preflight(args, ctx: ToolContext<ReadToolMeta>) {
@@ -162,7 +166,10 @@ export function createReadTool(init: ToolInit) {
       }
 
       const text = new TextDecoder().decode(file.data)
-      const slice = formatTextSlice(text, { limit: args.limit, offset: args.offset })
+      const slice = formatTextSlice(text, {
+        limit: args.limit ?? DEFAULT_LIMIT,
+        offset: args.offset ?? 1,
+      })
 
       // Record the read so the freshness tracker knows we've seen this
       // file's current bytes. write/edit consult this before mutating;

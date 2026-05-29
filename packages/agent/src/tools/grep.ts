@@ -52,30 +52,42 @@ export const grepTool = defineTool({
         description: "Ripgrep file types (`-t`), e.g. [`ts`, `rust`, `markdown`].",
       })
     ),
-    fixed_strings: Type.Boolean({
-      default: false,
-      description: "Treat all patterns as literals instead of as regular expressions",
-    }),
-    case_sensitive: Type.Boolean({
-      default: false,
-      description:
-        "Case sensitive search. Default false is smart case (case-insensitive if pattern is lowercase).",
-    }),
-    hidden: Type.Boolean({ default: false, description: "Search hidden files/directories." }),
-    ignore: Type.Boolean({ default: true, description: "Respect .gitignore/.ignore rules." }),
-    follow: Type.Boolean({ default: false, description: "Follow symlinks." }),
-    context: Type.Integer({
-      default: 0,
-      description: "Context lines before/after each match. 0-5.",
-      maximum: 5,
-      minimum: 0,
-    }),
-    limit: Type.Integer({
-      default: DEFAULT_LIMIT,
-      description: "Maximum matched lines to keep inline.",
-      maximum: MAX_LIMIT,
-      minimum: 1,
-    }),
+    fixed_strings: Type.Optional(
+      Type.Boolean({
+        default: false,
+        description: "Treat all patterns as literals instead of as regular expressions",
+      })
+    ),
+    case_sensitive: Type.Optional(
+      Type.Boolean({
+        default: false,
+        description:
+          "Case sensitive search. Default false is smart case (case-insensitive if pattern is lowercase).",
+      })
+    ),
+    hidden: Type.Optional(
+      Type.Boolean({ default: false, description: "Search hidden files/directories." })
+    ),
+    ignore: Type.Optional(
+      Type.Boolean({ default: true, description: "Respect .gitignore/.ignore rules." })
+    ),
+    follow: Type.Optional(Type.Boolean({ default: false, description: "Follow symlinks." })),
+    context: Type.Optional(
+      Type.Integer({
+        default: 0,
+        description: "Context lines before/after each match. 0-5.",
+        maximum: 5,
+        minimum: 0,
+      })
+    ),
+    limit: Type.Optional(
+      Type.Integer({
+        default: DEFAULT_LIMIT,
+        description: "Maximum matched lines to keep inline.",
+        maximum: MAX_LIMIT,
+        minimum: 1,
+      })
+    ),
   }),
 
   async preflight(args, ctx: ToolContext<GrepToolMeta>) {
@@ -116,9 +128,10 @@ export const grepTool = defineTool({
     }
 
     const text = cleanTextTui(result.stdout)
+    const limit = args.limit ?? DEFAULT_LIMIT
     const summary = truncate(text, {
       maxLineChars: command.kind === "rg" ? 500 : MAX_COLUMNS,
-      maxLines: args.limit + 1,
+      maxLines: limit + 1,
       strategy: "head",
     })
 
@@ -180,7 +193,8 @@ function buildRgArgs(args: GrepArgs, paths: string[]): string[] {
   else ret.push("--no-hidden")
   if (!args.ignore) ret.push("--no-ignore")
   if (args.follow) ret.push("--follow")
-  if (args.context > 0) ret.push(`--context=${args.context}`)
+  const context = args.context ?? 0
+  if (context > 0) ret.push(`--context=${context}`)
 
   for (const e of [...defaultExcludes(paths), ...(args.exclude ?? [])]) ret.push("--glob", `!${e}`)
   for (const g of args.glob ?? []) ret.push("--glob", g)
@@ -202,7 +216,8 @@ function buildGrepArgs(args: GrepArgs, paths: string[]): string[] {
   else ret.push("--extended-regexp")
   const hasUpper = /[A-Z]/.test(args.pattern)
   if (!args.case_sensitive && !hasUpper) ret.push("--ignore-case")
-  if (args.context > 0) ret.push("--context", String(args.context))
+  const context = args.context ?? 0
+  if (context > 0) ret.push("--context", String(context))
   for (const e of [...defaultExcludes(paths), ...(args.exclude ?? [])]) ret.push("--exclude-dir", e)
   for (const t of args.file_type ?? []) {
     for (const g of fileTypeGlobs(t)) ret.push("--include", g)

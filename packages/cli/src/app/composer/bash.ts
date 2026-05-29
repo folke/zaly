@@ -1,5 +1,4 @@
 import type { BashTool } from "@zaly/agent"
-import type { ParamsOf } from "@zaly/ai"
 import type { ComposerFormatCtx, ComposerPlugin, ComposerSubmitCtx } from "../composer.ts"
 
 import { codeToAnsi } from "@zaly/tui"
@@ -27,7 +26,7 @@ export class BashComposer implements ComposerPlugin {
     const command = bashMatch[2]
     const toolUse = await ctx.agent.useTool<BashTool>(
       "bash",
-      { command } as ParamsOf<BashTool>,
+      { command },
       "Bash command from the previous user message was executed automatically"
     )
     ctx.agent.send(toolUse.messages, { run: false })

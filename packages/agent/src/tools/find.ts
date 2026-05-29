@@ -37,17 +37,21 @@ export const findTool = defineTool({
   parallel: true,
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
-    pattern: Type.String({ default: "", description: "Filename/path pattern to search for." }),
+    pattern: Type.Optional(
+      Type.String({ default: "", description: "Filename/path pattern to search for." })
+    ),
     cwd: Type.Optional(Type.String({ description: "Directory to search from. Defaults to cwd." })),
     paths: Type.Optional(
       Type.Array(Type.String(), {
         description: "Optional directories to search, relative to cwd or absolute.",
       })
     ),
-    type: Type.Union([Type.Literal("file"), Type.Literal("dir"), Type.Literal("any")], {
-      default: "file",
-      description: "Entry type to return. `dir` requires fd/fdfind or find fallback.",
-    }),
+    type: Type.Optional(
+      Type.Union([Type.Literal("file"), Type.Literal("dir"), Type.Literal("any")], {
+        default: "file",
+        description: "Entry type to return. `dir` requires fd/fdfind or find fallback.",
+      })
+    ),
     file_type: Type.Optional(
       Type.Array(Type.String(), {
         description:
@@ -59,15 +63,21 @@ export const findTool = defineTool({
         description: "Patterns to exclude, e.g. [`node_modules`, `dist/**`].",
       })
     ),
-    hidden: Type.Boolean({ default: false, description: "Include hidden files/directories." }),
-    ignore: Type.Boolean({ default: true, description: "Respect .gitignore/.ignore rules." }),
-    follow: Type.Boolean({ default: false, description: "Follow symlinks." }),
-    limit: Type.Integer({
-      default: DEFAULT_LIMIT,
-      description: "Maximum paths to keep inline.",
-      maximum: MAX_LIMIT,
-      minimum: 1,
-    }),
+    hidden: Type.Optional(
+      Type.Boolean({ default: false, description: "Include hidden files/directories." })
+    ),
+    ignore: Type.Optional(
+      Type.Boolean({ default: true, description: "Respect .gitignore/.ignore rules." })
+    ),
+    follow: Type.Optional(Type.Boolean({ default: false, description: "Follow symlinks." })),
+    limit: Type.Optional(
+      Type.Integer({
+        default: DEFAULT_LIMIT,
+        description: "Maximum paths to keep inline.",
+        maximum: MAX_LIMIT,
+        minimum: 1,
+      })
+    ),
   }),
 
   async preflight(args, ctx: ToolContext<FindToolMeta>) {
@@ -115,8 +125,9 @@ export const findTool = defineTool({
       .filter((l) => l !== "")
       .map((p) => compactPath(p, cwd))
 
+    const limit = args.limit ?? DEFAULT_LIMIT
     const summary = truncate(text.join("\n"), {
-      maxLines: args.limit + 1,
+      maxLines: limit + 1,
       strategy: "head",
     })
 
@@ -125,7 +136,7 @@ export const findTool = defineTool({
       cmd: [command.cmd, ...cmdArgs],
       cwd,
       matches: summary.origLines,
-      pattern: args.pattern,
+      pattern: args.pattern ?? "",
       truncated,
     }
 
@@ -169,7 +180,7 @@ function buildArgs(kind: Finder["kind"], args: FindArgs, paths: string[]): strin
 }
 
 function fdArgs(args: FindArgs, paths: string[]): string[] {
-  const ret = ["--color", "always", "--max-results", String(args.limit)]
+  const ret = ["--color", "always", "--max-results", String(args.limit ?? DEFAULT_LIMIT)]
   if (args.type === "file") ret.push("--type", "file", "--type", "symlink")
   else if (args.type === "dir") ret.push("--type", "directory")
   if (args.hidden) ret.push("--hidden")
@@ -179,7 +190,7 @@ function fdArgs(args: FindArgs, paths: string[]): string[] {
   for (const t of args.file_type ?? []) {
     for (const e of fileTypeExtensions(t)) ret.push("--extension", e)
   }
-  ret.push(args.pattern || ".", ...paths)
+  ret.push(args.pattern ?? ".", ...paths)
   return ret
 }
 

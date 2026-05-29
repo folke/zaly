@@ -30,10 +30,12 @@ export const taskListTool = defineTool({
     "still in flight.",
   parallel: true,
   params: Type.Object({
-    includeFinished: Type.Boolean({
-      default: false,
-      description: "When true, also include tasks that have already completed in this session.",
-    }),
+    includeFinished: Type.Optional(
+      Type.Boolean({
+        default: false,
+        description: "When true, also include tasks that have already completed in this session.",
+      })
+    ),
   }),
 
   call(args, ctx) {
@@ -42,7 +44,7 @@ export const taskListTool = defineTool({
     // JSON format stays consistent with heartbeat output. Done tasks
     // surface only their identity / timing, not their (potentially huge)
     // captured body.
-    const info = tasks.info().filter((task) => args.includeFinished || task.status !== "done")
+    const info = tasks.info().filter((task) => (args.includeFinished ?? false) || task.status !== "done")
     return taskInfoPart(info)
   },
 })

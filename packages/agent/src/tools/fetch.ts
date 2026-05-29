@@ -135,15 +135,17 @@ export function createFetchTool(init: ToolInit): Tool {
     // oxlint-disable-next-line sort-keys -- semantic param order: url, method, headers, query, body, jsonpath
     params: Type.Object({
       url: Type.String({ description: "Absolute URL." }),
-      method: Type.Union(
-        [
-          Type.Literal("GET"),
-          Type.Literal("POST"),
-          Type.Literal("PUT"),
-          Type.Literal("PATCH"),
-          Type.Literal("DELETE"),
-        ],
-        { default: "GET", description: "HTTP method." }
+      method: Type.Optional(
+        Type.Union(
+          [
+            Type.Literal("GET"),
+            Type.Literal("POST"),
+            Type.Literal("PUT"),
+            Type.Literal("PATCH"),
+            Type.Literal("DELETE"),
+          ],
+          { default: "GET", description: "HTTP method." }
+        )
       ),
       headers: Type.Optional(
         Type.Record(Type.String(), Type.String(), {

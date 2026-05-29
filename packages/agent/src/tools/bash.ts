@@ -62,23 +62,27 @@ export const bashTool = defineTool({
           '(e.g. "check the test suite passes", not "run bun test").',
       })
     ),
-    max_lines: Type.Integer({
-      default: 200,
-      description:
-        "Cap on lines kept inline in the result. Split as head + tail " +
-        "(half each). Lower for commands you only need pass/fail on " +
-        "(`max_lines: 20`); raise when middle output matters. Output " +
-        "above the cap is elided in the inline result, but the full " +
-        "log is always written to disk and surfaced as " +
-        "`truncated.fullOutputPath` — `read` it if you need to dig deeper.",
-      minimum: 10,
-    }),
-    timeout: Type.Integer({
-      default: DEFAULT_TIMEOUT_MS,
-      description:
-        "Kill deadline in ms. The process IS killed when this elapses (SIGTERM → SIGKILL).",
-      minimum: 1,
-    }),
+    max_lines: Type.Optional(
+      Type.Integer({
+        default: 200,
+        description:
+          "Cap on lines kept inline in the result. Split as head + tail " +
+          "(half each). Lower for commands you only need pass/fail on " +
+          "(`max_lines: 20`); raise when middle output matters. Output " +
+          "above the cap is elided in the inline result, but the full " +
+          "log is always written to disk and surfaced as " +
+          "`truncated.fullOutputPath` — `read` it if you need to dig deeper.",
+        minimum: 10,
+      })
+    ),
+    timeout: Type.Optional(
+      Type.Integer({
+        default: DEFAULT_TIMEOUT_MS,
+        description:
+          "Kill deadline in ms. The process IS killed when this elapses (SIGTERM → SIGKILL).",
+        minimum: 1,
+      })
+    ),
   }),
 
   async preflight(args, ctx) {
@@ -132,7 +136,7 @@ export const bashTool = defineTool({
       // heartbeat flag this task with `*new*` without advancing the
       // cursor (which would consume the bytes for any later poll).
       hasNew: () => proc.stdout.length > cursor.combined,
-      poll: () => snapshot({ cursor, logPath, maxLines: args.max_lines, proc, startedAt }),
+      poll: () => snapshot({ cursor, logPath, maxLines: args.max_lines ?? 200, proc, startedAt }),
     }
   },
 })
