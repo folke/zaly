@@ -298,8 +298,8 @@ function toResponsesTool(tool: Tool, strict: boolean): ResponsesTool {
     description: tool.desc,
     name: tool.name,
     parameters: tool.params,
+    strict,
     type: "function",
-    ...(strict ? { strict: true } : {}),
   }
 }
 
