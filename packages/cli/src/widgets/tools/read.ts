@@ -1,5 +1,5 @@
 import type { ReadTool } from "@zaly/agent"
-import type { ToolResultProps } from "./registry.ts"
+import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
@@ -8,7 +8,6 @@ import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { log } from "@zaly/tui/widgets/log"
 import { show } from "@zaly/tui/widgets/show"
-import { widget } from "@zaly/tui/widgets/widget"
 
 const PREVIEW_LINE_LIMIT = 10
 
@@ -19,41 +18,43 @@ const PREVIEW_LINE_LIMIT = 10
  *  we strip it before highlighting so shiki tokens line up with the
  *  source. The numbering is regenerated visually by the terminal's
  *  natural row count anyway. */
-export const readResult = widget((props: ToolResultProps<ReadTool>) => {
-  const path = memo(() => {
-    const p = props.result()?.meta?.path
-    return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
-  })
+export const readRenderer: ToolRenderer<ReadTool> = {
+  result(props: ToolResultCtx<ReadTool>) {
+    const path = memo(() => {
+      const p = props.result()?.meta?.path
+      return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
+    })
 
-  const unchanged = memo(() => props.result()?.meta?.unchanged === true)
-  const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
-  const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
-  const numberOffset = memo(() => props.result()?.meta?.offset ?? props.params?.offset)
+    const unchanged = memo(() => props.result()?.meta?.unchanged === true)
+    const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
+    const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
+    const numberOffset = memo(() => props.result()?.meta?.offset ?? props.params?.offset)
 
-  return box(
-    {},
-    show(
-      { when: unchanged },
-      log({
-        content: "file unchanged since last read",
-        level: "warn",
-        visible: unchanged,
-      })
-    ),
-    show(
-      { when: memo(() => !unchanged()) },
-      code({
-        code: content,
-        limit: PREVIEW_LINE_LIMIT,
-        more: (_more, msg) => `${msg} read`,
-        numberOffset,
-        numbered: true,
-        path,
-        title,
-      })
+    return box(
+      {},
+      show(
+        { when: unchanged },
+        log({
+          content: "file unchanged since last read",
+          level: "warn",
+          visible: unchanged,
+        })
+      ),
+      show(
+        { when: memo(() => !unchanged()) },
+        code({
+          code: content,
+          limit: PREVIEW_LINE_LIMIT,
+          more: (_more, msg) => `${msg} read`,
+          numberOffset,
+          numbered: true,
+          path,
+          title,
+        })
+      )
     )
-  )
-})
+  },
+}
 
 /** Drop the leading `   N→` / `   N  ` line-number prefix the read tool
  *  emits. Tolerant of slight format variations. */

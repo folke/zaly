@@ -11,7 +11,7 @@ import { show } from "@zaly/tui/widgets/show"
 import { text } from "@zaly/tui/widgets/text"
 import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
-import { toolResult } from "./tools/registry.ts"
+import { toolRenderer } from "./tools/registry.ts"
 
 export type ToolCallProps = {
   call: ToolCallPart
@@ -46,13 +46,17 @@ export const toolCall = widget((props: ToolCallProps) => {
 
   const full = memo(() => !(unwrap(props.summary) ?? false))
 
+  const renderer = toolRenderer(call.name)
+  const toolCtx = { call, params, result: props.result }
+
   return bubble(
     { pending: props.pending, type: status },
     box(
       { flexDirection: "column" },
       // Tool name + params preview
       text(({ style, width }) => {
-        const p = params.path ?? params.command ?? params.url ?? params.pattern ?? params
+        const p =
+          params.path ?? params.command ?? params.url ?? params.pattern ?? params.glob ?? params
         const json =
           typeof p === "string"
             ? style.success(JSON.stringify(p))
@@ -71,14 +75,7 @@ export const toolCall = widget((props: ToolCallProps) => {
           level: "error",
           visible: isError,
         }),
-        show(
-          { when: memo(() => !isError()) },
-          toolResult({
-            call: props.call,
-            params,
-            result: props.result,
-          })
-        )
+        show({ when: memo(() => !isError()) }, renderer.result(toolCtx))
       )
     )
   )
