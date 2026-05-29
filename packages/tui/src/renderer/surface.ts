@@ -1,5 +1,6 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { Renderer } from "./renderer.ts"
 
 import { Emitter } from "@zaly/shared"
 
@@ -48,6 +49,16 @@ export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvent
   #running = false
   #mountCtx?: MountCtx
   #rendering?: Promise<void>
+  $r: Renderer
+
+  constructor(renderer: Renderer) {
+    super()
+    this.$r = renderer
+  }
+
+  track(ev: string, inc = 1): void {
+    this.$r.stats.inc(ev, inc)
+  }
 
   /** Re-usable listener that bridges a tracked node's `invalidate`
    *  event into this surface's `dirty` event. Subclasses attach this

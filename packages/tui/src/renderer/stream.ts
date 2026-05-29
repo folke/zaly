@@ -1,6 +1,7 @@
-import type { MountCtx, RenderCtx } from "../core/ctx.ts"
+import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Owner, SuspenseBoundary } from "../core/reactive.ts"
+import type { SuspenseBoundary } from "../core/reactive.ts"
+import type { Renderer } from "./renderer.ts"
 import type { Terminal } from "./terminal.ts"
 
 import {
@@ -110,17 +111,17 @@ export class Stream extends Surface<StreamEvents> {
   readonly #stale = new Set<number>()
   #opts: StreamOptions
 
-  constructor(
-    private readonly terminal: Terminal,
-    private readonly getCtx: () => RenderCtx,
-    private readonly rootOwner: Owner,
-    opts: Partial<StreamOptions> = {}
-  ) {
-    super()
+  constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
+    super(renderer)
     this.#opts = {
       fixedFooterHeight: opts.fixedFooterHeight ?? 0,
       maxLive: opts.maxLive ?? 3,
     }
+    this.on("dirty", () => this.track("stream.dirty"))
+  }
+
+  get terminal(): Terminal {
+    return this.$r.terminal
   }
 
   /**
@@ -139,7 +140,7 @@ export class Stream extends Surface<StreamEvents> {
     // The boundary is provided inside the new Owner scope so
     // descendants find it via `useContext(SuspenseContext)`.
     const boundary = createSuspenseBoundary()
-    const resolved = withOwner(this.rootOwner, () =>
+    const resolved = withOwner(this.$r.rootOwner, () =>
       createNode(() => {
         provideContext(SuspenseContext, boundary)
         return node()
@@ -200,7 +201,7 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   async #render(): Promise<{ commitLimit: number; rows: string[] }> {
-    const ctx = this.getCtx()
+    const ctx = this.$r.ctx
 
     // Render tracked nodes. Node.render() owns cache invalidation, so clean
     // nodes return cached rows immediately; Stream only preserves the

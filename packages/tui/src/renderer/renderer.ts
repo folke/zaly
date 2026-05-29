@@ -46,6 +46,23 @@ export type SurfaceType = "stream" | "ui" | "overlay"
 /** Visitor signature for `Renderer.walk`. Return `"stop"` to halt. */
 export type NodeVisitor = (node: Node) => void | "stop"
 
+export class RenderStats {
+  #stats: Record<string, number> = {}
+
+  /** Increment a stat by `delta` (default: `1`). */
+  inc(stat: string, delta = 1): void {
+    this.#stats[stat] = (this.#stats[stat] ?? 0) + delta
+  }
+
+  set(stat: string, value: number): void {
+    this.#stats[stat] = value
+  }
+
+  get(): Record<string, number> {
+    return { ...this.#stats }
+  }
+}
+
 /**
  * Wires a `Terminal` primitive with the `Stream` and `UI` surfaces.
  * Doesn't render anything until you either append to `renderer.stream`
@@ -96,6 +113,7 @@ export class Renderer {
    *  `defaultActions` + `globalActions` at construction; apps extend
    *  via `renderer.actions.register({ "app.foo": { ... } })`. */
   readonly actions: Actions
+  stats = new RenderStats()
 
   /** Global action impls. Merged into the `actions` catalog on
    *  construction so the ids declared here gain their keys and desc
@@ -119,10 +137,6 @@ export class Renderer {
     })
 
     this.#theme = opts.theme
-    // Single shared ctx per tick. Rebuilt lazily when version bumps or
-    // the cached ctx no longer matches the current terminal width
-    // (SIGWINCH handler bumps version + clears `#ctx` below).
-    const getCtx = (): RenderCtx => this.ctx
 
     // Reactive ambient state — theme is the live source of truth for
     // the components-facing `RenderContext`. Style derives from it via
@@ -140,8 +154,8 @@ export class Renderer {
       return useActiveOwner() as Owner
     })
 
-    this.ui = new UI(this.terminal, getCtx, this.#rootOwner)
-    this.stream = new Stream(this.terminal, getCtx, this.#rootOwner, {
+    this.ui = new UI(this)
+    this.stream = new Stream(this, {
       fixedFooterHeight: opts.fixedFooterHeight,
     })
     // Wire cross-surface coordination: when UI's footer height changes
@@ -150,13 +164,7 @@ export class Renderer {
     // re-anchor; explicit invalidate matches the new "surfaces signal
     // each other through events" contract.
     this.ui.on("dirty-stream", () => this.stream.invalidate())
-    this.overlay = new OverlaySurface({
-      getCtx,
-      rootOwner: this.#rootOwner,
-      stream: this.stream,
-      terminal: this.terminal,
-      ui: this.ui,
-    })
+    this.overlay = new OverlaySurface(this)
     this.overlay.on("dirty-ui", () => this.ui.invalidate())
     this.overlay.on("dirty-stream", () => this.stream.invalidate())
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
@@ -253,6 +261,10 @@ export class Renderer {
     return this.#ctx
   }
 
+  get rootOwner(): Owner {
+    return this.#rootOwner
+  }
+
   /** Whether the renderer is currently running. Surfaces use this to
    *  decide whether a fresh append/open should immediately mount the
    *  node or just queue it for the next `start()`. */
@@ -297,6 +309,9 @@ export class Renderer {
     // `#dirty = true` but couldn't schedule (no renderer yet). Now
     // that we're running, drain it.
     if (this.#dirty) this.#schedule()
+    // setInterval(() => {
+    //   console.log(this.stats.get())
+    // }, 5000)
   }
 
   stop(): void {
@@ -415,6 +430,7 @@ export class Renderer {
         while (this.#dirty && this.#running) {
           this.#dirty = false
           try {
+            this.stats.inc("render")
             // oxlint-disable-next-line no-await-in-loop
             await this.#render()
           } catch (error) {

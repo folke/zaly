@@ -1,21 +1,10 @@
-import type { MountCtx, RenderCtx } from "../core/ctx.ts"
+import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Owner } from "../core/reactive.ts"
 import type { Overlay } from "../widgets/overlay.ts"
-import type { Stream } from "./stream.ts"
-import type { Terminal } from "./terminal.ts"
-import type { UI } from "./ui.ts"
+import type { Renderer } from "./renderer.ts"
 
 import { createNode, withOwner } from "../core/reactive.ts"
 import { Surface } from "./surface.ts"
-
-export interface OverlayDeps {
-  terminal: Terminal
-  getCtx: () => RenderCtx
-  rootOwner: Owner
-  stream: Stream
-  ui: UI
-}
 
 /**
  * Overlay surface — paints absolute-positioned `Overlay` nodes on top
@@ -37,8 +26,9 @@ export interface OverlayDeps {
 export class OverlaySurface extends Surface {
   readonly #overlays: Overlay[] = []
 
-  constructor(private readonly deps: OverlayDeps) {
-    super()
+  constructor(renderer: Renderer) {
+    super(renderer)
+    this.on("dirty", () => this.track("overlay.dirty"))
   }
 
   /** Active overlays in paint order (low → high z-index). */
@@ -49,7 +39,7 @@ export class OverlaySurface extends Surface {
   /** Register an overlay with the surface. Function form runs `fn`
    *  inside a fresh Owner scope and adopts the returned Overlay. */
   add<O extends Overlay>(overlay: () => O): O {
-    const resolved = withOwner(this.deps.rootOwner, () => createNode(overlay))
+    const resolved = withOwner(this.$r.rootOwner, () => createNode(overlay))
     if (this.#overlays.includes(resolved)) return resolved
     this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
@@ -105,9 +95,9 @@ export class OverlaySurface extends Surface {
    * capture all three paints and emit them in one atomic frame.
    */
   async _render(sync?: (fn: () => void) => void): Promise<void> {
-    const run = sync ?? ((fn: () => void) => this.deps.terminal.sync(fn))
+    const run = sync ?? ((fn: () => void) => this.$r.terminal.sync(fn))
     const painted: { x: number; y: number; rows: string[] }[] = []
-    const ctx = this.deps.getCtx()
+    const ctx = this.$r.ctx
     await Promise.all(
       this.active.map(async (o) => {
         // Width and height are honoured by the box layout itself
@@ -117,16 +107,16 @@ export class OverlaySurface extends Surface {
         const rows = await o.render(ctx)
         let x = o.state.x
         let y = o.state.y
-        if (x < 0) x = this.deps.terminal.cols + x // Allow negative x to position relative to right edge
+        if (x < 0) x = this.$r.terminal.cols + x // Allow negative x to position relative to right edge
 
         let refY = 1
-        let refHeight = this.deps.terminal.rows
+        let refHeight = this.$r.terminal.rows
 
         if (o.state.relative === "ui") {
-          refHeight = this.deps.ui.height
-          refY = this.deps.terminal.footerTop
+          refHeight = this.$r.ui.height
+          refY = this.$r.terminal.footerTop
         } else if (o.state.relative === "stream") {
-          refHeight = this.deps.stream.liveHeight
+          refHeight = this.$r.stream.liveHeight
         }
 
         const anchorY = y < 0 ? refY + refHeight + y : refY + y - 1
@@ -141,7 +131,7 @@ export class OverlaySurface extends Surface {
     run(() => {
       for (const { rows, x, y } of painted) {
         for (let r = 0; r < rows.length; r++) {
-          this.deps.terminal.write(this.deps.terminal.moveTo(y + r, x) + rows[r])
+          this.$r.terminal.write(this.$r.terminal.moveTo(y + r, x) + rows[r])
         }
       }
       // Mark the covered rows stale in stream's tracked-rows snapshot
@@ -151,8 +141,8 @@ export class OverlaySurface extends Surface {
       // there carrying overlay bytes instead of stream content.
       for (const { rows, y } of painted) {
         if (rows.length > 0) {
-          this.deps.stream.markStale(y, y + rows.length - 1)
-          this.deps.ui.markStale(y, y + rows.length - 1)
+          this.$r.stream.markStale(y, y + rows.length - 1)
+          this.$r.ui.markStale(y, y + rows.length - 1)
         }
       }
     })

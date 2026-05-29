@@ -1,8 +1,7 @@
-import type { MountCtx, RenderCtx } from "../core/ctx.ts"
+import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Owner } from "../core/reactive.ts"
 import type { Box } from "../widgets/box.ts"
-import type { Terminal } from "./terminal.ts"
+import type { Renderer } from "./renderer.ts"
 
 import { createNode, withOwner } from "../core/reactive.ts"
 import { box } from "../widgets/box.ts"
@@ -26,12 +25,8 @@ export class UI extends Surface {
   #rows: string[] = []
   readonly #stale = new Set<number>()
 
-  constructor(
-    private readonly terminal: Terminal,
-    private readonly getCtx: () => RenderCtx,
-    private readonly rootOwner: Owner
-  ) {
-    super()
+  constructor(renderer: Renderer) {
+    super(renderer)
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
     this.#root.on("invalidate", this.onDirty)
@@ -39,11 +34,16 @@ export class UI extends Surface {
     // via `onStart`. Deferring means widgets added to the footer tree
     // (e.g. a Spinner) don't fire their `mount` handler before the
     // renderer is actually rendering.
+    this.on("dirty", () => this.track("ui.dirty"))
   }
 
   /** The footer's root Box. Add children via `ui.root.add(child)`. */
   get root(): Box {
     return this.#root
+  }
+
+  get terminal() {
+    return this.$r.terminal
   }
 
   /** Shortcut: add a child to the footer root. Same semantics as
@@ -54,7 +54,7 @@ export class UI extends Surface {
    *  `provideContext` inside `fn` attach to that scope) and adds the
    *  returned Node. The Owner disposes when the Node unmounts. */
   add<N extends Node>(child: () => N): N {
-    const ret = withOwner(this.rootOwner, () => createNode(child))
+    const ret = withOwner(this.$r.rootOwner, () => createNode(child))
     this.#root.add(ret)
     return ret
   }
@@ -85,7 +85,7 @@ export class UI extends Surface {
    */
   async _render(sync?: (fn: () => void) => void): Promise<void> {
     const run = sync ?? ((fn: () => void) => this.terminal.sync(fn))
-    const ctx = this.getCtx()
+    const ctx = this.$r.ctx
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const visible = Math.max(0, this.terminal.rows - 1)
     const rows = rendered.length > visible ? rendered.slice(-visible) : rendered
