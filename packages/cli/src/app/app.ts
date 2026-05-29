@@ -15,7 +15,7 @@ import { box } from "@zaly/tui/widgets/box"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { appActions } from "./actions.ts"
-import { buildAgent, wireAgent } from "./agent.ts"
+import { loadAgent, loadAgentModel, wireAgent } from "./agent.ts"
 import { createComposer } from "./composer.ts"
 import { replay } from "./replay.ts"
 import { bindStream } from "./stream.ts"
@@ -186,7 +186,14 @@ export class App {
     const tail = session.messages.filter((m) => !m.hidden).slice(-50)
 
     this.#notifier.notify(`Resumed session with ${session.messages.length} messages.`)
-    await Promise.all([this.initAgent(), replay(tail, this)])
+    await Promise.all([
+      (async () => {
+        await this.initAgent()
+        await this.loadPlugins()
+        this.agent.ctx.model ??= await loadAgentModel(this)
+      })(),
+      replay(tail, this),
+    ])
 
     // Hand control to the status signal — flip from "loading" to
     // whatever the agent's authoritative state is (almost always
@@ -194,14 +201,12 @@ export class App {
     // #status from here on.
     this.#state.busy = false
     this.#state.status = "ready"
-
-    void this.loadPlugins()
   }
 
   async initAgent(): Promise<void> {
-    this.#agent = await buildAgent(this)
-    this.#state.model = this.#agent.model
+    this.#agent = await loadAgent(this)
     this.#state.reasoning = this.#agent.ctx.reasoning
+    this.#state.model = this.#agent.model
     this.#agent.ctx.on("model", () => (this.#state.model = this.#agent?.model))
     this.#agent.ctx.on("reasoning", () => (this.#state.reasoning = this.#agent?.ctx.reasoning))
     this.#agent.ctx.on("skills", ({ skills }) => {
