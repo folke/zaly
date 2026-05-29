@@ -78,7 +78,7 @@ export const code = widget((props: State<CodeState>) => {
   )
 
   const formatted = memo(() =>
-    formatLines(body(), {
+    formatLines(body().split("\n"), {
       limit: unwrap(props.limit),
       more: props.more,
       numberOffset: unwrap(props.numberOffset),
