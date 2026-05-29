@@ -11,8 +11,14 @@ import { Value } from "typebox/value"
  *  a compiled `.Check`/`.Errors` step to confirm the shape actually
  *  matches before use.
  */
-export function coerce(schema: {}, value: unknown) {
-  const defaulted = Value.Default(schema, value)
-  const converted = Value.Convert(schema, defaulted)
-  return Value.Clean(schema, converted)
+export function coerce(
+  schema: {},
+  value: unknown,
+  opts: { convert?: boolean; defaults?: boolean; clean?: boolean } = {}
+): unknown {
+  let ret = value
+  if (opts.defaults ?? true) ret = Value.Default(schema, ret)
+  if (opts.convert ?? true) ret = Value.Convert(schema, ret)
+  if (opts.clean ?? true) ret = Value.Clean(schema, ret)
+  return ret
 }

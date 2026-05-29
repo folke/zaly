@@ -284,6 +284,7 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
   validator: {
     validateParams(params: unknown): Promise<Params>
     validateResult(result: unknown): Promise<Awaited<Result>>
+    cleanParams(params: unknown): Promise<unknown>
   }
   call(params: Params, ctx: ToolContext<Meta>): Promise<Result>
   preflight?(params: Params, ctx: ToolContext<Meta>): void | Promise<void>

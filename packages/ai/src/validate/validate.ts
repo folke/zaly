@@ -12,6 +12,7 @@
 
 import type { Validator as Compiled } from "typebox/schema"
 import type { Static, TObject, TSchema } from "typebox/type"
+import type { coerce } from "./coerce.ts"
 
 import { AiError } from "../error.ts"
 import { parseJson } from "../utils/json.ts"
@@ -22,17 +23,24 @@ export class Validator<
 > {
   #params?: Promise<Compiled>
   #result?: Promise<Compiled>
+  #defaults?: unknown
 
   constructor(
     public readonly params: P,
     public readonly result?: R
   ) {}
 
-  /** Validate raw tool arguments. Accepts either an already-parsed
-   *  value or a JSON string (parsed lazily via `parseJson`). Coerces
-   *  LLM quirks, checks against the schema, and throws an `AiError`
-   *  with annotated JSONC on failure. */
-  async validateParams(raw: unknown): Promise<Static<P>> {
+  /** Coerces and diffs raw input against the schema defaults, returning
+   * only the explicitly provided properties. */
+  async cleanParams(raw: unknown): Promise<unknown> {
+    const { Value } = await import("typebox/value")
+    this.#defaults ??= Value.Default(this.params, {})
+    const coerced = await this.#coerce(raw)
+    const diff = Value.Diff(this.#defaults, coerced)
+    return Value.Patch({}, diff)
+  }
+
+  async #coerce(raw: unknown, opts: Parameters<typeof coerce>[2] = {}): Promise<unknown> {
     let args = raw
     if (typeof args === "string") {
       const parsed = await parseJson(args)
@@ -42,12 +50,18 @@ export class Validator<
       args = parsed.data
     }
 
+    const { coerce } = await import("./coerce.ts")
+    return coerce(this.params, args, opts)
+  }
+
+  /** Validate raw tool arguments. Accepts either an already-parsed
+   *  value or a JSON string (parsed lazily via `parseJson`). Coerces
+   *  LLM quirks, checks against the schema, and throws an `AiError`
+   *  with annotated JSONC on failure. */
+  async validateParams(raw: unknown): Promise<Static<P>> {
+    const coerced = await this.#coerce(raw)
     this.#params ??= this.#compile(this.params)
     const compiled = await this.#params
-
-    const { coerce } = await import("./coerce.ts")
-    const coerced = coerce(this.params, args)
-
     if (compiled.Check(coerced)) return coerced as Static<P>
 
     const { stringifyErrors } = await import("./stringify.ts")

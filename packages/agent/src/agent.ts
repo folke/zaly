@@ -546,7 +546,7 @@ export class Agent extends Emitter<AgentEvents> {
       const tool = tools.find((t) => t.name === call.name)
       if (!tool) continue
       try {
-        call.params = (await tool.validator.validateParams(call.params)) ?? call.params
+        call.params = (await tool.validator.cleanParams(call.params)) ?? call.params
       } catch {}
     }
     return calls
