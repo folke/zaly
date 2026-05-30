@@ -12,7 +12,9 @@ import { createRef, createRenderer, createStore, memo } from "@zaly/tui"
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
 import { box } from "@zaly/tui/widgets/box"
+import { bubble } from "../widgets/bubble.ts"
 import { compactionMarker } from "../widgets/compaction.ts"
+import { toolPreview } from "../widgets/tool.ts"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { appActions } from "./actions.ts"
 import { loadAgent, loadAgentModel, wireAgent } from "./agent.ts"
@@ -343,7 +345,23 @@ export class App {
         })
       }
     }
-    const ret = await this.pick<(typeof items)[number]>({ items, title: req.ask })
+    const { code } = await import("@zaly/tui/widgets/code")
+    const { text } = await import("@zaly/tui/widgets/text")
+
+    const title = req.ask
+    const details = () =>
+      bubble(
+        { box: { padding: [1, 0] }, type: "permission" },
+        req.scope === "bash"
+          ? box(
+              { flexDirection: "row", style: "code", width: "fit" },
+              text("❯ ", { style: "primary" }),
+              code({ code: req.input, lang: "bash", style: false })
+            )
+          : toolPreview(req.scope, req.input)
+      )
+
+    const ret = await this.pick<(typeof items)[number]>({ details, items, title })
     if (ret === undefined || ret.value === false) return false
     if (ret.value !== true) {
       const perms = await this.agent.ctx.permissions()

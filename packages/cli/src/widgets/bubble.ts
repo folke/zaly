@@ -1,5 +1,5 @@
-import type { Accessor, AnyStyle, Node, Reactive, Ref } from "@zaly/tui"
-import type { Box } from "@zaly/tui/widgets/box"
+import type { Accessor, AnyStyle, Node, Reactive, Ref, State } from "@zaly/tui"
+import type { Box, BoxStyle } from "@zaly/tui/widgets/box"
 
 import { effect, memo, unwrap } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
@@ -16,6 +16,7 @@ type Bubble = {
 
 const bubbles = {
   assistant: { icon: "●", style: "white" },
+  permission: { icon: "●", spinner: true, style: "warn" },
   reasoning: { icon: "∴", style: "quiet" },
   tool_error: { icon: "●", style: "error" },
   tool_pending: { icon: "●", spinner: true, style: "info" },
@@ -30,6 +31,7 @@ export type BubbleProps = {
   pending?: Accessor<boolean>
   style?: AnyStyle
   childrenBox?: Ref<Box>
+  box?: State<BoxStyle>
 }
 
 export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) => {
@@ -37,7 +39,7 @@ export const bubble = widget((props: BubbleProps, ...children: readonly Node[]) 
   const spin = memo(() => b().spinner ?? unwrap(props.pending) ?? false)
   const tvpad = b().highlight ? 1 : 0
   const ret = box(
-    { padding: [1, 0, 0, 0], width: "fill" },
+    { padding: [1, 0, 0, 0], width: "fill", ...props.box },
     box(
       { flexDirection: "row", padding: [tvpad, 0, tvpad, 1], style: b().highlight, width: "fill" },
       spinner({

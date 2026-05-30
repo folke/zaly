@@ -20,6 +20,24 @@ export type ToolCallProps = {
   pending?: Accessor<boolean>
 }
 
+export function toolPreview(tool: string, params: string | Record<string, unknown> = "") {
+  return text(({ style, width }) => {
+    const p =
+      typeof params === "string"
+        ? params
+        : (params.path ?? params.command ?? params.url ?? params.pattern ?? params.glob ?? params)
+    let json = ""
+    if (p !== "")
+      json =
+        typeof p === "string"
+          ? style.success(JSON.stringify(p))
+          : inspect([p], {
+              inspect: { breakLength: Infinity, compact: true },
+            })
+    return `${style.primary.bold(tool)}(${truncateAnsi(json, Math.min(80, width))})`
+  })
+}
+
 /**
  * Tool-call block: name + intent on top, params preview, then a status
  * line that flips from running to ✓/✗ once the result arrives. The
@@ -53,18 +71,7 @@ export const toolCall = widget((props: ToolCallProps) => {
     { pending: props.pending, type: status },
     box(
       { flexDirection: "column" },
-      // Tool name + params preview
-      text(({ style, width }) => {
-        const p =
-          params.path ?? params.command ?? params.url ?? params.pattern ?? params.glob ?? params
-        const json =
-          typeof p === "string"
-            ? style.success(JSON.stringify(p))
-            : inspect([p], {
-                inspect: { breakLength: Infinity, compact: true },
-              })
-        return `${style.primary.bold(call.name)}(${truncateAnsi(json, Math.min(80, width))})`
-      }),
+      toolPreview(call.name, params),
       // Optional description, dimmed
       text(({ style }) => style.dim(desc ?? ""), { visible: desc !== undefined }),
       show(

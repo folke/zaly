@@ -1,19 +1,23 @@
+import type { Node } from "../core/node.ts"
 import type { Ref } from "../core/reactive.ts"
 import type { OverlaySurface } from "../renderer/overlay.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Menu } from "../widgets/menu.ts"
 import type { PickerItem, PickerProps } from "../widgets/picker.ts"
+import type { Widget } from "../widgets/widget.ts"
 
 import { createRef, signal } from "../core/reactive.ts"
+import { isMarkdown } from "../style/inspect.ts"
 import { divider } from "../widgets/divider.ts"
+import { markdown } from "../widgets/markdown.ts"
 import { overlay } from "../widgets/overlay.ts"
 import { picker } from "../widgets/picker.ts"
-import { show } from "../widgets/show.ts"
 import { text } from "../widgets/text.ts"
 
 export type PickOpts<T extends PickerItem<unknown> = PickerItem> = PickerProps<T> & {
   title?: string
   ref?: Ref<Menu<T>>
+  details?: Widget | string
 }
 export class Picker {
   #ui: OverlaySurface
@@ -31,6 +35,18 @@ export class Picker {
   }
 
   #pick<T extends PickerItem<unknown> = PickerItem>(opts: PickOpts<T>) {
+    const children: Node[] = []
+    if (opts.title)
+      children.push(
+        isMarkdown(opts.title) ? markdown(opts.title) : text(opts.title, { style: "borderTitle" })
+      )
+    if (opts.details) {
+      if (typeof opts.details === "string")
+        children.push(isMarkdown(opts.details) ? markdown(opts.details) : text(opts.details))
+      else children.push(opts.details())
+    }
+    if (children.length > 0) children.push(divider({ style: "border" }))
+
     return overlay(
       {
         padding: [0, 1],
@@ -41,11 +57,7 @@ export class Picker {
         y: 1,
       },
       divider({ style: "accent" }),
-      show(
-        { when: !!opts.title },
-        text(opts.title!, { style: "borderTitle" }),
-        divider({ style: "border" })
-      ),
+      ...children,
       picker<T>({ ...opts, maxHeight: 8 }).ref(opts.ref)
     )
   }
