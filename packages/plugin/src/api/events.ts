@@ -60,6 +60,7 @@ export class EventsApi {
 
   constructor(plugin: Plugin) {
     this.#plugin = plugin
+    this.#emitter.onEmitError = (error) => plugin.logger.error("Error in event litener:", error)
     this.#attach()
   }
 
