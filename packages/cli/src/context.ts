@@ -19,7 +19,15 @@ type Slots = {
   session: Session
   dotenv: Record<string, string[]>
 }
-export const REASONING_EFFORTS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const
+export const REASONING_EFFORTS = [
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const
 
 export class Context extends BaseLogger {
   #flags?: Flags

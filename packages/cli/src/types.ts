@@ -1,3 +1,4 @@
+import type { PermissionPresetName } from "@zaly/agent"
 import type { Model, ReasoningEffort, Usage } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
@@ -27,6 +28,7 @@ export interface Flags {
   apiKey?: string
   tools?: string[]
   reasoning?: ReasoningEffort
+  permission?: PermissionPresetName
   theme?: string
   yolo?: boolean
   session?: string

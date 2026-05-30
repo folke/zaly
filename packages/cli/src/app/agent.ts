@@ -53,7 +53,10 @@ export async function loadAgent(app: App): Promise<Agent> {
     model: await loadAgentModel(app),
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }
-      : { preset: p.preset, rules: { allow: p.allow, ask: p.ask, deny: p.deny } },
+      : {
+          preset: ctx.flags.permission ?? p.preset,
+          rules: { allow: p.allow, ask: p.ask, deny: p.deny },
+        },
     request: { reasoning },
     session,
     skills: { paths: await config.resources.skills() },

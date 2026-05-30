@@ -1,5 +1,6 @@
 // oxlint-disable sort-keys
 
+import type { PermissionPresetName } from "@zaly/agent"
 import type { Settings } from "@zaly/config"
 import type { CmdArgs } from "./types.ts"
 
@@ -145,6 +146,12 @@ export function mainCommand(cli: Cli) {
         type: "boolean",
         alias: ["y"],
         description: "Use the yolo permissions preset (allow everything)",
+      },
+      permission: {
+        type: "enum",
+        options: ["strict", "readonly", "permissive", "yolo"] as PermissionPresetName[],
+        description:
+          "Permission preset to use (strict=deny all, readonly=allow read-only tools, permissive=allow most tools, yolo=allow everything). Overrides `yolo` flag if both are present.",
       },
       "print-config": {
         type: "boolean",
