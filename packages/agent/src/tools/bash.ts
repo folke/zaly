@@ -21,9 +21,11 @@ export type BashToolMeta = MetaOf<BashTool>
  *    against a grace window. Sub-grace commands appear synchronous to the
  *    model; longer ones promote to a background task and the model gets
  *    a partial snapshot now plus a system-message completion later.
- *  - `task_wait` lets the model block on a still-running bash; `task_stop`
- *    aborts one. (No more bash_wait / bash_kill — the generic surface
- *    covers it.)
+ *  - There's no blocking wait: a backgrounded command's result arrives
+ *    automatically as a `task-done` system message. `task_poll` peeks at
+ *    incremental output, `task_stop` aborts, and `wakeup` covers
+ *    poll-cadence re-checks. (No more bash_wait / bash_kill — the generic
+ *    surface covers it.)
  *  - `timeout` is now a real kill deadline. The Spawn aborts itself when
  *    it elapses; the streamable's `done` resolves with `killReason: "timeout"`
  *    in the snapshot. Defaults to 10 minutes (long enough for builds, tests,
@@ -49,8 +51,9 @@ export const bashTool = defineTool({
     "Run a bash command. Returns its output once the command exits, or a " +
     "partial snapshot if the command is still running after the harness's " +
     "grace window — in that case the eventual result arrives as a system " +
-    "message. Use `task_wait` to block on a long-running shell, `task_stop` " +
-    "to terminate one. `timeout` is a real kill deadline.",
+    "message. Its result then arrives automatically when it finishes; use " +
+    "`task_poll` to peek at output, `task_stop` to terminate one. `timeout` " +
+    "is a real kill deadline.",
   params: Type.Object({
     command: Type.String({ description: "The shell command to run, evaluated by `bash -c`." }),
     description: Type.Optional(
