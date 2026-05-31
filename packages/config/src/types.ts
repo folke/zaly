@@ -1,5 +1,5 @@
 import type { PermissionPresetName } from "@zaly/agent"
-import type { ReasoningEffort } from "@zaly/ai"
+import type { ReasoningEffort, AuthSecrets } from "@zaly/ai"
 import type { ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
@@ -25,6 +25,7 @@ export type Settings = {
     commands?: string[] | false
   }
   keymap?: Record<string, KeyPatterns>
+  secrets?: AuthSecrets
 }
 
 export type TypiaSettings = Omit<Settings, "keymap"> & {

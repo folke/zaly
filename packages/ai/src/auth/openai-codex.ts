@@ -417,4 +417,5 @@ export const codexAuth: OAuthProvider = {
     const creds = await loginCodex(opts)
     return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
   },
+  priority: 10, // higher than envAuth to take precedence when both are registered,
 }

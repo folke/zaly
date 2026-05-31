@@ -4,7 +4,7 @@ import type { Setter } from "@zaly/tui"
 import type { AppState } from "../types.ts"
 import type { App } from "./app.ts"
 
-import { getModel } from "@zaly/ai"
+import { getModel, registerSecrets } from "@zaly/ai"
 
 export async function loadAgentModel(app: App): Promise<Model | undefined> {
   const { loadModel } = await import("@zaly/ai")
@@ -38,6 +38,8 @@ export async function loadAgent(app: App): Promise<Agent> {
   const settings = config.settings
   const ss = session.settings
   const p = settings.permissions ?? {}
+
+  if (config.user.settings?.secrets) await registerSecrets(config.user.settings.secrets)
 
   const merged = {
     cwd: ctx.flags.cwd ?? ss.cwd ?? config.paths.cwd,

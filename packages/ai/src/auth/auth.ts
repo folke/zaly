@@ -1,4 +1,6 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { ModelSpec } from "../types.ts"
+import type { AuthSecrets } from "./secrets.ts"
 
 import { createRegistry } from "@zaly/shared/registry"
 
@@ -30,7 +32,10 @@ export interface AuthCredentials {
  *  tokens; the default env reader completes synchronously (Promise
  *  wrapping is negligible overhead). */
 export interface AuthProvider {
-  getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>
+  // for chaining multiple providers together; higher-`priority` providers are
+  // consulted first. Default is `0`; negative numbers are valid.
+  priority?: number
+  getAuth(model: ModelSpec): MaybePromise<AuthCredentials | undefined>
 }
 
 export interface OAuthOptions {
@@ -69,6 +74,10 @@ export type AnyAuthProvider = BuiltinAuthProvider | (string & {})
 
 export const authRegistry = createRegistry<AuthLoader>("auth").from(authProviders)
 
+export async function registerSecrets(secrets: AuthSecrets): Promise<void> {
+  authRegistry.register("secrets", () => import("./secrets.ts").then((m) => m.secretsAuth(secrets)))
+}
+
 /** Compose multiple auth providers into one. Tried in order; the
  *  first to return credentials wins. Useful for "try my Codex session,
  *  fall back to OPENAI_API_KEY" flows:
@@ -85,6 +94,7 @@ export function chainAuth(...providers: (AuthProvider | AnyAuthProvider)[]): Aut
       resolved ??= await Promise.all(
         providers.map((p) => (typeof p === "string" ? authRegistry.load(p) : Promise.resolve(p)))
       )
+      resolved.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
       for (const p of resolved) {
         // Intentionally sequential: first-wins semantics. Running in
         // parallel would fire all auth checks even after a hit and

@@ -54,7 +54,7 @@ describe("loadModel — error paths", () => {
 
   test("accepts an inline ModelSpec without a catalog lookup", async () => {
     const m = await loadModel({
-      id: "inline",
+      id: "this-is-a-custom/spec",
       model: "inline",
       contextSize: 1000,
       maxTokens: 100,
@@ -63,7 +63,7 @@ describe("loadModel — error paths", () => {
       api: "mock-cost-test" as never,
       reasoning: false,
     })
-    expect(m.id).toBe("mock-cost-test/inline")
+    expect(m.id).toBe("this-is-a-custom/spec")
   })
 })
 
