@@ -55,13 +55,13 @@ export function appActions({ app }: { app: App }) {
         for (const [id, m] of Object.entries(models)) {
           items.push({
             hint: [
-              formatNumber(m.limit.context),
+              formatNumber(m.contextSize),
               m.reasoning ? "reasoning" : undefined,
-              ...m.modalities.input.filter((mod) => mod !== "text").toSorted(),
+              ...m.input.filter((mod) => mod !== "text").toSorted(),
             ]
               .filter(Boolean)
               .join(", "),
-            label: id,
+            label: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
             value: id,
           })
         }

@@ -67,21 +67,23 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
   const output = Math.min(context, 8192)
   const vision = model.capabilities?.vision ?? false
 
+  // oxlint-disable-next-line sort-keys
   return {
-    attachment: vision,
-    baseUrl: `${baseUrl}/v1`,
-    family: model.architecture ?? undefined,
-    id: model.key,
-    limit: { context, output },
-    modalities: {
-      input: vision ? ["text", "image"] : ["text"],
-      output: ["text"],
-    },
+    id: `lm-studio/${model.key}`,
     name: model.display_name,
-    open_weights: true,
-    provider: "openai",
+    model: model.key,
+    api: "openai",
+    baseUrl: `${baseUrl}/v1`,
+    info: {
+      family: model.architecture ?? undefined,
+      open_weights: true,
+      tool_call: model.capabilities?.trained_for_tool_use ?? false,
+    },
+    contextSize: context,
+    maxTokens: output,
+    input: vision ? ["text", "image"] : ["text"],
+    output: ["text"],
     reasoning: model.capabilities?.reasoning !== undefined,
-    tool_call: model.capabilities?.trained_for_tool_use ?? false,
   }
 }
 

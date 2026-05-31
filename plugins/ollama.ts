@@ -70,22 +70,24 @@ function toModelSpec(model: ModelResponse, show: ShowResponse, baseUrl: string):
   const vision = capabilities.has("vision") || show.projector_info !== undefined
   const family = show.details.family || model.details.family || undefined
 
+  // oxlint-disable-next-line sort-keys
   return {
-    attachment: vision,
-    baseUrl: `${baseUrl}/v1`,
-    family,
-    id: model.name,
-    limit: { context, output },
-    modalities: {
-      input: vision ? ["text", "image"] : ["text"],
-      output: ["text"],
-    },
+    id: `ollama/${model.name}`,
+    model: model.model,
     name: model.name,
-    open_weights: true,
-    provider: "openai",
+    baseUrl: `${baseUrl}/v1`,
+    contextSize: context,
+    maxTokens: output,
+    input: vision ? ["text", "image"] : ["text"],
+    output: ["text"],
+    info: {
+      family,
+      open_weights: true,
+      release_date: date(model.modified_at),
+      tool_call: capabilities.has("tools"),
+    },
+    api: "openai",
     reasoning: capabilities.has("thinking"),
-    release_date: date(model.modified_at),
-    tool_call: capabilities.has("tools"),
   }
 }
 

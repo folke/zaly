@@ -5,13 +5,15 @@ import { envAuth } from "../src/auth/env.ts"
 import { chainAuth, hasAuth } from "../src/auth/index.ts"
 
 const baseSpec: ModelSpec = {
-  attachment: false,
   id: "x",
-  limit: { context: 1000, output: 100 },
-  modalities: { input: ["text"], output: ["text"] },
   name: "x",
-  provider: "x",
+  maxTokens: 100,
+  contextSize: 1000,
+  input: ["text"],
+  model: "x",
+  api: "x",
   reasoning: false,
+  env: [],
 }
 
 const withEnv = (envs: string[]): ModelSpec => ({

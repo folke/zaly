@@ -407,7 +407,7 @@ function buildCodexHeaders(creds: CodexCredentials): Record<string, string> {
  *  `chainAuth(codexAuth, envAuth)`. */
 export const codexAuth: OAuthProvider = {
   async getAuth(model: ModelSpec): Promise<AuthCredentials | undefined> {
-    if (model.providerInfo?.id !== "openai-codex") return undefined
+    if (!model.id.startsWith("openai-codex/")) return
     const creds = await getCodexCredentials()
     if (creds === undefined) return undefined
     return { apiKey: creds.access, headers: buildCodexHeaders(creds) }

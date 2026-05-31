@@ -460,30 +460,20 @@ export interface ModelInfo {
   experimental?: {
     modes?: ExperimentalModes
   }
-  provider?: ModelProviderOverride
 }
 
 /** Metadata for one provider endpoint — one-to-one with the
  *  models.dev `Provider` schema. */
 export interface ProviderInfo {
   id: string
+  baseUrl?: string
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */
   env: string[]
-  /** npm module the Vercel AI SDK uses for this provider. Our
-   *  generator uses it to classify the adapter family
-   *  (`@ai-sdk/openai`, `@ai-sdk/anthropic`, …). Not loaded at
-   *  runtime by us. */
-  npm: string
-  /** Base URL — required for `@ai-sdk/openai-compatible` and
-   *  `@openrouter/ai-sdk-provider`; optional for `@ai-sdk/openai`
-   *  and `@ai-sdk/anthropic` (their adapters have a default). */
-  api?: string
   name: string
   /** Docs link for this provider's model list. */
   doc: string
-  models: Record<string, ModelInfo>
 }
 
 // ── Runtime API types ───────────────────────────────────────────────────
@@ -497,9 +487,9 @@ export type FetchLike = (input: string | URL | Request, init?: RequestInit) => P
  *  adapter-specific wire quirks live in `Quirks` below so the options
  *  shape stays uniform regardless of which family is used. */
 export interface ProviderOptions {
-  /** API key. Falls back to the first env var in `ProviderInfo.env`. */
+  /** API key. Falls back to `ModelSpec.apiKey` or the first set env var in `ModelSpec.env`. */
   apiKey?: string
-  /** Base URL override. Falls back to `ProviderInfo.api`. */
+  /** Base URL override. Falls back to `ModelSpec.baseUrl`. */
   baseUrl?: string
   /** Extra headers merged onto every request. */
   headers?: Record<string, string>
@@ -603,23 +593,33 @@ export interface Quirks {
  *
  *  Collapsing ModelInfo in avoids the `options.info.limit.context`
  *  ceremony; everything a user touches lives at one level. */
-export interface ModelSpec extends ProviderOptions, Omit<ModelInfo, "provider"> {
-  /** Provider name — e.g. `"openai"`, `"openrouter"`. Resolves against
-   *  the runtime catalog to pick the adapter family. */
-  provider: AnyProvider
-  /** Per-model wire override (renamed from `ModelInfo.provider`). When
-   *  set, fields on this object take precedence over the provider's
-   *  defaults — used by a minority of catalog entries to route a
-   *  specific model to a different npm, endpoint, shape, or add
-   *  custom body/headers. */
-  providerOverride?: ModelInfo["provider"]
-  /** Endpoint info. Auto-filled from the runtime catalog when
-   *  `provider` resolves to a known entry; supply here for custom
-   *  providers. */
-  providerInfo?: ProviderInfo
-  /** Default `maxTokens` for requests through this model. Unset →
-   *  adapter uses `limit.output` at request time. */
-  maxTokens?: number
-  /** Adapter-dispatch quirks. See `Quirks`. */
+export interface ModelSpec extends ProviderOptions {
+  /** Full model URI: `"<provider>/<id>"` */
+  id: string
+  /** Model id without the provider prefix. */
+  model: string
+  /** Human-friendly display name */
+  name: string
+  /** adapter to use: anthropic, openai, openai-responses, etc. */
+  api: AnyProvider
+  /** Is this a reasoning model? */
+  reasoning?: boolean
+  /** Input modalities this model accepts */
+  input: Modality[]
+  output?: Modality[]
+  cost?: ModelInfo["cost"]
+  /** Max output tokens this model accepts */
+  maxTokens: number
+  /** Max context size for this model */
+  contextSize: number
+  /** Adapter-dispatch quirks. See `Quirks` */
   quirks?: Quirks
+  /** Catalog model info */
+  info?: Partial<ModelInfo>
+  /** Catalog provider info */
+  providerInfo?: ProviderInfo
+  /** Env-var names consulted for credentials, in priority order.
+   *  The first element is the conventional one (`OPENAI_API_KEY`
+   *  etc.); downstream entries are fallbacks. */
+  env?: string[]
 }

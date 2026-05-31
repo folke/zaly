@@ -23,8 +23,8 @@ const model = await loadModel(id)
 
 console.log(`→ ${model.id}`)
 console.log(
-  `  context ${model.spec.limit.context}` +
-    ` · output ${model.spec.limit.output}` +
+  `  context ${model.spec.contextSize}` +
+    ` · output ${model.spec.maxTokens}` +
     ` · reasoning ${model.spec.reasoning ? "yes" : "no"}`
 )
 console.log()

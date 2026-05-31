@@ -1,3 +1,4 @@
+import type { ModelCatalog, StoredModel } from "../src/models.ts"
 /**
  * Filter the models.dev snapshot, apply our overrides, and emit
  * pre-resolved `ModelOptions` records ready for `getModel` / `loadModel`
@@ -15,7 +16,7 @@
  * Run:  bun packages/ai/scripts/build-providers.ts
  */
 import type { BuiltinProvider } from "../src/providers/index.ts"
-import type { ModelInfo, ModelSpec, ProviderInfo, Quirks } from "../src/types.ts"
+import type { ModelInfo, ModelProviderOverride, ProviderInfo, Quirks } from "../src/types.ts"
 import type { ProviderOverride } from "./overrides.ts"
 
 import { writeFileSync } from "node:fs"
@@ -27,20 +28,32 @@ const AI_DIR = join(import.meta.dirname, "..")
 const CATALOG_FILE = join(AI_DIR, "assets", "models.json")
 const MODEL_IDS_FILE = join(AI_DIR, "assets", "model-ids.json")
 
-/** Pre-resolved ModelOptions as stored on disk. `providerInfo` is
- *  intentionally absent — it lives in the shared `providers` map to
- *  avoid duplication across entries of the same provider. */
-type StoredModelOptions = Omit<ModelSpec, "providerInfo">
-
-/** Provider metadata minus the nested `models` sub-record. We store
- *  models flat under `output.models` so this field would otherwise
- *  duplicate ~1MB of data across the two maps. */
-type StoredProviderInfo = Omit<ProviderInfo, "models">
-
-interface Output {
-  providers: Record<string, StoredProviderInfo>
-  models: Record<string, StoredModelOptions>
+type CatalogModel = ModelInfo & {
+  provider?: ModelProviderOverride
 }
+
+type CatalogProvider = ProviderInfo & {
+  id: string
+  /** Env-var names consulted for credentials, in priority order.
+   *  The first element is the conventional one (`OPENAI_API_KEY`
+   *  etc.); downstream entries are fallbacks. */
+  env: string[]
+  /** npm module the Vercel AI SDK uses for this provider. Our
+   *  generator uses it to classify the adapter family
+   *  (`@ai-sdk/openai`, `@ai-sdk/anthropic`, …). Not loaded at
+   *  runtime by us. */
+  npm: string
+  /** Base URL — required for `@ai-sdk/openai-compatible` and
+   *  `@openrouter/ai-sdk-provider`; optional for `@ai-sdk/openai`
+   *  and `@ai-sdk/anthropic` (their adapters have a default). */
+  api?: string
+  name: string
+  /** Docs link for this provider's model list. */
+  doc: string
+  models: Record<string, CatalogModel>
+}
+
+type Catalog = Record<string, CatalogProvider>
 
 // ── npm → adapter mapping ─────────────────────────────────────────────────
 //
@@ -73,24 +86,19 @@ function adapterForNpm(npm: string): BuiltinProvider | undefined {
 
 // ── main ──────────────────────────────────────────────────────────────────
 
-const raw = snapshot as unknown as Record<string, ProviderInfo>
+const raw = snapshot as unknown as Catalog
 
 // Synthesise raw provider entries from `overrides.<id>.clone` rules
 // BEFORE the main loop runs, so cloned providers go through the same
 // adapter / baseUrl / headers / quirks pipeline as catalog-shipped ones.
 synthesiseClones(raw, overrides)
 
-const out: Output = { models: {}, providers: {} }
+const out: ModelCatalog = { models: {}, providers: {} }
 const allIds: string[] = []
 const skipped: { id: string; reason: string }[] = []
 
 for (const [pid, provider] of Object.entries(raw)) {
   const override = overrides[pid] ?? {}
-  const adapter = resolveAdapter(provider, override)
-  if (adapter === undefined) {
-    skipped.push({ id: pid, reason: `no adapter for npm ${provider.npm}` })
-    continue
-  }
 
   const keptModels: Record<string, ModelInfo> = {}
   for (const [mid, m] of Object.entries(provider.models)) {
@@ -100,7 +108,13 @@ for (const [pid, provider] of Object.entries(raw)) {
     // Per-model effective adapter. Model-level npm override wins over
     // provider-level (but not over our `overrides.adapter` force).
     const modelAdapter = override.adapter ?? adapterForNpm(m.provider?.npm ?? provider.npm)
-    if (modelAdapter === undefined) continue
+    if (modelAdapter === undefined) {
+      skipped.push({
+        id: `${pid}/${mid}`,
+        reason: `no adapter for npm ${m.provider?.npm ?? provider.npm}`,
+      })
+      continue
+    }
 
     // Escape-hatch transform: can drop or rewrite arbitrary fields.
     const info = override.transform ? override.transform(m, provider) : m
@@ -139,37 +153,28 @@ for (const s of skipped) console.log(`  ${s.id.padEnd(30)}  ${s.reason}`)
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
-/** Pick the adapter family for a provider. Provider-level override
- *  (`overrides.ts`) wins; otherwise fall back to the npm mapping. */
-function resolveAdapter(
-  provider: ProviderInfo,
-  override: ProviderOverride
-): BuiltinProvider | undefined {
-  if (override.adapter !== undefined) return override.adapter
-  return adapterForNpm(provider.npm)
-}
-
 /** Strip the `models` sub-record from ProviderInfo (stored flat
  *  elsewhere) and apply any baseUrl override. Other fields pass
  *  through unchanged. */
-function toStoredProviderInfo(
-  provider: ProviderInfo,
-  override: ProviderOverride
-): StoredProviderInfo {
-  const { models: _, ...rest } = provider
-  if (override.baseUrl !== undefined) rest.api = override.baseUrl
-  return rest
+function toStoredProviderInfo(provider: CatalogProvider, override: ProviderOverride): ProviderInfo {
+  return {
+    id: provider.id,
+    name: provider.name,
+    doc: provider.doc,
+    baseUrl: override.baseUrl ?? provider.api,
+    env: override.env ?? provider.env,
+  }
 }
 
 interface ProjectContext {
   adapter: BuiltinProvider
-  info: ModelInfo
-  provider: ProviderInfo
+  info: CatalogModel
+  provider: CatalogProvider
   override: ProviderOverride
 }
 
-function projectOptions(ctx: ProjectContext): StoredModelOptions {
-  const { adapter, info, override, provider } = ctx
+function projectOptions(ctx: ProjectContext): StoredModel {
+  const { adapter, info, override } = ctx
   // `ModelInfo.provider` is a per-model override; it lives at a
   // different key in the flattened ModelOptions so the adapter-name
   // identity can take the `provider` slot.
@@ -177,18 +182,9 @@ function projectOptions(ctx: ProjectContext): StoredModelOptions {
 
   const quirks = mergeQuirks(override.quirks, override.modelQuirks?.[info.id])
   // baseUrl precedence: per-model override (rare) > overrides.ts > provider.api.
-  const baseUrl = modelOverride?.api ?? override.baseUrl ?? provider.api
+  const baseUrl = modelOverride?.api
 
-  const opts: StoredModelOptions = {
-    ...flatInfo,
-    maxTokens: info.limit.output,
-    provider: adapter,
-  }
-  if (modelOverride !== undefined) opts.providerOverride = modelOverride
-  if (baseUrl !== undefined) opts.baseUrl = baseUrl
-  if (override.headers !== undefined) opts.headers = override.headers
-  if (quirks !== undefined) opts.quirks = quirks
-  return opts
+  return { ...flatInfo, api: adapter, baseUrl, headers: override.headers, quirks }
 }
 
 function mergeQuirks(
@@ -210,10 +206,7 @@ function mergeQuirks(
  *
  *  Skips synthesis when a provider with the same id already exists
  *  in the snapshot (lets a future real catalog entry take precedence). */
-function synthesiseClones(
-  catalog: Record<string, ProviderInfo>,
-  all: Record<string, ProviderOverride>
-): void {
+function synthesiseClones(catalog: Catalog, all: Record<string, ProviderOverride>): void {
   for (const [pid, override] of Object.entries(all)) {
     const rules = override.clone
     if (rules === undefined || rules.length === 0) continue

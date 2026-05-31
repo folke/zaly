@@ -17,15 +17,17 @@ import { Session } from "../src/session/index.ts"
  *  and the prompt registry can read those fields without crashes.
  *  Numbers chosen large enough that test scenarios never accidentally
  *  trip thresholds. */
-const mockSpec = {
-  attachment: true,
+const mockSpec: Model["spec"] = {
   id: "x",
-  limit: { context: 1_000_000, output: 16_000 },
-  modalities: { input: ["text", "image"], output: ["text"] },
+  model: "x",
+  contextSize: 1_000_000,
+  maxTokens: 16_000,
+  input: ["text", "image"],
+  output: ["text"],
   name: "mock",
-  provider: "mock",
+  api: "mock",
   reasoning: false,
-} as unknown as Model["spec"]
+}
 
 /** Drive `collect` over a script of stream events while honoring
  *  `onEvent` / `onUpdate` callbacks the agent passes in. Stamps the

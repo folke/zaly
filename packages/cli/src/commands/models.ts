@@ -59,9 +59,9 @@ async function run(_cli: Cli, args: ModelsArgs): Promise<void> {
     const row = [
       `**${id}**`,
       m.reasoning ? "**✓**" : "",
-      `\`${formatNumber(m.limit.context)}\``,
-      m.modalities.input.toSorted().join(", "),
-      m.release_date ?? "",
+      `\`${formatNumber(m.contextSize)}\``,
+      m.input.toSorted().join(", "),
+      m.info?.release_date ?? "",
     ]
     rows.push(`| ${row.join(" | ")} |`)
   }

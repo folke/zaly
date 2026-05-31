@@ -127,7 +127,10 @@ interface AnthropicRequest {
   tool_choice?: { type: "auto" | "any" | "none" } | { type: "tool"; name: string }
   temperature?: number
   stop_sequences?: string[]
-  thinking?: { type: "enabled"; budget_tokens: number } | { type: "adaptive" } | { type: "disabled" }
+  thinking?:
+    | { type: "enabled"; budget_tokens: number }
+    | { type: "adaptive" }
+    | { type: "disabled" }
   output_config?: { effort: "low" | "medium" | "high" | "xhigh" | "max" }
   stream: true
 }
@@ -201,7 +204,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const caching = opts.caching ?? true
   // Anthropic requires max_tokens. Default to the catalog's output cap
   // when the caller didn't set one.
-  const maxTokens = opts.maxTokens ?? model.limit.output
+  const maxTokens = opts.maxTokens ?? model.maxTokens
 
   // The durable `prompt[]` is the only thing that lands in Anthropic's
   // top-level `system` slot. Mid-conversation `role: "system"` messages
@@ -223,7 +226,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
     messages: await toAnthropicMessages(conversational, caching),
-    model: model.id,
+    model: model.model,
     stream: true,
   }
 
@@ -249,7 +252,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  applyThinking(out, model.id, opts.reasoning, maxTokens)
+  applyThinking(out, model.model, opts.reasoning, maxTokens)
 
   return out
 }
@@ -357,7 +360,9 @@ function adaptiveEffort(
 
 function supportsXHighEffort(model: string): boolean {
   const parsed = parseClaudeVersion(model)
-  return parsed?.family === "opus" && parsed.major === 4 && (parsed.minor === 7 || parsed.minor === 8)
+  return (
+    parsed?.family === "opus" && parsed.major === 4 && (parsed.minor === 7 || parsed.minor === 8)
+  )
 }
 
 function supportsMaxEffort(model: string): boolean {
@@ -372,7 +377,9 @@ function isMythos(model: string): boolean {
   return model === "claude-mythos-preview"
 }
 
-function parseClaudeVersion(model: string): { family: string; major: number; minor: number } | undefined {
+function parseClaudeVersion(
+  model: string
+): { family: string; major: number; minor: number } | undefined {
   const match = /^claude-([a-z]+)-(\d+)-(\d+)(?:-|$)/.exec(model)
   if (!match) return undefined
   return { family: match[1], major: Number(match[2]), minor: Number(match[3]) }
@@ -723,7 +730,13 @@ function* handleEvent(
       const cb = evt.content_block
       if (cb.type === "tool_use") {
         pendingToolUses.set(evt.index, { argsBuffer: "", id: cb.id, name: cb.name })
-        yield { args: "", id: cb.id, key: String(evt.index), name: cb.name, type: "tool-call-delta" }
+        yield {
+          args: "",
+          id: cb.id,
+          key: String(evt.index),
+          name: cb.name,
+          type: "tool-call-delta",
+        }
       } else if (cb.type === "text" && cb.text !== "") {
         yield { delta: cb.text, type: "text-delta" }
       } else if (cb.type === "thinking" && cb.thinking !== "") {

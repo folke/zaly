@@ -205,7 +205,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   }
   const out: OpenAIChatRequest = {
     messages,
-    model: model.id,
+    model: model.model,
     stream: true,
     stream_options: { include_usage: true },
   }

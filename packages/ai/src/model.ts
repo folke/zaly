@@ -90,20 +90,10 @@ export class Model<T extends AnyProvider = string> {
    *  If the model has catalog cost data, `finish` events get a
    *  populated `usage.cost` breakdown. */
   #stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
-    // `opts.maxTokens` is the only thing that puts a value on the wire.
-    // `spec.maxTokens` (catalog override) is treated as a hard cap that
-    // clamps a too-large caller value — never auto-applied as a default,
-    // because catalogs almost always set `spec.maxTokens == limit.output`
-    // and for models where output == context that would produce an
-    // invalid request (no room left for the prompt). Adapters that
-    // require a value on the wire (Anthropic) default from
-    // `spec.limit.output` themselves.
-    const limit = Math.min(this.spec.maxTokens ?? this.spec.limit.output, this.spec.limit.output)
-
     const streamOpts: StreamOptions = {
       ...opts,
       caching: opts.caching ?? true,
-      maxTokens: opts.maxTokens ? Math.min(opts.maxTokens, limit) : undefined,
+      maxTokens: opts.maxTokens ? Math.min(opts.maxTokens, this.spec.maxTokens) : undefined,
       reasoning: this.spec.reasoning ? opts.reasoning : undefined,
     }
 
@@ -135,8 +125,7 @@ export class Model<T extends AnyProvider = string> {
   }
 
   canAttach(modality: Modality): boolean {
-    if (!this.spec.attachment) return false
-    return this.spec.modalities.input.includes(modality)
+    return this.spec.input.includes(modality)
   }
 }
 
@@ -158,11 +147,7 @@ export async function loadModel(
   overrides?: Partial<ModelSpec>,
   auth?: AuthProvider
 ): Promise<Model> {
-  // Full model URI. Get from the catalog if it's a string; if it's already a spec, construct
-  const id =
-    typeof source === "string"
-      ? source
-      : `${source.providerInfo?.id ?? source.provider}/${source.id}`
+  const id = typeof source === "string" ? source : source.id
 
   const base = typeof source === "string" ? await getModel(source) : source
   if (base === undefined) {
@@ -172,7 +157,7 @@ export async function loadModel(
   }
   const spec: ModelSpec = { ...base, ...overrides }
   const creds = await authenticate(spec, auth)
-  const provider = await providerRegistry.load(spec.provider, {
+  const provider = await providerRegistry.load(spec.api, {
     ...spec,
     apiKey: spec.apiKey ?? creds?.apiKey,
     // Default retry on the request side — pre-stream only (`withRetry`

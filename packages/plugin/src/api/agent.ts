@@ -5,7 +5,6 @@ import type {
   AnyTool,
   PromptLoader,
   SendMode,
-  ToolLoader,
 } from "@zaly/agent"
 import type { Content, Message, TokenCount, Tool } from "@zaly/ai"
 import type { Plugin } from "../plugin.ts"

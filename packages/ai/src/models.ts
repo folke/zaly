@@ -1,7 +1,21 @@
 import type { AuthProvider } from "./auth/auth.ts"
-import type { Modality, ModelSpec, ProviderInfo } from "./types.ts"
+import type { AnyProvider } from "./providers/registry.ts"
+import type { Modality, ModelInfo, ModelSpec, ProviderInfo, Quirks } from "./types.ts"
 
 import { hasAuth } from "./auth/auth.ts"
+
+export type StoredModel = ModelInfo & {
+  api: AnyProvider
+  baseUrl?: string
+  quirks?: Quirks
+  headers?: Record<string, string>
+}
+
+/** On-disk catalog shape emitted by `scripts/build-providers.ts`. */
+export interface ModelCatalog {
+  providers: Record<string, ProviderInfo>
+  models: Record<string, StoredModel>
+}
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than
@@ -27,17 +41,11 @@ export function parseModelId(id: string): { provider: string; model: string } {
 // minus `providerInfo` which is joined in at lookup time from the
 // `providers` map).
 
-/** On-disk catalog shape emitted by `scripts/build-providers.ts`. */
-interface Catalog {
-  providers: Record<string, Omit<ProviderInfo, "models">>
-  models: Record<string, Omit<ModelSpec, "providerInfo">>
-}
+let catalogPromise: Promise<ModelCatalog> | undefined
 
-let catalogPromise: Promise<Catalog> | undefined
-
-function loadCatalog(): Promise<Catalog> {
+function loadCatalog(): Promise<ModelCatalog> {
   catalogPromise ??= import("../assets/models.json", { with: { type: "json" } }).then(
-    (m) => m.default as unknown as Catalog
+    (m) => m.default as unknown as ModelCatalog
   )
   return catalogPromise
 }
@@ -49,13 +57,13 @@ const customModels = new Map<string, ModelSpec>()
 /** Register custom model entries. Overrides any existing entry with
  *  the same id (custom or built-in). Persists for the lifetime of
  *  the process — nothing is written to disk. */
-export function addModels(models: Record<string, ModelSpec>): void {
+export function registerModels(models: Record<string, ModelSpec>): void {
   for (const [id, opts] of Object.entries(models)) customModels.set(id, opts)
 }
 
 export function registerModel(id: string, opts: ModelSpec): () => void {
   const prev = customModels.get(id)
-  addModels({ [id]: opts })
+  registerModels({ [id]: opts })
   return () => {
     if (customModels.get(id) !== opts) return
     else if (prev !== undefined) customModels.set(id, prev)
@@ -86,7 +94,10 @@ export async function getModel(id: string): Promise<ModelSpec | undefined> {
 export interface ModelFilter {
   auth?: AuthProvider | true
   reasoning?: boolean
-  modality?: Modality | Modality[] | { input?: Modality[]; output?: Modality[] }
+  modality?:
+    | Modality
+    | Modality[]
+    | { input?: Modality | Modality[]; output?: Modality | Modality[] }
   filter?: string | ((m: ModelSpec) => boolean)
 }
 
@@ -110,23 +121,19 @@ export async function filterModel(id: string, m: ModelSpec, opts?: ModelFilter):
  *  the model's declared input/output modalities. Shorthand targets
  *  input because "find me a vision model" is the common case. */
 function matchesModality(m: ModelSpec, spec: NonNullable<ModelFilter["modality"]>): boolean {
-  const normalised =
-    typeof spec === "string" || Array.isArray(spec) ? { input: [spec].flat() } : spec
-  if (
-    normalised.input !== undefined &&
-    normalised.input.length > 0 &&
-    !normalised.input.some((mod) => m.modalities.input.includes(mod))
-  ) {
-    return false
+  const input: Modality[] = []
+  const output: Modality[] = []
+  // oxlint-disable-next-line unicorn/consistent-function-scoping
+  const arr = (x?: Modality | Modality[]) => (typeof x === "string" ? [x] : (x ?? []))
+  if (typeof spec === "string" || Array.isArray(spec)) input.push(...arr(spec))
+  else {
+    input.push(...arr(spec.input))
+    output.push(...arr(spec.output))
   }
-  if (
-    normalised.output !== undefined &&
-    normalised.output.length > 0 &&
-    !normalised.output.some((mod) => m.modalities.output.includes(mod))
-  ) {
-    return false
-  }
-  return true
+  // "model must accept all these modalities"
+  return (
+    input.every((mod) => m.input.includes(mod)) && output.every((mod) => m.output?.includes(mod))
+  )
 }
 
 /** Every model we know about, keyed by id. Includes runtime-registered
@@ -136,16 +143,17 @@ export async function listModels(opts?: ModelFilter): Promise<Record<string, Mod
   const catalog = await loadCatalog()
   const entries: [string, ModelSpec][] = Object.entries(catalog.models).map(([id, stored]) => [
     id,
-    attachProviderInfo(stored, catalog, id),
+    toModelSpec(id, stored, catalog),
   ])
 
   entries.sort(([a, am], [b, bm]) => {
     const ap = am.providerInfo?.name ?? "0"
     const bp = bm.providerInfo?.name ?? "0"
     if (ap && bp && ap !== bp) return ap.localeCompare(bp)
-    const ka = am.release_date ?? am.last_updated ?? a
-    const kb = bm.release_date ?? bm.last_updated ?? b
-    return -ka.localeCompare(kb)
+    const ka = am.info?.release_date ?? am.info?.last_updated ?? a
+    const kb = bm.info?.release_date ?? bm.info?.last_updated ?? b
+    if (ka !== kb) return -ka.localeCompare(kb)
+    return am.name.localeCompare(bm.name)
   })
 
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
@@ -170,33 +178,37 @@ export async function listModelIds(): Promise<readonly string[]> {
 /** Built-in providers map. Exposed so callers can read endpoint
  *  metadata directly (names, docs URLs, env-var names) for pickers
  *  or admin tooling. */
-export async function builtinProviders(): Promise<
-  Readonly<Record<string, Omit<ProviderInfo, "models">>>
-> {
+export async function builtinProviders(): Promise<Readonly<Record<string, ProviderInfo>>> {
   const catalog = await loadCatalog()
   return catalog.providers
 }
 
 async function resolveBuiltin(id: string): Promise<ModelSpec | undefined> {
   const catalog = await loadCatalog()
-  const stored = (catalog.models as Record<string, Catalog["models"][string] | undefined>)[id]
-  if (stored === undefined) return undefined
-  return attachProviderInfo(stored, catalog, id)
+  const stored = catalog.models[id] as StoredModel | undefined
+  return stored ? toModelSpec(id, stored, catalog) : undefined
 }
 
-/** Attach `providerInfo` to a stored `ModelOptions`. The endpoint id
- *  (the URI prefix — `"openrouter"`, `"deepseek"`, …) comes from the
- *  model id key; `stored.provider` is now the adapter name, which
- *  isn't what we need to look up provider metadata. */
-function attachProviderInfo(
-  stored: Catalog["models"][string],
-  catalog: Catalog,
-  id: string
-): ModelSpec {
-  const { provider: endpointId } = parseModelId(id)
-  const providerMeta = (
-    catalog.providers as Record<string, Catalog["providers"][string] | undefined>
-  )[endpointId]
-  if (providerMeta === undefined) return stored
-  return { ...stored, providerInfo: { ...providerMeta, models: {} } }
+function toModelSpec(id: string, model: StoredModel, catalog: ModelCatalog): ModelSpec {
+  const provider = catalog.providers[parseModelId(id).provider] as ProviderInfo | undefined
+  if (!provider)
+    throw new Error(`Provider "${parseModelId(id).provider}" not found for model "${id}".`)
+  // oxlint-disable-next-line sort-keys
+  return {
+    id,
+    name: model.name,
+    model: model.id,
+    api: model.api,
+    baseUrl: model.baseUrl ?? provider.baseUrl,
+    headers: model.headers,
+    reasoning: model.reasoning,
+    input: model.modalities.input,
+    output: model.modalities.output,
+    maxTokens: model.limit.output,
+    contextSize: model.limit.context,
+    quirks: model.quirks,
+    env: provider.env,
+    providerInfo: provider,
+    info: model,
+  }
 }

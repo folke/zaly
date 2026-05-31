@@ -197,7 +197,7 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
 
   const out: ResponsesRequest = {
     input,
-    model: model.id,
+    model: model.model,
     stream: true,
   }
 

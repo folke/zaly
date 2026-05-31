@@ -2,7 +2,7 @@ import type { Provider, StreamEvent } from "../src/provider.ts"
 
 import { describe, expect, test } from "vitest"
 import { loadModel } from "../src/model.ts"
-import { addModels } from "../src/models.ts"
+import { registerModels } from "../src/models.ts"
 import { providerRegistry } from "../src/providers/index.ts"
 
 // ── Local mock provider (registered once for the whole file) ───────────
@@ -20,26 +20,28 @@ providerRegistry.register(
     })
 )
 
-addModels({
+registerModels({
   "mock-cost-test/cheap": {
     cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
     id: "cheap",
-    limit: { context: 100_000, output: 4096 },
-    modalities: { input: ["text"], output: ["text"] },
+    model: "cheap",
+    contextSize: 100_000,
+    maxTokens: 4096,
+    input: ["text"],
     name: "Cheap",
-    provider: "mock-cost-test" as never,
+    api: "mock-cost-test" as never,
     reasoning: false,
-    attachment: false,
   },
   "mock-cost-test/freebie": {
     // No cost field — augmentation should be a no-op.
     id: "freebie",
-    limit: { context: 100_000, output: 4096 },
-    modalities: { input: ["text"], output: ["text"] },
+    model: "freebie",
+    contextSize: 100_000,
+    maxTokens: 4096,
+    input: ["text"],
     name: "Freebie",
-    provider: "mock-cost-test" as never,
+    api: "mock-cost-test" as never,
     reasoning: false,
-    attachment: false,
   },
 })
 
@@ -52,12 +54,13 @@ describe("loadModel — error paths", () => {
 
   test("accepts an inline ModelSpec without a catalog lookup", async () => {
     const m = await loadModel({
-      attachment: false,
       id: "inline",
-      limit: { context: 1000, output: 100 },
-      modalities: { input: ["text"], output: ["text"] },
+      model: "inline",
+      contextSize: 1000,
+      maxTokens: 100,
+      input: ["text"],
       name: "Inline",
-      provider: "mock-cost-test" as never,
+      api: "mock-cost-test" as never,
       reasoning: false,
     })
     expect(m.id).toBe("mock-cost-test/inline")

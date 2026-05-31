@@ -30,11 +30,17 @@ export function streamReq(
   // `limit.output: 4096` matches the old hard-coded Anthropic fallback,
   // so request-shape tests that don't pass `maxTokens` keep their
   // previous wire-level assertions.
-  const spec = {
+  const spec: ModelSpec = {
     id: model,
-    limit: { context: 200_000, output: 4096 },
+    name: model,
+    model,
+    api: "mock",
+    input: ["text"],
+    output: ["text"],
+    contextSize: 200_000,
+    maxTokens: 4096,
     quirks,
-  } as unknown as ModelSpec
+  }
   return { ctx: { messages, prompt, tools }, model: spec, opts }
 }
 

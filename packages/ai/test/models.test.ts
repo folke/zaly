@@ -2,7 +2,7 @@ import type { ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import {
-  addModels,
+  registerModels,
   builtinProviders,
   filterModel,
   getModel,
@@ -30,25 +30,26 @@ describe("parseModelId", () => {
 })
 
 const customSpec = (overrides: Partial<ModelSpec> = {}): ModelSpec => ({
-  attachment: false,
   id: "model-x",
-  limit: { context: 1000, output: 100 },
-  modalities: { input: ["text"], output: ["text"] },
+  model: "model-x",
+  contextSize: 1000,
+  maxTokens: 100,
+  input: ["text"],
   name: "Model X",
-  provider: "mock-models-test",
+  api: "mock-models-test",
   reasoning: false,
   ...overrides,
 })
 
 describe("addModels / getModel", () => {
   test("custom registration is retrievable", async () => {
-    addModels({ "mock-models-test/foo": customSpec({ id: "foo", name: "Foo" }) })
+    registerModels({ "mock-models-test/foo": customSpec({ id: "foo", name: "Foo" }) })
     const m = await getModel("mock-models-test/foo")
     expect(m?.name).toBe("Foo")
   })
 
   test("custom registrations override built-ins with the same id", async () => {
-    addModels({
+    registerModels({
       "mock-models-test/override-target": customSpec({ id: "override-target", name: "Custom" }),
     })
     const m = await getModel("mock-models-test/override-target")
@@ -63,7 +64,8 @@ describe("addModels / getModel", () => {
 describe("filterModel", () => {
   const visionModel: ModelSpec = customSpec({
     id: "vision",
-    modalities: { input: ["text", "image"], output: ["text"] },
+    input: ["text", "image"],
+    output: ["text", "image"],
     reasoning: true,
   })
   const textModel: ModelSpec = customSpec({ id: "text" })
@@ -77,11 +79,6 @@ describe("filterModel", () => {
   test("modality shorthand checks input modalities", async () => {
     expect(await filterModel("vision", visionModel, { modality: "image" })).toBe(true)
     expect(await filterModel("vision", textModel, { modality: "image" })).toBe(false)
-  })
-
-  test("modality array shorthand: any-of input", async () => {
-    expect(await filterModel("vision", visionModel, { modality: ["image", "audio"] })).toBe(true)
-    expect(await filterModel("vision", textModel, { modality: ["audio", "video"] })).toBe(false)
   })
 
   test("modality object form narrows on output too", async () => {
@@ -105,7 +102,7 @@ describe("filterModel", () => {
 
 describe("listModels", () => {
   test("includes custom models", async () => {
-    addModels({ "mock-models-test/listed": customSpec({ id: "listed" }) })
+    registerModels({ "mock-models-test/listed": customSpec({ id: "listed" }) })
     const all = await listModels()
     expect(all["mock-models-test/listed"]).toBeDefined()
   })
@@ -113,7 +110,7 @@ describe("listModels", () => {
   test("filters apply to built-ins", async () => {
     // Use auth filter that rejects everything: built-ins drop out,
     // custom registrations stay (they bypass the filter).
-    addModels({ "mock-models-test/listed-filter": customSpec({ id: "listed-filter" }) })
+    registerModels({ "mock-models-test/listed-filter": customSpec({ id: "listed-filter" }) })
     const out = await listModels({ auth: { getAuth: () => undefined } })
     expect(out["mock-models-test/listed-filter"]).toBeDefined()
     // Sanity check: a known auth-gated built-in must be absent. Avoid

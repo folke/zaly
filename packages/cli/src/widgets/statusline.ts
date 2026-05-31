@@ -34,7 +34,7 @@ export const statusline = widget((props: AppState) =>
         // writes + output. Read and write are shown only when present
         // (non-Anthropic providers omit them or report only reads).
         const total = u.input + cacheRead + cacheWrite + u.output
-        const limit = props.model?.spec.limit.context ?? 0
+        const limit = props.model?.spec.contextSize ?? 0
         if (total === 0) return lhs
         const read = cacheRead > 0 ? ` ${style.dim("⚡")}${fmt(cacheRead)}` : ""
         const write = cacheWrite > 0 ? ` ${style.dim("+")}${fmt(cacheWrite)}` : ""
