@@ -97,10 +97,10 @@ export class AgentApi {
     return this.#ctx.agent.compact()
   }
 
-  async registerTool(name: string, tool: Tool | ToolLoader) {
+  async registerTool(tool: Tool) {
     this.#plugin.assertLoaded()
     const { toolRegistry } = await import("@zaly/agent")
-    this.#plugin.cleanup(toolRegistry.register(name, toLoader(tool)))
+    this.#plugin.cleanup(toolRegistry.register(tool.name, toLoader(tool)))
   }
 
   async registerPrompt(name: string, prompt: string | PromptLoader) {
