@@ -1,5 +1,4 @@
 import type { Content, ToolContext } from "@zaly/ai"
-import type { ToolInit } from "./registry.ts"
 
 import { AiError, defineTool, extractToolResults, toAttachment } from "@zaly/ai"
 import { normPath, safeStat } from "@zaly/shared"
@@ -27,7 +26,7 @@ import { Type } from "typebox"
 const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
-export type ReadTool = ReturnType<typeof createReadTool>
+export type ReadTool = typeof readTool
 
 export type FileMeta = {
   path: string
@@ -64,130 +63,122 @@ export type ReadToolMeta = FileMeta & {
  *  actually accepts the relevant modality — text-only models see a
  *  description that promises only text output, so they don't reach
  *  for the tool expecting images they can't process. */
-export function createReadTool(init: ToolInit) {
-  const attachmentKinds: string[] = []
-  if (init.model.canAttach("image")) attachmentKinds.push("image")
-  if (init.model.canAttach("pdf")) attachmentKinds.push("pdf")
-  const attachmentBlurb =
-    attachmentKinds.length > 0 ? ` ${attachmentKinds.join("/")} files return as attachments.` : ""
-
-  // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
-  return defineTool({
-    name: "read",
-    desc: `Read a file. Text files return numbered lines (\`cat -n\` style).${attachmentBlurb} Use \`offset\`/\`limit\` to slice large files.`,
-    parallel: true,
-    // oxlint-disable-next-line sort-keys -- semantic param order
-    params: Type.Object({
-      path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
-      offset: Type.Optional(
-        Type.Integer({
-          default: 1,
-          description:
-            "1-based line number to start at. Negative values count from " +
-            "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
-            "with the default limit returns the last 50 lines, like " +
-            "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
-            "starting 50 from the end.",
-        })
-      ),
-      limit: Type.Optional(
-        Type.Integer({
-          default: DEFAULT_LIMIT,
-          description: "Maximum number of lines to return.",
-          minimum: 1,
-        })
-      ),
-    }),
-
-    async preflight(args, ctx: ToolContext<ReadToolMeta>) {
-      const path = normPath(ctx.cwd, args.path)
-      await ctx.need?.("read", path)
-    },
-
-    async call(args, ctx: ToolContext<ReadToolMeta>): Promise<Content> {
-      const path = normPath(ctx.cwd, args.path)
-
-      const fileStat = await stat(path).catch((error: unknown) => {
-        throw new AiError({
-          cause: error,
-          code: "NOT_FOUND",
-          message: `cannot read ${path}: file not found`,
-        })
+// oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
+export const readTool = defineTool({
+  name: "read",
+  desc: `Read a file. Text files return numbered lines (\`cat -n\` style). Image & PDF files are sent as attachments. Use \`offset\`/\`limit\` to slice large files.`,
+  parallel: true,
+  // oxlint-disable-next-line sort-keys -- semantic param order
+  params: Type.Object({
+    path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
+    offset: Type.Optional(
+      Type.Integer({
+        default: 1,
+        description:
+          "1-based line number to start at. Negative values count from " +
+          "the end: -50 starts 50 lines before EOF (so `offset: -50` " +
+          "with the default limit returns the last 50 lines, like " +
+          "`tail -n 50`). `offset: -50, limit: 20` reads 20 lines " +
+          "starting 50 from the end.",
       })
-      if (!fileStat.isFile()) {
-        throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
-      }
-
-      if (isUnchanged(path, ctx)) {
-        // Fresh! We've seen this file's current bytes, so we can skip
-        // returning the content again.
-        ctx.meta = {
-          full: false,
-          kind: "read",
-          limit: 0,
-          mtime: fileStat.mtimeMs,
-          offset: 0,
-          path,
-          unchanged: true,
-        }
-        return [
-          { content: `file unchanged since last read: ${path}`, tag: "unchanged", type: "meta" },
-        ]
-      }
-
-      const file = await fileDetect(path)
-      if (!file) {
-        throw new AiError({
-          code: "READ_ERROR",
-          message: `${path}: could not read file`,
-        })
-      }
-
-      // Threshold-based binary check — files with sporadic control bytes
-      // (logs with ANSI styling, source with form feeds) still read as
-      // text; only when binary content dominates the sample do we bail.
-      if (file.type === "binary") {
-        throw new AiError({
-          code: "BINARY_FILE",
-          data: { bytes: file.data.length, path },
-          message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
-        })
-      }
-
-      const att = await toAttachment(file)
-      if (att) return [att]
-
-      if (file.type !== "text") {
-        throw new AiError({
-          code: "UNSUPPORTED_FILE",
-          data: { path, type: file.type },
-          message: `${path}: unsupported file type ${file.type}`,
-        })
-      }
-
-      const text = new TextDecoder().decode(file.data)
-      const slice = formatTextSlice(text, {
-        limit: args.limit ?? DEFAULT_LIMIT,
-        offset: args.offset ?? 1,
+    ),
+    limit: Type.Optional(
+      Type.Integer({
+        default: DEFAULT_LIMIT,
+        description: "Maximum number of lines to return.",
+        minimum: 1,
       })
+    ),
+  }),
 
-      // Record the read so the freshness tracker knows we've seen this
-      // file's current bytes. write/edit consult this before mutating;
-      // the masker uses `full` to know whether this read subsumes
-      // earlier reads of the same path.
+  async preflight(args, ctx: ToolContext<ReadToolMeta>) {
+    const path = normPath(ctx.cwd, args.path)
+    await ctx.need?.("read", path)
+  },
+
+  async call(args, ctx: ToolContext<ReadToolMeta>): Promise<Content> {
+    const path = normPath(ctx.cwd, args.path)
+
+    const fileStat = await stat(path).catch((error: unknown) => {
+      throw new AiError({
+        cause: error,
+        code: "NOT_FOUND",
+        message: `cannot read ${path}: file not found`,
+      })
+    })
+    if (!fileStat.isFile()) {
+      throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
+    }
+
+    if (isUnchanged(path, ctx)) {
+      // Fresh! We've seen this file's current bytes, so we can skip
+      // returning the content again.
       ctx.meta = {
-        full: slice.full,
+        full: false,
         kind: "read",
-        limit: slice.limit,
+        limit: 0,
         mtime: fileStat.mtimeMs,
-        offset: slice.offset,
+        offset: 0,
         path,
+        unchanged: true,
       }
+      return [
+        { content: `file unchanged since last read: ${path}`, tag: "unchanged", type: "meta" },
+      ]
+    }
 
-      return slice.content
-    },
-  })
-}
+    const file = await fileDetect(path)
+    if (!file) {
+      throw new AiError({
+        code: "READ_ERROR",
+        message: `${path}: could not read file`,
+      })
+    }
+
+    // Threshold-based binary check — files with sporadic control bytes
+    // (logs with ANSI styling, source with form feeds) still read as
+    // text; only when binary content dominates the sample do we bail.
+    if (file.type === "binary") {
+      throw new AiError({
+        code: "BINARY_FILE",
+        data: { bytes: file.data.length, path },
+        message: `${path}: binary file (${file.data.length} bytes); not displayable as text`,
+      })
+    }
+
+    const att = await toAttachment(file)
+    if (att) return [att]
+
+    if (file.type !== "text") {
+      throw new AiError({
+        code: "UNSUPPORTED_FILE",
+        data: { path, type: file.type },
+        message: `${path}: unsupported file type ${file.type}`,
+      })
+    }
+
+    const text = new TextDecoder().decode(file.data)
+    const slice = formatTextSlice(text, {
+      limit: args.limit ?? DEFAULT_LIMIT,
+      offset: args.offset ?? 1,
+    })
+
+    // Record the read so the freshness tracker knows we've seen this
+    // file's current bytes. write/edit consult this before mutating;
+    // the masker uses `full` to know whether this read subsumes
+    // earlier reads of the same path.
+    ctx.meta = {
+      full: slice.full,
+      kind: "read",
+      limit: slice.limit,
+      mtime: fileStat.mtimeMs,
+      offset: slice.offset,
+      path,
+    }
+
+    return slice.content
+  },
+})
 
 export function assertFresh(path: string, ctx: ToolContext) {
   const err = checkFresh(path, ctx)

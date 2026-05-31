@@ -191,11 +191,10 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     if (missing.length > 0) {
       const model = this.model
       if (!model) throw new Error("model must be loaded to load tools")
-      const toolInit = { cwd: this.cwd, model }
       const { toolRegistry } = await import("./tools/registry.ts")
       await Promise.all(
         missing.map(async (t) => {
-          this.#tools.set(t, await toolRegistry.load(t, toolInit))
+          this.#tools.set(t, await toolRegistry.load(t))
         })
       )
     }

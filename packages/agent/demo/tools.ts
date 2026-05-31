@@ -1,16 +1,8 @@
-import type { Model } from "@zaly/ai"
-
 import { toolRegistry } from "@zaly/agent"
 import { runTool, stringifyContent } from "@zaly/ai"
 
-const grepTool = await toolRegistry.load("grep", {
-  cwd: process.cwd(),
-  model: undefined as unknown as Model,
-})
-const findTool = await toolRegistry.load("find", {
-  cwd: process.cwd(),
-  model: undefined as unknown as Model,
-})
+const grepTool = await toolRegistry.load("grep")
+const findTool = await toolRegistry.load("find")
 
 const ret = await runTool(
   grepTool,

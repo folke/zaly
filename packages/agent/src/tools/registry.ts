@@ -12,7 +12,7 @@ export interface ToolInit {
   cwd: string
 }
 
-export type ToolLoader = (init: ToolInit) => Promise<Tool>
+export type ToolLoader = () => Promise<Tool>
 export type BuiltinTool = keyof typeof builtin
 export type AnyTool = AnyKey<BuiltinTool>
 
@@ -21,10 +21,10 @@ const builtin = {
   agent_spawn: () => import("./swarm.ts").then((m) => m.agentSpawnTool),
   bash: () => import("./bash.ts").then((m) => m.bashTool),
   edit: () => import("./edit.ts").then((m) => m.editTool),
-  fetch: (init: ToolInit) => import("./fetch.ts").then((m) => m.createFetchTool(init)),
+  fetch: () => import("./fetch.ts").then((m) => m.fetchTool),
   find: () => import("./find.ts").then((m) => m.findTool),
   grep: () => import("./grep.ts").then((m) => m.grepTool),
-  read: (init: ToolInit) => import("./read.ts").then((m) => m.createReadTool(init)),
+  read: () => import("./read.ts").then((m) => m.readTool),
   search: () => import("./search.ts").then((m) => m.searchTool),
   subagent: () => import("./subagent.ts").then((m) => m.subagentTool),
   task_list: () => import("./tasks.ts").then((m) => m.taskListTool),
