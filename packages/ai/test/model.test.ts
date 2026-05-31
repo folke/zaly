@@ -2,7 +2,7 @@ import type { Provider, StreamEvent } from "../src/provider.ts"
 
 import { describe, expect, test } from "vitest"
 import { loadModel } from "../src/model.ts"
-import { registerModels } from "../src/models.ts"
+import { registerModel } from "../src/models.ts"
 import { providerRegistry } from "../src/providers/index.ts"
 
 // ── Local mock provider (registered once for the whole file) ───────────
@@ -20,10 +20,10 @@ providerRegistry.register(
     })
 )
 
-registerModels({
-  "mock-cost-test/cheap": {
+registerModel([
+  {
     cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
-    id: "cheap",
+    id: "mock-cost-test/cheap",
     model: "cheap",
     contextSize: 100_000,
     maxTokens: 4096,
@@ -32,9 +32,9 @@ registerModels({
     api: "mock-cost-test" as never,
     reasoning: false,
   },
-  "mock-cost-test/freebie": {
+  {
     // No cost field — augmentation should be a no-op.
-    id: "freebie",
+    id: "mock-cost-test/freebie",
     model: "freebie",
     contextSize: 100_000,
     maxTokens: 4096,
@@ -43,27 +43,13 @@ registerModels({
     api: "mock-cost-test" as never,
     reasoning: false,
   },
-})
+])
 
 describe("loadModel — error paths", () => {
   test("throws a helpful error for unknown ids", async () => {
     await expect(loadModel("not-a-real-provider/not-a-real-model")).rejects.toThrow(
-      /Unknown model.*addModels/s
+      /Unknown model.*registerModel/s
     )
-  })
-
-  test("accepts an inline ModelSpec without a catalog lookup", async () => {
-    const m = await loadModel({
-      id: "this-is-a-custom/spec",
-      model: "inline",
-      contextSize: 1000,
-      maxTokens: 100,
-      input: ["text"],
-      name: "Inline",
-      api: "mock-cost-test" as never,
-      reasoning: false,
-    })
-    expect(m.id).toBe("this-is-a-custom/spec")
   })
 })
 

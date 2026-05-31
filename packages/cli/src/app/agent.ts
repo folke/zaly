@@ -17,7 +17,7 @@ export async function loadAgentModel(app: App): Promise<Model | undefined> {
   const modelId = ctx.flags.model ?? ss.modelId ?? settings.model
   const spec = modelId ? await getModel(modelId) : undefined
   if (!spec || !modelId) return
-  return await loadModel(modelId, { apiKey: ctx.flags.apiKey })
+  return await loadModel({ apiKey: ctx.flags.apiKey, id: modelId })
 }
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous

@@ -1,4 +1,3 @@
-import type { AuthProvider } from "./auth/auth.ts"
 import type { AnyPart, ContentTransform } from "./content/transform.ts"
 import type {
   CollectOptions,
@@ -130,36 +129,23 @@ export class Model<T extends AnyProvider = string> {
 }
 
 /**
- * Primary entry point. Resolves a model id (or an in-memory
- * `ModelOptions`) into a `Model` ready to stream.
- *
- * For catalog ids the options come pre-resolved from the generator
- * — quirks, baseUrl, headers, and maxTokens are baked in at build
- * time. `overrides` apply on top; pass a shared `fetch` here to pool
- * connection / retry state across many models.
- *
- * For inline `ModelOptions` the caller supplies everything, which is
- * how users add models to their local `addModels` catalog or register
- * one-off specs without committing them globally.
+ * Load a model by id or id with overrides.
+ * The id is looked up in the catalog for a base spec, which is then
+ * overridden by any fields in the input spec.
  */
 export async function loadModel(
-  source: string | ModelSpec,
-  overrides?: Partial<ModelSpec>,
-  auth?: AuthProvider
+  model: string | ({ id: string } & Partial<ModelSpec>)
 ): Promise<Model> {
-  const id = typeof source === "string" ? source : source.id
-
-  const base = typeof source === "string" ? await getModel(source) : source
-  if (base === undefined) {
-    throw new Error(
-      `Unknown model "${id}". Use \`addModels({ "${id}": { … } })\` to register a custom one.`
-    )
-  }
+  const id = typeof model === "string" ? model : model.id
+  const overrides = typeof model === "string" ? {} : model
+  const base = await getModel(id)
+  if (base === undefined)
+    throw new Error(`Unknown model "${id}". Use \`registerModel()\` to register a custom one.`)
   const spec: ModelSpec = { ...base, ...overrides }
-  const creds = await authenticate(spec, auth)
+  const creds = await authenticate(spec)
   const provider = await providerRegistry.load(spec.api, {
     ...spec,
-    apiKey: spec.apiKey ?? creds?.apiKey,
+    apiKey: creds?.apiKey ?? spec.apiKey,
     // Default retry on the request side — pre-stream only (`withRetry`
     // never restarts a body that's already started consuming, which
     // would waste already-generated tokens). Covers connection

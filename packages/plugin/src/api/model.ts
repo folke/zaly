@@ -3,8 +3,6 @@ import type { Plugin } from "../plugin.ts"
 
 import { toLoader } from "../plugin.ts"
 
-export type ModelOpts = ModelSpec & { auth?: AuthProvider }
-
 export class ModelApi {
   #plugin: Plugin
 
@@ -24,29 +22,22 @@ export class ModelApi {
     this.#ctx.model = m
   }
 
-  async load(id: string, opts?: Partial<ModelOpts>): Promise<Model>
-  async load(model: ModelOpts): Promise<Model>
-  async load(source: string | ModelOpts, o?: Partial<ModelOpts>): Promise<Model> {
+  async load(model: string | ({ id: string } & Partial<ModelSpec>)): Promise<Model> {
     this.#plugin.assertLoaded()
     const { loadModel } = await import("@zaly/ai")
-    if (typeof source === "string") {
-      const { auth, ...opts } = o ?? {}
-      return loadModel(source, opts, auth)
-    }
-    const { auth, ...opts } = source
-    return loadModel(opts, undefined, auth)
+    return loadModel(model)
   }
 
-  async list(opts?: ModelFilter): Promise<Record<string, ModelOpts>> {
+  async list(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
     this.#plugin.assertLoaded()
     const { listModels } = await import("@zaly/ai")
     return listModels(opts)
   }
 
-  async register(id: string, spec: ModelSpec) {
+  async register(spec: ModelSpec | ModelSpec[]) {
     this.#plugin.assertLoaded()
     const { registerModel } = await import("@zaly/ai")
-    this.#plugin.cleanup(registerModel(id, spec))
+    this.#plugin.cleanup(registerModel(spec))
   }
 
   async registerAuthProvider(name: string, provider: AuthLoader | AuthProvider) {

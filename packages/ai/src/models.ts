@@ -57,17 +57,17 @@ const customModels = new Map<string, ModelSpec>()
 /** Register custom model entries. Overrides any existing entry with
  *  the same id (custom or built-in). Persists for the lifetime of
  *  the process — nothing is written to disk. */
-export function registerModels(models: Record<string, ModelSpec>): void {
-  for (const [id, opts] of Object.entries(models)) customModels.set(id, opts)
-}
-
-export function registerModel(id: string, opts: ModelSpec): () => void {
-  const prev = customModels.get(id)
-  registerModels({ [id]: opts })
+export function registerModel(spec: ModelSpec | ModelSpec[]): () => void {
+  if (Array.isArray(spec)) {
+    const cleanups = spec.map(registerModel)
+    return () => cleanups.forEach((c) => c())
+  }
+  const prev = customModels.get(spec.id)
+  customModels.set(spec.id, spec)
   return () => {
-    if (customModels.get(id) !== opts) return
-    else if (prev !== undefined) customModels.set(id, prev)
-    else customModels.delete(id)
+    if (customModels.get(spec.id) !== spec) return
+    else if (prev !== undefined) customModels.set(spec.id, prev)
+    else customModels.delete(spec.id)
   }
 }
 

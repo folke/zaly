@@ -2,13 +2,13 @@ import type { ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import {
-  registerModels,
   builtinProviders,
   filterModel,
   getModel,
   listModelIds,
   listModels,
   parseModelId,
+  registerModel,
 } from "../src/models.ts"
 
 describe("parseModelId", () => {
@@ -43,15 +43,13 @@ const customSpec = (overrides: Partial<ModelSpec> = {}): ModelSpec => ({
 
 describe("addModels / getModel", () => {
   test("custom registration is retrievable", async () => {
-    registerModels({ "mock-models-test/foo": customSpec({ id: "foo", name: "Foo" }) })
+    registerModel(customSpec({ id: "mock-models-test/foo", name: "Foo" }))
     const m = await getModel("mock-models-test/foo")
     expect(m?.name).toBe("Foo")
   })
 
   test("custom registrations override built-ins with the same id", async () => {
-    registerModels({
-      "mock-models-test/override-target": customSpec({ id: "override-target", name: "Custom" }),
-    })
+    registerModel(customSpec({ id: "mock-models-test/override-target", name: "Custom" }))
     const m = await getModel("mock-models-test/override-target")
     expect(m?.name).toBe("Custom")
   })
@@ -102,7 +100,7 @@ describe("filterModel", () => {
 
 describe("listModels", () => {
   test("includes custom models", async () => {
-    registerModels({ "mock-models-test/listed": customSpec({ id: "listed" }) })
+    registerModel(customSpec({ id: "mock-models-test/listed" }))
     const all = await listModels()
     expect(all["mock-models-test/listed"]).toBeDefined()
   })
@@ -110,7 +108,7 @@ describe("listModels", () => {
   test("filters apply to built-ins", async () => {
     // Use auth filter that rejects everything: built-ins drop out,
     // custom registrations stay (they bypass the filter).
-    registerModels({ "mock-models-test/listed-filter": customSpec({ id: "listed-filter" }) })
+    registerModel(customSpec({ id: "mock-models-test/listed-filter" }))
     const out = await listModels({ auth: { getAuth: () => undefined } })
     expect(out["mock-models-test/listed-filter"]).toBeDefined()
     // Sanity check: a known auth-gated built-in must be absent. Avoid

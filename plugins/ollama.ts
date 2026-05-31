@@ -118,9 +118,7 @@ function date(value: Date | string): string {
 export default async function OllamaPlugin(api: PluginApi) {
   try {
     const models = await fetchModels()
-    for (const model of models) {
-      await api.model.register(`ollama/${model.id}`, model)
-    }
+    await api.model.register(models)
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
     api.ui.notify(`Failed to fetch models. Is Ollama running?\n* ${err.message}`, {
