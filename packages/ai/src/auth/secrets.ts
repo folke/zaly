@@ -63,6 +63,7 @@ export class SecretsManager {
       if (!value) throw new Error(`Environment variable \`${secret.key}\` is not set`)
     } else if (secret.source === "file") {
       value = await safeReadFile(secret.path)
+      value = value?.trim()
       if (!value) throw new Error(`Secret file at \`${secret.path}\` is empty or unreadable`)
     } else if (secret.source === "exec") {
       const { Spawn, TextStream } = await import("@zaly/shared/process")

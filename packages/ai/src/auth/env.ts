@@ -8,10 +8,10 @@ export const envAuth: AuthProvider = {
     const apiKey = model.apiKey
     if (apiKey) {
       const m = apiKey.match(/^(?:\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*))$/)
-      if (m) {
-        const name = m[1] || m[2]
-        if (process.env[name]) return { apiKey: process.env[name] }
-      }
+      if (!m) return undefined // literal apiKey: don't override it
+      const name = m[1] || m[2]
+      const value = process.env[name]
+      return value ? { apiKey: value } : undefined
     }
     const envs = model.env ?? []
     for (const name of envs) {
