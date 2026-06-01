@@ -61,7 +61,10 @@ export class MarkdownRenderer {
   /* single-line inputs compact and preserves explicit spacing when
   /* they asked for it. */
   normalizeEol(source: string, rendered: string): string {
+    // Collapse multiple blank lines to a maximum of one
     rendered = rendered.replace(/\n\n+/g, "\n\n")
+    // Trim leading blank lines
+    rendered = rendered.replace(/^\s*\n/, "")
     const trailing = /\n*$/.exec(source)?.[0] ?? ""
     return rendered.replace(/\n+$/, trailing)
   }
