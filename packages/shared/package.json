@@ -33,6 +33,10 @@
       "bun": "./src/cache.ts",
       "default": "./dist/cache.mjs"
     },
+    "./collection": {
+      "bun": "./src/collection.ts",
+      "default": "./dist/collection.mjs"
+    },
     "./detect": {
       "bun": "./src/detect/index.ts",
       "default": "./dist/detect.mjs"
@@ -85,6 +89,7 @@
       "./ansi": "./dist/ansi.mjs",
       "./args": "./dist/args.mjs",
       "./cache": "./dist/cache.mjs",
+      "./collection": "./dist/collection.mjs",
       "./detect": "./dist/detect.mjs",
       "./env": "./dist/env.mjs",
       "./glob": "./dist/glob.mjs",

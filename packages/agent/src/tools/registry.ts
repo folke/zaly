@@ -1,4 +1,5 @@
 import type { Model, Tool } from "@zaly/ai"
+import type { BaseCollection } from "@zaly/shared/collection"
 import type { AnyKey } from "@zaly/shared/registry"
 
 import { createRegistry } from "@zaly/shared/registry"
@@ -12,6 +13,7 @@ export interface ToolInit {
   cwd: string
 }
 
+export type ToolCollection = BaseCollection<Tool, string, true>
 export type ToolLoader = () => Promise<Tool>
 export type BuiltinTool = keyof typeof builtin
 export type AnyTool = AnyKey<BuiltinTool>
@@ -35,3 +37,11 @@ const builtin = {
 } as const satisfies Record<string, ToolLoader>
 
 export const toolRegistry = createRegistry<ToolLoader>("tool").from(builtin)
+
+export async function toolCollection(): Promise<ToolCollection> {
+  const { RegistryCollection } = await import("@zaly/shared/collection")
+  return new RegistryCollection<Tool, true>({
+    multi: true,
+    registry: toolRegistry.fork(),
+  })
+}

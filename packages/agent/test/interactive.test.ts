@@ -317,8 +317,8 @@ describe("Agent — mutable prompt + tools", () => {
       tools: [Add],
     })
     // Swap the available set before the call lands so "sub" can dispatch.
-    agent.ctx.$tools = [Sub]
-    const tools = await agent.tools()
+    agent.ctx.tools = [Sub]
+    const tools = agent.tools
     expect(tools.map((t) => t.name)).toEqual(["sub"])
     agent.send({ content: "go", role: "user" })
     await agent.run()

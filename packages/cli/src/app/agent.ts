@@ -1,6 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Model, Usage } from "@zaly/ai"
-import type { Setter } from "@zaly/tui"
+import type { Model } from "@zaly/ai"
 import type { AppState } from "../types.ts"
 import type { App } from "./app.ts"
 
@@ -12,9 +11,7 @@ export async function loadAgentModel(app: App): Promise<Model | undefined> {
   const session = await ctx.session()
   const config = await ctx.config()
   const settings = config.settings
-  const ss = session.settings
-
-  const modelId = ctx.flags.model ?? ss.modelId ?? settings.model
+  const modelId = ctx.flags.model ?? session.settings.modelId ?? settings.model
   const spec = modelId ? await getModel(modelId) : undefined
   if (!spec || !modelId) return
   return await loadModel({ apiKey: ctx.flags.apiKey, id: modelId })
@@ -41,35 +38,35 @@ export async function loadAgent(app: App): Promise<Agent> {
 
   if (config.user.settings?.secrets) await registerSecrets(config.user.settings.secrets)
 
-  const merged = {
-    cwd: ctx.flags.cwd ?? ss.cwd ?? config.paths.cwd,
-    reasoning: ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning,
-  }
+  const cwd = ctx.flags.cwd ?? ss.cwd ?? config.paths.cwd
 
-  const reasoning = merged.reasoning ? { effort: merged.reasoning } : undefined
-
-  return await createAgent({
-    allow: (req) => app.allow(req),
-    cwd: merged.cwd,
+  const agent = await createAgent({
+    allow: async (req) => {
+      const { allow } = await import("./permissions.ts")
+      return await allow(req, app)
+    },
+    cwd,
     logger: ctx.logger.child("agent"),
-    model: await loadAgentModel(app),
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }
       : {
           preset: ctx.flags.permission ?? p.preset,
           rules: { allow: p.allow, ask: p.ask, deny: p.deny },
         },
-    request: { reasoning },
     session,
-    skills: { paths: await config.resources.skills() },
-    tools: settings.tools,
   })
-}
 
-export interface AgentSignals {
-  setBusy: Setter<boolean>
-  setStatus: Setter<string>
-  setUsage: Setter<Usage>
+  agent.ctx.on("model", () => (app.state.model = agent.model))
+  agent.ctx.model = await loadAgentModel(app)
+
+  agent.ctx.on("reasoning", ({ effort }) => (app.state.reasoning = effort))
+  agent.ctx.reasoning = ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning ?? "medium"
+
+  const tools = await app.ctx.tools()
+  tools.on("change", () => (agent.ctx.tools = tools.active))
+  await tools.select(config.settings.tools ?? [])
+
+  return agent
 }
 
 /**
@@ -82,27 +79,19 @@ export interface AgentSignals {
  * (`paused`) uniformly. `usage` refreshes on `step-end` since
  * `agent.usage` reflects the last response by then.
  */
-export function wireAgent(agent: Agent, state: AppState, opts?: { signal?: AbortSignal }): void {
+export function attachState(agent: Agent, state: AppState): void {
   agent
-    .on("step-end", () => (state.usage = agent.usage), opts)
-    .on(
-      "status",
-      ({ status }) => {
-        const busy = status !== "idle" && status !== "paused"
-        state.busy = busy
-        state.status = status === "idle" ? "ready" : status
-      },
-      opts
-    )
-    .on(
-      "stop",
-      ({ kind }) => {
-        if (kind !== "error") return
-        state.status = "error"
-        const err = agent.lastStop?.error
-        if (err) console.error(`${err.name}: ${err.message}`)
-      },
-      opts
-    )
+    .on("step-end", () => (state.usage = agent.usage))
+    .on("status", ({ status }) => {
+      const busy = status !== "idle" && status !== "paused"
+      state.busy = busy
+      state.status = status === "idle" ? "ready" : status
+    })
+    .on("stop", ({ kind }) => {
+      if (kind !== "error") return
+      state.status = "error"
+      const err = agent.lastStop?.error
+      if (err) console.error(`${err.name}: ${err.message}`)
+    })
   state.usage = agent.usage
 }

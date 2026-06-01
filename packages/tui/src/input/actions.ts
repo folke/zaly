@@ -196,7 +196,8 @@ export class Actions extends Emitter<ActionEvents> {
   }
 
   /** Remove entries by id. */
-  unregister(...ids: string[]): void {
+  delete(filter: string[] | ActionFilter): void {
+    const ids = Array.isArray(filter) ? filter : this.list(filter).map((a) => a.id)
     let changed = false
     for (const id of ids) {
       if (this.#catalog.delete(id)) changed = true

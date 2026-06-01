@@ -27,6 +27,7 @@ export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
 }
 
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions
+export type ModelOpts = string | ({ id: string } & Partial<ModelSpec>)
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -133,9 +134,7 @@ export class Model<T extends AnyProvider = string> {
  * The id is looked up in the catalog for a base spec, which is then
  * overridden by any fields in the input spec.
  */
-export async function loadModel(
-  model: string | ({ id: string } & Partial<ModelSpec>)
-): Promise<Model> {
+export async function loadModel(model: ModelOpts): Promise<Model> {
   const id = typeof model === "string" ? model : model.id
   const overrides = typeof model === "string" ? {} : model
   const base = await getModel(id)

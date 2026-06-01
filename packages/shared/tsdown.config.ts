@@ -41,6 +41,7 @@ export default defineConfig({
     yaml: "src/yaml.ts",
     shell: "src/shell.ts",
     args: "src/args.ts",
+    collection: "src/collection.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate

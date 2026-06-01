@@ -85,6 +85,7 @@ export class Markdown extends Node<MarkdownState> {
       if (!c.result || c.lang !== lang || c.theme !== theme) continue
       if (code.startsWith(c.code) && c.code.length > (ret?.code.length ?? 0)) ret = c
     }
+    if (ret) ret.gen = this.#gen // bump gen to keep it alive in cache
     return ret?.result ? ret.result + code.slice(ret.code.length) : code
   }
 

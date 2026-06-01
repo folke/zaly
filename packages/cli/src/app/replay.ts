@@ -1,27 +1,29 @@
-import type { Message } from "@zaly/ai"
 import type { App } from "./app.ts"
 
 import { messageWidgets } from "./message.ts"
 
-const TAIL = 10
+const REPLAY_LIMIT = 100
+const STICKY_TAIL = 10
 
-export async function replay(messages: readonly Message[], app: App) {
-  const renderer = app.renderer
+/** Replay the conversation history for the current session, up to a certain limit. */
+export async function replay(app: App) {
+  const session = await app.ctx.session()
+  const messages = session.messages.filter((m) => !m.hidden).slice(-REPLAY_LIMIT)
 
-  const tail = messageWidgets(messages.slice(-TAIL), {
+  const tail = messageWidgets(messages.slice(-STICKY_TAIL), {
     composer: app.composer,
     pending: true,
   })
 
   const tailWidgets = tail.flatMap(({ widgets }) => widgets)
 
-  const nodes = messageWidgets(messages.slice(0, -TAIL), {
+  const nodes = messageWidgets(messages.slice(0, -STICKY_TAIL), {
     composer: app.composer,
     pending: false,
   }).flatMap(({ widgets }) => widgets)
 
   // Render the tail first with sticky:true, so that the end state is visible immediately
-  for (const node of tailWidgets) renderer.stream.append(node)
+  for (const node of tailWidgets) app.renderer.stream.append(node)
 
   // Give the renderer some time to flush initial render
   await new Promise((resolve) => setImmediate(resolve))
@@ -29,20 +31,20 @@ export async function replay(messages: readonly Message[], app: App) {
   // Now stream all the other nodes and yield to the event loop between each append,
   // so that the UI doesn't block
   for (const node of nodes) {
-    renderer.stream.append(node)
+    app.renderer.stream.append(node)
     // oxlint-disable-next-line no-await-in-loop
     await new Promise((resolve) => setImmediate(resolve))
   }
 
   // Wait for render so that pending states are still at the bottom
-  await renderer.render()
+  await app.renderer.render()
 
   // Flush pending nodes in the stream
   for (const { setPending } of tail) setPending?.(false)
 
   // Wait for final render so that pending states update in the UI
-  await renderer.render()
+  await app.renderer.render()
 
   // Wait till all rendering is idle
-  await renderer.stream.waitIdle()
+  await app.renderer.stream.waitIdle()
 }

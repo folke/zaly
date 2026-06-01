@@ -1,3 +1,4 @@
+import type { ToolCollection } from "@zaly/agent"
 import type { Session } from "@zaly/agent/session"
 import type { Config } from "@zaly/config"
 import type { LogLevel } from "@zaly/shared/logger"
@@ -18,6 +19,7 @@ type Slots = {
   console: CliReporter
   session: Session
   dotenv: Record<string, string[]>
+  tools: ToolCollection
 }
 export const REASONING_EFFORTS = [
   "off",
@@ -144,6 +146,13 @@ export class Context extends BaseLogger {
 
   theme() {
     return this.#cache.need("theme", async () => this.loadTheme())
+  }
+
+  tools() {
+    return this.#cache.need("tools", async () => {
+      const { toolCollection } = await import("@zaly/agent")
+      return await toolCollection()
+    })
   }
 
   async loadTheme(name?: string): Promise<Theme> {

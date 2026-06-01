@@ -1,12 +1,14 @@
-import type { AuthLoader, AuthProvider, Model, ModelFilter, ModelSpec } from "@zaly/ai"
+import type { AuthLoader, AuthProvider, Model, ModelFilter, ModelSpec, ModelOpts } from "@zaly/ai"
 import type { Plugin } from "../plugin.ts"
 
+import { BaseCollection } from "@zaly/shared/collection"
 import { toLoader } from "../plugin.ts"
 
-export class ModelApi {
+export class ModelApi extends BaseCollection<Model, ModelOpts> {
   #plugin: Plugin
 
   constructor(plugin: Plugin) {
+    super({ active: undefined })
     this.#plugin = plugin
   }
 
@@ -22,16 +24,17 @@ export class ModelApi {
     this.#ctx.model = m
   }
 
-  async load(model: string | ({ id: string } & Partial<ModelSpec>)): Promise<Model> {
+  async _load(model: ModelOpts): Promise<Model> {
     this.#plugin.assertLoaded()
     const { loadModel } = await import("@zaly/ai")
     return loadModel(model)
   }
 
-  async list(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
+  async list(opts?: ModelFilter): Promise<ModelSpec[]> {
     this.#plugin.assertLoaded()
     const { listModels } = await import("@zaly/ai")
-    return listModels(opts)
+    const ret = await listModels(opts)
+    return Object.values(ret)
   }
 
   async register(spec: ModelSpec | ModelSpec[]) {

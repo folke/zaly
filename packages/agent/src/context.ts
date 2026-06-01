@@ -6,12 +6,11 @@ import type { Notifier, NotifyOptions } from "./notify.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
 import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
-import type { Skills, SkillsOptions } from "./skills.ts"
+import type { Skills } from "./skills.ts"
 import type { Swarm } from "./swarm.ts"
-import type { AnyTool } from "./tools/registry.ts"
 import type { AgentOptions } from "./types.ts"
 
-import { normPath, isInstance, Emitter } from "@zaly/shared"
+import { Emitter, isInstance, normPath } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
 
 type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
@@ -20,7 +19,6 @@ type Slots = {
   notifier: Notifier
   masker: Masker
   permissions: PermissionManager
-  skills: Skills
   swarm: Swarm
 }
 
@@ -42,10 +40,10 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   #cache = new LazyCache<Slots>()
 
   #prompt = new Map<string, string>()
-  #tools = new Map<string, Tool>()
+  #tools: Tool[] = []
+  #skills?: Skills
 
   $prompt: (string | { template: AnyPrompt })[]
-  $tools: (Tool | AnyTool)[]
 
   constructor(opts: AgentContextOpts) {
     super()
@@ -54,6 +52,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
     this.#session = opts.session
     this.#model = opts.model
+    this.#skills = opts.skills
 
     this.$prompt = opts.prompt ?? [
       { template: "agent" },
@@ -63,7 +62,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
       { template: "MEMORY.md" },
     ]
 
-    this.$tools = opts.tools ?? []
+    this.#tools = opts.tools ?? []
     this.onEmitError = (error) => this.#opts.logger?.child("context").error(error)
 
     this.on("model", async ({ model }) => {
@@ -73,7 +72,6 @@ export class AgentContext extends Emitter<AgentContextEvents> {
         await this.session.update({ reasoning: effort })
       })
       .on("cwd", ({ cwd }) => {
-        this.#tools = new Map() // reset tools to force reload with new cwd
         this.#prompt = new Map() // reset prompts to force reload with new cwd
         this.#cache.forget("permissions") // reset permissions to force reload with new cwd
         void this.session.update({ cwd })
@@ -183,25 +181,12 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     void this.emit("model", { model: m, prev })
   }
 
-  async tools(): Promise<Tool[]> {
-    const spec = this.$tools
-    const missing = spec
-      .filter((t): t is string => typeof t === "string")
-      .filter((t) => !this.#tools.has(t))
-    if (missing.length > 0) {
-      const model = this.model
-      if (!model) throw new Error("model must be loaded to load tools")
-      const { toolRegistry } = await import("./tools/registry.ts")
-      await Promise.all(
-        missing.map(async (t) => {
-          this.#tools.set(t, await toolRegistry.load(t))
-        })
-      )
-    }
-    const ret = spec.map((t) => (typeof t === "string" ? this.#tools.get(t)! : t))
-    const skills = await this.skills()
-    if (skills?.tool) ret.push(skills.tool)
-    return ret
+  set tools(tools: Tool[]) {
+    this.#tools = tools
+  }
+
+  get tools(): Tool[] {
+    return [...this.#tools, ...(this.skills?.tool ? [this.skills.tool] : [])]
   }
 
   async prompt(): Promise<string[]> {
@@ -237,17 +222,14 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     )
   }
 
-  async skills(): Promise<Skills | undefined> {
-    return this.#cache.want(
-      "skills",
-      async (opts?: SkillsOptions) => {
-        const { Skills } = await import("./skills.ts")
-        const ret = await Skills.load(opts)
-        await this.emitSerial("skills", { skills: ret })
-        return ret
-      },
-      this.#opts.skills
-    )
+  set skills(s: Skills) {
+    if (s === this.#skills) return
+    this.#skills = s
+    void this.emit("skills", { skills: s })
+  }
+
+  get skills(): Skills | undefined {
+    return this.#skills
   }
 
   private async notifier(): Promise<Notifier | undefined> {

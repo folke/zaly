@@ -101,7 +101,7 @@ export class Agent extends Emitter<AgentEvents> {
     // the first node fires.
 
     this.#tasks = new Tasks()
-    this.#tasks.$tools = async () => await this.tools()
+    this.#tasks.$tools = async () => this.tools
     this.#tasks.heartbeatMs = opts.heartbeatMs
     this.#tasks.onEmitError = (error) => opts.logger?.child("tasks").error(error)
     // Post-round task completions inject a system message into the next
@@ -151,7 +151,7 @@ export class Agent extends Emitter<AgentEvents> {
     // `skill` tool). The child opts out of its own skill scan since
     // the catalog is shared.
 
-    let tools = [...(await this.tools())].filter((t) => t.name !== "skill")
+    let tools = [...this.tools].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
     const { createAgent } = await import("./context.ts")
 
@@ -168,7 +168,7 @@ export class Agent extends Emitter<AgentEvents> {
       // explicitly opted out of.
       notify: this.#opts.notify,
       permissions: await this.ctx.permissions(),
-      skills: await this.#ctx.skills(), // shared catalog; child doesn't reload
+      skills: this.#ctx.skills, // shared catalog; child doesn't reload
       // Propagate the swarm so the child + every grandchild address
       // each other through the same registry. Override-able via
       // `overrides.swarm` if a caller wants the child outside the
@@ -229,14 +229,10 @@ export class Agent extends Emitter<AgentEvents> {
   get contextSize(): number {
     return this.#usage.contextSize
   }
+
   get pressure(): ContextPressure {
     const used = this.contextSize
-    // Defensive: test mocks sometimes lack `spec` even when the type
-    // declares it required. Bare `this.model.spec.limit.context` would
-    // throw on those mocks; treat missing fields as "no known limit"
-    // (level 0, no pressure-driven masking).
-    const spec = (this.model as { spec?: { limit?: { context?: number } } }).spec
-    const limit = spec?.limit?.context ?? 0
+    const limit = this.model?.spec.contextSize ?? 0
     const ratio = limit > 0 ? used / limit : 0
     const level = PRESSURE_LEVELS.findLast((t) => ratio >= t) ?? 0
     return { level, limit, ratio, used }
@@ -254,8 +250,8 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#parent
   }
 
-  async tools() {
-    return this.#ctx.tools()
+  get tools() {
+    return this.#ctx.tools
   }
 
   async prompt() {
@@ -304,8 +300,7 @@ export class Agent extends Emitter<AgentEvents> {
     result: ToolResult<NonNullable<T["_types"]>["meta"]>
     messages: [Message<"system">, Message<"assistant">, Message<"tool">]
   }> {
-    const tools = await this.tools()
-    const tool = tools.find((t) => t.name === name) as T | undefined
+    const tool = this.tools.find((t) => t.name === name) as T | undefined
     if (!tool) throw new Error(`cannot inject tool use: no tool named "${name}"`)
 
     const id = uuidv7()
@@ -438,7 +433,7 @@ export class Agent extends Emitter<AgentEvents> {
     const context = {
       messages: [...this.ctx.messages],
       prompt: await this.prompt(),
-      tools: await this.tools(),
+      tools: this.tools,
     } satisfies Context
     await this.emitSerial("context", context)
     const model = this.model
@@ -545,9 +540,8 @@ export class Agent extends Emitter<AgentEvents> {
   async #parseToolCalls(message: Message): Promise<ToolCallPart[]> {
     if (typeof message.content === "string") return []
     const calls = message.content.filter((p): p is ToolCallPart => p.type === "tool-call")
-    const tools = await this.tools()
     for (const call of calls) {
-      const tool = tools.find((t) => t.name === call.name)
+      const tool = this.tools.find((t) => t.name === call.name)
       if (!tool) continue
       try {
         call.params = (await tool.validator.cleanParams(call.params)) ?? call.params
