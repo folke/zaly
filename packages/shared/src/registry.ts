@@ -36,9 +36,20 @@ export type { Registry }
 class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
   readonly #label: string
   readonly #entries = new Map<string, L>()
+  #parent?: Registry<L, I>
 
   constructor(label: string) {
     this.#label = label
+  }
+
+  fork(label?: string): Registry<L, I> {
+    const child = new Registry<L, I>(label ?? this.#label)
+    child.#parent = this
+    return child
+  }
+
+  protected loader(name: string): L | undefined {
+    return this.#entries.get(name) ?? this.#parent?.loader(name)
   }
 
   /** Resolve a loader by name. The `(keyof I & string) | (string & {})`
@@ -53,9 +64,9 @@ class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
   // through the typed signature.
   load(name: string, ...args: LoadArgs<L>): unknown {
     const opts = args[0] as LoadArgs<L>[0]
-    const loader = this.#entries.get(name)
+    const loader = this.loader(name)
     if (!loader) {
-      const known = [...this.#entries.keys()].toSorted().join(", ")
+      const known = [...this.keys()].toSorted().join(", ")
       throw new Error(`Unknown ${this.#label} "${name}". Registered: ${known || "(none)"}.`)
     }
     return loader(opts)
@@ -75,11 +86,11 @@ class Registry<L extends Loader, I extends LoaderMap<L> = LoaderMap<L>> {
   }
 
   has(name: AnyRegKey<I>): boolean {
-    return this.#entries.has(name)
+    return this.loader(name) !== undefined
   }
 
   keys(): AnyRegKey<I>[] {
-    return [...this.#entries.keys()]
+    return [...new Set([...(this.#parent?.keys() ?? []), ...this.#entries.keys()])]
   }
 
   /** Bulk-register a literal map of entries. The `const E` modifier and
