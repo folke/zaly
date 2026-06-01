@@ -40,6 +40,7 @@ type ShikiCode = {
   theme?: ShikiTheme
   inflight?: Promise<string>
   result?: string
+  gen: number
 }
 
 export class Markdown extends Node<MarkdownState> {
@@ -52,6 +53,7 @@ export class Markdown extends Node<MarkdownState> {
   #renderer?: MarkdownRenderer
   #code = new Map<string, ShikiCode>()
   #update = signal(0)
+  #gen = 0
   #worker: Accessor<number>
 
   constructor(state: State<MarkdownState>) {
@@ -60,7 +62,7 @@ export class Markdown extends Node<MarkdownState> {
     this.#worker = createAsync(
       async () => {
         const update = this.#update.get() // track
-        const todo = [...this.#code.values()]
+        const todo = [...this.#code.values()].filter((c) => c.gen === this.#gen && !c.result)
         if (!todo.length) return update // nothing to do, skip
         await Promise.all(
           todo.map(async (req) => {
@@ -74,13 +76,26 @@ export class Markdown extends Node<MarkdownState> {
     )
   }
 
+  /** Find a highlighted result for a prefix of `code` in the cache. This
+   * handles streaming updates where the full code block isn't available yet
+   * and prevents flashing un-highlighted text on each update. */
+  #streamingHighlight(code: string, lang: string, theme?: ShikiTheme) {
+    let ret: ShikiCode | undefined
+    for (const c of this.#code.values()) {
+      if (!c.result || c.lang !== lang || c.theme !== theme) continue
+      if (code.startsWith(c.code) && c.code.length > (ret?.code.length ?? 0)) ret = c
+    }
+    return ret?.result ? ret.result + code.slice(ret.code.length) : code
+  }
+
   #highlight(code: string, lang?: string, theme?: ShikiTheme): string {
     if (!lang) return code
     const key = shikiWorker.key({ code, lang, theme })
     const ret = this.#code.get(key)
+    if (ret) ret.gen = this.#gen // bump gen to keep it alive in cache
     if (ret?.result) return ret.result
-    else if (!ret) this.#code.set(key, { code, key, lang, theme })
-    return code
+    else if (!ret) this.#code.set(key, { code, gen: this.#gen, key, lang, theme })
+    return this.#streamingHighlight(code, lang, theme)
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
@@ -93,15 +108,21 @@ export class Markdown extends Node<MarkdownState> {
 
     if (!hasColors) formatted = this.#renderer.normalizeEol(source, source)
     else {
+      this.#gen++ // bump generation to track what is still used
+
       formatted = await this.#renderer.render(source, {
         ...ctx,
         highlight: (code, lang) => this.#highlight(code, lang, ctx.style.theme.shiki),
       })
 
+      // prune old entries
+      for (const [k, c] of this.#code.entries()) if (c.gen !== this.#gen) this.#code.delete(k)
+
+      // Trigger the worker if needed
       if (this.#code.values().some((c) => !c.inflight)) {
-        this.#update.set(this.#update.get() + 1) // trigger worker
+        this.#update.set(this.#gen) // trigger worker
         this.#worker() // tracked
-      } // trigger worker
+      }
     }
 
     return formatText(formatted, {

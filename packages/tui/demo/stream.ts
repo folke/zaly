@@ -37,6 +37,36 @@ r.stream.append(node)
 for await (const chunk of agent.stream()) {
   node.state.content += chunk   // triggers re-render
 }
+const node = markdown("")
+r.stream.append(node)
+
+for await (const chunk of agent.stream()) {
+  node.state.content += chunk   // triggers re-render
+}
+const node = markdown("")
+r.stream.append(node)
+
+for await (const chunk of agent.stream()) {
+  node.state.content += chunk   // triggers re-render
+}
+const node = markdown("")
+r.stream.append(node)
+
+for await (const chunk of agent.stream()) {
+  node.state.content += chunk   // triggers re-render
+}
+const node = markdown("")
+r.stream.append(node)
+
+for await (const chunk of agent.stream()) {
+  node.state.content += chunk   // triggers re-render
+}
+const node = markdown("")
+r.stream.append(node)
+
+for await (const chunk of agent.stream()) {
+  node.state.content += chunk   // triggers re-render
+}
 \`\`\`
 
 Because \`markdown()\` re-renders on every mutation, the fenced block above
