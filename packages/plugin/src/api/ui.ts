@@ -47,8 +47,8 @@ export class UiApi {
     return off
   }
 
-  registerActions(actions: Action[]): () => void {
-    const off = this.#renderer.actions.register(actions)
+  registerActions(action: Action | Action[]): () => void {
+    const off = this.#renderer.actions.register(Array.isArray(action) ? action : [action])
     this.#plugin.cleanup(off)
     return off
   }
