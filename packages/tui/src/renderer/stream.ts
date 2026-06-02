@@ -301,7 +301,7 @@ export class Stream extends Surface<StreamEvents> {
       // be \n'd into scrollback during a commit — clear first.
       for (const r of stale) {
         if (r < 1 || r > bottom) continue
-        if (r >= newTopRow && r <= bottom) continue
+        if (commitCount === 0 && r >= newTopRow && r <= bottom) continue
         this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
       }
 
