@@ -1,3 +1,5 @@
+import type { Stats } from "node:fs"
+
 import { decodePath, encodePath, normPath, safeStatAsync } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { zalyPaths } from "@zaly/shared/paths"
@@ -19,6 +21,7 @@ export type SessionInfo = {
   workspace: string
   /** Populated when listing with `sort: true` */
   mtime?: number
+  stat?: Stats
 }
 
 export type SessionFilter = {
@@ -78,6 +81,7 @@ export async function listSessions(opts: SessionListOpts = {}) {
     ret.map(async (session) => {
       const s = await stat(session.path).catch(() => undefined)
       session.mtime = s?.mtimeMs
+      session.stat = s
       return session
     })
   )
