@@ -1,8 +1,8 @@
 import type { InspectOptions as NodeInspectOptions } from "node:util"
 
+import { hasAnsi } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
 import { formatWithOptions } from "node:util"
-import { hasAnsi } from "@zaly/shared/ansi"
 
 export interface InspectOptions {
   /** Forwarded to `util.formatWithOptions` for object inspection. */
@@ -14,6 +14,7 @@ export interface InspectOptions {
 
 // Markdown-ish characters. Matches rekal's skip regex.
 const MD_RE = /[`*_#[\]\->~|]/
+const JSON_RE = /^\s*[{[]/
 
 // `util.format` placeholder tokens (`%s`, `%d`, …).
 const FORMAT_RE = /%[sdifjoOc%]/
@@ -22,7 +23,7 @@ const FORMAT_RE = /%[sdifjoOc%]/
  *  markers and isn't already ANSI-styled. Mirrors rekal's `Formatter.markdown`
  *  skip test so we avoid double-rendering pre-styled strings. */
 export function isMarkdown(s: string): boolean {
-  return MD_RE.test(s) && !hasAnsi(s)
+  return MD_RE.test(s) && !hasAnsi(s) && !JSON_RE.test(s)
 }
 
 const isFormatString = (v: unknown): v is string => typeof v === "string" && FORMAT_RE.test(v)

@@ -75,6 +75,7 @@ export async function getModel(id: string): Promise<ModelSpec | undefined> {
 export interface ModelFilter {
   auth?: AuthProvider | true
   reasoning?: boolean
+  contextSize?: number
   modality?:
     | Modality
     | Modality[]
@@ -87,6 +88,7 @@ export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boo
     return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
+  if (opts?.contextSize !== undefined && m.contextSize < opts.contextSize) return false
   if (
     opts?.filter !== undefined &&
     typeof opts.filter === "string" &&

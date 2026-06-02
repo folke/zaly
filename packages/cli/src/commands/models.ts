@@ -3,7 +3,6 @@
 import type { Cli } from "../cli.ts"
 import type { CmdArgs } from "../types.ts"
 
-import { listModels } from "@zaly/ai"
 import { formatNumber } from "@zaly/shared"
 import { defineCommand } from "citty"
 
@@ -21,6 +20,18 @@ export function modelsCommand(cli: Cli) {
         description: "Substring filter for model ids",
         required: false,
       },
+      "context-size": {
+        type: "string",
+        description:
+          "Filter for models with at least this context size. Suffixes K, M, B accepted.",
+        required: false,
+      },
+      input: {
+        type: "enum",
+        options: ["text", "image", "audio", "video"],
+        description: "Filter for models accepting this input modality",
+        required: false,
+      },
       all: {
         type: "boolean",
         description: "Show all catalog models, including those without local auth",
@@ -31,33 +42,50 @@ export function modelsCommand(cli: Cli) {
         description: "Emit raw catalog rows as JSON",
         default: false,
       },
+      limit: {
+        type: "string",
+        description: "Limit the number of models listed",
+        required: false,
+      },
     },
-    run: ({ args }) => run(cli, args),
+    run: ({ args }) => run(cli, args as unknown as ModelsArgs),
   })
 }
 
-async function run(_cli: Cli, args: ModelsArgs): Promise<void> {
+async function run(cli: Cli, args: ModelsArgs): Promise<void> {
   // Default: only models the current auth chain can authenticate.
   // `--all`: every catalog row, regardless of local credentials.
-  const models = await listModels({
+  const ctx = cli.ctx
+  const model = await ctx.model()
+  const cs = args.contextSize ? args.contextSize.match(/^(\d+)\s*([kmb])?$/i) : undefined
+  let contextSize: number | undefined
+  if (cs) {
+    contextSize = parseInt(cs[1], 10)
+    const suffix = cs[2]?.toLowerCase()
+    if (suffix === "k") contextSize *= 1e3
+    else if (suffix === "m") contextSize *= 1e6
+    else if (suffix === "b") contextSize *= 1e9
+  }
+
+  let models = await model.list({
     auth: args.all ? undefined : true,
     filter: args.pattern,
+    contextSize,
+    modality: args.input,
   })
-
+  if (args.limit) models = models.slice(0, parseInt(args.limit, 10))
   if (args.json) {
     console.log(JSON.stringify(models, undefined, 2))
     return
   }
 
-  const ctx = _cli.ctx
-
   const rows: string[] = [
     "| Model Id | Reasoning | Context limit | Modalities | Release Date |",
     "|-|-:|-:|-|-:|",
   ]
-  for (const [id, m] of Object.entries(models)) {
+  for (const m of models) {
     const row = [
-      `**${id}**`,
+      `**${m.id}**`,
       m.reasoning ? "**✓**" : "",
       `\`${formatNumber(m.contextSize)}\``,
       m.input.toSorted().join(", "),
