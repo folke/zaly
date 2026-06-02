@@ -19,6 +19,10 @@ export class AgentApi {
     return this.#plugin.ctx
   }
 
+  get messages(): readonly Message[] {
+    return this.#ctx.agent.messages
+  }
+
   get usage(): TokenCount {
     return this.#ctx.agent.usage
   }
