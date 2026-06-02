@@ -36,7 +36,7 @@ export type ListenerOpts = {
   signal?: AbortSignal
 }
 
-export type EventType<T extends EventMap> = keyof T & string
+export type EventType<T extends EventMap> = [T] extends [never] ? never : keyof T & string
 
 /** Per-key event envelope — the payload plus its discriminator. This is
  *  the shape every listener receives, both typed and wildcard. */

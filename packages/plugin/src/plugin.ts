@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
 import type { PluginApi } from "./api/api.ts"
 import type { PluginHost } from "./types.ts"
@@ -16,7 +17,7 @@ export function loadPlugin(path: string, host: PluginHost): Promise<PluginLoadRe
 }
 
 class Plugin {
-  #cleanup: (() => void)[] = []
+  #cleanup: (() => MaybePromise)[] = []
   #path: string
   #api!: PluginApi
   #ac = new AbortController()
@@ -39,7 +40,7 @@ class Plugin {
       await loader(plugin.api)
       return { ok: true, plugin }
     } catch (error) {
-      plugin.dispose()
+      await plugin.dispose()
       return { error: toError(error), ok: false, plugin }
     }
   }
@@ -78,14 +79,15 @@ class Plugin {
     return this.host.ctx
   }
 
-  cleanup(fn: () => void): void {
+  cleanup(fn: () => MaybePromise): void {
     this.#cleanup.push(fn)
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
     if (!this.running) return
     // LIFO so within-plugin override chains unwind correctly
-    while (this.#cleanup.length > 0) this.#cleanup.pop()!()
+    // oxlint-disable-next-line no-await-in-loop
+    while (this.#cleanup.length > 0) await this.#cleanup.pop()!()
     this.#cleanup = []
     this.#ac.abort()
   }

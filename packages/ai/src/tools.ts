@@ -6,6 +6,7 @@ import type {
   Tool,
   ToolCallPart,
   ToolContext,
+  ToolDef,
   ToolResult,
   ToolResultPart,
 } from "./types.ts"
@@ -48,15 +49,7 @@ export function defineTool<
   Params extends TObject,
   Result extends TSchema = TSchema,
   Meta extends object = object,
->(def: {
-  desc?: string
-  call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>
-  preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>
-  name: string
-  params: Params
-  parallel?: boolean
-  result?: Result
-}): Tool<Static<Params>, Static<Result>, Meta> {
+>(def: ToolDef<Params, Result, Meta>): Tool<Static<Params>, Static<Result>, Meta> {
   // oxlint-disable-next-line sort-keys
   const tool = {
     name: def.name,

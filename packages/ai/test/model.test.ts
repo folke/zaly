@@ -1,8 +1,7 @@
 import type { Provider, StreamEvent } from "../src/provider.ts"
 
 import { describe, expect, test } from "vitest"
-import { loadModel } from "../src/model.ts"
-import { registerModel } from "../src/models.ts"
+import { modelCollection } from "../src/model.ts"
 import { providerRegistry } from "../src/providers/index.ts"
 
 // ── Local mock provider (registered once for the whole file) ───────────
@@ -20,7 +19,9 @@ providerRegistry.register(
     })
 )
 
-registerModel([
+const models = modelCollection()
+
+models.register([
   {
     cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
     id: "mock-cost-test/cheap",
@@ -47,7 +48,7 @@ registerModel([
 
 describe("loadModel — error paths", () => {
   test("throws a helpful error for unknown ids", async () => {
-    await expect(loadModel("not-a-real-provider/not-a-real-model")).rejects.toThrow(
+    await expect(models.load("not-a-real-provider/not-a-real-model")).rejects.toThrow(
       /Unknown model.*registerModel/s
     )
   })
@@ -62,7 +63,7 @@ describe("Model.stream — cost augmentation", () => {
         usage: { cacheRead: 200, cacheWrite: 100, input: 1000, output: 50, reasoning: 20 },
       },
     ]
-    const model = await loadModel("mock-cost-test/cheap")
+    const model = await models.load("mock-cost-test/cheap")
     const message = await model.stream({ messages: [{ content: "hi", role: "user" }] })
     const cost = message.meta.usage.cost!
     // Uncached input = 1000 - 200 - 100 = 700
@@ -76,7 +77,7 @@ describe("Model.stream — cost augmentation", () => {
 
   test("models without a price table get usage but no cost", async () => {
     scriptedEvents = [{ finishReason: "stop", type: "finish", usage: { input: 100, output: 10 } }]
-    const model = await loadModel("mock-cost-test/freebie")
+    const model = await models.load("mock-cost-test/freebie")
     const message = await model.stream({ messages: [{ content: "hi", role: "user" }] })
     expect(message.meta.usage.input).toBe(100)
     expect(message.meta.usage.output).toBe(10)

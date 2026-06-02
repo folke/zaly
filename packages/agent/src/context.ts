@@ -4,7 +4,6 @@ import type { AgentStatus } from "./events.ts"
 import type { Masker, MaskOptions } from "./masker.ts"
 import type { Notifier, NotifyOptions } from "./notify.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
-import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
 import type { Skills } from "./skills.ts"
 import type { Swarm } from "./swarm.ts"
@@ -27,7 +26,7 @@ export type AgentContextEvents = {
   reasoning: { effort: ReasoningEffort; prev?: ReasoningEffort }
   session: { session: Session; prev?: Session }
   cwd: { cwd: string; prev?: string }
-  skills: { skills: Skills }
+  skills: { skills?: Skills }
 }
 
 export class AgentContext extends Emitter<AgentContextEvents> {
@@ -38,12 +37,9 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   #reasoning: ReasoningEffort
   #cwd: string
   #cache = new LazyCache<Slots>()
-
-  #prompt = new Map<string, string>()
-  #tools: Tool[] = []
+  #tools: Tool[]
   #skills?: Skills
-
-  $prompt: (string | { template: AnyPrompt })[]
+  #prompt: string[]
 
   constructor(opts: AgentContextOpts) {
     super()
@@ -53,14 +49,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     this.#session = opts.session
     this.#model = opts.model
     this.#skills = opts.skills
-
-    this.$prompt = opts.prompt ?? [
-      { template: "agent" },
-      { template: "env" },
-      { template: "model" },
-      { template: "AGENTS.md" },
-      { template: "MEMORY.md" },
-    ]
+    this.#prompt = opts.prompt ?? []
 
     this.#tools = opts.tools ?? []
     this.onEmitError = (error) => this.#opts.logger?.child("context").error(error)
@@ -72,7 +61,6 @@ export class AgentContext extends Emitter<AgentContextEvents> {
         await this.session.update({ reasoning: effort })
       })
       .on("cwd", ({ cwd }) => {
-        this.#prompt = new Map() // reset prompts to force reload with new cwd
         this.#cache.forget("permissions") // reset permissions to force reload with new cwd
         void this.session.update({ cwd })
       })
@@ -189,26 +177,12 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     return [...this.#tools, ...(this.skills?.tool ? [this.skills.tool] : [])]
   }
 
-  async prompt(): Promise<string[]> {
-    const spec = this.$prompt
-    const missing = spec
-      .filter((p): p is { template: string } => typeof p === "object")
-      .map((p) => p.template)
-      .filter((p) => !this.#prompt.has(p))
-    if (missing.length > 0) {
-      const model = this.model
-      if (!model) throw new Error("model must be loaded to load prompts")
-      const promptCtx = { cwd: this.cwd, model }
-      const { promptRegistry } = await import("./prompt/registry.ts")
-      await Promise.all(
-        missing.map(async (p) => {
-          this.#prompt.set(p, await promptRegistry.load(p, promptCtx))
-        })
-      )
-    }
-    return spec
-      .map((p) => (typeof p === "string" ? p : this.#prompt.get(p.template)!))
-      .filter((text) => text.trim() !== "")
+  get prompt(): string[] {
+    return this.#prompt
+  }
+
+  set prompt(p: string[]) {
+    this.#prompt = p
   }
 
   async swarm() {
@@ -222,7 +196,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     )
   }
 
-  set skills(s: Skills) {
+  set skills(s: Skills | undefined) {
     if (s === this.#skills) return
     this.#skills = s
     void this.emit("skills", { skills: s })

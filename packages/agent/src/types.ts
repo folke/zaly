@@ -16,7 +16,6 @@ import type { NotifyOptions } from "./notify.ts"
 import type { PermissionScope, PermissionScopes } from "./permissions/handlers/registry.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
 import type { Suggestion } from "./permissions/types.ts"
-import type { AnyPrompt } from "./prompt/registry.ts"
 import type { Session } from "./session/session.ts"
 import type { SessionOptions } from "./session/types.ts"
 import type { Skills } from "./skills.ts"
@@ -172,7 +171,7 @@ export interface AgentOptions extends CollectOptions {
    *  this for "behave like X" instructions that don't change across
    *  the session. For mid-conversation steering, `send()` a
    *  `role: "system"` message instead. Mutable via `agent.prompt = …`. */
-  prompt?: (string | { template: AnyPrompt })[]
+  prompt?: string[]
   /** Model's declared context window — enables silent-overflow detection. */
   contextLimit?: number
   /** Nesting depth of this agent. `0` = top-level (user-facing).

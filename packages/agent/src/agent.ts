@@ -254,8 +254,8 @@ export class Agent extends Emitter<AgentEvents> {
     return this.#ctx.tools
   }
 
-  async prompt() {
-    return this.#ctx.prompt()
+  get prompt() {
+    return this.#ctx.prompt
   }
 
   get ctx(): AgentContext {
@@ -432,7 +432,7 @@ export class Agent extends Emitter<AgentEvents> {
     this.#abortController = new AbortController()
     const context = {
       messages: [...this.ctx.messages],
-      prompt: await this.prompt(),
+      prompt: this.prompt,
       tools: this.tools,
     } satisfies Context
     await this.emitSerial("context", context)

@@ -1,4 +1,5 @@
-import type { AgentContext } from "@zaly/agent"
+import type { AgentContext, PromptCollection, ToolCollection } from "@zaly/agent"
+import type { ModelCollection } from "@zaly/ai"
 import type { LogApi, Logger } from "@zaly/shared/logger"
 import type { Renderer, Theme } from "@zaly/tui"
 import type { Notifier } from "@zaly/tui/services/notifier"
@@ -15,4 +16,7 @@ export type PluginHost = {
   pick: Picker["pick"]
   notify: Notifier["notify"]
   loadTheme(name: string): Promise<Theme>
+  tools: ToolCollection
+  model: ModelCollection
+  prompts: PromptCollection
 }

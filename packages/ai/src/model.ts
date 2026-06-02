@@ -1,4 +1,5 @@
 import type { AnyPart, ContentTransform } from "./content/transform.ts"
+import type { ModelFilter } from "./models.ts"
 import type {
   CollectOptions,
   Context,
@@ -11,10 +12,11 @@ import type {
 import type { AnyProvider } from "./providers/registry.ts"
 import type { Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
 
+import { BaseCollection } from "@zaly/shared/collection"
 import { authenticate } from "./auth/auth.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
-import { getModel } from "./models.ts"
+import { filterModels, getModel, listModels } from "./models.ts"
 import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
@@ -28,6 +30,7 @@ export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
 
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions
 export type ModelOpts = string | ({ id: string } & Partial<ModelSpec>)
+export type { ModelCollection }
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -134,17 +137,17 @@ export class Model<T extends AnyProvider = string> {
  * The id is looked up in the catalog for a base spec, which is then
  * overridden by any fields in the input spec.
  */
-export async function loadModel(model: ModelOpts): Promise<Model> {
+export async function loadModel(model: ModelOpts, base?: ModelSpec): Promise<Model> {
   const id = typeof model === "string" ? model : model.id
   const overrides = typeof model === "string" ? {} : model
-  const base = await getModel(id)
+  base ??= await getModel(id)
   if (base === undefined)
     throw new Error(`Unknown model "${id}". Use \`registerModel()\` to register a custom one.`)
   const spec: ModelSpec = { ...base, ...overrides }
   const creds = await authenticate(spec)
   const provider = await providerRegistry.load(spec.api, {
     ...spec,
-    apiKey: creds?.apiKey ?? spec.apiKey,
+    apiKey: creds?.apiKey,
     // Default retry on the request side — pre-stream only (`withRetry`
     // never restarts a body that's already started consuming, which
     // would waste already-generated tokens). Covers connection
@@ -179,4 +182,35 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
     cost.reasoning = (usage.reasoning * prices.reasoning) / M
   }
   return cost
+}
+
+class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpec[]>, ModelSpec> {
+  async get(id: string): Promise<ModelSpec | undefined> {
+    const spec = this.registered.findLast((r) => r.id === id)
+    return spec ?? (await getModel(id))
+  }
+
+  async load(opts: ModelOpts): Promise<Model> {
+    const id = typeof opts === "string" ? opts : opts.id
+    return loadModel(opts, await this.get(id))
+  }
+
+  async list(filter?: ModelFilter): Promise<ModelSpec[]> {
+    const [models, custom] = await Promise.all([
+      listModels(filter),
+      filterModels(this.registered, { ...filter, auth: undefined }),
+    ])
+    for (const m of Object.values(custom)) models[m.id] = m
+    return Object.values(models)
+  }
+
+  override register(spec: ModelSpec | ModelSpec[]): () => void {
+    const specs = Array.isArray(spec) ? spec : [spec]
+    const offs = specs.map((s) => super.register(s))
+    return () => offs.forEach((off) => off())
+  }
+}
+
+export function modelCollection() {
+  return new ModelCollection(undefined)
 }

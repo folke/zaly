@@ -54,9 +54,6 @@ export async function fetchModels(baseUrl = LM_STUDIO): Promise<ModelSpec[]> {
 
 async function lmstudio<T>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
-  const token = process.env.LM_API_TOKEN
-  if (token) headers.set("Authorization", `Bearer ${token}`)
-
   const res = await fetch(url, { ...init, headers })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`)
   return (await res.json()) as T
@@ -79,6 +76,11 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
       open_weights: true,
       tool_call: model.capabilities?.trained_for_tool_use ?? false,
     },
+    env: ["LM_STUDIO_API_KEY"],
+    providerInfo: {
+      id: "lm-studio",
+      name: "LM Studio",
+    },
     contextSize: context,
     maxTokens: output,
     input: vision ? ["text", "image"] : ["text"],
@@ -90,7 +92,7 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
 export default async function LMStudioPlugin(api: PluginApi) {
   try {
     const models = await fetchModels()
-    await api.model.register(models)
+    api.model.register(models)
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
     api.ui.notify(`Failed to fetch models. Is LM Studio running?\n* ${err.message}`, {

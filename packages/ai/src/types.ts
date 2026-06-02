@@ -10,6 +10,7 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
+import type { Static, TObject, TSchema } from "typebox/type"
 import type { FinishReason, Usage } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
 
@@ -264,6 +265,20 @@ export interface ToolContext<M extends object = object> {
    *  that survive into `ToolResultPart.meta`. Wire-invisible — the model
    *  never sees this. */
   meta?: M
+}
+
+export type ToolDef<
+  Params extends TObject = TObject,
+  Result extends TSchema = TSchema,
+  Meta extends object = object,
+> = {
+  desc?: string
+  call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>
+  preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>
+  name: string
+  params: Params
+  parallel?: boolean
+  result?: Result
 }
 
 export interface Tool<Params = unknown, Result = unknown, Meta extends object = object> {
@@ -617,7 +632,7 @@ export interface ModelSpec extends ProviderOptions {
   /** Catalog model info */
   info?: Partial<ModelInfo>
   /** Catalog provider info */
-  providerInfo?: ProviderInfo
+  providerInfo?: Partial<ProviderInfo>
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */

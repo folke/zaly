@@ -7,7 +7,8 @@ export async function loadPlugins(app: App): Promise<void> {
   const config = await app.ctx.config()
   for (const plugin of app.plugins) {
     try {
-      plugin.dispose()
+      // oxlint-disable-next-line no-await-in-loop
+      await plugin.dispose()
     } catch (error) {
       app.ctx.logger.child("plugins").error(`Failed to dispose plugin \`${plugin.path}\`:`, error)
     }
@@ -18,9 +19,12 @@ export async function loadPlugins(app: App): Promise<void> {
     loadTheme: (name: string) => app.ctx.loadTheme(name),
     log: app.ctx,
     logger: app.ctx.logger.child("plugin"),
+    model: await app.ctx.model(),
     notify: app.notify,
     pick: app.pick,
+    prompts: await app.ctx.prompts(),
     renderer: app.renderer,
+    tools: await app.ctx.tools(),
   }
 
   app.plugins = []

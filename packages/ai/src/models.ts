@@ -52,33 +52,14 @@ function loadCatalog(): Promise<ModelCatalog> {
 
 // ── Runtime-registered custom catalog ───────────────────────────────────
 
-const customModels = new Map<string, ModelSpec>()
-
-/** Register custom model entries. Overrides any existing entry with
- *  the same id (custom or built-in). Persists for the lifetime of
- *  the process — nothing is written to disk. */
-export function registerModel(spec: ModelSpec | ModelSpec[]): () => void {
-  if (Array.isArray(spec)) {
-    const cleanups = spec.map(registerModel)
-    return () => cleanups.forEach((c) => c())
-  }
-  const prev = customModels.get(spec.id)
-  customModels.set(spec.id, spec)
-  return () => {
-    if (customModels.get(spec.id) !== spec) return
-    else if (prev !== undefined) customModels.set(spec.id, prev)
-    else customModels.delete(spec.id)
-  }
-}
-
 /** Look up model options by id. Custom models win over built-ins.
  *  Built-in entries come pre-resolved from the generator — quirks,
  *  baseUrl, headers, maxTokens are all baked in; we just attach
  *  `providerInfo` from the shared providers map. */
 export async function getModel(id: string): Promise<ModelSpec | undefined> {
-  const custom = customModels.get(id)
-  if (custom !== undefined) return custom
-  return await resolveBuiltin(id)
+  const catalog = await loadCatalog()
+  const stored = catalog.models[id] as StoredModel | undefined
+  return stored ? toModelSpec(id, stored, catalog) : undefined
 }
 
 /** Predicate inputs for narrowing a model list.
@@ -101,7 +82,7 @@ export interface ModelFilter {
   filter?: string | ((m: ModelSpec) => boolean)
 }
 
-export async function filterModel(id: string, m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
+export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
   if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth === true ? undefined : opts.auth)))
     return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
@@ -109,7 +90,7 @@ export async function filterModel(id: string, m: ModelSpec, opts?: ModelFilter):
   if (
     opts?.filter !== undefined &&
     typeof opts.filter === "string" &&
-    !id.includes(opts.filter.toLowerCase())
+    !m.id.includes(opts.filter.toLowerCase())
   )
     return false
   if (opts?.filter !== undefined && typeof opts.filter === "function" && !opts.filter(m))
@@ -139,32 +120,40 @@ function matchesModality(m: ModelSpec, spec: NonNullable<ModelFilter["modality"]
 /** Every model we know about, keyed by id. Includes runtime-registered
  *  custom models. For just ids (autocomplete sources), use
  *  `listModelIds` — one compact JSON, no catalog load needed. */
-export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
-  const catalog = await loadCatalog()
-  const entries: [string, ModelSpec][] = Object.entries(catalog.models).map(([id, stored]) => [
-    id,
-    toModelSpec(id, stored, catalog),
-  ])
-
-  entries.sort(([a, am], [b, bm]) => {
-    const ap = am.providerInfo?.name ?? "0"
-    const bp = bm.providerInfo?.name ?? "0"
+export async function filterModels(
+  models: ModelSpec[],
+  opts?: ModelFilter
+): Promise<Record<string, ModelSpec>> {
+  models.sort((a, b) => {
+    const ap = a.providerInfo?.name ?? "0"
+    const bp = b.providerInfo?.name ?? "0"
     if (ap && bp && ap !== bp) return ap.localeCompare(bp)
-    const ka = am.info?.release_date ?? am.info?.last_updated ?? a
-    const kb = bm.info?.release_date ?? bm.info?.last_updated ?? b
+    const ka = a.info?.release_date ?? a.info?.last_updated ?? a.id
+    const kb = b.info?.release_date ?? b.info?.last_updated ?? b.id
     if (ka !== kb) return -ka.localeCompare(kb)
-    return am.name.localeCompare(bm.name)
+    return a.name.localeCompare(b.name)
   })
 
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.
-  const verdicts = await Promise.all(entries.map(([id, m]) => filterModel(id, m, opts)))
+  const verdicts = await Promise.all(models.map((m) => filterModel(m, opts)))
   const out: Record<string, ModelSpec> = {}
-  for (const [i, [id, m]] of entries.entries()) {
-    if (verdicts[i]) out[id] = m
+  for (const [i, m] of models.entries()) {
+    if (verdicts[i]) out[m.id] = m
   }
-  for (const [id, m] of customModels) out[id] = m
   return out
+}
+
+/** Every model we know about, keyed by id. Includes runtime-registered
+ *  custom models. For just ids (autocomplete sources), use
+ *  `listModelIds` — one compact JSON, no catalog load needed. */
+export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
+  // FIXME: filter should also apply to custom models?
+  const catalog = await loadCatalog()
+  const models: ModelSpec[] = Object.entries(catalog.models).map(([id, stored]) =>
+    toModelSpec(id, stored, catalog)
+  )
+  return await filterModels(models, opts)
 }
 
 /** Flat sorted array of every built-in model id. Custom models are
@@ -181,12 +170,6 @@ export async function listModelIds(): Promise<readonly string[]> {
 export async function builtinProviders(): Promise<Readonly<Record<string, ProviderInfo>>> {
   const catalog = await loadCatalog()
   return catalog.providers
-}
-
-async function resolveBuiltin(id: string): Promise<ModelSpec | undefined> {
-  const catalog = await loadCatalog()
-  const stored = catalog.models[id] as StoredModel | undefined
-  return stored ? toModelSpec(id, stored, catalog) : undefined
 }
 
 function toModelSpec(id: string, model: StoredModel, catalog: ModelCatalog): ModelSpec {

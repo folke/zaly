@@ -1,12 +1,5 @@
-import type {
-  AgentStatus,
-  AgentStop,
-  AnyPrompt,
-  AnyTool,
-  PromptLoader,
-  SendMode,
-} from "@zaly/agent"
-import type { Content, Message, TokenCount, Tool } from "@zaly/ai"
+import type { AgentStatus, AgentStop, PromptLoader, SendMode } from "@zaly/agent"
+import type { Content, Message, TokenCount } from "@zaly/ai"
 import type { Plugin } from "../plugin.ts"
 
 import { toLoader } from "../plugin.ts"
@@ -36,22 +29,6 @@ export class AgentApi {
 
   get cwd() {
     return this.#ctx.cwd
-  }
-
-  get prompt() {
-    return this.#ctx.$prompt
-  }
-
-  set prompt(p: (string | { template: AnyPrompt })[]) {
-    this.#ctx.$prompt = p
-  }
-
-  get tools() {
-    return this.#ctx.$tools
-  }
-
-  set tools(t: (Tool | AnyTool)[]) {
-    this.#ctx.$tools = t
   }
 
   get status(): AgentStatus | undefined {
@@ -94,12 +71,6 @@ export class AgentApi {
   compact(): Promise<void> {
     this.#plugin.assertLoaded()
     return this.#ctx.agent.compact()
-  }
-
-  async registerTool(tool: Tool) {
-    this.#plugin.assertLoaded()
-    const { toolRegistry } = await import("@zaly/agent")
-    this.#plugin.cleanup(toolRegistry.register(tool.name, toLoader(tool)))
   }
 
   async registerPrompt(name: string, prompt: string | PromptLoader) {

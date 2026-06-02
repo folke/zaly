@@ -123,7 +123,7 @@ export async function authenticate(
   auth?: AuthProvider
 ): Promise<AuthCredentials | undefined> {
   auth ??= chainAuth(...authRegistry.keys())
-  return auth.getAuth(model)
+  return auth.getAuth(model) ?? (model.apiKey ? { apiKey: model.apiKey } : undefined)
 }
 
 /** Whether `auth` can resolve credentials for this model. Shorthand

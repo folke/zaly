@@ -1,7 +1,7 @@
 import type { Model, Tool } from "@zaly/ai"
-import type { BaseCollection } from "@zaly/shared/collection"
 import type { AnyKey } from "@zaly/shared/registry"
 
+import { BaseCollection } from "@zaly/shared/collection"
 import { createRegistry } from "@zaly/shared/registry"
 
 /** Per-load context handed to every tool factory. Lets factories
@@ -13,7 +13,7 @@ export interface ToolInit {
   cwd: string
 }
 
-export type ToolCollection = BaseCollection<Tool, string, true>
+export type { ToolCollection }
 export type ToolLoader = () => Promise<Tool>
 export type BuiltinTool = keyof typeof builtin
 export type AnyTool = AnyKey<BuiltinTool>
@@ -38,10 +38,20 @@ const builtin = {
 
 export const toolRegistry = createRegistry<ToolLoader>("tool").from(builtin)
 
+class ToolCollection extends BaseCollection<AnyTool[], AnyTool[], Tool> {
+  list(): AnyTool[] {
+    const ret = new Set(toolRegistry.keys())
+    for (const r of this.registered) ret.add(r.name)
+    return [...ret]
+  }
+
+  async load(tools?: AnyTool[]): Promise<Tool[]> {
+    const load = async (t: string) =>
+      this.registered.findLast((r) => r.name === t) ?? toolRegistry.load(t)
+    return await Promise.all((tools ?? this.active).map((t) => load(t)))
+  }
+}
+
 export async function toolCollection(): Promise<ToolCollection> {
-  const { RegistryCollection } = await import("@zaly/shared/collection")
-  return new RegistryCollection<Tool, true>({
-    multi: true,
-    registry: toolRegistry.fork(),
-  })
+  return new ToolCollection([])
 }

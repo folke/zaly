@@ -40,7 +40,8 @@
     "node": ">=24"
   },
   "devDependencies": {
-    "jiti": "^2.7.0"
+    "jiti": "^2.7.0",
+    "typebox": "^1.1.39"
   },
   "inlinedDependencies": {
     "jiti": "2.7.0"

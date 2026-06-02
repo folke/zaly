@@ -182,7 +182,8 @@ export class App {
     attachState(this.#agent, this.#state)
 
     await this.loadResources()
-    this.agent.ctx.model ??= await loadAgentModel(this)
+
+    if (!this.#agent.model) await loadAgentModel(this, { notify: true })
 
     void import("./stream.ts").then(({ attachStream }) => attachStream(this))
   }

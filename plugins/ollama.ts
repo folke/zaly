@@ -86,6 +86,10 @@ function toModelSpec(model: ModelResponse, show: ShowResponse, baseUrl: string):
       release_date: date(model.modified_at),
       tool_call: capabilities.has("tools"),
     },
+    providerInfo: {
+      id: "ollama",
+      name: "Ollama",
+    },
     api: "openai",
     reasoning: capabilities.has("thinking"),
   }
@@ -118,7 +122,7 @@ function date(value: Date | string): string {
 export default async function OllamaPlugin(api: PluginApi) {
   try {
     const models = await fetchModels()
-    await api.model.register(models)
+    api.model.register(models)
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
     api.ui.notify(`Failed to fetch models. Is Ollama running?\n* ${err.message}`, {

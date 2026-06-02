@@ -1,20 +1,27 @@
 import type { Agent } from "@zaly/agent"
-import type { Model } from "@zaly/ai"
 import type { AppState } from "../types.ts"
 import type { App } from "./app.ts"
 
-import { getModel, registerSecrets } from "@zaly/ai"
+import { registerSecrets } from "@zaly/ai"
+import { toError } from "@zaly/shared"
 
-export async function loadAgentModel(app: App): Promise<Model | undefined> {
-  const { loadModel } = await import("@zaly/ai")
+export async function loadAgentModel(app: App, opts?: { notify?: boolean }): Promise<void> {
   const ctx = app.ctx
   const session = await ctx.session()
   const config = await ctx.config()
   const settings = config.settings
   const modelId = ctx.flags.model ?? session.settings.modelId ?? settings.model
-  const spec = modelId ? await getModel(modelId) : undefined
-  if (!spec || !modelId) return
-  return await loadModel({ apiKey: ctx.flags.apiKey, id: modelId })
+  if (!modelId) return
+  const model = await ctx.model()
+  try {
+    model.active = await model.load({ apiKey: ctx.flags.apiKey, id: modelId })
+  } catch (error) {
+    if (opts?.notify)
+      app.notify(`Failed to load model **${modelId}**:\n${toError(error).message}`, {
+        level: "error",
+        title: "Model Load Error",
+      })
+  }
 }
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
@@ -56,16 +63,29 @@ export async function loadAgent(app: App): Promise<Agent> {
     session,
   })
 
-  agent.ctx.on("model", () => (app.state.model = agent.model))
-  agent.ctx.model = await loadAgentModel(app)
-
   agent.ctx.on("reasoning", ({ effort }) => (app.state.reasoning = effort))
   agent.ctx.reasoning = ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning ?? "medium"
 
   const tools = await app.ctx.tools()
-  tools.on("change", () => (agent.ctx.tools = tools.active))
-  await tools.select(config.settings.tools ?? [])
+  tools.onAny(async () => (agent.ctx.tools = await tools.load()))
+  tools.active = config.settings.tools ?? []
 
+  const prompts = await ctx.prompts()
+  const updatePrompt = async () => {
+    const model = agent.ctx.model
+    agent.ctx.prompt = model ? await prompts.render({ cwd: agent.ctx.cwd, model }) : []
+  }
+  prompts.onAny(updatePrompt)
+  agent.ctx.on("model", updatePrompt)
+  agent.ctx.on("cwd", updatePrompt)
+
+  const model = await app.ctx.model()
+  model.on("active", ({ active }) => {
+    app.state.model = active
+    agent.ctx.model = active
+  })
+
+  await loadAgentModel(app)
   return agent
 }
 

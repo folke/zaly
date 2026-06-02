@@ -1,5 +1,6 @@
-import type { ToolCollection } from "@zaly/agent"
+import type { PromptCollection, ToolCollection } from "@zaly/agent"
 import type { Session } from "@zaly/agent/session"
+import type { ModelCollection } from "@zaly/ai"
 import type { Config } from "@zaly/config"
 import type { LogLevel } from "@zaly/shared/logger"
 import type { Theme } from "@zaly/tui"
@@ -20,6 +21,8 @@ type Slots = {
   session: Session
   dotenv: Record<string, string[]>
   tools: ToolCollection
+  model: ModelCollection
+  prompts: PromptCollection
 }
 export const REASONING_EFFORTS = [
   "off",
@@ -152,6 +155,20 @@ export class Context extends BaseLogger {
     return this.#cache.need("tools", async () => {
       const { toolCollection } = await import("@zaly/agent")
       return await toolCollection()
+    })
+  }
+
+  model() {
+    return this.#cache.need("model", async () => {
+      const { modelCollection } = await import("@zaly/ai")
+      return modelCollection()
+    })
+  }
+
+  prompts() {
+    return this.#cache.need("prompts", async () => {
+      const { promptCollection } = await import("@zaly/agent")
+      return promptCollection()
     })
   }
 

@@ -275,6 +275,17 @@ describe("Agent — mutable prompt + tools", () => {
       id: "mock/x",
       options: {} as never,
       provider: {} as never,
+      spec: {
+        id: "mock/x",
+        model: "x",
+        contextSize: 1_000_000,
+        maxTokens: 16_000,
+        input: ["text"],
+        output: ["text"],
+        name: "mock",
+        api: "mock",
+        reasoning: false,
+      },
       async stream(ctx: { prompt?: string[] }) {
         lastPrompt = ctx.prompt
         return {
@@ -289,15 +300,18 @@ describe("Agent — mutable prompt + tools", () => {
       },
     } as never
     const agent = await loadAgent({ model: recordingModel, prompt: ["original"] })
+    expect(agent.model?.id).toBe("mock/x")
+    expect(agent.prompt).toEqual(["original"])
+    expect(agent.ctx.prompt).toEqual(["original"])
     agent.send({ content: "go", role: "user" })
     await agent.run()
     expect(lastPrompt).toEqual(["original"])
 
-    agent.ctx.$prompt = ["updated"]
+    agent.ctx.prompt = ["updated"]
     agent.send({ content: "again", role: "user" })
     await agent.run()
     expect(lastPrompt).toEqual(["updated"])
-    expect(await agent.prompt()).toEqual(["updated"])
+    expect(agent.prompt).toEqual(["updated"])
   })
 
   test("tools setter rebuilds the dispatch table", async () => {

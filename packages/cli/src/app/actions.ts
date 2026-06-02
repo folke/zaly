@@ -44,15 +44,15 @@ export function appActions({ app }: { app: App }) {
       cmd: "model",
       desc: "Switch the model used for future agent turns.",
       fn: async (ctx) => {
-        const { listModels, loadModel } = await import("@zaly/ai")
+        const model = await app.ctx.model()
         const filter = ctx.args?._.join(" ") ?? ""
-        const models = await listModels({
+        const models = await model.list({
           auth: ctx.args?.all ? undefined : true,
           filter: filter.length > 0 ? filter : undefined,
         })
 
         const items: PickerItem[] = []
-        for (const [id, m] of Object.entries(models)) {
+        for (const m of models) {
           items.push({
             hint: [
               formatNumber(m.contextSize),
@@ -62,11 +62,11 @@ export function appActions({ app }: { app: App }) {
               .filter(Boolean)
               .join(", "),
             label: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
-            value: id,
+            value: m.id,
           })
         }
         const ret = await app.pick({ items, sort: true })
-        if (ret) app.agent.ctx.model = await loadModel(ret.value)
+        if (ret) model.active = await model.load(ret.value)
       },
     }),
     "app.cancel": {
