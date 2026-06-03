@@ -244,24 +244,24 @@ describe("Notifier — check() polling", () => {
 
   test("user-returned fires after idle threshold elapses", async () => {
     const { agent, notifications } = await mockAgent()
-    const notifier = new Notifier({ idle: 1 }) // 1 second idle
+    const notifier = new Notifier({ idle: 0.05 }) // 1 second idle
     notifier.attach(agent)
     notifications.length = 0
     // Prime lastStep
     notifier.check(agent)
     // Wait beyond threshold (use a deliberately short idle to keep test fast)
-    await new Promise((r) => setTimeout(r, 1100))
+    await new Promise((r) => setTimeout(r, 60))
     notifier.check(agent)
     expect(findTag(notifications, "user-returned")).toBeDefined()
   })
 
   test("periodic 'time' notification fires after periodic threshold", async () => {
     const { agent, notifications } = await mockAgent()
-    const notifier = new Notifier({ idle: 3600, periodic: 1 }) // 1 second periodic
+    const notifier = new Notifier({ idle: 3600, periodic: 0.05 }) // 1 second periodic
     notifier.attach(agent)
     notifications.length = 0
     notifier.check(agent)
-    await new Promise((r) => setTimeout(r, 1100))
+    await new Promise((r) => setTimeout(r, 60))
     notifier.check(agent)
     expect(findTag(notifications, "time")).toBeDefined()
   })
