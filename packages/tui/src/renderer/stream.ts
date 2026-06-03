@@ -434,10 +434,18 @@ export class Stream extends Surface<StreamEvents> {
    * and re-establishment of DECSTBM lives in the terminal-level handler.
    */
   onResize(): void {
+    this.reset({ keepNodes: true })
+  }
+
+  reset(opts: { keepNodes?: boolean } = {}): void {
     this.#rows = []
     for (const s of this.#state) s.commit = 0
     this.#stale.clear()
     this.#prevBottom = undefined
+    if (!opts.keepNodes) {
+      for (const s of this.#state) s.freeze()
+      this.#state = []
+    }
     void this.emit("dirty")
   }
 
