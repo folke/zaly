@@ -108,12 +108,24 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
     "menu.next": (): void => {
       const n = this.#items().length
       if (n === 0) return
-      this.state.active = (this.#active() + 1) % n
+      this.active = this.#active() + 1
+    },
+    "menu.pagedown": (): void => {
+      const n = this.#items().length
+      if (n === 0) return
+      const page = Math.max(this.pageSize - 1, 1)
+      this.active = this.#active() + page
+    },
+    "menu.pageup": (): void => {
+      const n = this.#items().length
+      if (n === 0) return
+      const page = Math.max(this.pageSize - 1, 1)
+      this.active = this.#active() - page
     },
     "menu.prev": (): void => {
       const n = this.#items().length
       if (n === 0) return
-      this.state.active = (this.#active() - 1 + n) % n
+      this.active = this.#active() - 1
     },
     "menu.select": (): void => {
       const items = this.#items()
@@ -151,6 +163,12 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
     this.invalidate()
   }
 
+  set active(i: number) {
+    const n = this.#items().length
+    i = i < 0 ? i + n : i
+    this.state.active = n === 0 ? 0 : i % n
+  }
+
   #items(): readonly T[] {
     return unwrap(this.state.items)
   }
@@ -171,13 +189,17 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
     return this
   }
 
+  get pageSize(): number {
+    return this.state.maxHeight ?? Math.max(this.#items().length, 1)
+  }
+
   protected _render(ctx: RenderCtx): string[] {
     const items = this.#items()
     if (items.length === 0 && !this.state.sticky) return []
 
     const width = resolveSize(this.state.width ?? "fill", ctx.width) ?? ctx.width
     const active = this.#active()
-    const max = this.state.maxHeight ?? Math.max(items.length, 1)
+    const max = this.pageSize
 
     // Item-row budget: cap by maxHeight, but when `sticky` is on it can
     // only grow. Zero is allowed (no items, not sticky-grown) — we

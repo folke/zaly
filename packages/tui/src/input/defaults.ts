@@ -106,6 +106,16 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["down", "ctrl-n"],
   },
+  "menu.pagedown": {
+    desc: "move down one page",
+    hidden: true,
+    keys: ["pagedown", "ctrl-d"],
+  },
+  "menu.pageup": {
+    desc: "move up one page",
+    hidden: true,
+    keys: ["pageup", "ctrl-u"],
+  },
   "menu.prev": {
     desc: "move to the previous item",
     hidden: true,
