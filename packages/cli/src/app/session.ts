@@ -1,5 +1,5 @@
 import type { Session, SessionInfo } from "@zaly/agent/session"
-import type { PickerItem } from "@zaly/tui/widgets/picker"
+import type { Option } from "@zaly/tui/widgets/select"
 import type { Flags } from "../types.ts"
 import type { App } from "./app.ts"
 
@@ -40,7 +40,7 @@ function isClaudePath(p: string): boolean {
   return /(?:^|\/)\.claude\/projects\//.test(p)
 }
 
-type SessionItem = PickerItem & { info: SessionInfo }
+type SessionItem = Option<SessionInfo>
 
 export async function pickSession(app: App) {
   const { listSessions, Session } = await import("@zaly/agent/session")
@@ -59,14 +59,13 @@ export async function pickSession(app: App) {
   }
 
   const items: SessionItem[] = sessions.map((info, s) => ({
-    hint: `${formatRelativeTime(info.mtime ?? 0)}, ${formatSize(info.stat?.size ?? 0, 1)}`,
-    info,
-    label: messages[s] ? stringifyContent(messages[s].content) : "[new session]",
-    value: info.path,
+    desc: `${formatRelativeTime(info.mtime ?? 0)}, ${formatSize(info.stat?.size ?? 0, 1)}`,
+    name: messages[s] ? stringifyContent(messages[s].content) : "[new session]",
+    value: info,
   }))
   const ret = await app.pick({ items, sort: true })
   if (!ret) return
-  await switchSession(ret.info, app)
+  await switchSession(ret.value, app)
 }
 
 export async function switchSession(opts: SessionInfo | undefined, app: App) {

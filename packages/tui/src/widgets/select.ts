@@ -15,12 +15,14 @@ import { resolveSize } from "../layout/size.ts"
  *  plus their own `render`. `value` is what `Autocomplete`'s default
  *  `accept` inserts; `label` is what the default renderer shows
  *  (falling back to `value`); `hint` is a dim right-column description. */
-export interface MenuItem<T = string> {
+export type Option<T = unknown> = {
+  name?: string
+  desc?: string
   value: T
-  label?: string
-  hint?: string
-  /** Highlight this item as a match of search, for example */
+  /** When true, the item is a match for the current query */
   match?: boolean
+  /** For pickers: override the text used for matching/searching */
+  search?: string
 }
 
 /** Per-row rendering hook. `active` lets callers branch on selection
@@ -30,9 +32,9 @@ export interface MenuItem<T = string> {
  *  string is clipped/padded to the row width by Menu. `ctx` is the
  *  current `RenderCtx` so renderers can call `ctx.style.*` for theme-
  *  aware ANSI without capturing it from elsewhere. */
-export type MenuRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string
+export type OptionRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string
 
-export interface MenuState<T = MenuItem> extends Style {
+export interface SelectState<T extends Option = Option> extends Style {
   /** Items to show. Accepts a signal accessor so the list can be
    *  driven from reactive state (filtered results, search, etc.). */
   items: Reactive<readonly T[]>
@@ -60,14 +62,14 @@ export interface MenuState<T = MenuItem> extends Style {
   /** Per-item renderer. When omitted, items must be `MenuItem`-shaped
    *  (carry at least `label` or `value`) and the default two-column
    *  layout applies. */
-  render?: MenuRender<T>
+  render?: OptionRender<T>
 }
 
-export interface MenuEvents<T = MenuItem> extends BaseEvents {
+export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   /** Fired when the user completes the active item. Payload is the item. */
   complete: { item: T }
   /** Fired when the user picks the active item. Payload is the item. */
-  select: { item: T }
+  accept: { item: T }
   /** Fired when the user cancels (esc). */
   cancel: {}
 }
@@ -81,71 +83,68 @@ export interface MenuEvents<T = MenuItem> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
-  MenuState<T>,
-  MenuEvents<T>
-> {
-  static readonly type = "menu"
-  override readonly type = Menu.type
+export class Select<T extends Option = Option> extends Node<SelectState<T>, SelectEvents<T>> {
+  static readonly type = "select"
+  override readonly type = Select.type
 
   override actions = {
-    "menu.cancel": (): void => {
+    "select.accept": (): void => {
+      const items = this.#items()
+      if (items.length === 0) return
+      const i = this.#active()
+      void this.emit("accept", { item: items[i] })
+    },
+    "select.cancel": (): void => {
       void this.emit("cancel")
     },
-    "menu.complete": (): void => {
+    "select.complete": (): void => {
       const items = this.#items()
       if (items.length === 0) return
       const i = this.#active()
       void this.emit("complete", { item: items[i] })
     },
-    "menu.first": (): void => {
+    "select.first": (): void => {
       if (this.#items().length === 0) return
       this.state.active = 0
     },
-    "menu.last": (): void => {
+    "select.last": (): void => {
       const n = this.#items().length
       if (n === 0) return
       this.state.active = n - 1
     },
-    "menu.next": (): void => {
+    "select.next": (): void => {
       const n = this.#items().length
       if (n === 0) return
       this.active = this.#active() + 1
     },
-    "menu.next-match": (): void => {
+    "select.next-match": (): void => {
       const active = this.#active()
       const matches = this.#matches.map((i) => i.idx)
-      if (matches.length === 0) return this.actions["menu.next"]()
+      if (matches.length === 0) return this.actions["select.next"]()
       this.active = matches.find((i) => i > active) ?? matches[0]
     },
-    "menu.page-down": (): void => {
+    "select.page-down": (): void => {
       const n = this.#items().length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
       this.active = this.#active() + page
     },
-    "menu.page-up": (): void => {
+    "select.page-up": (): void => {
       const n = this.#items().length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
       this.active = this.#active() - page
     },
-    "menu.prev": (): void => {
+    "select.prev": (): void => {
       const n = this.#items().length
       if (n === 0) return
       this.active = this.#active() - 1
     },
-    "menu.prev-match": (): void => {
+    "select.prev-match": (): void => {
       const active = this.#active()
       const matches = this.#matches.map((i) => i.idx).toReversed()
-      if (matches.length === 0) return this.actions["menu.prev"]()
+      if (matches.length === 0) return this.actions["select.prev"]()
       this.active = matches.find((i) => i < active) ?? matches[0]
-    },
-    "menu.select": (): void => {
-      const items = this.#items()
-      if (items.length === 0) return
-      const i = this.#active()
-      void this.emit("select", { item: items[i] })
     },
   } satisfies NodeActionMap
 
@@ -163,8 +162,8 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
    *  enough to re-admit it otherwise. */
   #windowStart = 0
 
-  constructor(initial: MenuState<T>) {
-    super({ active: 0, ...initial } as MenuState<T>)
+  constructor(initial: SelectState<T>) {
+    super({ active: 0, ...initial } as SelectState<T>)
   }
 
   /** Reset the sticky height + window anchor. Callers owning the
@@ -265,13 +264,12 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
       const widest = labels.length === 0 ? 0 : Math.max(...labels.map(stringWidth))
       const gap = 2
       const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(width / 2))
-      const hintAvail = Math.max(0, width - labelWidth - gap)
+      const descAvail = Math.max(0, width - labelWidth - gap)
       const spacer = " ".repeat(gap)
       return (item: T): string => {
-        const mi = item as MenuItem<unknown>
-        const labelCell = fit(defaultLabel(item), labelWidth)
-        const hintCell = fit(mi.hint ?? "", hintAvail)
-        return ctx.style.add("menuLabel")(labelCell) + spacer + ctx.style.add("menuHint")(hintCell)
+        const nameCell = fit(defaultLabel(item), labelWidth)
+        const descCell = fit(item.desc ?? "", descAvail)
+        return ctx.style.add("menuLabel")(nameCell) + spacer + ctx.style.add("menuHint")(descCell)
       }
     })()
 
@@ -303,13 +301,9 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
   }
 }
 
-function defaultLabel(item: unknown): string {
-  let ret: string
-  if (typeof item === "object" && item !== null) {
-    const mi = item as MenuItem<unknown>
-    ret = mi.label ?? String(mi.value)
-  } else ret = String(item)
-  return ret.replace(/\s+/g, " ").trim() // collapse whitespace for cleaner default layout
+function defaultLabel(item: Option): string {
+  const label = item.name ?? (typeof item.value === "string" ? item.value : String(item.value))
+  return label.replace(/\s+/g, " ").trim() // collapse whitespace for cleaner default layout
 }
 
 function fit(s: string, width: number): string {
@@ -327,6 +321,6 @@ function fit(s: string, width: number): string {
  * m.on("select", (item) => console.log("picked", item.value))
  * ```
  */
-export function menu<T extends MenuItem<unknown> = MenuItem>(state: MenuState<T>): Menu<T> {
-  return new Menu<T>(state)
+export function select<T extends Option = Option>(state: SelectState<T>): Select<T> {
+  return new Select<T>(state)
 }

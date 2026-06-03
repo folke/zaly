@@ -1,13 +1,14 @@
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { MenuRender } from "../menu.ts"
+import type { OptionRender } from "../select.ts"
 
-import { spawn } from "node:child_process"
 import { stringWidth } from "@zaly/shared/ansi"
+import { spawn } from "node:child_process"
 
 /** A GitHub issue or pull request returned by `githubSource`. Shape
  *  mirrors the `gh` CLI's `--json number,title,state,author,url`
  *  output, with `type` added to distinguish issues from PRs. */
 export interface GithubItem {
+  value: number
   number: number
   title: string
   /** `"open"` / `"closed"` for issues; `"open"` / `"closed"` / `"merged"`
@@ -97,7 +98,7 @@ export function githubSource(opts: GithubSourceOptions = {}): CompletionSource<G
   }
 }
 
-const defaultRender: MenuRender<GithubItem> = (item, _active, ctx) => {
+const defaultRender: OptionRender<GithubItem> = (item, _active, ctx) => {
   const { style } = ctx
   const num = `#${item.number}`
   const stateSlot = stateStyleSlot(item.state)

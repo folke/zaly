@@ -81,59 +81,59 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["enter"],
   },
-  "menu.cancel": {
-    desc: "cancel the menu",
+  "select.accept": {
+    desc: "select the active item",
+    hidden: true,
+    keys: ["enter"],
+  },
+  "select.cancel": {
+    desc: "cancel the select",
     hidden: true,
     keys: ["esc"],
   },
-  "menu.complete": {
+  "select.complete": {
     desc: "complete the active item",
     hidden: true,
     keys: ["tab"],
   },
-  "menu.first": {
+  "select.first": {
     desc: "jump to the first item",
     hidden: true,
     keys: ["home"],
   },
-  "menu.last": {
+  "select.last": {
     desc: "jump to the last item",
     hidden: true,
     keys: ["end"],
   },
-  "menu.next": {
+  "select.next": {
     desc: "move to the next item",
     hidden: true,
     keys: ["down"],
   },
-  "menu.next-match": {
+  "select.next-match": {
     desc: "move to the next item that matches the query",
     hidden: true,
     keys: ["ctrl-n"],
   },
-  "menu.page-down": {
+  "select.page-down": {
     desc: "move down one page",
     hidden: true,
     keys: ["pagedown", "ctrl-d"],
   },
-  "menu.page-up": {
+  "select.page-up": {
     desc: "move up one page",
     hidden: true,
     keys: ["pageup", "ctrl-u"],
   },
-  "menu.prev": {
+  "select.prev": {
     desc: "move to the previous item",
     hidden: true,
     keys: ["up"],
   },
-  "menu.prev-match": {
+  "select.prev-match": {
     desc: "move to the previous item that matches the query",
     hidden: true,
     keys: ["ctrl-p"],
-  },
-  "menu.select": {
-    desc: "select the active item",
-    hidden: true,
-    keys: ["enter"],
   },
 }

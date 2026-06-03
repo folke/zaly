@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
-import type { MenuItem } from "../../src/widgets/menu.ts"
+import type { Option } from "../../src/widgets/select.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
@@ -29,7 +29,10 @@ describe("autocomplete", () => {
   test("detects trigger and calls complete with query", async () => {
     const i = input({})
     await i.render(ctx)
-    const complete = vi.fn(() => [{ value: "/help" }, { value: "/hello" }])
+    const complete = vi.fn(() => [
+      { name: "help", value: "/help" },
+      { name: "hello", value: "/hello" },
+    ])
     const ac = autocomplete({
       input: i,
       sources: {
@@ -53,14 +56,14 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          complete: () => [{ value: "/help" }],
+          complete: () => [{ name: "/help", value: "/help" }],
           triggers: [/^\s*\//],
         },
       },
     })
     i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
-    ac.menu.actions["menu.select"]()
+    ac.select.actions["select.accept"]()
     expect(i.state.value).toBe("/help ")
     expect(i.state.cursor).toBe("/help ".length)
   })
@@ -69,7 +72,7 @@ describe("autocomplete", () => {
     const i = input({})
     await i.render(ctx)
     const cb = vi.fn()
-    const item: MenuItem = { value: "/quit" }
+    const item: Option = { name: "quit", value: "/quit" }
     const ac = autocomplete({
       input: i,
       sources: {
@@ -79,7 +82,7 @@ describe("autocomplete", () => {
     ac.on("complete", cb)
     i.state.set({ cursor: 1, value: "/" })
     await Promise.resolve()
-    ac.menu.actions["menu.select"]()
+    ac.select.actions["select.accept"]()
     expect(cb).toHaveBeenCalledWith(
       { item, source: "slash", type: "complete" },
       ac,
@@ -102,7 +105,7 @@ describe("autocomplete", () => {
     i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
     expect(ac.open).toBe(true)
-    ac.menu.actions["menu.cancel"]()
+    ac.select.actions["select.cancel"]()
     expect(ac.open).toBe(false)
     const rows = await ac.render(ctx)
     expect(rows).toEqual([])
@@ -121,7 +124,7 @@ describe("autocomplete", () => {
     i.state.set({ cursor: 7, value: "hey @bo" })
     await Promise.resolve()
     expect(complete).toHaveBeenCalledWith("bo", expect.any(Function))
-    ac.menu.actions["menu.select"]()
+    ac.select.actions["select.accept"]()
     expect(i.state.value).toBe("hey @bob ")
   })
 
@@ -161,7 +164,7 @@ describe("autocomplete", () => {
     })
     i.state.set({ cursor: 3, value: "/qu" })
     await Promise.resolve()
-    ac.menu.actions["menu.select"]()
+    ac.select.actions["select.accept"]()
     expect(onAccept).toHaveBeenCalledWith({ value: "quit" }, "qu")
     // Source handled it; the typed trigger+query gets cleared, nothing
     // is inserted.
@@ -185,7 +188,7 @@ describe("autocomplete", () => {
     })
     i.state.set({ cursor: 4, value: "@src" })
     await Promise.resolve()
-    ac.menu.actions["menu.select"]()
+    ac.select.actions["select.accept"]()
     // No trailing space (files override).
     expect(i.state.value).toBe("src/index.ts")
     expect(i.state.cursor).toBe("src/index.ts".length)

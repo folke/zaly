@@ -1,6 +1,6 @@
 import type { Dirent } from "node:fs"
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { MenuItem } from "../menu.ts"
+import type { Option } from "../select.ts"
 
 import { readdir } from "node:fs/promises"
 import { resolve } from "pathe"
@@ -45,7 +45,7 @@ type DirCache = Map<string, Dirent[]>
  * })
  * ```
  */
-export function filesSource(opts: FilesSourceOptions = {}): CompletionSource {
+export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Option<string>> {
   const cwd = opts.cwd ?? process.cwd()
   const trigger = opts.trigger ?? /(?<=^|\s)@/
   const prefix = opts.prefix ?? "@"
@@ -61,7 +61,7 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource {
       const v = item.value
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
-    async complete(query: string, match: Matcher): Promise<MenuItem[]> {
+    async complete(query: string, match: Matcher): Promise<Option<string>[]> {
       const lastSlash = query.lastIndexOf("/")
       const dirPart = lastSlash === -1 ? "" : query.slice(0, lastSlash + 1)
       const absDir = resolve(cwd, dirPart)
@@ -83,14 +83,14 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource {
       const baseQuery = lastSlash === -1 ? query : query.slice(lastSlash + 1)
       const base: Matcher = baseQuery === query ? match : (s) => fuzzyScore(baseQuery, s)
 
-      const out: MenuItem[] = []
+      const out: Option<string>[] = []
       for (const ent of entries) {
         const abs = resolve(absDir, ent.name)
         if (!filter(ent, abs)) continue
         if (!base(ent.name)) continue
         const isDir = ent.isDirectory()
-        const label = isDir ? `${ent.name}/` : ent.name
-        out.push({ label, value: `${dirPart}${label}` })
+        const name = isDir ? `${ent.name}/` : ent.name
+        out.push({ name, value: `${dirPart}${name}` })
         if (out.length >= limit) break
       }
       return out

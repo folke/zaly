@@ -115,10 +115,6 @@
       "bun": "./src/widgets/markdown.ts",
       "default": "./dist/widgets/markdown.mjs"
     },
-    "./widgets/menu": {
-      "bun": "./src/widgets/menu.ts",
-      "default": "./dist/widgets/menu.mjs"
-    },
     "./widgets/overlay": {
       "bun": "./src/widgets/overlay.ts",
       "default": "./dist/widgets/overlay.mjs"
@@ -131,6 +127,10 @@
       "bun": "./src/widgets/progress.ts",
       "default": "./dist/widgets/progress.mjs"
     },
+    "./widgets/select": {
+      "bun": "./src/widgets/select.ts",
+      "default": "./dist/widgets/select.mjs"
+    },
     "./widgets/show": {
       "bun": "./src/widgets/show.ts",
       "default": "./dist/widgets/show.mjs"
@@ -142,6 +142,10 @@
     "./widgets/text": {
       "bun": "./src/widgets/text.ts",
       "default": "./dist/widgets/text.mjs"
+    },
+    "./widgets/tree": {
+      "bun": "./src/widgets/tree.ts",
+      "default": "./dist/widgets/tree.mjs"
     },
     "./widgets/widget": {
       "bun": "./src/widgets/widget.ts",
@@ -184,13 +188,14 @@
       "./widgets/input": "./dist/widgets/input.mjs",
       "./widgets/log": "./dist/widgets/log.mjs",
       "./widgets/markdown": "./dist/widgets/markdown.mjs",
-      "./widgets/menu": "./dist/widgets/menu.mjs",
       "./widgets/overlay": "./dist/widgets/overlay.mjs",
       "./widgets/picker": "./dist/widgets/picker.mjs",
       "./widgets/progress": "./dist/widgets/progress.mjs",
+      "./widgets/select": "./dist/widgets/select.mjs",
       "./widgets/show": "./dist/widgets/show.mjs",
       "./widgets/spinner": "./dist/widgets/spinner.mjs",
       "./widgets/text": "./dist/widgets/text.mjs",
+      "./widgets/tree": "./dist/widgets/tree.mjs",
       "./widgets/widget": "./dist/widgets/widget.mjs",
       "./package.json": "./package.json"
     },

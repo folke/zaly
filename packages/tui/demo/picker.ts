@@ -39,10 +39,10 @@ renderer.ui.add(() =>
         console.log("finding", query)
         await new Promise((r) => setTimeout(r, 250)) // simulate async
         return ["apple", "banana", "cherry"]
-          .map((label) => ({ label, value: label }))
-          .filter((item) => item.label.includes(query))
+          .map((name) => ({ name, value: name }))
+          .filter((item) => item.name.includes(query))
       },
-    }).on("select", ({ item }) => {
+    }).on("accept", ({ item }) => {
       logger.info(`you picked: ${item.value}`)
     })
   )

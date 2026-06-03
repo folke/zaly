@@ -1,6 +1,6 @@
 import type { ActionDef, Actions } from "../../input/actions.ts"
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { MenuRender } from "../menu.ts"
+import type { OptionRender } from "../select.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 
@@ -8,7 +8,7 @@ import { stringWidth } from "@zaly/shared/ansi"
  *  `ActionInfo` plus the action `id` so the source's `accept` can
  *  dispatch without a secondary lookup. Items match the `MenuItem`
  *  contract loosely via the overlapping `name`/... shape. */
-export type ActionCompletionItem = ActionDef & { id: string; value: string }
+export type ActionCompletionItem = ActionDef & { name: string; id: string; value: string }
 
 export interface ActionsSourceOptions {
   /** Registry to read from. Usually `renderer.actions`. */
@@ -20,8 +20,8 @@ export interface ActionsSourceOptions {
   filter?: (id: string, info: ActionDef) => boolean
 }
 
-const defaultRender: MenuRender<ActionCompletionItem> = (item, _active, ctx) => {
-  const name = item.cmd ?? item.id
+const defaultRender: OptionRender<ActionCompletionItem> = (item, _active, ctx) => {
+  const name = item.name
   const desc = item.desc ?? ""
   const gap = 2
   // Label column: widest name wins; capped at half width so a long
@@ -62,7 +62,7 @@ export function actionsSource(opts: ActionsSourceOptions): CompletionSource<Acti
         if (!filter(info.id, info)) continue
         const name = info.cmd ?? info.id
         if (!match(name)) continue
-        out.push({ ...info, id: info.id, value: name })
+        out.push({ ...info, id: info.id, name, value: name })
       }
       return out
     },

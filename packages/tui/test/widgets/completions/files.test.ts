@@ -73,19 +73,19 @@ describe("filesSource", () => {
 
   test("accept prepends the trigger prefix (default @) and a trailing space for files", () => {
     const src = filesSource({ cwd: root })
-    const inserted = src.accept!({ value: "src/index.ts" }, "src/index.ts")
+    const inserted = src.accept!({ name: "src/index.ts", value: "src/index.ts" }, "src/index.ts")
     expect(inserted).toBe("@src/index.ts ")
   })
 
   test("accept leaves directories without a trailing space so users can drill deeper", () => {
     const src = filesSource({ cwd: root })
-    const inserted = src.accept!({ value: "src/" }, "src/")
+    const inserted = src.accept!({ name: "src/", value: "src/" }, "src/")
     expect(inserted).toBe("@src/")
   })
 
   test("accept uses a custom prefix when configured", () => {
     const src = filesSource({ cwd: root, prefix: "#", trigger: /(?<=^|\s)#/ })
-    const inserted = src.accept!({ value: "README.md" }, "README.md")
+    const inserted = src.accept!({ name: "README.md", value: "README.md" }, "README.md")
     expect(inserted).toBe("#README.md ")
   })
 

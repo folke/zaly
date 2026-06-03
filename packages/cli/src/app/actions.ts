@@ -1,7 +1,7 @@
 import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
 import type { ActionDef } from "@zaly/tui"
 import type { Overlay } from "@zaly/tui/widgets/overlay"
-import type { PickerItem } from "@zaly/tui/widgets/picker"
+import type { Option } from "@zaly/tui/widgets/select"
 import type { Text } from "@zaly/tui/widgets/text"
 import type { App } from "./app.ts"
 
@@ -22,8 +22,8 @@ export function appActions({ app }: { app: App }) {
       cmd: "effort",
       desc: "Change how much reasoning the model uses for future turns.",
       fn: async () => {
-        const items: PickerItem<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
-          label: level,
+        const items: Option<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
+          name: level,
           value: level,
         }))
         const effort = await app.pick({
@@ -51,17 +51,17 @@ export function appActions({ app }: { app: App }) {
           filter: filter.length > 0 ? filter : undefined,
         })
 
-        const items: PickerItem[] = []
+        const items: Option<string>[] = []
         for (const m of models) {
           items.push({
-            hint: [
+            desc: [
               formatNumber(m.contextSize),
               m.reasoning ? "reasoning" : undefined,
               ...m.input.filter((mod) => mod !== "text").toSorted(),
             ]
               .filter(Boolean)
               .join(", "),
-            label: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
+            name: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
             value: m.id,
           })
         }
@@ -157,10 +157,10 @@ export function appActions({ app }: { app: App }) {
         const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
         const themes = themeRegistry.keys()
 
-        const items: PickerItem[] = []
+        const items: Option<string>[] = []
         for (const id of themes) {
           items.push({
-            label: id,
+            name: id,
             value: id,
           })
         }

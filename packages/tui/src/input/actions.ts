@@ -2,7 +2,7 @@ import type { ArgsOpts, ArgsResult } from "@zaly/shared/args"
 import type { Node } from "../core/node.ts"
 import type { Renderer } from "../renderer/renderer.ts"
 import type { Input } from "../widgets/input.ts"
-import type { Menu } from "../widgets/menu.ts"
+import type { Select } from "../widgets/select.ts"
 import type { KeyPattern } from "./keys.ts"
 import type { RoutedKey } from "./router.ts"
 
@@ -105,7 +105,7 @@ export type NodeActionMap = Record<string, NodeAction>
  * `defaultActions` catalog so TypeScript catches missing docs or
  * renamed actions at compile time.
  */
-export type BuiltinAction = keyof (Input["actions"] & Menu["actions"] & Renderer["globalActions"])
+export type BuiltinAction = keyof (Input["actions"] & Select["actions"] & Renderer["globalActions"])
 
 type ActionEvents = {
   change: {}

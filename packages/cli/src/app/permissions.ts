@@ -1,5 +1,5 @@
 import type { PermissionRequest, Suggestion } from "@zaly/agent"
-import type { PickerItem } from "@zaly/tui/widgets/picker"
+import type { Option } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
 import { box } from "@zaly/tui/widgets/box"
@@ -9,20 +9,20 @@ import { bubble } from "../widgets/bubble.ts"
 import { toolPreview } from "../widgets/tool.ts"
 
 export async function allow(req: PermissionRequest, app: App): Promise<boolean> {
-  const items: PickerItem<boolean | Suggestion>[] = []
-  items.push({ label: "Allow", value: true })
-  items.push({ label: "Deny", value: false })
+  const items: Option<boolean | Suggestion>[] = []
+  items.push({ name: "Allow", value: true })
+  items.push({ name: "Deny", value: false })
   for (const s of req.suggestions ?? []) {
     if (s.kind === "rule") {
       items.push({
-        hint: s.description,
-        label: `Allow \`${s.scope}(${s.pattern})\``,
+        desc: s.description,
+        name: `Allow \`${s.scope}(${s.pattern})\``,
         value: { kind: "rule", pattern: s.pattern, scope: s.scope },
       })
     } else {
       items.push({
-        hint: s.description,
-        label: `Add workspace ${s.path}`,
+        desc: s.description,
+        name: `Add workspace ${s.path}`,
         value: { kind: "workspace", path: s.path },
       })
     }
