@@ -74,7 +74,7 @@ export interface ProviderRequest {
  */
 export interface Provider<T extends string = string> {
   id: T
-  stream(req: ProviderRequest): AsyncIterable<StreamEvent>
+  stream: (req: ProviderRequest) => AsyncIterable<StreamEvent>
 }
 
 /** Tool-use control. `{ name }` forces the named tool; `"required"`

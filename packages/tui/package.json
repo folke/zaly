@@ -214,7 +214,7 @@
     "diff": "^9.0.0",
     "marked": "^18.0.4",
     "pathe": "^2.0.3",
-    "shiki": "^4.1.0"
+    "shiki": "^4.2.0"
   },
   "devDependencies": {
     "ghostty-web": "^0.4.0",

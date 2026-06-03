@@ -6,7 +6,7 @@ export function compareNaturalDescNumbers(a: string, b: string): number {
   // Capture decimals as one chunk so `5.5` compares as 5.5, not as
   // `5` + `.` + `5` (which would tie with `5` on the leading digit and
   // then lose to it on length).
-  const re = /(\d+(?:\.\d+)?)/g
+  const re = /(?<num>\d+(?:\.\d+)?)/g
   const ax = a.split(re)
   const bx = b.split(re)
   const len = Math.min(ax.length, bx.length)

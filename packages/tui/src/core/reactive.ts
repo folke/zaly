@@ -612,7 +612,7 @@ export type SignalStore<T extends object> = T & {
    *  receives the current plain state (untracked) and returns a
    *  partial to merge. Each field's signal short-circuits on value-
    *  equality, so unchanged fields don't notify subscribers. */
-  set(patch: Partial<T> | ((current: T) => Partial<T>)): void
+  set: (patch: Partial<T> | ((current: T) => Partial<T>)) => void
 }
 
 export function createStore<T extends object>(initial: T): SignalStore<T> {
@@ -683,10 +683,10 @@ export function createStore<T extends object>(initial: T): SignalStore<T> {
  * subtree to settle" caller.
  */
 export type SuspenseBoundary = {
-  increment(): void
-  decrement(): void
-  active(): boolean
-  whenIdle(): Promise<void>
+  increment: () => void
+  decrement: () => void
+  active: () => boolean
+  whenIdle: () => Promise<void>
 }
 
 /** Nearest Suspense provider in the Owner chain. `undefined` when no

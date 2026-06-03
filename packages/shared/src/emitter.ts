@@ -27,7 +27,7 @@ export type ListenerCtx = {
   /** Signal that aborts when the current listener chain should stop */
   signal: AbortSignal
   /** Abort the current listener chain with an optional reason */
-  abort(reason?: unknown): void
+  abort: (reason?: unknown) => void
 }
 
 export type ListenerOpts = {

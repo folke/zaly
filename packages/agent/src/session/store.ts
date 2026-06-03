@@ -29,18 +29,18 @@ export interface SessionStore {
   readonly root: SessionNode | undefined
 
   /** Lookup by uuid. Returns undefined for unknown ids. */
-  get(id: string): Promise<SessionNode | undefined>
+  get: (id: string) => Promise<SessionNode | undefined>
 
   /** Append a node. Becomes the new `root`. The in-memory state must
    *  reflect the append synchronously (so a follow-up `root` read sees
    *  it) even when underlying I/O is still in flight. */
-  write(node: SessionNode): Promise<void>
+  write: (node: SessionNode) => Promise<void>
 
   /** Optional flush + cleanup hook — called by `Session.close()`. */
-  close?(): Promise<void>
+  close?: () => Promise<void>
 
   /** Optional bulk iterator for the full DAG — used by `/tree` UI and
    *  the masker's full-history scans. Backends with lazy reads can
    *  override with a more efficient bulk-scan implementation. */
-  all?(): Iterable<SessionNode> | AsyncIterable<SessionNode>
+  all?: () => Iterable<SessionNode> | AsyncIterable<SessionNode>
 }

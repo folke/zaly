@@ -2,9 +2,9 @@ import { createWriteStream, mkdirSync } from "node:fs"
 import { dirname } from "pathe"
 
 export type Stream<T> = {
-  add(chunk: Buffer): void
-  finish(): void
-  close?(): Promise<void>
+  add: (chunk: Buffer) => void
+  finish: () => void
+  close?: () => Promise<void>
   readonly result: T
   readonly done: boolean
 }

@@ -3,8 +3,8 @@ import { Emitter } from "./emitter.ts"
 
 export type Collection<A, L, R> = {
   active: A
-  list(): L
-  register(value: R): void
+  list: () => L
+  register: (value: R) => void
 }
 
 export type CollectionEvents<A, R> = {

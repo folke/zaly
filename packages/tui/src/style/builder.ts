@@ -21,11 +21,11 @@ type FgExtractKey = `fg${Capitalize<FgChainKey>}`
 export type StyleBuilder = {
   theme: Theme
   (text: string): string
-  fg(color: Color): StyleBuilder
-  bg(color: Color): StyleBuilder
-  add(slot?: AnyThemeKey | Style): StyleBuilder
-  lighten(n: number): StyleBuilder
-  darken(n: number): StyleBuilder
+  fg: (color: Color) => StyleBuilder
+  bg: (color: Color) => StyleBuilder
+  add: (slot?: AnyThemeKey | Style) => StyleBuilder
+  lighten: (n: number) => StyleBuilder
+  darken: (n: number) => StyleBuilder
   // oxlint-disable-next-line typescript/consistent-indexed-object-style -- mapped over a key union, not an open string index
 } & {
   readonly [K in AttrName | FgChainKey | BgChainKey | FgExtractKey]: StyleBuilder

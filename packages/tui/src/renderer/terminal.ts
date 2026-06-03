@@ -13,18 +13,18 @@ export interface TerminalWriter {
   readonly columns: number
   readonly rows: number
   readonly isTTY?: boolean
-  write(s: string): boolean | void
+  write: (s: string) => boolean | void
 }
 
 export interface TerminalReader {
   readonly isTTY?: boolean
-  setRawMode?(mode: boolean): void
-  ref?(): void
-  unref?(): void
-  on(event: string, listener: (...args: unknown[]) => void): void
-  off(event: string, listener: (...args: unknown[]) => void): void
-  resume?(): void
-  pause?(): void
+  setRawMode?: (mode: boolean) => void
+  ref?: () => void
+  unref?: () => void
+  on: (event: string, listener: (...args: unknown[]) => void) => void
+  off: (event: string, listener: (...args: unknown[]) => void) => void
+  resume?: () => void
+  pause?: () => void
 }
 
 export interface TerminalOpts {

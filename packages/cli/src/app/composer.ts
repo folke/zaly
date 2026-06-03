@@ -49,7 +49,7 @@ export type ComposerPlugin = {
   when?: RegExp | ((value: string, ctx: ComposerCtx) => boolean)
   format?: (value: string, ctx: ComposerFormatCtx) => MaybePromise<string | undefined>
   validate?: (value: string, ctx: ComposerCtx) => true | string
-  submit?: (value: string, ctx: ComposerSubmitCtx) => MaybePromise<void>
+  submit?: (value: string, ctx: ComposerSubmitCtx) => MaybePromise
   render?: (ctx: ComposerRenderCtx) => MaybePromise<Node | Node[] | undefined>
 }
 

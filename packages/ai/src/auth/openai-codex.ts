@@ -284,8 +284,8 @@ function parseManualInput(input: string, expectedState: string): string {
 }
 
 interface CallbackServer {
-  waitForCode(): Promise<string>
-  close(): void
+  waitForCode: () => Promise<string>
+  close: () => void
 }
 
 /** Bind a one-shot HTTP server on `127.0.0.1:1455` waiting for the

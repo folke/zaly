@@ -74,9 +74,10 @@ export interface PermissionContext<T extends string> {
    *  composite handlers — e.g. the bash handler delegates `<` redirects
    *  and inferred file paths to `ctx.validate("read", path)` rather
    *  than carrying file-rule logic itself. */
-  validate(scope: string, input: string): CheckResult
+  validate: (scope: string, input: string) => CheckResult
 }
 
 export interface PermissionHandler<T extends string> {
+  // oxlint-disable-next-line typescript/method-signature-style
   validate(input: string, ctx: PermissionContext<T>): CheckResult
 }

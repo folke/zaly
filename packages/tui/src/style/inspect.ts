@@ -42,8 +42,8 @@ export function inspect(msg: unknown[], opts: InspectOptions = {}): string {
   // `opts.inspect.colors = false`.
   const inspectOpts: NodeInspectOptions = { colors: hasColors, ...opts.inspect }
 
-  // oxlint-disable-next-line oxc/no-accumulating-spread
   let ret: unknown[] = []
+  // oxlint-disable-next-line oxc/no-accumulating-spread
   for (let i = data.length - 1; i >= 0; i--) {
     const item = data[i]
     if (isFormatString(item)) {

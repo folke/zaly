@@ -18,7 +18,7 @@ export type LogEntry<T extends LogMeta = LogMeta> = {
 }
 
 export type LogReporter = {
-  $log(entry: LogEntry<any>): void
+  $log: (entry: LogEntry<any>) => void
 }
 
 export type LogSinkFn = (data: LogEntry<any>) => void

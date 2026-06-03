@@ -297,11 +297,13 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
   /** Per-tool validator. Owns the params/result compile state and
    *  lazy-loads typebox on first call. Created by `defineTool`. */
   validator: {
-    validateParams(params: unknown): Promise<Params>
-    validateResult(result: unknown): Promise<Awaited<Result>>
-    cleanParams(params: unknown): Promise<unknown>
+    validateParams: (params: unknown) => Promise<Params>
+    validateResult: (result: unknown) => Promise<Awaited<Result>>
+    cleanParams: (params: unknown) => Promise<unknown>
   }
+  // oxlint-disable-next-line typescript/method-signature-style
   call(params: Params, ctx: ToolContext<Meta>): Promise<Result>
+  // oxlint-disable-next-line typescript/method-signature-style
   preflight?(params: Params, ctx: ToolContext<Meta>): void | Promise<void>
   _types?: { params: Params; result: Result; meta: Meta }
 }
@@ -334,10 +336,10 @@ export type MetaOf<T extends Tool = Tool> = T extends Tool<unknown, unknown, inf
  *  return a Streamable, the harness handles the rest. The runtime guard
  *  `isStreamable` (in `@zaly/ai/tools`) detects this shape. */
 export interface Streamable {
-  poll(): ToolResult & { running: boolean }
-  hasNew?(): boolean
+  poll: () => ToolResult & { running: boolean }
+  hasNew?: () => boolean
   done: Promise<void>
-  abort(): void
+  abort: () => void
 }
 
 /** Normalised tool execution outcome — maps 1:1 to `ToolResultPart`.

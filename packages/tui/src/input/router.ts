@@ -34,14 +34,14 @@ export interface RoutedKey {
    *  for `switch(ev.pattern)` matching without calling `keyMatches`. */
   pattern: string
   stopped: boolean
-  stop(): void
+  stop: () => void
 }
 
 /** A routed paste event — the pasted text + the same propagation control. */
 export interface RoutedPaste {
   text: string
   stopped: boolean
-  stop(): void
+  stop: () => void
 }
 
 export type InputRouterEvents = {

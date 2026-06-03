@@ -3,8 +3,8 @@ import type { Node } from "../core/node.ts"
 import type { Image } from "../widgets/image.ts"
 import type { MdCallbacks, MdImageMeta } from "./types.ts"
 
-import { basename } from "pathe"
 import { stripAnsi } from "@zaly/shared/ansi"
+import { basename } from "pathe"
 
 /** Minimal host shape the image callback needs. Any Node-like parent
  *  with a per-src `Image` cache satisfies it — the `Markdown` widget is
@@ -17,8 +17,8 @@ export interface ImageHost {
   images: Map<string, Image>
   /** Attach a freshly-created `Image` as a child so mount/unmount
    *  propagate. */
-  add(child: Node): unknown
-  remove(child: Node): unknown
+  add: (child: Node) => unknown
+  remove: (child: Node) => unknown
 }
 
 /** Per-occurrence image metadata collected during markdown rendering. */

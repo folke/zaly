@@ -8,7 +8,7 @@ import { log } from "../widgets/log.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
 export interface LoggerStream {
-  append(node: () => Node): unknown
+  append: (node: () => Node) => unknown
 }
 
 export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node

@@ -35,7 +35,7 @@ export interface AuthProvider {
   // for chaining multiple providers together; higher-`priority` providers are
   // consulted first. Default is `0`; negative numbers are valid.
   priority?: number
-  getAuth(model: ModelSpec): MaybePromise<AuthCredentials | undefined>
+  getAuth: (model: ModelSpec) => MaybePromise<AuthCredentials | undefined>
 }
 
 export interface OAuthOptions {
@@ -55,7 +55,7 @@ export interface OAuthOptions {
 }
 
 export interface OAuthProvider extends AuthProvider {
-  login(opts?: OAuthOptions): Promise<AuthCredentials>
+  login: (opts?: OAuthOptions) => Promise<AuthCredentials>
 }
 
 /** Built-in adapter families. Keyed by adapter name so `keyof` gives

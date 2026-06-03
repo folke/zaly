@@ -117,6 +117,7 @@ export default defineConfig({
     "no-warning-comments": ["warn", { location: "start", terms: ["todo", "fixme", "bug"] }],
     "oxc/no-barrel-file": "off",
     "prefer-destructuring": "off", // 3
+    "prefer-named-capture-group": "off",
     "prefer-template": "warn",
     "sort-imports": "off", // 64
     "sort-keys": ["warn", "asc", { caseSensitive: true, natural: false }],

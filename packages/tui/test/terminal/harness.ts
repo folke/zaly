@@ -74,20 +74,20 @@ export interface Harness {
   readonly renderer: Renderer
   readonly term: GhosttyTerminal
   /** The visible rows [top → bottom], trimmed on the right. */
-  viewport(): string[]
+  viewport: () => string[]
   /** All lines that have scrolled off the top. Oldest first. */
-  scrollback(): string[]
+  scrollback: () => string[]
   /** A single visible row (0-based from top of viewport). */
-  row(i: number): string
+  row: (i: number) => string
   /** Wait for any pending microtasks (state mutations → flush). */
-  flush(): Promise<void>
+  flush: () => Promise<void>
   /**
    * Resize the simulated terminal and fire SIGWINCH so the renderer's
    * resize handler runs. Waits for the scheduled flush to settle.
    */
-  resize(cols: number, rows: number): Promise<void>
+  resize: (cols: number, rows: number) => Promise<void>
   /** Tear down the renderer and the terminal. */
-  dispose(): void
+  dispose: () => void
 }
 
 const rowToString = (cells: GhosttyCell[]): string => {
