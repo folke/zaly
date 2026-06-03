@@ -173,6 +173,22 @@ export function appActions({ app }: { app: App }) {
       desc: "Quit zaly.",
       keys: [],
     },
+    "session.new": {
+      cmd: "new",
+      desc: "Start a new session in the current workspace.",
+      fn: async () => {
+        const { newSession } = await import("./session.ts")
+        await newSession(app)
+      },
+    },
+    "session.resume": {
+      cmd: "resume",
+      desc: "Resume a session in the current workspace.",
+      fn: async () => {
+        const { pickSession } = await import("./session.ts")
+        await pickSession(app)
+      },
+    },
   } as const satisfies Record<string, ActionDef>
 }
 

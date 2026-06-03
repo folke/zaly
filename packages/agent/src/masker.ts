@@ -168,9 +168,8 @@ export class Masker {
   }
 
   attach(agent: Agent) {
-    agent.on("context", (ctx, a) => {
-      ctx.messages = this.apply(ctx.messages, a.pressure)
-    })
+    agent.on("context", (ctx, a) => (ctx.messages = this.apply(ctx.messages, a.pressure)))
+    agent.ctx.on("session", () => this.reset())
   }
 
   /** Number of messages with at least one stamped part. */

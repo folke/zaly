@@ -142,7 +142,7 @@ export async function loadModel(model: ModelOpts, base?: ModelSpec): Promise<Mod
   const overrides = typeof model === "string" ? {} : model
   base ??= await getModel(id)
   if (base === undefined)
-    throw new Error(`Unknown model "${id}". Use \`registerModel()\` to register a custom one.`)
+    throw new Error(`Model \`${id}\` not found. Has the model been registered?`)
   const spec: ModelSpec = { ...base, ...overrides }
   const creds = await authenticate(spec)
   const provider = await providerRegistry.load(spec.api, {

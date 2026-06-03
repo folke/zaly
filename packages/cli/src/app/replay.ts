@@ -1,14 +1,15 @@
+import type { Session } from "@zaly/agent/session"
 import type { App } from "./app.ts"
 
 import { messageWidgets } from "./message.ts"
 
 const REPLAY_LIMIT = 100
-const STICKY_TAIL = 10
+const STICKY_TAIL = 20
 
 /** Replay the conversation history for the current session, up to a certain limit. */
-export async function replay(app: App) {
-  const session = await app.ctx.session()
+export async function replay(session: Session, app: App) {
   const messages = session.messages.filter((m) => !m.hidden).slice(-REPLAY_LIMIT)
+  if (messages.length === 0) return
 
   const tail = messageWidgets(messages.slice(-STICKY_TAIL), {
     composer: app.composer,

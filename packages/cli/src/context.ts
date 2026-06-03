@@ -59,8 +59,8 @@ export class Context extends BaseLogger {
 
   async session() {
     return this.#cache.need("session", async () => {
-      const { loadSession } = await import("./app/session.ts")
-      return await loadSession(this.flags)
+      const { bootstrapSession } = await import("./app/session.ts")
+      return await bootstrapSession(this.flags)
     })
   }
 

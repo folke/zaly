@@ -5,18 +5,22 @@ import type { App } from "./app.ts"
 import { registerSecrets } from "@zaly/ai"
 import { toError } from "@zaly/shared"
 
-export async function loadAgentModel(app: App, opts?: { notify?: boolean }): Promise<void> {
+export async function bootstrapModel(
+  agent: Agent,
+  app: App,
+  opts: { notify?: boolean; force?: boolean } = {}
+): Promise<void> {
   const ctx = app.ctx
-  const session = await ctx.session()
   const config = await ctx.config()
   const settings = config.settings
-  const modelId = ctx.flags.model ?? session.settings.modelId ?? settings.model
+  const modelId = ctx.flags.model ?? agent.session.settings.modelId ?? settings.model
   if (!modelId) return
   const model = await ctx.model()
+  if (model.active && !opts.force) return
   try {
     model.active = await model.load({ apiKey: ctx.flags.apiKey, id: modelId })
   } catch (error) {
-    if (opts?.notify)
+    if (opts.notify)
       app.notify(`Failed to load model **${modelId}**:\n${toError(error).message}`, {
         level: "error",
         title: "Model Load Error",
@@ -76,16 +80,27 @@ export async function loadAgent(app: App): Promise<Agent> {
     agent.ctx.prompt = model ? await prompts.render({ cwd: agent.ctx.cwd, model }) : []
   }
   prompts.onAny(updatePrompt)
-  agent.ctx.on("model", updatePrompt)
   agent.ctx.on("cwd", updatePrompt)
 
   const model = await app.ctx.model()
-  model.on("active", ({ active }) => {
-    app.state.model = active
-    agent.ctx.model = active
+  model.on("active", ({ active }) => (agent.ctx.model = active))
+  model.on("register", async ({ value: spec }) => {
+    if (app.ready) return
+    // Plugins can register models during startup
+    if (!agent.model || agent.model.id === spec.id)
+      await bootstrapModel(agent, app, { force: true, notify: true })
   })
 
-  await loadAgentModel(app)
+  agent.ctx.on("model", async () => {
+    app.state.model = agent.ctx.model
+    // no-op if set through model.active, but needed when switching
+    // via agent.ctx.useSession(), since that loads the session's model
+    // directly into agent.ctx.model, bypassing model.active's setter.
+    if (model.active !== agent.ctx.model) model.active = agent.ctx.model
+    await updatePrompt()
+  })
+
+  await bootstrapModel(agent, app)
   return agent
 }
 
@@ -113,5 +128,6 @@ export function attachState(agent: Agent, state: AppState): void {
       const err = agent.lastStop?.error
       if (err) console.error(`${err.name}: ${err.message}`)
     })
+  agent.ctx.on("session", () => (state.usage = agent.usage))
   state.usage = agent.usage
 }

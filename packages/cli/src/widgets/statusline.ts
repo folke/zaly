@@ -25,7 +25,9 @@ export const statusline = widget((props: AppState) =>
           props.reasoning && props.model?.spec.reasoning
             ? style.primary(` ∴ ${props.reasoning}`)
             : ""
-        const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(props.model?.id ?? "no model")}${reasoning} ${dot} ${style.accent(props.status)}`
+        const modelId = props.model?.id ?? (props.status === "loading" ? "" : "no model")
+
+        const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(modelId)}${reasoning} ${dot} ${style.accent(props.status)}`
         const u = props.usage
         const cacheRead = u.cacheRead ?? 0
         const cacheWrite = u.cacheWrite ?? 0

@@ -20,6 +20,7 @@ export class Notifier {
    *  below the lowest threshold (e.g. after compaction), so a later
    *  refill can fire the same level again. */
   #pressureLevel = 0
+  #ac?: AbortController
 
   constructor(opts: NotifyOptions = {}) {
     this.#opts = { idle: 30 * 60, periodic: 60 * 60, ...opts }
@@ -27,27 +28,55 @@ export class Notifier {
 
   attach(agent: Agent) {
     agent.on("step-start", () => this.check(agent))
+    agent.ctx.on("session", () => this.attachSession(agent))
+    this.attachSession(agent)
+  }
+
+  attachSession(agent: Agent) {
+    this.#ac?.abort()
+    this.#ac = new AbortController()
+    const opts = { signal: this.#ac.signal }
     agent.session
-      .on("compact", ({ node }) => {
-        this.#pressureLevel = 0
-        agent.notify("compacted", {
-          ...this.time(),
-          messages_preserved: node.tail,
-          trigger: node.trigger,
-        })
-      })
-      .on("session-resume", () => {
-        agent.notify("session-resume", this.time())
-      })
-      .on("session-start", () => {
-        agent.notify("session-start", this.time())
-      })
-      .on("cwd", ({ cwd }) => {
-        agent.notify("cwd-changed", { cwd })
-      })
-      .on("model", ({ model, prev }) => {
-        agent.notify("model-changed", { current: model, prev })
-      })
+      .on(
+        "compact",
+        ({ node }) => {
+          this.#pressureLevel = 0
+          agent.notify("compacted", {
+            ...this.time(),
+            messages_preserved: node.tail,
+            trigger: node.trigger,
+          })
+        },
+        opts
+      )
+      .on(
+        "session-resume",
+        () => {
+          agent.notify("session-resume", this.time())
+        },
+        opts
+      )
+      .on(
+        "session-start",
+        () => {
+          agent.notify("session-start", this.time())
+        },
+        opts
+      )
+      .on(
+        "cwd",
+        ({ cwd }) => {
+          agent.notify("cwd-changed", { cwd })
+        },
+        opts
+      )
+      .on(
+        "model",
+        ({ model, prev }) => {
+          agent.notify("model-changed", { current: model, prev })
+        },
+        opts
+      )
   }
 
   time(now = Date.now()) {

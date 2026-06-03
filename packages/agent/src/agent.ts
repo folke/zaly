@@ -128,6 +128,21 @@ export class Agent extends Emitter<AgentEvents> {
 
     // Seed usage
     this.#usage = new TokenUsage(this.messages)
+    this.#ctx.on("session", () => this.reset())
+  }
+
+  async reset(): Promise<void> {
+    this.stop({ abort: true, reason: "reset" })
+    await this.waitIdle()
+    await this.#tasks.killAll()
+    this.#cancelAllWakeups()
+    this.#usage = new TokenUsage(this.messages)
+    this.#stopPolicy.reset({ keepUsage: false })
+    this.#injectQueue = []
+    this.#appendQueue = []
+    this.#notifyQueue = []
+    this.#wakeups.clear()
+    this.#stop("natural")
   }
 
   /** Spawn a child agent that inherits this agent's runtime defaults —

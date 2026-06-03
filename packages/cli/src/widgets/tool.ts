@@ -88,7 +88,7 @@ export const toolCall = widget((props: ToolCallProps) => {
   )
 })
 
-export const toolCalls = widget((props: { calls: ToolCallProps[]; done: Accessor<boolean> }) => {
-  const pending = memo(() => !props.done() && props.calls.some((c) => c.result() === undefined))
+export const toolCalls = widget((props: { calls: ToolCallProps[]; pending: Accessor<boolean> }) => {
+  const pending = memo(() => props.pending() && props.calls.some((c) => c.result() === undefined))
   return box({}, ...props.calls.map((call) => toolCall({ ...call, summary: pending })))
 })

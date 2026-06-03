@@ -11,7 +11,7 @@ import { createRef, createRenderer, createStore, memo } from "@zaly/tui"
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
-import { attachState, loadAgent, loadAgentModel } from "./agent.ts"
+import { attachState, bootstrapModel, loadAgent } from "./agent.ts"
 
 /**
  * App = the long-lived glue between Agent and Renderer. Startup is
@@ -35,6 +35,7 @@ export class App {
   #notifier!: Notifier
   #picker!: Picker
   #composer!: Composer
+  #loading = true
 
   #state = createStore<AppState>({
     busy: true,
@@ -82,9 +83,9 @@ export class App {
     return this.#ctx
   }
 
-  /** Whether the agent has finished loading and the app is ready to accept user input. */
+  /** True if bootstrapping is complete and the app is interactive. */
   get ready(): boolean {
-    return this.#agent !== undefined
+    return !this.#loading && this.#agent !== undefined
   }
 
   static async start(cli: Cli): Promise<App> {
@@ -171,8 +172,12 @@ export class App {
    *  the agent (heavy). The user sees their conversation history
    *  before model resolution finishes. */
   async #initSessionAndAgent(): Promise<void> {
-    await Promise.all([this.initAgent(), import("./replay.ts").then(({ replay }) => replay(this))])
+    await Promise.all([
+      this.initAgent(),
+      import("./replay.ts").then(async ({ replay }) => replay(await this.ctx.session(), this)),
+    ])
     // Hand control to the status signal
+    this.#loading = false
     this.#state.busy = false
     this.#state.status = "ready"
   }
@@ -182,8 +187,7 @@ export class App {
     attachState(this.#agent, this.#state)
 
     await this.loadResources()
-
-    if (!this.#agent.model) await loadAgentModel(this, { notify: true })
+    await bootstrapModel(this.#agent, this, { notify: true })
 
     void import("./stream.ts").then(({ attachStream }) => attachStream(this))
   }
