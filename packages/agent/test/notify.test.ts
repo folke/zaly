@@ -31,6 +31,10 @@ async function mockAgent(
     used: 0,
   }
   const agent = {
+    ctx: {
+      session,
+      on: () => agent.ctx,
+    },
     get session() {
       return session
     },
@@ -76,6 +80,10 @@ describe("Notifier — event-driven lifecycle", () => {
     const session = await Session.load({ store: new MemoryStore() })
     const notifications: Omit<MetaPart, "type">[] = []
     const agent = {
+      ctx: {
+        session,
+        on: () => agent.ctx,
+      },
       session,
       notify: (type: string, data: unknown) =>
         notifications.push(
@@ -113,6 +121,10 @@ describe("Notifier — event-driven lifecycle", () => {
     const session = await Session.load({ store: new MemoryStore(seedNodes) })
     const notifications: Omit<MetaPart, "type">[] = []
     const agent = {
+      ctx: {
+        session,
+        on: () => agent.ctx,
+      },
       session,
       notify: (type: string, data: unknown) =>
         notifications.push(
@@ -140,6 +152,10 @@ describe("Notifier — event-driven lifecycle", () => {
     const notifications: Omit<MetaPart, "type">[] = []
     let pressure: ContextPressure = { level: 2, limit: 100, ratio: 0.9, used: 90 }
     const agent = {
+      ctx: {
+        session,
+        on: () => agent.ctx,
+      },
       session,
       notify: (type: string, data: unknown) =>
         notifications.push(
@@ -256,6 +272,10 @@ describe("Notifier — check() polling", () => {
     const notifications: Omit<MetaPart, "type">[] = []
     let pressure: ContextPressure = { level: 0, limit: 100_000, ratio: 0, used: 0 }
     const agent = {
+      ctx: {
+        session,
+        on: () => agent.ctx,
+      },
       session,
       notify: (type: string, data: unknown) =>
         notifications.push(
@@ -307,6 +327,10 @@ describe("Notifier — check() polling", () => {
     const notifications: Omit<MetaPart, "type">[] = []
     let pressure: ContextPressure = { level: 0, limit: 100_000, ratio: 0, used: 0 }
     const agent = {
+      ctx: {
+        session,
+        on: () => agent.ctx,
+      },
       session,
       notify: (type: string, data: unknown) =>
         notifications.push(

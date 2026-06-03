@@ -49,7 +49,7 @@ models.register([
 describe("loadModel — error paths", () => {
   test("throws a helpful error for unknown ids", async () => {
     await expect(models.load("not-a-real-provider/not-a-real-model")).rejects.toThrow(
-      /Unknown model.*registerModel/s
+      /Model.*not found/s
     )
   })
 })
