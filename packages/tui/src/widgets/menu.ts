@@ -5,7 +5,7 @@ import type { NodeActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
 import type { Style } from "../style/types.ts"
 
-import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
+import { stringWidth, truncateAnsi } from "@zaly/shared/ansi"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
@@ -217,12 +217,10 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
     const blank = " ".repeat(width)
 
     const defaultRender = ((): ((item: T) => string) => {
+      const labels = windowItems.map(defaultLabel)
       // Pre-compute label column width once from the visible window —
       // custom renderers skip this entirely.
-      const widest =
-        windowItems.length === 0
-          ? 0
-          : Math.max(...windowItems.map((it) => stringWidth(defaultLabel(it))))
+      const widest = labels.length === 0 ? 0 : Math.max(...labels.map(stringWidth))
       const gap = 2
       const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(width / 2))
       const hintAvail = Math.max(0, width - labelWidth - gap)
@@ -264,18 +262,19 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
 }
 
 function defaultLabel(item: unknown): string {
+  let ret: string
   if (typeof item === "object" && item !== null) {
     const mi = item as MenuItem<unknown>
-    return mi.label ?? String(mi.value)
-  }
-  return String(item)
+    ret = mi.label ?? String(mi.value)
+  } else ret = String(item)
+  return ret.replace(/\s+/g, " ").trim() // collapse whitespace for cleaner default layout
 }
 
 function fit(s: string, width: number): string {
   const w = stringWidth(s)
   if (w === width) return s
   if (w < width) return s + " ".repeat(width - w)
-  return sliceAnsi(s, 0, width)
+  return truncateAnsi(s, width)
 }
 
 /**
