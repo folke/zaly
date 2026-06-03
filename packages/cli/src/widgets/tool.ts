@@ -42,7 +42,7 @@ export function renderToolCall(
         : inspect([p], {
             inspect: { breakLength: Infinity, compact: true },
           })
-  return `${style.primary.bold(tool)}(${truncateAnsi(args.replace(/\s*/g, " "), Math.min(80, width))})`
+  return `${style.primary.bold(tool)}(${truncateAnsi(args, Math.min(80, width))})`
 }
 
 /**

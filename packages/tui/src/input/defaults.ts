@@ -104,14 +104,19 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
   "menu.next": {
     desc: "move to the next item",
     hidden: true,
-    keys: ["down", "ctrl-n"],
+    keys: ["down"],
   },
-  "menu.pagedown": {
+  "menu.next-match": {
+    desc: "move to the next item that matches the query",
+    hidden: true,
+    keys: ["ctrl-n"],
+  },
+  "menu.page-down": {
     desc: "move down one page",
     hidden: true,
     keys: ["pagedown", "ctrl-d"],
   },
-  "menu.pageup": {
+  "menu.page-up": {
     desc: "move up one page",
     hidden: true,
     keys: ["pageup", "ctrl-u"],
@@ -119,7 +124,12 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
   "menu.prev": {
     desc: "move to the previous item",
     hidden: true,
-    keys: ["up", "ctrl-p"],
+    keys: ["up"],
+  },
+  "menu.prev-match": {
+    desc: "move to the previous item that matches the query",
+    hidden: true,
+    keys: ["ctrl-p"],
   },
   "menu.select": {
     desc: "select the active item",

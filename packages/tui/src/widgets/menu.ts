@@ -19,6 +19,8 @@ export interface MenuItem<T = string> {
   value: T
   label?: string
   hint?: string
+  /** Highlight this item as a match of search, for example */
+  match?: boolean
 }
 
 /** Per-row rendering hook. `active` lets callers branch on selection
@@ -110,13 +112,19 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
       if (n === 0) return
       this.active = this.#active() + 1
     },
-    "menu.pagedown": (): void => {
+    "menu.next-match": (): void => {
+      const active = this.#active()
+      const matches = this.#matches.map((i) => i.idx)
+      if (matches.length === 0) return this.actions["menu.next"]()
+      this.active = matches.find((i) => i > active) ?? matches[0]
+    },
+    "menu.page-down": (): void => {
       const n = this.#items().length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
       this.active = this.#active() + page
     },
-    "menu.pageup": (): void => {
+    "menu.page-up": (): void => {
       const n = this.#items().length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
@@ -126,6 +134,12 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
       const n = this.#items().length
       if (n === 0) return
       this.active = this.#active() - 1
+    },
+    "menu.prev-match": (): void => {
+      const active = this.#active()
+      const matches = this.#matches.map((i) => i.idx).toReversed()
+      if (matches.length === 0) return this.actions["menu.prev"]()
+      this.active = matches.find((i) => i < active) ?? matches[0]
     },
     "menu.select": (): void => {
       const items = this.#items()
@@ -167,6 +181,12 @@ export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<
     const n = this.#items().length
     i = i < 0 ? i + n : i
     this.state.active = n === 0 ? 0 : i % n
+  }
+
+  get #matches(): readonly { idx: number; item: T }[] {
+    return this.#items()
+      .map((item, idx) => ({ idx, item }))
+      .filter((i) => i.item.match)
   }
 
   #items(): readonly T[] {
