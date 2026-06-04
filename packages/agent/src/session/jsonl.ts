@@ -1,13 +1,11 @@
-import type { WriteStream } from "node:fs"
 import type { FileHandle } from "node:fs/promises"
 import type { SessionStore } from "./store.ts"
 import type { SessionNode } from "./types.ts"
 
-import { normPath, safeStringify } from "@zaly/shared"
-import { createWriteStream } from "node:fs"
-import { open } from "node:fs/promises"
+import { normPath, safeStringify, withLock } from "@zaly/shared"
+import { appendFile, open } from "node:fs/promises"
 
-const CHUNK_SIZE = 64 * 1024
+const CHUNK_SIZE = 4 * 1024 * 1024
 
 /**
  * JSONL-backed `SessionStore` — append-only file, one record per line.
@@ -23,14 +21,12 @@ const CHUNK_SIZE = 64 * 1024
  */
 export class JsonlStore implements SessionStore {
   readonly path: string
-  readonly #writer: WriteStream
   #nodes = new Map<string, SessionNode>()
   #root?: SessionNode
   #jsonl: JsonlReader<SessionNode>
 
   constructor(path: string) {
     this.path = path
-    this.#writer = createWriteStream(path, { flags: "a" })
     this.#jsonl = new JsonlReader(path)
   }
 
@@ -65,17 +61,15 @@ export class JsonlStore implements SessionStore {
   }
 
   async write(node: SessionNode): Promise<void> {
+    const line = `${safeStringify(node)}\n`
+    await withLock(this.path, async () => {
+      await appendFile(this.path, line, "utf8")
+    })
     this.#nodes.set(node.uuid, node)
     this.#root = node
-    await new Promise<void>((resolve, reject) => {
-      this.#writer.write(`${safeStringify(node)}\n`, (err) => (err ? reject(err) : resolve()))
-    })
   }
 
   async close(): Promise<void> {
-    await new Promise<void>((resolve, reject) => {
-      this.#writer.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
-    })
     await this.#jsonl.close()
   }
 
