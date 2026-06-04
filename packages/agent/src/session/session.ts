@@ -62,6 +62,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   #closed = false
   #started = false
   #path?: string
+  #head?: string
 
   protected constructor(opts: SessionInit<T>) {
     super()
@@ -187,7 +188,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   /** Current head uuid — the root of the store, which is the most
    *  recently appended node. */
   get head(): string | undefined {
-    return this.#store.root?.uuid
+    return this.#head ?? this.#store.root?.uuid
   }
 
   /** Full DAG iterator — backed by `store.all()`. Yields raw nodes
@@ -249,6 +250,12 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return compactUuid
   }
 
+  async checkout(uuid: string): Promise<void> {
+    if (this.#closed) throw new Error("Session is closed")
+    this.#head = uuid
+    await this.#rebuild()
+  }
+
   /** Pre-active history of the current chain — messages from before
    *  the most recent compact (and earlier compacts), in chronological
    *  order. Useful for TUI scrollback that wants to render context the
@@ -275,7 +282,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   async #commit(n: PartialNode, opts: { force?: boolean } = {}): Promise<string> {
     let node: SessionNode = {
       ...n,
-      parentUuid: this.#store.root?.uuid,
+      parentUuid: this.head,
       ts: Date.now(),
       uuid: uuidv7(),
     }
@@ -300,8 +307,9 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       node = { ...node, settings: next }
     }
 
-    node = { ...node, parentUuid: this.#store.root?.uuid }
+    node = { ...node, parentUuid: this.head }
     await this.#store.write(node)
+    this.#head = undefined // invalidate head cache so it reflects the store's root on next read
 
     // Decorate the new node with cumulative meta and append to the
     // active chain view
@@ -347,7 +355,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   ): Promise<SessionView & { settings: SessionSettings }> {
     // Backward pass: collect raw nodes (new to old)
     const reverse: SessionNode[] = []
-    let cursor = opts.uuid ?? this.#store.root?.uuid
+    let cursor = opts.uuid ?? this.head
     let limit = opts.limit ?? Infinity
     let compact: SessionNode<"compact"> | undefined
     const messageNodes: SessionNode<"message">[] = []
