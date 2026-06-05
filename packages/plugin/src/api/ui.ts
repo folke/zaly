@@ -23,7 +23,7 @@ export class UiApi {
     return this.#host.renderer
   }
 
-  async pick<T extends Option = Option>(opts: Omit<PickOpts<T>, "input">): Promise<T | undefined> {
+  async pick<T extends Option = Option>(opts: PickOpts<T>): Promise<T | undefined> {
     return this.#host.pick(opts)
   }
 
@@ -45,8 +45,8 @@ export class UiApi {
     return off
   }
 
-  registerActions(action: Action | Action[]): () => void {
-    const off = this.#renderer.actions.register(Array.isArray(action) ? action : [action])
+  registerActions(...action: Action[]): () => void {
+    const off = this.#renderer.actions.register(action)
     this.#plugin.cleanup(off)
     return off
   }

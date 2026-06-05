@@ -2,8 +2,10 @@ import type { Node } from "../core/node.ts"
 import type { Ref } from "../core/reactive.ts"
 import type { OverlaySurface } from "../renderer/overlay.ts"
 import type { Input } from "../widgets/input.ts"
-import type { PickerProps } from "../widgets/picker.ts"
-import type { Option, Select } from "../widgets/select.ts"
+import type { Overlay } from "../widgets/overlay.ts"
+import type { PickerSelectProps, PickerTreeProps } from "../widgets/picker.ts"
+import type { Option, Selectable } from "../widgets/select.ts"
+import type { TreeNode } from "../widgets/tree.ts"
 import type { Widget } from "../widgets/widget.ts"
 
 import { createRef, signal } from "../core/reactive.ts"
@@ -14,11 +16,19 @@ import { overlay } from "../widgets/overlay.ts"
 import { picker } from "../widgets/picker.ts"
 import { text } from "../widgets/text.ts"
 
-export type PickOpts<T extends Option = Option> = PickerProps<T> & {
+export type PickSelectOpts<T extends Option = Option> = Omit<PickerSelectProps<T>, "input"> & {
   title?: string
-  ref?: Ref<Select<T>>
+  ref?: Ref<Selectable<T>>
   details?: Widget | string
 }
+
+export type PickTreeOpts<T extends TreeNode = TreeNode> = Omit<PickerTreeProps<T>, "input"> & {
+  title?: string
+  details?: Widget | string
+}
+
+export type PickOpts<T extends Option = Option> = PickSelectOpts<T> | PickTreeOpts<T>
+
 export class Picker {
   #ui: OverlaySurface
   #input: Input
@@ -34,7 +44,9 @@ export class Picker {
     return this.#open.get
   }
 
-  #pick<T extends Option = Option>(opts: PickOpts<T>) {
+  #pick<T extends Option = Option>(
+    opts: (PickSelectOpts<T> | PickTreeOpts<T>) & { input: Input; ref: Ref<Selectable<T>> }
+  ): Overlay {
     const children: Node[] = []
     if (opts.title)
       children.push(
@@ -58,7 +70,7 @@ export class Picker {
       },
       divider({ style: "accent" }),
       ...children,
-      picker<T>({ ...opts, maxHeight: 8 }).ref(opts.ref)
+      picker<T>({ maxHeight: 8, ...opts }).ref(opts.ref)
     )
   }
 
@@ -67,12 +79,12 @@ export class Picker {
     this.#close = undefined
   }
 
-  async pick<T extends Option = Option>(opts: Omit<PickOpts<T>, "input">): Promise<T | undefined> {
+  async pick<T extends Option = Option>(opts: PickOpts<T>): Promise<T | undefined> {
     this.close()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
     this.#input.consume()
-    const ref = createRef<Select<T>>()
+    const ref = createRef<Selectable<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
     const menu = ref()

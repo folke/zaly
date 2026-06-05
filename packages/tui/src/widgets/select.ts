@@ -25,6 +25,10 @@ export type Option<T = unknown> = {
   search?: string
 }
 
+export type OptionRenderCtx<T> = RenderCtx & {
+  visible: T[]
+}
+
 /** Per-row rendering hook. `active` lets callers branch on selection
  *  state (e.g. swap an icon or pick a different fg) — but Menu still
  *  applies the `menuActive` theme slot uniformly so the highlight
@@ -32,7 +36,7 @@ export type Option<T = unknown> = {
  *  string is clipped/padded to the row width by Menu. `ctx` is the
  *  current `RenderCtx` so renderers can call `ctx.style.*` for theme-
  *  aware ANSI without capturing it from elsewhere. */
-export type OptionRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string
+export type OptionRender<T> = (item: T, active: boolean, ctx: OptionRenderCtx<T>) => string
 
 export interface SelectState<T extends Option = Option> extends Style {
   /** Items to show. Accepts a signal accessor so the list can be
@@ -74,6 +78,8 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   cancel: {}
 }
 
+export type Selectable<T extends Option = Option> = Node<object, SelectEvents<T>>
+
 /**
  * Selectable list. Items are rendered one per row with an active-row
  * highlight; navigation actions (`next`, `prev`, `first`, `last`,
@@ -83,7 +89,10 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
  * and as the underlying list for `Autocomplete`. Doesn't open/close
  * itself — callers control visibility via `state.visible`.
  */
-export class Select<T extends Option = Option> extends Node<SelectState<T>, SelectEvents<T>> {
+export class Select<T extends Option = Option>
+  extends Node<SelectState<T>, SelectEvents<T>>
+  implements Selectable<T>
+{
   static readonly type = "select"
   override readonly type = Select.type
 
@@ -253,25 +262,11 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     // Compose the per-row renderer. Custom `render` takes precedence;
     // otherwise fall back to the built-in two-column layout (requires
     // items shaped like `MenuItem`).
-    const custom = this.state.render
-    const windowItems = items.slice(start, start + rows)
+    const visible = items.slice(start, start + rows)
     const blank = " ".repeat(width)
+    const optionCtx: OptionRenderCtx<T> = { ...ctx, visible }
 
-    const defaultRender = ((): ((item: T) => string) => {
-      const labels = windowItems.map(defaultLabel)
-      // Pre-compute label column width once from the visible window —
-      // custom renderers skip this entirely.
-      const widest = labels.length === 0 ? 0 : Math.max(...labels.map(stringWidth))
-      const gap = 2
-      const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(width / 2))
-      const descAvail = Math.max(0, width - labelWidth - gap)
-      const spacer = " ".repeat(gap)
-      return (item: T): string => {
-        const nameCell = fit(defaultLabel(item), labelWidth)
-        const descCell = fit(item.desc ?? "", descAvail)
-        return ctx.style.add("menuLabel")(nameCell) + spacer + ctx.style.add("menuHint")(descCell)
-      }
-    })()
+    const renderer = this.optionRenderer
 
     const out: string[] = []
     for (let i = start; i < start + rows; i++) {
@@ -283,7 +278,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
         continue
       }
       const isActive = i === active
-      const raw = custom ? custom(item, isActive, ctx) : defaultRender(item)
+      const raw = renderer(item, isActive, optionCtx)
       // Menu always pads/clips to row width and applies `menuActive`
       // on the selected row — keeps selection visuals consistent across
       // apps regardless of what the custom render produced.
@@ -294,10 +289,38 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     if (showCounter) {
       const shown = items.length === 0 ? 0 : active + 1
       const label = `(${shown}/${items.length})`
-      out.push(ctx.style.add("menuHint")(fit(label, width)))
+      out.push(ctx.style.gutter(fit(label, width)))
     }
 
     return out
+  }
+
+  get optionRenderer(): OptionRender<T> {
+    return this.state.render ?? this.defaultRenderer()
+  }
+
+  defaultRenderer(): OptionRender<Option> {
+    let visible: Option[] = []
+    let widest = 0
+
+    const update = (ctx: OptionRenderCtx<Option>): void => {
+      if (ctx.visible === visible) return
+      visible = ctx.visible
+      const labels = ctx.visible.map(defaultLabel)
+      // Pre-compute label column width once from the visible window —
+      // custom renderers skip this entirely.
+      widest = labels.length === 0 ? 0 : Math.max(...labels.map(stringWidth))
+    }
+    const gap = 2
+    const spacer = " ".repeat(gap)
+    return (item: Option, _active, ctx): string => {
+      update(ctx)
+      const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(ctx.width / 2))
+      const descAvail = Math.max(0, ctx.width - labelWidth - gap)
+      const nameCell = fit(defaultLabel(item), labelWidth)
+      const descCell = fit(item.desc ?? "", descAvail)
+      return ctx.style.add("menuLabel")(nameCell) + spacer + ctx.style.add("menuHint")(descCell)
+    }
   }
 }
 
