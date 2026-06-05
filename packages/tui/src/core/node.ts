@@ -426,8 +426,8 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     return this
   }
 
-  ref(ref?: Ref<this>): this {
-    if (ref) ref.value = this
+  ref<N extends Node>(ref?: Ref<this extends N ? N : never>): this {
+    if (ref) ref.value = this as unknown as typeof ref.value
     return this
   }
 
