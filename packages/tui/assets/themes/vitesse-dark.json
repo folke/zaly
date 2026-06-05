@@ -27,7 +27,7 @@
   "highlight": {
     "bg": "#272727"
   },
-  "menuActive": {
+  "optionActive": {
     "bg": "#181818"
   },
   "selection": {

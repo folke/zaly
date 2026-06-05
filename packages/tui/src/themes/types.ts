@@ -131,10 +131,10 @@ export type Theme = {
 
   // ── menu ─────────────────────────────────────────────────────────────
 
-  menuLabel: ThemeValue
-  menuHint: ThemeValue
+  optionName: ThemeValue
+  optionDesc: ThemeValue
   /** Currently-highlighted entry. */
-  menuActive: ThemeValue
+  optionActive: ThemeValue
 
   // ── diff ─────────────────────────────────────────────────────────────
 

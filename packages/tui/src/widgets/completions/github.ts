@@ -107,7 +107,7 @@ const defaultRender: OptionRender<GithubItem> = (item, _active, ctx) => {
 
   // Layout: [#num] [state/type] title ............. @author
   // All chrome is left-aligned; author is the right-column hint.
-  const lead = `${style.add("menuLabel")(num)} ${style.add(stateSlot)(`${item.state}·${typeLabel}`)} ${item.title}`
+  const lead = `${style.add("optionName")(num)} ${style.add(stateSlot)(`${item.state}·${typeLabel}`)} ${item.title}`
 
   if (author === "") return lead
   const gap = 2
@@ -115,7 +115,7 @@ const defaultRender: OptionRender<GithubItem> = (item, _active, ctx) => {
   const hintW = stringWidth(author)
   const padded = ctx.width - leadW - hintW - gap
   if (padded < 1) return lead
-  return lead + " ".repeat(padded + gap) + style.add("menuHint")(author)
+  return lead + " ".repeat(padded + gap) + style.add("optionDesc")(author)
 }
 
 function stateStyleSlot(state: string): string {

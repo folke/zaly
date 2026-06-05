@@ -70,8 +70,8 @@ export const defaults: Theme = {
 
   // menu
   menuActive: "selection",
-  menuHint: "muted",
-  menuLabel: "primary",
+  optionDesc: "muted",
+  optionName: "primary",
 
   // diff
   diffAdd: { bg: "success-50", fg: "success" },

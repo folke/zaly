@@ -163,7 +163,7 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
     mdCodeBlock: optBg(t.color("textCodeBlock.background", "editor.background")),
     overlay: optBg(t.color("editorWidget.background", "menu.background")),
     highlight: optBg(t.color("editor.selectionBackground", "list.activeSelectionBackground")),
-    menuActive: optBg(t.color("list.activeSelectionBackground", "editor.selectionBackground")),
+    optionActive: optBg(t.color("list.activeSelectionBackground", "editor.selectionBackground")),
     selection: optBg(t.color("editor.selectionBackground")),
 
     // ── diff (mix VSCode bg + TextMate fg) ─────────────────────────────

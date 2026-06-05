@@ -31,7 +31,7 @@ export type OptionRenderCtx<T> = RenderCtx & {
 
 /** Per-row rendering hook. `active` lets callers branch on selection
  *  state (e.g. swap an icon or pick a different fg) — but Menu still
- *  applies the `menuActive` theme slot uniformly so the highlight
+ *  applies the `optionActive` theme slot uniformly so the highlight
  *  stays visually consistent across the widget ecosystem. The returned
  *  string is clipped/padded to the row width by Menu. `ctx` is the
  *  current `RenderCtx` so renderers can call `ctx.style.*` for theme-
@@ -279,11 +279,11 @@ export class Select<T extends Option = Option>
       }
       const isActive = i === active
       const raw = renderer(item, isActive, optionCtx)
-      // Menu always pads/clips to row width and applies `menuActive`
+      // Menu always pads/clips to row width and applies `optionActive`
       // on the selected row — keeps selection visuals consistent across
       // apps regardless of what the custom render produced.
       const cell = fit(raw, width)
-      out.push(isActive ? ctx.style.add("menuActive")(cell) : cell)
+      out.push(isActive ? ctx.style.add("optionActive")(cell) : cell)
     }
 
     if (showCounter) {
@@ -319,7 +319,7 @@ export class Select<T extends Option = Option>
       const descAvail = Math.max(0, ctx.width - labelWidth - gap)
       const nameCell = fit(defaultLabel(item), labelWidth)
       const descCell = fit(item.desc ?? "", descAvail)
-      return ctx.style.add("menuLabel")(nameCell) + spacer + ctx.style.add("menuHint")(descCell)
+      return ctx.style.add("optionName")(nameCell) + spacer + ctx.style.add("optionDesc")(descCell)
     }
   }
 }

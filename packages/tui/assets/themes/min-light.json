@@ -24,7 +24,7 @@
   "highlight": {
     "bg": "#EEE"
   },
-  "menuActive": {
+  "optionActive": {
     "bg": "#EEE"
   },
   "diffAdd": {

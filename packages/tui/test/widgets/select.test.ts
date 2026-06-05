@@ -209,7 +209,7 @@ describe("menu", () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
-  test("custom render is used for item rows; menuActive still paints selection", async () => {
+  test("custom render is used for item rows; optionActive still paints selection", async () => {
     interface Row extends Option {
       tag: string
     }

@@ -20,7 +20,7 @@
   "highlight": {
     "bg": "#212121"
   },
-  "menuActive": {
+  "optionActive": {
     "bg": "#212121"
   },
   "diffAdd": {
