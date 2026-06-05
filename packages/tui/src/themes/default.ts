@@ -20,6 +20,7 @@ export const defaults: Theme = {
   quiet: { dim: true, fg: "muted", italic: true },
   comment: { fg: "muted", italic: true },
   title: { bold: true, fg: "primary" },
+  delim: "muted",
 
   // surface & structure
   subtle: "brightBlack",
@@ -45,6 +46,17 @@ export const defaults: Theme = {
   warn: "yellow",
   error: "red",
 
+  // syntax
+  syntaxNumber: "brightBlue",
+  syntaxString: "green",
+  syntaxBoolean: "yellow",
+  syntaxFunction: "blue",
+  syntaxField: "white",
+  syntaxConstant: "magenta",
+  syntaxSpecial: "red",
+  syntaxDelimiter: "delim",
+  syntaxBracket: "delim",
+
   // markdown
   mdBold: { bold: true },
   mdCode: { bg: "primary+10", fg: "black" },
@@ -69,7 +81,7 @@ export const defaults: Theme = {
   mdTableHeader: "title",
 
   // menu
-  menuActive: "selection",
+  optionActive: "selection",
   optionDesc: "muted",
   optionName: "primary",
 

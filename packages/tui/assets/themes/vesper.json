@@ -39,6 +39,24 @@
   "comment": {
     "fg": "#575757"
   },
+  "syntaxNumber": {
+    "fg": "#FFC799"
+  },
+  "syntaxString": {
+    "fg": "#99FFE4"
+  },
+  "syntaxBoolean": {
+    "fg": "#FFC799"
+  },
+  "syntaxFunction": {
+    "fg": "#FFC799"
+  },
+  "syntaxField": {
+    "fg": "#FFF"
+  },
+  "syntaxSpecial": {
+    "fg": "#A0A0A0"
+  },
   "mdHeading": {
     "fg": "#FFC799",
     "bold": true

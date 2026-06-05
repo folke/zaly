@@ -180,6 +180,17 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
     // ── code annotations (scope rules) ─────────────────────────────────
     comment: t.style("comment"),
 
+    // ── syntax (scope rules) ───────────────────────────────────────────
+    syntaxNumber: t.style("constant.numeric"),
+    syntaxString: t.style("string"),
+    syntaxBoolean: t.style("constant.language.boolean"),
+    syntaxFunction: t.style("entity.name.function"),
+    syntaxField: t.style("variable.other.member"),
+    syntaxConstant: t.style("constant"),
+    syntaxSpecial: t.style("keyword", "storage"),
+    syntaxDelimiter: t.style("punctuation"),
+    syntaxBracket: t.style("meta.brace"),
+
     // ── markdown (scope rules) ─────────────────────────────────────────
     mdHeading: extend(t.style("heading.1.markdown", "markup.heading"), { bold: true }),
     mdHeading1: extend(t.style("heading.1.markdown", "markup.heading.heading-1"), { bold: true }),

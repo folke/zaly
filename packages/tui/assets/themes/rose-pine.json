@@ -45,6 +45,33 @@
     "italic": true,
     "fg": "#6e6a86"
   },
+  "syntaxNumber": {
+    "fg": "#ebbcba"
+  },
+  "syntaxString": {
+    "fg": "#f6c177"
+  },
+  "syntaxBoolean": {
+    "fg": "#ebbcba"
+  },
+  "syntaxFunction": {
+    "fg": "#ebbcba"
+  },
+  "syntaxField": {
+    "fg": "#e0def4"
+  },
+  "syntaxConstant": {
+    "fg": "#31748f"
+  },
+  "syntaxSpecial": {
+    "fg": "#31748f"
+  },
+  "syntaxDelimiter": {
+    "fg": "#908caa"
+  },
+  "syntaxBracket": {
+    "fg": "#e0def4"
+  },
   "mdHeading": {
     "bold": true
   },

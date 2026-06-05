@@ -58,6 +58,8 @@ export type Theme = {
   comment: ThemeValue
   /** Section / panel titles. Typically `bold` + a fg color. */
   title: ThemeValue
+  /** Structural separators — borders, dividers, gutter lines. */
+  delim: ThemeValue
 
   // ── surface & structure ──────────────────────────────────────────────
 
@@ -104,6 +106,17 @@ export type Theme = {
   info: Color
   warn: Color
   error: Color
+
+  // ── syntax ───────────────────────────────────────────────────────────
+  syntaxBoolean: ThemeValue
+  syntaxBracket: ThemeValue
+  syntaxConstant: ThemeValue
+  syntaxDelimiter: ThemeValue
+  syntaxField: ThemeValue
+  syntaxFunction: ThemeValue
+  syntaxNumber: ThemeValue
+  syntaxSpecial: ThemeValue
+  syntaxString: ThemeValue
 
   // ── markdown ─────────────────────────────────────────────────────────
 

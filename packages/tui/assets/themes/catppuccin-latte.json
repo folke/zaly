@@ -48,6 +48,25 @@
     "italic": true,
     "fg": "#7c7f93"
   },
+  "syntaxNumber": {
+    "fg": "#fe640b"
+  },
+  "syntaxString": {
+    "fg": "#40a02b"
+  },
+  "syntaxBoolean": {
+    "fg": "#fe640b"
+  },
+  "syntaxFunction": {
+    "italic": true,
+    "fg": "#1e66f5"
+  },
+  "syntaxSpecial": {
+    "fg": "#8839ef"
+  },
+  "syntaxDelimiter": {
+    "fg": "#7c7f93"
+  },
   "mdHeading": {
     "fg": "#d20f39",
     "bold": true

@@ -36,6 +36,21 @@
   "comment": {
     "fg": "#c2c3c5"
   },
+  "syntaxNumber": {
+    "fg": "#1976D2"
+  },
+  "syntaxString": {
+    "fg": "#2b5581"
+  },
+  "syntaxBoolean": {
+    "fg": "#1976D2"
+  },
+  "syntaxFunction": {
+    "fg": "#6f42c1"
+  },
+  "syntaxSpecial": {
+    "fg": "#D32F2F"
+  },
   "mdLink": {
     "fg": "#22863a"
   },

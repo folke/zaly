@@ -44,6 +44,27 @@
   "comment": {
     "fg": "#616E88"
   },
+  "syntaxNumber": {
+    "fg": "#B48EAD"
+  },
+  "syntaxString": {
+    "fg": "#A3BE8C"
+  },
+  "syntaxBoolean": {
+    "fg": "#81A1C1"
+  },
+  "syntaxFunction": {
+    "fg": "#88C0D0"
+  },
+  "syntaxField": {
+    "fg": "#D8DEE9"
+  },
+  "syntaxSpecial": {
+    "fg": "#81A1C1"
+  },
+  "syntaxDelimiter": {
+    "fg": "#ECEFF4"
+  },
   "mdHeading": {
     "fg": "#88C0D0",
     "bold": true

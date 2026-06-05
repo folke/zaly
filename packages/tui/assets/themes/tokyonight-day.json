@@ -13,6 +13,9 @@
     "fg": "#848cb5",
     "italic": true
   },
+  "delim": {
+    "fg": "#006a83"
+  },
   "diffAdd": {
     "bg": "#b7ced5"
   },
@@ -113,6 +116,33 @@
   "shiki": "tokyo-night",
   "subtle": "#d0d5e3",
   "success": "#118c74",
+  "syntaxBoolean": {
+    "fg": "#b15c00"
+  },
+  "syntaxBracket": {
+    "fg": "#6172b0"
+  },
+  "syntaxConstant": {
+    "fg": "#7847bd"
+  },
+  "syntaxDelimiter": {
+    "fg": "#006a83"
+  },
+  "syntaxField": {
+    "fg": "inherit"
+  },
+  "syntaxFunction": {
+    "fg": "#2e7de9"
+  },
+  "syntaxNumber": {
+    "fg": "#188092"
+  },
+  "syntaxSpecial": {
+    "fg": "#188092"
+  },
+  "syntaxString": {
+    "fg": "#587539"
+  },
   "text": "#3760bf",
   "title": {
     "bold": true,

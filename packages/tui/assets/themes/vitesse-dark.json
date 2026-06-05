@@ -48,6 +48,33 @@
   "comment": {
     "fg": "#687668"
   },
+  "syntaxNumber": {
+    "fg": "#4C9A91"
+  },
+  "syntaxString": {
+    "fg": "#c98a7d"
+  },
+  "syntaxBoolean": {
+    "fg": "#4d9375"
+  },
+  "syntaxFunction": {
+    "fg": "#80a665"
+  },
+  "syntaxField": {
+    "fg": "#bd976a"
+  },
+  "syntaxConstant": {
+    "fg": "#c99076"
+  },
+  "syntaxSpecial": {
+    "fg": "#4d9375"
+  },
+  "syntaxDelimiter": {
+    "fg": "#666666"
+  },
+  "syntaxBracket": {
+    "fg": "#666666"
+  },
   "mdHeading": {
     "bold": true,
     "fg": "#4d9375"
