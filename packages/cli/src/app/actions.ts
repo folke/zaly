@@ -71,13 +71,14 @@ export function appActions({ app }: { app: App }) {
     }),
     "app.cancel": {
       cmd: "cancel",
-      desc: "Clear the composer, or press twice to exit zaly.",
+      desc: "Clear the composer, close the picker, or press twice to exit zaly.",
       fn: (() => {
         let exit = false
         return () => {
           if (exit) app.exit()
           else {
             if (app.input.length > 0) return (app.input = "")
+            if (app.picker.isOpen()) return app.picker.close()
             exit = true
             app.notify("Press `Ctrl-C` again to exit.", {
               level: "warn",

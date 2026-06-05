@@ -54,6 +54,10 @@ export class App {
     return this.#renderer
   }
 
+  get picker(): Picker {
+    return this.#picker
+  }
+
   get agent(): Agent {
     if (!this.#agent) throw new Error("Agent not initialized")
     return this.#agent
