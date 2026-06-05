@@ -5,6 +5,7 @@ import { AiError, defineTool, extractToolResults } from "@zaly/ai"
 import { safeStatAsync } from "@zaly/shared"
 import { glob } from "@zaly/shared/glob"
 import { readFile } from "node:fs/promises"
+import { isDeepStrictEqual } from "node:util"
 import { dirname } from "pathe"
 import { Type } from "typebox"
 
@@ -80,17 +81,21 @@ export class Skills {
     this.catalog.clear()
     this.#tool = undefined
     const paths = this.#opts.paths ?? []
-    await Promise.all(paths.map(async (path) => await this.add(path)))
+    // Load all skills in parallel, but add them to the catalog in order so
+    // that the first one wins on name collision.
+    const skills = await Promise.all(paths.map(async (path) => await this.#load(path)))
+    for (const skill of skills)
+      if (skill && !this.catalog.has(skill.name)) this.catalog.set(skill.name, skill)
     return this
   }
 
-  async add(path: string): Promise<SkillEntry | undefined> {
+  async #load(path: string): Promise<SkillEntry | undefined> {
     if (!path.endsWith("SKILL.md")) return
     const dir = dirname(path)
     try {
       const { meta, mtime, body } = await readSkill(path)
       if (!meta.name || !meta.description || this.catalog.has(meta.name)) return
-      const skill: SkillEntry = {
+      return {
         body,
         description: meta.description,
         dir,
@@ -98,9 +103,15 @@ export class Skills {
         name: meta.name,
         path,
       }
-      this.catalog.set(meta.name, skill)
-      return skill
     } catch {}
+  }
+
+  async #update(entry: SkillEntry): Promise<SkillEntry> {
+    const updated = (await this.#load(entry.path)) ?? entry
+    if (isDeepStrictEqual(updated, entry)) return entry
+    this.catalog.set(entry.name, updated)
+    this.#tool = undefined
+    return updated
   }
 
   /** Skill base directories — pass each to `agent.permissions.addWorkspace`
@@ -155,7 +166,7 @@ export class Skills {
     }
 
     // Refresh the skill entry so we have an up-to-date mtime for staleness checks in `isActivated`.
-    skill = (await this.add(skill.path)) ?? skill
+    skill = await this.#update(skill)
 
     const activated = await this.isActivated(skill, ctx)
     if (activated) {
