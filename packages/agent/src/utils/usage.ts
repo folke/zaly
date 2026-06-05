@@ -22,11 +22,12 @@ export function addUsage(a: Usage, b: Usage): Usage {
 }
 
 export class TokenUsage {
-  #last: Usage
+  #last: Usage = empty()
   #total: Usage = empty()
 
   constructor(messages?: readonly Message[]) {
-    this.#last = lastTokenUsage(messages ?? []) ?? empty()
+    for (const m of messages ?? [])
+      if (m.role === "assistant" && m.meta?.usage) this.add(m.meta.usage)
   }
 
   add(count: Usage): void {
@@ -55,11 +56,4 @@ export class TokenUsage {
 
 function empty(): TokenCount {
   return { input: 0, output: 0 }
-}
-
-export function lastTokenUsage(messages: readonly Message[]): Usage | undefined {
-  const message = messages.findLast((m) => m.role === "assistant" && m.meta?.usage) as
-    | Message<"assistant">
-    | undefined
-  return message?.meta?.usage
 }
