@@ -2,7 +2,7 @@ import type { InspectOptions as NodeInspectOptions } from "node:util"
 
 import { hasAnsi } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
-import { formatWithOptions } from "node:util"
+import { formatWithOptions, inspect as nodeInspect } from "node:util"
 
 export interface InspectOptions {
   /** Forwarded to `util.formatWithOptions` for object inspection. */
@@ -26,7 +26,13 @@ export function isMarkdown(s: string): boolean {
   return MD_RE.test(s) && !hasAnsi(s) && !JSON_RE.test(s)
 }
 
-const isFormatString = (v: unknown): v is string => typeof v === "string" && FORMAT_RE.test(v)
+const isFormatString = (v: unknown): v is string =>
+  typeof v === "string" && FORMAT_RE.test(v) && !hasAnsi(v)
+
+export function inspect(obj: unknown, opts: NodeInspectOptions = {}): string {
+  opts = { colors: hasColors, ...opts }
+  return nodeInspect(obj, opts)
+}
 
 /**
  * Inspect a list of args the way `console.log` does, returning a single
@@ -34,12 +40,8 @@ const isFormatString = (v: unknown): v is string => typeof v === "string" && FOR
  * `Error` values to their message (unless `stacktrace: true`), and falls
  * back to `util.formatWithOptions` for mixed values.
  */
-export function inspect(msg: unknown[], opts: InspectOptions = {}): string {
+export function inspectFormat(msg: unknown[], opts: InspectOptions = {}): string {
   const data = opts.stacktrace ? msg : msg.map((v) => (v instanceof Error ? v.message : v))
-  // Colors on by default — logger output is always rendered through the
-  // stream surface (which emits ANSI anyway), so `util.inspect`'s per-
-  // token colors should pass through. Callers can still opt out via
-  // `opts.inspect.colors = false`.
   const inspectOpts: NodeInspectOptions = { colors: hasColors, ...opts.inspect }
 
   let ret: unknown[] = []

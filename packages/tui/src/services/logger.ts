@@ -3,7 +3,7 @@ import type { InspectOptions } from "../style/inspect.ts"
 import type { LogState } from "../widgets/log.ts"
 
 import { Node } from "../core/node.ts"
-import { inspect, isMarkdown } from "../style/inspect.ts"
+import { inspectFormat, isMarkdown } from "../style/inspect.ts"
 import { log } from "../widgets/log.ts"
 
 /** Minimal stream surface the logger needs. Stream satisfies this. */
@@ -71,7 +71,7 @@ export class TuiReporter implements LogReporter {
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const nodes = msg.filter((m): m is Node => m instanceof Node)
     msg = msg.filter((m) => !(m instanceof Node))
-    const str = inspect(msg, this.#opts)
+    const str = inspectFormat(msg, this.#opts)
     const markdown = (this.#opts.markdown ?? true) && isMarkdown(str)
     const overrides = this.#opts.styles?.[level] ?? {}
     return log({ content: str, level, markdown, ...overrides }, ...nodes)
@@ -81,7 +81,7 @@ export class TuiReporter implements LogReporter {
    *  line (no prefix chrome) and writes it to stdout/stderr. Keeps the
    *  fallback synchronous and ordered. */
   #writeFallback(level: LogLevel, msg: unknown[]): void {
-    const str = inspect(msg, this.#opts)
+    const str = inspectFormat(msg, this.#opts)
     const kind: "stdout" | "stderr" = ERR_LEVELS.has(level) ? "stderr" : "stdout"
     const write = this.#opts.write ?? defaultWrite
     write(`${str}\n`, kind)
