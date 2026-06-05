@@ -8,7 +8,7 @@ import type { Theme } from "../themes/types.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { Node } from "./node.ts"
 
-import { style } from "../style/builder.ts"
+import { styleBuilder } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
 
 /**
@@ -118,7 +118,7 @@ function termWidth(): number | undefined {
 export function createCtx(opts: Partial<RenderCtx> & { theme?: Theme } = {}): RenderCtx {
   const tw = termWidth() ?? 80
   return {
-    style: opts.style ?? style(opts.theme ?? defaultTheme),
+    style: opts.style ?? styleBuilder(opts.theme ?? defaultTheme),
     transmit: (data) => process.stdout.write(data),
     version: opts.version ?? 0,
     width: Math.min(opts.width ?? tw, tw),

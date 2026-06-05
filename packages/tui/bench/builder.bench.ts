@@ -10,15 +10,15 @@
  */
 
 import { barplot, bench, summary } from "mitata"
-import { style } from "../src/style/builder.ts"
+import { styleBuilder } from "../src/style/builder.ts"
 import { defaultTheme } from "../src/themes/registry.ts"
 
-const s = style(defaultTheme)
+const s = styleBuilder(defaultTheme)
 
 barplot(async () => {
   summary(async () => {
     // Baseline: bare call, no styling. Gives us the pure proxy overhead.
-    bench("style()('hi')", () => style()("hi"))
+    bench("style()('hi')", () => styleBuilder()("hi"))
 
     // Single fg via theme slot. Common in text widgets.
     bench("style.primary('hi')", () => s.primary("hi"))

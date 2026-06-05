@@ -58,7 +58,7 @@ describe("inspect", () => {
   })
 
   test("colors can be disabled via opts.inspect.colors", () => {
-    const out = inspectFormat([{ n: 1 }], { inspect: { colors: false } })
+    const out = inspectFormat([{ n: 1 }], { colors: false })
     expect(out).not.toMatch(/\x1b\[[0-9;]*m/)
     expect(out).toContain("n: 1")
   })

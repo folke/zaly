@@ -51,10 +51,14 @@ export type StyleBuilder = {
  * err("oops"); err.underline("fatal")
  * ```
  *
- * Calling an empty builder is a no-op: `style()("x")` returns `"x"` unchanged.
+ * Calling an empty builder is a no-op: `styleBuilder()("x")` returns `"x"` unchanged.
  */
-export function style(theme: Theme = defaultTheme): StyleBuilder {
-  return build({ current: {}, last: undefined, theme })
+export function styleBuilder(theme: Theme | false = defaultTheme): StyleBuilder {
+  return build({
+    current: {},
+    last: undefined,
+    theme: theme === false ? { ...defaultTheme, enabled: false } : theme,
+  })
 }
 
 const ATTRS = new Set<string>(["bold", "dim", "italic", "underline", "inverse", "strikethrough"])
@@ -74,7 +78,7 @@ type PendingOp = "fg" | "bg" | "darken" | "add" | "lighten"
 interface BuilderState {
   current: Style
   last: "fg" | "bg" | undefined
-  theme: Theme
+  theme: Theme & { enabled?: boolean }
   pending?: PendingOp
 }
 
@@ -88,7 +92,7 @@ type BuilderFn = {
 // --- module-level handlers (shared across every chain) -----------------
 
 function applyStyle(state: BuilderState, text: string): string {
-  if (!text) return text
+  if (!text || state.theme.enabled === false) return text
   const open = openStyle(state.current, state.theme)
   return open === "" ? text : open + reapplyStyle(text, open) + RESET
 }
