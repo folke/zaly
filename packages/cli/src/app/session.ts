@@ -1,10 +1,14 @@
-import type { Session, SessionInfo } from "@zaly/agent/session"
+import type { Session, SessionInfo, SessionNode } from "@zaly/agent/session"
+import type { Message, TextPart } from "@zaly/ai"
+import type { AnyStyle, RenderCtx } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
+import type { TreeNode } from "@zaly/tui/widgets/tree"
 import type { Flags } from "../types.ts"
 import type { App } from "./app.ts"
 
 import { loadSession, resumeSession } from "@zaly/agent/session"
 import { normPath, safeStatAsync } from "@zaly/shared"
+import { renderToolCall } from "../widgets/tool.ts"
 
 export async function bootstrapSession(flags: Flags): Promise<Session> {
   const filter = flags.session ?? normPath()
@@ -77,4 +81,200 @@ export async function switchSession(opts: SessionInfo | undefined, app: App) {
 
 export async function newSession(app: App) {
   return await switchSession(undefined, app)
+}
+
+export type SessionTreeOpts = {
+  reasoning?: boolean
+  tools?: boolean
+  system?: boolean
+  fallback?: boolean
+}
+
+type TreeMessage = {
+  role: Message["role"]
+  text: string
+  render: (ctx: RenderCtx) => string
+}
+
+function assertExhaustive(value: never): never {
+  throw new Error(`Unhandled case: ${JSON.stringify(value)}`)
+}
+
+const icons = {
+  active: "● ",
+  inactive: "○ ",
+  reasoning: "∴ ",
+}
+
+const roleStyles = {
+  assistant: { role: "success", text: "text" },
+  reasoning: { role: "quiet", text: "quiet" },
+  system: { role: "quiet", text: "quiet" },
+  tool: { role: "info", text: "text" },
+  user: { role: "primary", text: "text" },
+} as const satisfies Record<string, { text: AnyStyle; role: AnyStyle }>
+
+function clean(s: string): string {
+  return s.replace(/\s+/g, " ").trim()
+}
+
+function expand(m: Message, opts: SessionTreeOpts & { active?: boolean } = {}): TreeMessage[] {
+  const ret: TreeMessage[] = []
+  const icon = (ctx: RenderCtx, ico?: string) =>
+    opts.active ? ctx.style.accent(ico ?? icons.active) : ctx.style.divider(ico ?? icons.inactive)
+  const parts =
+    typeof m.content === "string" ? [{ text: m.content, type: "text" } as TextPart] : m.content
+  for (const part of parts) {
+    switch (part.type) {
+      case "reasoning": {
+        if (!opts.reasoning || part.text.trim() === "") continue
+        ret.push({
+          render: (ctx) => ctx.style.quiet(`${icon(ctx, icons.reasoning)}${clean(part.text)}`),
+          role: m.role,
+          text: part.text,
+        })
+        break
+      }
+
+      case "text": {
+        if (part.text.trim() === "") continue
+        ret.push({
+          render: (ctx) => {
+            const s = roleStyles[m.role]
+            const role = ctx.style.add(s.role)(`${m.role}:`)
+            const text = ctx.style.add(s.text)(clean(part.text))
+            return `${icon(ctx)}${role} ${text}`
+          },
+          role: m.role,
+          text: part.text,
+        })
+        break
+      }
+      case "tool-call": {
+        if (!opts.tools) continue
+        ret.push({
+          render: (ctx) =>
+            `${icon(ctx)}${renderToolCall(part.name, { ...ctx, params: part.params })}`,
+          role: m.role,
+          text: `tool ${part.name} ${typeof part.params === "string" ? part.params : JSON.stringify(part.params)}`,
+        })
+        break
+      }
+      case "error":
+      case "audio":
+      case "image":
+      case "video":
+      case "pdf":
+      case "tool-result":
+      case "meta": {
+        break
+      }
+      default: {
+        assertExhaustive(part)
+      }
+    }
+  }
+  return ret
+}
+
+export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
+  opts = { fallback: false, reasoning: true, system: false, tools: true, ...opts }
+  const session = app.agent.session
+  type Node = TreeNode<
+    Option<SessionNode | { type: "root"; ts: 0 }> & {
+      render?: (ctx: RenderCtx) => string
+      active?: boolean
+    }
+  >
+  const root: Node = { search: "root", value: { ts: 0, type: "root" } }
+  const sessionNodes = new Map<string, SessionNode>()
+  const now = performance.now()
+  const all = await Array.fromAsync(session.nodes())
+  for (const node of all.toReversed()) sessionNodes.set(node.uuid, node)
+  const diff = performance.now() - now
+  app.notify(`Loaded ${sessionNodes.size} session nodes in ${diff.toFixed(2)}ms`)
+
+  const active = new Set<string>()
+  for (let node = session.head ? sessionNodes.get(session.head) : undefined; node; ) {
+    active.add(node.uuid)
+    node = node.parentUuid ? sessionNodes.get(node.parentUuid) : undefined
+  }
+
+  const children = new Map<string | undefined, SessionNode[]>()
+  for (const node of sessionNodes.values()) {
+    const parent =
+      node.parentUuid && sessionNodes.has(node.parentUuid) ? node.parentUuid : undefined
+    const list = children.get(parent) ?? []
+    list.push(node)
+    children.set(parent, list)
+  }
+  for (const list of children.values()) list.sort((a, b) => a.ts - b.ts)
+
+  const parts = (node: SessionNode): Node[] => {
+    const isActive = active.has(node.uuid)
+    const expanded =
+      node.type === "message" ? expand(node.message, { ...opts, active: isActive }) : []
+    if (expanded.length === 0 && opts.fallback)
+      expanded.push({
+        render: (ctx: RenderCtx) => ctx.style.add("quiet")(`[${node.type}]`),
+        role: "system" as const,
+        text: `[${node.type}]`,
+      })
+    return expanded.map((m) => ({
+      active: isActive,
+      render: m.render,
+      search: m.text,
+      value: node,
+    }))
+  }
+
+  const buildChain = (start: SessionNode): Node[] => {
+    const rows: Node[] = []
+    let node = start
+    for (;;) {
+      rows.push(...parts(node))
+      const next: SessionNode[] = children.get(node.uuid) ?? []
+      if (next.length === 0) return rows
+      if (next.length === 1) {
+        node = next[0]
+        continue
+      }
+
+      const branches = next.flatMap((child): Node[] => {
+        const branch = buildChain(child)
+        if (branch.length === 0) return []
+        const [head, ...rest] = branch
+        if (rest.length > 0) {
+          head.children ??= []
+          head.children.unshift(...rest)
+        }
+        return [head]
+      })
+      if (rows.length === 0) return branches
+      const branchParent = rows.at(-1)!
+      branchParent.children ??= []
+      branchParent.children.push(...branches)
+      return rows
+    }
+  }
+
+  root.children = (children.get(undefined) ?? []).flatMap(buildChain)
+
+  const node = await app.pick({
+    maxHeight: 20,
+    render: (item, _a, ctx) => {
+      const s = ctx.style
+      if (item.value.type === "root") return s.accent("Session Root")
+      if (!item.render) return s.dim(item.search ?? "unknown")
+      const ret = item.render(ctx)
+      return item.active ? ret : s.dim(ret)
+    },
+    tree: root,
+  })
+
+  if (!node || node.value.type === "root") return
+  await session.checkout(node.value.uuid)
+  const { replay } = await import("./replay.ts")
+  app.renderer.stream.reset()
+  await Promise.all([replay(session, app), app.agent.ctx.useSession(session)])
 }

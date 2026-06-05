@@ -1,5 +1,6 @@
 import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Accessor, RenderCtx } from "@zaly/tui"
+import type { InspectOptions } from "node:util"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
@@ -24,25 +25,27 @@ export function toolPreview(tool: string, params: string | Record<string, unknow
   return text((ctx) => renderToolCall(tool, { ...ctx, params }))
 }
 
-export function renderToolCall(
-  tool: string,
-  ctx: RenderCtx & { params?: Record<string, unknown> | string }
+export function toolParams(
+  params: unknown = "",
+  opts: InspectOptions & { raw?: boolean; width?: number } = {}
 ) {
+  const parsed = params ? (safeParseToolParams<Tool<Record<string, unknown>>>(params) ?? {}) : {}
+  const p = parsed.path ?? parsed.command ?? parsed.url ?? parsed.pattern ?? parsed.glob ?? parsed
+  const ret =
+    typeof p === "string" && opts.raw
+      ? p
+      : inspect(p, {
+          breakLength: Infinity,
+          compact: true,
+          ...opts,
+        })
+  return opts.width ? truncateAnsi(ret, opts.width) : ret
+}
+
+export function renderToolCall(tool: string, ctx: RenderCtx & { params?: unknown }) {
   const { style, width } = ctx
-  const params = ctx.params ?? ""
-  const p =
-    typeof params === "string"
-      ? params
-      : (params.path ?? params.command ?? params.url ?? params.pattern ?? params.glob ?? params)
-  let args = ""
-  if (p !== "")
-    args =
-      typeof p === "string"
-        ? style.success(JSON.stringify(p))
-        : inspect([p], {
-            inspect: { breakLength: Infinity, compact: true },
-          })
-  return `${style.primary.bold(tool)}(${truncateAnsi(args, Math.min(80, width))})`
+  const params = toolParams(ctx.params, { width: Math.min(80, width - tool.length - 2) })
+  return `${style.primary.bold(tool)}(${params})`
 }
 
 /**
