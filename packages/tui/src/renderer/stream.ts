@@ -110,6 +110,11 @@ export class Stream extends Surface<StreamEvents> {
    *  Cleared at end of each render. */
   readonly #stale = new Set<number>()
   #opts: StreamOptions
+  #scrollback: string[] = []
+  #scrollTimer: NodeJS.Timeout | undefined
+  #history: string[] = []
+  #scrollOffset = 0
+  #wasVirtual = false
 
   constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
     super(renderer)
@@ -200,6 +205,49 @@ export class Stream extends Surface<StreamEvents> {
     return this.#rows
   }
 
+  scroll(lines = 0.5): void {
+    const amount = Math.trunc(Math.abs(lines) < 1 ? lines * this.liveHeight : lines)
+    if (amount === 0) return
+
+    const maxOffset = Math.max(0, this.#history.length - this.liveHeight)
+    const target = Math.max(0, Math.min(maxOffset, this.#scrollOffset - amount))
+    if (target === this.#scrollOffset) return
+
+    if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
+
+    const start = this.#scrollOffset
+    const delta = Math.abs(target - start)
+    const dir = Math.sign(target - start)
+    const totalTime = 120
+    const stepTime = Math.max(8, Math.min(16, totalTime / delta))
+    const stepAmount = Math.max(1, Math.ceil(delta / Math.ceil(totalTime / stepTime)))
+
+    const tick = () => {
+      const remaining = Math.abs(target - this.#scrollOffset)
+      if (remaining === 0) {
+        this.#scrollTimer = undefined
+        return
+      }
+
+      const step = Math.min(stepAmount, remaining)
+      this.#scrollOffset += dir * step
+      this.onDirty()
+
+      this.#scrollTimer = setTimeout(tick, stepTime)
+      this.#scrollTimer.unref()
+    }
+
+    tick()
+  }
+
+  scrollUp(lines = 0.5): void {
+    this.scroll(-lines)
+  }
+
+  scrollDown(lines = 0.5): void {
+    this.scroll(lines)
+  }
+
   async #render(): Promise<{ commitLimit: number; rows: string[] }> {
     const ctx = this.$r.ctx
 
@@ -266,10 +314,23 @@ export class Stream extends Surface<StreamEvents> {
     const commitThreshold = Math.max(1, terminalRows - this.#opts.fixedFooterHeight)
     const newCC = Math.min(commitLimit, Math.max(oldCC, allRows.length - commitThreshold))
     const commitCount = newCC - oldCC
+    const nextScrollback = [...this.#scrollback, ...allRows.slice(oldCC, newCC)]
+    const history = [...nextScrollback, ...allRows.slice(newCC)]
+    this.#scrollOffset = Math.min(this.#scrollOffset, Math.max(0, history.length - liveHeight))
+
     // Bottom-anchored slice of (post-commit) addressable: the rows
     // that actually paint in the scroll region.
-    const newVisible = allRows.slice(newCC).slice(-liveHeight)
+    const normalVisible = allRows.slice(newCC).slice(-liveHeight)
+    const visibleEnd =
+      this.#scrollOffset === 0 ? history.length : Math.max(0, history.length - this.#scrollOffset)
+    const newVisible =
+      this.#scrollOffset === 0
+        ? normalVisible
+        : history.slice(Math.max(0, visibleEnd - liveHeight), visibleEnd)
     const newTopRow = bottom - newVisible.length + 1
+    const virtual = this.#scrollOffset > 0
+    const resetImages = virtual || this.#wasVirtual
+    this.#wasVirtual = virtual
 
     // Snapshot + clear now so the paint closure (possibly deferred via
     // the Renderer's capture) doesn't race with new `markStale` calls.
@@ -285,7 +346,7 @@ export class Stream extends Surface<StreamEvents> {
     // Skipped on layout shift (`oldBottom !== bottom`), stale rows,
     // and out-of-range `oldVisible` indices.
     const screenAlreadyMatches = (row: number, expected: string, shift: number): boolean => {
-      if (oldBottom !== bottom) return false
+      if (virtual || oldBottom !== bottom) return false
       const preShiftRow = row + shift
       if (stale.has(preShiftRow)) return false
       const oldIdx = preShiftRow - oldTopRow
@@ -294,6 +355,7 @@ export class Stream extends Surface<StreamEvents> {
     }
 
     run(() => {
+      if (resetImages) this.terminal.deleteImages({ data: false })
       // Stale-clear: rows in `#stale` that aren't covered by the
       // visible paint loop below. Inside-visible rows are handled by
       // the diff (force-write via `stale.has`). Anything above the new
@@ -363,6 +425,8 @@ export class Stream extends Surface<StreamEvents> {
       }
     })
 
+    this.#scrollback = nextScrollback
+    this.#history = history
     this.#rows = newVisible
     this.#prevBottom = bottom
 
@@ -439,6 +503,11 @@ export class Stream extends Surface<StreamEvents> {
 
   reset(opts: { keepNodes?: boolean } = {}): void {
     this.#rows = []
+    this.#scrollback = []
+    this.#history = []
+    this.#scrollOffset = 0
+    if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
+    this.#scrollTimer = undefined
     for (const s of this.#state) s.commit = 0
     this.#stale.clear()
     this.#prevBottom = undefined

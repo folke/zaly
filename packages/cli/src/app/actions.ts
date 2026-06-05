@@ -144,6 +144,18 @@ export function appActions({ app }: { app: App }) {
       desc: "Reload plugins & resources",
       fn: () => void app.reload(),
     },
+    "app.scroll-down": {
+      cmd: "scroll-down",
+      desc: "Scroll down in the message history.",
+      fn: () => app.renderer.stream.scrollDown(),
+      keys: ["pagedown", "ctrl-d"],
+    },
+    "app.scroll-up": {
+      cmd: "scroll-up",
+      desc: "Scroll up in the message history.",
+      fn: () => app.renderer.stream.scrollUp(),
+      keys: ["pageup", "ctrl-u"],
+    },
     "app.stop": {
       cmd: "stop",
       desc: "Stop the current agent turn or running tool batch.",

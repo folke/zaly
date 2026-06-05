@@ -153,13 +153,21 @@ export class Terminal {
     }
   }
 
+  deleteImages(opts: { data?: boolean } = {}): void {
+    if (!this.#started) return
+    // Remove all Kitty images. KGP doesn't support selective deletion, so
+    // this is the only way to avoid orphaned images when the renderer
+    // crashes mid-paint.
+    this.write(`\x1b_Ga=d,d=${(opts.data ?? true) ? "A" : "a"},q=2\x1b\\`)
+  }
+
   /** Restore terminal modes, detach listeners. Idempotent. */
   stop(): void {
     if (!this.#started) return
 
     try {
       // Remove all Kitty images
-      this.write(`\x1b_Ga=d,d=A\x1b\\`)
+      this.deleteImages()
 
       // Clear scroll region (if set), disable paste/focus reporting,
       // auto-wrap back on, cursor back on.
