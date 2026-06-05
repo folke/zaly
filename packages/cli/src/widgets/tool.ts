@@ -1,6 +1,5 @@
 import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Accessor, RenderCtx } from "@zaly/tui"
-import type { InspectOptions } from "node:util"
+import type { Accessor, InspectOpts, RenderCtx } from "@zaly/tui"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
@@ -27,18 +26,11 @@ export function toolPreview(tool: string, params: string | Record<string, unknow
 
 export function toolParams(
   params: unknown = "",
-  opts: InspectOptions & { raw?: boolean; width?: number } = {}
+  opts: InspectOpts & { raw?: boolean; width?: number } = {}
 ) {
   const parsed = params ? (safeParseToolParams<Tool<Record<string, unknown>>>(params) ?? {}) : {}
   const p = parsed.path ?? parsed.command ?? parsed.url ?? parsed.pattern ?? parsed.glob ?? parsed
-  const ret =
-    typeof p === "string" && opts.raw
-      ? p
-      : inspect(p, {
-          breakLength: Infinity,
-          compact: true,
-          ...opts,
-        })
+  const ret = typeof p === "string" && opts.raw ? p : inspect(p, { indent: 0, ...opts })
   return opts.width ? truncateAnsi(ret, opts.width) : ret
 }
 

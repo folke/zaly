@@ -1,23 +1,23 @@
 import type { LogLevel } from "@zaly/shared/logger"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { Color } from "../style/types.ts"
+import type { TextContent } from "./text.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
 import { memo, unwrap } from "../core/reactive.ts"
 import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
-import { text } from "./text.ts"
+import { text, textContent } from "./text.ts"
 import { widget } from "./widget.ts"
 
 export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif"
 
 export interface LogState {
   level: LogLevel
-  content: Reactive<string>
+  content: TextContent
   title?: string
   /** Rendering of the per-level prefix chunk. Defaults by level. */
   style?: LogStyle
@@ -113,7 +113,6 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
           fg: textColor,
         }
       : undefined,
-    visible: memo(() => unwrap(state.content).trim() !== ""),
     width: "fill",
   } as const
   return box(

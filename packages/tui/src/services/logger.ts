@@ -1,5 +1,5 @@
 import type { LogEntry, LogLevel, LogReporter } from "@zaly/shared/logger"
-import type { InspectOptions } from "../style/inspect.ts"
+import type { InspectOpts } from "../style/inspect.ts"
 import type { LogState } from "../widgets/log.ts"
 
 import { Node } from "../core/node.ts"
@@ -15,7 +15,7 @@ export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node
 
 export type LogStyleOverride = Omit<LogState, "level" | "content">
 
-export interface TuiReporterOpts extends InspectOptions {
+export interface TuiReporterOpts extends InspectOpts {
   /** Render string messages as markdown when they look like it.
    *  Default: `true`. */
   markdown?: boolean
@@ -71,10 +71,24 @@ export class TuiReporter implements LogReporter {
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const nodes = msg.filter((m): m is Node => m instanceof Node)
     msg = msg.filter((m) => !(m instanceof Node))
-    const str = inspectFormat(msg, this.#opts)
-    const markdown = (this.#opts.markdown ?? true) && isMarkdown(str)
+    const markdown =
+      (this.#opts.markdown ?? true) &&
+      msg.length === 1 &&
+      typeof msg[0] === "string" &&
+      isMarkdown(msg[0])
     const overrides = this.#opts.styles?.[level] ?? {}
-    return log({ content: str, level, markdown, ...overrides }, ...nodes)
+    return log(
+      {
+        content:
+          msg.length === 1 && typeof msg[0] === "string"
+            ? msg[0]
+            : (ctx) => inspectFormat(msg, { ...this.#opts, style: ctx.style }),
+        level,
+        markdown,
+        ...overrides,
+      },
+      ...nodes
+    )
   }
 
   /** String path for the no-stream fallback — builds a plain inspected

@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Accessor, Reactive } from "../core/reactive.ts"
+import type { Accessor } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 import type { MarkdownRenderer } from "../markdown/renderer.ts"
@@ -7,19 +7,21 @@ import type { MdOptions } from "../markdown/types.ts"
 import type { ShikiTheme } from "../shiki/types.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Image } from "./image.ts"
+import type { TextContent } from "./text.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
-import { createAsync, signal, unwrap } from "../core/reactive.ts"
+import { createAsync, signal } from "../core/reactive.ts"
 import { calcLayout, formatText } from "../layout/text.ts"
 import { shikiWorker } from "../shiki/client.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
+import { textContent } from "./text.ts"
 
 export interface MarkdownState {
   /** Markdown source. Accepts a plain string or a reactive accessor —
    *  pass `signal()` / `memo()` for streaming content that re-parses on
    *  each render and subscribes the node to the signal. */
-  content: Reactive<string>
+  content: TextContent
   /** Options forwarded to `renderMarkdown`. */
   options?: MdOptions
   /**
@@ -104,7 +106,7 @@ export class Markdown extends Node<MarkdownState> {
       const { MarkdownRenderer } = await import("../markdown/renderer.ts")
       this.#renderer = new MarkdownRenderer({ ...this.state.options, parent: this })
     }
-    const source = unwrap(this.state.content) // tracked
+    const source = await textContent(this.state.content, ctx)
     let formatted: string
 
     if (!hasColors) formatted = this.#renderer.normalizeEol(source, source)
@@ -135,8 +137,8 @@ export class Markdown extends Node<MarkdownState> {
     })
   }
 
-  override layout() {
-    return calcLayout(unwrap(this.state.content))
+  override async layout(ctx: RenderCtx) {
+    return calcLayout(await textContent(this.state.content, ctx))
   }
 }
 
@@ -151,12 +153,12 @@ export class Markdown extends Node<MarkdownState> {
  * ```
  */
 export function markdown(
-  content: Reactive<string>,
+  content: TextContent,
   style?: Omit<State<MarkdownState>, "content">
 ): Markdown
 export function markdown(state: State<MarkdownState>): Markdown
 export function markdown(
-  first: Reactive<string> | MarkdownState,
+  first: TextContent | MarkdownState,
   style?: Omit<State<MarkdownState>, "content">
 ): Markdown {
   // Plain strings and accessor functions go through the content path;
