@@ -18,10 +18,11 @@ export type TreeNode<T extends Option = Option> = T & {
   icon?: string
 }
 
-export type TreeProps<T extends TreeNode = TreeNode> = Omit<SelectState<T>, "items"> & {
+export type TreeProps<T extends TreeNode = TreeNode> = Omit<SelectState<T>, "items" | "active"> & {
   tree: T
   /** If true, the root node will be rendered and selectable. Defaults to false. */
   root?: boolean
+  active?: T | ((item: T) => boolean)
 }
 
 export type TreeEvents<T extends TreeNode = TreeNode> = SelectEvents<T> & {}
@@ -54,9 +55,13 @@ export class Tree<T extends TreeNode = TreeNode>
   constructor(props: TreeProps<T>) {
     super(props)
     this.items = this.#build()
+    const activeFn =
+      typeof props.active === "function" ? props.active : (i: T) => i === props.active
+    const active = props.active ? this.items.findIndex((i) => activeFn(i.value)) : -1
     this.nodes = this.items.map((i) => i.value)
     this.select = new Select({
       ...this.state,
+      active: active === -1 ? 0 : active,
       items: this.items,
       render: this.#render.bind(this),
     })

@@ -189,7 +189,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   opts = { fallback: false, reasoning: true, system: false, tools: true, ...opts }
   const session = app.agent.session
   type Node = TreeNode<
-    Option<SessionNode | { type: "root"; ts: 0 }> & {
+    Option<SessionNode | { type: "root"; ts: 0; uuid?: string }> & {
       render?: (ctx: RenderCtx) => string
       active?: boolean
     }
@@ -278,6 +278,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   root.children = (children.get(undefined) ?? []).flatMap(buildChain)
 
   const node = await app.pick({
+    active: (item) => item.value.uuid === sessionHead,
     maxHeight: 20,
     render: (item, _a, ctx) => {
       const s = ctx.style
