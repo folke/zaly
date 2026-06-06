@@ -217,7 +217,7 @@
   "dependencies": {
     "@zaly/shared": "workspace:*",
     "diff": "^9.0.0",
-    "marked": "^18.0.4",
+    "marked": "^18.0.5",
     "pathe": "^2.0.3",
     "shiki": "^4.2.0"
   },

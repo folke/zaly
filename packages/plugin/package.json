@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "jiti": "^2.7.0",
-    "typebox": "^1.1.39"
+    "typebox": "^1.2.1"
   },
   "inlinedDependencies": {
     "jiti": "2.7.0"
