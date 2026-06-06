@@ -39,9 +39,9 @@ export const statusline = widget((props: AppState) =>
 
         components.push(() => {
           const m = props.model
-          if (!m) return props.status === "loading" ? undefined : s.error("no model")
           const reasoning =
-            props.reasoning && m.spec.reasoning ? s.primary(` ∴ ${props.reasoning}`) : ""
+            props.reasoning && m?.spec.reasoning ? s.primary(` ∴ ${props.reasoning}`) : ""
+          if (!m) return props.status === "loading" ? undefined : s.error("no model")
           return `${s.success(m.id)}${reasoning}`
         })
 

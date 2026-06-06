@@ -39,7 +39,7 @@ export class App {
 
   #state = createStore<AppState>({
     busy: true,
-    scroll: { offset: 0, total: 0, below: 0 },
+    scroll: { below: 0, offset: 0, total: 0 },
     status: "loading",
     step: 0,
   })

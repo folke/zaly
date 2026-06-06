@@ -69,6 +69,7 @@ export async function loadAgent(app: App): Promise<Agent> {
 
   agent.ctx.on("reasoning", ({ effort }) => (app.state.reasoning = effort))
   agent.ctx.reasoning = ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning ?? "medium"
+  app.state.reasoning = agent.ctx.reasoning
 
   const tools = await app.ctx.tools()
   tools.onAny(async () => (agent.ctx.tools = await tools.load()))
