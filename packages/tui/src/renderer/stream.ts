@@ -101,11 +101,11 @@ export class Stream extends Surface<StreamEvents> {
   #prevBottom: number | undefined
   #opts: StreamOptions
   #scrollback: string[] = []
-  #scrollTimer: NodeJS.Timeout | undefined
   #history: string[] = []
   /** 0 = follow live bottom; otherwise 1-based top row inside #history. */
   #scrollTop = 0
   #wasVirtual = false
+  #scrollAnim?: { cancel: () => void }
 
   constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
     super(renderer)
@@ -211,17 +211,19 @@ export class Stream extends Surface<StreamEvents> {
     })
   }
 
-  scroll(lines = 0.5): void {
+  scroll(lines = 0.5): Promise<void> {
     const amount = Math.trunc(Math.abs(lines) < 1 ? lines * this.liveHeight : lines)
-    if (amount === 0) return
+    if (amount === 0) return Promise.resolve()
 
     const total = this.#history.length
     const maxTop = Math.max(1, total - this.liveHeight + 1)
     const current = this.#scrollTop === 0 ? maxTop : this.#scrollTop
     const target = Math.max(1, Math.min(maxTop, current + amount))
-    if (target === current) return
+    if (target === current) return Promise.resolve()
 
-    if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
+    this.#scrollAnim?.cancel()
+
+    const ret = Promise.withResolvers<void>()
 
     const delta = Math.abs(target - current)
     const dir = Math.sign(target - current)
@@ -235,7 +237,8 @@ export class Stream extends Surface<StreamEvents> {
       if (remaining === 0) {
         this.#scrollTop = target >= lastTop ? 0 : target
         this.emitScroll()
-        this.#scrollTimer = undefined
+        ret.resolve()
+        this.#scrollAnim = undefined
         return
       }
 
@@ -245,34 +248,41 @@ export class Stream extends Surface<StreamEvents> {
       this.emitScroll()
       this.invalidate()
 
-      this.#scrollTimer = setTimeout(tick, stepTime)
-      this.#scrollTimer.unref()
+      const t = setTimeout(tick, stepTime)
+      t.unref()
+      this.#scrollAnim = {
+        cancel: () => {
+          clearTimeout(t)
+          ret.resolve()
+          this.#scrollAnim = undefined
+        },
+      }
     }
 
     tick()
+    return ret.promise
   }
 
-  scrollBottom(): void {
+  async scrollBottom(): Promise<void> {
     if (this.#scrollTop === 0) return
-    this.scroll(Math.max(1, this.#history.length - this.liveHeight + 1))
-    setTimeout(() => {
-      if (this.#scrollTop === 0) return
-      this.#scrollTop = 0
-      this.emitScroll()
-      this.invalidate()
-    }, SCROLL_DURATION + 50)
+    await this.scroll(Math.max(1, this.#history.length - this.liveHeight + 1))
+    if (this.#scrollTop === 0) return // Already at target
+    if (this.#scrollAnim) return // Another scroll started during the scroll-bottom animation; don't override it with a hard jump
+    this.#scrollTop = 0
+    this.emitScroll()
+    this.invalidate()
   }
 
-  scrollTop(): void {
-    this.scroll(-this.#history.length + 1)
+  scrollTop(): Promise<void> {
+    return this.scroll(-this.#history.length + 1)
   }
 
-  scrollUp(lines = 0.5): void {
-    this.scroll(-lines)
+  scrollUp(lines = 0.5): Promise<void> {
+    return this.scroll(-lines)
   }
 
-  scrollDown(lines = 0.5): void {
-    this.scroll(lines)
+  scrollDown(lines = 0.5): Promise<void> {
+    return this.scroll(lines)
   }
 
   async #render(): Promise<{ commitLimit: number; rows: string[] }> {
@@ -519,8 +529,7 @@ export class Stream extends Surface<StreamEvents> {
     this.#scrollback = []
     this.#history = []
     this.#scrollTop = 0
-    if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
-    this.#scrollTimer = undefined
+    this.#scrollAnim?.cancel()
     for (const s of this.#state) s.commit = 0
     this.clearStale()
     this.#prevBottom = undefined

@@ -167,7 +167,7 @@ export class Composer {
       if (plugin === false) return
       await plugin.submit(value.value, ctx)
     }
-    this.#app.renderer.stream.scrollBottom()
+    void this.#app.renderer.stream.scrollBottom()
     this.#app.agent.send()
     void this.#app.agent.waitIdle()
   }
