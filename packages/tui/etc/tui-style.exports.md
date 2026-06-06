@@ -1,12 +1,13 @@
-# @zaly/tui/style (19)
+# @zaly/tui/style (20)
 
-## Functions (6)
+## Functions (7)
 
 - inspect
+- inspectFormat
 - isHexColor
 - isMarkdown
 - parseHex
-- style
+- styleBuilder
 - toHex
 
 ## Types (13)
@@ -19,7 +20,7 @@
 - Color
 - ColorLightness
 - HexColor
-- InspectOptions
+- InspectOpts
 - RGB
 - Style
 - StyleBuilder

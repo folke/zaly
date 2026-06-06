@@ -1,10 +1,17 @@
-# @zaly/agent (66)
+# @zaly/agent (81)
 
-## Functions (4)
+## Classes (2)
+
+- Commands
+- Skills
+
+## Functions (6)
 
 - createAgent
 - isUuidv7
 - isUuidv7Like
+- promptCollection
+- toolCollection
 - uuidv7
 
 ## Constants (3)
@@ -13,21 +20,25 @@
 - promptRegistry
 - toolRegistry
 
-## Types Classes (5)
+## Types Classes (8)
 
 - Agent
 - AgentContext
 - PermissionManager
+- PromptCollection
 - StopPolicy
 - Tasks
+- TokenUsage
+- ToolCollection
 
-## Types Functions (3)
+## Types Functions (4)
 
+- addUsage
 - createAgentContext
 - taskCompletionMessage
 - taskInfoPart
 
-## Types (51)
+## Types (58)
 
 - AgentContextEvents
 - AgentEvents
@@ -44,6 +55,8 @@
 - BuiltinScope
 - BuiltinTool
 - CheckResult
+- Command
+- CommandsOptions
 - ContextPressure
 - DoneTaskInfo
 - EditTool
@@ -60,12 +73,17 @@
 - PermissionRequest
 - PermissionScope
 - PermissionScopes
+- Prompt
 - PromptCtx
 - PromptLoader
 - ReadTool
 - ReadToolMeta
 - Rule
 - SendMode
+- SkillEntry
+- SkillMeta
+- SkillTool
+- SkillsOptions
 - StepKind
 - StepResult
 - StopOptions

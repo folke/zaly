@@ -1,4 +1,4 @@
-# @zaly/ai (122)
+# @zaly/ai (133)
 
 ## Classes (3)
 
@@ -6,9 +6,8 @@
 - ContentTransform
 - Model
 
-## Functions (51)
+## Functions (52)
 
-- addModels
 - attachmentToMeta
 - authenticate
 - builtinProviders
@@ -23,6 +22,7 @@
 - extractToolResults
 - fileToMetaPart
 - filterModel
+- filterModels
 - getModel
 - hasAttachments
 - hasAuth
@@ -39,10 +39,11 @@
 - loadModel
 - metaToText
 - metaToTextPart
+- modelCollection
 - pairedToolIds
 - parseJson
 - parseModelId
-- registerModel
+- registerSecrets
 - renderMetaPart
 - runTool
 - safeParseToolParams
@@ -64,11 +65,17 @@
 
 - authRegistry
 
-## Types Functions (1)
+## Types Classes (2)
+
+- ModelCollection
+- SecretsManager
+
+## Types Functions (2)
 
 - collect
+- secretsAuth
 
-## Types (66)
+## Types (73)
 
 - AnyAuthProvider
 - AnyPart
@@ -78,6 +85,7 @@
 - AuthCredentials
 - AuthLoader
 - AuthProvider
+- AuthSecrets
 - BuiltinAuthProvider
 - CollectOptions
 - Content
@@ -99,8 +107,10 @@
 - MetaOf
 - MetaPart
 - Modality
+- ModelCatalog
 - ModelFilter
 - ModelInfo
+- ModelOpts
 - ModelProviderOverride
 - ModelSpec
 - ModelStreamOptions
@@ -121,6 +131,8 @@
 - ResponseFormat
 - RetryOptions
 - Role
+- Secret
+- StoredModel
 - StreamEvent
 - StreamOptions
 - Streamable
@@ -130,9 +142,11 @@
 - ToolCallPart
 - ToolChoice
 - ToolContext
+- ToolDef
 - ToolResult
 - ToolResultPart
 - Usage
 - VideoPart
+- WirePart
 - WithPart
 - WithoutPart

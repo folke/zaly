@@ -1,12 +1,13 @@
-# @zaly/shared/args (6)
+# @zaly/shared/args (7)
 
 ## Functions (2)
 
 - argsParse
 - argsUsage
 
-## Types (4)
+## Types (5)
 
+- ArgsOption
 - ArgsOpts
 - ArgsResult
 - ParsedArgs

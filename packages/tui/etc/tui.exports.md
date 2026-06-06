@@ -1,23 +1,14 @@
-# @zaly/tui (197)
+# @zaly/tui (108)
 
-## Classes (5)
+## Classes (2)
 
 - KeyPatternError
-- Notifier
 - Owner
-- Picker
-- TuiReporter
 
-## Functions (58)
+## Functions (32)
 
-- actionsSource
-- autocomplete
-- box
-- calcLayout
 - canonical
-- code
 - codeToAnsi
-- countLines
 - createAsync
 - createContext
 - createCtx
@@ -29,124 +20,70 @@
 - createStore
 - createSuspenseBoundary
 - defineAction
-- diff
-- divider
 - effect
-- filesSource
-- formatLines
-- formatText
-- fuzzyScore
-- githubSource
-- image
 - inRenderContextOf
-- input
 - inspect
+- inspectFormat
 - isAccessor
 - isKeyPattern
 - isMarkdown
 - keyMatches
-- log
-- markdown
 - memo
-- menu
 - onCleanup
-- overlay
-- picker
-- progress
 - provideContext
-- rank
-- resetImageTransmitCache
-- show
 - signal
-- spinner
-- text
 - toAccessor
 - untrack
 - unwrap
 - useActiveOwner
 - useContext
-- widget
 - withActiveNode
 - withOwner
 
-## Constants (3)
+## Constants (2)
 
 - RenderContext
 - SuspenseContext
-- spinnerFrames
 
-## Types Classes (19)
+## Types Classes (9)
 
 - Actions
-- Autocomplete
-- Box
-- Diff
-- Image
-- Input
 - InputRouter
-- Markdown
-- Menu
 - Node
 - OverlaySurface
-- Progress
+- RenderStats
 - Renderer
-- Show
-- Spinner
 - Stream
 - Terminal
-- Text
 - UI
 
-## Types Functions (2)
+## Types Functions (1)
 
 - isNode
-- textContent
 
-## Types (110)
+## Types (62)
 
-- AcceptFn
 - Accessor
 - Action
-- ActionCompletionItem
 - ActionCtx
 - ActionDef
 - ActionFilter
 - ActionFn
 - ActionMap
-- ActionsSourceOptions
 - AnsiColor
 - AnsiColorName
 - AnsiStyle
 - AnyStyle
-- AutocompleteEvents
-- AutocompleteOptions
-- AutocompleteState
 - BaseEvents
-- BoxStyle
 - BrightAnsiColorName
 - BuiltinAction
-- CodeState
 - Color
 - ColorLightness
-- CompleteResult
-- CompletionSource
 - Context
-- DiffState
-- DividerState
-- FilesSourceOptions
 - FlexState
-- GithubFetcher
-- GithubItem
-- GithubSourceOptions
-- GithubState
 - HexColor
-- ImageState
-- InputAttachment
-- InputEvents
 - InputRouterEvents
-- InputState
-- InputValue
-- InspectOptions
+- InspectOpts
 - KeyBinding
 - KeyEvent
 - KeyHandler
@@ -156,35 +93,16 @@
 - KeymapEntry
 - Layout
 - LayoutState
-- LogEntryFactory
-- LogState
-- LogStyle
-- LogStyleOverride
-- LoggerStream
-- MarkdownState
-- Matcher
-- MenuEvents
-- MenuItem
-- MenuRender
-- MenuState
 - MountCtx
 - NodeAction
 - NodeActionMap
 - NodeVisitor
-- NotifProps
-- Overlay
-- OverlayState
-- Padding
-- PickOpts
-- PickerItem
-- PickerProps
-- PickerResult
-- ProgressState
-- Props
 - RGB
 - Reactive
 - Ref
+- RenderContextValue
 - RenderCtx
+- RenderEvents
 - RendererOptions
 - RoutedKey
 - RoutedPaste
@@ -196,21 +114,14 @@
 - ShikiTheme
 - ShikiWorkerRequest
 - ShikiWorkerResponse
-- ShowState
 - Signal
 - SignalStore
 - SpecialKeyName
-- SpinnerState
-- SpinnerStyle
 - State
 - Style
 - StyleState
 - SurfaceType
 - SuspenseBoundary
-- TextContent
-- TextStyle
 - Theme
 - ThemeKey
 - ThemeValue
-- TuiReporterOpts
-- WrapMode

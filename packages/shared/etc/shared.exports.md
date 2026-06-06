@@ -14,7 +14,7 @@
 - findUp
 - formatDuration
 - formatNumber
-- formatRelTime
+- formatRelativeTime
 - formatSize
 - gitRoot
 - hash
