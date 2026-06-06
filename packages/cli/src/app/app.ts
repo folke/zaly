@@ -39,8 +39,9 @@ export class App {
 
   #state = createStore<AppState>({
     busy: true,
+    scroll: { offset: 0, total: 0, below: 0 },
     status: "loading",
-    usage: { input: 0, output: 0 },
+    step: 0,
   })
 
   private constructor(ctx: Context) {
@@ -125,6 +126,9 @@ export class App {
         wrap: (node) => box({ padding: [1, 0, 0, 0] }, node),
       },
       theme: await this.#ctx.theme(),
+    })
+    this.#renderer.stream.on("scroll", ({ offset, total, below }) => {
+      this.#state.scroll = { offset, total, below }
     })
 
     void this.initActions()

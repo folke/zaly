@@ -19,35 +19,57 @@ export const statusline = widget((props: AppState) =>
     { flexDirection: "row", gap: 1 },
     spinner({ color: "accent", idle: "✓", running: memo(() => props.busy) }),
     text(
-      ({ style }) => {
-        const dot = style.dim("·")
-        const reasoning =
-          props.reasoning && props.model?.spec.reasoning
-            ? style.primary(` ∴ ${props.reasoning}`)
-            : ""
-        const modelId = props.model?.id ?? (props.status === "loading" ? "" : "no model")
+      ({ style: s }) => {
+        if (props.step < 0) return "" // subscribe to step for usage refresh
 
-        const lhs = `${style.primary.bold("zaly")} ${dot} ${style.success(modelId)}${reasoning} ${dot} ${style.accent(props.status)}`
+        const components: (string | undefined | (() => string | undefined))[] = []
+
+        const dot = s.dim("·")
+
+        components.push(s.primary.bold("zaly"))
+
+        if (props.scroll.offset < props.scroll.total) {
+          const pct = Math.round((props.scroll.offset / props.scroll.total) * 100)
+          const pcts = pct > 0 ? ` (${pct}%)` : ""
+          const below = props.scroll.below
+          components.push(s.warn.bold(`↓ ${below} lines${pcts}`))
+        }
+
+        components.push(() => {
+          const m = props.model
+          if (!m) return props.status === "loading" ? undefined : s.error("no model")
+          const reasoning =
+            props.reasoning && m.spec.reasoning ? s.primary(` ∴ ${props.reasoning}`) : ""
+          return `${s.success(m.id)}${reasoning}`
+        })
+        components.push(s.accent(props.status))
+
         const u = props.usage
-        const cacheRead = u.cacheRead ?? 0
-        const cacheWrite = u.cacheWrite ?? 0
-        // Each field is its own billing tier and they sum to the full
-        // context-window usage: uncached input + cached reads + cached
-        // writes + output. Read and write are shown only when present
-        // (non-Anthropic providers omit them or report only reads).
-        const total = u.input + cacheRead + cacheWrite + u.output
-        const limit = props.model?.spec.contextSize ?? 0
-        if (total === 0) return lhs
-        const read = cacheRead > 0 ? ` ${style.dim("⚡")}${fmt(cacheRead)}` : ""
-        const write = cacheWrite > 0 ? ` ${style.dim("+")}${fmt(cacheWrite)}` : ""
-        const pct = limit > 0 ? Math.round((total / limit) * 100) : 0
-        let pctStyle: ThemeKey = "success"
-        if (pct >= 80) pctStyle = "error"
-        else if (pct >= 60) pctStyle = "warn"
-        const pcts = limit > 0 ? style.add(pctStyle)(`(${pct}%)`) : ""
-        return `${lhs} ${dot} ${style.dim("ctx")} ${fmt(total)} ${pcts} ${dot} ${style.dim("↑")}${fmt(u.input)} ${style.dim("↓")}${fmt(u.output)}${read}${write}`
+
+        if (u && u.contextSize > 0) {
+          const limit = props.model?.spec.contextSize ?? 0
+          components.push(() => {
+            let pctStyle: ThemeKey = "success"
+            const pct = limit > 0 ? Math.round((u.contextSize / limit) * 100) : 0
+            if (pct >= 80) pctStyle = "error"
+            else if (pct >= 60) pctStyle = "warn"
+            const pcts = limit > 0 ? s.add(pctStyle)(` (${pct}%)`) : ""
+            return `${s.dim("ctx")} ${fmt(u.contextSize)}${pcts}`
+          })
+
+          components.push(() => {
+            const read = u.cacheRead > 0 ? ` ${s.dim("⚡")}${fmt(u.cacheRead)}` : ""
+            const write = u.cacheWrite > 0 ? ` ${s.dim("+")}${fmt(u.cacheWrite)}` : ""
+            return `${s.dim("↑")}${fmt(u.input)} ${s.dim("↓")}${fmt(u.output)}${read}${write}`
+          })
+        }
+
+        return components
+          .map((c) => (typeof c === "function" ? c() : c))
+          .filter((c): c is string => !!c)
+          .join(` ${dot} `)
       },
-      { wrap: "none" }
+      { flexGrow: 1, wrap: "none" }
     )
   )
 )

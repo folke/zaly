@@ -15,6 +15,7 @@ import { Surface } from "./surface.ts"
 
 export type StreamEvents = {
   idle: void
+  scroll: { offset: number; total: number; below: number }
 }
 
 type RenderState = {
@@ -113,7 +114,8 @@ export class Stream extends Surface<StreamEvents> {
   #scrollback: string[] = []
   #scrollTimer: NodeJS.Timeout | undefined
   #history: string[] = []
-  #scrollOffset = 0
+  /** 0 = follow live bottom; otherwise 1-based top row inside #history. */
+  #scrollTop = 0
   #wasVirtual = false
 
   constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
@@ -209,28 +211,47 @@ export class Stream extends Surface<StreamEvents> {
     const amount = Math.trunc(Math.abs(lines) < 1 ? lines * this.liveHeight : lines)
     if (amount === 0) return
 
-    const maxOffset = Math.max(0, this.#history.length - this.liveHeight)
-    const target = Math.max(0, Math.min(maxOffset, this.#scrollOffset - amount))
-    if (target === this.#scrollOffset) return
+    const total = this.#history.length
+    const maxTop = Math.max(1, total - this.liveHeight + 1)
+    const current = this.#scrollTop === 0 ? maxTop : this.#scrollTop
+    const target = Math.max(1, Math.min(maxTop, current + amount))
+    if (target === current) return
 
     if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
 
-    const start = this.#scrollOffset
-    const delta = Math.abs(target - start)
-    const dir = Math.sign(target - start)
+    const delta = Math.abs(target - current)
+    const dir = Math.sign(target - current)
     const totalTime = 120
     const stepTime = Math.max(8, Math.min(16, totalTime / delta))
     const stepAmount = Math.max(1, Math.ceil(delta / Math.ceil(totalTime / stepTime)))
 
     const tick = () => {
-      const remaining = Math.abs(target - this.#scrollOffset)
+      const lastTop = Math.max(1, this.#history.length - this.liveHeight + 1)
+      const top = this.#scrollTop === 0 ? lastTop : this.#scrollTop
+      const remaining = Math.abs(target - top)
       if (remaining === 0) {
+        this.#scrollTop = target >= lastTop ? 0 : target
+        void this.emit("scroll", {
+          below:
+            this.#scrollTop === 0
+              ? 0
+              : this.#history.length - this.#scrollTop - this.liveHeight + 1,
+          offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
+          total: this.#history.length,
+        })
         this.#scrollTimer = undefined
         return
       }
 
       const step = Math.min(stepAmount, remaining)
-      this.#scrollOffset += dir * step
+      const next = top + dir * step
+      this.#scrollTop = next >= lastTop ? 0 : next
+      void this.emit("scroll", {
+        below:
+          this.#scrollTop === 0 ? 0 : this.#history.length - this.#scrollTop - this.liveHeight + 1,
+        offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
+        total: this.#history.length,
+      })
       this.onDirty()
 
       this.#scrollTimer = setTimeout(tick, stepTime)
@@ -316,19 +337,18 @@ export class Stream extends Surface<StreamEvents> {
     const commitCount = newCC - oldCC
     const nextScrollback = [...this.#scrollback, ...allRows.slice(oldCC, newCC)]
     const history = [...nextScrollback, ...allRows.slice(newCC)]
-    this.#scrollOffset = Math.min(this.#scrollOffset, Math.max(0, history.length - liveHeight))
+    const maxTop = Math.max(1, history.length - liveHeight + 1)
+    if (this.#scrollTop > maxTop) this.#scrollTop = 0
 
     // Bottom-anchored slice of (post-commit) addressable: the rows
     // that actually paint in the scroll region.
     const normalVisible = allRows.slice(newCC).slice(-liveHeight)
-    const visibleEnd =
-      this.#scrollOffset === 0 ? history.length : Math.max(0, history.length - this.#scrollOffset)
     const newVisible =
-      this.#scrollOffset === 0
+      this.#scrollTop === 0
         ? normalVisible
-        : history.slice(Math.max(0, visibleEnd - liveHeight), visibleEnd)
+        : history.slice(this.#scrollTop - 1, this.#scrollTop - 1 + liveHeight)
     const newTopRow = bottom - newVisible.length + 1
-    const virtual = this.#scrollOffset > 0
+    const virtual = this.#scrollTop > 0
     const resetImages = virtual || this.#wasVirtual
     this.#wasVirtual = virtual
 
@@ -505,7 +525,7 @@ export class Stream extends Surface<StreamEvents> {
     this.#rows = []
     this.#scrollback = []
     this.#history = []
-    this.#scrollOffset = 0
+    this.#scrollTop = 0
     if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
     this.#scrollTimer = undefined
     for (const s of this.#state) s.commit = 0
