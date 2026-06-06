@@ -139,7 +139,6 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   }
 
   async useSession(s: Session): Promise<void> {
-    if (s === this.#session) return
     const prev = this.#session
     this.#session = s
     const modelId = s.settings.modelId

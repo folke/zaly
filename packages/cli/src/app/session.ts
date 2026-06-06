@@ -8,7 +8,7 @@ import type { App } from "./app.ts"
 
 import { loadSession, resumeSession } from "@zaly/agent/session"
 import { normPath, safeStatAsync } from "@zaly/shared"
-import { renderToolCall } from "../widgets/tool.ts"
+import { toolParams } from "../widgets/tool.ts"
 
 export async function bootstrapSession(flags: Flags): Promise<Session> {
   const filter = flags.session ?? normPath()
@@ -102,6 +102,7 @@ function assertExhaustive(value: never): never {
 
 const icons = {
   active: "● ",
+  head: "▶ ",
   inactive: "○ ",
   reasoning: "∴ ",
 }
@@ -118,10 +119,17 @@ function clean(s: string): string {
   return s.replace(/\s+/g, " ").trim()
 }
 
-function expand(m: Message, opts: SessionTreeOpts & { active?: boolean } = {}): TreeMessage[] {
+function expand(
+  m: Message,
+  opts: SessionTreeOpts & { active?: boolean; head?: boolean } = {}
+): TreeMessage[] {
   const ret: TreeMessage[] = []
-  const icon = (ctx: RenderCtx, ico?: string) =>
-    opts.active ? ctx.style.accent(ico ?? icons.active) : ctx.style.divider(ico ?? icons.inactive)
+  const icon = (ctx: RenderCtx, ico?: string) => {
+    if (opts.head) return ctx.style.accent(ico ?? icons.head)
+    return opts.active
+      ? ctx.style.accent(ico ?? icons.active)
+      : ctx.style.divider(ico ?? icons.inactive)
+  }
   const parts =
     typeof m.content === "string" ? [{ text: m.content, type: "text" } as TextPart] : m.content
   for (const part of parts) {
@@ -154,7 +162,7 @@ function expand(m: Message, opts: SessionTreeOpts & { active?: boolean } = {}): 
         if (!opts.tools) continue
         ret.push({
           render: (ctx) =>
-            `${icon(ctx)}${renderToolCall(part.name, { ...ctx, params: part.params })}`,
+            `${icon(ctx)}${ctx.style.syntaxConstant(part.name)}: ${ctx.style.muted(toolParams(part.params, { ...ctx, raw: true }))}`,
           role: m.role,
           text: `tool ${part.name} ${typeof part.params === "string" ? part.params : JSON.stringify(part.params)}`,
         })
@@ -194,6 +202,8 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   const diff = performance.now() - now
   app.notify(`Loaded ${sessionNodes.size} session nodes in ${diff.toFixed(2)}ms`)
 
+  const sessionHead = session.messages.at(-1)?.id ?? session.head
+
   const active = new Set<string>()
   for (let node = session.head ? sessionNodes.get(session.head) : undefined; node; ) {
     active.add(node.uuid)
@@ -213,7 +223,13 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   const parts = (node: SessionNode): Node[] => {
     const isActive = active.has(node.uuid)
     const expanded =
-      node.type === "message" ? expand(node.message, { ...opts, active: isActive }) : []
+      node.type === "message"
+        ? expand(node.message, {
+            ...opts,
+            active: isActive,
+            head: sessionHead === node.uuid,
+          })
+        : []
     if (expanded.length === 0 && opts.fallback)
       expanded.push({
         render: (ctx: RenderCtx) => ctx.style.add("quiet")(`[${node.type}]`),
@@ -239,6 +255,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
         node = next[0]
         continue
       }
+      next.sort((a, b) => Number(active.has(b.uuid)) - Number(active.has(a.uuid)) || a.ts - b.ts)
 
       const branches = next.flatMap((child): Node[] => {
         const branch = buildChain(child)
@@ -266,9 +283,9 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
       const s = ctx.style
       if (item.value.type === "root") return s.accent("Session Root")
       if (!item.render) return s.dim(item.search ?? "unknown")
-      const ret = item.render(ctx)
-      return item.active ? ret : s.dim(ret)
+      return item.render(ctx)
     },
+    title: "Session Tree",
     tree: root,
   })
 
