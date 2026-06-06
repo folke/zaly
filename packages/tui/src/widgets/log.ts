@@ -7,10 +7,9 @@ import type { TextContent } from "./text.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
-import { memo, unwrap } from "../core/reactive.ts"
 import { box } from "./box.ts"
 import { markdown } from "./markdown.ts"
-import { text, textContent } from "./text.ts"
+import { text } from "./text.ts"
 import { widget } from "./widget.ts"
 
 export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif"

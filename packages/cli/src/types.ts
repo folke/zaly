@@ -1,5 +1,5 @@
 import type { PermissionPresetName, TokenUsage } from "@zaly/agent"
-import type { Model, ReasoningEffort, Usage } from "@zaly/ai"
+import type { Model, ReasoningEffort } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
 type CmdRawArgs<C> = C extends (...args: any) => { setup?: (ctx: infer Ctx) => any }
