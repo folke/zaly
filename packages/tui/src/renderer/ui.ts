@@ -21,20 +21,15 @@ import { Surface } from "./surface.ts"
  * and its next flush naturally fills the new geometry.
  */
 export class UI extends Surface {
+  readonly type = "ui"
   readonly #root: Box = box({ flexDirection: "column" })
   #rows: string[] = []
-  readonly #stale = new Set<number>()
 
   constructor(renderer: Renderer) {
     super(renderer)
     // Root invalidates propagate to us via the parent chain (no parent
     // set above — the UI owns the root). Subscribe directly.
-    this.#root.on("invalidate", this.onDirty)
-    // The root is *not* mounted here — it mounts on `Renderer.start()`
-    // via `onStart`. Deferring means widgets added to the footer tree
-    // (e.g. a Spinner) don't fire their `mount` handler before the
-    // renderer is actually rendering.
-    this.on("dirty", () => this.track("ui.dirty"))
+    this.#root.on("invalidate", this.invalidate)
   }
 
   /** The footer's root Box. Add children via `ui.root.add(child)`. */
@@ -83,14 +78,12 @@ export class UI extends Surface {
    * provided so all surfaces paint inside one atomic sync frame. Direct
    * callers (tests) omit it and get an immediate `terminal.sync`.
    */
-  async _render(sync?: (fn: () => void) => void): Promise<void> {
-    const run = sync ?? ((fn: () => void) => this.terminal.sync(fn))
+  async _render(run: (fn: () => void) => void): Promise<void> {
     const ctx = this.$r.ctx
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const visible = Math.max(0, this.terminal.rows - 1)
     const rows = rendered.length > visible ? rendered.slice(-visible) : rendered
-    const stale = new Set(this.#stale)
-    this.#stale.clear()
+    const stale = this.clearStale()
 
     // Snapshot the currently-painted rows BEFORE writing `this.#rows`.
     // The paint closure can run deferred (when a capture `sync` is
@@ -111,34 +104,20 @@ export class UI extends Surface {
       // reappear when the footer shrinks back.
       if (nextHeight !== this.terminal.reserveBottom) {
         this.terminal.setReserveBottom(nextHeight)
-        void this.emit("dirty-stream")
+        this.$r.stream.markStale()
+        this.$r.stream.invalidate()
       }
 
       // Paint (or re-paint) each footer row. The footer starts at
       // `footerTop` (1-based). Only rewrite rows whose content changed.
       const top = this.terminal.footerTop
       for (let i = 0; i < nextHeight; i++) {
-        if (!stale.has(i) && prevRows[i] === rows[i] && prevHeight === nextHeight) continue
+        if (!stale.has(i + top) && prevRows[i] === rows[i] && prevHeight === nextHeight) continue
         this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
       }
     })
 
     this.#rows = rows
-  }
-
-  /**
-   * Force a full repaint of the currently-painted footer rows on the
-   * next render. Replaces each cached row with `""` so the diff sees
-   * every slot as changed and rewrites it in place — without shrinking
-   * the array. Emptying it entirely would fool the grow/shrink math
-   * into thinking the footer just appeared (`prevHeight === 0`), so
-   * it'd emit `scrollUp(nextHeight)` to make room for a footer that's
-   * already on screen, visibly scrolling the stream up by N rows.
-   */
-  invalidate(): void {
-    this.#rows = this.#rows.map(() => "")
-    this.#rows.forEach((_, i) => this.#stale.add(i))
-    void this.emit("dirty")
   }
 
   /**
@@ -150,7 +129,7 @@ export class UI extends Surface {
    */
   onResize(): void {
     this.#rows = []
-    void this.emit("dirty")
+    this.invalidate()
   }
 
   /** UI's tracked node set is just the footer root. */
@@ -166,11 +145,8 @@ export class UI extends Surface {
     if (this.#root.mounted) this.#root.unmount()
   }
 
-  markStale(fromRow: number, toRow: number): void {
+  get bounds(): { top: number; bottom: number } {
     const top = this.terminal.footerTop
-    for (let r = fromRow; r <= toRow; r++) {
-      const i = r - top
-      if (i >= 0 && i < this.#rows.length) this.#stale.add(i)
-    }
+    return { bottom: this.terminal.rows, top }
   }
 }

@@ -4,8 +4,10 @@ import type { Owner } from "../core/reactive.ts"
 import type { ActionDef } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../services/logger.ts"
 import type { Theme } from "../themes/types.ts"
+import type { Surface } from "./surface.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 
+import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
 import { createCtx } from "../core/ctx.ts"
 import { createRoot, memo, provideContext, signal, useActiveOwner } from "../core/reactive.ts"
@@ -39,6 +41,12 @@ export interface RendererOptions {
   hookSignals?: boolean
   logger?: Logger
   reporter?: TuiReporterOpts
+}
+
+export type RenderEvents = {
+  start: {}
+  stop: {}
+  dirty: {}
 }
 
 export type SurfaceType = "stream" | "ui" | "overlay"
@@ -77,7 +85,7 @@ export class RenderStats {
  * renderer.stop()
  * ```
  */
-export class Renderer {
+export class Renderer extends Emitter<RenderEvents> {
   readonly stream: Stream
   readonly ui: UI
   readonly overlay: OverlaySurface
@@ -130,6 +138,7 @@ export class Renderer {
   } satisfies Record<string, ActionDef>
 
   constructor(opts: RendererOptions = {}) {
+    super()
     this.terminal = new Terminal({
       hookSignals: opts.hookSignals,
       stdin: opts.stdin,
@@ -158,15 +167,9 @@ export class Renderer {
     this.stream = new Stream(this, {
       fixedFooterHeight: opts.fixedFooterHeight,
     })
-    // Wire cross-surface coordination: when UI's footer height changes
-    // it has already issued a `scrollUp`/`scrollDown`, shifting real
-    // on-screen rows. Stream's `#rows` mirror needs a full repaint to
-    // re-anchor; explicit invalidate matches the new "surfaces signal
-    // each other through events" contract.
-    this.ui.on("dirty-stream", () => this.stream.invalidate())
+    // Surfaces coordinate directly through `markStale()` / `invalidate()`;
+    // the renderer only owns scheduling, lifecycle events, and paint order.
     this.overlay = new OverlaySurface(this)
-    this.overlay.on("dirty-ui", () => this.ui.invalidate())
-    this.overlay.on("dirty-stream", () => this.stream.invalidate())
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
 
     this.input = new InputRouter(this.logger.child({ name: "input" }))
@@ -191,12 +194,7 @@ export class Renderer {
     this.actions.register(defaultActions, { default: true })
     this.actions.register(this.globalActions, { default: true })
 
-    // Surfaces emit `"dirty"` instead of self-scheduling. Centralising
-    // the microtask here means one flush per tick for the whole tree
-    // and keeps paint order explicit: stream < ui < overlay.
-    this.stream.on("dirty", this.#onDirty)
-    this.ui.on("dirty", this.#onDirty)
-    this.overlay.on("dirty", this.#onDirty)
+    this.on("dirty", this.#onDirty)
 
     // SIGWINCH: dimensions changed. The terminal has re-wrapped its
     // existing content against the new column count; our on-screen
@@ -302,9 +300,7 @@ export class Renderer {
     // Mount every surface's tracked tree. Build one MountCtx per
     // surface; each shares the same underlying services (router,
     // overlay, tree walk), only the `surface` tag differs.
-    this.stream.onStart(this.#mountCtxFor("stream"))
-    this.ui.onStart(this.#mountCtxFor("ui"))
-    this.overlay.onStart(this.#mountCtxFor("overlay"))
+    void this.emit("start")
     // Anything that called `emit("dirty")` before `start()` set
     // `#dirty = true` but couldn't schedule (no renderer yet). Now
     // that we're running, drain it.
@@ -319,9 +315,7 @@ export class Renderer {
     // Unmount before tearing the terminal down so widgets that
     // scheduled teardown work (timers, subscriptions) have a clean
     // chance to run before their last render.
-    this.overlay.onStop()
-    this.ui.onStop()
-    this.stream.onStop()
+    void this.emit("stop")
     this.#running = false
     this.#stdin.off("data", this.#onData)
     this.#stdin.pause?.()
@@ -383,7 +377,7 @@ export class Renderer {
   /** Build a MountCtx for a given surface. Each call creates a fresh
    *  object but closes over the same underlying services, so nodes
    *  across surfaces share a single overlay surface, router, etc. */
-  #mountCtxFor(surface: SurfaceType): MountCtx {
+  mountCtx(surface: SurfaceType): MountCtx {
     const logger = this.logger.child({ name: surface, surface })
     const input = this.input
     return {
@@ -463,26 +457,27 @@ export class Renderer {
   }
 
   /**
-   * Render every surface once, then commit all of their writes inside a
+   * Render every dirty surface, then commit all of their writes inside a
    * single `terminal.sync(...)` block — one atomic frame for the entire
    * tree per tick. Each surface's `render(sync)` takes a capture
    * function that collects its paint closure; those run back-to-back
    * inside the outer sync after all compute phases settle.
    */
   async #render(): Promise<void> {
-    const paints: { paint: () => void; order: number }[] = []
-    const capture =
-      (order: number) =>
-      (fn: () => void): void => {
-        paints.push({ order, paint: fn })
-      }
+    // oxlint-disable-next-line unicorn/consistent-function-scoping
+    const capture = async (surface: Surface) => {
+      if (!surface.dirty) return
+      let ret: (() => void) | undefined
+      await surface.render((paint) => (ret = paint))
+      return ret
+    }
     // Order: stream (lowest) → ui → overlay (highest). Parallel
     // compute; the paints execute in array order under the outer sync,
     // so later surfaces land on top of earlier ones' bytes.
-    await Promise.all([
-      this.stream.render(capture(1)),
-      this.ui.render(capture(2)),
-      this.overlay.render(capture(3)),
+    const paints = await Promise.all([
+      capture(this.stream),
+      capture(this.ui),
+      capture(this.overlay),
     ])
     // Flush any side-channel transmits (e.g. KGP image data queued by
     // Image widgets during render) BEFORE entering the synced frame.
@@ -490,9 +485,7 @@ export class Renderer {
     // the frame body reference them by id and just need them to have
     // arrived first.
     this.terminal.flushTransmits()
-    this.terminal.sync(() => {
-      paints.toSorted((a, b) => a.order - b.order).forEach(({ paint }) => paint())
-    })
+    this.terminal.sync(() => paints.forEach((p) => p?.()))
   }
 
   // stdin wiring. In raw mode the terminal delivers bytes directly —

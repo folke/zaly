@@ -1,7 +1,6 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Overlay } from "../widgets/overlay.ts"
-import type { Renderer } from "./renderer.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { createNode, withOwner } from "../core/reactive.ts"
@@ -36,11 +35,11 @@ export type OverlaySurfaceEvents = {
  *     so overlays that touch row 0 can disrupt scrollback.
  */
 export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
+  readonly type = "overlay"
   readonly #overlays: Overlay[] = []
 
-  constructor(renderer: Renderer) {
-    super(renderer)
-    this.on("dirty", () => this.track("overlay.dirty"))
+  get bounds(): { top: number; bottom: number } {
+    return { bottom: this.$r.terminal.rows, top: 1 }
   }
 
   /** Active overlays in paint order (low → high z-index). */
@@ -55,10 +54,10 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     if (this.#overlays.includes(resolved)) return resolved
     this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
-    resolved.on("invalidate", this.onDirty)
+    resolved.on("invalidate", this.invalidate)
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
-    if (resolved.visible) void this.emit("dirty")
+    if (resolved.visible) this.invalidate()
     return resolved
   }
 
@@ -67,11 +66,8 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     if (i === -1) return this
     if (overlay.mounted) overlay.unmount()
     this.#overlays.splice(i, 1)
-    overlay.off("invalidate", this.onDirty)
-    // Footer was masked beneath this overlay; ask UI to repaint so the
-    // rows are re-emitted under us. Routed through the Renderer.
-    void this.emit("dirty-ui")
-    void this.emit("dirty")
+    overlay.off("invalidate", this.invalidate)
+    this.invalidate()
     return this
   }
 
@@ -106,8 +102,7 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
    * `render(sync?)` shape used by Stream and UI so the Renderer can
    * capture all three paints and emit them in one atomic frame.
    */
-  async _render(sync?: (fn: () => void) => void): Promise<void> {
-    const run = sync ?? ((fn: () => void) => this.$r.terminal.sync(fn))
+  async _render(run: (fn: () => void) => void): Promise<void> {
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.$r.ctx
     await Promise.all(

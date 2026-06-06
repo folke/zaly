@@ -88,6 +88,7 @@ function findFrozenPrefixEnd(rendered: string[], frozen: string[]): number {
 }
 
 export class Stream extends Surface<StreamEvents> {
+  readonly type = "stream"
   #state: RenderState[] = []
   #rows: string[] = []
   /** Bottom row of the live region the last time we painted. Used to
@@ -96,21 +97,6 @@ export class Stream extends Surface<StreamEvents> {
    *  derive `oldTopRow` from the *current* scrollBottom, which is wrong
    *  after a footer grow/shrink. */
   #prevBottom: number | undefined
-  /** Absolute rows the stream paint should treat as "screen doesn't
-   *  match our mirror." Populated by `markStale` when another surface
-   *  (overlay) writes into the scroll region. The render handles each
-   *  stale row one of two ways:
-   *
-   *    - If above the visible paint area: explicit `clearLine` write
-   *      before any `\n`-scroll, so overlay bytes never get promoted
-   *      into scrollback.
-   *    - If inside the visible paint area: forced as a "diff miss" in
-   *      the visible paint loop so the row gets rewritten with correct
-   *      stream content, regardless of whether `oldVisible[k]` claims
-   *      it already matches.
-   *
-   *  Cleared at end of each render. */
-  readonly #stale = new Set<number>()
   #opts: StreamOptions
   #scrollback: string[] = []
   #scrollTimer: NodeJS.Timeout | undefined
@@ -125,8 +111,11 @@ export class Stream extends Surface<StreamEvents> {
       fixedFooterHeight: opts.fixedFooterHeight ?? 0,
       maxLive: opts.maxLive ?? 3,
     }
-    this.on("dirty", () => this.track("stream.dirty"))
     this.emitScroll = throttle(this.emitScroll.bind(this), 1000 / 60)
+  }
+
+  get bounds(): { top: number; bottom: number } {
+    return { bottom: this.terminal.scrollBottom, top: 1 }
   }
 
   get terminal(): Terminal {
@@ -158,7 +147,7 @@ export class Stream extends Surface<StreamEvents> {
 
     const invalidate = () => {
       state.dirty = true
-      this.onDirty()
+      this.invalidate()
     }
 
     const state = {
@@ -181,7 +170,7 @@ export class Stream extends Surface<StreamEvents> {
 
     resolved.on("invalidate", invalidate)
 
-    void this.emit("dirty")
+    this.invalidate()
     return resolved
   }
 
@@ -253,7 +242,7 @@ export class Stream extends Surface<StreamEvents> {
       const next = top + dir * step
       this.#scrollTop = next >= lastTop ? 0 : next
       this.emitScroll()
-      this.onDirty()
+      this.invalidate()
 
       this.#scrollTimer = setTimeout(tick, stepTime)
       this.#scrollTimer.unref()
@@ -314,9 +303,7 @@ export class Stream extends Surface<StreamEvents> {
     return { commitLimit: commitLimit ?? rows.length, rows }
   }
 
-  async _render(sync?: (fn: () => void) => void): Promise<void> {
-    const run = sync ?? ((fn) => this.terminal.sync(fn))
-
+  async _render(run: (fn: () => void) => void): Promise<void> {
     const { commitLimit, rows: allRows } = await this.#render()
     const liveHeight = this.liveHeight
     const bottom = this.terminal.scrollBottom
@@ -355,8 +342,7 @@ export class Stream extends Surface<StreamEvents> {
 
     // Snapshot + clear now so the paint closure (possibly deferred via
     // the Renderer's capture) doesn't race with new `markStale` calls.
-    const stale = new Set(this.#stale)
-    this.#stale.clear()
+    const stale = this.clearStale()
 
     // Diff check: does screen position `row` already hold `expected`?
     //   - `row`: target absolute screen row.
@@ -494,18 +480,6 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Force a full repaint of the currently-visible stream rows on the
-   * next render. Marks each currently-painted row as stale so the
-   * diff is forced to rewrite it. We don't shrink `#rows` — the
-   * tracked length feeds the diff's bottom-anchored mapping.
-   */
-  invalidate(): void {
-    const top = (this.#prevBottom ?? this.terminal.scrollBottom) - this.#rows.length + 1
-    for (let i = 0; i < this.#rows.length; i++) this.#stale.add(top + i)
-    void this.emit("dirty")
-  }
-
-  /**
    * Terminal was resized. The paint bookkeeping (`#rows`, per-state
    * committed prefixes, stale-row set) was sized against the old
    * column/row geometry — after a `SIGWINCH` the real terminal has
@@ -532,32 +506,13 @@ export class Stream extends Surface<StreamEvents> {
     if (this.#scrollTimer) clearTimeout(this.#scrollTimer)
     this.#scrollTimer = undefined
     for (const s of this.#state) s.commit = 0
-    this.#stale.clear()
+    this.clearStale()
     this.#prevBottom = undefined
     if (!opts.keepNodes) {
       for (const s of this.#state) s.freeze()
       this.#state = []
     }
-    void this.emit("dirty")
-  }
-
-  /**
-   * Mark a range of absolute rows (inclusive) as stale. The next
-   * render's diff treats them as "screen doesn't match our mirror"
-   * and forces a rewrite (inside the visible region) or explicit
-   * clear (above the visible region, before any `\n`-scroll).
-   *
-   * Typical caller: the overlay surface when an overlay paints over
-   * rows the stream "owns" — those rows now have overlay bytes, not
-   * stream bytes, and need rewriting on overlay close.
-   *
-   * No `"dirty"` emit — callers own their own scheduling.
-   */
-  markStale(fromRow: number, toRow: number): void {
-    const bottom = this.terminal.scrollBottom
-    for (let r = fromRow; r <= toRow; r++) {
-      if (r >= 1 && r <= bottom) this.#stale.add(r)
-    }
+    this.invalidate()
   }
 
   protected mountAll(ctx: MountCtx): void {
@@ -567,7 +522,7 @@ export class Stream extends Surface<StreamEvents> {
     // `\n`-promoted into scrollback once the stream grows past the
     // commit threshold. Marking stale forces an explicit clear (above
     // the visible paint area) or a diff miss (inside).
-    for (let r = 1; r <= this.terminal.scrollBottom; r++) this.#stale.add(r)
+    this.markStale()
     for (const s of this.#state) if (!s.node.mounted) s.node.mount(ctx)
   }
 
