@@ -358,27 +358,23 @@ export class Stream extends Surface<StreamEvents> {
 
     // Bottom-anchored slice of (post-commit) addressable: the rows
     // that actually paint in the scroll region.
-    const normalVisible = liveRows.slice(-liveHeight)
-    const historySlice = (start: number, end: number): string[] => {
-      const ret: string[] = []
-      const take = (rows: string[], offset: number): void => {
-        const from = Math.max(0, start - offset)
-        const to = Math.min(rows.length, end - offset)
-        if (from < to) ret.push(...rows.slice(from, to))
-      }
+    let newVisible = liveRows.slice(-liveHeight)
+    const historyChanged = this.#historyLength !== historyLength
+    this.#scrollback.push(...commitRows)
+    this.#historyLength = historyLength
 
-      let offset = 0
-      take(this.#scrollback, offset)
-      offset += this.#scrollback.length
-      take(commitRows, offset)
-      offset += commitRows.length
-      take(liveRows, offset)
-      return ret
+    if (this.#scrollTop > 0) {
+      if (historyChanged) this.emitScroll()
+      const start = this.#scrollTop - 1
+      const end = start + liveHeight
+      const scrollbackEnd = this.#scrollback.length
+      newVisible = this.#scrollback.slice(start, end)
+      if (newVisible.length < liveHeight) {
+        const liveStart = Math.max(0, start - scrollbackEnd)
+        newVisible.push(...liveRows.slice(liveStart, liveStart + liveHeight - newVisible.length))
+      }
     }
-    const newVisible =
-      this.#scrollTop === 0
-        ? normalVisible
-        : historySlice(this.#scrollTop - 1, this.#scrollTop - 1 + liveHeight)
+
     const newTopRow = bottom - newVisible.length + 1
     const virtual = this.#scrollTop > 0
     const hasKittyImages = newVisible.some((row) => row.includes("\x1b_Ga=p"))
@@ -477,10 +473,6 @@ export class Stream extends Surface<StreamEvents> {
       }
     })
 
-    const historyChanged = this.#historyLength !== historyLength
-    this.#scrollback.push(...commitRows)
-    this.#historyLength = historyLength
-    if (this.#scrollTop > 0 && historyChanged) this.emitScroll()
     this.#rows = newVisible
     this.#prevBottom = bottom
     this.#hasKittyImages = hasKittyImages
