@@ -244,38 +244,62 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
     }))
   }
 
-  const buildChain = (start: SessionNode): Node[] => {
+  type BuiltChain = { anchor?: Node; rows: Node[] }
+
+  const buildChain = (start: SessionNode): BuiltChain => {
     const rows: Node[] = []
+    let anchor: Node | undefined
     let node = start
+
     for (;;) {
-      rows.push(...parts(node))
+      const visible = parts(node)
+      if (visible.length > 0) {
+        rows.push(...visible)
+        anchor = visible.at(-1)
+      }
+
       const next: SessionNode[] = children.get(node.uuid) ?? []
-      if (next.length === 0) return rows
+      if (next.length === 0) return { anchor, rows }
       if (next.length === 1) {
         node = next[0]
         continue
       }
-      next.sort((a, b) => Number(active.has(b.uuid)) - Number(active.has(a.uuid)) || a.ts - b.ts)
 
-      const branches = next.flatMap((child): Node[] => {
-        const branch = buildChain(child)
-        if (branch.length === 0) return []
-        const [head, ...rest] = branch
+      // next.sort((a, b) => Number(active.has(b.uuid)) - Number(active.has(a.uuid)) || a.ts - b.ts)
+      next.sort((a, b) => a.ts - b.ts)
+      const branches = next.map(buildChain).filter((branch) => branch.rows.length > 0)
+      if (branches.length === 0) return { anchor, rows }
+
+      // Raw marker/settings nodes may have multiple children, while the
+      // current display options leave only one visible continuation. Treat
+      // that as a linear chain instead of creating a one-child subtree.
+      if (branches.length === 1) {
+        const [branch] = branches
+        rows.push(...branch.rows)
+        anchor = branch.anchor ?? anchor
+        return { anchor, rows }
+      }
+
+      const branchHeads = branches.map((branch) => {
+        const [head, ...rest] = branch.rows
         if (rest.length > 0) {
           head.children ??= []
-          head.children.unshift(...rest)
+          head.children.push(...rest)
         }
-        return [head]
+        return head
       })
-      if (rows.length === 0) return branches
-      const branchParent = rows.at(-1)!
-      branchParent.children ??= []
-      branchParent.children.push(...branches)
-      return rows
+      if (anchor) {
+        anchor.children ??= []
+        anchor.children.push(...branchHeads)
+      } else {
+        rows.push(...branchHeads)
+        anchor = branchHeads.at(-1)
+      }
+      return { anchor, rows }
     }
   }
 
-  root.children = (children.get(undefined) ?? []).flatMap(buildChain)
+  root.children = (children.get(undefined) ?? []).flatMap((node) => buildChain(node).rows)
 
   const node = await app.pick({
     active: (item) => item.value.uuid === sessionHead,
