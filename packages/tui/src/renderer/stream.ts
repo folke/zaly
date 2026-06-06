@@ -105,6 +105,7 @@ export class Stream extends Surface<StreamEvents> {
   /** 0 = follow live bottom; otherwise 1-based top row inside history. */
   #scrollTop = 0
   #wasVirtual = false
+  #hasKittyImages = false
   #scrollAnim?: { cancel: () => void }
 
   constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
@@ -380,7 +381,9 @@ export class Stream extends Surface<StreamEvents> {
         : historySlice(this.#scrollTop - 1, this.#scrollTop - 1 + liveHeight)
     const newTopRow = bottom - newVisible.length + 1
     const virtual = this.#scrollTop > 0
-    const resetImages = virtual || this.#wasVirtual
+    const hasKittyImages = newVisible.some((row) => row.includes("\x1b_Ga=p"))
+    const resetImages =
+      (virtual || this.#wasVirtual) && (this.#hasKittyImages || hasKittyImages)
     this.#wasVirtual = virtual
 
     // Snapshot + clear now so the paint closure (possibly deferred via
@@ -481,6 +484,7 @@ export class Stream extends Surface<StreamEvents> {
     if (this.#scrollTop > 0 && historyChanged) this.emitScroll()
     this.#rows = newVisible
     this.#prevBottom = bottom
+    this.#hasKittyImages = hasKittyImages
 
     // Mark newly-promoted rows on their owning states. This keeps the
     // immutable scrollback boundary local to each retained node, so later
@@ -541,6 +545,7 @@ export class Stream extends Surface<StreamEvents> {
     this.#scrollAnim?.cancel()
     this.clearStale()
     this.#prevBottom = undefined
+    this.#hasKittyImages = false
     this.invalidate()
   }
 
