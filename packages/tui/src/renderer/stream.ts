@@ -4,6 +4,7 @@ import type { SuspenseBoundary } from "../core/reactive.ts"
 import type { Renderer } from "./renderer.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { throttle } from "@zaly/shared/throttle"
 import {
   createNode,
   createSuspenseBoundary,
@@ -125,6 +126,7 @@ export class Stream extends Surface<StreamEvents> {
       maxLive: opts.maxLive ?? 3,
     }
     this.on("dirty", () => this.track("stream.dirty"))
+    this.emitScroll = throttle(this.emitScroll.bind(this), 1000 / 60)
   }
 
   get terminal(): Terminal {
@@ -207,6 +209,17 @@ export class Stream extends Surface<StreamEvents> {
     return this.#rows
   }
 
+  emitScroll(): void {
+    setImmediate(() => {
+      void this.emit("scroll", {
+        below:
+          this.#scrollTop === 0 ? 0 : this.#history.length - this.#scrollTop - this.liveHeight + 1,
+        offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
+        total: this.#history.length,
+      })
+    })
+  }
+
   scroll(lines = 0.5): void {
     const amount = Math.trunc(Math.abs(lines) < 1 ? lines * this.liveHeight : lines)
     if (amount === 0) return
@@ -231,14 +244,7 @@ export class Stream extends Surface<StreamEvents> {
       const remaining = Math.abs(target - top)
       if (remaining === 0) {
         this.#scrollTop = target >= lastTop ? 0 : target
-        void this.emit("scroll", {
-          below:
-            this.#scrollTop === 0
-              ? 0
-              : this.#history.length - this.#scrollTop - this.liveHeight + 1,
-          offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
-          total: this.#history.length,
-        })
+        this.emitScroll()
         this.#scrollTimer = undefined
         return
       }
@@ -246,12 +252,7 @@ export class Stream extends Surface<StreamEvents> {
       const step = Math.min(stepAmount, remaining)
       const next = top + dir * step
       this.#scrollTop = next >= lastTop ? 0 : next
-      void this.emit("scroll", {
-        below:
-          this.#scrollTop === 0 ? 0 : this.#history.length - this.#scrollTop - this.liveHeight + 1,
-        offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
-        total: this.#history.length,
-      })
+      this.emitScroll()
       this.onDirty()
 
       this.#scrollTimer = setTimeout(tick, stepTime)
@@ -446,7 +447,9 @@ export class Stream extends Surface<StreamEvents> {
     })
 
     this.#scrollback = nextScrollback
+    const historyChanged = this.#history.length !== history.length
     this.#history = history
+    if (this.#scrollTop > 0 && historyChanged) this.emitScroll()
     this.#rows = newVisible
     this.#prevBottom = bottom
 

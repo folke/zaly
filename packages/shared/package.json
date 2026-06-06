@@ -77,6 +77,10 @@
       "bun": "./src/text.ts",
       "default": "./dist/text.mjs"
     },
+    "./throttle": {
+      "bun": "./src/throttle.ts",
+      "default": "./dist/throttle.mjs"
+    },
     "./yaml": {
       "bun": "./src/yaml.ts",
       "default": "./dist/yaml.mjs"
@@ -100,6 +104,7 @@
       "./registry": "./dist/registry.mjs",
       "./shell": "./dist/shell.mjs",
       "./text": "./dist/text.mjs",
+      "./throttle": "./dist/throttle.mjs",
       "./yaml": "./dist/yaml.mjs",
       "./package.json": "./package.json"
     },
@@ -142,7 +147,7 @@
     "ignore": "7.0.5",
     "image-meta": "0.2.2",
     "is-fullwidth-code-point": "5.1.0",
-    "js-yaml": "4.1.1",
+    "js-yaml": "4.2.0",
     "picomatch": "4.0.4",
     "shell-quote": "1.8.4",
     "slice-ansi": "9.0.0",
