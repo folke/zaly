@@ -101,8 +101,8 @@ export class Stream extends Surface<StreamEvents> {
   #prevBottom: number | undefined
   #opts: StreamOptions
   #scrollback: string[] = []
-  #history: string[] = []
-  /** 0 = follow live bottom; otherwise 1-based top row inside #history. */
+  #historyLength = 0
+  /** 0 = follow live bottom; otherwise 1-based top row inside history. */
   #scrollTop = 0
   #wasVirtual = false
   #scrollAnim?: { cancel: () => void }
@@ -204,9 +204,9 @@ export class Stream extends Surface<StreamEvents> {
     setImmediate(() => {
       void this.emit("scroll", {
         below:
-          this.#scrollTop === 0 ? 0 : this.#history.length - this.#scrollTop - this.liveHeight + 1,
-        offset: this.#scrollTop === 0 ? this.#history.length : this.#scrollTop,
-        total: this.#history.length,
+          this.#scrollTop === 0 ? 0 : this.#historyLength - this.#scrollTop - this.liveHeight + 1,
+        offset: this.#scrollTop === 0 ? this.#historyLength : this.#scrollTop,
+        total: this.#historyLength,
       })
     })
   }
@@ -215,7 +215,7 @@ export class Stream extends Surface<StreamEvents> {
     const amount = Math.trunc(Math.abs(lines) < 1 ? lines * this.liveHeight : lines)
     if (amount === 0) return Promise.resolve()
 
-    const total = this.#history.length
+    const total = this.#historyLength
     const maxTop = Math.max(1, total - this.liveHeight + 1)
     const current = this.#scrollTop === 0 ? maxTop : this.#scrollTop
     const target = Math.max(1, Math.min(maxTop, current + amount))
@@ -231,7 +231,7 @@ export class Stream extends Surface<StreamEvents> {
     const stepAmount = Math.max(1, Math.ceil(delta / Math.ceil(SCROLL_DURATION / stepTime)))
 
     const tick = () => {
-      const lastTop = Math.max(1, this.#history.length - this.liveHeight + 1)
+      const lastTop = Math.max(1, this.#historyLength - this.liveHeight + 1)
       const top = this.#scrollTop === 0 ? lastTop : this.#scrollTop
       const remaining = Math.abs(target - top)
       if (remaining === 0) {
@@ -265,7 +265,7 @@ export class Stream extends Surface<StreamEvents> {
 
   async scrollBottom(): Promise<void> {
     if (this.#scrollTop === 0) return
-    await this.scroll(Math.max(1, this.#history.length - this.liveHeight + 1))
+    await this.scroll(Math.max(1, this.#historyLength - this.liveHeight + 1))
     if (this.#scrollTop === 0) return // Already at target
     if (this.#scrollAnim) return // Another scroll started during the scroll-bottom animation; don't override it with a hard jump
     this.#scrollTop = 0
@@ -274,7 +274,7 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   scrollTop(): Promise<void> {
-    return this.scroll(-this.#history.length + 1)
+    return this.scroll(-this.#historyLength + 1)
   }
 
   scrollUp(lines = 0.5): Promise<void> {
@@ -349,18 +349,35 @@ export class Stream extends Surface<StreamEvents> {
     const commitThreshold = Math.max(1, terminalRows - this.#opts.fixedFooterHeight)
     const newCC = Math.min(commitLimit, Math.max(oldCC, allRows.length - commitThreshold))
     const commitCount = newCC - oldCC
-    const nextScrollback = [...this.#scrollback, ...allRows.slice(oldCC, newCC)]
-    const history = [...nextScrollback, ...allRows.slice(newCC)]
-    const maxTop = Math.max(1, history.length - liveHeight + 1)
+    const commitRows = allRows.slice(oldCC, newCC)
+    const liveRows = allRows.slice(newCC)
+    const historyLength = this.#scrollback.length + commitRows.length + liveRows.length
+    const maxTop = Math.max(1, historyLength - liveHeight + 1)
     if (this.#scrollTop > maxTop) this.#scrollTop = 0
 
     // Bottom-anchored slice of (post-commit) addressable: the rows
     // that actually paint in the scroll region.
-    const normalVisible = allRows.slice(newCC).slice(-liveHeight)
+    const normalVisible = liveRows.slice(-liveHeight)
+    const historySlice = (start: number, end: number): string[] => {
+      const ret: string[] = []
+      const take = (rows: string[], offset: number): void => {
+        const from = Math.max(0, start - offset)
+        const to = Math.min(rows.length, end - offset)
+        if (from < to) ret.push(...rows.slice(from, to))
+      }
+
+      let offset = 0
+      take(this.#scrollback, offset)
+      offset += this.#scrollback.length
+      take(commitRows, offset)
+      offset += commitRows.length
+      take(liveRows, offset)
+      return ret
+    }
     const newVisible =
       this.#scrollTop === 0
         ? normalVisible
-        : history.slice(this.#scrollTop - 1, this.#scrollTop - 1 + liveHeight)
+        : historySlice(this.#scrollTop - 1, this.#scrollTop - 1 + liveHeight)
     const newTopRow = bottom - newVisible.length + 1
     const virtual = this.#scrollTop > 0
     const resetImages = virtual || this.#wasVirtual
@@ -458,9 +475,9 @@ export class Stream extends Surface<StreamEvents> {
       }
     })
 
-    this.#scrollback = nextScrollback
-    const historyChanged = this.#history.length !== history.length
-    this.#history = history
+    const historyChanged = this.#historyLength !== historyLength
+    this.#scrollback.push(...commitRows)
+    this.#historyLength = historyLength
     if (this.#scrollTop > 0 && historyChanged) this.emitScroll()
     this.#rows = newVisible
     this.#prevBottom = bottom
@@ -506,38 +523,37 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Terminal was resized. The paint bookkeeping (`#rows`, per-state
-   * committed prefixes, stale-row set) was sized against the old
-   * column/row geometry — after a `SIGWINCH` the real terminal has
-   * re-wrapped scrollback and `scrollBottom` now points at a different
-   * row. We can't reconstruct where each pre-resize row "actually"
-   * landed; the pragmatic fix is to forget the visible-region bookkeeping
-   * and let the next render paint from scratch against the new
-   * dimensions. Node state (`#state`) is preserved so retained nodes
-   * re-render at the new width through Node.render()'s cache key.
+   * Terminal was resized. Forget only the paint mirror that mapped stream
+   * rows onto the old screen geometry. App scrollback and per-state commit
+   * boundaries are preserved; retained nodes re-render at the new width
+   * through Node.render()'s cache key.
    *
    * Paired with a screen-clear in the Renderer's resize handler — this
    * method only resets our mirror of what's on screen; the actual wipe
    * and re-establishment of DECSTBM lives in the terminal-level handler.
    */
   onResize(): void {
-    this.reset({ keepNodes: true })
+    this.resetPaint()
+  }
+
+  resetPaint(): void {
+    this.#rows = []
+    this.#scrollAnim?.cancel()
+    this.clearStale()
+    this.#prevBottom = undefined
+    this.invalidate()
   }
 
   reset(opts: { keepNodes?: boolean } = {}): void {
-    this.#rows = []
+    this.resetPaint()
     this.#scrollback = []
-    this.#history = []
+    this.#historyLength = 0
     this.#scrollTop = 0
-    this.#scrollAnim?.cancel()
     for (const s of this.#state) s.commit = 0
-    this.clearStale()
-    this.#prevBottom = undefined
     if (!opts.keepNodes) {
       for (const s of this.#state) s.freeze()
       this.#state = []
     }
-    this.invalidate()
   }
 
   protected mountAll(ctx: MountCtx): void {
