@@ -1,7 +1,7 @@
 import { createCtx } from "@zaly/tui"
+import { loadTheme } from "@zaly/tui/themes"
 import { box } from "@zaly/tui/widgets/box"
 import { text } from "@zaly/tui/widgets/text"
-import { loadTheme } from "@zaly/tui/themes"
 
 const status = (props: { level: "success" | "warn" | "error"; msg: string }) =>
   text(({ style }) => `${style.bold[props.level](" ● ")}${style.dim(props.msg)}`)

@@ -1,8 +1,8 @@
 import { createCtx } from "@zaly/tui"
+import { loadTheme } from "@zaly/tui/themes"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { text } from "@zaly/tui/widgets/text"
-import { loadTheme } from "@zaly/tui/themes"
 
 const samples = [
   {

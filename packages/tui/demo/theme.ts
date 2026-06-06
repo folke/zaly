@@ -1,7 +1,7 @@
 import { createCtx } from "@zaly/tui"
+import { loadTheme, themeRegistry } from "@zaly/tui/themes"
 import { box } from "@zaly/tui/widgets/box"
 import { text } from "@zaly/tui/widgets/text"
-import { loadTheme, themeRegistry } from "@zaly/tui/themes"
 
 /**
  * Preview every bundled theme side-by-side. Uses the `@zaly/tui/themes`

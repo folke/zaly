@@ -382,8 +382,7 @@ export class Stream extends Surface<StreamEvents> {
     const newTopRow = bottom - newVisible.length + 1
     const virtual = this.#scrollTop > 0
     const hasKittyImages = newVisible.some((row) => row.includes("\x1b_Ga=p"))
-    const resetImages =
-      (virtual || this.#wasVirtual) && (this.#hasKittyImages || hasKittyImages)
+    const resetImages = (virtual || this.#wasVirtual) && (this.#hasKittyImages || hasKittyImages)
     this.#wasVirtual = virtual
 
     // Snapshot + clear now so the paint closure (possibly deferred via

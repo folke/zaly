@@ -5,11 +5,11 @@ import { renderMarkdown } from "#md"
 import { createCtx } from "../../src/core/ctx.ts"
 import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
 import { createNode } from "../../src/index.ts"
-import { markdown } from "../../src/widgets/markdown.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
+import { markdown } from "../../src/widgets/markdown.ts"
 
 // No-op `transmit` so kitty image transmits don't leak to stdout during
 // tests. Tests that need to assert on transmit bytes pass their own.

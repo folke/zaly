@@ -47,7 +47,10 @@ describe("PermissionManager — workspaces", () => {
 
 describe("PermissionManager — rules", () => {
   test("addRule prepends to the rule list", () => {
-    const m = new PermissionManager({ cwd, rules: [{ pattern: "*", policy: "ask", scope: "bash" }] })
+    const m = new PermissionManager({
+      cwd,
+      rules: [{ pattern: "*", policy: "ask", scope: "bash" }],
+    })
     m.addRule({ pattern: "ls", policy: "allow", scope: "bash" })
     expect(m.rules[0]).toMatchObject({ pattern: "ls", policy: "allow", scope: "bash" })
   })

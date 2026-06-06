@@ -218,7 +218,9 @@ function normalizeGlobs(glob: string | string[] | undefined): string[] {
   const values = Array.isArray(glob) ? glob : [glob]
   return values
     .map((value) => value?.trim())
-    .filter((value): value is string => !!value && value !== "." && value !== "*" && value !== "**/*")
+    .filter(
+      (value): value is string => !!value && value !== "." && value !== "*" && value !== "**/*"
+    )
     .map((value) => (hasGlob(value) ? value : `*${value}*`))
 }
 

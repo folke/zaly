@@ -50,7 +50,10 @@ export function stringifyErrors(
     const enumMessage = enumMessages.get(err.instancePath)
     if (shouldSkipBranchError(err, unionPaths, enumMessages)) {
       continue
-    } else if (enumMessage && (err.keyword === "const" || err.keyword === "enum" || err.keyword === "anyOf")) {
+    } else if (
+      enumMessage &&
+      (err.keyword === "const" || err.keyword === "enum" || err.keyword === "anyOf")
+    ) {
       if (!placedEnums.has(err.instancePath)) {
         place(err.instancePath, enumMessage, err)
         const list = errorsByTarget.get(err.instancePath)!
@@ -145,7 +148,10 @@ function enumLikeMessages(errors: readonly TLocalizedValidationError[]): Map<str
 
   const ret = new Map<string, string>()
   for (const [path, list] of values) {
-    if (list.length < 2 || (!hasAnyOf.has(path) && !errors.some((e) => e.keyword === "enum" && e.instancePath === path)))
+    if (
+      list.length < 2 ||
+      (!hasAnyOf.has(path) && !errors.some((e) => e.keyword === "enum" && e.instancePath === path))
+    )
       continue
     ret.set(path, `must be one of: ${list.map((v) => JSON.stringify(v)).join(", ")}`)
   }
@@ -161,7 +167,10 @@ function isCoveredByEnumMessage(
     return error.keyword === "const" || error.keyword === "enum" || error.keyword === "anyOf"
   const parent = parentPath(enumPath)
   if (error.instancePath !== parent) return false
-  return (error.keyword === "required" || error.keyword === "anyOf") && hasNestedEnumMessage(parent, enumMessages)
+  return (
+    (error.keyword === "required" || error.keyword === "anyOf") &&
+    hasNestedEnumMessage(parent, enumMessages)
+  )
 }
 
 function parentPath(path: string): string {

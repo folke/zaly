@@ -25,7 +25,13 @@ export interface PermissionPreset {
 // ── Pattern groups ─────────────────────────────────────────────────────────
 
 /** Native tools that only inspect session state or workspace files. */
-const READONLY_TOOLS = ["tool(read)", "tool(grep)", "tool(find)", "tool(task_list)", "tool(task_poll)"]
+const READONLY_TOOLS = [
+  "tool(read)",
+  "tool(grep)",
+  "tool(find)",
+  "tool(task_list)",
+  "tool(task_poll)",
+]
 
 /** Read-only utilities the model can run without surprises: file
  *  inspection, search, metadata. None of these modify state on their own.

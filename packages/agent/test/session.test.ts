@@ -488,11 +488,10 @@ describe("Session — meta on disk", () => {
     await s.close()
 
     const loaded = await Session.load({ path: file })
-    const assistants = loaded.messages.filter((m): m is Message<"assistant"> => m.role === "assistant")
-    expect(assistants.map((m) => m.meta?.modelId)).toEqual([
-      "openai/gpt-4o",
-      "anthropic/claude",
-    ])
+    const assistants = loaded.messages.filter(
+      (m): m is Message<"assistant"> => m.role === "assistant"
+    )
+    expect(assistants.map((m) => m.meta?.modelId)).toEqual(["openai/gpt-4o", "anthropic/claude"])
     await loaded.close()
   })
 })

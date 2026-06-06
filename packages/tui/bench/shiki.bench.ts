@@ -102,9 +102,12 @@ barplot(async () => {
     // `createAsync` body once shiki is loaded. `do_not_optimize` keeps
     // the highlighted output from being treated as dead by V8.
     const highlight = warmup
-    bench("highlight(SMALL_TS, ts)", async () => do_not_optimize(await highlight(SMALL_TS, "typescript")))
-    bench("highlight(MEDIUM_TS, ts)", async () => do_not_optimize(await highlight(MEDIUM_TS, "typescript")))
-    bench("highlight(LARGE_TS, ts)", async () => do_not_optimize(await highlight(LARGE_TS, "typescript")))
+    bench("highlight(SMALL_TS, ts)", async () =>
+      do_not_optimize(await highlight(SMALL_TS, "typescript")))
+    bench("highlight(MEDIUM_TS, ts)", async () =>
+      do_not_optimize(await highlight(MEDIUM_TS, "typescript")))
+    bench("highlight(LARGE_TS, ts)", async () =>
+      do_not_optimize(await highlight(LARGE_TS, "typescript")))
 
     // Other langs — same length, different grammars. Bash is regex-heavy
     // (lots of lookahead); JSON is simple. Worth seeing whether grammar
@@ -112,7 +115,8 @@ barplot(async () => {
     const hBash = await createAnsiHighlighter({ langs: ["bash"] })
     const hJson = await createAnsiHighlighter({ langs: ["json"] })
     bench("highlight(BASH, bash)", async () => do_not_optimize(await hBash(BASH, "bash")))
-    bench("highlight(JSON_BLOCK, json)", async () => do_not_optimize(await hJson(JSON_BLOCK, "json")))
+    bench("highlight(JSON_BLOCK, json)", async () =>
+      do_not_optimize(await hJson(JSON_BLOCK, "json")))
   })
 })
 

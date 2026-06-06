@@ -44,7 +44,9 @@ export const taskListTool = defineTool({
     // JSON format stays consistent with heartbeat output. Done tasks
     // surface only their identity / timing, not their (potentially huge)
     // captured body.
-    const info = tasks.info().filter((task) => (args.includeFinished ?? false) || task.status !== "done")
+    const info = tasks
+      .info()
+      .filter((task) => (args.includeFinished ?? false) || task.status !== "done")
     return taskInfoPart(info)
   },
 })

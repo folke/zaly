@@ -35,13 +35,13 @@
     "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*"
   },
-  "engines": {
-    "bun": ">=1.2",
-    "node": ">=24"
-  },
   "devDependencies": {
     "jiti": "^2.7.0",
     "typebox": "^1.2.1"
+  },
+  "engines": {
+    "bun": ">=1.2",
+    "node": ">=24"
   },
   "inlinedDependencies": {
     "jiti": "2.7.0"
