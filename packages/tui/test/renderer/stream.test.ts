@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 import { createAsync, memo } from "../../src/core/reactive.ts"
 import { Renderer } from "../../src/renderer/renderer.ts"
 import { text } from "../../src/widgets/text.ts"
-import { MockReader, MockWriter, mockMountCtx } from "./mock.ts"
+import { MockReader, MockWriter } from "./mock.ts"
 
 function mount(cols = 20, rows = 10) {
   const stdout = new MockWriter(cols, rows)
@@ -15,7 +15,7 @@ function mount(cols = 20, rows = 10) {
   // schedule on `"dirty"` so `stream.add(...)` still eventually renders
   // when awaiting microtasks, mirroring the Renderer's behaviour.
   let scheduled = false
-  stream.on("dirty", () => {
+  renderer.on("dirty", () => {
     if (scheduled) return
     scheduled = true
     queueMicrotask(() => {
@@ -23,7 +23,7 @@ function mount(cols = 20, rows = 10) {
       void stream.render()
     })
   })
-  return { stdout, stream, terminal }
+  return { stdout, stream, terminal, renderer }
 }
 
 // Drain enough microtasks that the scheduled render + flush chain
@@ -127,21 +127,21 @@ describe("Stream.append — dropping the previous tail", () => {
 
 describe("Stream.onStart / onStop", () => {
   test("onStart mounts every tracked node; onStop unmounts them", async () => {
-    const { stream } = mount(20, 10)
+    const { stream, renderer } = mount(20, 10)
     const t = text("x")
     stream.append(() => t)
     // Before the surface is "running", appends don't trigger mount.
     expect(t.mounted).toBe(false)
-    stream.onStart(mockMountCtx("stream"))
+    await renderer.emit("start")
     expect(t.mounted).toBe(true)
     expect(t.surface).toBe("stream")
-    stream.onStop()
+    await renderer.emit("stop")
     expect(t.mounted).toBe(false)
   })
 
-  test("append while running mounts immediately", () => {
-    const { stream } = mount(20, 10)
-    stream.onStart(mockMountCtx("stream"))
+  test("append while running mounts immediately", async () => {
+    const { stream, renderer } = mount(20, 10)
+    await renderer.emit("start")
     const t = text("x")
     stream.append(() => t)
     expect(t.mounted).toBe(true)

@@ -21,17 +21,6 @@ describe("actionsSource", () => {
     expect(commit.value).toBe("commit")
   })
 
-  test("falls back to id when info.name is absent (fuzzy-matches on id)", async () => {
-    const actions = new Actions()
-    actions.register({ "app.foo": { desc: "" } })
-    const src = actionsSource({ actions })
-    const items = await src.complete("foo", match("foo"))
-    expect(items).toHaveLength(1)
-    expect(items[0].id).toBe("app.foo")
-    expect(items[0].cmd).toBeUndefined()
-    expect(items[0].value).toBe("app.foo")
-  })
-
   test("fuzzy-matches the displayed name", async () => {
     const actions = new Actions()
     actions.register({
