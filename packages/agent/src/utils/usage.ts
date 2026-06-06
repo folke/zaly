@@ -21,13 +21,37 @@ export function addUsage(a: Usage, b: Usage): Usage {
   return out
 }
 
-export class TokenUsage {
+export class TokenUsage implements Usage {
   #last: Usage = empty()
   #total: Usage = empty()
 
   constructor(messages?: readonly Message[]) {
     for (const m of messages ?? [])
       if (m.role === "assistant" && m.meta?.usage) this.add(m.meta.usage)
+  }
+
+  get cost(): Usage {
+    return this.total.cost ?? empty()
+  }
+
+  get input(): number {
+    return this.last.input
+  }
+
+  get output(): number {
+    return this.last.output
+  }
+
+  get cacheRead(): number {
+    return this.last.cacheRead ?? 0
+  }
+
+  get cacheWrite(): number {
+    return this.last.cacheWrite ?? 0
+  }
+
+  get reasoning(): number {
+    return this.last.reasoning ?? 0
   }
 
   add(count: Usage): void {

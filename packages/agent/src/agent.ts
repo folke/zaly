@@ -229,9 +229,10 @@ export class Agent extends Emitter<AgentEvents> {
 
   /** Token usage from the most recent step's response. Drives
    *  `contextSize` and any "this turn used N tokens" UI. */
-  get usage(): TokenCount {
-    return this.#usage.last
+  get usage(): TokenUsage {
+    return this.#usage
   }
+
   /** Cumulative token usage across every step in the current run.
    *  Useful for billing-style displays. */
   get totalUsage(): TokenCount {

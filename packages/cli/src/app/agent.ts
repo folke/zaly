@@ -116,7 +116,10 @@ export async function loadAgent(app: App): Promise<Agent> {
  */
 export function attachState(agent: Agent, state: AppState): void {
   agent
-    .on("step-end", () => (state.usage = agent.usage))
+    .on("step-end", () => {
+      state.usage = agent.usage
+      state.step += 1
+    })
     .on("status", ({ status }) => {
       const busy = status !== "idle" && status !== "paused"
       state.busy = busy

@@ -1,4 +1,4 @@
-import type { PermissionPresetName } from "@zaly/agent"
+import type { PermissionPresetName, TokenUsage } from "@zaly/agent"
 import type { Model, ReasoningEffort, Usage } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
@@ -40,9 +40,11 @@ export interface Flags {
 }
 
 export type AppState = {
+  step: number
   busy: boolean
   model?: Model
   status: string
-  usage: Usage
+  usage?: TokenUsage
   reasoning?: ReasoningEffort
+  scroll: { offset: number; total: number; below: number }
 }
