@@ -1,6 +1,7 @@
 import type { Message, ModelStreamOptions, StreamEvent, TokenCount } from "@zaly/ai"
 import type { Agent } from "../src/agent.ts"
 import type { AgentStopKind } from "../src/events.ts"
+import type { TokenUsage } from "../src/index.ts"
 import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
@@ -127,7 +128,7 @@ export async function runAgent(
 ): Promise<{
   messages: Message[]
   /** Last step's usage. */
-  usage: TokenCount
+  usage: TokenUsage
   /** Cumulative usage across the run. */
   totalUsage: TokenCount
   stopReason: AgentStopKind

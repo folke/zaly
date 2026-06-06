@@ -116,7 +116,8 @@ describe("Agent — usage accumulation", () => {
       tools: [Add],
     })
     expect(result.totalUsage).toEqual({ input: 30, output: 8 })
-    expect(result.usage).toEqual({ input: 20, output: 3 })
+    expect(result.usage.input).toEqual(20)
+    expect(result.usage.output).toEqual(3)
   })
 })
 
