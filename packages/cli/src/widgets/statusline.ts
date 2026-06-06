@@ -28,6 +28,8 @@ export const statusline = widget((props: AppState) =>
 
         components.push(s.primary.bold("zaly"))
 
+        if (props.status !== "ready") components.push(s.accent(props.status))
+
         if (props.scroll.offset < props.scroll.total) {
           const pct = Math.round((props.scroll.offset / props.scroll.total) * 100)
           const pcts = pct > 0 ? ` (${pct}%)` : ""
@@ -42,7 +44,6 @@ export const statusline = widget((props: AppState) =>
             props.reasoning && m.spec.reasoning ? s.primary(` ∴ ${props.reasoning}`) : ""
           return `${s.success(m.id)}${reasoning}`
         })
-        components.push(s.accent(props.status))
 
         const u = props.usage
 
