@@ -335,6 +335,11 @@ export class Input extends Node<InputState, InputEvents> {
     })
   }
 
+  replace(text: string): void {
+    this.state.value = ""
+    this.insert(text)
+  }
+
   /** Consume the input's current value and attachments.
    * Pastes are replaced inline with their text; file/image
    * attachments are returned in the `attachments` array and removed from the value. */

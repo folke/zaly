@@ -191,6 +191,12 @@ export function appActions({ app }: { app: App }) {
         if (ret) app.renderer.theme = await loadTheme(ret.value)
       },
     },
+    "composer.history": {
+      cmd: "history",
+      desc: "Browse and pick from recent composer inputs.",
+      fn: () => void app.composer.pickHistory(),
+      keys: ["ctrl-r"],
+    },
     "global.quit": {
       cmd: "quit",
       desc: "Quit zaly.",

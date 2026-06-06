@@ -34,6 +34,7 @@ type PickerBaseProps = {
    *  When false, all items are shown, but first result is selected */
   filter?: boolean
   fuzzy?: boolean
+  reverse?: boolean
 }
 
 export type PickerSelectProps<T extends Option = Option> = PickerBaseProps &
@@ -92,7 +93,7 @@ function pickerFn<T extends Option = Option>(
   const input = () => (props.input instanceof Input ? props.input : props.input())
 
   const matcher = memo(() => {
-    const query = input().state.value ?? ""
+    const query = (input().state.value ?? "").trim()
     const ret: { query: string; match: Matcher } = {
       match: () => 1,
       query,
@@ -137,7 +138,11 @@ function pickerFn<T extends Option = Option>(
 
   const items = memo(() => {
     let ret = results()
-    if (props.sort) ret = ret.toSorted((a, b) => b.score - a.score)
+    const query = (input().state.value ?? "").trim()
+    if (props.sort && query !== "") {
+      ret = ret.toSorted((a, b) => b.score - a.score)
+      ret = props.reverse ? ret.toReversed() : ret
+    }
     for (const r of ret) r.item.match = r.score > 0
     if (props.filter ?? true) ret = ret.filter(({ score }) => score > 0)
     else {

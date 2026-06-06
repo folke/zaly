@@ -83,7 +83,7 @@ export class Picker {
     this.close()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
-    this.#input.consume()
+    const prev = this.#input.consume().value
     const ref = createRef<Selectable<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
@@ -95,7 +95,7 @@ export class Picker {
       settled = true
       ac.abort()
       this.#open.set(false)
-      this.#input.consume()
+      this.#input.replace(prev)
       res.resolve(value)
       this.#ui.close(node)
     }

@@ -85,7 +85,8 @@ export class Composer {
 
   set value(v: string) {
     if (!this.#input) throw new Error("Composer input is not initialized yet.")
-    this.#input.state.value = v
+    this.#input.state.value = ""
+    this.#input.insert(v)
   }
 
   add(plugin: ComposerPlugin): void {
@@ -166,6 +167,7 @@ export class Composer {
       if (plugin === false) return
       await plugin.submit(value.value, ctx)
     }
+    this.#app.renderer.stream.scrollBottom()
     this.#app.agent.send()
     void this.#app.agent.waitIdle()
   }
@@ -193,6 +195,19 @@ export class Composer {
       ret.history = [...(state.inputHistory ?? []), ...ret.history]
     })
     return this.#input
+  }
+
+  async pickHistory(): Promise<void> {
+    if (!this.#input) return
+    const history = this.#input.history
+    const items = history.map((value) => ({ name: value, value }))
+    const ret = await this.#app.pick({
+      active: items.length - 1,
+      items,
+      reverse: true,
+      sort: true,
+    })
+    if (ret) this.#input.insert(ret.value)
   }
 }
 
