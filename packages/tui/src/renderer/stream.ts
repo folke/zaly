@@ -19,6 +19,23 @@ export type StreamEvents = {
   scroll: { offset: number; total: number; below: number }
 }
 
+type StreamSnapshot = {
+  bottom: number
+  hasKittyImages: boolean
+  historyLength: number
+  top: number
+  virtual: boolean
+  visible: string[]
+}
+
+type StreamRenderPlan = {
+  commit: string[]
+  next: StreamSnapshot
+  old: StreamSnapshot
+  resetImages: boolean
+  stale: Set<number>
+}
+
 type RenderState = {
   /** Rows from this state that have already entered terminal scrollback.
    *  Scrollback is immutable, so later renders may only replace rows after
@@ -92,20 +109,18 @@ const SCROLL_DURATION = 120
 export class Stream extends Surface<StreamEvents> {
   readonly type = "stream"
   #state: RenderState[] = []
-  #rows: string[] = []
-  /** Bottom row of the live region the last time we painted. Used to
-   *  compute where `#rows` actually live on screen when the footer
-   *  resizes between renders (scrollBottom moves). Without this we'd
-   *  derive `oldTopRow` from the *current* scrollBottom, which is wrong
-   *  after a footer grow/shrink. */
-  #prevBottom: number | undefined
+  #snapshot: StreamSnapshot = {
+    bottom: 0,
+    hasKittyImages: false,
+    historyLength: 0,
+    top: 1,
+    virtual: false,
+    visible: [],
+  }
   #opts: StreamOptions
   #scrollback: string[] = []
-  #historyLength = 0
   /** 0 = follow live bottom; otherwise 1-based top row inside history. */
   #scrollTop = 0
-  #wasVirtual = false
-  #hasKittyImages = false
   #scrollAnim?: { cancel: () => void }
 
   constructor(renderer: Renderer, opts: Partial<StreamOptions> = {}) {
@@ -198,7 +213,11 @@ export class Stream extends Surface<StreamEvents> {
    * so the overlay surface can restore what it drew over.
    */
   get rows(): readonly string[] {
-    return this.#rows
+    return this.#snapshot.visible
+  }
+
+  get #historyLength(): number {
+    return this.#snapshot.historyLength
   }
 
   emitScroll(): void {
@@ -332,13 +351,9 @@ export class Stream extends Surface<StreamEvents> {
 
   async _render(run: (fn: () => void) => void): Promise<void> {
     const { commitLimit, rows: allRows } = await this.#render()
+    const old = this.#snapshot
     const liveHeight = this.liveHeight
-    const bottom = this.terminal.scrollBottom
-    const terminalRows = this.terminal.rows
-    const oldCC = this.#committedRows()
-    const oldVisible = this.#rows
-    const oldBottom = this.#prevBottom ?? bottom
-    const oldTopRow = oldBottom - oldVisible.length + 1
+    const committed = this.#committedRows()
 
     // Commit threshold = the *full terminal minus the baseline footer
     // height*. Steady state (footer == fixedFooterHeight) keeps
@@ -347,12 +362,12 @@ export class Stream extends Surface<StreamEvents> {
     // hides rows temporarily but they're recoverable when the footer
     // shrinks back. `fixedFooterHeight = 0` reduces to "commit at the
     // full terminal" (old behavior).
-    const commitThreshold = Math.max(1, terminalRows - this.#opts.fixedFooterHeight)
-    const newCC = Math.min(commitLimit, Math.max(oldCC, allRows.length - commitThreshold))
-    const commitCount = newCC - oldCC
-    const commitRows = allRows.slice(oldCC, newCC)
-    const liveRows = allRows.slice(newCC)
-    const historyLength = this.#scrollback.length + commitRows.length + liveRows.length
+    const commitThreshold = Math.max(1, this.terminal.rows - this.#opts.fixedFooterHeight)
+    const liveStart = Math.min(commitLimit, Math.max(committed, allRows.length - commitThreshold))
+    const commit = allRows.slice(committed, liveStart)
+    this.#scrollback.push(...commit)
+    const liveRows = allRows.slice(liveStart)
+    const historyLength = this.#scrollback.length + liveRows.length
     const maxTop = Math.max(1, historyLength - liveHeight + 1)
     if (this.#scrollTop > maxTop) this.#scrollTop = 0
 
@@ -360,123 +375,127 @@ export class Stream extends Surface<StreamEvents> {
     // that actually paint in the scroll region.
     let newVisible = liveRows.slice(-liveHeight)
     const historyChanged = this.#historyLength !== historyLength
-    this.#scrollback.push(...commitRows)
-    this.#historyLength = historyLength
 
     if (this.#scrollTop > 0) {
       if (historyChanged) this.emitScroll()
       const start = this.#scrollTop - 1
-      const end = start + liveHeight
-      const scrollbackEnd = this.#scrollback.length
-      newVisible = this.#scrollback.slice(start, end)
-      if (newVisible.length < liveHeight) {
-        const liveStart = Math.max(0, start - scrollbackEnd)
-        newVisible.push(...liveRows.slice(liveStart, liveStart + liveHeight - newVisible.length))
+      const sbl = this.#scrollback.length
+      // Slice starts in the live region
+      if (start >= sbl) newVisible = liveRows.slice(start - sbl, start - sbl + liveHeight)
+      else {
+        // Slice overlaps with scrollback
+        newVisible = this.#scrollback.slice(start, start + liveHeight)
+        if (newVisible.length < liveHeight)
+          newVisible.push(...liveRows.slice(0, liveHeight - newVisible.length))
       }
     }
 
-    const newTopRow = bottom - newVisible.length + 1
-    const virtual = this.#scrollTop > 0
-    const hasKittyImages = newVisible.some((row) => row.includes("\x1b_Ga=p"))
-    const resetImages = (virtual || this.#wasVirtual) && (this.#hasKittyImages || hasKittyImages)
-    this.#wasVirtual = virtual
-
-    // Snapshot + clear now so the paint closure (possibly deferred via
-    // the Renderer's capture) doesn't race with new `markStale` calls.
-    const stale = this.clearStale()
-
-    // Diff check: does screen position `row` already hold `expected`?
-    //   - `row`: target absolute screen row.
-    //   - `shift`: how many `\n`-commits have happened in this frame
-    //     before this check (0 for the pre-commit pass, `commitCount`
-    //     for the post-commit visible paint). Pre-shift, this position
-    //     held content from row `row + shift`.
-    // Skipped on layout shift (`oldBottom !== bottom`), stale rows,
-    // and out-of-range `oldVisible` indices.
-    const screenAlreadyMatches = (row: number, expected: string, shift: number): boolean => {
-      if (virtual || oldBottom !== bottom) return false
-      const preShiftRow = row + shift
-      if (stale.has(preShiftRow)) return false
-      const oldIdx = preShiftRow - oldTopRow
-      if (oldIdx < 0 || oldIdx >= oldVisible.length) return false
-      return oldVisible[oldIdx] === expected
+    const next: StreamSnapshot = {
+      bottom: liveHeight,
+      hasKittyImages: newVisible.some((row) => row.includes("\x1b_Ga=p")),
+      historyLength,
+      top: liveHeight - newVisible.length + 1,
+      virtual: this.#scrollTop > 0,
+      visible: newVisible,
     }
 
-    run(() => {
-      if (resetImages) this.terminal.deleteImages({ data: false })
-      // Stale-clear: rows in `#stale` that aren't covered by the
-      // visible paint loop below. Inside-visible rows are handled by
-      // the diff (force-write via `stale.has`). Anything above the new
-      // visible paint area still has overlay bytes and would otherwise
-      // be \n'd into scrollback during a commit — clear first.
-      for (const r of stale) {
-        if (r < 1 || r > bottom) continue
-        if (commitCount === 0 && r >= newTopRow && r <= bottom) continue
-        this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+    const plan: StreamRenderPlan = {
+      commit,
+      next,
+      old,
+      resetImages: (next.virtual || old.virtual) && (old.hasKittyImages || next.hasKittyImages),
+      stale: this.clearStale(),
+    }
+
+    run(() => this.#paint(plan))
+
+    this.#snapshot = next
+    this.#advanceCommits(commit.length)
+    this.#dropCommittedStates()
+
+    if (!this.pending) void this.emit("idle")
+  }
+
+  #paint(plan: StreamRenderPlan): void {
+    if (plan.resetImages) this.terminal.deleteImages({ data: false })
+    this.#paintStale(plan)
+    this.#paintCommits(plan)
+    this.#clearAboveVisible(plan)
+    this.#paintVisible(plan)
+  }
+
+  #paintStale(plan: StreamRenderPlan): void {
+    // Stale-clear: rows in `#stale` that aren't covered by the visible
+    // paint loop below. Inside-visible rows are handled by the diff
+    // (force-write via `stale.has`). Anything above the new visible paint
+    // area still has overlay bytes and would otherwise be \n'd into
+    // scrollback during a commit — clear first.
+    for (const r of plan.stale) {
+      if (r < 1 || r > plan.next.bottom) continue
+      if (plan.commit.length === 0 && r >= plan.next.top && r <= plan.next.bottom) continue
+      this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+    }
+  }
+
+  #paintCommits(plan: StreamRenderPlan): void {
+    // Paint each batch of to-be-committed rows at the top of the scroll
+    // region, then \n them off. Batched because the scroll region only has
+    // `liveHeight` rows.
+    let i = 0
+    while (i < plan.commit.length) {
+      const batch = Math.min(plan.commit.length - i, plan.next.bottom)
+      for (let j = 0; j < batch; j++) {
+        const row = 1 + j
+        const content = plan.commit[i + j]
+        // Diff only the first batch — subsequent batches start from
+        // post-`\n` state which the old snapshot doesn't model.
+        if (i === 0 && this.#screenAlreadyMatches(plan, row, content, 0)) continue
+        this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
       }
+      this.terminal.write(this.terminal.moveTo(plan.next.bottom, 1))
+      for (let j = 0; j < batch; j++) this.terminal.write("\n")
+      i += batch
+    }
+  }
 
-      // Commit `commitCount` rows to scrollback. Paint each batch of
-      // to-be-committed rows at the top of the scroll region, then
-      // \n them off. Batched because the scroll region only has
-      // `liveHeight` rows — a single render that crosses the threshold
-      // by more than `liveHeight` (e.g. a freshly-mounted node taller
-      // than the live region) needs multiple paint/scroll passes.
-      //
-      // The paint-before-\n positioning ensures the row that lands in
-      // scrollback is the one we actually want (`allRows[oldCC + i]`),
-      // independent of what the previous render painted there. The
-      // first batch's writes can be skipped when the row already holds
-      // the right bytes (steady-state streaming case — the row was the
-      // top of the previous frame's bottom-anchored visible).
-      let i = 0
-      while (i < commitCount) {
-        const batch = Math.min(commitCount - i, liveHeight)
-        for (let j = 0; j < batch; j++) {
-          const row = 1 + j
-          const content = allRows[oldCC + i + j]
-          // Diff only the first batch — subsequent batches start from
-          // post-`\n` state which `oldVisible` doesn't model.
-          if (i === 0 && screenAlreadyMatches(row, content, 0)) continue
-          this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
-        }
-        this.terminal.write(this.terminal.moveTo(bottom, 1))
-        for (let j = 0; j < batch; j++) this.terminal.write("\n")
-        i += batch
-      }
+  #clearAboveVisible(plan: StreamRenderPlan): void {
+    // Layout shifts and \n commits can leave ghost content above the new
+    // bottom-anchored stream paint area. Clear it explicitly.
+    const clearTop =
+      plan.old.bottom !== plan.next.bottom ? Math.max(1, Math.min(plan.old.top, plan.next.top)) : 1
+    for (let r = clearTop; r < plan.next.top; r++) {
+      if (r < 1 || r > plan.next.bottom) continue
+      this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+    }
+  }
 
-      // Clear rows that should be blank above the visible paint area.
-      // Two cases:
-      //   (a) Layout shift (footer resized): rows that were stream's
-      //       previous paint area but aren't in the new one need
-      //       clearing.
-      //   (b) After commits, content from rows above the prev visible
-      //       region may have been `\n`-shifted into rows 1..newTopRow-1
-      //       (because the `\n` shifts the *entire* scroll region, not
-      //       just our paint area). Clear those so they don't carry
-      //       ghost content into the area above stream's bottom-anchor.
-      const clearTop = oldBottom !== bottom ? Math.max(1, Math.min(oldTopRow, newTopRow)) : 1
-      for (let r = clearTop; r < newTopRow; r++) {
-        if (r < 1 || r > bottom) continue
-        this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
-      }
+  #paintVisible(plan: StreamRenderPlan): void {
+    // Paint the visible region. In the steady streaming case this skips
+    // every write except the last row.
+    for (let k = 0; k < plan.next.visible.length; k++) {
+      const row = plan.next.top + k
+      if (this.#screenAlreadyMatches(plan, row, plan.next.visible[k], plan.commit.length)) continue
+      this.terminal.write(
+        this.terminal.moveTo(row, 1) + this.terminal.clearLine() + plan.next.visible[k]
+      )
+    }
+  }
 
-      // Paint the visible region. Each row checks against `oldVisible`
-      // shifted up by `commitCount` (post-`\n` state). In the streaming
-      // case (commitCount = 1, region full, newTopRow == oldTopRow)
-      // this skips every write except the last.
-      for (let k = 0; k < newVisible.length; k++) {
-        const row = newTopRow + k
-        if (screenAlreadyMatches(row, newVisible[k], commitCount)) continue
-        this.terminal.write(
-          this.terminal.moveTo(row, 1) + this.terminal.clearLine() + newVisible[k]
-        )
-      }
-    })
+  #screenAlreadyMatches(
+    plan: StreamRenderPlan,
+    row: number,
+    expected: string,
+    shift: number
+  ): boolean {
+    if (plan.next.virtual || plan.old.bottom !== plan.next.bottom) return false
+    const preShiftRow = row + shift
+    if (plan.stale.has(preShiftRow)) return false
+    const oldIdx = preShiftRow - plan.old.top
+    if (oldIdx < 0 || oldIdx >= plan.old.visible.length) return false
+    return plan.old.visible[oldIdx] === expected
+  }
 
-    this.#rows = newVisible
-    this.#prevBottom = bottom
-    this.#hasKittyImages = hasKittyImages
-
+  #advanceCommits(commitCount: number): void {
     // Mark newly-promoted rows on their owning states. This keeps the
     // immutable scrollback boundary local to each retained node, so later
     // mutations above the boundary can't shift already-promoted rows and
@@ -489,7 +508,9 @@ export class Stream extends Surface<StreamEvents> {
       s.commit += n
       remaining -= n
     }
+  }
 
+  #dropCommittedStates(): void {
     // Drop states whose rows have entirely entered scrollback. Their
     // committed rows leave `allRows` on the next tick; the global committed
     // count is derived from retained states, so no separate adjustment is
@@ -501,8 +522,6 @@ export class Stream extends Surface<StreamEvents> {
       this.#state.shift()
       first.freeze()
     }
-
-    if (!this.pending) void this.emit("idle")
   }
 
   #committedRows(): number {
@@ -532,18 +551,23 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   resetPaint(): void {
-    this.#rows = []
+    this.#snapshot = {
+      ...this.#snapshot,
+      bottom: this.terminal.scrollBottom,
+      hasKittyImages: false,
+      top: 1,
+      virtual: false,
+      visible: [],
+    }
     this.#scrollAnim?.cancel()
     this.clearStale()
-    this.#prevBottom = undefined
-    this.#hasKittyImages = false
     this.invalidate()
   }
 
   reset(opts: { keepNodes?: boolean } = {}): void {
     this.resetPaint()
     this.#scrollback = []
-    this.#historyLength = 0
+    this.#snapshot.historyLength = 0
     this.#scrollTop = 0
     for (const s of this.#state) s.commit = 0
     if (!opts.keepNodes) {
