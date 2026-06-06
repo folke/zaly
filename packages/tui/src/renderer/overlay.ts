@@ -42,6 +42,10 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     return { bottom: this.$r.terminal.rows, top: 1 }
   }
 
+  override get dirty(): boolean {
+    return this.active.length > 0 || super.dirty
+  }
+
   /** Active overlays in paint order (low → high z-index). */
   get active(): readonly Overlay[] {
     return this.#overlays.filter((o) => o.visible && o.ctx !== undefined)
