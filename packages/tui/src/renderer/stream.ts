@@ -87,6 +87,8 @@ function findFrozenPrefixEnd(rendered: string[], frozen: string[]): number {
   return frozen.length
 }
 
+const SCROLL_DURATION = 120
+
 export class Stream extends Surface<StreamEvents> {
   readonly type = "stream"
   #state: RenderState[] = []
@@ -223,9 +225,8 @@ export class Stream extends Surface<StreamEvents> {
 
     const delta = Math.abs(target - current)
     const dir = Math.sign(target - current)
-    const totalTime = 120
-    const stepTime = Math.max(8, Math.min(16, totalTime / delta))
-    const stepAmount = Math.max(1, Math.ceil(delta / Math.ceil(totalTime / stepTime)))
+    const stepTime = Math.max(8, Math.min(16, SCROLL_DURATION / delta))
+    const stepAmount = Math.max(1, Math.ceil(delta / Math.ceil(SCROLL_DURATION / stepTime)))
 
     const tick = () => {
       const lastTop = Math.max(1, this.#history.length - this.liveHeight + 1)
@@ -249,6 +250,21 @@ export class Stream extends Surface<StreamEvents> {
     }
 
     tick()
+  }
+
+  scrollBottom(): void {
+    if (this.#scrollTop === 0) return
+    this.scroll(Math.max(1, this.#history.length - this.liveHeight + 1))
+    setTimeout(() => {
+      if (this.#scrollTop === 0) return
+      this.#scrollTop = 0
+      this.emitScroll()
+      this.invalidate()
+    }, SCROLL_DURATION + 50)
+  }
+
+  scrollTop(): void {
+    this.scroll(-this.#history.length + 1)
   }
 
   scrollUp(lines = 0.5): void {

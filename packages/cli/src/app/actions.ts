@@ -144,14 +144,24 @@ export function appActions({ app }: { app: App }) {
       desc: "Reload plugins & resources",
       fn: () => void app.reload(),
     },
+    "app.scroll-bottom": {
+      cmd: "scroll-bottom",
+      desc: "Scroll to the bottom of the message history.",
+      fn: () => app.renderer.stream.scrollBottom(),
+      keys: ["end", "ctrl-down"],
+    },
     "app.scroll-down": {
-      cmd: "scroll-down",
       desc: "Scroll down in the message history.",
       fn: () => app.renderer.stream.scrollDown(),
       keys: ["pagedown", "ctrl-d"],
     },
+    "app.scroll-top": {
+      cmd: "scroll-top",
+      desc: "Scroll to the top of the message history.",
+      fn: () => app.renderer.stream.scrollTop(),
+      keys: ["home", "ctrl-up"],
+    },
     "app.scroll-up": {
-      cmd: "scroll-up",
       desc: "Scroll up in the message history.",
       fn: () => app.renderer.stream.scrollUp(),
       keys: ["pageup", "ctrl-u"],
