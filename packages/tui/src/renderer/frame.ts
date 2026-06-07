@@ -107,9 +107,12 @@ export class RenderFrame {
     }
   }
 
-  paint(): void {
+  paint(): { rows: number; ops: number } {
+    const ops = this.#ops.length
     this.flush()
+    const rows = this.#ops.length - ops
     for (const op of this.#ops) op(this.terminal)
     this.#ops.length = 0
+    return { ops, rows }
   }
 }

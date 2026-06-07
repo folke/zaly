@@ -4,10 +4,12 @@ import type { Owner } from "../core/reactive.ts"
 import type { ActionDef } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../services/logger.ts"
 import type { Theme } from "../themes/types.ts"
+import type { RenderFrame } from "./frame.ts"
 import type { Surface } from "./surface.ts"
 import type { TerminalReader, TerminalWriter } from "./terminal.ts"
 
 import { Emitter } from "@zaly/shared"
+import { stringWidth } from "@zaly/shared/ansi"
 import { Logger } from "@zaly/shared/logger"
 import { createCtx } from "../core/ctx.ts"
 import { createRoot, memo, provideContext, signal, useActiveOwner } from "../core/reactive.ts"
@@ -113,6 +115,7 @@ export class Renderer extends Emitter<RenderEvents> {
   #escTimer: ReturnType<typeof setTimeout> | undefined
   #rendering?: Promise<void>
   #dirty = false
+  #debug = false
   /** Monotonic cache-key for `RenderCtx`. Bumped on any event that
    *  invalidates every node cache in the tree (resize, theme swap). */
   #ctxVersion = 0
@@ -265,6 +268,16 @@ export class Renderer extends Emitter<RenderEvents> {
 
   get rootOwner(): Owner {
     return this.#rootOwner
+  }
+
+  get debug(): boolean {
+    return this.#debug
+  }
+
+  set debug(debug: boolean) {
+    if (this.#debug === debug) return
+    this.#debug = debug
+    this.#schedule()
   }
 
   /** Whether the renderer is currently running. Surfaces use this to
@@ -472,13 +485,32 @@ export class Renderer extends Emitter<RenderEvents> {
     await render(this.ui)
     frame.commitBase()
     await render(this.overlay)
+    if (this.#debug) this.#renderDebug(frame)
     // Flush any side-channel transmits (e.g. KGP image data queued by
     // Image widgets during render) BEFORE entering the synced frame.
     // The terminal stores transmitted bytes globally — placements in
     // the frame body reference them by id and just need them to have
     // arrived first.
     this.terminal.flushTransmits()
-    this.terminal.sync(() => frame.paint())
+    this.terminal.sync(() => {
+      const s = frame.paint()
+      this.stats.inc("paint-ops", s.ops)
+      this.stats.inc("paint-rows", s.rows)
+    })
+  }
+
+  #renderDebug(frame: RenderFrame): void {
+    const stats = this.stats.get()
+    const rows = Object.entries(stats)
+      .toSorted(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}: ${value}`)
+    rows.unshift(`debug: ${new Date().toLocaleTimeString()}`)
+
+    const width = Math.min(this.terminal.cols, Math.max(...rows.map((row) => stringWidth(row)), 0))
+    const x = Math.max(1, this.terminal.cols - width + 1)
+    for (let i = 0; i < rows.length && i < this.terminal.rows; i++) {
+      frame.overlay(i + 1, x, rows[i])
+    }
   }
 
   // stdin wiring. In raw mode the terminal delivers bytes directly —
