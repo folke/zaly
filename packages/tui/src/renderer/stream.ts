@@ -21,6 +21,7 @@ export type StreamEvents = {
 
 type StreamSnapshot = {
   bottom: number
+  frame: string[]
   hasKittyImages: boolean
   historyLength: number
   top: number
@@ -30,6 +31,7 @@ type StreamSnapshot = {
 
 type StreamRenderPlan = {
   commit: string[]
+  frame: string[]
   next: StreamSnapshot
   old: StreamSnapshot
   resetImages: boolean
@@ -111,6 +113,7 @@ export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
   #snapshot: StreamSnapshot = {
     bottom: 0,
+    frame: [],
     hasKittyImages: false,
     historyLength: 0,
     top: 1,
@@ -392,6 +395,7 @@ export class Stream extends Surface<StreamEvents> {
 
     const next: StreamSnapshot = {
       bottom: liveHeight,
+      frame: [],
       hasKittyImages: newVisible.some((row) => row.includes("\x1b_Ga=p")),
       historyLength,
       top: liveHeight - newVisible.length + 1,
@@ -401,6 +405,7 @@ export class Stream extends Surface<StreamEvents> {
 
     const plan: StreamRenderPlan = {
       commit,
+      frame: this.#frame(old, next.bottom),
       next,
       old,
       resetImages: (next.virtual || old.virtual) && (old.hasKittyImages || next.hasKittyImages),
@@ -409,11 +414,18 @@ export class Stream extends Surface<StreamEvents> {
 
     run(() => this.#paint(plan))
 
+    next.frame = plan.frame
     this.#snapshot = next
     this.#advanceCommits(commit.length)
     this.#dropCommittedStates()
 
     if (!this.pending) void this.emit("idle")
+  }
+
+  #frame(old: StreamSnapshot, bottom: number): string[] {
+    const frame = old.frame.slice(0, bottom)
+    while (frame.length < bottom) frame.push("")
+    return frame
   }
 
   #paint(plan: StreamRenderPlan): void {
@@ -425,15 +437,13 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   #paintStale(plan: StreamRenderPlan): void {
-    // Stale-clear: rows in `#stale` that aren't covered by the visible
-    // paint loop below. Inside-visible rows are handled by the diff
-    // (force-write via `stale.has`). Anything above the new visible paint
-    // area still has overlay bytes and would otherwise be \n'd into
-    // scrollback during a commit — clear first.
+    // Stale-clear rows that aren't covered by the visible paint loop below.
+    // Inside-visible rows are handled by the diff unless commits will scroll
+    // them into scrollback first, in which case clear them now.
     for (const r of plan.stale) {
       if (r < 1 || r > plan.next.bottom) continue
       if (plan.commit.length === 0 && r >= plan.next.top && r <= plan.next.bottom) continue
-      this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+      this.#clearRow(plan, r)
     }
   }
 
@@ -447,13 +457,13 @@ export class Stream extends Surface<StreamEvents> {
       for (let j = 0; j < batch; j++) {
         const row = 1 + j
         const content = plan.commit[i + j]
-        // Diff only the first batch — subsequent batches start from
-        // post-`\n` state which the old snapshot doesn't model.
-        if (i === 0 && this.#screenAlreadyMatches(plan, row, content, 0)) continue
-        this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
+        this.#writeRow(plan, row, content)
       }
       this.terminal.write(this.terminal.moveTo(plan.next.bottom, 1))
-      for (let j = 0; j < batch; j++) this.terminal.write("\n")
+      for (let j = 0; j < batch; j++) {
+        this.terminal.write("\n")
+        this.#scrollFrame(plan, 1)
+      }
       i += batch
     }
   }
@@ -465,7 +475,7 @@ export class Stream extends Surface<StreamEvents> {
       plan.old.bottom !== plan.next.bottom ? Math.max(1, Math.min(plan.old.top, plan.next.top)) : 1
     for (let r = clearTop; r < plan.next.top; r++) {
       if (r < 1 || r > plan.next.bottom) continue
-      this.terminal.write(this.terminal.moveTo(r, 1) + this.terminal.clearLine())
+      this.#clearRow(plan, r)
     }
   }
 
@@ -474,25 +484,34 @@ export class Stream extends Surface<StreamEvents> {
     // every write except the last row.
     for (let k = 0; k < plan.next.visible.length; k++) {
       const row = plan.next.top + k
-      if (this.#screenAlreadyMatches(plan, row, plan.next.visible[k], plan.commit.length)) continue
-      this.terminal.write(
-        this.terminal.moveTo(row, 1) + this.terminal.clearLine() + plan.next.visible[k]
-      )
+      this.#writeRow(plan, row, plan.next.visible[k])
     }
   }
 
-  #screenAlreadyMatches(
-    plan: StreamRenderPlan,
-    row: number,
-    expected: string,
-    shift: number
-  ): boolean {
-    if (plan.next.virtual || plan.old.bottom !== plan.next.bottom) return false
-    const preShiftRow = row + shift
-    if (plan.stale.has(preShiftRow)) return false
-    const oldIdx = preShiftRow - plan.old.top
-    if (oldIdx < 0 || oldIdx >= plan.old.visible.length) return false
-    return plan.old.visible[oldIdx] === expected
+  #writeRow(plan: StreamRenderPlan, row: number, content: string): void {
+    if (!plan.stale.has(row) && plan.frame[row - 1] === content) return
+    this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
+    plan.frame[row - 1] = content
+    plan.stale.delete(row)
+  }
+
+  #clearRow(plan: StreamRenderPlan, row: number): void {
+    if (!plan.stale.has(row) && plan.frame[row - 1] === "") return
+    this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine())
+    plan.frame[row - 1] = ""
+    plan.stale.delete(row)
+  }
+
+  #scrollFrame(plan: StreamRenderPlan, lines: number): void {
+    if (lines <= 0) return
+    plan.frame.copyWithin(0, lines)
+    plan.frame.fill("", Math.max(0, plan.frame.length - lines))
+
+    if (plan.stale.size > 0) {
+      const stale = new Set<number>()
+      for (const row of plan.stale) if (row > lines) stale.add(row - lines)
+      plan.stale = stale
+    }
   }
 
   #advanceCommits(commitCount: number): void {
@@ -554,6 +573,7 @@ export class Stream extends Surface<StreamEvents> {
     this.#snapshot = {
       ...this.#snapshot,
       bottom: this.terminal.scrollBottom,
+      frame: [],
       hasKittyImages: false,
       top: 1,
       virtual: false,
