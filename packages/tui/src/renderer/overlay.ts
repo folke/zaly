@@ -1,6 +1,7 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Overlay } from "../widgets/overlay.ts"
+import type { RenderFrame } from "./frame.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { createNode, withOwner } from "../core/reactive.ts"
@@ -106,7 +107,7 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
    * `render(sync?)` shape used by Stream and UI so the Renderer can
    * capture all three paints and emit them in one atomic frame.
    */
-  async _render(run: (fn: () => void) => void): Promise<void> {
+  async _render(frame: RenderFrame): Promise<void> {
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.$r.ctx
     await Promise.all(
@@ -146,23 +147,8 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
         })
       })
     )
-    run(() => {
-      for (const { rows, x, y } of painted) {
-        for (let r = 0; r < rows.length; r++) {
-          this.$r.terminal.write(this.$r.terminal.moveTo(y + r, x) + rows[r])
-        }
-      }
-      // Mark the covered rows stale in stream's tracked-rows snapshot
-      // so its NEXT render diff-rewrites them with real stream bytes
-      // before the `\n`-at-scrollBottom growth path. Without this, an
-      // overlay-overlaid row that scrolled into scrollback would land
-      // there carrying overlay bytes instead of stream content.
-      for (const { rows, y } of painted) {
-        if (rows.length > 0) {
-          this.$r.stream.markStale(y, y + rows.length - 1)
-          this.$r.ui.markStale(y, y + rows.length - 1)
-        }
-      }
-    })
+    for (const { rows, x, y } of painted) {
+      for (let r = 0; r < rows.length; r++) frame.overlay(y + r, x, rows[r])
+    }
   }
 }

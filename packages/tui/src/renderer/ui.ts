@@ -1,6 +1,7 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Box } from "../widgets/box.ts"
+import type { RenderFrame } from "./frame.ts"
 import type { Renderer } from "./renderer.ts"
 
 import { createNode, withOwner } from "../core/reactive.ts"
@@ -78,44 +79,29 @@ export class UI extends Surface {
    * provided so all surfaces paint inside one atomic sync frame. Direct
    * callers (tests) omit it and get an immediate `terminal.sync`.
    */
-  async _render(run: (fn: () => void) => void): Promise<void> {
+  async _render(frame: RenderFrame): Promise<void> {
     const ctx = this.$r.ctx
     const rendered = await this.#root.render({ ...ctx, width: this.terminal.cols })
     const visible = Math.max(0, this.terminal.rows - 1)
     const rows = rendered.length > visible ? rendered.slice(-visible) : rendered
-    const stale = this.clearStale()
-
-    // Snapshot the currently-painted rows BEFORE writing `this.#rows`.
-    // The paint closure can run deferred (when a capture `sync` is
-    // provided), by which point `this.#rows` has already been swapped
-    // to the new slice — so the diff comparison needs the old values.
-    const prevRows = this.#rows
-    const prevHeight = prevRows.length
+    const prevHeight = this.#rows.length
     const nextHeight = rows.length
 
-    run(() => {
-      // Resize the reserved bottom to match the new footer height.
-      // Reissues DECSTBM — stream's next flush sees a different
-      // `scrollBottom` and re-slices its virtual buffer to fit. No
-      // proactive scrollUp/scrollDown: stream owns its bottom-anchored
-      // layout entirely, and the `dirty-stream` event tells it to
-      // repaint at the new positions. Footer-grow no longer commits
-      // stream rows to scrollback — they stay addressable, ready to
-      // reappear when the footer shrinks back.
-      if (nextHeight !== this.terminal.reserveBottom) {
-        this.terminal.setReserveBottom(nextHeight)
-        this.$r.stream.markStale()
-        this.$r.stream.invalidate()
-      }
+    // Resize the reserved bottom to match the new footer height.
+    // Reissues DECSTBM — stream's next flush sees a different
+    // `scrollBottom` and re-slices its virtual buffer to fit. Footer-grow no
+    // longer commits stream rows to scrollback — they stay addressable, ready
+    // to reappear when the footer shrinks back.
+    if (nextHeight !== this.terminal.reserveBottom) {
+      frame.flush()
+      frame.queue((terminal) => terminal.setReserveBottom(nextHeight))
+      this.$r.stream.invalidate()
+    }
 
-      // Paint (or re-paint) each footer row. The footer starts at
-      // `footerTop` (1-based). Only rewrite rows whose content changed.
-      const top = this.terminal.footerTop
-      for (let i = 0; i < nextHeight; i++) {
-        if (!stale.has(i + top) && prevRows[i] === rows[i] && prevHeight === nextHeight) continue
-        this.terminal.write(this.terminal.moveTo(top + i, 1) + this.terminal.clearLine() + rows[i])
-      }
-    })
+    const top = this.terminal.rows - nextHeight + 1
+    const prevTop = this.terminal.rows - prevHeight + 1
+    for (let row = prevTop; row < top; row++) frame.clear(row)
+    for (let i = 0; i < nextHeight; i++) frame.set(top + i, rows[i])
 
     this.#rows = rows
   }

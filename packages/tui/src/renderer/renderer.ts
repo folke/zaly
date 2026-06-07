@@ -19,6 +19,7 @@ import { InputRouter } from "../input/router.ts"
 import { TuiReporter } from "../services/logger.ts"
 import { styleBuilder as buildStyle } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
+import { Frame } from "./frame.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { Stream } from "./stream.ts"
 import { Terminal } from "./terminal.ts"
@@ -91,6 +92,7 @@ export class Renderer extends Emitter<RenderEvents> {
   readonly overlay: OverlaySurface
   readonly terminal: Terminal
   readonly input: InputRouter
+  readonly frame: Frame
   /** Always-on logger, auto-attached to `this.stream`. Calling
    *  `renderer.log("msg")` logs at `"log"` level; level methods
    *  (`renderer.log.error(...)` etc.) are also available. */
@@ -144,6 +146,7 @@ export class Renderer extends Emitter<RenderEvents> {
       stdin: opts.stdin,
       stdout: opts.stdout,
     })
+    this.frame = new Frame(this.terminal)
 
     this.#theme = opts.theme
 
@@ -167,8 +170,8 @@ export class Renderer extends Emitter<RenderEvents> {
     this.stream = new Stream(this, {
       fixedFooterHeight: opts.fixedFooterHeight,
     })
-    // Surfaces coordinate directly through `markStale()` / `invalidate()`;
-    // the renderer only owns scheduling, lifecycle events, and paint order.
+    // Surfaces render into the shared frame; the renderer owns scheduling,
+    // lifecycle events, and paint order.
     this.overlay = new OverlaySurface(this)
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
 
@@ -228,6 +231,7 @@ export class Renderer extends Emitter<RenderEvents> {
           this.terminal.setScrollRegion(1, this.terminal.scrollBottom)
         }
       })
+      this.frame.reset()
       this.stream.onResize()
       this.ui.onResize()
     })
@@ -456,36 +460,25 @@ export class Renderer extends Emitter<RenderEvents> {
     if (this.#rendering !== undefined) await this.#rendering
   }
 
-  /**
-   * Render every dirty surface, then commit all of their writes inside a
-   * single `terminal.sync(...)` block — one atomic frame for the entire
-   * tree per tick. Each surface's `render(sync)` takes a capture
-   * function that collects its paint closure; those run back-to-back
-   * inside the outer sync after all compute phases settle.
-   */
+  /** Render dirty surfaces into a shared full-viewport frame, then flush
+   * queued terminal ops and final row diffs in one atomic terminal sync. */
   async #render(): Promise<void> {
-    // oxlint-disable-next-line unicorn/consistent-function-scoping
-    const capture = async (surface: Surface) => {
+    const frame = this.frame.begin()
+    const render = async (surface: Surface): Promise<void> => {
       if (!surface.dirty) return
-      let ret: (() => void) | undefined
-      await surface.render((paint) => (ret = paint))
-      return ret
+      await surface.render(frame)
     }
-    // Order: stream (lowest) → ui → overlay (highest). Parallel
-    // compute; the paints execute in array order under the outer sync,
-    // so later surfaces land on top of earlier ones' bytes.
-    const paints = await Promise.all([
-      capture(this.stream),
-      capture(this.ui),
-      capture(this.overlay),
-    ])
+    await render(this.stream)
+    await render(this.ui)
+    frame.commitBase()
+    await render(this.overlay)
     // Flush any side-channel transmits (e.g. KGP image data queued by
     // Image widgets during render) BEFORE entering the synced frame.
     // The terminal stores transmitted bytes globally — placements in
     // the frame body reference them by id and just need them to have
     // arrived first.
     this.terminal.flushTransmits()
-    this.terminal.sync(() => paints.forEach((p) => p?.()))
+    this.terminal.sync(() => frame.paint())
   }
 
   // stdin wiring. In raw mode the terminal delivers bytes directly —

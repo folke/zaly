@@ -1,6 +1,7 @@
 import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { SuspenseBoundary } from "../core/reactive.ts"
+import type { RenderFrame } from "./frame.ts"
 import type { Renderer } from "./renderer.ts"
 import type { Terminal } from "./terminal.ts"
 
@@ -21,7 +22,6 @@ export type StreamEvents = {
 
 type StreamSnapshot = {
   bottom: number
-  frame: string[]
   hasKittyImages: boolean
   historyLength: number
   top: number
@@ -31,11 +31,10 @@ type StreamSnapshot = {
 
 type StreamRenderPlan = {
   commit: string[]
-  frame: string[]
+  frame: RenderFrame
   next: StreamSnapshot
   old: StreamSnapshot
   resetImages: boolean
-  stale: Set<number>
 }
 
 type RenderState = {
@@ -113,7 +112,6 @@ export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
   #snapshot: StreamSnapshot = {
     bottom: 0,
-    frame: [],
     hasKittyImages: false,
     historyLength: 0,
     top: 1,
@@ -352,7 +350,7 @@ export class Stream extends Surface<StreamEvents> {
     return { commitLimit: commitLimit ?? rows.length, rows }
   }
 
-  async _render(run: (fn: () => void) => void): Promise<void> {
+  async _render(frame: RenderFrame): Promise<void> {
     const { commitLimit, rows: allRows } = await this.#render()
     const old = this.#snapshot
     const liveHeight = this.liveHeight
@@ -395,7 +393,6 @@ export class Stream extends Surface<StreamEvents> {
 
     const next: StreamSnapshot = {
       bottom: liveHeight,
-      frame: [],
       hasKittyImages: newVisible.some((row) => row.includes("\x1b_Ga=p")),
       historyLength,
       top: liveHeight - newVisible.length + 1,
@@ -405,16 +402,14 @@ export class Stream extends Surface<StreamEvents> {
 
     const plan: StreamRenderPlan = {
       commit,
-      frame: this.#frame(old, next.bottom),
+      frame,
       next,
       old,
       resetImages: (next.virtual || old.virtual) && (old.hasKittyImages || next.hasKittyImages),
-      stale: this.clearStale(),
     }
 
-    run(() => this.#paint(plan))
+    this.#paint(plan)
 
-    next.frame = plan.frame
     this.#snapshot = next
     this.#advanceCommits(commit.length)
     this.#dropCommittedStates()
@@ -422,29 +417,11 @@ export class Stream extends Surface<StreamEvents> {
     if (!this.pending) void this.emit("idle")
   }
 
-  #frame(old: StreamSnapshot, bottom: number): string[] {
-    const frame = old.frame.slice(0, bottom)
-    while (frame.length < bottom) frame.push("")
-    return frame
-  }
-
   #paint(plan: StreamRenderPlan): void {
-    if (plan.resetImages) this.terminal.deleteImages({ data: false })
-    this.#paintStale(plan)
+    if (plan.resetImages) plan.frame.queue((terminal) => terminal.deleteImages({ data: false }))
     this.#paintCommits(plan)
     this.#clearAboveVisible(plan)
     this.#paintVisible(plan)
-  }
-
-  #paintStale(plan: StreamRenderPlan): void {
-    // Stale-clear rows that aren't covered by the visible paint loop below.
-    // Inside-visible rows are handled by the diff unless commits will scroll
-    // them into scrollback first, in which case clear them now.
-    for (const r of plan.stale) {
-      if (r < 1 || r > plan.next.bottom) continue
-      if (plan.commit.length === 0 && r >= plan.next.top && r <= plan.next.bottom) continue
-      this.#clearRow(plan, r)
-    }
   }
 
   #paintCommits(plan: StreamRenderPlan): void {
@@ -459,11 +436,10 @@ export class Stream extends Surface<StreamEvents> {
         const content = plan.commit[i + j]
         this.#writeRow(plan, row, content)
       }
-      this.terminal.write(this.terminal.moveTo(plan.next.bottom, 1))
-      for (let j = 0; j < batch; j++) {
-        this.terminal.write("\n")
-        this.#scrollFrame(plan, 1)
-      }
+      plan.frame.scrollUp(1, plan.next.bottom, batch, (terminal) => {
+        terminal.write(terminal.moveTo(plan.next.bottom, 1))
+        for (let j = 0; j < batch; j++) terminal.write("\n")
+      })
       i += batch
     }
   }
@@ -489,29 +465,11 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   #writeRow(plan: StreamRenderPlan, row: number, content: string): void {
-    if (!plan.stale.has(row) && plan.frame[row - 1] === content) return
-    this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine() + content)
-    plan.frame[row - 1] = content
-    plan.stale.delete(row)
+    plan.frame.set(row, content)
   }
 
   #clearRow(plan: StreamRenderPlan, row: number): void {
-    if (!plan.stale.has(row) && plan.frame[row - 1] === "") return
-    this.terminal.write(this.terminal.moveTo(row, 1) + this.terminal.clearLine())
-    plan.frame[row - 1] = ""
-    plan.stale.delete(row)
-  }
-
-  #scrollFrame(plan: StreamRenderPlan, lines: number): void {
-    if (lines <= 0) return
-    plan.frame.copyWithin(0, lines)
-    plan.frame.fill("", Math.max(0, plan.frame.length - lines))
-
-    if (plan.stale.size > 0) {
-      const stale = new Set<number>()
-      for (const row of plan.stale) if (row > lines) stale.add(row - lines)
-      plan.stale = stale
-    }
+    plan.frame.clear(row)
   }
 
   #advanceCommits(commitCount: number): void {
@@ -573,14 +531,12 @@ export class Stream extends Surface<StreamEvents> {
     this.#snapshot = {
       ...this.#snapshot,
       bottom: this.terminal.scrollBottom,
-      frame: [],
       hasKittyImages: false,
       top: 1,
       virtual: false,
       visible: [],
     }
     this.#scrollAnim?.cancel()
-    this.clearStale()
     this.invalidate()
   }
 
@@ -597,13 +553,6 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   protected mountAll(ctx: MountCtx): void {
-    // Mark every row in the current scroll region as stale on start.
-    // Pre-zaly content sitting in the terminal would otherwise stay on
-    // screen above stream's bottom-anchored paint, and — worse — get
-    // `\n`-promoted into scrollback once the stream grows past the
-    // commit threshold. Marking stale forces an explicit clear (above
-    // the visible paint area) or a diff miss (inside).
-    this.markStale()
     for (const s of this.#state) if (!s.node.mounted) s.node.mount(ctx)
   }
 
