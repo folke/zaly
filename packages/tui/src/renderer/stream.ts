@@ -438,7 +438,7 @@ export class Stream extends Surface<StreamEvents> {
       for (let j = 0; j < batch; j++) {
         const row = 1 + j
         const content = plan.commit[i + j]
-        this.#writeRow(plan, row, content)
+        plan.frame.set(row, content)
       }
       plan.frame.scrollUp(1, plan.next.bottom, batch, (terminal) => {
         terminal.write(terminal.moveTo(plan.next.bottom, 1))
@@ -455,7 +455,7 @@ export class Stream extends Surface<StreamEvents> {
       plan.old.bottom !== plan.next.bottom ? Math.max(1, Math.min(plan.old.top, plan.next.top)) : 1
     for (let r = clearTop; r < plan.next.top; r++) {
       if (r < 1 || r > plan.next.bottom) continue
-      this.#clearRow(plan, r)
+      plan.frame.clear(r)
     }
   }
 
@@ -486,16 +486,8 @@ export class Stream extends Surface<StreamEvents> {
     // every write except the last row.
     for (let k = 0; k < plan.next.visible.length; k++) {
       const row = plan.next.top + k
-      this.#writeRow(plan, row, plan.next.visible[k])
+      plan.frame.set(row, plan.next.visible[k])
     }
-  }
-
-  #writeRow(plan: StreamRenderPlan, row: number, content: string): void {
-    plan.frame.set(row, content)
-  }
-
-  #clearRow(plan: StreamRenderPlan, row: number): void {
-    plan.frame.clear(row)
   }
 
   #advanceCommits(commitCount: number): void {
