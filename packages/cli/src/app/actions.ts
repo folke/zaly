@@ -22,15 +22,15 @@ export function appActions({ app }: { app: App }) {
       cmd: "effort",
       desc: "Change how much reasoning the model uses for future turns.",
       fn: async () => {
-        const items: Option<ReasoningEffort>[] = REASONING_EFFORTS.map((level) => ({
+        const items: (Option & { text: ReasoningEffort })[] = REASONING_EFFORTS.map((level) => ({
           name: level,
-          value: level,
+          text: level,
         }))
         const effort = await app.pick({
-          active: items.findIndex((i) => i.value === app.agent.ctx.reasoning),
+          active: items.findIndex((i) => i.text === app.agent.ctx.reasoning),
           items,
         })
-        if (effort) app.agent.ctx.reasoning = effort.value
+        if (effort) app.agent.ctx.reasoning = effort.text
       },
     },
     "agent.model": defineAction({
@@ -51,7 +51,7 @@ export function appActions({ app }: { app: App }) {
           filter: filter.length > 0 ? filter : undefined,
         })
 
-        const items: Option<string>[] = []
+        const items: Option[] = []
         for (const m of models) {
           items.push({
             desc: [
@@ -62,11 +62,11 @@ export function appActions({ app }: { app: App }) {
               .filter(Boolean)
               .join(", "),
             name: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
-            value: m.id,
+            text: m.id,
           })
         }
         const ret = await app.pick({ items, sort: true })
-        if (ret) model.active = await model.load(ret.value)
+        if (ret) model.active = await model.load(ret.text)
       },
     }),
     "app.cancel": {
@@ -180,15 +180,15 @@ export function appActions({ app }: { app: App }) {
         const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
         const themes = themeRegistry.keys()
 
-        const items: Option<string>[] = []
+        const items: Option[] = []
         for (const id of themes) {
           items.push({
             name: id,
-            value: id,
+            text: id,
           })
         }
         const ret = await app.pick({ items, sort: true })
-        if (ret) app.renderer.theme = await loadTheme(ret.value)
+        if (ret) app.renderer.theme = await loadTheme(ret.text)
       },
     },
     "composer.history": {

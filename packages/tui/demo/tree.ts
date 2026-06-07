@@ -29,98 +29,94 @@ const renderer = await createRenderer({ logger })
 installLogger(logger)
 
 const root: TreeNode = {
-  value: "zaly",
+  text: "zaly",
   children: [
     {
-      value: "packages",
+      text: "packages",
       children: [
         {
-          value: "agent",
+          text: "agent",
           children: [
             {
-              value: "src",
+              text: "src",
               children: [
-                { value: "agent.ts" },
-                { value: "context.ts" },
+                { text: "agent.ts" },
+                { text: "context.ts" },
                 {
-                  value: "session",
-                  children: [{ value: "session.ts" }, { value: "store.ts" }, { value: "nodes.ts" }],
+                  text: "session",
+                  children: [{ text: "session.ts" }, { text: "store.ts" }, { text: "nodes.ts" }],
                 },
                 {
-                  value: "tools",
+                  text: "tools",
                   children: [
-                    { value: "bash.ts" },
-                    { value: "read.ts" },
-                    { value: "grep.ts" },
-                    { value: "tasks.ts" },
+                    { text: "bash.ts" },
+                    { text: "read.ts" },
+                    { text: "grep.ts" },
+                    { text: "tasks.ts" },
                   ],
                 },
               ],
             },
             {
-              value: "test",
+              text: "test",
               children: [
-                { value: "session.test.ts" },
-                { value: "permissions.test.ts" },
-                { value: "tools.test.ts" },
+                { text: "session.test.ts" },
+                { text: "permissions.test.ts" },
+                { text: "tools.test.ts" },
               ],
             },
           ],
         },
         {
-          value: "tui",
+          text: "tui",
           children: [
             {
-              value: "src",
+              text: "src",
               children: [
                 {
-                  value: "renderer",
+                  text: "renderer",
                   children: [
-                    { value: "renderer.ts" },
-                    { value: "stream.ts" },
-                    { value: "overlay.ts" },
-                    { value: "terminal.ts" },
+                    { text: "renderer.ts" },
+                    { text: "stream.ts" },
+                    { text: "overlay.ts" },
+                    { text: "terminal.ts" },
                   ],
                 },
                 {
-                  value: "widgets",
+                  text: "widgets",
                   children: [
-                    { value: "input.ts" },
-                    { value: "select.ts" },
-                    { value: "picker.ts" },
-                    { value: "tree.ts" },
+                    { text: "input.ts" },
+                    { text: "select.ts" },
+                    { text: "picker.ts" },
+                    { text: "tree.ts" },
                   ],
                 },
               ],
             },
             {
-              value: "demo",
-              children: [
-                { value: "tree.ts" },
-                { value: "markdown.ts" },
-                { value: "autocomplete.ts" },
-              ],
+              text: "demo",
+              children: [{ text: "tree.ts" }, { text: "markdown.ts" }, { text: "autocomplete.ts" }],
             },
           ],
         },
         {
-          value: "cli",
+          text: "cli",
           children: [
             {
-              value: "src",
+              text: "src",
               children: [
                 {
-                  value: "app",
+                  text: "app",
                   children: [
-                    { value: "agent.ts" },
-                    { value: "stream.ts" },
-                    { value: "context.ts" },
-                    { value: "commands.ts" },
+                    { text: "agent.ts" },
+                    { text: "stream.ts" },
+                    { text: "context.ts" },
+                    { text: "commands.ts" },
                   ],
                 },
                 {
-                  value: "widgets",
-                  children: [{ value: "composer.ts" }, { value: "tool.ts" }],
+                  text: "widgets",
+                  children: [{ text: "composer.ts" }, { text: "tool.ts" }],
                 },
               ],
             },
@@ -129,31 +125,31 @@ const root: TreeNode = {
       ],
     },
     {
-      value: "docs",
-      children: [{ value: "vim.md" }, { value: "config.md" }, { value: "plugins.md" }],
+      text: "docs",
+      children: [{ text: "vim.md" }, { text: "config.md" }, { text: "plugins.md" }],
     },
     {
-      value: "branches",
+      text: "branches",
       children: [
         {
-          value: "main",
+          text: "main",
           children: [
-            { value: "initial prompt" },
+            { text: "initial prompt" },
             {
-              value: "assistant response",
+              text: "assistant response",
               children: [
-                { value: "follow-up A" },
+                { text: "follow-up A" },
                 {
-                  value: "follow-up B",
-                  children: [{ value: "tool call" }, { value: "final answer" }],
+                  text: "follow-up B",
+                  children: [{ text: "tool call" }, { text: "final answer" }],
                 },
               ],
             },
           ],
         },
         {
-          value: "alternate",
-          children: [{ value: "edited prompt" }, { value: "alternate response" }],
+          text: "alternate",
+          children: [{ text: "edited prompt" }, { text: "alternate response" }],
         },
       ],
     },

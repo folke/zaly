@@ -34,7 +34,8 @@ const icons = {
   vertical: "│ ",
 }
 
-export type TreeItem<T extends TreeNode = TreeNode> = Option<T> & {
+export type TreeItem<T extends TreeNode = TreeNode> = Option & {
+  node: T
   last?: boolean
   parent?: TreeItem<T>
 }
@@ -57,8 +58,8 @@ export class Tree<T extends TreeNode = TreeNode>
     this.items = this.#build()
     const activeFn =
       typeof props.active === "function" ? props.active : (i: T) => i === props.active
-    const active = props.active ? this.items.findIndex((i) => activeFn(i.value)) : -1
-    this.nodes = this.items.map((i) => i.value)
+    const active = props.active ? this.items.findIndex((i) => activeFn(i.node)) : -1
+    this.nodes = this.items.map((i) => i.node)
     this.select = new Select({
       ...this.state,
       active: active === -1 ? 0 : active,
@@ -68,13 +69,13 @@ export class Tree<T extends TreeNode = TreeNode>
     this.#optionRender = this.state.render ?? (this.select.defaultRenderer() as OptionRender<T>)
     this.add(this.select)
     this.select
-      .on("complete", ({ item }) => this.emit("complete", { item: item.value }))
-      .on("accept", ({ item }) => this.emit("accept", { item: item.value }))
+      .on("complete", ({ item }) => this.emit("complete", { item: item.node }))
+      .on("accept", ({ item }) => this.emit("accept", { item: item.node }))
       .on("cancel", () => this.emit("cancel"))
   }
 
   #render(item: TreeItem<T>, _active: boolean, ctx: OptionRenderCtx<TreeItem<T>>): string {
-    const visible = ctx.visible.map((i) => i.value)
+    const visible = ctx.visible.map((i) => i.node)
     const prefix: string[] = []
     const s = ctx.style
     let n = item as TreeItem<T> | undefined
@@ -88,7 +89,7 @@ export class Tree<T extends TreeNode = TreeNode>
       prefix.unshift(icon)
       n = n.parent
     }
-    const text = this.#optionRender(item.value, _active, { ...ctx, visible }).replace(/\s+/g, " ")
+    const text = this.#optionRender(item.node, _active, { ...ctx, visible }).replace(/\s+/g, " ")
     return `${s.gutter(prefix.join(""))}${text}`
   }
 
@@ -100,7 +101,7 @@ export class Tree<T extends TreeNode = TreeNode>
     const it: TreeItem<T> | undefined =
       item === this.state.tree && !this.state.root
         ? undefined
-        : { last: opts.last, parent: opts.parent, value: item }
+        : { last: opts.last, node: item, parent: opts.parent, text: item.text }
     if (it) ret.push(it)
     const children = item.children ?? []
     for (let c = 0; c < children.length; c++) {

@@ -9,20 +9,20 @@ import { bubble } from "../widgets/bubble.ts"
 import { toolPreview } from "../widgets/tool.ts"
 
 export async function allow(req: PermissionRequest, app: App): Promise<boolean> {
-  const items: Option<boolean | Suggestion>[] = []
-  items.push({ name: "Allow", value: true })
-  items.push({ name: "Deny", value: false })
+  const items: (Option & { value: boolean | Suggestion })[] = []
+  items.push({ text: "Allow", value: true })
+  items.push({ text: "Deny", value: false })
   for (const s of req.suggestions ?? []) {
     if (s.kind === "rule") {
       items.push({
         desc: s.description,
-        name: `Allow \`${s.scope}(${s.pattern})\``,
+        text: `Allow \`${s.scope}(${s.pattern})\``,
         value: { kind: "rule", pattern: s.pattern, scope: s.scope },
       })
     } else {
       items.push({
         desc: s.description,
-        name: `Add workspace ${s.path}`,
+        text: `Add workspace ${s.path}`,
         value: { kind: "workspace", path: s.path },
       })
     }

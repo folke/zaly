@@ -3,6 +3,7 @@ import type { BaseEvents } from "../core/node.ts"
 import type { Reactive, Ref } from "../core/reactive.ts"
 import type { NodeActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
+import type { SearchItem } from "../search/matcher.ts"
 import type { Style } from "../style/types.ts"
 
 import { stringWidth, truncateAnsi } from "@zaly/shared/ansi"
@@ -15,14 +16,9 @@ import { resolveSize } from "../layout/size.ts"
  *  plus their own `render`. `value` is what `Autocomplete`'s default
  *  `accept` inserts; `label` is what the default renderer shows
  *  (falling back to `value`); `hint` is a dim right-column description. */
-export type Option<T = unknown> = {
+export type Option = SearchItem & {
   name?: string
   desc?: string
-  value: T
-  /** When true, the item is a match for the current query */
-  match?: boolean
-  /** For pickers: override the text used for matching/searching */
-  search?: string
 }
 
 export type OptionRenderCtx<T> = RenderCtx & {
@@ -194,7 +190,7 @@ export class Select<T extends Option = Option>
   get #matches(): readonly { idx: number; item: T }[] {
     return this.#items()
       .map((item, idx) => ({ idx, item }))
-      .filter((i) => i.item.match)
+      .filter((i) => (i.item.score ?? 0) > 0)
   }
 
   #items(): readonly T[] {
@@ -325,7 +321,7 @@ export class Select<T extends Option = Option>
 }
 
 function defaultLabel(item: Option): string {
-  const label = item.name ?? (typeof item.value === "string" ? item.value : String(item.value))
+  const label = item.name ?? item.text
   return label.replace(/\s+/g, " ").trim() // collapse whitespace for cleaner default layout
 }
 

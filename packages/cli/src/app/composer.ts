@@ -200,14 +200,14 @@ export class Composer {
   async pickHistory(): Promise<void> {
     if (!this.#input) return
     const history = this.#input.history
-    const items = history.map((value) => ({ name: value, value }))
+    const items = history.map((text) => ({ text }))
     const ret = await this.#app.pick({
       active: items.length - 1,
       items,
       reverse: true,
       sort: true,
     })
-    if (ret) this.#input.insert(ret.value)
+    if (ret) this.#input.insert(ret.text)
   }
 }
 

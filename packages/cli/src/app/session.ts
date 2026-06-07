@@ -44,7 +44,7 @@ function isClaudePath(p: string): boolean {
   return /(?:^|\/)\.claude\/projects\//.test(p)
 }
 
-type SessionItem = Option<SessionInfo>
+type SessionItem = Option & { value: SessionInfo }
 
 export async function pickSession(app: App) {
   const { listSessions, Session } = await import("@zaly/agent/session")
@@ -62,11 +62,14 @@ export async function pickSession(app: App) {
     return
   }
 
-  const items: SessionItem[] = sessions.map((info, s) => ({
-    desc: `${formatRelativeTime(info.mtime ?? 0)}, ${formatSize(info.stat?.size ?? 0, 1)}`,
-    name: messages[s] ? stringifyContent(messages[s].content) : "[new session]",
-    value: info,
-  }))
+  const items: SessionItem[] = sessions.map((info, s) => {
+    const text = messages[s] ? stringifyContent(messages[s].content) : "[new session]"
+    return {
+      desc: `${formatRelativeTime(info.mtime ?? 0)}, ${formatSize(info.stat?.size ?? 0, 1)}`,
+      text,
+      value: info,
+    }
+  })
   const ret = await app.pick({ items, sort: true })
   if (!ret) return
   await switchSession(ret.value, app)
@@ -188,13 +191,14 @@ function expand(
 export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   opts = { fallback: false, reasoning: true, system: false, tools: true, ...opts }
   const session = app.agent.session
+
   type Node = TreeNode<
-    Option<SessionNode | { type: "root"; ts: 0; uuid?: string }> & {
+    Option & { node?: SessionNode; root?: boolean } & {
       render?: (ctx: RenderCtx) => string
       active?: boolean
-    }
+    } & ({ root: boolean } | { node: SessionNode })
   >
-  const root: Node = { search: "root", value: { ts: 0, type: "root" } }
+  const root: Node = { root: true, text: "root" }
   const sessionNodes = new Map<string, SessionNode>()
   const now = performance.now()
   const all = await Array.fromAsync(session.nodes())
@@ -238,9 +242,9 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
       })
     return expanded.map((m) => ({
       active: isActive,
+      node,
       render: m.render,
-      search: m.text,
-      value: node,
+      text: m.text,
     }))
   }
 
@@ -302,20 +306,21 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   root.children = (children.get(undefined) ?? []).flatMap((node) => buildChain(node).rows)
 
   const node = await app.pick({
-    active: (item) => item.value.uuid === sessionHead,
+    active: (item) => item.node?.uuid === sessionHead,
+    fuzzy: false,
     maxHeight: 20,
     render: (item, _a, ctx) => {
       const s = ctx.style
-      if (item.value.type === "root") return s.accent("Session Root")
-      if (!item.render) return s.dim(item.search ?? "unknown")
+      if (item.root) return s.accent("Session Root")
+      if (!item.render) return s.dim(item.text)
       return item.render(ctx)
     },
     title: "Session Tree",
     tree: root,
   })
 
-  if (!node || node.value.type === "root") return
-  await session.checkout(node.value.uuid)
+  if (!node?.node) return
+  await session.checkout(node.node.uuid)
   const { replay } = await import("./replay.ts")
   app.renderer.stream.reset()
   await Promise.all([replay(session, app), app.agent.ctx.useSession(session)])

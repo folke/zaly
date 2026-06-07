@@ -11,15 +11,14 @@ import { select } from "./select.ts"
 import { tree } from "./tree.ts"
 import { widget } from "./widget.ts"
 
-export type PickerResult<T extends Option = Option> = {
-  item: T
+export type Scored<T extends Option = Option> = T & {
   score: number
 }
 
 export type PickerFn<T extends Option = Option> = (
   query: string,
   match: Matcher
-) => MaybePromise<(T | PickerResult<T>)[]>
+) => MaybePromise<Scored<T>[]>
 
 type PickerBaseProps = {
   /** The `Input` to watch. Pass the node directly, or a `Ref<Input>`
@@ -61,25 +60,10 @@ const smartSearch = (query: string): Matcher => {
   }
 }
 
-function isPickerResult<T extends Option = Option>(x: T | PickerResult<T>): x is PickerResult<T> {
-  return "score" in x && "item" in x
-}
-
 function isTree<T extends Option = Option>(
   props: PickerTreeProps<T> | PickerSelectProps<T>
 ): props is PickerTreeProps<T> {
   return "tree" in props
-}
-
-function searchText(item: Option): string {
-  const search: string[] = []
-  if (item.search !== undefined) search.push(item.search)
-  else {
-    if (typeof item.value === "string") search.push(item.value)
-    if (item.name !== undefined && item.name !== item.value) search.push(item.name)
-  }
-  if (search.length === 0) throw new Error("Picker items must have a label or searchText")
-  return search.join(" ")
 }
 
 function pickerFn<T extends Option = Option>(props: PickerSelectProps<T>): Select<T>
@@ -107,10 +91,18 @@ function pickerFn<T extends Option = Option>(
     const t = tree({ ...props, tree: props.tree }).bind(props.input)
     effect(() => {
       const m = matcher()
-      for (const item of t.items) {
-        const s = m.match(searchText(item.value))
-        item.value.match = s > 0
+      let current = 0
+      let idx = -1
+      untrack(() => (current = t.select.state.active ?? 0))
+      for (let i = 0; i < t.items.length; i++) {
+        const item = t.items[i]
+        const s = m.match(item.text)
+        if (idx === -1 && s > 0 && i >= current) idx = i
+        item.score = s
       }
+      untrack(() => {
+        if (idx !== -1) t.select.state.active = idx
+      })
       t.invalidate()
     })
     return t
@@ -119,21 +111,21 @@ function pickerFn<T extends Option = Option>(
   const node = select<T>({ ...props, items: [] }).bind(props.input)
   const it = props.items
 
-  const results: Accessor<readonly PickerResult<T>[]> =
+  const results: Accessor<readonly Scored<T>[]> =
     typeof it === "function"
       ? createAsync(
-          async (): Promise<PickerResult<T>[]> => {
+          async (): Promise<Scored<T>[]> => {
             const m = matcher()
-            const ret = await it(m.query, m.match)
-            return ret.map((r) => (isPickerResult(r) ? r : { item: r, score: 1 }))
+            return await it(m.query, m.match)
           },
           { initialValue: [] }
         )
       : memo(() =>
-          it.map((item) => ({
-            item,
-            score: matcher().match(searchText(item)),
-          }))
+          it.map((item) =>
+            Object.assign(item, {
+              score: matcher().match(item.text),
+            })
+          )
         )
 
   const items = memo(() => {
@@ -143,7 +135,6 @@ function pickerFn<T extends Option = Option>(
       ret = ret.toSorted((a, b) => b.score - a.score)
       ret = props.reverse ? ret.toReversed() : ret
     }
-    for (const r of ret) r.item.match = r.score > 0
     if (props.filter ?? true) ret = ret.filter(({ score }) => score > 0)
     else {
       let best = 0
@@ -154,7 +145,7 @@ function pickerFn<T extends Option = Option>(
         node.active = best
       })
     }
-    return ret.map(({ item }) => item)
+    return ret
   })
 
   node.state.items = items

@@ -30,7 +30,7 @@ describe("filesSource", () => {
   test("lists cwd entries with a trailing slash on directories", async () => {
     const src = filesSource({ cwd: root })
     const items = await src.complete("", match(""))
-    const values = items.map((i) => i.value)
+    const values = items.map((i) => i.text)
     expect(values).toContain("src/")
     expect(values).toContain("README.md")
     expect(values).toContain("package.json")
@@ -39,13 +39,13 @@ describe("filesSource", () => {
   test("default filter hides dotfiles", async () => {
     const src = filesSource({ cwd: root })
     const items = await src.complete("", match(""))
-    expect(items.map((i) => i.value)).not.toContain(".hidden")
+    expect(items.map((i) => i.text)).not.toContain(".hidden")
   })
 
   test("custom filter overrides default (keeps dotfiles)", async () => {
     const src = filesSource({ cwd: root, filter: () => true })
     const items = await src.complete("", match(""))
-    expect(items.map((i) => i.value)).toContain(".hidden")
+    expect(items.map((i) => i.text)).toContain(".hidden")
   })
 
   test("filter receives Dirent (isFile / isDirectory) and abs path", async () => {
@@ -54,13 +54,13 @@ describe("filesSource", () => {
       filter: (ent) => ent.isDirectory(),
     })
     const items = await src.complete("", match(""))
-    expect(items.every((i) => i.value.endsWith("/"))).toBe(true)
+    expect(items.every((i) => i.text.endsWith("/"))).toBe(true)
   })
 
   test("resolves nested paths via trailing-slash segments", async () => {
     const src = filesSource({ cwd: root })
     const items = await src.complete("src/", match("src/"))
-    const values = items.map((i) => i.value)
+    const values = items.map((i) => i.text)
     expect(values).toContain("src/widgets/")
     expect(values).toContain("src/index.ts")
   })
@@ -68,24 +68,30 @@ describe("filesSource", () => {
   test("fuzzy-matches basenames", async () => {
     const src = filesSource({ cwd: root })
     const items = await src.complete("src/widgets/inpt", match("src/widgets/inpt"))
-    expect(items.map((i) => i.value)).toContain("src/widgets/input.ts")
+    expect(items.map((i) => i.text)).toContain("src/widgets/input.ts")
   })
 
   test("accept prepends the trigger prefix (default @) and a trailing space for files", () => {
     const src = filesSource({ cwd: root })
-    const inserted = src.accept!({ name: "src/index.ts", value: "src/index.ts" }, "src/index.ts")
+    const inserted = src.accept!(
+      { name: "src/index.ts", text: "src/index.ts", file: "src/index.ts" },
+      "src/index.ts"
+    )
     expect(inserted).toBe("@src/index.ts ")
   })
 
   test("accept leaves directories without a trailing space so users can drill deeper", () => {
     const src = filesSource({ cwd: root })
-    const inserted = src.accept!({ name: "src/", value: "src/" }, "src/")
+    const inserted = src.accept!({ name: "src/", text: "src/", file: "src/" }, "src/")
     expect(inserted).toBe("@src/")
   })
 
   test("accept uses a custom prefix when configured", () => {
     const src = filesSource({ cwd: root, prefix: "#", trigger: /(?<=^|\s)#/ })
-    const inserted = src.accept!({ name: "README.md", value: "README.md" }, "README.md")
+    const inserted = src.accept!(
+      { name: "README.md", text: "README.md", file: "README.md" },
+      "README.md"
+    )
     expect(inserted).toBe("#README.md ")
   })
 

@@ -56,7 +56,7 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          complete: () => [{ name: "/help", value: "/help" }],
+          complete: () => [{ name: "/help", text: "/help" }],
           triggers: [/^\s*\//],
         },
       },
@@ -72,7 +72,7 @@ describe("autocomplete", () => {
     const i = input({})
     await i.render(ctx)
     const cb = vi.fn()
-    const item: Option = { name: "quit", value: "/quit" }
+    const item: Option = { name: "quit", text: "/quit" }
     const ac = autocomplete({
       input: i,
       sources: {
@@ -114,7 +114,7 @@ describe("autocomplete", () => {
   test("trigger regex on word-boundary (@mention) works mid-text", async () => {
     const i = input({})
     await i.render(ctx)
-    const complete = vi.fn(() => [{ value: "@bob" }])
+    const complete = vi.fn(() => [{ text: "@bob" }])
     const ac = autocomplete({
       input: i,
       sources: {

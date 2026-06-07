@@ -364,9 +364,9 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
 /** Default `accept` fallback used when a source doesn't provide one.
  *  Assumes the item is `MenuItem`-shaped and inserts `value + " "` —
  *  matches the old `trailingSpace: true` behaviour. Returns `undefined`
- *  (clear-only) when the item has no `value`. */
+ *  (clear-only) when the item has no `text`. */
 function defaultAccept(item: Option): string | undefined {
-  const ret = typeof item.value === "string" ? item.value : item.name
+  const ret = item.text
   return ret ? `${ret} ` : undefined
 }
 

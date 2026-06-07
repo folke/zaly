@@ -30,6 +30,8 @@ export interface FilesSourceOptions {
 
 type DirCache = Map<string, Dirent[]>
 
+type File = Option & { file: string }
+
 /**
  * Completion source for file paths. Splits the query at the last `/`
  * — everything before is a literal directory prefix, everything after
@@ -45,7 +47,7 @@ type DirCache = Map<string, Dirent[]>
  * })
  * ```
  */
-export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Option<string>> {
+export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<File> {
   const cwd = opts.cwd ?? process.cwd()
   const trigger = opts.trigger ?? /(?<=^|\s)@/
   const prefix = opts.prefix ?? "@"
@@ -58,10 +60,10 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Opt
       // Dirs keep the popup open (trigger still matches, user can
       // drill in). Files close it — a trailing space makes `#detect`
       // see whitespace in the query and bail.
-      const v = item.value
+      const v = item.file
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
-    async complete(query: string, match: Matcher): Promise<Option<string>[]> {
+    async complete(query: string, match: Matcher): Promise<File[]> {
       const lastSlash = query.lastIndexOf("/")
       const dirPart = lastSlash === -1 ? "" : query.slice(0, lastSlash + 1)
       const absDir = resolve(cwd, dirPart)
@@ -83,14 +85,15 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Opt
       const baseQuery = lastSlash === -1 ? query : query.slice(lastSlash + 1)
       const base: Matcher = baseQuery === query ? match : (s) => fuzzyScore(baseQuery, s)
 
-      const out: Option<string>[] = []
+      const out: File[] = []
       for (const ent of entries) {
         const abs = resolve(absDir, ent.name)
         if (!filter(ent, abs)) continue
         if (!base(ent.name)) continue
         const isDir = ent.isDirectory()
         const name = isDir ? `${ent.name}/` : ent.name
-        out.push({ name, value: `${dirPart}${name}` })
+        const file = `${dirPart}${name}`
+        out.push({ file, name, text: file })
         if (out.length >= limit) break
       }
       return out

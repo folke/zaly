@@ -1,5 +1,5 @@
 import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { OptionRender } from "../select.ts"
+import type { Option, OptionRender } from "../select.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { spawn } from "node:child_process"
@@ -7,8 +7,7 @@ import { spawn } from "node:child_process"
 /** A GitHub issue or pull request returned by `githubSource`. Shape
  *  mirrors the `gh` CLI's `--json number,title,state,author,url`
  *  output, with `type` added to distinguish issues from PRs. */
-export interface GithubItem {
-  value: number
+export type GithubItem = Option & {
   number: number
   title: string
   /** `"open"` / `"closed"` for issues; `"open"` / `"closed"` / `"merged"`
@@ -138,7 +137,7 @@ function defaultFetcher(limit: number): GithubFetcher {
     return [
       ...parse(issues).map((x) => Object.assign(x, { type: "issue" as const })),
       ...parse(prs).map((x) => Object.assign(x, { type: "pr" as const })),
-    ]
+    ].map((item) => Object.assign(item, { text: `#${item.number} ${item.title}` }))
   }
 }
 

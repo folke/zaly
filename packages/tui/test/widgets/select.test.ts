@@ -10,9 +10,9 @@ import { select } from "../../src/widgets/select.ts"
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
 
 const items = [
-  { desc: "show commands", value: "/help" },
-  { desc: "exit", value: "/quit" },
-  { desc: "pick a model", value: "/model" },
+  { desc: "show commands", text: "/help" },
+  { desc: "exit", text: "/quit" },
+  { desc: "pick a model", text: "/model" },
 ]
 
 function stripAnsi(s: string): string {
@@ -31,7 +31,7 @@ describe("menu", () => {
 
   test("label defaults to value; custom label wins", async () => {
     const m = select({
-      items: [{ name: "Custom", value: "x" }],
+      items: [{ name: "Custom", text: "x" }],
     })
     const rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows[0]).toContain("Custom")
@@ -80,7 +80,7 @@ describe("menu", () => {
   test("maxHeight caps visible item rows; window follows active", async () => {
     const manyItems = Array.from({ length: 10 }, (_, i) => ({
       name: `cmd${i}`,
-      value: `cmd${i}`,
+      text: `cmd${i}`,
     }))
     const m = select({ counter: false, items: manyItems, maxHeight: 3 })
     let rows = (await m.render(ctx)).map(stripAnsi)
@@ -95,7 +95,7 @@ describe("menu", () => {
   })
 
   test("counter auto-shows as the last row when items exceed maxHeight", async () => {
-    const manyItems = Array.from({ length: 10 }, (_, i) => ({ name: `cmd${i}`, value: `cmd${i}` }))
+    const manyItems = Array.from({ length: 10 }, (_, i) => ({ name: `cmd${i}`, text: `cmd${i}` }))
     const m = select({ items: manyItems, maxHeight: 3 })
     m.state.active = 4
     const rows = (await m.render(ctx)).map(stripAnsi)
@@ -107,7 +107,7 @@ describe("menu", () => {
   test("counter hides when counter: false", async () => {
     const manyItems = Array.from({ length: 10 }, (_, i) => ({
       name: `cmd${i}`,
-      value: `cmd${i}`,
+      text: `cmd${i}`,
     }))
     const m = select({ counter: false, items: manyItems, maxHeight: 3 })
     const rows = (await m.render(ctx)).map(stripAnsi)
@@ -124,7 +124,7 @@ describe("menu", () => {
   test("pin-until-leave: window doesn't move while active stays in view", async () => {
     const manyItems = Array.from({ length: 10 }, (_, i) => ({
       name: `cmd${i}`,
-      value: `cmd${i}`,
+      text: `cmd${i}`,
     }))
     const m = select({ counter: false, items: manyItems, maxHeight: 4 })
     // First render starts at 0–3. Move active forward within the window.
@@ -147,7 +147,7 @@ describe("menu", () => {
   test("sticky: counter row persists once shown, so total height stays put", async () => {
     const many = Array.from({ length: 27 }, (_, i) => ({
       name: `cmd${i}`,
-      value: `cmd${i}`,
+      text: `cmd${i}`,
     }))
     const m = select({ items: many, maxHeight: 8, sticky: true })
     // Initial: 8 item rows + 1 counter = 9 rows.
@@ -159,10 +159,10 @@ describe("menu", () => {
     m.state.items = [
       {
         name: "cmd0",
-        value: "cmd0",
+        text: "cmd0",
       },
-      { name: "cmd1", value: "cmd1" },
-      { name: "cmd2", value: "cmd2" },
+      { name: "cmd1", text: "cmd1" },
+      { name: "cmd2", text: "cmd2" },
     ]
     rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows).toHaveLength(9)
@@ -173,7 +173,7 @@ describe("menu", () => {
   test("sticky: height grows but doesn't shrink; resetHeight clears it", async () => {
     const many = Array.from({ length: 8 }, (_, i) => ({
       name: `cmd${i}`,
-      value: `cmd${i}`,
+      text: `cmd${i}`,
     }))
     const m = select({ counter: false, items: many, maxHeight: 5, sticky: true })
     let rows = (await m.render(ctx)).map(stripAnsi)
@@ -182,7 +182,7 @@ describe("menu", () => {
     m.state.items = [
       {
         name: "cmd0",
-        value: "cmd0",
+        text: "cmd0",
       },
     ]
     rows = (await m.render(ctx)).map(stripAnsi)
@@ -199,11 +199,11 @@ describe("menu", () => {
   test("generic over item type — select payload is typed as T", () => {
     interface Cmd {
       name: string
-      value: string
+      text: string
       fn: () => void
     }
     const fn = vi.fn()
-    const m = select<Cmd>({ items: [{ fn, value: "/quit", name: "quit" }] })
+    const m = select<Cmd>({ items: [{ fn, text: "/quit", name: "quit" }] })
     m.on("accept", ({ item: it }) => it.fn())
     m.actions["select.accept"]()
     expect(fn).toHaveBeenCalledTimes(1)
@@ -215,9 +215,9 @@ describe("menu", () => {
     }
     const m = select<Row>({
       items: [
-        { name: "alpha", tag: "alpha", value: "alpha" },
-        { name: "beta", tag: "beta", value: "beta" },
-        { name: "gamma", tag: "gamma", value: "gamma" },
+        { name: "alpha", tag: "alpha", text: "alpha" },
+        { name: "beta", tag: "beta", text: "beta" },
+        { name: "gamma", tag: "gamma", text: "gamma" },
       ],
       render: (it, active) => `${active ? "→" : " "} ${it.tag}`,
     })

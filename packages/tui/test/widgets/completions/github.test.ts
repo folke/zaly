@@ -8,7 +8,7 @@ const match = (q: string) => (s: string) => fuzzyScore(q, s)
 
 const sample: GithubItem[] = [
   {
-    value: 123,
+    text: "#123 Fix flaky",
     author: { login: "alice" },
     number: 123,
     state: "open",
@@ -17,7 +17,7 @@ const sample: GithubItem[] = [
     url: "https://github.com/owner/repo/issues/123",
   },
   {
-    value: 124,
+    text: "#124 Add github source",
     author: { login: "bob" },
     number: 124,
     state: "open",
@@ -26,7 +26,7 @@ const sample: GithubItem[] = [
     url: "https://github.com/owner/repo/pull/124",
   },
   {
-    value: 125,
+    text: "#125 Update docs",
     author: { login: "carol" },
     number: 125,
     state: "closed",
