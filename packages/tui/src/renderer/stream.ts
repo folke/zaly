@@ -24,6 +24,7 @@ type StreamSnapshot = {
   bottom: number
   hasKittyImages: boolean
   historyLength: number
+  scrollTop: number
   top: number
   virtual: boolean
   visible: string[]
@@ -114,6 +115,7 @@ export class Stream extends Surface<StreamEvents> {
     bottom: 0,
     hasKittyImages: false,
     historyLength: 0,
+    scrollTop: 0,
     top: 1,
     virtual: false,
     visible: [],
@@ -395,6 +397,7 @@ export class Stream extends Surface<StreamEvents> {
       bottom: liveHeight,
       hasKittyImages: newVisible.some((row) => row.includes("\x1b_Ga=p")),
       historyLength,
+      scrollTop: this.#scrollTop === 0 ? maxTop : this.#scrollTop,
       top: liveHeight - newVisible.length + 1,
       virtual: this.#scrollTop > 0,
       visible: newVisible,
@@ -421,6 +424,7 @@ export class Stream extends Surface<StreamEvents> {
     if (plan.resetImages) plan.frame.queue((terminal) => terminal.deleteImages({ data: false }))
     this.#paintCommits(plan)
     this.#clearAboveVisible(plan)
+    this.#paintVirtualScroll(plan)
     this.#paintVisible(plan)
   }
 
@@ -452,6 +456,28 @@ export class Stream extends Surface<StreamEvents> {
     for (let r = clearTop; r < plan.next.top; r++) {
       if (r < 1 || r > plan.next.bottom) continue
       this.#clearRow(plan, r)
+    }
+  }
+
+  #paintVirtualScroll(plan: StreamRenderPlan): void {
+    if (plan.commit.length > 0) return
+    if (!plan.old.virtual || !plan.next.virtual) return
+    if (plan.old.bottom !== plan.next.bottom) return
+    if (plan.old.visible.length !== plan.next.visible.length) return
+    if (plan.next.visible.length === 0) return
+
+    const delta = plan.next.scrollTop - plan.old.scrollTop
+    const lines = Math.abs(delta)
+    if (lines === 0 || lines >= plan.next.visible.length) return
+
+    if (delta > 0) {
+      plan.frame.scrollUp(1, plan.next.bottom, lines, (terminal) => {
+        terminal.write(terminal.scrollUp(lines))
+      })
+    } else {
+      plan.frame.scrollDown(1, plan.next.bottom, lines, (terminal) => {
+        terminal.write(terminal.scrollDown(lines))
+      })
     }
   }
 
@@ -532,6 +558,7 @@ export class Stream extends Surface<StreamEvents> {
       ...this.#snapshot,
       bottom: this.terminal.scrollBottom,
       hasKittyImages: false,
+      scrollTop: 0,
       top: 1,
       virtual: false,
       visible: [],

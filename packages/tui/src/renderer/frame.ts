@@ -77,12 +77,7 @@ export class RenderFrame {
     }
   }
 
-  scrollUp(
-    top: number,
-    bottom: number,
-    lines: number,
-    op: FrameOp
-  ): void {
+  scrollUp(top: number, bottom: number, lines: number, op: FrameOp): void {
     if (lines <= 0 || top > bottom) return
     this.flush()
     this.queue(op)
@@ -92,6 +87,21 @@ export class RenderFrame {
     for (let i = from - 1; i < to; i++) {
       const source = i + amount
       const value = source < to ? (this.current[source] ?? "") : ""
+      this.current[i] = value
+      this.#next[i] = value
+    }
+  }
+
+  scrollDown(top: number, bottom: number, lines: number, op: FrameOp): void {
+    if (lines <= 0 || top > bottom) return
+    this.flush()
+    this.queue(op)
+    const from = Math.max(1, top)
+    const to = Math.min(this.#next.length, bottom)
+    const amount = Math.min(lines, to - from + 1)
+    for (let i = to - 1; i >= from - 1; i--) {
+      const source = i - amount
+      const value = source >= from - 1 ? (this.current[source] ?? "") : ""
       this.current[i] = value
       this.#next[i] = value
     }
