@@ -40,9 +40,14 @@ export interface RendererOptions {
    *  match your app's persistent footer (e.g. 2 for a single-line
    *  input with a one-line border). */
   fixedFooterHeight?: number
+  /** Enable alternate screen buffer. Useful to test whether native
+   *  scrollback is competing with app-level scrolling. */
+  altScreen?: boolean
   /** Register SIGINT/SIGTERM cleanup (default: true). Disable in tests. */
   hookSignals?: boolean
   logger?: Logger
+  /** Enable terminal mouse reporting. Scroll events scroll the stream. */
+  mouse?: boolean
   reporter?: TuiReporterOpts
 }
 
@@ -145,7 +150,9 @@ export class Renderer extends Emitter<RenderEvents> {
   constructor(opts: RendererOptions = {}) {
     super()
     this.terminal = new Terminal({
+      altScreen: opts.altScreen,
       hookSignals: opts.hookSignals,
+      mouse: opts.mouse,
       stdin: opts.stdin,
       stdout: opts.stdout,
     })
@@ -191,6 +198,9 @@ export class Renderer extends Emitter<RenderEvents> {
     // matched keymap action ids back to the registry for dispatch.
     this.actions.setTargetResolver(() => this.input.focused)
     this.input.setActions(this.actions)
+    this.input.on("mouse", ({ event }) => {
+      void this.stream.scroll(event.deltaY)
+    })
     // Rebuild the Router's keymap whenever the catalog changes. Action
     // `.keys` fields are the single source of truth for default
     // bindings; `setKeymap` can still be called by apps to override.
@@ -268,6 +278,14 @@ export class Renderer extends Emitter<RenderEvents> {
 
   get rootOwner(): Owner {
     return this.#rootOwner
+  }
+
+  get mouse(): boolean {
+    return this.terminal.mouse
+  }
+
+  set mouse(mouse: boolean) {
+    this.terminal.mouse = mouse
   }
 
   get debug(): boolean {

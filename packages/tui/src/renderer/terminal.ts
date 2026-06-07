@@ -34,6 +34,10 @@ export interface TerminalOpts {
   reserveBottom?: number
   /** Register SIGINT/SIGTERM/process.exit handlers. Disable for tests. */
   hookSignals?: boolean
+  /** Enable alternate screen buffer. */
+  altScreen?: boolean
+  /** Enable SGR mouse reporting. */
+  mouse?: boolean
 }
 
 type ResizeListener = (cols: number, rows: number) => void
@@ -45,10 +49,12 @@ const CSI = "\x1b["
 export class Terminal {
   readonly #stdout: TerminalWriter
   readonly #stdin: TerminalReader | undefined
+  readonly #altScreen: boolean
   readonly #hookSignals: boolean
 
   #started = false
   #reserveBottom: number
+  #mouse = false
   #prevRawMode: boolean | undefined
   #resizeListeners = new Set<ResizeListener>()
   #signalCleanup: (() => void) | undefined
@@ -61,7 +67,9 @@ export class Terminal {
     this.#stdout = opts.stdout ?? (process.stdout as unknown as TerminalWriter)
     this.#stdin = opts.stdin ?? (process.stdin as unknown as TerminalReader)
     this.#reserveBottom = opts.reserveBottom ?? 0
+    this.#altScreen = opts.altScreen ?? false
     this.#hookSignals = opts.hookSignals ?? true
+    this.#mouse = opts.mouse ?? false
   }
 
   /** Current terminal columns (number of cells wide). */
@@ -89,6 +97,21 @@ export class Terminal {
     return this.#reserveBottom > 0 ? this.rows - this.#reserveBottom + 1 : 0
   }
 
+  get mouse(): boolean {
+    return this.#mouse
+  }
+
+  set mouse(mouse: boolean) {
+    if (this.#mouse === mouse) return
+    this.#mouse = mouse
+    if (!this.#started) return
+    this.write(
+      mouse
+        ? `${CSI}?1002h${CSI}?1006h${CSI}?1007h`
+        : `${CSI}?1007l${CSI}?1006l${CSI}?1002l`
+    )
+  }
+
   // ---------- lifecycle ----------
 
   /**
@@ -99,6 +122,8 @@ export class Terminal {
     if (this.#started) return
     this.#started = true
 
+    if (this.#altScreen) this.write(`${CSI}?1049h`)
+
     // Cursor hidden, auto-wrap off, bracketed paste on, focus reporting on.
     // Bracketed paste (?2004) lets the decoder tell chunked pastes apart
     // from keystrokes so widgets don't run individual key handlers for
@@ -106,6 +131,7 @@ export class Terminal {
     // terminal tell us when our window gains/loses focus so we can
     // update cursor visibility, pause animations, etc.
     this.write(`${CSI}?25l${CSI}?7l${CSI}?2004h${CSI}?1004h`)
+    if (this.#mouse) this.write(`${CSI}?1002h${CSI}?1006h${CSI}?1007h`)
     // Scroll region set to [1, scrollBottom]. Terminals default to the
     // full viewport, so omitting `reserveBottom = 0` is a no-op.
     if (this.#reserveBottom > 0) this.setScrollRegion(1, this.scrollBottom)
@@ -175,7 +201,8 @@ export class Terminal {
       // Wipe the visible viewport — covers both leftover footer rows
       // and any half-painted stream rows from an in-flight render that
       // was killed mid-paint (crash path). Scrollback is unaffected.
-      this.write(`${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
+      this.write(`${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
+      if (this.#altScreen) this.write(`${CSI}?1049l`)
     } finally {
       this.#started = false
     }

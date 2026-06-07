@@ -10,10 +10,23 @@ import type { KeyEvent } from "./keys.ts"
  * an idle-timer tick to emit a bare `esc` event when no follow-up arrives.
  */
 
+export type MouseEvent = {
+  type: "mouse"
+  kind: "scroll"
+  x: number
+  y: number
+  deltaY: number
+  alt: boolean
+  ctrl: boolean
+  meta: boolean
+  shift: boolean
+}
+
 export type InputEvent =
   | { type: "key"; event: KeyEvent }
   | { type: "paste"; text: string }
   | { type: "focus"; gained: boolean }
+  | MouseEvent
 
 export class Decoder {
   #pending = ""
@@ -169,6 +182,11 @@ const TILDE_NAMES: Partial<Record<string, string>> = {
 const SS3_NAMES: Partial<Record<string, string>> = { P: "f1", Q: "f2", R: "f3", S: "f4" }
 
 function handleCsi(params: string, final: string, out: InputEvent[]): void {
+  if ((final === "M" || final === "m") && params.startsWith("<")) {
+    handleMouse(params, out)
+    return
+  }
+
   const parts = params.length === 0 ? [] : params.split(";")
 
   const arrow = ARROW_NAMES[final]
@@ -188,8 +206,39 @@ function handleCsi(params: string, final: string, out: InputEvent[]): void {
     return
   }
 
-  // Unrecognized CSI — drop. (Mouse reports, cursor-position responses,
-  // etc. will land here until phase 2 handles them.)
+  // Unrecognized CSI — drop. (Cursor-position responses, etc.)
+}
+
+function handleMouse(params: string, out: InputEvent[]): void {
+  const parts = params
+    .slice(1)
+    .split(";")
+    .map((p) => Number.parseInt(p, 10))
+  const [button, x, y] = parts
+  if (!Number.isFinite(button) || !Number.isFinite(x) || !Number.isFinite(y)) return
+
+  const code = button & 0b11
+  const scroll = (button & 0b0100_0000) !== 0
+  if (!scroll) return
+
+  const mods = mouseModBits(button)
+  out.push({
+    ...mods,
+    deltaY: code === 0 ? -1 : 1,
+    kind: "scroll",
+    type: "mouse",
+    x,
+    y,
+  })
+}
+
+function mouseModBits(button: number): Pick<KeyEvent, "alt" | "ctrl" | "meta" | "shift"> {
+  return {
+    alt: (button & 0b1000) !== 0,
+    ctrl: (button & 0b1_0000) !== 0,
+    meta: false,
+    shift: (button & 0b0100) !== 0,
+  }
 }
 
 function modBits(m: number): Pick<KeyEvent, "alt" | "ctrl" | "meta" | "shift"> {

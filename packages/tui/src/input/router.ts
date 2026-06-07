@@ -1,6 +1,6 @@
 import type { Node } from "../core/node.ts"
 import type { Actions } from "./actions.ts"
-import type { InputEvent } from "./decoder.ts"
+import type { InputEvent, MouseEvent } from "./decoder.ts"
 import type { KeyEvent, KeyPattern } from "./keys.ts"
 
 import { Emitter } from "@zaly/shared"
@@ -47,6 +47,7 @@ export interface RoutedPaste {
 export type InputRouterEvents = {
   "terminal-focus": { gained: boolean }
   key: { event: KeyEvent }
+  mouse: { event: MouseEvent }
   focus: { node: Node }
   blur: { node: Node }
 }
@@ -125,7 +126,10 @@ export class InputRouter extends Emitter<InputRouterEvents> {
   #dispatch(ev: InputEvent): boolean {
     if (ev.type === "key") return this.#dispatchKey(ev.event)
     if (ev.type === "paste") return this.#dispatchPaste(ev.text)
-    else {
+    if (ev.type === "mouse") {
+      void this.emit("mouse", { event: ev })
+      return false
+    } else {
       this.#terminalFocus = ev.gained
       void this.emit("terminal-focus", { gained: ev.gained })
     }
