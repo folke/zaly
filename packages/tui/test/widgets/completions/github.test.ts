@@ -1,10 +1,28 @@
+import type { Match, SearchItem } from "../../../src/search/index.ts"
+import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
 import type { GithubItem } from "../../../src/widgets/completions/github.ts"
 
 import { describe, expect, test, vi } from "vitest"
-import { fuzzyScore } from "../../../src/widgets/completions/fuzzy.ts"
+import { Matcher } from "../../../src/search/index.ts"
 import { githubSource } from "../../../src/widgets/completions/github.ts"
 
-const match = (q: string) => (s: string) => fuzzyScore(q, s)
+const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
+  const matcher = new Matcher<T>()
+  matcher.init(q)
+  const fn = (s: string | T) => matcher.match(s)
+  return Object.assign(fn, {
+    matcher: (pattern: string) => {
+      const m = new Matcher<T>()
+      m.init(pattern)
+      return (s: string | T) => m.match(s)
+    },
+  })
+}
+
+const complete = async (src: CompletionSource<GithubItem>, query: string) => {
+  const items = src.complete
+  return typeof items === "function" ? await items(query, match(query)) : items
+}
 
 const sample: GithubItem[] = [
   {
@@ -41,30 +59,30 @@ const fakeFetcher = () => Promise.resolve(sample)
 describe("githubSource", () => {
   test("returns the fetched items on an empty query", async () => {
     const src = githubSource({ fetcher: fakeFetcher })
-    const items = await src.complete("", match(""))
+    const items = await complete(src, "")
     expect(items.map((i) => i.number)).toEqual([123, 124, 125])
   })
 
   test("fuzzy-matches on '#<num> <title>' so digits and words both work", async () => {
     const src = githubSource({ fetcher: fakeFetcher })
-    const byNum = await src.complete("124", match("124"))
+    const byNum = await complete(src, "124")
     expect(byNum.map((i) => i.number)).toEqual([124])
-    const byWord = await src.complete("flaky", match("flaky"))
+    const byWord = await complete(src, "flaky")
     expect(byWord.map((i) => i.number)).toEqual([123])
   })
 
   test("fetcher is invoked at most once across many complete() calls", async () => {
     const fetcher = vi.fn(fakeFetcher)
     const src = githubSource({ fetcher })
-    await src.complete("", match(""))
-    await src.complete("auto", match("auto"))
-    await src.complete("#125", match("#125"))
+    await complete(src, "")
+    await complete(src, "auto")
+    await complete(src, "#125")
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 
   test("fetcher failure degrades to empty results (doesn't throw)", async () => {
     const src = githubSource({ fetcher: () => Promise.reject(new Error("no gh")) })
-    const items = await src.complete("", match(""))
+    const items = await complete(src, "")
     expect(items).toEqual([])
   })
 
@@ -91,7 +109,7 @@ describe("githubSource", () => {
   test("state option is forwarded to the fetcher", async () => {
     const fetcher = vi.fn(fakeFetcher)
     const src = githubSource({ fetcher, state: "all" })
-    await src.complete("", match(""))
+    await complete(src, "")
     expect(fetcher).toHaveBeenCalledWith(expect.any(String), "all")
   })
 })

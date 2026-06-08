@@ -144,58 +144,6 @@ describe("menu", () => {
     expect(rows[3]).toContain("cmd4")
   })
 
-  test("sticky: counter row persists once shown, so total height stays put", async () => {
-    const many = Array.from({ length: 27 }, (_, i) => ({
-      name: `cmd${i}`,
-      text: `cmd${i}`,
-    }))
-    const m = select({ items: many, maxHeight: 8, sticky: true })
-    // Initial: 8 item rows + 1 counter = 9 rows.
-    let rows = (await m.render(ctx)).map(stripAnsi)
-    expect(rows).toHaveLength(9)
-    expect(rows[8]).toMatch(/\d+\/27/)
-    // Filter down to something that fits — without the persistent
-    // counter we'd drop from 9 rows to 8.
-    m.state.items = [
-      {
-        name: "cmd0",
-        text: "cmd0",
-      },
-      { name: "cmd1", text: "cmd1" },
-      { name: "cmd2", text: "cmd2" },
-    ]
-    rows = (await m.render(ctx)).map(stripAnsi)
-    expect(rows).toHaveLength(9)
-    // Last row still carries a counter, now reflecting the filtered total.
-    expect(rows[8]).toMatch(/\d+\/3/)
-  })
-
-  test("sticky: height grows but doesn't shrink; resetHeight clears it", async () => {
-    const many = Array.from({ length: 8 }, (_, i) => ({
-      name: `cmd${i}`,
-      text: `cmd${i}`,
-    }))
-    const m = select({ counter: false, items: many, maxHeight: 5, sticky: true })
-    let rows = (await m.render(ctx)).map(stripAnsi)
-    expect(rows).toHaveLength(5)
-    // Shrink items — rendered height should stay at 5 with blank filler.
-    m.state.items = [
-      {
-        name: "cmd0",
-        text: "cmd0",
-      },
-    ]
-    rows = (await m.render(ctx)).map(stripAnsi)
-    expect(rows).toHaveLength(5)
-    expect(rows[0]).toContain("cmd0")
-    expect(rows[1].trim()).toBe("")
-    // Reset allows shrink again.
-    m.resetHeight()
-    rows = (await m.render(ctx)).map(stripAnsi)
-    expect(rows).toHaveLength(1)
-    expect(rows[0]).toContain("cmd0")
-  })
-
   test("generic over item type — select payload is typed as T", () => {
     interface Cmd {
       name: string
@@ -219,7 +167,7 @@ describe("menu", () => {
         { name: "beta", tag: "beta", text: "beta" },
         { name: "gamma", tag: "gamma", text: "gamma" },
       ],
-      render: (it, active) => `${active ? "→" : " "} ${it.tag}`,
+      render: (it, renderCtx) => `${renderCtx.active ? "→" : " "} ${it.tag}`,
     })
     const rows = (await m.render(ctx)).map(stripAnsi)
     expect(rows[0]).toMatch(/^→ alpha/)

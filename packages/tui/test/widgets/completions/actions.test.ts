@@ -1,9 +1,29 @@
+import type { Match, SearchItem } from "../../../src/search/index.ts"
+import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
+import type { Option } from "../../../src/widgets/select.ts"
+
 import { describe, expect, test, vi } from "vitest"
 import { Actions } from "../../../src/input/actions.ts"
+import { Matcher } from "../../../src/search/index.ts"
 import { actionsSource } from "../../../src/widgets/completions/actions.ts"
-import { fuzzyScore } from "../../../src/widgets/completions/fuzzy.ts"
 
-const match = (q: string) => (s: string) => fuzzyScore(q, s)
+const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
+  const matcher = new Matcher<T>()
+  matcher.init(q)
+  const fn = (s: string | T) => matcher.match(s)
+  return Object.assign(fn, {
+    matcher: (pattern: string) => {
+      const m = new Matcher<T>()
+      m.init(pattern)
+      return (s: string | T) => m.match(s)
+    },
+  })
+}
+
+const complete = async <T extends Option>(src: CompletionSource<T>, query: string) => {
+  const items = src.complete
+  return typeof items === "function" ? await items(query, match(query)) : items
+}
 
 describe("actionsSource", () => {
   test("emits raw ActionInfo + id items from the registry", async () => {
@@ -13,7 +33,7 @@ describe("actionsSource", () => {
       "app.quit": { desc: "quit the app", cmd: "quit" },
     })
     const src = actionsSource({ actions })
-    const items = await src.complete("", match(""))
+    const items = await complete(src, "")
     expect(items.map((i) => i.id)).toContain("app.commit")
     const commit = items.find((i) => i.id === "app.commit")!
     expect(commit.cmd).toBe("commit")
@@ -29,7 +49,7 @@ describe("actionsSource", () => {
       "app.restart": { cmd: "restart" },
     })
     const src = actionsSource({ actions })
-    const items = await src.complete("qt", match("qt"))
+    const items = await complete(src, "qt")
     expect(items.map((i) => i.cmd)).toEqual(["quit"])
   })
 
@@ -40,7 +60,7 @@ describe("actionsSource", () => {
       "app.visible": { cmd: "visible" },
     })
     const src = actionsSource({ actions })
-    const items = await src.complete("", match(""))
+    const items = await complete(src, "")
     expect(items.map((i) => i.cmd)).toEqual(["visible"])
   })
 
@@ -49,7 +69,7 @@ describe("actionsSource", () => {
     const fn = vi.fn()
     actions.register({ "app.quit": { fn, cmd: "quit" } })
     const src = actionsSource({ actions })
-    const item = { id: "app.quit", name: "quit", text: "quit" }
+    const item = { id: "app.quit", name: "quit", score: 1, text: "quit" }
     const result = src.accept!(item, "quit")
     expect(result).toBeUndefined()
     expect(fn).toHaveBeenCalled()

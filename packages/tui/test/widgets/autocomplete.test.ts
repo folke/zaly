@@ -1,4 +1,5 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
+import type { ScoredItem } from "../../src/search/index.ts"
 import type { Option } from "../../src/widgets/select.ts"
 
 import { describe, expect, test, vi } from "vitest"
@@ -8,6 +9,7 @@ import { autocomplete } from "../../src/widgets/autocomplete.ts"
 import { input } from "../../src/widgets/input.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
+const scored = <T extends Option>(option: T): ScoredItem<T> => ({ ...option, score: 1 })
 
 describe("autocomplete", () => {
   test("renders nothing when no trigger matches", async () => {
@@ -17,7 +19,7 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          complete: () => [{ value: "/help" }],
+          complete: () => [scored({ text: "/help" })],
           triggers: [/^\s*\//],
         },
       },
@@ -30,8 +32,8 @@ describe("autocomplete", () => {
     const i = input({})
     await i.render(ctx)
     const complete = vi.fn(() => [
-      { name: "help", value: "/help" },
-      { name: "hello", value: "/hello" },
+      scored({ name: "help", text: "/help" }),
+      scored({ name: "hello", text: "/hello" }),
     ])
     const ac = autocomplete({
       input: i,
@@ -39,24 +41,21 @@ describe("autocomplete", () => {
         slash: { complete, triggers: [/^\s*\//] },
       },
     })
-    // Triggering is driven by input state changes; the widget subscribes
-    // on construction, so we nudge state to fire the watcher.
     i.state.set({ cursor: 3, value: "/he" })
-    // Allow the microtask-queued refresh to run.
     await Promise.resolve()
     expect(complete).toHaveBeenCalledWith("he", expect.any(Function))
     const rows = await ac.render(ctx)
     expect(rows.length).toBeGreaterThan(0)
   })
 
-  test("select replaces trigger + query in input with item.value", async () => {
+  test("select replaces trigger + query in input with item.text", async () => {
     const i = input({})
     await i.render(ctx)
     const ac = autocomplete({
       input: i,
       sources: {
         slash: {
-          complete: () => [{ name: "/help", text: "/help" }],
+          complete: () => [scored({ name: "/help", text: "/help" })],
           triggers: [/^\s*\//],
         },
       },
@@ -72,11 +71,11 @@ describe("autocomplete", () => {
     const i = input({})
     await i.render(ctx)
     const cb = vi.fn()
-    const item: Option = { name: "quit", text: "/quit" }
+    const picked = scored({ name: "quit", text: "/quit" })
     const ac = autocomplete({
       input: i,
       sources: {
-        slash: { complete: () => [item], triggers: [/^\s*\//] },
+        slash: { complete: () => [picked], triggers: [/^\s*\//] },
       },
     })
     ac.on("complete", cb)
@@ -84,7 +83,7 @@ describe("autocomplete", () => {
     await Promise.resolve()
     ac.select.actions["select.accept"]()
     expect(cb).toHaveBeenCalledWith(
-      { item, source: "slash", type: "complete" },
+      { item: picked, source: "slash", type: "complete" },
       ac,
       expect.anything()
     )
@@ -97,7 +96,7 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          complete: () => [{ value: "/help" }],
+          complete: () => [scored({ text: "/help" })],
           triggers: [/^\s*\//],
         },
       },
@@ -114,7 +113,7 @@ describe("autocomplete", () => {
   test("trigger regex on word-boundary (@mention) works mid-text", async () => {
     const i = input({})
     await i.render(ctx)
-    const complete = vi.fn(() => [{ text: "@bob" }])
+    const complete = vi.fn(() => [scored({ text: "@bob" })])
     const ac = autocomplete({
       input: i,
       sources: {
@@ -131,8 +130,8 @@ describe("autocomplete", () => {
   test("first matching source wins when multiple could apply", async () => {
     const i = input({})
     await i.render(ctx)
-    const slashComplete = vi.fn(() => [{ value: "/slash" }])
-    const otherComplete = vi.fn(() => [{ value: "/other" }])
+    const slashComplete = vi.fn(() => [scored({ text: "/slash" })])
+    const otherComplete = vi.fn(() => [scored({ text: "/other" })])
     autocomplete({
       input: i,
       sources: {
@@ -142,8 +141,6 @@ describe("autocomplete", () => {
     })
     i.state.set({ cursor: 2, value: "/x" })
     await Promise.resolve()
-    // Sources iterate in object-insertion order; `other` is declared
-    // first (after alphabetical sort), so it claims the match.
     expect(otherComplete).toHaveBeenCalled()
     expect(slashComplete).not.toHaveBeenCalled()
   })
@@ -152,12 +149,13 @@ describe("autocomplete", () => {
     const i = input({})
     await i.render(ctx)
     const onAccept = vi.fn(() => undefined)
+    const picked = scored({ text: "quit" })
     const ac = autocomplete({
       input: i,
       sources: {
         cmd: {
           accept: onAccept,
-          complete: () => [{ value: "quit" }],
+          complete: () => [picked],
           triggers: [/^\s*\//],
         },
       },
@@ -165,9 +163,7 @@ describe("autocomplete", () => {
     i.state.set({ cursor: 3, value: "/qu" })
     await Promise.resolve()
     ac.select.actions["select.accept"]()
-    expect(onAccept).toHaveBeenCalledWith({ value: "quit" }, "qu")
-    // Source handled it; the typed trigger+query gets cleared, nothing
-    // is inserted.
+    expect(onAccept).toHaveBeenCalledWith(picked, "qu")
     expect(i.state.value).toBe("")
     expect(i.state.cursor).toBe(0)
     expect(ac.visible).toBe(false)
@@ -180,8 +176,8 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         files: {
-          accept: (item) => (item as { value: string }).value,
-          complete: () => [{ value: "src/index.ts" }],
+          accept: (option) => option.text,
+          complete: () => [scored({ text: "src/index.ts" })],
           triggers: [/(?<=^|\s)@/],
         },
       },
@@ -189,7 +185,6 @@ describe("autocomplete", () => {
     i.state.set({ cursor: 4, value: "@src" })
     await Promise.resolve()
     ac.select.actions["select.accept"]()
-    // No trailing space (files override).
     expect(i.state.value).toBe("src/index.ts")
     expect(i.state.cursor).toBe("src/index.ts".length)
   })
@@ -201,7 +196,7 @@ describe("autocomplete", () => {
       input: i,
       sources: {
         slash: {
-          complete: () => [{ value: "/help" }],
+          complete: () => [scored({ text: "/help" })],
           triggers: [/^\s*\//],
         },
       },

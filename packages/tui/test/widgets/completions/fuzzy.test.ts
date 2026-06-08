@@ -1,5 +1,24 @@
+import type { SearchItem } from "../../../src/search/index.ts"
+
 import { describe, expect, test } from "vitest"
-import { fuzzyScore, rank } from "../../../src/widgets/completions/fuzzy.ts"
+import { Matcher, sorter } from "../../../src/search/index.ts"
+
+const fuzzyScore = (query: string, target: string): number => {
+  const matcher = new Matcher({ smartcase: false })
+  matcher.init(query)
+  return matcher.match(target)
+}
+
+const rank = <T>(items: Iterable<T>, score: (item: T) => number, limit?: number): T[] => {
+  const ranked: (SearchItem & { item: T; score: number })[] = []
+  let idx = 0
+  for (const item of items) {
+    const s = score(item)
+    if (s > 0) ranked.push({ idx, item, score: s, text: String(item) })
+    idx++
+  }
+  return ranked.toSorted(sorter()).slice(0, limit).map((item) => item.item)
+}
 
 describe("fuzzyScore", () => {
   test("returns a positive score for subsequence matches", () => {
