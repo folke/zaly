@@ -1,6 +1,6 @@
 import type { MaybePromise } from "@zaly/shared"
 import type { TryResult } from "@zaly/shared/logger"
-import type { ActionDef, NodeActionMap } from "../input/actions.ts"
+import type { ActionCtx, ActionDef, NodeActionMap } from "../input/actions.ts"
 import type { RoutedKey, RoutedPaste } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { MountCtx, RenderCtx } from "./ctx.ts"
@@ -86,6 +86,17 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     children.forEach((c) => this.add(c))
   }
 
+  withEvents<Events extends {}>(): this & Emitter<Events> {
+    return this as unknown as this & Emitter<Events>
+  }
+
+  withActions<A extends NodeActionMap>(actions: A): this & { actions: A } {
+    this.actions ??= {}
+    for (const [id, entry] of Object.entries(actions)) {
+      this.actions[id] = entry
+    }
+    return this as this & { actions: A }
+  }
   get mountSignal(): AbortSignal {
     this.#mountAc ??= new AbortController()
     return this.#mountAc.signal
