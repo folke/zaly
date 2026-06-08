@@ -18,6 +18,8 @@ export type BaseEvents = {
   unmount: {}
   focus: {}
   blur: {}
+  show: {}
+  hide: {}
   key: { key: RoutedKey }
   paste: { paste: RoutedPaste }
   childadded: { child: Node }
@@ -412,12 +414,14 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   show(): this {
     if (this.visible) return this
     this.state.visible = true
+    void this.emit("show")
     return this
   }
 
   hide(): this {
     if (!this.visible) return this
     this.state.visible = false
+    void this.emit("hide")
     return this
   }
 
