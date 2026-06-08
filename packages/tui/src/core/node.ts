@@ -97,6 +97,15 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     }
     return this as this & { actions: A }
   }
+
+  action(id: keyof NonNullable<this["actions"]> & string, opts?: Partial<ActionCtx>): boolean {
+    const entry = this.actions?.[id]
+    const fn = typeof entry === "function" ? entry : entry?.fn
+    if (!fn) return false
+    fn({ source: "programmatic", target: this, ...opts, id, node: this })
+    return true
+  }
+
   get mountSignal(): AbortSignal {
     this.#mountAc ??= new AbortController()
     return this.#mountAc.signal
