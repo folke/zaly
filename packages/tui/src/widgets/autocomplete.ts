@@ -1,24 +1,14 @@
-import type { MaybePromise } from "@zaly/shared"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
-import type { Reactive, Ref } from "../core/reactive.ts"
+import type { Accessor, Reactive, Ref } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
-import type { Option, OptionRender } from "./select.ts"
+import type { SearchItems } from "../search/search.ts"
+import type { Option, OptionRender, Select } from "./select.ts"
 
 import { Node } from "../core/node.ts"
-import { effect, unwrap } from "../core/reactive.ts"
-import { fuzzyScore } from "./completions/fuzzy.ts"
+import { effect, memo, signal, unwrap } from "../core/reactive.ts"
 import { Input } from "./input.ts"
-import { Select } from "./select.ts"
-
-export type CompleteResult<T extends Option = Option> = MaybePromise<readonly T[]>
-
-/** Match function handed to `complete`. Returns `0` for no match,
- *  positive integer otherwise — so both `match(s) > 0` and the
- *  idiomatic `.filter(match(s))` work (0 is falsy). The magnitude is a
- *  score the source can use to rank its own candidates when it cares
- *  about order. */
-export type Matcher = (s: string) => number
+import { picker } from "./picker.ts"
 
 /** Called when the user picks `item` from this source. Return a string
  *  to insert in place of the trigger + query range, or `undefined`
@@ -44,7 +34,7 @@ export type AcceptFn<T> = (item: T, query: string) => string | undefined
  *  its own row presentation — handy when `T` isn't a plain `MenuItem`. */
 export interface CompletionSource<T extends Option = Option> {
   triggers: readonly RegExp[]
-  complete: (query: string, match: Matcher) => CompleteResult<T>
+  complete: SearchItems<T>
   accept?: AcceptFn<T>
   render?: OptionRender<T>
 }
@@ -72,8 +62,6 @@ export interface AutocompleteOptions {
 }
 
 export interface AutocompleteEvents extends BaseEvents {
-  open: {}
-  close: {}
   /** Fired after an item is inserted into the input. Payload item type
    *  is `unknown` because sources may have different `T`; discriminate
    *  by source name and cast. */
@@ -127,138 +115,63 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   override readonly type = Autocomplete.type
 
   readonly select: Select
-  readonly #inputRef: Input | Ref<Input>
+  #opts: AutocompleteOptions
   readonly #sources: Record<string, CompletionSource<any>>
-  #input?: Input
-  #match: Match | undefined
-  #cancelled = false
-  /** Increments each time a refresh starts, so an in-flight async
-   *  `complete()` can notice it's been superseded and bail before
-   *  writing stale items. */
-  #refreshSeq = 0
-  #enabled?: Reactive<boolean>
+  #match: Accessor<Match | undefined>
 
   constructor(opts: AutocompleteOptions) {
     super({ visible: false })
-    this.#inputRef = opts.input
-    this.#enabled = opts.enabled
+    this.#opts = opts
     this.#sources = opts.sources
 
-    this.select = new Select({
-      items: [] as Option[],
-      maxHeight: opts.maxHeight ?? 8,
-      sticky: false,
-    })
-    this.add(this.select)
-    this.select.bind(this.#inputRef)
+    const [cancelled, cancel] = signal(false)
 
-    // If a concrete Input is passed, wire immediately so the widget
-    // works without a mount step (tests, standalone usage). Refs
-    // resolve on mount — by then the Input has been constructed and
-    // wired via `node.ref(ref)`.
-    if (this.#inputRef instanceof Input) this.#bindInput(this.#inputRef)
+    this.#match = memo(() => {
+      const ret = this.#detect()
+      if (ret) cancel(false)
+      return ret
+    })
+
+    const source = memo(() => {
+      const m = this.#match()
+      return m ? this.#sources[m.source] : undefined
+    })
+
+    const visible = memo(
+      () => this.enabled && this.#match() !== undefined && !cancelled() && this.select.count > 0
+    )
+
+    // Use an effect instead of setting a signal, since Node.show/hide overwrites the signal
+    effect(() => {
+      if (visible()) this.show()
+      else this.hide()
+    })
+
+    this.select = picker({
+      items: memo(() => source()?.complete ?? []),
+      maxHeight: opts.maxHeight ?? 8,
+      pattern: memo(() => this.#match()?.query ?? ""),
+      render: memo(() => source()?.render),
+      visible,
+    })
+
+    this.add(this.select)
+    this.select.bind(this.#opts.input)
 
     // Bridge menu events to input rewrite. Tab completes by inserting the
     // item's value; Enter selects, giving the source a chance to execute.
-    this.select.on("complete", ({ item }) => {
-      this.#complete(item)
-    })
-    this.select.on("accept", ({ item }) => {
-      this.#accept(item)
-    })
-    this.select.on("cancel", () => {
-      this.#cancelled = true
-      this.#close()
-    })
+    this.select.on("complete", ({ item }) => this.#complete(item))
+    this.select.on("accept", ({ item }) => this.#accept(item))
+    this.select.on("cancel", () => cancel(true))
+  }
 
-    this.on("mount", () => {
-      if (this.#input === undefined && !(this.#inputRef instanceof Input)) {
-        // Ref dereferences via `.value`, which throws if it hasn't been
-        // wired by a `node.ref(ref)` call on an `Input` somewhere in
-        // the tree. Surface that as a clearer message.
-        try {
-          this.#bindInput(this.#inputRef.value)
-        } catch {
-          throw new Error("autocomplete: input Ref was not wired before mount")
-        }
-      }
-    })
-
-    effect(() => {
-      if (!this.enabled) {
-        this.#close()
-      } else {
-        void this.#refresh()
-      }
-    })
+  get #input(): Input | undefined {
+    if (this.#opts.input instanceof Input) return this.#opts.input
+    return this.#opts.input()
   }
 
   get enabled(): boolean {
-    return unwrap(this.#enabled ?? true)
-  }
-
-  /** Whether the popup is currently showing. */
-  get open(): boolean {
-    return this.state.visible === true
-  }
-
-  #bindInput(node: Input): void {
-    this.#input = node
-    // Re-evaluate whenever the bound input mutates. `invalidate` fires
-    // on every state write, so this is the single hook we need. The
-    // refresh kicks off synchronously; any async `complete(query)` adds
-    // its own microtask, and the `#refreshSeq` guard prevents a slow
-    // response from overwriting newer state.
-    node.on(
-      "invalidate",
-      (): void => {
-        void this.try(() => this.#refresh())
-      },
-      { signal: this.mountSignal }
-    )
-  }
-
-  async #refresh(): Promise<void> {
-    if (!this.#input) return
-    if (!this.enabled) return this.#close()
-    const seq = ++this.#refreshSeq
-    const match = this.#detect()
-    if (match === undefined) {
-      this.#match = undefined
-      this.#close()
-      return
-    }
-    // A new (or moved) trigger: clear cancellation sticky state so the
-    // menu can reopen on keystrokes that follow an `esc`. We compare on
-    // source + start; cursor-only changes in the same word keep the
-    // suppression if the user hit esc.
-    if (
-      this.#match === undefined ||
-      this.#match.source !== match.source ||
-      this.#match.start !== match.start
-    ) {
-      this.#cancelled = false
-    }
-    this.#match = match
-    if (this.#cancelled) {
-      this.#close()
-      return
-    }
-    const source = this.#sources[match.source]
-    const matcher: Matcher = (s) => fuzzyScore(match.query, s)
-    const result = source.complete(match.query, matcher)
-    const items = Array.isArray(result) ? result : await result
-    // A newer refresh has already started — drop our stale result.
-    if (seq !== this.#refreshSeq) return
-    if (items.length === 0) {
-      this.#close()
-      return
-    }
-    // Forward the source's custom `render` so per-source row styling
-    // kicks in. Explicitly clear it when the new source doesn't supply
-    // one so we don't carry a previous source's renderer.
-    this.select.state.set({ active: 0, items, render: source.render })
-    this.#setVisible(true)
+    return unwrap(this.#opts.enabled) ?? true
   }
 
   #detect(): Match | undefined {
@@ -294,14 +207,14 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   }
 
   #complete(item: Option): void {
-    const match = this.#match
+    const match = this.#match()
     if (match === undefined) return
     // Completion keeps the trigger (`/`, `@`, ...) and only replaces the query.
     this.#replace(item, defaultAccept(item), match.end)
   }
 
   #accept(item: Option): void {
-    const match = this.#match
+    const match = this.#match()
     if (match === undefined) return
     const source = this.#sources[match.source]
     // Source-provided accept wins on Enter; default is `item.value + " "` when
@@ -314,7 +227,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
   }
 
   #replace(item: Option, accepted: string | undefined, start: number): void {
-    const match = this.#match
+    const match = this.#match()
     if (match === undefined || !this.#input) return
     const value = this.#input.state.value ?? ""
     const cursor = this.#input.state.cursor ?? 0
@@ -333,24 +246,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       })
     }
     void this.emit("complete", { item, source: match.source })
-    this.#close()
-  }
-
-  #close(): void {
-    if (!this.open) return
-    this.#setVisible(false)
-    // Clear the Menu's items + sticky grown-height so nothing stale
-    // lingers in state (e.g. briefly visible if anything re-opens the
-    // popup before a fresh complete() lands).
-    this.select.state.set({ items: [] })
-    this.select.resetHeight()
-    void this.emit("close")
-  }
-
-  #setVisible(v: boolean): void {
-    const was = this.open
-    this.state.visible = v
-    if (v && !was) void this.emit("open")
+    this.hide()
   }
 
   protected _render(ctx: RenderCtx): string[] | Promise<string[]> {

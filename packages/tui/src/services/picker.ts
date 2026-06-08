@@ -4,8 +4,7 @@ import type { OverlaySurface } from "../renderer/overlay.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { PickerSelectProps, PickerTreeProps } from "../widgets/picker.ts"
-import type { Option, Selectable } from "../widgets/select.ts"
-import type { TreeNode } from "../widgets/tree.ts"
+import type { Option, Select } from "../widgets/select.ts"
 import type { Widget } from "../widgets/widget.ts"
 
 import { createRef, signal } from "../core/reactive.ts"
@@ -16,18 +15,11 @@ import { overlay } from "../widgets/overlay.ts"
 import { picker } from "../widgets/picker.ts"
 import { text } from "../widgets/text.ts"
 
-export type PickSelectOpts<T extends Option = Option> = Omit<PickerSelectProps<T>, "input"> & {
+export type PickOpts<T extends Option = Option> = {
   title?: string
-  ref?: Ref<Selectable<T>>
+  ref?: Ref<Select<T>>
   details?: Widget | string
-}
-
-export type PickTreeOpts<T extends TreeNode = TreeNode> = Omit<PickerTreeProps<T>, "input"> & {
-  title?: string
-  details?: Widget | string
-}
-
-export type PickOpts<T extends Option = Option> = PickSelectOpts<T> | PickTreeOpts<T>
+} & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
 export class Picker {
   #ui: OverlaySurface
@@ -45,7 +37,7 @@ export class Picker {
   }
 
   #pick<T extends Option = Option>(
-    opts: (PickSelectOpts<T> | PickTreeOpts<T>) & { input: Input; ref: Ref<Selectable<T>> }
+    opts: PickOpts<T> & { input: Input; ref: Ref<Select<T>> }
   ): Overlay {
     const children: Node[] = []
     if (opts.title)
@@ -84,7 +76,7 @@ export class Picker {
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
     const prev = this.#input.consume().value
-    const ref = createRef<Selectable<T>>()
+    const ref = createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
     const menu = ref()

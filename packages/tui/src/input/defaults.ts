@@ -1,4 +1,18 @@
-import type { ActionDef, BuiltinAction } from "./actions.ts"
+import type { Renderer } from "../renderer/renderer.ts"
+import type { Input } from "../widgets/input.ts"
+import type { PickerActions } from "../widgets/picker.ts"
+import type { Select } from "../widgets/select.ts"
+import type { ActionDef } from "./actions.ts"
+
+/**
+ * Union of every built-in action id. Derived from widget `actions`
+ * dicts plus the Renderer's `globalActions`. Used to constrain the
+ * `defaultActions` catalog so TypeScript catches missing docs or
+ * renamed actions at compile time.
+ */
+export type BuiltinAction =
+  | keyof (Input["actions"] & Select["actions"] & Renderer["globalActions"])
+  | PickerActions
 
 /**
  * Catalog of built-in actions with descriptions and default bindings.
@@ -81,6 +95,16 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["enter"],
   },
+  "picker.next": {
+    desc: "move to the next item that matches the query",
+    hidden: true,
+    keys: ["ctrl-n"],
+  },
+  "picker.prev": {
+    desc: "move to the previous item that matches the query",
+    hidden: true,
+    keys: ["ctrl-p"],
+  },
   "select.accept": {
     desc: "select the active item",
     hidden: true,
@@ -111,11 +135,6 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["down"],
   },
-  "select.next-match": {
-    desc: "move to the next item that matches the query",
-    hidden: true,
-    keys: ["ctrl-n"],
-  },
   "select.page-down": {
     desc: "move down one page",
     hidden: true,
@@ -130,10 +149,5 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     desc: "move to the previous item",
     hidden: true,
     keys: ["up"],
-  },
-  "select.prev-match": {
-    desc: "move to the previous item that matches the query",
-    hidden: true,
-    keys: ["ctrl-p"],
   },
 }

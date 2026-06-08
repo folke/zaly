@@ -1,14 +1,12 @@
 import type { ActionDef, Actions } from "../../input/actions.ts"
-import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { OptionRender } from "../select.ts"
-
-import { stringWidth } from "@zaly/shared/ansi"
+import type { CompletionSource } from "../autocomplete.ts"
+import type { PickerItem } from "../picker.ts"
 
 /** Completion item produced by `actionsSource`. Carries the full
  *  `ActionInfo` plus the action `id` so the source's `accept` can
  *  dispatch without a secondary lookup. Items match the `MenuItem`
  *  contract loosely via the overlapping `name`/... shape. */
-export type ActionCompletionItem = ActionDef & { name: string; id: string; text: string }
+export type ActionCompletionItem = ActionDef & PickerItem & { id: string; score: number }
 
 export interface ActionsSourceOptions {
   /** Registry to read from. Usually `renderer.actions`. */
@@ -18,17 +16,6 @@ export interface ActionsSourceOptions {
   /** Keep predicate. Default skips `info.hidden`. Return `false` to
    *  drop the entry from the completion list. */
   filter?: (id: string, info: ActionDef) => boolean
-}
-
-const defaultRender: OptionRender<ActionCompletionItem> = (item, _active, ctx) => {
-  const name = item.name
-  const desc = item.desc ?? ""
-  const gap = 2
-  // Label column: widest name wins; capped at half width so a long
-  // name doesn't crowd out the hint. Hint fills the remainder.
-  const labelW = Math.min(Math.max(stringWidth(name), 10), Math.floor(ctx.width / 2))
-  const pad = Math.max(0, labelW - stringWidth(name))
-  return ctx.style.optionName(name) + " ".repeat(pad + gap) + ctx.style.optionDesc(desc)
 }
 
 /**
@@ -56,17 +43,17 @@ export function actionsSource(opts: ActionsSourceOptions): CompletionSource<Acti
       opts.actions.dispatch(item.id, { source: "autocomplete" })
       return undefined
     },
-    complete(_query: string, match: Matcher): ActionCompletionItem[] {
+    complete(_query, match): ActionCompletionItem[] {
       const out: ActionCompletionItem[] = []
       for (const info of opts.actions.list()) {
         if (!filter(info.id, info)) continue
         const name = info.cmd ?? info.id
-        if (!match(name)) continue
-        out.push({ ...info, id: info.id, name, text: name })
+        const score = match(name)
+        if (!score) continue
+        out.push({ ...info, id: info.id, name, score, text: name })
       }
       return out
     },
-    render: defaultRender,
     triggers: [trigger],
   }
 }

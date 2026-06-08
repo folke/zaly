@@ -1,5 +1,5 @@
 // oxlint-disable sort-keys
-import type { TreeNode } from "@zaly/tui/widgets/tree"
+import type { TreeItem } from "@zaly/tui/widgets/tree"
 
 import { installLogger, Logger } from "@zaly/shared/logger"
 import { createRenderer } from "@zaly/tui"
@@ -28,7 +28,7 @@ const renderer = await createRenderer({ logger })
 
 installLogger(logger)
 
-const root: TreeNode = {
+const root: TreeItem = {
   text: "zaly",
   children: [
     {

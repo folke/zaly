@@ -2,7 +2,7 @@ import type { Session, SessionInfo, SessionNode } from "@zaly/agent/session"
 import type { Message, TextPart } from "@zaly/ai"
 import type { AnyStyle, RenderCtx } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
-import type { TreeNode } from "@zaly/tui/widgets/tree"
+import type { TreeItem } from "@zaly/tui/widgets/tree"
 import type { Flags } from "../types.ts"
 import type { App } from "./app.ts"
 
@@ -192,7 +192,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   opts = { fallback: false, reasoning: true, system: false, tools: true, ...opts }
   const session = app.agent.session
 
-  type Node = TreeNode<
+  type Node = TreeItem<
     Option & { node?: SessionNode; root?: boolean } & {
       render?: (ctx: RenderCtx) => string
       active?: boolean
@@ -309,7 +309,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
     active: (item) => item.node?.uuid === sessionHead,
     fuzzy: false,
     maxHeight: 20,
-    render: (item, _a, ctx) => {
+    render: (item, ctx) => {
       const s = ctx.style
       if (item.root) return s.accent("Session Root")
       if (!item.render) return s.dim(item.text)

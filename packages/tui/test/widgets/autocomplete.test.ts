@@ -104,9 +104,9 @@ describe("autocomplete", () => {
     })
     i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
-    expect(ac.open).toBe(true)
+    expect(ac.visible).toBe(true)
     ac.select.actions["select.cancel"]()
-    expect(ac.open).toBe(false)
+    expect(ac.visible).toBe(false)
     const rows = await ac.render(ctx)
     expect(rows).toEqual([])
   })
@@ -170,7 +170,7 @@ describe("autocomplete", () => {
     // is inserted.
     expect(i.state.value).toBe("")
     expect(i.state.cursor).toBe(0)
-    expect(ac.open).toBe(false)
+    expect(ac.visible).toBe(false)
   })
 
   test("accept returning a string replaces the trigger+query range", async () => {
@@ -208,9 +208,9 @@ describe("autocomplete", () => {
     })
     i.state.set({ cursor: 3, value: "/he" })
     await Promise.resolve()
-    expect(ac.open).toBe(true)
+    expect(ac.visible).toBe(true)
     i.state.set({ cursor: 5, value: "hello" })
     await Promise.resolve()
-    expect(ac.open).toBe(false)
+    expect(ac.visible).toBe(false)
   })
 })

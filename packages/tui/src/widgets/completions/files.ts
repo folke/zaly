@@ -1,10 +1,10 @@
 import type { Dirent } from "node:fs"
-import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { Option } from "../select.ts"
+import type { ScoredItem } from "../../search/matcher.ts"
+import type { CompletionSource } from "../autocomplete.ts"
+import type { PickerItem } from "../picker.ts"
 
 import { readdir } from "node:fs/promises"
 import { resolve } from "pathe"
-import { fuzzyScore } from "./fuzzy.ts"
 
 export interface FilesSourceOptions {
   /** Base directory relative queries resolve against. Default:
@@ -30,7 +30,7 @@ export interface FilesSourceOptions {
 
 type DirCache = Map<string, Dirent[]>
 
-type File = Option & { file: string }
+type File = PickerItem & { file: string }
 
 /**
  * Completion source for file paths. Splits the query at the last `/`
@@ -63,7 +63,7 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
       const v = item.file
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
-    async complete(query: string, match: Matcher): Promise<File[]> {
+    async complete(query: string, match): Promise<ScoredItem<File>[]> {
       const lastSlash = query.lastIndexOf("/")
       const dirPart = lastSlash === -1 ? "" : query.slice(0, lastSlash + 1)
       const absDir = resolve(cwd, dirPart)
@@ -83,17 +83,18 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
       // call over the bare name. The provided matcher still works for
       // callers that supply their own `trigger` without slash scoping.
       const baseQuery = lastSlash === -1 ? query : query.slice(lastSlash + 1)
-      const base: Matcher = baseQuery === query ? match : (s) => fuzzyScore(baseQuery, s)
+      const base = baseQuery === query ? match : match.matcher(baseQuery)
 
-      const out: File[] = []
+      const out: ScoredItem<File>[] = []
       for (const ent of entries) {
         const abs = resolve(absDir, ent.name)
         if (!filter(ent, abs)) continue
-        if (!base(ent.name)) continue
+        const score = base(ent.name)
+        if (!score) continue
         const isDir = ent.isDirectory()
         const name = isDir ? `${ent.name}/` : ent.name
         const file = `${dirPart}${name}`
-        out.push({ file, name, text: file })
+        out.push({ file, name, score, text: file })
         if (out.length >= limit) break
       }
       return out

@@ -1,5 +1,7 @@
-import type { CompletionSource, Matcher } from "../autocomplete.ts"
-import type { Option, OptionRender } from "../select.ts"
+import type { ScoredItem } from "../../search/matcher.ts"
+import type { CompletionSource } from "../autocomplete.ts"
+import type { PickerItem } from "../picker.ts"
+import type { OptionRender } from "../select.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { spawn } from "node:child_process"
@@ -7,7 +9,7 @@ import { spawn } from "node:child_process"
 /** A GitHub issue or pull request returned by `githubSource`. Shape
  *  mirrors the `gh` CLI's `--json number,title,state,author,url`
  *  output, with `type` added to distinguish issues from PRs. */
-export type GithubItem = Option & {
+export type GithubItem = PickerItem & {
   number: number
   title: string
   /** `"open"` / `"closed"` for issues; `"open"` / `"closed"` / `"merged"`
@@ -78,17 +80,18 @@ export function githubSource(opts: GithubSourceOptions = {}): CompletionSource<G
 
   return {
     accept: (item) => `${prefix}${item.number} `,
-    async complete(_query: string, match: Matcher): Promise<GithubItem[]> {
+    async complete(_query: string, match): Promise<ScoredItem<GithubItem>[]> {
       cache ??= fetcher(cwd, state).catch(() => [])
       const items = await cache
-      const out: GithubItem[] = []
+      const out: ScoredItem<GithubItem>[] = []
       for (const item of items) {
         // Match on "#<num> <title>" so users can type either digits or
         // words and both hit. Keeps ranking implicit — source order
         // (freshest first from gh) wins when scores tie.
         const target = `#${item.number} ${item.title}`
-        if (!match(target)) continue
-        out.push(item)
+        const score = match(target)
+        if (!score) continue
+        out.push({ ...item, score })
       }
       return out
     },
@@ -97,7 +100,7 @@ export function githubSource(opts: GithubSourceOptions = {}): CompletionSource<G
   }
 }
 
-const defaultRender: OptionRender<GithubItem> = (item, _active, ctx) => {
+const defaultRender: OptionRender<GithubItem> = (item, ctx) => {
   const { style } = ctx
   const num = `#${item.number}`
   const stateSlot = stateStyleSlot(item.state)

@@ -10,7 +10,6 @@ export type SearchItem = {
 
 export type ScoredItem<T extends SearchItem = SearchItem> = T & {
   score: number
-  idx: number
 }
 
 export type MatcherOptions = ScoreOptions & {

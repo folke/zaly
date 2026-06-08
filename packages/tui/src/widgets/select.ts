@@ -1,38 +1,36 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { Reactive, Ref } from "../core/reactive.ts"
+import type { State } from "../core/state.ts"
 import type { NodeActionMap } from "../input/actions.ts"
 import type { Size } from "../layout/size.ts"
-import type { SearchItem } from "../search/matcher.ts"
 import type { Style } from "../style/types.ts"
 
-import { stringWidth, truncateAnsi } from "@zaly/shared/ansi"
+import { fitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { Node } from "../core/node.ts"
 import { unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 
-/** Default shape for items in a Menu. All fields optional so callers
- *  can produce either a fully-fledged entry or a custom-typed item
- *  plus their own `render`. `value` is what `Autocomplete`'s default
- *  `accept` inserts; `label` is what the default renderer shows
- *  (falling back to `value`); `hint` is a dim right-column description. */
-export type Option = SearchItem & {
+/** Default shape for selectable options. `text` is the canonical
+ *  searchable/fallback label. `name` overrides the displayed label in the
+ *  default renderer, and `desc` is shown as a dim right-column description. */
+export type Option = {
   name?: string
   desc?: string
+  text: string
 }
 
 export type OptionRenderCtx<T> = RenderCtx & {
   visible: T[]
+  active?: boolean
 }
 
-/** Per-row rendering hook. `active` lets callers branch on selection
- *  state (e.g. swap an icon or pick a different fg) — but Menu still
- *  applies the `optionActive` theme slot uniformly so the highlight
- *  stays visually consistent across the widget ecosystem. The returned
- *  string is clipped/padded to the row width by Menu. `ctx` is the
- *  current `RenderCtx` so renderers can call `ctx.style.*` for theme-
- *  aware ANSI without capturing it from elsewhere. */
-export type OptionRender<T> = (item: T, active: boolean, ctx: OptionRenderCtx<T>) => string
+/** Per-row rendering hook. `ctx.active` lets callers branch on selection
+ *  state (e.g. swap an icon or pick a different fg) — but Select still
+ *  applies the `optionActive` theme slot uniformly so the highlight stays
+ *  visually consistent. The returned string is clipped/padded to the row
+ *  width by Select. */
+export type OptionRender<T> = (item: T, ctx: OptionRenderCtx<T>) => string
 
 export interface SelectState<T extends Option = Option> extends Style {
   /** Items to show. Accepts a signal accessor so the list can be
@@ -48,21 +46,15 @@ export interface SelectState<T extends Option = Option> extends Style {
    *  don't fit. `undefined` (default) auto-shows when needed;
    *  `false` disables, `true` forces on. */
   counter?: boolean
-  /** When `true`, the rendered height can grow but never shrinks
-   *  between renders. Useful for popups (autocomplete) where the
-   *  surrounding layout would jitter if the menu resized while the
-   *  user types. Call `resetHeight()` to start a fresh open cycle.
-   *  Default: `false`. */
-  sticky?: boolean
   /** Render width. Defaults to `fill`. */
   width?: Size
-  /** Width of the label column for the default renderer. Defaults to
-   *  the widest item label + 2. Ignored when `render` is set. */
+  /** Width of the label column for the default renderer. Defaults to the
+   *  widest visible label, capped to half the row width. Ignored when
+   *  `render` is set. */
   labelWidth?: number
-  /** Per-item renderer. When omitted, items must be `MenuItem`-shaped
-   *  (carry at least `label` or `value`) and the default two-column
-   *  layout applies. */
-  render?: OptionRender<T>
+  /** Per-item renderer. When omitted, the default two-column layout uses
+   *  `name ?? text` as the label and `desc` as the right-column hint. */
+  render?: Reactive<OptionRender<T> | undefined>
 }
 
 export interface SelectEvents<T extends Option = Option> extends BaseEvents {
@@ -74,93 +66,67 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   cancel: {}
 }
 
-export type Selectable<T extends Option = Option> = Node<object, SelectEvents<T>>
-
 /**
  * Selectable list. Items are rendered one per row with an active-row
  * highlight; navigation actions (`next`, `prev`, `first`, `last`,
- * `select`, `cancel`) live on `this.actions`, same pattern as `Input`.
+ * `accept`, `complete`, `cancel`) live on `this.actions`, same pattern as
+ * `Input`.
  *
- * Used standalone for simple pickers (confirm dialogs, model selectors)
- * and as the underlying list for `Autocomplete`. Doesn't open/close
- * itself — callers control visibility via `state.visible`.
+ * Used standalone for simple lists and as the underlying list primitive for
+ * `picker`, `tree`, and `autocomplete`. Doesn't open/close itself — callers
+ * control visibility via `state.visible`.
  */
-export class Select<T extends Option = Option>
-  extends Node<SelectState<T>, SelectEvents<T>>
-  implements Selectable<T>
-{
+export class Select<T extends Option = Option> extends Node<SelectState<T>, SelectEvents<T>> {
   static readonly type = "select"
   override readonly type = Select.type
 
   override actions = {
     "select.accept": (): void => {
-      const items = this.#items()
+      const items = this.#items
       if (items.length === 0) return
-      const i = this.#active()
-      void this.emit("accept", { item: items[i] })
+      void this.emit("accept", { item: items[this.active] })
     },
     "select.cancel": (): void => {
       void this.emit("cancel")
     },
     "select.complete": (): void => {
-      const items = this.#items()
+      const items = this.#items
       if (items.length === 0) return
-      const i = this.#active()
-      void this.emit("complete", { item: items[i] })
+      void this.emit("complete", { item: items[this.active] })
     },
     "select.first": (): void => {
-      if (this.#items().length === 0) return
-      this.state.active = 0
+      if (this.#items.length === 0) return
+      this.active = 0
     },
     "select.last": (): void => {
-      const n = this.#items().length
+      const n = this.#items.length
       if (n === 0) return
-      this.state.active = n - 1
+      this.active = n - 1
     },
     "select.next": (): void => {
-      const n = this.#items().length
+      const n = this.#items.length
       if (n === 0) return
-      this.active = this.#active() + 1
-    },
-    "select.next-match": (): void => {
-      const active = this.#active()
-      const matches = this.#matches.map((i) => i.idx)
-      if (matches.length === 0) return this.actions["select.next"]()
-      this.active = matches.find((i) => i > active) ?? matches[0]
+      this.active++
     },
     "select.page-down": (): void => {
-      const n = this.#items().length
+      const n = this.#items.length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
-      this.active = this.#active() + page
+      this.active += page
     },
     "select.page-up": (): void => {
-      const n = this.#items().length
+      const n = this.#items.length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
-      this.active = this.#active() - page
+      this.active -= page
     },
     "select.prev": (): void => {
-      const n = this.#items().length
+      const n = this.#items.length
       if (n === 0) return
-      this.active = this.#active() - 1
-    },
-    "select.prev-match": (): void => {
-      const active = this.#active()
-      const matches = this.#matches.map((i) => i.idx).toReversed()
-      if (matches.length === 0) return this.actions["select.prev"]()
-      this.active = matches.find((i) => i < active) ?? matches[0]
+      this.active--
     },
   } satisfies NodeActionMap
 
-  /** Grow-only height counter. `state.sticky` consults this so filter-
-   *  driven shrinks don't jitter the surrounding layout. */
-  #stickyRows = 0
-  /** Whether the counter row has ever shown during this sticky session.
-   *  Once true, we keep rendering it even when items fit — otherwise
-   *  filtering down to within `maxHeight` would drop the counter row
-   *  and shrink the overall menu height by one. */
-  #stickyCounter = false
   /** Top of the currently-rendered window, in absolute item indices.
    *  Updated per render using the pin-until-leave rule: stays put
    *  while `active` remains in `[start, start + visible)`, slides just
@@ -171,34 +137,17 @@ export class Select<T extends Option = Option>
     super({ active: 0, ...initial } as SelectState<T>)
   }
 
-  /** Reset the sticky height + window anchor. Callers owning the
-   *  open/close lifecycle (e.g. `Autocomplete`) invoke this on close
-   *  so the next open starts from scratch. */
-  resetHeight(): void {
-    this.#stickyRows = 0
-    this.#stickyCounter = false
-    this.#windowStart = 0
-    this.invalidate()
-  }
-
-  set active(i: number) {
-    const n = this.#items().length
-    i = i < 0 ? i + n : i
-    this.state.active = n === 0 ? 0 : i % n
-  }
-
-  get #matches(): readonly { idx: number; item: T }[] {
-    return this.#items()
-      .map((item, idx) => ({ idx, item }))
-      .filter((i) => (i.item.score ?? 0) > 0)
-  }
-
-  #items(): readonly T[] {
+  get #items() {
     return unwrap(this.state.items)
   }
 
-  #active(): number {
-    const n = this.#items().length
+  set active(i: number) {
+    const n = this.#items.length
+    this.state.active = n === 0 ? 0 : ((i % n) + n) % n
+  }
+
+  get active(): number {
+    const n = this.#items.length
     if (n === 0) return 0
     const a = this.state.active ?? 0
     return Math.max(0, Math.min(n - 1, a))
@@ -213,133 +162,95 @@ export class Select<T extends Option = Option>
     return this
   }
 
+  get count(): number {
+    return this.#items.length
+  }
+
   get pageSize(): number {
-    return this.state.maxHeight ?? Math.max(this.#items().length, 1)
+    return this.state.maxHeight ?? Math.max(this.#items.length, 1)
   }
 
   protected _render(ctx: RenderCtx): string[] {
-    const items = this.#items()
-    if (items.length === 0 && !this.state.sticky) return []
+    const items = this.#items
+    if (items.length === 0) return []
 
     const width = resolveSize(this.state.width ?? "fill", ctx.width) ?? ctx.width
-    const active = this.#active()
-    const max = this.pageSize
-
-    // Item-row budget: cap by maxHeight, but when `sticky` is on it can
-    // only grow. Zero is allowed (no items, not sticky-grown) — we
-    // bailed above in that case.
-    let rows = Math.min(max, items.length)
-    if (this.state.sticky) {
-      rows = Math.max(this.#stickyRows, rows)
-      this.#stickyRows = rows
-    }
-    if (rows === 0) return []
+    const active = this.active
+    const height = Math.min(this.pageSize, items.length)
+    if (height === 0) return []
 
     // Pin-until-leave window. `#windowStart` is kept across renders so
     // the list doesn't recenter while the user nudges up/down inside
-    // the current viewport. Slide only when `active` would fall off
-    // either edge, and clamp against the tail so we don't expose rows
-    // past items.length when the list shrinks.
     let start = this.#windowStart
     if (active < start) start = active
-    else if (active >= start + rows) start = active - rows + 1
-    start = Math.max(0, Math.min(Math.max(0, items.length - rows), start))
+    else if (active >= start + height) start = active - height + 1
+    start = Math.max(0, Math.min(Math.max(0, items.length - height), start))
     this.#windowStart = start
 
-    const overflow = items.length > rows
-    let showCounter = this.state.counter ?? overflow
-    if (this.state.sticky) {
-      // Counter is sticky too: once shown in this session, keep it so
-      // filtering-down doesn't shave the last row off the menu height.
-      if (showCounter) this.#stickyCounter = true
-      if (this.#stickyCounter && this.state.counter !== false) showCounter = true
+    const visible = items.slice(start, start + height)
+    const renderer = this.renderer
+
+    const rows: string[] = []
+    for (let i = start; i < start + height; i++) {
+      const item = items[i]
+      let row = renderer(item, { ...ctx, active: i === active, visible })
+      row = fitAnsi(row, width)
+      rows.push(i === active ? ctx.style.optionActive(row) : row)
     }
 
-    // Compose the per-row renderer. Custom `render` takes precedence;
-    // otherwise fall back to the built-in two-column layout (requires
-    // items shaped like `MenuItem`).
-    const visible = items.slice(start, start + rows)
-    const blank = " ".repeat(width)
-    const optionCtx: OptionRenderCtx<T> = { ...ctx, visible }
-
-    const renderer = this.optionRenderer
-
-    const out: string[] = []
-    for (let i = start; i < start + rows; i++) {
-      const item = items[i] as T | undefined
-      if (item === undefined) {
-        // Sticky kept the row alive past the end of the (now shorter)
-        // items list. Emit a full-width blank.
-        out.push(blank)
-        continue
-      }
-      const isActive = i === active
-      const raw = renderer(item, isActive, optionCtx)
-      // Menu always pads/clips to row width and applies `optionActive`
-      // on the selected row — keeps selection visuals consistent across
-      // apps regardless of what the custom render produced.
-      const cell = fit(raw, width)
-      out.push(isActive ? ctx.style.add("optionActive")(cell) : cell)
-    }
-
-    if (showCounter) {
+    if (this.state.counter ?? items.length > height) {
       const shown = items.length === 0 ? 0 : active + 1
       const label = `(${shown}/${items.length})`
-      out.push(ctx.style.gutter(fit(label, width)))
+      rows.push(ctx.style.gutter(fitAnsi(label, width)))
     }
 
-    return out
+    return rows
   }
 
-  get optionRenderer(): OptionRender<T> {
-    return this.state.render ?? this.defaultRenderer()
+  get renderer(): OptionRender<T> {
+    return unwrap(this.state.render) ?? this.defaultRenderer()
+  }
+
+  extendRenderer(fn: (prev: OptionRender<T>) => OptionRender<T>): this {
+    const prev = this.renderer
+    this.state.render = fn(prev)
+    return this
   }
 
   defaultRenderer(): OptionRender<Option> {
     let visible: Option[] = []
-    let widest = 0
+    let labelWidth = 0
 
-    const update = (ctx: OptionRenderCtx<Option>): void => {
+    const update = (ctx: OptionRenderCtx<Option>) => {
       if (ctx.visible === visible) return
       visible = ctx.visible
-      const labels = ctx.visible.map(defaultLabel)
-      // Pre-compute label column width once from the visible window —
-      // custom renderers skip this entirely.
-      widest = labels.length === 0 ? 0 : Math.max(...labels.map(stringWidth))
+      if (!visible.some((i) => i.desc)) return (labelWidth = ctx.width) // No desc, so full width
+      labelWidth = this.state.labelWidth ?? 0
+      labelWidth ||= visible
+        .map(itemLabel)
+        .reduce((max, label) => Math.max(max, stringWidth(label)), 0)
+      labelWidth = Math.min(labelWidth, Math.floor(ctx.width / 2))
     }
-    const gap = 2
-    const spacer = " ".repeat(gap)
-    return (item: Option, _active, ctx): string => {
+
+    return (item: Option, ctx): string => {
       update(ctx)
-      const labelWidth = Math.min(this.state.labelWidth ?? widest, Math.floor(ctx.width / 2))
-      const descAvail = Math.max(0, ctx.width - labelWidth - gap)
-      const nameCell = fit(defaultLabel(item), labelWidth)
-      const descCell = fit(item.desc ?? "", descAvail)
-      return ctx.style.add("optionName")(nameCell) + spacer + ctx.style.add("optionDesc")(descCell)
+      const label = fitAnsi(itemLabel(item), labelWidth)
+      const desc = fitAnsi(item.desc ?? "", Math.max(0, ctx.width - labelWidth - 2))
+      return `${ctx.style.optionName(label)}  ${ctx.style.optionDesc(desc)}`
     }
   }
 }
 
-function defaultLabel(item: Option): string {
-  const label = item.name ?? item.text
-  return label.replace(/\s+/g, " ").trim() // collapse whitespace for cleaner default layout
-}
-
-function fit(s: string, width: number): string {
-  const w = stringWidth(s)
-  if (w === width) return s
-  if (w < width) return s + " ".repeat(width - w)
-  return truncateAnsi(s, width)
-}
+const itemLabel = (item: Option): string => (item.name ?? item.text).replace(/\s+/g, " ").trim()
 
 /**
- * Factory for `Menu`.
+ * Factory for a selectable list.
  *
  * ```ts
- * const m = menu({ items: [{ value: "/help" }, { value: "/quit" }] })
- * m.on("select", (item) => console.log("picked", item.value))
+ * const s = select({ items: [{ text: "/help" }, { text: "/quit" }] })
+ * s.on("accept", ({ item }) => console.log("picked", item.text))
  * ```
  */
-export function select<T extends Option = Option>(state: SelectState<T>): Select<T> {
+export function select<T extends Option = Option>(state: State<SelectState<T>>): Select<T> {
   return new Select<T>(state)
 }

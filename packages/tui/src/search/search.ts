@@ -24,7 +24,9 @@ export type SearchItems<T extends SearchItem = SearchItem> = readonly T[] | Sear
  *  idiomatic `.filter(match(s))` work (0 is falsy). The magnitude is a
  *  score the source can use to rank its own candidates when it cares
  *  about order. */
-export type Match<T extends SearchItem = SearchItem> = (s: string | T) => number
+export type Match<T extends SearchItem = SearchItem> = {
+  matcher: (pattern: string) => (s: string | T) => number
+} & ((s: string | T) => number)
 
 export class Searcher<T extends SearchItem = SearchItem> {
   #opts: SearchOptions<T>
@@ -51,7 +53,15 @@ export class Searcher<T extends SearchItem = SearchItem> {
 
     let ret: ScoredItem<T>[] = []
     if (typeof items === "function") {
-      const maybe = items(query, (s: string | T) => (m.tick === tick ? m.match(s) : 0))
+      const match = (s: string | T) => (m.tick === tick ? m.match(s) : 0)
+      const fn = Object.assign(match, {
+        matcher: (pattern: string) => {
+          const ma = new Matcher<T>(this.#opts)
+          ma.init(pattern)
+          return (s: string | T) => (ma.tick === tick ? ma.match(s) : 0)
+        },
+      })
+      const maybe = items(query, fn)
       if (isPromiseLike(maybe))
         return maybe.then((res) => {
           if (tick !== m.tick) return [] // Not in the same tick, discard results
@@ -67,7 +77,7 @@ export class Searcher<T extends SearchItem = SearchItem> {
     const m = this.#matcher
 
     // Original index
-    for (let i = 0; i < ret.length; i++) ret[i].idx ||= i
+    for (let i = 0; i < ret.length; i++) ret[i].idx ??= i
 
     if (!m.empty() && (this.#opts.filter ?? true)) ret = ret.filter(({ score }) => score > 0)
     if (this.#sorter && (this.#opts.sortEmpty || !m.empty())) ret = ret.toSorted(this.#sorter)

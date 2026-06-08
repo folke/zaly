@@ -124,9 +124,16 @@ export function hasAnsi(text: string): boolean {
   return /\x1b\[[0-9;]*m/.test(text)
 }
 
-export const truncateAnsi = (s: string, maxLength: number, ellipsis = "…"): string => {
+export const truncateAnsi = (s: string, width: number, ellipsis = "…"): string => {
   const len = stringWidth(s)
-  if (len <= maxLength) return s
+  if (len <= width) return s
   const ellipsisWidth = stringWidth(ellipsis)
-  return `${sliceAnsi(s, 0, maxLength - ellipsisWidth)}${ellipsis}`
+  return `${sliceAnsi(s, 0, width - ellipsisWidth)}${ellipsis}`
+}
+
+export const fitAnsi = (s: string, width: number, ellipsis = "…"): string => {
+  const len = stringWidth(s)
+  if (len === width) return s
+  if (len < width) return s + " ".repeat(width - len)
+  return truncateAnsi(s, width, ellipsis)
 }
