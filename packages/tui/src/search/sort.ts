@@ -1,24 +1,34 @@
-import type { SearchItem } from "./matcher.ts"
+import type { ScoredItem, SearchItem } from "./matcher.ts"
 
-type SortKey<T> = Extract<keyof T, string>
+type SortKey<T extends SearchItem> = Extract<keyof (ScoredItem<T> & SearchItem), string>
 
 export type SortField<T extends SearchItem = SearchItem> =
   | SortKey<T>
-  | {
-      desc?: boolean
-      len?: boolean
-      name: SortKey<T>
-    }
+  | `#${SortKey<T>}`
+  | `${SortKey<T>}:desc`
+
+export type ParsedField<T extends SearchItem = SearchItem> = {
+  desc?: boolean
+  len?: boolean
+  name: SortKey<T>
+}
+
+export type Sorter<T extends SearchItem = SearchItem> = (
+  a: ScoredItem<T>,
+  b: ScoredItem<T>
+) => number
+
+function parse<T extends SearchItem>(field: SortField<T>): ParsedField<T> {
+  const len = field.startsWith("#")
+  const desc = field.endsWith(":desc")
+  const name = field.replace(/^#/, "").replace(/:desc$/, "") as SortKey<T>
+  return { desc, len, name }
+}
 
 export function sorter<T extends SearchItem>(
-  fields: readonly SortField<T>[] = [
-    { desc: true, name: "score" as SortKey<T> },
-    "idx" as SortKey<T>,
-  ]
-): (a: T, b: T) => number {
-  const parsed: { desc?: boolean; len?: boolean; name: SortKey<T> }[] = fields.map((field) =>
-    typeof field === "string" ? { name: field } : field
-  )
+  fields: readonly SortField<T>[] = ["score:desc", "#text", "idx"]
+): Sorter<T> {
+  const parsed: ParsedField<T>[] = fields.map(parse)
   return (a, b) => {
     for (const field of parsed) {
       let av: unknown = a[field.name]
