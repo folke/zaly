@@ -10,7 +10,6 @@ export type SearchOptions<T extends SearchItem = SearchItem> = MatcherOptions & 
   sort?: boolean | readonly SortField<T>[]
   filter?: boolean
   sortEmpty?: boolean
-  reverse?: boolean
 }
 
 export type SearchFn<T extends SearchItem = SearchItem> = (
@@ -92,7 +91,6 @@ export class Searcher<T extends SearchItem = SearchItem> {
 
     if (!m.empty() && (this.#opts.filter ?? true)) ret = ret.filter(({ score }) => score > 0)
     if (this.#sorter && (this.#opts.sortEmpty || !m.empty())) ret = ret.toSorted(this.#sorter)
-    // if (this.#opts.reverse) ret.reverse()
 
     return ret
   }

@@ -53,7 +53,6 @@ export const picker = widget(
       return inp?.state.value ?? ""
     })
 
-    const searcher = new Searcher<T>(props)
     let node: Select<T>
     let items: Reactive<SearchItems<T>>
     if (isTree(props)) {
@@ -64,6 +63,7 @@ export const picker = widget(
       node = select({ ...props, items: [] })
       items = props.items
     }
+    const searcher = new Searcher<T>(props)
 
     node.extendRenderer((prev) => (item, ctx) => {
       let row = prev(item, ctx)

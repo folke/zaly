@@ -55,6 +55,7 @@ export interface SelectState<T extends Option = Option> extends Style {
   /** Per-item renderer. When omitted, the default two-column layout uses
    *  `name ?? text` as the label and `desc` as the right-column hint. */
   render?: Reactive<OptionRender<T> | undefined>
+  reverse?: boolean
 }
 
 export interface SelectEvents<T extends Option = Option> extends BaseEvents {
@@ -106,24 +107,24 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     "select.next": (): void => {
       const n = this.#items.length
       if (n === 0) return
-      this.active++
+      this.active += this.#direction
     },
     "select.page-down": (): void => {
       const n = this.#items.length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
-      this.active += page
+      this.state.active = this.#clamp(this.active + this.#direction * page)
     },
     "select.page-up": (): void => {
       const n = this.#items.length
       if (n === 0) return
       const page = Math.max(this.pageSize - 1, 1)
-      this.active -= page
+      this.state.active = this.#clamp(this.active - this.#direction * page)
     },
     "select.prev": (): void => {
       const n = this.#items.length
       if (n === 0) return
-      this.active--
+      this.active -= this.#direction
     },
   } satisfies NodeActionMap
 
@@ -137,8 +138,17 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     super({ active: 0, ...initial } as SelectState<T>)
   }
 
+  get #direction(): 1 | -1 {
+    return this.state.reverse ? -1 : 1
+  }
+
   get #items() {
     return unwrap(this.state.items)
+  }
+
+  #clamp(i: number): number {
+    const n = this.#items.length
+    return n === 0 ? 0 : Math.max(0, Math.min(n - 1, i))
   }
 
   set active(i: number) {
@@ -197,6 +207,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
       row = fitAnsi(row, width)
       rows.push(i === active ? ctx.style.optionActive(row) : row)
     }
+    if (this.state.reverse) rows.reverse()
 
     if (this.state.counter ?? items.length > height) {
       const shown = items.length === 0 ? 0 : active + 1
@@ -235,6 +246,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     return (item: Option, ctx): string => {
       update(ctx)
       const label = fitAnsi(itemLabel(item), labelWidth)
+      if (!item.desc) return ctx.style.optionName(label)
       const desc = fitAnsi(item.desc ?? "", Math.max(0, ctx.width - labelWidth - 2))
       return `${ctx.style.optionName(label)}  ${ctx.style.optionDesc(desc)}`
     }

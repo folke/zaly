@@ -65,7 +65,11 @@ export function appActions({ app }: { app: App }) {
             text: m.id,
           })
         }
-        const ret = await app.pick({ items, sort: true })
+        const ret = await app.pick({
+          items,
+          reverse: true,
+          sort: ["score:desc", "idx"],
+        })
         if (ret) model.active = await model.load(ret.text)
       },
     }),
