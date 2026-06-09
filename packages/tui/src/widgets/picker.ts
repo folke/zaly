@@ -6,7 +6,7 @@ import type { Option, Select, SelectState } from "./select.ts"
 import type { TreeItem, TreeProps } from "./tree.ts"
 
 import { sliceAnsi, stripAnsi } from "@zaly/shared/ansi"
-import { createAsync, memo, unwrap } from "../core/reactive.ts"
+import { createAsync, effect, memo, untrack, unwrap } from "../core/reactive.ts"
 import { Searcher } from "../search/search.ts"
 import { Input } from "./input.ts"
 import { select } from "./select.ts"
@@ -67,6 +67,7 @@ export const picker = widget(
 
     node.extendRenderer((prev) => (item, ctx) => {
       let row = prev(item, ctx)
+      if (!item.score) return row
       const stripped = stripAnsi(row)
       const positions = searcher.positions(stripped).toSorted((a, b) => b - a)
       while (positions.length > 0) {
@@ -93,18 +94,34 @@ export const picker = widget(
         .filter(([item]) => item.score)
         .map(([, i]) => i)
 
+    if (props.filter === false) {
+      // When not filtering, go to the next match when the pattern changes
+      effect(() => {
+        const m = matches()
+        if (m.length === 0 || pattern() === "") return
+        untrack(() => {
+          const active = node.active
+          node.active = m.find((i) => i >= active) ?? m[0]
+        })
+      })
+    }
+
     return node.withActions({
       "picker.next": () => {
         const active = node.active
         const m = matches()
         if (m.length === 0) return node.action("select.next")
-        node.active = m.find((i) => i > active) ?? m[0]
+        node.active = node.state.reverse
+          ? (m.toReversed().find((i) => i < active) ?? m.at(-1)!)
+          : (m.find((i) => i > active) ?? m[0])
       },
       "picker.prev": () => {
         const active = node.active
-        const m = matches().toReversed()
+        const m = matches()
         if (m.length === 0) return node.action("select.prev")
-        node.active = m.find((i) => i < active) ?? m.at(-1)!
+        node.active = node.state.reverse
+          ? (m.find((i) => i > active) ?? m[0])
+          : (m.toReversed().find((i) => i < active) ?? m.at(-1)!)
       },
     })
   }
