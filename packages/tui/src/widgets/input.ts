@@ -8,10 +8,12 @@ import type { RoutedKey } from "../input/router.ts"
 import type { Size } from "../layout/size.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 
+import { hash, isPromiseLike } from "@zaly/shared"
 import { sliceAnsi, splitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { fileDetect } from "@zaly/shared/detect"
 import { basename } from "pathe"
 import { Node } from "../core/node.ts"
+import { untrack } from "../core/reactive.ts"
 import { clipboard } from "../input/clipboard.ts"
 import { formatText } from "../layout/text.ts"
 
@@ -61,6 +63,8 @@ export type InputEvents = BaseEvents & {
   attach: { attachment: InputAttachment }
 }
 
+type FormatEntry = { promise?: Promise<void>; result?: string; input: string }
+
 /**
  * Multi-line text input with auto-grow.
  *
@@ -98,6 +102,8 @@ export class Input extends Node<InputState, InputEvents> {
   #historyIndex: number | undefined
   #preferredCol: number | undefined
   #staged: ((InputAttachment | Paste) & { id: number; marker: string })[] = []
+  #formatCache: Map<string, FormatEntry> & { version?: number } = new Map<string, FormatEntry>()
+  #formatGen = 0
 
   /**
    * Editing actions. Parameterless — they close over `this` — so both
@@ -432,6 +438,57 @@ export class Input extends Node<InputState, InputEvents> {
     ev.stop()
   }
 
+  #format(value: string, ctx: RenderCtx): string {
+    const format = this.state.format
+    if (!format) return value
+
+    if (ctx.version !== this.#formatCache.version) {
+      this.#formatCache.clear()
+      this.#formatCache.version = ctx.version
+    }
+
+    const key = hash(value)
+    const cached = this.#formatCache.get(key)
+    if (cached?.result !== undefined) return cached.result
+    const streaming = this.#streamingFormat(value)
+    if (cached?.promise) return streaming ?? value
+
+    const ret = format(value, { style: ctx.style })
+    if (!isPromiseLike(ret)) return ret
+
+    const gen = ++this.#formatGen
+    const entry: FormatEntry = { input: value }
+    entry.promise = ret.then(
+      (result) => {
+        if (this.#formatCache.get(key) !== entry) return
+        entry.result = result
+        entry.promise = undefined
+        if (this.#formatGen === gen && result !== value) untrack(() => this.invalidate())
+      },
+      () => {
+        if (this.#formatCache.get(key) === entry) this.#formatCache.delete(key)
+      }
+    )
+    this.#formatCache.set(key, entry)
+    while (this.#formatCache.size > 100)
+      this.#formatCache.delete(this.#formatCache.keys().next().value!)
+    return streaming ?? value
+  }
+
+  /** Reuse a highlighted prefix while async formatting catches up. */
+  #streamingFormat(value: string): string | undefined {
+    let ret: [string, FormatEntry] | undefined
+    for (const [key, cached] of this.#formatCache) {
+      if (cached.result === undefined) continue
+      if (value.startsWith(cached.input) && cached.input.length > (ret?.[1].input.length ?? 0))
+        ret = [key, cached]
+    }
+    if (ret === undefined) return
+    this.#formatCache.delete(ret[0])
+    this.#formatCache.set(ret[0], ret[1]) // bump to end of LRU
+    return ret[1].result + value.slice(ret[1].input.length)
+  }
+
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     const value = this.state.value ?? ""
     const placeholder = this.state.placeholder ?? ""
@@ -451,7 +508,7 @@ export class Input extends Node<InputState, InputEvents> {
         if (!content.includes(att.marker)) continue
         content = content.replace(att.marker, ctx.style.accent(att.marker))
       }
-      content = this.state.format ? await this.state.format(content, { style: ctx.style }) : content
+      content = this.#format(content, ctx)
     }
 
     // Fake cursor. `cursor` is an absolute index in the raw value, while
