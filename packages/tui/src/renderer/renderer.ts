@@ -12,7 +12,14 @@ import { Emitter } from "@zaly/shared"
 import { stringWidth } from "@zaly/shared/ansi"
 import { Logger } from "@zaly/shared/logger"
 import { createCtx } from "../core/ctx.ts"
-import { createRoot, memo, provideContext, signal, useActiveOwner } from "../core/reactive.ts"
+import {
+  createRoot,
+  memo,
+  provideContext,
+  signal,
+  untrack,
+  useActiveOwner,
+} from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
 import { Actions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
@@ -125,7 +132,6 @@ export class Renderer extends Emitter<RenderEvents> {
    *  invalidates every node cache in the tree (resize, theme swap). */
   #ctxVersion = 0
   #ctx: RenderCtx | undefined
-  readonly #onDirty = (): void => this.#schedule()
 
   /** Runtime action registry (catalog + dispatcher). Populated with
    *  `defaultActions` + `globalActions` at construction; apps extend
@@ -210,7 +216,8 @@ export class Renderer extends Emitter<RenderEvents> {
     this.actions.register(defaultActions, { default: true })
     this.actions.register(this.globalActions, { default: true })
 
-    this.on("dirty", this.#onDirty)
+    // Untrack to prevent dep leaking
+    this.on("dirty", () => untrack(() => this.#schedule()))
 
     // SIGWINCH: dimensions changed. The terminal has re-wrapped its
     // existing content against the new column count; our on-screen

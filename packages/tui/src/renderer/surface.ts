@@ -4,6 +4,7 @@ import type { RenderFrame } from "./frame.ts"
 import type { Renderer, SurfaceType } from "./renderer.ts"
 
 import { Emitter } from "@zaly/shared"
+import { untrack } from "../core/reactive.ts"
 
 /**
  * Base event map for renderer surfaces. Surfaces usually schedule work
@@ -68,7 +69,7 @@ export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvent
   invalidate = (): void => {
     this.#dirty = true
     this.track(`${this.type}.dirty`)
-    void this.$r.emit("dirty")
+    untrack(() => void this.$r.emit("dirty"))
   }
 
   /** `true` between `onStart()` and `onStop()`. Subclasses read this
