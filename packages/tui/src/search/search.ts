@@ -53,7 +53,7 @@ export class Searcher<T extends SearchItem = SearchItem> {
       matcher: (pattern: string) => {
         const ma = new Matcher<T>(this.#opts)
         ma.init(pattern)
-        return (s: string | T) => (ma.tick === tick ? ma.match(s) : 0)
+        return (s: string | T) => (m.tick === tick ? ma.match(s) : 0)
       },
     })
   }
