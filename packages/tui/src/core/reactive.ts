@@ -168,6 +168,20 @@ export function unwrap<T>(v: Reactive<T>): T {
   return isAccessor<T>(v) ? v() : v
 }
 
+export function lazy<T>(fn: () => Reactive<T>): Accessor<T> {
+  let value: Reactive<T>
+  let initialized = false
+  return brand(() => {
+    if (!initialized) {
+      value = fn()
+      initialized = true
+    }
+    return unwrap(value)
+  }, "get")
+}
+
+function brand<F extends (...args: any[]) => any>(fn: F, tag: "get"): Accessor<ReturnType<F>>
+function brand<F extends (...args: any[]) => any>(fn: F, tag: "set"): Setter<Parameters<F>[0]>
 function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F {
   Object.defineProperty(fn, REACTIVE, {
     configurable: false,
@@ -446,7 +460,7 @@ export function signal<T>(initial: T): Signal<T> {
       ctx.register(() => subs.delete(ctx.notify))
     }
     return value
-  }, "get") as Accessor<T>
+  }, "get")
 
   const set = brand((next: T | ((prev: T) => T)): void => {
     const resolved = typeof next === "function" ? (next as (prev: T) => T)(value) : next
@@ -455,7 +469,7 @@ export function signal<T>(initial: T): Signal<T> {
     // Snapshot — subscribers may mutate the set while running.
     const snapshot = [...subs]
     for (const notify of snapshot) notify()
-  }, "set") as Setter<T>
+  }, "set")
 
   return Object.assign([get, set] as const, { get, set }) as Signal<T>
 }
@@ -475,7 +489,7 @@ export function signal<T>(initial: T): Signal<T> {
  * ```
  */
 export function toAccessor<T>(value: T): Accessor<T> {
-  return brand(() => value, "get") as Accessor<T>
+  return brand(() => value, "get")
 }
 
 // ---- effect ----------------------------------------------------------
