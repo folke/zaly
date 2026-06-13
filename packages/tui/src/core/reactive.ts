@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { Node } from "./node.ts"
 
 import { AsyncLocalStorage } from "node:async_hooks"
@@ -512,7 +513,7 @@ export function toAccessor<T>(value: T): Accessor<T> {
  * **Footgun**: don't write a signal from inside an effect that reads
  * the same signal — you'll loop. Writing unrelated signals is fine.
  */
-export function effect(fn: () => void): () => void {
+export function effect(fn: () => void | (() => void)): () => void {
   let cleanups: (() => void)[] = []
   let disposed = false
 
@@ -538,9 +539,9 @@ export function effect(fn: () => void): () => void {
     const old = cleanups
     cleanups = []
     for (const c of old) c()
-    const tracked = (): void => withTracking(ctx, fn)
-    if (owner !== undefined) withOwner(owner, tracked)
-    else tracked()
+    const tracked = (): void | (() => void) => withTracking(ctx, fn)
+    const cleanup = owner !== undefined ? withOwner(owner, tracked) : tracked()
+    if (typeof cleanup === "function") cleanups.push(cleanup)
   }
 
   // Auto-dispose on owner teardown. If there's no owner, the caller
@@ -813,6 +814,77 @@ export function createAsync<T>(
     ).finally(() => suspense?.decrement())
   })
   return value
+}
+
+export function createProgressive<T>(
+  fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
+  opts: { throttle?: number; initialValue: T }
+): Accessor<{ result: T; loading: boolean }>
+export function createProgressive<T>(
+  fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
+  opts: { throttle?: number; initialValue?: T }
+): Accessor<{ result?: T; loading: boolean }>
+export function createProgressive<T>(
+  fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
+  opts: { throttle?: number; initialValue?: T } = {}
+): Accessor<{ result?: T; loading: boolean }> {
+  const throttle = opts.throttle ?? 16
+  const [state, setState] = signal({
+    loading: true,
+    result: opts.initialValue,
+  })
+
+  let gen = 0
+
+  effect(() => {
+    const my = ++gen
+    const ac = new AbortController()
+
+    void (async () => {
+      try {
+        setState((prev) => ({ ...prev, loading: true }))
+        let prev = performance.now()
+        const result = await fn({
+          set: (value: T) => {
+            if (ac.signal.aborted || my !== gen) return
+            const now = performance.now()
+            if (now - prev >= throttle) {
+              prev = now
+              setState({ loading: true, result: value })
+            }
+          },
+          signal: ac.signal,
+        })
+        if (my === gen) setState({ loading: false, result })
+      } finally {
+        ac.abort()
+      }
+    })()
+
+    return () => {
+      ac.abort()
+    }
+  })
+
+  return state
+}
+
+export function createIterable<T>(
+  fn: (ctx: { signal: AbortSignal }) => AsyncIterable<T | readonly T[]>,
+  opts: { throttle?: number; initialValue?: readonly T[] } = {}
+): Accessor<{ result: readonly T[]; loading: boolean }> {
+  return createProgressive(
+    async ({ signal: s, set }) => {
+      const results: T[] = []
+      for await (const item of fn({ signal: s })) {
+        if (s.aborted) return results
+        results.push(...(Array.isArray(item) ? item : [item]))
+        set(results)
+      }
+      return results
+    },
+    { ...opts, initialValue: opts.initialValue ?? [] }
+  )
 }
 
 export type Ref<T> = (() => T) & { value: T }
