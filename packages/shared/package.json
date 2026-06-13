@@ -61,6 +61,10 @@
       "bun": "./src/logger.ts",
       "default": "./dist/logger.mjs"
     },
+    "./minheap": {
+      "bun": "./src/minheap.ts",
+      "default": "./dist/minheap.mjs"
+    },
     "./paths": {
       "bun": "./src/paths/index.ts",
       "default": "./dist/paths.mjs"
@@ -104,6 +108,7 @@
       "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
       "./logger": "./dist/logger.mjs",
+      "./minheap": "./dist/minheap.mjs",
       "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
