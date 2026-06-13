@@ -3,6 +3,7 @@ import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
 import type { GithubItem } from "../../../src/widgets/completions/github.ts"
 
 import { describe, expect, test, vi } from "vitest"
+import { unwrap } from "../../../src/index.ts"
 import { Matcher } from "../../../src/search/index.ts"
 import { githubSource } from "../../../src/widgets/completions/github.ts"
 
@@ -20,7 +21,7 @@ const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
 }
 
 const complete = async (src: CompletionSource<GithubItem>, query: string) => {
-  const items = src.complete
+  const items = unwrap(src.complete)
   return typeof items === "function" ? await items(query, match(query)) : items
 }
 

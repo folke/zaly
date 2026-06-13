@@ -1,12 +1,12 @@
 import type { Reactive, Ref } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
-import type { SearchItem } from "../search/matcher.ts"
+import type { ScoredItem, SearchItem } from "../search/matcher.ts"
 import type { SearchItems, SearchOptions } from "../search/search.ts"
 import type { Option, Select, SelectState } from "./select.ts"
 import type { TreeItem, TreeProps } from "./tree.ts"
 
 import { sliceAnsi, stripAnsi } from "@zaly/shared/ansi"
-import { createAsync, effect, memo, untrack, unwrap } from "../core/reactive.ts"
+import { createProgressive, effect, memo, untrack, unwrap } from "../core/reactive.ts"
 import { Searcher } from "../search/search.ts"
 import { Input } from "./input.ts"
 import { select } from "./select.ts"
@@ -82,10 +82,14 @@ export const picker = widget(
       return row
     })
 
-    const results = createAsync(async () => searcher.search(unwrap(items), pattern()), {
-      initialValue: [],
-    })
-    node.state.items = results
+    const results = createProgressive<ScoredItem<T>[]>(
+      async ({ set }) =>
+        await searcher.search(unwrap(items), pattern(), { progress: (r) => set(r) }),
+      {
+        initialValue: [],
+      }
+    )
+    node.state.items = memo(() => [...results().result])
     if (props.input) node.bind(props.input)
 
     const matches = () =>

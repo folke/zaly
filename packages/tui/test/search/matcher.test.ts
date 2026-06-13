@@ -1,4 +1,4 @@
-import type { SearchItem } from "../../src/search/index.ts"
+import type { ScoredItem, SearchItem } from "../../src/search/index.ts"
 
 import { describe, expect, test } from "vitest"
 import { Matcher, sorter } from "../../src/search/index.ts"
@@ -204,7 +204,7 @@ describe("Matcher", () => {
 
 describe("sorter", () => {
   test("sorts by score desc then idx", () => {
-    const items: SearchItem[] = [
+    const items: ScoredItem[] = [
       { idx: 2, score: 10, text: "c" },
       { idx: 0, score: 20, text: "a" },
       { idx: 1, score: 20, text: "b" },
@@ -213,34 +213,27 @@ describe("sorter", () => {
   })
 
   test("supports length fields", () => {
-    const items: SearchItem[] = [
+    const items: ScoredItem[] = [
       { score: 1, text: "longer" },
       { score: 1, text: "x" },
     ]
-    expect(items.toSorted(sorter([{ len: true, name: "text" }])).map((item) => item.text)).toEqual([
-      "x",
-      "longer",
-    ])
+    expect(items.toSorted(sorter(["#text"])).map((item) => item.text)).toEqual(["x", "longer"])
   })
 
   test("skips fields that are undefined on either side", () => {
-    const items: SearchItem[] = [
+    const items: ScoredItem[] = [
       { idx: 1, score: 5, text: "b" },
-      { idx: 0, text: "a" }, // no score
+      { idx: 0, text: "a" } as ScoredItem, // no score
     ]
     // score is skipped (undefined on one side), falls through to idx asc
     expect(items.toSorted(sorter()).map((item) => item.text)).toEqual(["a", "b"])
   })
 
   test("sorts booleans true-first", () => {
-    const items: SearchItem[] = [
+    const items: ScoredItem[] = [
       { idx: 0, score: 0, text: "a" },
       { idx: 1, score: 2, text: "b" },
     ]
-    expect(
-      items
-        .toSorted(sorter([{ name: "score" as never, desc: true }, "idx" as never]))
-        .map((i) => i.text)
-    ).toEqual(["b", "a"])
+    expect(items.toSorted(sorter(["score:desc", "idx"])).map((i) => i.text)).toEqual(["b", "a"])
   })
 })

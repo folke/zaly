@@ -5,11 +5,13 @@ import { Score } from "./score.ts"
 export type SearchItem = {
   idx?: number
   score?: number
+  file?: string
   text: string
 }
 
 export type ScoredItem<T extends SearchItem = SearchItem> = T & {
   score: number
+  topk?: boolean
 }
 
 export type MatcherOptions = ScoreOptions & {
@@ -118,8 +120,9 @@ export class Matcher<T extends SearchItem = SearchItem> {
 
   update(item: T): ScoredItem<T> {
     const score = this.match(item)
-    item.score = score
-    return item as ScoredItem<T>
+    const it = item as ScoredItem<T>
+    it.score = score
+    return it
   }
 
   positions(input: T | string): number[] {

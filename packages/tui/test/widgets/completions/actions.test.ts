@@ -3,6 +3,7 @@ import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
 import type { Option } from "../../../src/widgets/select.ts"
 
 import { describe, expect, test, vi } from "vitest"
+import { unwrap } from "../../../src/index.ts"
 import { Actions } from "../../../src/input/actions.ts"
 import { Matcher } from "../../../src/search/index.ts"
 import { actionsSource } from "../../../src/widgets/completions/actions.ts"
@@ -21,7 +22,7 @@ const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
 }
 
 const complete = async <T extends Option>(src: CompletionSource<T>, query: string) => {
-  const items = src.complete
+  const items = unwrap(src.complete)
   return typeof items === "function" ? await items(query, match(query)) : items
 }
 

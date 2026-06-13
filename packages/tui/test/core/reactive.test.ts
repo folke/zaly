@@ -151,7 +151,9 @@ describe("effect", () => {
     const [b, setB] = signal("b")
     const [pick, setPick] = signal<"a" | "b">("a")
     const fn = vi.fn(() => (pick() === "a" ? a() : b()))
-    effect(fn)
+    effect(() => {
+      fn()
+    })
     expect(fn).toHaveBeenCalledTimes(1)
 
     // Reading `a` only while pick==="a": writing `b` must not re-run.

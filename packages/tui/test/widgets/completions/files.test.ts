@@ -1,12 +1,13 @@
-// oxlint-disable unicorn/no-await-expression-member
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
 import type { Match, SearchItem } from "../../../src/search/index.ts"
 import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
 import type { Option } from "../../../src/widgets/select.ts"
 
+// oxlint-disable unicorn/no-await-expression-member
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { unwrap } from "../../../src/index.ts"
 import { Matcher } from "../../../src/search/index.ts"
 import { filesSource } from "../../../src/widgets/completions/files.ts"
 
@@ -24,7 +25,7 @@ const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
 }
 
 const complete = async <T extends Option>(src: CompletionSource<T>, query: string) => {
-  const items = src.complete
+  const items = unwrap(src.complete)
   return typeof items === "function" ? await items(query, match(query)) : items
 }
 
@@ -62,19 +63,10 @@ describe("filesSource", () => {
     expect(items.map((i) => i.text)).not.toContain(".hidden")
   })
 
-  test("custom filter overrides default (keeps dotfiles)", async () => {
-    const src = filesSource({ cwd: root, filter: () => true })
+  test("hidden:true (keeps dotfiles)", async () => {
+    const src = filesSource({ cwd: root, hidden: true })
     const items = await complete(src, "")
     expect(items.map((i) => i.text)).toContain(".hidden")
-  })
-
-  test("filter receives Dirent (isFile / isDirectory) and abs path", async () => {
-    const src = filesSource({
-      cwd: root,
-      filter: (ent) => ent.isDirectory(),
-    })
-    const items = await complete(src, "")
-    expect(items.every((i) => i.text.endsWith("/"))).toBe(true)
   })
 
   test("resolves nested paths via trailing-slash segments", async () => {

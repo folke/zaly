@@ -2,7 +2,7 @@ import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
 import type { Accessor, Reactive, Ref } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
-import type { SearchItems } from "../search/search.ts"
+import type { SearchItems, SearchOptions } from "../search/search.ts"
 import type { Option, OptionRender, Select } from "./select.ts"
 
 import { Node } from "../core/node.ts"
@@ -34,7 +34,7 @@ export type AcceptFn<T> = (item: T, query: string) => string | undefined
  *  its own row presentation — handy when `T` isn't a plain `MenuItem`. */
 export interface CompletionSource<T extends Option = Option> {
   triggers: readonly RegExp[]
-  complete: SearchItems<T>
+  complete: Reactive<SearchItems<T>>
   accept?: AcceptFn<T>
   render?: OptionRender<T>
 }
@@ -42,7 +42,7 @@ export interface CompletionSource<T extends Option = Option> {
 // oxlint-disable-next-line no-empty-interface
 export interface AutocompleteState extends StyleState {}
 
-export interface AutocompleteOptions {
+export interface AutocompleteOptions extends SearchOptions {
   /** The `Input` to watch. Pass the node directly, or a `Ref<Input>`
    *  populated by `node.ref(ref)` elsewhere in the tree — the latter
    *  enables fully inline composition where the input doesn't need a
@@ -59,6 +59,7 @@ export interface AutocompleteOptions {
   /** Cap on rows the popup shows at once. Default: 8. */
   maxHeight?: number
   enabled?: Reactive<boolean>
+  reverse?: boolean
 }
 
 export interface AutocompleteEvents extends BaseEvents {
@@ -124,6 +125,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     this.#opts = opts
     this.#sources = opts.sources
 
+    // FIXME: why is this needed?
     const [cancelled, cancel] = signal(false)
 
     this.#match = memo(() => {
@@ -148,11 +150,12 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     })
 
     this.select = picker({
-      items: memo(() => source()?.complete ?? []),
+      ...opts,
+      items: memo(() => unwrap(source()?.complete) ?? []),
       maxHeight: opts.maxHeight ?? 8,
       pattern: memo(() => this.#match()?.query ?? ""),
       render: memo(() => source()?.render),
-      visible,
+      // visible,
     })
 
     this.add(this.select)
