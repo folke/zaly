@@ -2,10 +2,10 @@ import type { MetaPart, TextPart, ToolContext } from "@zaly/ai"
 
 import { AiError, defineTool } from "@zaly/ai"
 import { normPath } from "@zaly/shared"
-import { Spawn, TextStream } from "@zaly/shared/process"
+import { defaultExcludes } from "@zaly/shared/find"
+import { Spawn, TextStream, which } from "@zaly/shared/process"
 import { cleanTextTui } from "@zaly/shared/text"
 import { Type } from "typebox"
-import { bin, defaultExcludes, fileTypeGlobs } from "../utils/search.ts"
 import { truncate } from "../utils/truncate.ts"
 
 const MAX_BUFFER = 512 * 1024
@@ -164,10 +164,37 @@ export const grepTool = defineTool({
 type GrepArgs = Parameters<GrepTool["call"]>[0]
 type GrepBackend = { cmd: string; kind: "rg" | "grep" }
 
+const FILE_TYPE_EXTENSIONS: Record<string, string[]> = {
+  c: ["c", "h"],
+  cpp: ["cpp", "cc", "cxx", "hpp", "hh", "hxx"],
+  go: ["go"],
+  java: ["java"],
+  js: ["js", "jsx", "mjs", "cjs"],
+  json: ["json"],
+  lua: ["lua"],
+  markdown: ["md", "markdown"],
+  md: ["md", "markdown"],
+  py: ["py"],
+  python: ["py"],
+  rs: ["rs"],
+  rust: ["rs"],
+  toml: ["toml"],
+  ts: ["ts", "tsx", "mts", "cts"],
+  yaml: ["yml", "yaml"],
+}
+
+function fileTypeExtensions(type: string): string[] {
+  return FILE_TYPE_EXTENSIONS[type] ?? [type]
+}
+
+function fileTypeGlobs(type: string): string[] {
+  return fileTypeExtensions(type).map((e) => `*.${e}`)
+}
+
 function resolveGrep(): GrepBackend | undefined {
-  const rg = bin("rg")
+  const rg = which("rg")
   if (rg) return { cmd: rg, kind: "rg" }
-  const grep = bin("grep")
+  const grep = which("grep")
   return grep ? { cmd: grep, kind: "grep" } : undefined
 }
 

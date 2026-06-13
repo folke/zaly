@@ -59,16 +59,79 @@ export class BufferStream extends BaseStream<Buffer> {
 
 export class TextStream extends BaseStream<string> {
   #decoder = new TextDecoder()
+  #linePending = ""
+  #lineOffset = 0
+  #lines: string[] = []
+  #waiters: (() => void)[] = []
 
   onAdd(chunk: Buffer): string {
-    return this.#decoder.decode(chunk, { stream: true })
+    const text = this.#decoder.decode(chunk, { stream: true })
+    this.#pushLines(text)
+    return text
   }
 
   onResult(chunks: string[]): string {
     return chunks.join("")
   }
 
-  override onFinish = () => this.chunks.push(this.#decoder.decode()) // flush any remaining bytes
+  override onFinish = () => {
+    const text = this.#decoder.decode() // flush any remaining bytes
+    this.chunks.push(text)
+    this.#pushLines(text)
+    if (this.#linePending) {
+      this.#lines.push(stripCr(this.#linePending))
+      this.#linePending = ""
+    }
+    this.#wakeLines()
+  }
+
+  /** Iterate decoded lines as they arrive. Preserves empty lines and
+   * flushes the final unterminated line when the stream finishes. */
+  async *lines(): AsyncIterable<string> {
+    for await (const batch of this.lineBatches(1)) yield batch[0]
+  }
+
+  /** Iterate decoded lines in batches. Preserves empty lines and flushes
+   * the final unterminated line when the stream finishes. */
+  async *lineBatches(size = 512): AsyncIterable<string[]> {
+    while (!this.done || this.#lineOffset < this.#lines.length) {
+      if (this.#lineOffset < this.#lines.length) {
+        const end = Math.min(this.#lineOffset + size, this.#lines.length)
+        const batch = this.#lines.slice(this.#lineOffset, end)
+        this.#lineOffset = end
+        this.#compactLines()
+        yield batch
+        continue
+      }
+      // oxlint-disable-next-line no-await-in-loop -- async iterator waits for the next chunk
+      await new Promise<void>((resolve) => this.#waiters.push(resolve))
+    }
+  }
+
+  #pushLines(text: string): void {
+    if (!text) return
+    this.#linePending += text
+    const parts = this.#linePending.split("\n")
+    this.#linePending = parts.pop() ?? ""
+    for (const line of parts) this.#lines.push(stripCr(line))
+    this.#wakeLines()
+  }
+
+  #compactLines(): void {
+    if (this.#lineOffset < 1024 || this.#lineOffset * 2 < this.#lines.length) return
+    this.#lines.splice(0, this.#lineOffset)
+    this.#lineOffset = 0
+  }
+
+  #wakeLines(): void {
+    const waiters = this.#waiters
+    this.#waiters = []
+    for (const wake of waiters) wake()
+  }
+}
+
+function stripCr(line: string): string {
+  return line.endsWith("\r") ? line.slice(0, -1) : line
 }
 
 export type ProxyStreamOptions<T, X> = {

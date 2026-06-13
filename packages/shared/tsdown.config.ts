@@ -30,6 +30,7 @@ export default defineConfig({
     cache: "src/cache.ts",
     detect: "src/detect/index.ts",
     env: "src/env.ts",
+    find: "src/find.ts",
     glob: "src/glob.ts",
     image: "src/image/index.ts",
     index: "src/index.ts",

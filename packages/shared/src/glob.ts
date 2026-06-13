@@ -19,6 +19,7 @@ export type GlobOptions = {
   onMatch?: (rel: string) => void
   onError?: (path: string, error: Error) => void
   signal?: AbortSignal
+  limit?: number // maximum number of matches to return
 }
 
 const defaults: GlobOptions = {
@@ -88,7 +89,7 @@ function maxPatternDepth(patterns: readonly string[]): number {
 }
 
 export async function* glob(
-  pattern: string | readonly string[],
+  pattern?: string | readonly string[],
   opts: Partial<GlobOptions> = {}
 ): AsyncGenerator<string> {
   const { default: ignore } = await import("ignore")
@@ -97,12 +98,13 @@ export async function* glob(
   const ignoreFiles = new Set(o.ignoreFiles)
   const rootIgnore = ignore().add([...o.exclude, ...ignoreFiles])
 
-  const patterns = typeof pattern === "string" ? [pattern] : pattern
+  const patterns = typeof pattern === "string" ? [pattern] : (pattern ?? [])
   o.depth = Math.min(o.depth, maxPatternDepth(patterns))
   const match = patterns.length > 0 ? await matcher([...patterns]) : () => true
 
   const visited = new Set<string>()
   const matches: string[] = []
+  let count = 0
 
   const git = gitRoot(root)
   if (o.ignore)
@@ -152,8 +154,10 @@ export async function* glob(
       }
 
       if (!o.type || o.type === (child.dir ? "dir" : "file")) {
+        if (o.limit && count + 1 > o.limit) return
         matches.push(child.rel)
         o.onMatch?.(child.rel)
+        count++
       }
     }
   }
@@ -173,6 +177,7 @@ export async function* glob(
     // oxlint-disable-next-line no-await-in-loop
     await Promise.race(inflight)
     yield* matches.splice(0) // yield and clear matches
+    if (o.limit && count >= o.limit) break
   }
   yield* matches.splice(0) // yield and clear matches
 }

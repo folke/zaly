@@ -45,6 +45,10 @@
       "bun": "./src/env.ts",
       "default": "./dist/env.mjs"
     },
+    "./find": {
+      "bun": "./src/find.ts",
+      "default": "./dist/find.mjs"
+    },
     "./glob": {
       "bun": "./src/glob.ts",
       "default": "./dist/glob.mjs"
@@ -96,6 +100,7 @@
       "./collection": "./dist/collection.mjs",
       "./detect": "./dist/detect.mjs",
       "./env": "./dist/env.mjs",
+      "./find": "./dist/find.mjs",
       "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
       "./logger": "./dist/logger.mjs",
