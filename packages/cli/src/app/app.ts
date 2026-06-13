@@ -145,6 +145,7 @@ export class App {
     this.#picker = new Picker(this.#renderer.overlay, this.#input)
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
+        app: this,
         actions: this.#renderer.actions,
         composer: createRef(this.#input),
         enabled: memo(() => !this.#picker.isOpen()),
