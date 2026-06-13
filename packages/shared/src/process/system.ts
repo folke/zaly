@@ -3,6 +3,13 @@ import { delimiter, join } from "pathe"
 import { safeStat } from "../utils.ts"
 
 // ── Environment helpers ────────────────────────────────────────────────
+const cache = new Map<string, string | undefined>()
+
+export function which(cmd: string, opts: { update?: boolean } = {}): string | undefined {
+  if (opts.update) cache.delete(cmd)
+  if (!cache.has(cmd)) cache.set(cmd, _which(cmd))
+  return cache.get(cmd)
+}
 
 /** PATH probe — returns the resolved absolute path of an executable,
  *  or `undefined` when not found. Truthy check works for the
@@ -19,7 +26,7 @@ import { safeStat } from "../utils.ts"
  *  - On Windows, falls through `PATHEXT` (defaults to `.COM;.EXE;.BAT;.CMD`)
  *    when `cmd` lacks an extension.
  *  - When running under Bun, defers to `Bun.which()` (native, faster). */
-export function which(cmd: string): string | undefined {
+function _which(cmd: string): string | undefined {
   // Bun fast path — native PATH lookup without our manual stat loop.
   // `Bun.which` returns `null` when not found, `string` otherwise.
   const bun = (globalThis as { Bun?: { which?: (cmd: string) => string | null } }).Bun
