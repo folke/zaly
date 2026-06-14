@@ -7,7 +7,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@microsoft/api-extractor": "^7.58.7",
+    "@microsoft/api-extractor": "^7.58.9",
     "@zaly/tui": "workspace:*",
     "citty": "^0.2.2",
     "mitata": "^1.0.34",

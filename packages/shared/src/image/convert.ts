@@ -1,6 +1,5 @@
 // oxlint-disable no-await-in-loop
 import type sharpType from "sharp"
-import type { PngOptions } from "sharp"
 import type { DetectedFile, DetectedImage } from "../detect/file.ts"
 import type { ImageFormat } from "../detect/image.ts"
 import type { ImageInfo } from "./info.ts"
@@ -129,7 +128,7 @@ export async function imageCompress(
 
   // try to compress while preserving the alpha channel (if any) first
   if (format === "png") {
-    const steps: PngOptions[] = [
+    const steps: sharpType.PngOptions[] = [
       { compressionLevel: 9 },
       { palette: true, quality: 80 },
       { palette: true, quality: 50 },
