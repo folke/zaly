@@ -42,7 +42,7 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
         const { find } = await import("@zaly/shared/find")
         for await (const f of find({ ...opts, cwd })) {
           const ff = Array.isArray(f) ? f : [f]
-          yield ff.map((file) => ({ file, name: file, text: file }))
+          yield ff.map((file) => ({ file, text: file }))
         }
       })
       return memo(() => [...iter().result])

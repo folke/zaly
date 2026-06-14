@@ -1,7 +1,7 @@
 import type { GlobOptions } from "./glob.ts"
 
-import { basename } from "pathe"
-import { normPath, prettyPath } from "./path.ts"
+import { basename, relative } from "pathe"
+import { normPath } from "./path.ts"
 import { Spawn } from "./process/spawn.ts"
 import { TextStream } from "./process/stream.ts"
 import { which } from "./process/system.ts"
@@ -31,6 +31,7 @@ const defaults: FindOptions = {
   limit: undefined,
   paths: [],
   pattern: undefined,
+  throttle: 16,
   type: "file",
 }
 
@@ -63,7 +64,7 @@ export class FindError extends Error {
   }
 }
 
-type Finder = (opts: FindOptions) => AsyncIterable<string | string[]>
+type Finder = (opts: FindOptions) => AsyncIterable<string[]>
 
 const backends: Record<NonNullable<FindOptions["backend"]>, Finder> = {
   async *fd(opts: FindOptions) {
@@ -82,20 +83,17 @@ const backends: Record<NonNullable<FindOptions["backend"]>, Finder> = {
       type: opts.type === "any" ? undefined : opts.type,
     }
     let count = 0
-    if (paths.length) {
-      for (const path of paths) {
-        if (opts.signal?.aborted) return
-        // oxlint-disable-next-line no-await-in-loop
-        for await (const p of glob(opts.pattern, { ...globOpts, cwd: path })) {
-          const full = normPath(path, p)
-          const rel = prettyPath(full, cwd)
-          yield rel
-          if (opts.limit && ++count >= opts.limit) return
-        }
+    if (paths.length === 0) paths.push(cwd)
+    for (const path of paths) {
+      if (opts.signal?.aborted) return
+      const rel = relative(cwd, path)
+      // oxlint-disable-next-line no-await-in-loop
+      for await (const p of glob(opts.pattern, { ...globOpts, cwd: path })) {
+        yield p.map((f) => (rel ? `${rel}/${f}` : f))
+        count += p.length
+        if (opts.limit && count >= opts.limit) return
       }
-      return
     }
-    yield* glob(opts.pattern, globOpts)
   },
   async *rg(opts: FindOptions) {
     if (which("rg")) yield* spawnFind("rg", rgFilesArgs(opts), opts)
@@ -109,7 +107,7 @@ export function defaultExcludes(paths: readonly string[]): string[] {
   )
 }
 
-export async function* find(opts: FindOptions = {}): AsyncIterable<string | string[]> {
+export async function* find(opts: FindOptions = {}): AsyncIterable<string[]> {
   opts = { ...defaults, ...opts }
   if (opts.signal?.aborted) return
   let backend = opts.backend
@@ -132,11 +130,7 @@ export async function* find(opts: FindOptions = {}): AsyncIterable<string | stri
   }
 }
 
-async function* spawnFind(
-  cmd: string,
-  args: string[],
-  opts: FindOptions
-): AsyncIterable<string | string[]> {
+async function* spawnFind(cmd: string, args: string[], opts: FindOptions): AsyncIterable<string[]> {
   const cwd = normPath(opts.cwd)
   const stdout = new TextStream()
   const stderr = new TextStream()

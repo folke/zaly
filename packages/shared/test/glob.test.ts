@@ -7,7 +7,7 @@ import { glob } from "../src/glob.ts"
 /** Collect a glob into a sorted array — most assertions compare unordered. */
 async function collect(...args: Parameters<typeof glob>): Promise<string[]> {
   const out: string[] = []
-  for await (const m of glob(...args)) out.push(m)
+  for await (const m of glob(...args)) out.push(...(Array.isArray(m) ? m : [m]))
   return out.toSorted()
 }
 

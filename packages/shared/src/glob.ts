@@ -1,10 +1,11 @@
+// oxlint-disable no-await-in-loop
 import type { Ignore } from "ignore"
+import type { Dirent } from "node:fs"
 
-import { readFileSync } from "node:fs"
-import { readdir } from "node:fs/promises"
-import { join } from "pathe"
+import { readdir, realpath } from "node:fs/promises"
+import { dirname } from "pathe"
 import { normPath } from "./path.ts"
-import { findUp, gitRoot, safeStat, toError } from "./utils.ts"
+import { findUp, gitRoot, safeReadFile, safeStatAsync, toError } from "./utils.ts"
 
 export type GlobOptions = {
   cwd: string
@@ -20,6 +21,7 @@ export type GlobOptions = {
   onError?: (path: string, error: Error) => void
   signal?: AbortSignal
   limit?: number // maximum number of matches to return
+  throttle?: number // delay in ms between yielding batches of matches (default: 0, i.e. yield one by one)
 }
 
 const defaults: GlobOptions = {
@@ -36,31 +38,47 @@ const defaults: GlobOptions = {
 type GlobEntry = {
   path: string
   rel: string
-  ignore?: IgnoreTree
+  ignore: Ignores
   depth: number
-  dir: boolean
+  visited?: Set<string>
 }
 
-class IgnoreTree {
-  parent?: IgnoreTree
+export class Ignores {
+  #ignores: { ig: Ignore; cwd: string }[] = []
 
-  constructor(
-    public ig: Ignore,
-    public rel = ""
-  ) {}
-
-  extend(ig: Ignore, rel: string) {
-    const child = new IgnoreTree(ig, rel)
-    child.parent = this
-    return child
+  constructor(ignores?: { ig: Ignore; cwd: string }[] | { ig: Ignore; cwd: string }) {
+    if (ignores) this.#ignores = Array.isArray(ignores) ? [...ignores] : [ignores]
   }
 
-  ignores(rel: string): boolean {
-    const test = this.ig.test(rel.slice(this.rel.length))
-    if (test.ignored) return true
-    if (test.unignored) return false
-    return this.parent?.ignores(rel) ?? false
+  clone() {
+    return new Ignores(this.#ignores)
   }
+
+  async add(igf: string) {
+    const ig = await readIgnore(igf)
+    if (!ig) return
+    this.#ignores.push({ cwd: dirname(igf), ig })
+  }
+
+  /** `path` must be absolute. Pass `dir: true` for directories. */
+  ignores(path: string, dir?: boolean): boolean {
+    for (let i = this.#ignores.length - 1; i >= 0; i--) {
+      const { ig, cwd } = this.#ignores[i]
+      if (path === cwd) continue
+      let rel = path.slice(cwd.length + 1)
+      if (dir) rel += "/" // ensure directories end with a slash for matching
+      const test = ig.test(rel)
+      if (test.ignored) return true
+      if (test.unignored) return false
+    }
+    return false
+  }
+}
+
+async function readIgnore(path: string): Promise<Ignore | undefined> {
+  const { default: ignore } = await import("ignore")
+  const content = await safeReadFile(path)
+  return content === undefined ? undefined : ignore().add(content)
 }
 
 async function matcher(patterns: string[]) {
@@ -88,96 +106,180 @@ function maxPatternDepth(patterns: readonly string[]): number {
   return max
 }
 
+export function glob(
+  pattern?: string | readonly string[],
+  opts?: Partial<GlobOptions> & { throttle?: 0 }
+): AsyncGenerator<string>
+export function glob(
+  pattern?: string | readonly string[],
+  opts?: Partial<GlobOptions>
+): AsyncGenerator<string[]>
 export async function* glob(
   pattern?: string | readonly string[],
   opts: Partial<GlobOptions> = {}
-): AsyncGenerator<string> {
+): AsyncGenerator<string | string[]> {
   const { default: ignore } = await import("ignore")
   const o: GlobOptions = { ...defaults, ...opts }
   const root = normPath(o.cwd)
-  const ignoreFiles = new Set(o.ignoreFiles)
-  const rootIgnore = ignore().add([...o.exclude, ...ignoreFiles])
-
+  const ignoreFiles = new Map<string, number>(o.ignoreFiles.map((igf, i) => [igf, i]))
+  const rootIgnore = new Ignores({
+    cwd: root,
+    ig: ignore().add([...o.exclude, ...ignoreFiles.keys()]),
+  })
   const patterns = typeof pattern === "string" ? [pattern] : (pattern ?? [])
   o.depth = Math.min(o.depth, maxPatternDepth(patterns))
   const match = patterns.length > 0 ? await matcher([...patterns]) : () => true
-
-  const visited = new Set<string>()
+  const visited = o.follow ? new Set<string>([await realpath(root)]) : undefined
   const matches: string[] = []
   let count = 0
+  let stopped = false
+  o.signal?.addEventListener("abort", () => {
+    stopped = true
+  })
 
-  const git = gitRoot(root)
-  if (o.ignore)
-    for (const igf of ignoreFiles) {
-      const igPath = findUp(root, igf, { stop: git })
-      if (igPath) rootIgnore.add(readFileSync(igPath, "utf8"))
-    }
+  if (o.ignore) {
+    const git = gitRoot(root)
+    // findUp walks up and check files in order, so we need to reverse inner and outer,
+    // to keep correct precedence (closest ignore file should override rules from parent directories)
+    const paths = findUp(root, [...ignoreFiles.keys()].toReversed(), {
+      all: true,
+      stop: git,
+      type: "file",
+    })
+      .filter((p) => dirname(p) !== root)
+      .toReversed()
+    for (const p of paths) await rootIgnore.add(p)
+  }
 
   async function ls(dir: GlobEntry) {
-    if (opts.signal?.aborted) return // skip if cancelled mid-flight
-    let entries
+    if (stopped) return
+    let entries: (Dirent & { skip?: boolean })[]
     try {
       entries = await readdir(dir.path, { withFileTypes: true })
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
+      if (stopped) return
     } catch (error) {
       return o.onError?.(dir.path, toError(error))
     }
 
     let ig = dir.ignore
-    const children: GlobEntry[] = []
 
+    let ignoreAdd: { igf: string; order: number }[] | undefined
+
+    // First pass to find ignore files and build ignore tree
     for (const entry of entries) {
-      const path = join(entry.parentPath, entry.name)
       if (o.ignore && entry.isFile() && ignoreFiles.has(entry.name)) {
-        const fig = ignore().add(readFileSync(path, "utf8"))
-        ig = ig ? ig.extend(fig, dir.rel) : new IgnoreTree(fig, dir.rel)
-      } else if (!o.hidden && entry.name.startsWith(".")) {
-        continue
-      } else {
-        let isDirectory = entry.isDirectory()
-        isDirectory ||=
-          o.follow && entry.isSymbolicLink() && (safeStat(path)?.isDirectory() ?? false)
-        const rel = dir.rel + entry.name + (isDirectory ? "/" : "")
-        const depth = dir.depth + 1
-        children.push({ depth, dir: isDirectory, path, rel })
+        entry.skip = true // mark ignore files to skip in the main loop
+        ignoreAdd ??= []
+        ignoreAdd.push({ igf: `${dir.path}/${entry.name}`, order: ignoreFiles.get(entry.name)! })
       }
     }
 
-    for (const child of children) {
-      o.onVisit?.(child.rel)
-      if (ig?.ignores(child.rel)) continue
-      if (!child.dir && !match(child.rel)) continue
+    if (ignoreAdd) {
+      // sort by priority to ensure consistent order of ignore rules
+      ignoreAdd.sort((a, b) => a.order - b.order)
+      ig = ig.clone()
+      for (const { igf } of ignoreAdd) await ig.add(igf)
+    }
 
-      if (child.dir) {
-        if (visited.has(child.path)) continue
-        visited.add(child.path)
-        if (child.depth < o.depth) queue.push({ ...child, ignore: ig })
+    // Second pass to process entries
+    for (const entry of entries) {
+      // oxlint-disable-next-line typescript/no-unnecessary-condition
+      if (stopped) return // check if stopped before processing each entry
+      if (entry.skip) continue // skip already processed ignore files
+      if (!o.hidden && entry.name.startsWith(".")) continue
+      const path = `${dir.path}/${entry.name}`
+      let isDirectory = entry.isDirectory()
+      if (!isDirectory && o.follow && entry.isSymbolicLink()) {
+        const stat = await safeStatAsync(path)
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
+        if (stopped) return
+        isDirectory = stat?.isDirectory() ?? false
+      }
+      const rel = dir.rel + entry.name + (isDirectory ? "/" : "")
+      const depth = dir.depth + 1
+      o.onVisit?.(rel)
+
+      if (ig.ignores(path, isDirectory)) continue
+
+      // traversal — never gated by the user pattern
+      if (isDirectory) {
+        let childVisited: Set<string> | undefined
+        if (o.follow) {
+          const realPath = await realpath(path).catch(() => undefined)
+          // oxlint-disable-next-line typescript/no-unnecessary-condition
+          if (stopped) return
+          if (!realPath || dir.visited?.has(realPath)) continue
+          childVisited = new Set(dir.visited).add(realPath)
+        }
+        if (depth < o.depth) queue.push({ depth, ignore: ig, path, rel, visited: childVisited })
       }
 
-      if (!o.type || o.type === (child.dir ? "dir" : "file")) {
-        if (o.limit && count + 1 > o.limit) return
-        matches.push(child.rel)
-        o.onMatch?.(child.rel)
-        count++
+      // emission — gated by type AND pattern
+      if (!o.type || o.type === (isDirectory ? "dir" : "file")) {
+        if (match(isDirectory ? rel.slice(0, -1) : rel)) {
+          matches.push(rel)
+          o.onMatch?.(rel)
+          count++
+          if (o.limit && count >= o.limit) {
+            stopped = true
+            queue.length = 0
+            return
+          }
+        }
       }
     }
   }
 
-  const queue: GlobEntry[] = [
-    { depth: 0, dir: true, ignore: new IgnoreTree(rootIgnore), path: root, rel: "" },
-  ]
+  const queue: GlobEntry[] = [{ depth: 0, ignore: rootIgnore, path: root, rel: "", visited }]
 
   const inflight = new Set<Promise<void>>()
+  let lastYield = performance.now()
+  let sleep = Promise.withResolvers()
+  let error: unknown
+
   while (queue.length > 0 || inflight.size > 0) {
     o.signal?.throwIfAborted()
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    if (stopped) break
+    if (error) throw error
 
     while (inflight.size < CONCURRENCY && queue.length > 0) {
-      const p = ls(queue.pop()!).finally(() => inflight.delete(p))
+      const p = ls(queue.pop()!)
+        .finally(() => {
+          inflight.delete(p)
+          sleep.resolve()
+        })
+        // oxlint-disable-next-line unicorn/catch-error-name
+        .catch((e) => {
+          error ??= e
+          stopped = true
+          queue.length = 0
+        })
       inflight.add(p)
     }
-    // oxlint-disable-next-line no-await-in-loop
-    await Promise.race(inflight)
-    yield* matches.splice(0) // yield and clear matches
-    if (o.limit && count >= o.limit) break
+
+    if (inflight.size > 0) {
+      await sleep.promise
+      sleep = Promise.withResolvers()
+    }
+
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    if (stopped) break
+    if (!matches.length) continue
+
+    if (o.throttle) {
+      const now = performance.now()
+      if (now - lastYield >= o.throttle) {
+        lastYield = now
+        yield matches.splice(0) // yield and clear matches
+      }
+    } else yield* matches.splice(0) // yield and clear matches
   }
-  yield* matches.splice(0) // yield and clear matches
+
+  o.signal?.throwIfAborted()
+  if (matches.length === 0) return
+  if (o.throttle)
+    yield matches.splice(0) // yield and clear matches
+  else yield* matches.splice(0) // yield and clear matches
 }
