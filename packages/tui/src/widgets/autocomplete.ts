@@ -125,7 +125,6 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     this.#opts = opts
     this.#sources = opts.sources
 
-    // FIXME: why is this needed?
     const [cancelled, cancel] = signal(false)
 
     this.#match = memo(() => {
@@ -155,7 +154,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
       maxHeight: opts.maxHeight ?? 8,
       pattern: memo(() => this.#match()?.query ?? ""),
       render: memo(() => source()?.render),
-      // visible,
+      visible,
     })
 
     this.add(this.select)
