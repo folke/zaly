@@ -43,7 +43,7 @@ type GlobEntry = {
   visited?: Set<string>
 }
 
-export class Ignores {
+class Ignores {
   #ignores: { ig: Ignore; cwd: string }[] = []
 
   constructor(ignores?: { ig: Ignore; cwd: string }[] | { ig: Ignore; cwd: string }) {

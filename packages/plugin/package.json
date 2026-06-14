@@ -44,6 +44,7 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "jiti": "2.7.0"
+    "jiti": "2.7.0",
+    "typebox": "1.2.10"
   }
 }

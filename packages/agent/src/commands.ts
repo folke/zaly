@@ -80,7 +80,7 @@ export class Commands {
   async format(input: string | ArgsResult, cmd: Command): Promise<string> {
     let args: ArgsResult
     if (typeof input === "string") {
-      const { argsParse } = await import("../../shared/src/args.ts")
+      const { argsParse } = await import("@zaly/shared/args")
       args = await argsParse(input, cmd.args ?? {})
     } else args = input
 

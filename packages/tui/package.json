@@ -83,10 +83,6 @@
       "bun": "./src/widgets/completions/files.ts",
       "default": "./dist/widgets/completions/files.mjs"
     },
-    "./widgets/completions/fuzzy": {
-      "bun": "./src/widgets/completions/fuzzy.ts",
-      "default": "./dist/widgets/completions/fuzzy.mjs"
-    },
     "./widgets/completions/github": {
       "bun": "./src/widgets/completions/github.ts",
       "default": "./dist/widgets/completions/github.mjs"
@@ -180,7 +176,6 @@
       "./widgets/completions": "./dist/widgets/completions/index.mjs",
       "./widgets/completions/actions": "./dist/widgets/completions/actions.mjs",
       "./widgets/completions/files": "./dist/widgets/completions/files.mjs",
-      "./widgets/completions/fuzzy": "./dist/widgets/completions/fuzzy.mjs",
       "./widgets/completions/github": "./dist/widgets/completions/github.mjs",
       "./widgets/diff": "./dist/widgets/diff.mjs",
       "./widgets/divider": "./dist/widgets/divider.mjs",
