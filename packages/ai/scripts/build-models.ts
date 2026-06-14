@@ -95,7 +95,13 @@ synthesiseClones(raw, overrides)
 
 const out: ModelCatalog = { models: {}, providers: {} }
 const allIds: string[] = []
-const skipped: { id: string; reason: string }[] = []
+const skipped = new Map<string, string[]>()
+
+const skip = (id: string, reason: string): void => {
+  const ids = skipped.get(reason) ?? []
+  ids.push(id)
+  skipped.set(reason, ids)
+}
 
 for (const [pid, provider] of Object.entries(raw)) {
   const override = overrides[pid] ?? {}
@@ -109,10 +115,7 @@ for (const [pid, provider] of Object.entries(raw)) {
     // provider-level (but not over our `overrides.adapter` force).
     const modelAdapter = override.adapter ?? adapterForNpm(m.provider?.npm ?? provider.npm)
     if (modelAdapter === undefined) {
-      skipped.push({
-        id: `${pid}/${mid}`,
-        reason: `no adapter for npm ${m.provider?.npm ?? provider.npm}`,
-      })
+      skip(pid, `no adapter for ${m.provider?.npm ?? provider.npm}`)
       continue
     }
 
@@ -131,7 +134,7 @@ for (const [pid, provider] of Object.entries(raw)) {
   }
 
   if (Object.keys(keptModels).length === 0) {
-    skipped.push({ id: pid, reason: "no tool-calling models survived filter" })
+    skip(pid, "no tool-calling models survived filter")
     continue
   }
 
@@ -148,8 +151,13 @@ console.log(`✓ ${providerCount} providers, ${allIds.length} models`)
 console.log(`  wrote: ${CATALOG_FILE.replace(AI_DIR, ".")}`)
 console.log(`         ${MODEL_IDS_FILE.replace(AI_DIR, ".")}`)
 console.log()
-console.log(`skipped (${skipped.length}):`)
-for (const s of skipped) console.log(`  ${s.id.padEnd(30)}  ${s.reason}`)
+console.log(`skipped (${[...skipped.values()].flat().length}):`)
+for (const [reason, ids] of [...skipped.entries()].toSorted((a, b) => b[1].length - a[1].length)) {
+  const uniqueIds = [...new Set(ids)]
+  console.log(
+    `${reason.padEnd(50)}: ${ids.length} (${uniqueIds.slice(0, 3).join(", ")}${uniqueIds.length > 3 ? ", …" : ""})`
+  )
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────
 
