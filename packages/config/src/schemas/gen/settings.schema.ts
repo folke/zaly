@@ -20,7 +20,8 @@ export const SettingsSchema = {
                             "low",
                             "medium",
                             "high",
-                            "xhigh"
+                            "xhigh",
+                            "max"
                         ]
                     },
                     tools: {
@@ -152,11 +153,104 @@ export const SettingsSchema = {
                         },
                         required: []
                     },
+                    secrets: {
+                        $ref: "#/components/schemas/AuthSecrets"
+                    },
                     keymap: {
                         $ref: "#/components/schemas/Recordstringstringstring"
                     }
                 },
                 required: []
+            },
+            AuthSecrets: {
+                type: "object",
+                properties: {},
+                required: [],
+                additionalProperties: {
+                    $ref: "#/components/schemas/Secret"
+                }
+            },
+            Secret: {
+                oneOf: [
+                    {
+                        type: "object",
+                        properties: {
+                            source: {
+                                type: "string",
+                                "enum": [
+                                    "env"
+                                ]
+                            },
+                            key: {
+                                type: "string"
+                            }
+                        },
+                        required: [
+                            "source",
+                            "key"
+                        ]
+                    },
+                    {
+                        type: "object",
+                        properties: {
+                            source: {
+                                type: "string",
+                                "enum": [
+                                    "exec"
+                                ]
+                            },
+                            cmd: {
+                                type: "string"
+                            },
+                            args: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                }
+                            }
+                        },
+                        required: [
+                            "source",
+                            "cmd"
+                        ]
+                    },
+                    {
+                        type: "object",
+                        properties: {
+                            source: {
+                                type: "string",
+                                "enum": [
+                                    "file"
+                                ]
+                            },
+                            path: {
+                                type: "string"
+                            }
+                        },
+                        required: [
+                            "source",
+                            "path"
+                        ]
+                    },
+                    {
+                        type: "object",
+                        properties: {
+                            source: {
+                                type: "string",
+                                "enum": [
+                                    "literal"
+                                ]
+                            },
+                            value: {
+                                type: "string"
+                            }
+                        },
+                        required: [
+                            "source",
+                            "value"
+                        ]
+                    }
+                ]
             },
             Recordstringstringstring: {
                 type: "object",
