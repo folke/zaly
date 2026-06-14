@@ -169,18 +169,6 @@ export function unwrap<T>(v: Reactive<T>): T {
   return isAccessor<T>(v) ? v() : v
 }
 
-export function lazy<T>(fn: () => Reactive<T>): Accessor<T> {
-  let value: Reactive<T>
-  let initialized = false
-  return brand(() => {
-    if (!initialized) {
-      value = fn()
-      initialized = true
-    }
-    return unwrap(value)
-  }, "get")
-}
-
 function brand<F extends (...args: any[]) => any>(fn: F, tag: "get"): Accessor<ReturnType<F>>
 function brand<F extends (...args: any[]) => any>(fn: F, tag: "set"): Setter<Parameters<F>[0]>
 function brand<F extends (...args: any[]) => any>(fn: F, tag: "get" | "set"): F {
@@ -450,9 +438,13 @@ const nodeCtx = new WeakMap<Node, TrackingCtx>()
  * the notify. Wrap mutable values you want to "publish" in a fresh
  * object/array, or use a counter signal to force fan-out.
  */
-export function signal<T>(initial: T): Signal<T> {
+export function signal<T>(
+  initial: T,
+  opts: { equals?: false | ((prev: T, next: T) => boolean) } = {}
+): Signal<T> {
   let value = initial
   const subs = new Set<() => void>()
+  const equals = opts.equals === false ? () => false : (opts.equals ?? ((a, b) => a === b))
 
   const get = brand((): T => {
     const ctx = activeCtx.getStore()
@@ -465,7 +457,7 @@ export function signal<T>(initial: T): Signal<T> {
 
   const set = brand((next: T | ((prev: T) => T)): void => {
     const resolved = typeof next === "function" ? (next as (prev: T) => T)(value) : next
-    if (resolved === value) return
+    if (equals(value, resolved)) return
     value = resolved
     // Snapshot — subscribers may mutate the set while running.
     const snapshot = [...subs]
@@ -816,25 +808,40 @@ export function createAsync<T>(
   return value
 }
 
+export type Progressive<T> = Accessor<T> & {
+  readonly loading: Accessor<boolean>
+  whenIdle: () => Promise<void>
+}
+
 export function createProgressive<T>(
   fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
   opts: { throttle?: number; initialValue: T }
-): Accessor<{ result: T; loading: boolean }>
+): Progressive<T>
 export function createProgressive<T>(
   fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
   opts: { throttle?: number; initialValue?: T }
-): Accessor<{ result?: T; loading: boolean }>
+): Progressive<T | undefined>
 export function createProgressive<T>(
   fn: (ctx: { signal: AbortSignal; set: (value: T) => void }) => MaybePromise<T>,
   opts: { throttle?: number; initialValue?: T } = {}
-): Accessor<{ result?: T; loading: boolean }> {
+): Progressive<T | undefined> {
   const throttle = opts.throttle ?? 16
-  const [state, setState] = signal({
-    loading: true,
-    result: opts.initialValue,
+  const [loading, setLoading] = signal(true)
+  const [state, setState] = signal<T | undefined>(opts.initialValue, { equals: false })
+
+  const ret: Progressive<T | undefined> = Object.assign(state, {
+    get loading() {
+      return loading
+    },
+    whenIdle: () => {
+      if (!loading()) return Promise.resolve()
+      idle ??= Promise.withResolvers<void>()
+      return idle.promise
+    },
   })
 
   let gen = 0
+  let idle: ReturnType<typeof Promise.withResolvers<void>> | undefined
 
   effect(() => {
     const my = ++gen
@@ -842,7 +849,7 @@ export function createProgressive<T>(
 
     void (async () => {
       try {
-        setState((prev) => ({ ...prev, loading: true }))
+        setLoading(true)
         let prev = performance.now()
         const result = await fn({
           set: (value: T) => {
@@ -850,12 +857,23 @@ export function createProgressive<T>(
             const now = performance.now()
             if (now - prev >= throttle) {
               prev = now
-              setState({ loading: true, result: value })
+              setState(() => value)
             }
           },
           signal: ac.signal,
         })
-        if (my === gen) setState({ loading: false, result })
+        if (my === gen) {
+          setState(() => result)
+          setLoading(false)
+          idle?.resolve()
+          idle = undefined
+        }
+      } catch (error) {
+        if (my === gen) {
+          setLoading(false)
+          idle?.reject(error)
+          idle = undefined
+        }
       } finally {
         ac.abort()
       }
@@ -866,13 +884,13 @@ export function createProgressive<T>(
     }
   })
 
-  return state
+  return ret
 }
 
 export function createIterable<T>(
   fn: (ctx: { signal: AbortSignal }) => AsyncIterable<T | readonly T[]>,
   opts: { throttle?: number; initialValue?: readonly T[] } = {}
-): Accessor<{ result: readonly T[]; loading: boolean }> {
+): Progressive<readonly T[]> {
   return createProgressive(
     async ({ signal: s, set }) => {
       const results: T[] = []
