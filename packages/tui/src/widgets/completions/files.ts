@@ -4,7 +4,7 @@ import type { CompletionSource } from "../autocomplete.ts"
 import type { PickerItem } from "../picker.ts"
 
 import { normPath } from "@zaly/shared"
-import { createIterable } from "../../core/reactive.ts"
+import { createIterable, signal } from "../../core/reactive.ts"
 
 export interface FilesSourceOptions extends FindOptions {
   /** Base directory relative queries resolve against. Default:
@@ -20,6 +20,7 @@ export interface FilesSourceOptions extends FindOptions {
    *  When customizing `trigger`, set this to the character your trigger
    *  represents. */
   prefix?: string
+  refreshInterval?: number
 }
 
 type File = PickerItem & { file: string }
@@ -31,6 +32,8 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
   const trigger = opts.trigger ?? /(?<=^|\s)@/
   const prefix = opts.prefix ?? "@"
   let results: Progressive<readonly File[]> | undefined
+  const [gen, setGen] = signal(0)
+  let lastRefresh = 0
   return {
     accept: (item) => {
       // Dirs keep the popup open (trigger still matches, user can
@@ -40,7 +43,13 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
     get complete() {
+      const now = performance.now()
+      if (!results?.loading() && now - lastRefresh > (opts.refreshInterval ?? 10_000)) {
+        setGen((g) => g + 1) // Refresh results
+        lastRefresh = now
+      }
       return (results ??= createIterable<File>(async function* iterFiles() {
+        gen() // Re-run when `gen` changes
         const { find } = await import("@zaly/shared/find")
         for await (const f of find({ ...opts, cwd })) {
           const ff = Array.isArray(f) ? f : [f]
