@@ -10,6 +10,7 @@ import { input } from "../../src/widgets/input.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 40 })
 const scored = <T extends Option>(option: T): ScoredItem<T> => ({ ...option, score: 1 })
+const yieldMain = () => new Promise((resolve) => setImmediate(resolve))
 
 describe("autocomplete", () => {
   test("renders nothing when no trigger matches", async () => {
@@ -42,7 +43,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 3, value: "/he" })
-    await Promise.resolve()
+    await yieldMain()
     expect(complete).toHaveBeenCalledWith("he", expect.any(Function))
     const rows = await ac.render(ctx)
     expect(rows.length).toBeGreaterThan(0)
@@ -61,7 +62,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 3, value: "/he" })
-    await Promise.resolve()
+    await yieldMain()
     ac.select.actions["select.accept"]()
     expect(i.state.value).toBe("/help ")
     expect(i.state.cursor).toBe("/help ".length)
@@ -80,7 +81,7 @@ describe("autocomplete", () => {
     })
     ac.on("complete", cb)
     i.state.set({ cursor: 1, value: "/" })
-    await Promise.resolve()
+    await yieldMain()
     ac.select.actions["select.accept"]()
     expect(cb).toHaveBeenCalledWith(
       { item: picked, source: "slash", type: "complete" },
@@ -102,7 +103,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 3, value: "/he" })
-    await Promise.resolve()
+    await yieldMain()
     expect(ac.visible).toBe(true)
     ac.select.actions["select.cancel"]()
     expect(ac.visible).toBe(false)
@@ -121,7 +122,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 7, value: "hey @bo" })
-    await Promise.resolve()
+    await yieldMain()
     expect(complete).toHaveBeenCalledWith("bo", expect.any(Function))
     ac.select.actions["select.accept"]()
     expect(i.state.value).toBe("hey @bob ")
@@ -161,7 +162,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 3, value: "/qu" })
-    await Promise.resolve()
+    await yieldMain()
     ac.select.actions["select.accept"]()
     expect(onAccept).toHaveBeenCalledWith(picked, "qu")
     expect(i.state.value).toBe("")
@@ -183,7 +184,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 4, value: "@src" })
-    await Promise.resolve()
+    await yieldMain()
     ac.select.actions["select.accept"]()
     expect(i.state.value).toBe("src/index.ts")
     expect(i.state.cursor).toBe("src/index.ts".length)
@@ -202,7 +203,7 @@ describe("autocomplete", () => {
       },
     })
     i.state.set({ cursor: 3, value: "/he" })
-    await Promise.resolve()
+    await yieldMain()
     expect(ac.visible).toBe(true)
     i.state.set({ cursor: 5, value: "hello" })
     await Promise.resolve()

@@ -1,9 +1,10 @@
 import type { FindOptions } from "@zaly/shared/find"
+import type { Progressive } from "../../core/reactive.ts"
 import type { CompletionSource } from "../autocomplete.ts"
 import type { PickerItem } from "../picker.ts"
 
 import { normPath } from "@zaly/shared"
-import { createIterable, lazy, memo } from "../../core/reactive.ts"
+import { createIterable } from "../../core/reactive.ts"
 
 export interface FilesSourceOptions extends FindOptions {
   /** Base directory relative queries resolve against. Default:
@@ -29,6 +30,7 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
   const cwd = normPath(opts.cwd)
   const trigger = opts.trigger ?? /(?<=^|\s)@/
   const prefix = opts.prefix ?? "@"
+  let results: Progressive<readonly File[]> | undefined
   return {
     accept: (item) => {
       // Dirs keep the popup open (trigger still matches, user can
@@ -37,16 +39,15 @@ export function filesSource(opts: FilesSourceOptions = {}): CompletionSource<Fil
       const v = item.file
       return `${prefix}${v}${v.endsWith("/") ? "" : " "}`
     },
-    complete: lazy(() => {
-      const iter = createIterable(async function* iterFiles() {
+    get complete() {
+      return (results ??= createIterable<File>(async function* iterFiles() {
         const { find } = await import("@zaly/shared/find")
         for await (const f of find({ ...opts, cwd })) {
           const ff = Array.isArray(f) ? f : [f]
           yield ff.map((file) => ({ file, text: file }))
         }
-      })
-      return memo(() => [...iter().result])
-    }),
+      }))
+    },
     triggers: [trigger],
   }
 }

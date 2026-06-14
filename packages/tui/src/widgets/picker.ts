@@ -89,7 +89,7 @@ export const picker = widget(
         initialValue: [],
       }
     )
-    node.state.items = memo(() => [...results().result])
+    node.state.items = results
     if (props.input) node.bind(props.input)
 
     const matches = () =>

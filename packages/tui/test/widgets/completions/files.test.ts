@@ -1,3 +1,4 @@
+import type { Progressive } from "../../../src/index.ts"
 import type { Match, SearchItem } from "../../../src/search/index.ts"
 import type { CompletionSource } from "../../../src/widgets/autocomplete.ts"
 import type { Option } from "../../../src/widgets/select.ts"
@@ -7,7 +8,6 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { unwrap } from "../../../src/index.ts"
 import { Matcher } from "../../../src/search/index.ts"
 import { filesSource } from "../../../src/widgets/completions/files.ts"
 
@@ -25,8 +25,9 @@ const match = <T extends SearchItem = SearchItem>(q: string): Match<T> => {
 }
 
 const complete = async <T extends Option>(src: CompletionSource<T>, query: string) => {
-  const items = unwrap(src.complete)
-  return typeof items === "function" ? await items(query, match(query)) : items
+  const items = src.complete as Progressive<T[]>
+  await items.whenIdle()
+  return items().filter((i) => match(query)(i.text))
 }
 
 let root: string
@@ -52,7 +53,7 @@ describe("filesSource", () => {
     const src = filesSource({ cwd: root })
     const items = await complete(src, "")
     const values = items.map((i) => i.text)
-    expect(values).toContain("src/")
+    expect(values).toContain("src/index.ts")
     expect(values).toContain("README.md")
     expect(values).toContain("package.json")
   })
@@ -73,7 +74,7 @@ describe("filesSource", () => {
     const src = filesSource({ cwd: root })
     const items = await complete(src, "src/")
     const values = items.map((i) => i.text)
-    expect(values).toContain("src/widgets/")
+    expect(values).toContain("src/widgets/input.ts")
     expect(values).toContain("src/index.ts")
   })
 
