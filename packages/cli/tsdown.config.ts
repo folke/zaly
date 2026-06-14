@@ -14,8 +14,10 @@ export default defineConfig({
     plugins: [
       {
         name: "fix-shebang",
-        renderChunk(code) {
-          return code.replace(/^#!.*\bbun\b.*/, "#!/usr/bin/env node")
+        renderChunk(code, chunk) {
+          if (chunk.name === "zaly") {
+            return code.replace(/^#!.*\bbun\b.*/, "#!/usr/bin/env node")
+          }
         },
       },
     ],
