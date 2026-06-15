@@ -71,7 +71,7 @@ export class RenderFrame {
       if (this.current[i] === next) continue
       const row = i + 1
       this.queue((terminal) => {
-        terminal.write(terminal.moveTo(row, 1) + terminal.clearLine() + next)
+        terminal.write(terminal.moveTo(row, 1) + terminal.clearLine() + next.trimEnd())
       })
       this.current[i] = next
     }
