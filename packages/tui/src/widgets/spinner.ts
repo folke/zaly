@@ -92,8 +92,6 @@ const animator = new Animator()
  * is harmless — the unref'd timer doesn't pin the event loop.
  */
 export class Spinner extends Node<SpinnerState> {
-  #timer?: ReturnType<typeof setInterval>
-
   constructor(state: SpinnerState) {
     super(state)
     // Timer lifecycle is driven by mount + reactive state, not `_render`:
@@ -128,7 +126,7 @@ export class Spinner extends Node<SpinnerState> {
   #check(): void {
     const enabled = unwrap(this.state.running ?? true) && this.visible && this.mounted // track
     if (!enabled) return animator.del(this)
-    if (this.#timer === undefined) animator.add(this)
+    animator.add(this)
   }
 
   protected _render(ctx: RenderCtx): string[] {
