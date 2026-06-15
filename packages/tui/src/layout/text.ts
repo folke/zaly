@@ -3,6 +3,7 @@ import type { StyleBuilder } from "../style/builder.ts"
 
 import { clamp } from "@zaly/shared"
 import {
+  hasAnsi,
   sliceAnsi,
   splitAnsi,
   stringWidth,
@@ -15,6 +16,7 @@ import { ansiBg, styleAnsi } from "../style/ansi.ts"
 export type WrapMode = "word" | "char" | "none"
 
 const ELLIPSIS = "…"
+const TAB_WIDTH = 4
 
 export function formatText(
   text: string,
@@ -31,7 +33,7 @@ export function formatText(
   }
 ): string[] {
   const mode = opts.wrap ?? "word"
-  const lines = splitAnsi(text)
+  const lines = splitAnsi(expandTabs(text))
   const ret: string[] = []
   if (mode === "none") ret.push(...lines)
   else {
@@ -78,6 +80,28 @@ export function formatText(
   return ret.map((line) => (opts.style ? opts.style(line) : line))
 }
 
+export function expandTabs(s: string, tabSize = TAB_WIDTH): string {
+  if (!s.includes("\t")) return s
+  const plain = hasAnsi(s) ? stripAnsi(s) : s
+  const spaces: string[] = []
+  let col = 0
+
+  for (const ch of plain) {
+    if (ch === "\t") {
+      const n = tabSize - (col % tabSize)
+      spaces.push(" ".repeat(n))
+      col += n
+    } else if (ch === "\n" || ch === "\r") {
+      col = 0
+    } else {
+      col += stringWidth(ch)
+    }
+  }
+
+  let i = 0
+  return s.replaceAll("\t", () => spaces[i++] ?? " ".repeat(tabSize))
+}
+
 export function formatLines(
   text: string | string[],
   opts: {
@@ -90,7 +114,7 @@ export function formatLines(
     style?: StyleBuilder
   } = {}
 ): string[] {
-  const lines = typeof text === "string" ? splitAnsi(text) : text
+  const lines = (typeof text === "string" ? splitAnsi(text) : text).map((line) => expandTabs(line))
   const offset = clamp(opts.offset ?? 0, 0, lines.length - 1)
   const limit = clamp(opts.limit ?? lines.length, 1, lines.length - offset)
   const ellipsis = opts.style?.(ELLIPSIS) ?? ELLIPSIS
@@ -146,6 +170,7 @@ function minContent(text: string, mode: WrapMode): number | undefined {
 }
 
 export function calcLayout(text: string, opts: { wrap?: WrapMode } = {}): Layout {
+  text = expandTabs(text)
   const width = maxContent(text)
   return {
     minWidth: minContent(text, opts.wrap ?? "word") ?? width,

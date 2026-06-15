@@ -12,7 +12,7 @@ import type { TextContent } from "./text.ts"
 import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
 import { createAsync, signal } from "../core/reactive.ts"
-import { calcLayout, formatText } from "../layout/text.ts"
+import { calcLayout, expandTabs, formatText } from "../layout/text.ts"
 import { shikiWorker } from "../shiki/client.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
 import { textContent } from "./text.ts"
@@ -106,7 +106,8 @@ export class Markdown extends Node<MarkdownState> {
       const { MarkdownRenderer } = await import("../markdown/renderer.ts")
       this.#renderer = new MarkdownRenderer({ ...this.state.options, parent: this })
     }
-    const source = await textContent(this.state.content, ctx)
+    let source = await textContent(this.state.content, ctx)
+    source = expandTabs(source)
     let formatted: string
 
     if (!hasColors) formatted = this.#renderer.normalizeEol(source, source)
