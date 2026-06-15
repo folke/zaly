@@ -75,16 +75,19 @@ export const toolCall = widget((props: ToolCallProps) => {
       { flexDirection: "column" },
       toolPreview(call.name, params),
       // Optional description, dimmed
-      text(({ style }) => style.dim(desc ?? ""), { visible: desc !== undefined }),
+      desc ? text(({ style }) => style.dim(desc)) : undefined,
       show(
         { when: full },
-        // Result body, once it arrives
-        log({
-          content: memo(() => props.result()?.error?.message ?? "Unknown error"),
-          level: "error",
-          visible: isError,
-        }),
-        show({ when: memo(() => !isError()) }, renderer.result(toolCtx))
+        {
+          use: () =>
+            log({
+              content: memo(() => props.result()?.error?.message ?? "Unknown error"),
+              level: "error",
+              visible: isError,
+            }),
+          when: isError,
+        },
+        () => renderer.result(toolCtx)
       )
     )
   )

@@ -95,8 +95,7 @@ export const code = widget((props: State<CodeState>) => {
       style: props.style === false ? undefined : (props.style ?? "code"),
       width: "fit",
     },
-    show(
-      { when: title },
+    show({ when: title }, () =>
       text((ctx) => ctx.style.codeTitle(title() ?? ""), { wrap: "none" })
     ),
     text(formatted, { wrap: "none" })

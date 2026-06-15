@@ -33,24 +33,25 @@ export const readRenderer: ToolRenderer<ReadTool> = {
     return box(
       {},
       show(
-        { when: unchanged },
-        log({
-          content: "file unchanged since last read",
-          level: "warn",
-          visible: unchanged,
-        })
-      ),
-      show(
-        { when: memo(() => !unchanged()) },
-        code({
-          code: content,
-          limit: PREVIEW_LINE_LIMIT,
-          more: (_more, msg) => `${msg} read`,
-          numberOffset,
-          numbered: true,
-          path,
-          title,
-        })
+        {
+          use: () =>
+            log({
+              content: "file unchanged since last read",
+              level: "warn",
+              visible: unchanged,
+            }),
+          when: unchanged,
+        },
+        () =>
+          code({
+            code: content,
+            limit: PREVIEW_LINE_LIMIT,
+            more: (_more, msg) => `${msg} read`,
+            numberOffset,
+            numbered: true,
+            path,
+            title,
+          })
       )
     )
   },
