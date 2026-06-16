@@ -13,6 +13,7 @@ import {
   SuspenseContext,
   withOwner,
 } from "../core/reactive.ts"
+import { bumpPlacements as bumpKittyPlacements } from "../image/kitty.ts"
 import { Surface } from "./surface.ts"
 
 export type StreamEvents = {
@@ -22,7 +23,7 @@ export type StreamEvents = {
 
 type StreamSnapshot = {
   bottom: number
-  hasKittyImages: boolean
+  deleteVirtualPlacements?: () => string
   historyLength: number
   scrollTop: number
   top: number
@@ -35,7 +36,6 @@ type StreamRenderPlan = {
   frame: RenderFrame
   next: StreamSnapshot
   old: StreamSnapshot
-  resetImages: boolean
 }
 
 type RenderState = {
@@ -113,7 +113,6 @@ export class Stream extends Surface<StreamEvents> {
   #state: RenderState[] = []
   #snapshot: StreamSnapshot = {
     bottom: 0,
-    hasKittyImages: false,
     historyLength: 0,
     scrollTop: 0,
     top: 1,
@@ -379,6 +378,8 @@ export class Stream extends Surface<StreamEvents> {
     let newVisible = liveRows.slice(-liveHeight)
     const historyChanged = this.#historyLength !== historyLength
 
+    let deleteImages: (() => string) | undefined
+
     if (this.#scrollTop > 0) {
       if (historyChanged) this.emitScroll()
       const start = this.#scrollTop - 1
@@ -391,11 +392,16 @@ export class Stream extends Surface<StreamEvents> {
         if (newVisible.length < liveHeight)
           newVisible.push(...liveRows.slice(0, liveHeight - newVisible.length))
       }
+      const kittyPlacements = bumpKittyPlacements(newVisible)
+      if (kittyPlacements) {
+        newVisible = kittyPlacements.rows
+        deleteImages = kittyPlacements.delete
+      }
     }
 
     const next: StreamSnapshot = {
       bottom: liveHeight,
-      hasKittyImages: newVisible.some((row) => row.includes("\x1b_Ga=p")),
+      deleteVirtualPlacements: deleteImages,
       historyLength,
       scrollTop: this.#scrollTop === 0 ? maxTop : this.#scrollTop,
       top: liveHeight - newVisible.length + 1,
@@ -408,7 +414,6 @@ export class Stream extends Surface<StreamEvents> {
       frame,
       next,
       old,
-      resetImages: (next.virtual || old.virtual) && (old.hasKittyImages || next.hasKittyImages),
     }
 
     this.#paint(plan)
@@ -421,7 +426,8 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   #paint(plan: StreamRenderPlan): void {
-    if (plan.resetImages) plan.frame.queue((terminal) => terminal.deleteImages({ data: false }))
+    if (plan.old.deleteVirtualPlacements)
+      plan.frame.queue((terminal) => terminal.write(plan.old.deleteVirtualPlacements!()))
     this.#paintCommits(plan)
     this.#clearAboveVisible(plan)
     this.#paintVirtualScroll(plan)
@@ -549,7 +555,6 @@ export class Stream extends Surface<StreamEvents> {
     this.#snapshot = {
       ...this.#snapshot,
       bottom: this.terminal.scrollBottom,
-      hasKittyImages: false,
       scrollTop: 0,
       top: 1,
       virtual: false,

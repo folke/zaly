@@ -18,9 +18,6 @@
 
 import type { ImageInfo } from "@zaly/shared/image"
 
-import { fileHash } from "@zaly/shared/detect"
-import { isRemoteSession } from "./capabilities.ts"
-
 const CHUNK_SIZE = 4096
 
 /** Allocate a fresh 32-bit image id (1..0xFFFFFFFE). */
@@ -56,6 +53,8 @@ const transmitCache = new Map<string, CacheEntry>()
 export async function transmitOnce(
   info: ImageInfo
 ): Promise<{ imageId: number; transmit: string } | undefined> {
+  const { fileHash } = await import("@zaly/shared/detect")
+  const { isRemoteSession } = await import("./capabilities.ts")
   const key = fileHash(info)
   let entry = transmitCache.get(key)
   if (entry === undefined) {
@@ -160,4 +159,20 @@ function toBase64(bytes: Uint8Array): string {
   let binary = ""
   for (const b of bytes) binary += String.fromCharCode(b)
   return btoa(binary)
+}
+
+export function bumpPlacements(
+  rows: string[]
+): undefined | { delete: () => string; rows: string[] } {
+  const placements: { i: number; p: number }[] = []
+  const ret = rows.map((row) =>
+    row.replace(/\x1b_Ga=p,i=(\d+),p=(\d+)/g, (_, i) => {
+      const imageId = parseInt(i, 10)
+      const placementId = allocatePlacementId()
+      placements.push({ i: imageId, p: placementId })
+      return `\x1b_Ga=p,i=${imageId},p=${placementId}`
+    })
+  )
+  if (!placements.length) return
+  return { delete: () => placements.map((p) => deletePlacement(p.i, p.p)).join(""), rows: ret }
 }
