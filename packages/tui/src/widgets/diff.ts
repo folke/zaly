@@ -72,8 +72,8 @@ export class Diff extends Node<DiffState> {
         if (!lang) return input
         const theme = context?.style().theme.shiki
         const [original, modified] = await Promise.all([
-          codeToAnsi(input.original, lang, theme),
-          codeToAnsi(input.modified, lang, theme),
+          codeToAnsi(input.original, lang, { theme }),
+          codeToAnsi(input.modified, lang, { theme }),
         ])
         return { modified, original }
       },

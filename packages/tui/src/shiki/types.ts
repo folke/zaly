@@ -8,21 +8,28 @@ export type ShikiRequest = {
   code: string
   lang: string
   theme?: ShikiTheme
+  signal?: AbortSignal
 }
 
-export type ShikiJob = Omit<ShikiRequest, "lang" | "key"> & {
+export type ShikiWorkerRequest = Omit<ShikiRequest, "lang" | "key"> & {
+  id: number
   lang: ShikiLanguage
   key: string
 }
 
-export type ShikiResult = { key: string; value: string; error?: string }
+export type ShikiJob = ShikiWorkerRequest &
+  ReturnType<typeof Promise.withResolvers<ShikiResult>> & {
+    scheduled?: boolean
+  }
 
-export type ShikiWorkerRequest = {
+export type ShikiResult = {
   id: number
-  jobs: ShikiJob[]
+  value: string
+  error?: string
+  aborted?: boolean
 }
 
-export type ShikiWorkerResponse = {
-  id: number
-  results: ShikiResult[]
+export type ShikiOpts = {
+  theme?: ShikiTheme
+  signal?: AbortSignal
 }

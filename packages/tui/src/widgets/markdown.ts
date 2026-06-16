@@ -41,6 +41,7 @@ type ShikiCode = {
   lang: string
   theme?: ShikiTheme
   inflight?: Promise<string>
+  ac?: AbortController
   result?: string
   gen: number
 }
@@ -68,8 +69,18 @@ export class Markdown extends Node<MarkdownState> {
         if (!todo.length) return update // nothing to do, skip
         await Promise.all(
           todo.map(async (req) => {
-            req.inflight ??= codeToAnsi(req.code, req.lang, req.theme)
-            req.result = await req.inflight
+            req.ac ??= new AbortController()
+            req.inflight ??= codeToAnsi(req.code, req.lang, {
+              signal: req.ac.signal,
+              theme: req.theme,
+            })
+            try {
+              req.result = await req.inflight
+            } catch (error) {
+              if (req.ac.signal.aborted) {
+                if (this.#code.get(req.key) === req) this.#code.delete(req.key)
+              } else throw error
+            }
           })
         )
         return update + 1
@@ -120,7 +131,11 @@ export class Markdown extends Node<MarkdownState> {
       })
 
       // prune old entries
-      for (const [k, c] of this.#code.entries()) if (c.gen !== this.#gen) this.#code.delete(k)
+      for (const [k, c] of this.#code.entries())
+        if (c.gen !== this.#gen) {
+          c.ac?.abort()
+          if (c.result !== undefined) this.#code.delete(k)
+        }
 
       // Trigger the worker if needed
       if (this.#code.values().some((c) => !c.inflight)) {

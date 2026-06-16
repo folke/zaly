@@ -57,7 +57,7 @@ export class Cli {
     const penv = Object.fromEntries(Object.entries(env).map(([p, v]) => [prettyPath(p), v]))
     const json = JSON.stringify({ ...settings, env: penv }, undefined, 2)
     const theme = await this.ctx.theme()
-    const str = await codeToAnsi(json, "json", theme.shiki)
+    const str = await codeToAnsi(json, "json", { theme: theme.shiki })
     this.ctx.log(str.trim())
   }
 

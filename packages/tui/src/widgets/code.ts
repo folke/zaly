@@ -72,7 +72,7 @@ export const code = widget((props: State<CodeState>) => {
     async () => {
       const source = plain()
       if (!lang || !syntax) return source
-      return await codeToAnsi(source, lang, context?.style().theme.shiki)
+      return await codeToAnsi(source, lang, { theme: context?.style().theme.shiki })
     },
     { initialValue: plain() }
   )

@@ -16,7 +16,7 @@ export class BashComposer implements ComposerPlugin {
     const s = ctx.style
     const prefix = bashMatch[1]
     const command = bashMatch[2]
-    value = await codeToAnsi(command, "bash", s.theme.shiki)
+    value = await codeToAnsi(command, "bash", { theme: s.theme.shiki })
     return `${s.divider(prefix)}${value}`
   }
 
