@@ -8,7 +8,8 @@ import { basename, extname } from "pathe"
 // oxlint-disable no-nested-ternary
 // oxlint-disable typescript/no-unnecessary-condition
 import { Node } from "../core/node.ts"
-import { createAsync, memo, unwrap } from "../core/reactive.ts"
+import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
+import { RenderContext } from "../core/render.ts"
 import { calcLayout, countLines } from "../layout/text.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
 
@@ -63,14 +64,16 @@ export class Diff extends Node<DiffState> {
       return this.state.lang ?? (path !== undefined ? langFromPath(path) : undefined)
     })
 
+    const context = useContext(RenderContext)
     this.#highlighted = createAsync(
       async () => {
         const lang = this.#lang()
         const input = this.input
         if (!lang) return input
+        const theme = context?.style().theme.shiki
         const [original, modified] = await Promise.all([
-          codeToAnsi(input.original, lang),
-          codeToAnsi(input.modified, lang),
+          codeToAnsi(input.original, lang, theme),
+          codeToAnsi(input.modified, lang, theme),
         ])
         return { modified, original }
       },
