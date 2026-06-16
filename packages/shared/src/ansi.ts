@@ -104,19 +104,32 @@ export function splitAnsi(s: string): string[] {
   // `joined` and prepend the lot to each slice — catastrophic for kitty
   // placements, which then fire on every row instead of just their own.
   const perLine = lines.map((line) => extractApc(line))
-  const joinedNoApc = perLine.map((p) => p.rest).join("")
   const out: string[] = []
-  let pos = 0
+  let prev = ""
+  let prevRest = ""
   for (const { apc, rest } of perLine) {
-    const w = stringWidth(rest)
+    const w = stringWidth(prev)
+    const prefix = stripSyntheticResets(prev, prevRest)
     // `joinedNoApc` has no APC content, so sliceAnsi's internal
     // extractApc here produces an empty `apc` prefix — the returned
     // slice is pure SGR-normalised content. We prepend the line's own
     // APCs back on.
-    out.push(apc + sliceAnsi(joinedNoApc, pos, pos + w))
-    pos += w
+    const next = sliceAnsi(prefix + rest, w, w + stringWidth(rest))
+    out.push(apc + next)
+    prev = next
+    prevRest = rest
   }
   return out
+}
+
+const SYNTHETIC_RESET_RE = /\x1b\[(?:0|22|23|24|25|27|28|29|39|49|59)m$/
+
+function stripSyntheticResets(prev: string, source: string): string {
+  for (;;) {
+    const match = prev.match(SYNTHETIC_RESET_RE)
+    if (!match || source.endsWith(match[0])) return prev
+    prev = prev.slice(0, -match[0].length)
+  }
 }
 
 /** Check if the string contains any ANSI SGR escapes */
