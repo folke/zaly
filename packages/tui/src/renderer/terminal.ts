@@ -27,6 +27,20 @@ export interface TerminalReader {
   pause?: () => void
 }
 
+export type TerminalProgress = "inactive" | "progress" | "loading" | "error" | "paused"
+type ProgressState = {
+  type: TerminalProgress
+  value?: number
+}
+// oxlint-disable-next-line sort-keys
+const progressStates: Record<TerminalProgress, number> = {
+  inactive: 0,
+  progress: 1,
+  error: 2,
+  loading: 3,
+  paused: 4,
+}
+
 export interface TerminalOpts {
   stdin?: TerminalReader
   stdout?: TerminalWriter
@@ -44,6 +58,7 @@ type ResizeListener = (cols: number, rows: number) => void
 
 // ESC helpers — keeping as plain string constants so greps / docs line up.
 const CSI = "\x1b["
+const ST = "\x1b\\"
 
 /** @internal */
 export class Terminal {
@@ -55,6 +70,8 @@ export class Terminal {
   #started = false
   #reserveBottom: number
   #mouse = false
+  #progress: ProgressState = { type: "inactive" }
+  #progressInterval: ReturnType<typeof setInterval> | undefined
   #prevRawMode: boolean | undefined
   #resizeListeners = new Set<ResizeListener>()
   #signalCleanup: (() => void) | undefined
@@ -106,9 +123,7 @@ export class Terminal {
     this.#mouse = mouse
     if (!this.#started) return
     this.write(
-      mouse
-        ? `${CSI}?1002h${CSI}?1006h${CSI}?1007h`
-        : `${CSI}?1007l${CSI}?1006l${CSI}?1002l`
+      mouse ? `${CSI}?1002h${CSI}?1006h${CSI}?1007h` : `${CSI}?1007l${CSI}?1006l${CSI}?1002l`
     )
   }
 
@@ -132,6 +147,7 @@ export class Terminal {
     // update cursor visibility, pause animations, etc.
     this.write(`${CSI}?25l${CSI}?7l${CSI}?2004h${CSI}?1004h`)
     if (this.#mouse) this.write(`${CSI}?1002h${CSI}?1006h${CSI}?1007h`)
+    this.#writeProgress()
     // Scroll region set to [1, scrollBottom]. Terminals default to the
     // full viewport, so omitting `reserveBottom = 0` is a no-op.
     if (this.#reserveBottom > 0) this.setScrollRegion(1, this.scrollBottom)
@@ -192,8 +208,9 @@ export class Terminal {
     if (!this.#started) return
 
     try {
-      // Remove all Kitty images
+      // Remove all Kitty images and taskbar/window progress state.
       this.deleteImages()
+      this.setProgress()
 
       // Clear scroll region (if set), disable paste/focus reporting,
       // auto-wrap back on, cursor back on.
@@ -201,7 +218,9 @@ export class Terminal {
       // Wipe the visible viewport — covers both leftover footer rows
       // and any half-painted stream rows from an in-flight render that
       // was killed mid-paint (crash path). Scrollback is unaffected.
-      this.write(`${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`)
+      this.write(
+        `${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`
+      )
       if (this.#altScreen) this.write(`${CSI}?1049l`)
     } finally {
       this.#started = false
@@ -217,6 +236,43 @@ export class Terminal {
     process.off("SIGWINCH", this.#onResize)
     this.#signalCleanup?.()
     this.#signalCleanup = undefined
+  }
+
+  /** Set terminal/window progress when supported (OSC 9;4).
+   *
+   * - omitted / `"inactive"`: clear progress
+   * - `"loading"`: indeterminate progress
+   * - `"progress"`: determinate progress percentage, clamped to `0..100`
+   * - `"error"` / `"paused"`: terminal-specific error/paused states with optional percentage
+   */
+  setProgress(state: "progress", value: number): void
+  setProgress(state: "error" | "paused", value?: number): void
+  setProgress(state?: "inactive" | "loading"): void
+  setProgress(state?: TerminalProgress, value?: number): void {
+    state ??= "inactive"
+    if (state === "progress") this.#progress = { type: "progress", value: value ?? 0 }
+    else if (state === "error" || state === "paused")
+      this.#progress = { type: state, value: value ?? this.#progress.value }
+    else this.#progress = { type: state }
+    this.#writeProgress()
+    if (state === "inactive") {
+      if (this.#progressInterval) clearInterval(this.#progressInterval)
+      this.#progressInterval = undefined
+    } else if (!this.#progressInterval) {
+      this.#progressInterval = setInterval(() => this.#writeProgress(), 100)
+      this.#progressInterval.unref()
+    }
+  }
+
+  #writeProgress(): void {
+    if (!this.#started) return
+    const value =
+      this.#progress.value === undefined
+        ? undefined
+        : Math.max(0, Math.min(100, Math.round(this.#progress.value)))
+    const state = progressStates[this.#progress.type]
+    const seq = `\x1b]9;4;${state}${value !== undefined ? `;${value}` : ""}${ST}`
+    this.write(seq)
   }
 
   /** Change the bottom reservation and re-apply the scroll region. */

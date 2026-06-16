@@ -7,7 +7,7 @@ import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 import type { Composer } from "./composer.ts"
 
-import { createRef, createRenderer, createStore, memo } from "@zaly/tui"
+import { createRef, createRenderer, createStore, effect, memo } from "@zaly/tui"
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
@@ -128,7 +128,7 @@ export class App {
       theme: await this.#ctx.theme(),
     })
     this.#renderer.stream.on("scroll", ({ offset, total, below }) => {
-      this.#state.scroll = { offset, total, below }
+      this.#state.scroll = { below, offset, total }
     })
 
     void this.initActions()
@@ -145,12 +145,18 @@ export class App {
     this.#picker = new Picker(this.#renderer.overlay, this.#input)
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
-        app: this,
         actions: this.#renderer.actions,
+        app: this,
         composer: createRef(this.#input),
         enabled: memo(() => !this.#picker.isOpen()),
       })
     )
+    effect(() => {
+      if (this.#state.status === "error") this.#renderer.terminal.setProgress("error")
+      else if (this.#state.busy) this.#renderer.terminal.setProgress("loading")
+      else this.#renderer.terminal.setProgress()
+    })
+
     this.#renderer.start()
     await this.#renderer.render()
   }
