@@ -56,5 +56,10 @@
   },
   "trustedDependencies": [
     "sharp"
-  ]
+  ],
+  "description": "A terminal-native AI coding agent for developers.",
+  "homepage": "https://zaly.dev",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  }
 }

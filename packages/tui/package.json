@@ -4,7 +4,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/folke/zaly.git"
+    "url": "git+https://github.com/folke/zaly.git",
+    "directory": "packages/tui"
   },
   "files": [
     "dist/**/*",
@@ -231,5 +232,9 @@
   },
   "inlinedDependencies": {
     "typia": "12.1.1"
+  },
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/tui#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
   }
 }

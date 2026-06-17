@@ -4,7 +4,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/folke/zaly.git"
+    "url": "git+https://github.com/folke/zaly.git",
+    "directory": "packages/plugin"
   },
   "files": [
     "dist/**/*"
@@ -46,5 +47,9 @@
   "inlinedDependencies": {
     "jiti": "2.7.0",
     "typebox": "1.2.14"
+  },
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/plugin#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
   }
 }

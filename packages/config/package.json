@@ -4,7 +4,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/folke/zaly.git"
+    "url": "git+https://github.com/folke/zaly.git",
+    "directory": "packages/config"
   },
   "files": [
     "assets/**/*",
@@ -48,5 +49,9 @@
   "inlinedDependencies": {
     "defu": "6.1.7",
     "typia": "12.1.1"
+  },
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/config#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
   }
 }

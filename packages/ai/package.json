@@ -4,7 +4,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/folke/zaly.git"
+    "url": "git+https://github.com/folke/zaly.git",
+    "directory": "packages/ai"
   },
   "files": [
     "dist/**/*",
@@ -46,5 +47,9 @@
   },
   "inlinedDependencies": {
     "jsonrepair": "3.14.0"
+  },
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/ai#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
   }
 }
