@@ -136,6 +136,8 @@ export class Terminal {
   start(): void {
     if (this.#started) return
     this.#started = true
+    this.#writeProgress("progress", 0)
+    this.#writeProgress("inactive")
 
     if (this.#altScreen) this.write(`${CSI}?1049h`)
 
@@ -250,6 +252,12 @@ export class Terminal {
   setProgress(state?: "inactive" | "loading"): void
   setProgress(state?: TerminalProgress, value?: number): void {
     state ??= "inactive"
+
+    const resetError = () => {
+      this.#writeProgress("progress", 50)
+      this.#writeProgress("loading")
+    }
+    if (this.#progress.type === "error" && state !== "error") resetError()
     if (state === "progress") this.#progress = { type: "progress", value: value ?? 0 }
     else if (state === "error" || state === "paused")
       this.#progress = { type: state, value: value ?? this.#progress.value }
@@ -264,14 +272,14 @@ export class Terminal {
     }
   }
 
-  #writeProgress(): void {
+  #writeProgress(state?: TerminalProgress, value?: number | false): void {
     if (!this.#started) return
-    const value =
+    value ??=
       this.#progress.value === undefined
         ? undefined
         : Math.max(0, Math.min(100, Math.round(this.#progress.value)))
-    const state = progressStates[this.#progress.type]
-    const seq = `\x1b]9;4;${state}${value !== undefined ? `;${value}` : ""}${ST}`
+    const st = progressStates[state ?? this.#progress.type]
+    const seq = `\x1b]9;4;${st}${typeof value === "number" ? `;${value}` : ""}${ST}`
     this.write(seq)
   }
 
