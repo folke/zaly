@@ -216,6 +216,7 @@ describe("real tools do not leave the agent stuck in running-tools", () => {
     expect(agent.status).toBe("idle")
     const part = lastToolPart(agent)
     if (!part) throw new Error("expected tool-result")
+    console.log(part)
     expect(part.isError).toBe(false)
   })
 })
