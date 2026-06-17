@@ -26,8 +26,8 @@
   },
   "scripts": {
     "build": "z build",
-    "build:models": "bun scripts/fetch-models.ts && bun scripts/build-models.ts",
     "lint": "z lint",
+    "models": "bun scripts/fetch-models.ts && bun scripts/build-models.ts",
     "test": "z test"
   },
   "dependencies": {

@@ -1,59 +1,37 @@
+name: CI
+
 on:
   push:
     branches:
       - main
+  pull_request:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  id-token: write
-
-name: CI
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun --workspaces install --frozen-lockfile
+      # TODO: enable once existing lint issues are fixed.
+      # - run: bun z lint
       - run: bun z build
-      - run: bun z test
+      - run: bun z test --bun
+      - name: Check generated artifacts
+        if: github.event_name == 'pull_request'
+        run: |
+          if ! git diff --quiet; then
+            git status --short
+            git diff --stat
+            echo "::error::Generated artifacts changed. Run 'bun z build' and commit the result."
+            exit 1
+          fi
       - uses: stefanzweifel/git-auto-commit-action@v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           commit_message: "chore: update generated artifacts"
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    outputs:
-      releases_created: ${{ steps.release-please.outputs.releases_created }}
-    steps:
-      - uses: googleapis/release-please-action@v4
-        id: release-please
-        with:
-          config-file: .github/release-please-config.json
-          manifest-file: .github/release-please-manifest.json
-
-  # publish:
-  #   needs: release
-  #   if: needs.release.outputs.releases_created == 'true'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: oven-sh/setup-bun@v2
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: "24.x"
-  #         registry-url: "https://registry.npmjs.org"
-  #     - run: bun install --frozen-lockfile
-  #     - run: bun run build
-  #
-  #     - name: Publish @rekal/mem
-  #       working-directory: packages/mem
-  #       run: npm publish --provenance --access public
-  #
-  #     - name: Publish @rekal/cli
-  #       working-directory: packages/cli
-  #       run: npm publish --provenance --access public

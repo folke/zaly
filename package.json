@@ -19,6 +19,7 @@
     "fmt": "z fmt",
     "knip": "knip",
     "lint": "z lint",
+    "models": "bun --cwd packages/ai run models",
     "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
     "test": "z test --bun",

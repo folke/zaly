@@ -1,0 +1,22 @@
+name: Models
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun --workspaces install --frozen-lockfile
+      - run: bun run models
+      - run: bun z lint packages/ai
+      - uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "chore(models): update models.dev catalog"
