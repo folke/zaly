@@ -126,7 +126,9 @@ export async function* glob(
     cwd: root,
     ig: ignore().add([...o.exclude, ...ignoreFiles.keys()]),
   })
-  const patterns = typeof pattern === "string" ? [pattern] : (pattern ?? [])
+  const patterns = (typeof pattern === "string" ? [pattern] : (pattern ?? [])).filter(
+    (p) => p.trim() !== ""
+  )
   o.depth = Math.min(o.depth, maxPatternDepth(patterns))
   const match = patterns.length > 0 ? await matcher([...patterns]) : () => true
   const visited = o.follow ? new Set<string>([await realpath(root)]) : undefined

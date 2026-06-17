@@ -14,6 +14,6 @@ const text = stringifyContent(ret.content)
 console.log(ret.meta)
 console.log(text)
 
-const findRet = await runTool(findTool, { cwd: ".", max_depth: 3, name: "package.json" }, {})
+const findRet = await runTool(findTool, { cwd: ".", glob: "package.json", max_depth: 3 }, {})
 console.log(findRet.meta)
 console.log(stringifyContent(findRet.content))
