@@ -1,7 +1,13 @@
+import { isCI } from "@zaly/shared/env"
 import { spawnSync } from "node:child_process"
 import { cpSync, readdirSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
+
+if (isCI) {
+  console.log("Skipping tokyonight build on CI …")
+  process.exit(0)
+}
 
 // Path to the tokyonight.nvim checkout that hosts the zaly extra template.
 // Override with $TOKYONIGHT_DIR to point elsewhere (CI, a sibling checkout, …).
