@@ -11,9 +11,6 @@ permissions:
 
 jobs:
   build:
-    if: >-
-      github.event_name != 'pull_request' ||
-      (!startsWith(github.head_ref, 'release-please--') && !startsWith(github.head_ref, 'release-please/'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,3 +36,21 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           commit_message: "chore: update generated artifacts"
+
+  release:
+    needs: build
+    if: ${{ !failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      releases_created: ${{ steps.release-please.outputs.releases_created }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release-please
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
+          target-branch: main
