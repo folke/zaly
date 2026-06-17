@@ -18,7 +18,7 @@ export const defaultSettings: Settings = {
     // "fetch",
     // "find",
     // "grep",
-    // "search",
+    "search",
     // "subagent",
     // "task_list",
     // "task_poll",

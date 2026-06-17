@@ -22,6 +22,7 @@
     "models": "bun --cwd packages/ai run models",
     "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
+    "publish": "z publish",
     "test": "z test --bun",
     "test:live": "LIVE=1 bun test live",
     "up": "bun z update"

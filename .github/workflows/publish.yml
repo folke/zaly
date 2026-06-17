@@ -1,0 +1,71 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run npm publish --dry-run
+        required: false
+        type: boolean
+        default: false
+      packages:
+        description: Optional space-separated package names/slugs to publish
+        required: false
+        type: string
+        default: ""
+      provenance:
+        description: Publish with npm provenance
+        required: false
+        type: boolean
+        default: false
+      tag:
+        description: npm dist-tag
+        required: false
+        type: string
+        default: latest
+  # Enable after npm provenance is configured and the release flow is ready.
+  # workflow_run:
+  #   workflows:
+  #     - Release
+  #   branches:
+  #     - main
+  #   types:
+  #     - completed
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    # For workflow_run later, add:
+    # if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+      - run: bun install --frozen-lockfile
+      - run: bun z build
+      - name: Publish packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          args=(--tag "${{ inputs.tag }}")
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          if [[ "${{ inputs.provenance }}" == "true" ]]; then
+            args+=(--provenance)
+          else
+            args+=(--no-provenance)
+          fi
+          if [[ -n "${{ inputs.packages }}" ]]; then
+            # shellcheck disable=SC2206
+            packages=(${{ inputs.packages }})
+            args+=("${packages[@]}")
+          fi
+          bun z publish "${args[@]}"

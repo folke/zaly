@@ -7,7 +7,8 @@
     "url": "git+https://github.com/folke/zaly.git"
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "assets/MODELS_DEV_LICENSE"
   ],
   "type": "module",
   "exports": {

@@ -7,12 +7,11 @@
     "url": "git+https://github.com/folke/zaly.git"
   },
   "bin": {
-    "zaly": "./bin/zaly.ts"
+    "zaly": "bin/zaly.ts"
   },
   "files": [
-    "src/**/*",
-    "bin/**/*",
-    "dist/**/*"
+    "dist/**/*",
+    "scripts/postinstall.mjs"
   ],
   "type": "module",
   "exports": {

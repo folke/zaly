@@ -155,6 +155,48 @@ const main = defineCommand({
         await exec(["oxfmt", ...rawArgs])
       },
     }),
+    publish: defineCommand({
+      meta: {
+        name: "publish",
+        description: "Publish public packages to npm, skipping versions that already exist",
+      },
+      args: {
+        dryRun: {
+          type: "boolean",
+          description: "Run npm publish --dry-run",
+          default: false,
+        },
+        otp: {
+          type: "string",
+          description: "Forward an npm one-time password",
+        },
+        provenance: {
+          type: "boolean",
+          description: "Publish with npm provenance (defaults to true on GitHub Actions)",
+          default: process.env.GITHUB_ACTIONS === "true",
+        },
+        tag: {
+          type: "string",
+          description: "Publish with a specific npm dist-tag",
+        },
+      },
+      run: async ({ args, rawArgs }) => {
+        const { publish } = await import("./publish.ts")
+        const packageNames = rawArgs.filter((arg, index) => {
+          if (arg.startsWith("-")) return false
+          const prev = rawArgs[index - 1]
+          return prev !== "--otp" && prev !== "--tag"
+        })
+        await publish({
+          root,
+          dryRun: args.dryRun,
+          otp: args.otp,
+          packageNames,
+          provenance: args.provenance,
+          tag: args.tag,
+        })
+      },
+    }),
     bench: defineCommand({
       meta: {
         name: "bench",
