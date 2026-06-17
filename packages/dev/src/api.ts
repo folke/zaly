@@ -8,18 +8,11 @@
 // oxlint-disable sort-keys
 
 import type { IConfigFile } from "@microsoft/api-extractor"
+import type { Pkg, PkgExport } from "./utils.ts"
 
 import { Extractor, ExtractorConfig, ExtractorLogLevel } from "@microsoft/api-extractor"
-import { existsSync, mkdirSync, readFileSync } from "node:fs"
+import { mkdirSync } from "node:fs"
 import { join } from "pathe"
-
-interface PackageJson {
-  name: string
-  exports?: Record<string, ExportTarget>
-  publishConfig?: { exports?: Record<string, ExportTarget> }
-}
-
-type ExportTarget = string | { default?: string; types?: string; import?: string }
 
 // `@zaly/cli` is a leaf binary, not consumed externally — skip it.
 export const API_PACKAGES = ["agent", "ai", "shared", "tui"] as const
@@ -34,7 +27,7 @@ function mjsToDts(mjs: string): string {
   return mjs.replace(/\.mjs$/, ".d.mts")
 }
 
-function entryTarget(t: ExportTarget): string | undefined {
+function entryTarget(t: PkgExport): string | undefined {
   if (typeof t === "string") return t
   return t.types ?? t.default ?? t.import
 }
@@ -74,21 +67,16 @@ function configFor(pkgDir: string, pkgName: string, subpath: string, dts: string
   }
 }
 
-function reportForPackage(root: string, slug: string, check: boolean): boolean {
-  const pkgDir = join(root, "packages", slug)
-  const pkgPath = join(pkgDir, "package.json")
-  if (!existsSync(pkgPath)) return true
+function reportForPackage(pkg: Pkg, check: boolean): boolean {
+  const pkgDir = pkg.dir
+  console.log(`Generating API report for ${pkg.name}...`)
 
-  console.log(`Generating API report for @zaly/${slug}...`)
-
-  const pkg: PackageJson = JSON.parse(readFileSync(pkgPath, "utf8"))
   mkdirSync(join(pkgDir, "etc"), { recursive: true })
   // `publishConfig.exports` carries the dist-shape (`./dist/*.mjs`); use
   // it when present so we don't have to mirror tsdown's output layout
   // ourselves. Falls back to the dev `exports` field for packages that
   // don't override.
-  const publishExports = pkg.publishConfig?.exports
-  const exportEntries = Object.entries(publishExports ?? pkg.exports ?? {})
+  const exportEntries = Object.entries(pkg.publishExports)
   let allOk = true
 
   for (const [subpath, target] of exportEntries) {
@@ -102,7 +90,7 @@ function reportForPackage(root: string, slug: string, check: boolean): boolean {
     const config = ExtractorConfig.prepare({
       configObject: configFor(pkgDir, pkg.name, subpath, dts),
       configObjectFullPath: join(pkgDir, "api-extractor.json"),
-      packageJsonFullPath: pkgPath,
+      packageJsonFullPath: join(pkgDir, "package.json"),
     })
 
     const result = Extractor.invoke(config, {
@@ -114,15 +102,14 @@ function reportForPackage(root: string, slug: string, check: boolean): boolean {
   return allOk
 }
 
-export function runApi(opts: { root: string; slug?: string; check: boolean }): boolean {
-  if (opts.slug && !API_PACKAGES.includes(opts.slug as (typeof API_PACKAGES)[number])) {
-    process.stderr.write(`no API report defined for @zaly/${opts.slug}\n`)
-    return true
-  }
-  const targets = opts.slug ? [opts.slug] : [...API_PACKAGES]
+export function runApi(pkgs: Pkg[], opts: { check: boolean }): boolean {
   let allOk = true
-  for (const slug of targets) {
-    if (!reportForPackage(opts.root, slug, opts.check)) allOk = false
+  for (const pkg of pkgs) {
+    if (!API_PACKAGES.includes(pkg.slug as (typeof API_PACKAGES)[number])) {
+      console.warn(`Skipping \`${pkg.name}\` — not in API_PACKAGES list`)
+      continue
+    }
+    if (!reportForPackage(pkg, opts.check)) allOk = false
   }
   return allOk
 }

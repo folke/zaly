@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@typia/transform": "^12.1.1",
+    "pkg-types": "^2.3.1",
     "std-env": "^4.1.0",
     "typia": "^12.1.1"
   }

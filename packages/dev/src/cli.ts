@@ -2,47 +2,17 @@
 // oxlint-disable unicorn/prefer-ternary
 // oxlint-disable sort-keys
 
-import { defineCommand, runCommand, runMain, showUsage } from "citty"
-import { existsSync, readdirSync, readFileSync } from "node:fs"
-import { fileURLToPath } from "node:url"
-import { dirname, join, resolve } from "pathe"
-import { isAgent } from "std-env"
+import type { Pkg } from "./utils.ts"
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
+import { defineCommand, runCommand, runMain, showUsage } from "citty"
+import { existsSync } from "node:fs"
+import { join } from "pathe"
+import { isAgent } from "std-env"
+import { findPkg, resolvePkgs, workspace } from "./utils.ts"
 
 const passthrough = new Set(["test", "lint", "fmt"])
 
 export type Runtime = "bun" | "node"
-
-function currentPackage(): string | undefined {
-  if (process.cwd() === root) return undefined
-  try {
-    const json = JSON.parse(readFileSync(`${process.cwd()}/package.json`, "utf8"))
-    return typeof json.name === "string" && json.name !== "zaly" ? json.name : undefined
-  } catch {
-    return undefined
-  }
-}
-
-function currentSlug(): string | undefined {
-  const name = currentPackage()
-  return name?.startsWith("@zaly/") ? name.slice("@zaly/".length) : undefined
-}
-
-function allPackageDirs(): string[] {
-  const pkgsRoot = join(root, "packages")
-  return readdirSync(pkgsRoot, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(pkgsRoot, d.name, "package.json")))
-    .map((d) => join(pkgsRoot, d.name))
-    .toSorted()
-}
-
-function pkgDirs(opts: { root?: boolean } = {}): string[] {
-  const slug = currentSlug()
-  const ret = slug ? [join(root, "packages", slug)] : allPackageDirs()
-  if (!slug && opts.root) ret.unshift(root)
-  return ret
-}
 
 async function exec(cmd: string[], cwd: string = process.cwd()): Promise<void> {
   const proc = Bun.spawn(cmd, { cwd, stdio: ["inherit", "inherit", "inherit"] })
@@ -50,14 +20,14 @@ async function exec(cmd: string[], cwd: string = process.cwd()): Promise<void> {
   if (code !== 0) process.exit(code)
 }
 
-async function runScripts(script: string, pkg?: string): Promise<void> {
+async function runScripts(script: string, pkg?: Pkg): Promise<void> {
   const args = [
     "bun",
     "run",
     "--sequential",
     "--if-present",
     "--no-exit-on-error",
-    pkg ? `--filter=${pkg}` : "--workspaces",
+    pkg && !pkg.root ? `--filter=${pkg.name}` : "--workspaces",
     script,
   ]
   await exec(args)
@@ -87,17 +57,17 @@ const main = defineCommand({
         },
       },
       run: async ({ args }) => {
-        const pkg = currentPackage()
         if (args.typia) {
           const { compile, generateJsonSchemas, hasSchemas } = await import("./typia.ts")
-          for (const dir of pkgDirs()) {
-            if (!hasSchemas(dir)) continue
-            await compile(dir)
-            await generateJsonSchemas(dir)
+          for (const pkg of await resolvePkgs()) {
+            if (!hasSchemas(pkg.dir)) continue
+            await compile(pkg.dir)
+            await generateJsonSchemas(pkg.dir)
           }
         }
+        const pkg = await findPkg()
         if (args.scripts) await runScripts("build:*", pkg)
-        await exec(["tsdown", "--cwd", root, ...(pkg ? ["--filter", pkg] : [])])
+        await exec(["tsdown", "--cwd", workspace, ...(pkg ? ["--filter", pkg.name] : [])])
       },
     }),
     update: defineCommand({
@@ -108,9 +78,9 @@ const main = defineCommand({
       },
       run: async () => {
         await exec(["bun", "update", "-r", "--latest"])
-        for (const dir of pkgDirs()) {
-          console.log(`Updating ${dir}...`)
-          await exec(["bun", "update", "--cwd", dir, "--latest"])
+        for (const pkg of await resolvePkgs()) {
+          console.log(`Updating ${pkg.name}...`)
+          await exec(["bun", "update", "--cwd", pkg.dir, "--latest"])
         }
       },
     }),
@@ -123,13 +93,13 @@ const main = defineCommand({
         bun: { type: "boolean", description: "Also run `bun test` before vitest", default: false },
       },
       run: async ({ args, rawArgs }) => {
-        const pkg = currentPackage()
+        const pkg = await findPkg()
         const extras = rawArgs.filter((a) => a !== "--bun")
         if (args.bun) await exec(["bun", "test"])
         if (pkg) {
-          await exec(["vitest", "-r", root, "--project", pkg, "run", ...extras])
+          await exec(["vitest", "-r", workspace, "--project", pkg.name, "run", ...extras])
         } else {
-          await exec(["vitest", "run", ...extras], root)
+          await exec(["vitest", "run", ...extras], workspace)
         }
       },
     }),
@@ -161,7 +131,7 @@ const main = defineCommand({
         description: "Publish public packages to npm, skipping versions that already exist",
       },
       args: {
-        dryRun: {
+        "dry-run": {
           type: "boolean",
           description: "Run npm publish --dry-run",
           default: false,
@@ -180,18 +150,12 @@ const main = defineCommand({
           description: "Publish with a specific npm dist-tag",
         },
       },
-      run: async ({ args, rawArgs }) => {
+      run: async ({ args }) => {
         const { publish } = await import("./publish.ts")
-        const packageNames = rawArgs.filter((arg, index) => {
-          if (arg.startsWith("-")) return false
-          const prev = rawArgs[index - 1]
-          return prev !== "--otp" && prev !== "--tag"
-        })
-        await publish({
-          root,
-          dryRun: args.dryRun,
+        await publish(await resolvePkgs(), {
+          root: workspace,
+          dryRun: args["dry-run"],
           otp: args.otp,
-          packageNames,
           provenance: args.provenance,
           tag: args.tag,
         })
@@ -217,12 +181,12 @@ const main = defineCommand({
       },
       run: async ({ args }) => {
         const { runMitata, runImports } = await import("./bench.ts")
-        const pdirs = pkgDirs()
+        const pkgs = await resolvePkgs()
         if (args.imports) {
-          await runImports({ pkgDirs: pdirs, exec }, args.node ? "node" : "bun")
+          await runImports(pkgs, { exec, runtime: args.node ? "node" : "bun" })
           return
         }
-        const dirs = pdirs.map((d) => join(d, "bench")).filter((d) => existsSync(d))
+        const dirs = pkgs.map((pkg) => join(pkg.dir, "bench")).filter((d) => existsSync(d))
         const ok = await runMitata({ dirs, pattern: args.pattern })
         if (!ok) process.exit(1)
       },
@@ -241,7 +205,7 @@ const main = defineCommand({
       },
       run: async ({ args }) => {
         const { runApi } = await import("./api.ts")
-        const ok = runApi({ root, slug: currentSlug(), check: args.check })
+        const ok = runApi(await resolvePkgs(), { check: args.check })
         if (!ok) process.exit(1)
       },
     }),
@@ -263,9 +227,7 @@ const main = defineCommand({
       },
       run: async ({ args }) => {
         const { runExports } = await import("./exports.ts")
-        const ok = await runExports({
-          root,
-          slug: currentSlug(),
+        const ok = await runExports(await resolvePkgs(), {
           check: args.check,
           runtime: args.node ? "node" : "bun",
         })

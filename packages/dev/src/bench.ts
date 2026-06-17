@@ -11,24 +11,12 @@
  */
 
 import type { Runtime } from "./cli.ts"
+import type { Pkg } from "./utils.ts"
 
 import { run } from "mitata"
 import { globSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "pathe"
-
-interface PackageJson {
-  name?: string
-  dependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  exports?: Record<string, unknown>
-}
-
-function readPkg(pkgDir: string): PackageJson {
-  return JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8")) as PackageJson
-}
 
 function expandPattern(arg?: string): string {
   if (!arg) return "*.bench.ts"
@@ -53,16 +41,15 @@ export async function runMitata(opts: { dirs: string[]; pattern?: string }): Pro
   return true
 }
 
-function importSpecs(pkgDir: string): string[] {
-  const pkg = readPkg(pkgDir)
+function importSpecs(pkg: Pkg): string[] {
   let specs: string[] = []
-  for (const dep of Object.keys(pkg.dependencies ?? {})) specs.push(dep)
-  for (const dep of Object.keys(pkg.optionalDependencies ?? {})) specs.push(dep)
-  for (const dep of Object.keys(pkg.peerDependencies ?? {})) specs.push(dep)
-  for (const dep of Object.keys(pkg.devDependencies ?? {})) specs.push(dep)
+  for (const dep of Object.keys(pkg.json.dependencies ?? {})) specs.push(dep)
+  for (const dep of Object.keys(pkg.json.optionalDependencies ?? {})) specs.push(dep)
+  for (const dep of Object.keys(pkg.json.peerDependencies ?? {})) specs.push(dep)
+  for (const dep of Object.keys(pkg.json.devDependencies ?? {})) specs.push(dep)
   specs = specs.filter((s) => !s.startsWith("@types/"))
   if (pkg.name) {
-    for (const sub of Object.keys(pkg.exports ?? {})) {
+    for (const sub of Object.keys(pkg.json.exports ?? {})) {
       if (sub === "./package.json" || sub.startsWith("./zaly")) continue
       specs.push(sub === "." ? pkg.name : `${pkg.name}${sub.slice(1)}`)
     }
@@ -71,20 +58,20 @@ function importSpecs(pkgDir: string): string[] {
 }
 
 export interface RunImportsOpts {
-  pkgDirs: string[]
   exec: (cmd: string[], cwd?: string) => Promise<void>
+  runtime?: Runtime
 }
 
-export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promise<void> {
-  runtime ??= "bun"
+export async function runImports(pkgs: Pkg[], opts: RunImportsOpts): Promise<void> {
+  const runtime = opts.runtime ?? "bun"
   const { createRender } = await import("@zaly/tui")
   const { markdown } = await import("@zaly/tui/widgets/markdown")
   const tmpRoot = mkdtempSync(join(tmpdir(), "z-bench-imports-"))
   try {
-    for (const dir of opts.pkgDirs) {
-      const specs = importSpecs(dir)
+    for (const pkg of pkgs) {
+      const specs = importSpecs(pkg)
       if (specs.length === 0) continue
-      const pkgName = readPkg(dir).name ?? dir
+      const pkgName = pkg.name
       process.stdout.write(`\n── ${pkgName} ──\n`)
       const cases = [`${runtime} -e ' '`, ...specs.map((s) => `${runtime} -e 'import "${s}"'`)]
       const names = [runtime, ...specs].flatMap((s) => ["-n", s])
@@ -101,7 +88,7 @@ export async function runImports(opts: RunImportsOpts, runtime?: Runtime): Promi
           ...cases,
           ...names,
         ],
-        dir
+        pkg.dir
       )
       const md = readFileSync(out, "utf8")
       const rows = await createRender(() => markdown(md))

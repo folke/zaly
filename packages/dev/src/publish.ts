@@ -1,75 +1,16 @@
+import type { Pkg } from "./utils.ts"
+
 // oxlint-disable no-await-in-loop
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs"
+import { mkdtempSync, readdirSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
-
-type PackageJson = {
-  name: string
-  version: string
-  private?: boolean
-  dependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
-  publishConfig?: { access?: string }
-}
 
 export type PublishOptions = {
   dryRun?: boolean
   otp?: string
-  packageNames?: string[]
   provenance?: boolean
   root: string
   tag?: string
-}
-
-type PackageInfo = {
-  dir: string
-  json: PackageJson
-}
-
-function readJson(path: string): PackageJson {
-  return JSON.parse(readFileSync(path, "utf8")) as PackageJson
-}
-
-function allPackages(root: string): PackageInfo[] {
-  const pkgsRoot = join(root, "packages")
-  return readdirSync(pkgsRoot, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(pkgsRoot, d.name, "package.json")))
-    .map((d) => {
-      const dir = join(pkgsRoot, d.name)
-      return { dir, json: readJson(join(dir, "package.json")) }
-    })
-    .filter((pkg) => !pkg.json.private && pkg.json.publishConfig !== undefined)
-}
-
-function workspaceDeps(pkg: PackageJson): string[] {
-  return [pkg.dependencies, pkg.peerDependencies, pkg.optionalDependencies]
-    .flatMap((deps) => Object.entries(deps ?? {}))
-    .filter(([, version]) => version.startsWith("workspace:"))
-    .map(([name]) => name)
-}
-
-function sortPackages(packages: PackageInfo[]): PackageInfo[] {
-  const byName = new Map(packages.map((pkg) => [pkg.json.name, pkg]))
-  const seen = new Set<string>()
-  const visiting = new Set<string>()
-  const ret: PackageInfo[] = []
-
-  const visit = (pkg: PackageInfo) => {
-    if (seen.has(pkg.json.name)) return
-    if (visiting.has(pkg.json.name)) throw new Error(`Circular workspace dependency: ${pkg.json.name}`)
-    visiting.add(pkg.json.name)
-    for (const dep of workspaceDeps(pkg.json)) {
-      const depPkg = byName.get(dep)
-      if (depPkg) visit(depPkg)
-    }
-    visiting.delete(pkg.json.name)
-    seen.add(pkg.json.name)
-    ret.push(pkg)
-  }
-
-  for (const pkg of packages.toSorted((a, b) => a.json.name.localeCompare(b.json.name))) visit(pkg)
-  return ret
 }
 
 async function run(cmd: string[], cwd: string): Promise<{ code: number; stdout: string }> {
@@ -88,21 +29,22 @@ async function exec(cmd: string[], cwd: string): Promise<void> {
   if (code !== 0) process.exit(code)
 }
 
-async function pack(pkg: PackageInfo): Promise<{ dir: string; tarball: string }> {
+async function pack(pkg: Pkg): Promise<{ dir: string; tarball: string }> {
   const dir = mkdtempSync(join(tmpdir(), "zaly-publish-"))
-  await exec(["bunx", "--yes", "pnpm@11", "pack", "--pack-destination", dir], pkg.dir)
+  await exec(["bunx", "--yes", "pnpm@latest", "pack", "--pack-destination", dir], pkg.dir)
   const tarballs = readdirSync(dir).filter((file) => file.endsWith(".tgz"))
-  if (tarballs.length !== 1) throw new Error(`Expected one tarball for ${pkg.json.name}, got ${tarballs.length}`)
+  if (tarballs.length !== 1)
+    throw new Error(`Expected one tarball for ${pkg.json.name}, got ${tarballs.length}`)
   return { dir, tarball: join(dir, tarballs.join("")) }
 }
 
-async function isPublished(pkg: PackageInfo): Promise<boolean> {
+async function isPublished(pkg: Pkg): Promise<boolean> {
   const spec = `${pkg.json.name}@${pkg.json.version}`
   const { code } = await run(["npm", "view", spec, "version", "--json"], pkg.dir)
   return code === 0
 }
 
-function publishArgs(pkg: PackageInfo, opts: PublishOptions, tarball: string): string[] {
+function publishArgs(pkg: Pkg, opts: PublishOptions, tarball: string): string[] {
   const args = ["npm", "publish", tarball, "--access", pkg.json.publishConfig?.access ?? "public"]
   if (opts.dryRun) args.push("--dry-run")
   if (opts.provenance) args.push("--provenance")
@@ -111,16 +53,14 @@ function publishArgs(pkg: PackageInfo, opts: PublishOptions, tarball: string): s
   return args
 }
 
-function matches(pkg: PackageInfo, names: string[]): boolean {
-  if (names.length === 0) return true
-  return names.some((name) => pkg.json.name === name || pkg.json.name === `@zaly/${name}`)
-}
+export async function publish(pkgs: Pkg[], opts: PublishOptions): Promise<void> {
+  if (pkgs.length === 0) throw new Error("No publishable packages matched")
 
-export async function publish(opts: PublishOptions): Promise<void> {
-  const selected = sortPackages(allPackages(opts.root).filter((pkg) => matches(pkg, opts.packageNames ?? [])))
-  if (selected.length === 0) throw new Error("No publishable packages matched")
-
-  for (const pkg of selected) {
+  for (const pkg of pkgs) {
+    if (pkg.json.private) {
+      console.warn(`✗ \`${pkg.json.name}\` is private, skipping`)
+      continue
+    }
     const spec = `${pkg.json.name}@${pkg.json.version}`
     if (!opts.dryRun && (await isPublished(pkg))) {
       console.log(`✓ ${spec} already published, skipping`)

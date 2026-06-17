@@ -27,16 +27,12 @@
 
 import type { ExportedDeclarations } from "ts-morph"
 import type { Runtime } from "./cli.ts"
+import type { Pkg } from "./utils.ts"
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "pathe"
 import { Project, SyntaxKind } from "ts-morph"
 import { API_PACKAGES } from "./api.ts"
-
-interface PackageJson {
-  name: string
-  exports?: Record<string, string | Record<string, string>>
-}
 
 type ExportEntry = {
   name: string
@@ -171,25 +167,13 @@ async function generateReport(entry: ExportEntry, runtime: Runtime): Promise<str
   return `${lines.join("\n").trimEnd()}\n`
 }
 
-async function reportForPackage(
-  root: string,
-  slug: string,
-  check: boolean,
-  runtime: Runtime
-): Promise<boolean> {
-  const pkgDir = join(root, "packages", slug)
-  const pkgPath = join(pkgDir, "package.json")
-  if (!existsSync(pkgPath)) return true
-
-  console.log(`Generating exports report for @zaly/${slug}...`)
-
-  const pkg: PackageJson = JSON.parse(readFileSync(pkgPath, "utf8"))
+async function reportForPackage(pkg: Pkg, check: boolean, runtime: Runtime): Promise<boolean> {
+  const pkgDir = pkg.dir
+  console.log(`Generating exports report for ${pkg.name}...`)
   mkdirSync(join(pkgDir, "etc"), { recursive: true })
-
   const entries: ExportEntry[] = []
 
-  for (const [n, e] of Object.entries(pkg.exports ?? {})) {
-    if (n === "./package.json") continue
+  for (const [n, e] of Object.entries(pkg.exports)) {
     const f = typeof e === "string" ? e : (e[runtime] ?? e.default)
     if (!f) throw new Error(`No export path for runtime "${runtime}" in export "${n}"`)
     entries.push({
@@ -227,21 +211,21 @@ async function reportForPackage(
   return allOk
 }
 
-export async function runExports(opts: {
-  root: string
-  slug?: string
-  check: boolean
-  runtime?: Runtime
-}): Promise<boolean> {
-  if (opts.slug && !API_PACKAGES.includes(opts.slug as (typeof API_PACKAGES)[number])) {
-    process.stderr.write(`no exports report defined for @zaly/${opts.slug}\n`)
-    return true
+export async function runExports(
+  pkgs: Pkg[],
+  opts: {
+    check: boolean
+    runtime?: Runtime
   }
-  const targets = opts.slug ? [opts.slug] : [...API_PACKAGES]
+): Promise<boolean> {
   let allOk = true
-  for (const slug of targets) {
+  for (const pkg of pkgs) {
+    if (!API_PACKAGES.includes(pkg.slug as (typeof API_PACKAGES)[number])) {
+      console.warn(`Skipping \`${pkg.name}\` — not in API_PACKAGES list`)
+      continue
+    }
     // oxlint-disable-next-line no-await-in-loop
-    if (!(await reportForPackage(opts.root, slug, opts.check, opts.runtime ?? "bun"))) allOk = false
+    if (!(await reportForPackage(pkg, opts.check, opts.runtime ?? "bun"))) allOk = false
   }
   return allOk
 }
