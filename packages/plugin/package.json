@@ -45,6 +45,6 @@
   },
   "inlinedDependencies": {
     "jiti": "2.7.0",
-    "typebox": "1.2.10"
+    "typebox": "1.2.14"
   }
 }
