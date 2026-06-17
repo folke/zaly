@@ -7,7 +7,7 @@
     "url": "git+https://github.com/folke/zaly.git"
   },
   "bin": {
-    "zaly": "bin/zaly.ts"
+    "zaly": "./bin/zaly.ts"
   },
   "files": [
     "dist/**/*",
