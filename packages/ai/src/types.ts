@@ -48,16 +48,16 @@ export type WirePart = {
  *  `Content` inside the wrapper). The two arms are mutually exclusive
  *  so renderers and consumers can branch on the discriminator instead
  *  of sniffing the shape of `data`. */
-export type MetaPart = {
+export type MetaPart<T extends string = string, D = unknown, C extends Content = Content> = {
   type: "meta"
   /** XML wrapper tag. Defaults to `"meta"`. Use a semantic tag when the
    *  meta has clear intent the model should recognize (`"truncation"`,
    *  `"shell"`, `"system"`). Stay consistent across tools for the same
    *  concept. */
-  tag?: string
-  data?: unknown
-  content?: Content
-} & ({ data: unknown } | { content: Content })
+  tag?: T
+  data?: D
+  content?: C
+} & ({ data: D } | { content: C })
 
 export type FilePart<T extends string = string, MT extends string = string> = {
   type: T

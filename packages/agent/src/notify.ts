@@ -13,8 +13,8 @@ export type NotifyOptions = {
 
 export class Notifier {
   #opts: Required<NotifyOptions>
-  #lastStep?: number
   #lastTime?: number
+  #lastStep?: number
   /** Highest pressure threshold (from `#pressureLevels`) we've already
    *  notified for in this session. Reset to 0 when pressure drops back
    *  below the lowest threshold (e.g. after compaction), so a later
@@ -36,6 +36,7 @@ export class Notifier {
     this.#ac?.abort()
     this.#ac = new AbortController()
     const opts = { signal: this.#ac.signal }
+    // FIXME: session-start/resume  never triggers, since attach happens AFTER start
     agent.session
       .on(
         "compact",
@@ -80,15 +81,17 @@ export class Notifier {
   }
 
   time(now = Date.now()) {
-    this.#lastStep = now
+    this.#lastTime = now
     return timeInfo(now)
   }
 
   check(agent: Agent) {
     const now = Date.now()
-    const lastInfo = this.#lastStep ? timeInfo(this.#lastStep) : undefined
+    const lastInfo = this.#lastTime ? timeInfo(this.#lastTime) : undefined
 
     this.#lastStep ??= now
+    this.#lastTime ??= now
+
     if (lastInfo && timeInfo(now).date !== lastInfo.date) {
       agent.notify("new-day", this.time(now))
     } else if (now - this.#lastStep > this.#opts.idle * 1000) {
@@ -96,10 +99,10 @@ export class Notifier {
         idle: formatDuration(this.#lastStep, { to: now }),
         ...this.time(now),
       })
-    } else if (now - (this.#lastTime ?? now) > this.#opts.periodic * 1000) {
+    } else if (now - this.#lastTime > this.#opts.periodic * 1000) {
       agent.notify("time", this.time(now))
     }
-    this.#lastTime = now
+    this.#lastStep = now
 
     // Context-window pressure — denominator is `limit.context` (full
     // window), NOT `maxTokens` (per-request output cap). Notification
