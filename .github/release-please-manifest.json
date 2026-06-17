@@ -1,0 +1,9 @@
+{
+  "packages/agent": "0.0.1",
+  "packages/ai": "0.0.1",
+  "packages/cli": "0.0.1",
+  "packages/config": "0.0.1",
+  "packages/plugin": "0.0.1",
+  "packages/shared": "0.0.1",
+  "packages/tui": "0.0.1"
+}

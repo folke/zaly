@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "separate-pull-requests": false,
+  "prerelease": false,
+  "prerelease-type": "alpha",
+  "initial-version": "0.0.1",
+  "changelog-sections": [
+    { "type": "feat", "section": "🚀 Enhancements" },
+    { "type": "fix", "section": "🩹 Fixes" },
+    { "type": "perf", "section": "🔥 Performance" },
+    { "type": "refactor", "section": "💅 Refactors" },
+    { "type": "types", "section": "🌊 Types" },
+    { "type": "style", "section": "🎨 Styles" },
+    { "type": "revert", "section": "⏪ Reverts" },
+    { "type": "docs", "section": "📖 Documentation" },
+    { "type": "test", "section": "✅ Tests" },
+    { "type": "build", "section": "📦 Build" },
+    { "type": "ci", "section": "🤖 CI" },
+    { "type": "chore", "section": "🏡 Chores", "hidden": true }
+  ],
+  "packages": {
+    "packages/agent": {},
+    "packages/ai": {},
+    "packages/cli": {},
+    "packages/config": {},
+    "packages/plugin": {},
+    "packages/shared": {},
+    "packages/tui": {}
+  }
+}
