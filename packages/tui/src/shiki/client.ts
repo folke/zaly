@@ -1,4 +1,5 @@
-import type { ShikiJob, ShikiOpts, ShikiRequest, ShikiResult } from "./types.ts"
+import type { ShikiJob, ShikiOpts, ShikiRequest, ShikiResult, ShikiWorkerRequest } from "./types.ts"
+import type { WorkerInstance } from "./worker.ts"
 
 import { hash } from "@zaly/shared"
 import { hasColors } from "@zaly/shared/env"
@@ -9,6 +10,7 @@ function isJob(s: ShikiJob | ShikiResult): s is ShikiJob {
 }
 
 const MAX_CACHE_SIZE = 100
+// Max jobs posted to the worker. Worker still processes serially.
 const MAX_RUNNING = 2
 
 export class ShikiWorkerClient {
@@ -17,7 +19,8 @@ export class ShikiWorkerClient {
   #queue = new Map<number, ShikiJob>()
   #running = new Map<number, ShikiJob>()
   #results: ShikiResult[] = []
-  #worker?: Worker
+  #worker?: WorkerInstance<ShikiWorkerRequest, ShikiResult>
+  #workerPromise?: Promise<WorkerInstance<ShikiWorkerRequest, ShikiResult>>
   // oxlint-disable-next-line no-unused-private-class-members
   #updateScheduled: Promise<void> | undefined = undefined
 
@@ -60,27 +63,33 @@ export class ShikiWorkerClient {
     this.#rejectAll(error)
   }
 
-  #request(job: ShikiJob): void {
+  async #request(job: ShikiJob): Promise<void> {
     job.scheduled = true
     this.#running.set(job.id, job)
-    const worker = (this.#worker ??= this.#createWorker())
+    const worker = await this.#createWorker()
     const { signal: _s, promise: _prom, resolve: _res, reject: _rej, ...msg } = job
     // oxlint-disable-next-line unicorn/require-post-message-target-origin
     worker.postMessage(msg)
   }
 
-  #createWorker(): Worker {
-    const worker = new Worker(new URL("worker.ts", import.meta.url), { type: "module" })
-    worker.unref()
-    worker.addEventListener("message", (event: MessageEvent<ShikiResult>) => {
-      this.#running.delete(event.data.id)
-      this.#results.push(event.data)
-      this.update()
-    })
-    worker.addEventListener("error", (event) => {
-      this.#rejectAll(event.error ?? new Error(event.message))
-    })
-    return worker
+  async #createWorker(): Promise<WorkerInstance<ShikiWorkerRequest, ShikiResult>> {
+    if (this.#worker) return this.#worker
+    this.#workerPromise ??= (async () => {
+      const { createWorker } = await import("./worker.ts")
+      const worker = await createWorker<ShikiWorkerRequest, ShikiResult>(
+        new URL("server.ts", import.meta.url)
+      )
+      worker.on("message", (event) => {
+        this.#running.delete(event.id)
+        this.#results.push(event)
+        this.update()
+      })
+      worker.on("error", (error) => {
+        this.#rejectAll(error)
+      })
+      return worker
+    })()
+    return (this.#worker = await this.#workerPromise)
   }
 
   update() {
@@ -119,7 +128,7 @@ export class ShikiWorkerClient {
     const todo = [...this.#queue.values()]
       .filter((j) => !j.scheduled)
       .slice(-(MAX_RUNNING - this.#running.size))
-    for (const job of todo) this.#request(job)
+    await Promise.all(todo.map((j) => this.#request(j)))
   }
 
   #rejectAll(error: unknown): void {
