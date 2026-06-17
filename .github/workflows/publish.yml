@@ -49,6 +49,14 @@ jobs:
           node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
       - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --lockfile-only
+      - name: Check bun.lock
+        run: |
+          if ! git diff --quiet -- bun.lock; then
+            git diff -- bun.lock
+            echo "::error::bun.lock is out of date. Run 'bun install --lockfile-only' and commit bun.lock."
+            exit 1
+          fi
       - run: bun z build
       - name: Publish packages
         env:

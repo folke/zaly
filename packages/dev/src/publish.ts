@@ -1,5 +1,6 @@
 // oxlint-disable no-await-in-loop
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "pathe"
 
 type PackageJson = {
@@ -9,8 +10,7 @@ type PackageJson = {
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
   optionalDependencies?: Record<string, string>
-  publishConfig?: Record<string, unknown> & { access?: string }
-  [key: string]: unknown
+  publishConfig?: { access?: string }
 }
 
 export type PublishOptions = {
@@ -88,19 +88,12 @@ async function exec(cmd: string[], cwd: string): Promise<void> {
   if (code !== 0) process.exit(code)
 }
 
-async function withPublishManifest(pkg: PackageInfo, fn: () => Promise<void>): Promise<void> {
-  const path = join(pkg.dir, "package.json")
-  const original = readFileSync(path, "utf8")
-  const { access: _access, ...publishConfig } = pkg.json.publishConfig ?? {}
-  const patched = { ...pkg.json, ...publishConfig }
-  delete patched.publishConfig
-
-  writeFileSync(path, `${JSON.stringify(patched, undefined, 2)}\n`)
-  try {
-    await fn()
-  } finally {
-    writeFileSync(path, original)
-  }
+async function pack(pkg: PackageInfo): Promise<{ dir: string; tarball: string }> {
+  const dir = mkdtempSync(join(tmpdir(), "zaly-publish-"))
+  await exec(["bunx", "--yes", "pnpm@11", "pack", "--pack-destination", dir], pkg.dir)
+  const tarballs = readdirSync(dir).filter((file) => file.endsWith(".tgz"))
+  if (tarballs.length !== 1) throw new Error(`Expected one tarball for ${pkg.json.name}, got ${tarballs.length}`)
+  return { dir, tarball: join(dir, tarballs.join("")) }
 }
 
 async function isPublished(pkg: PackageInfo): Promise<boolean> {
@@ -109,8 +102,8 @@ async function isPublished(pkg: PackageInfo): Promise<boolean> {
   return code === 0
 }
 
-function publishArgs(pkg: PackageInfo, opts: PublishOptions): string[] {
-  const args = ["npm", "publish", "--access", pkg.json.publishConfig?.access ?? "public"]
+function publishArgs(pkg: PackageInfo, opts: PublishOptions, tarball: string): string[] {
+  const args = ["npm", "publish", tarball, "--access", pkg.json.publishConfig?.access ?? "public"]
   if (opts.dryRun) args.push("--dry-run")
   if (opts.provenance) args.push("--provenance")
   if (opts.tag) args.push("--tag", opts.tag)
@@ -135,6 +128,11 @@ export async function publish(opts: PublishOptions): Promise<void> {
     }
 
     console.log(`→ publishing ${spec}`)
-    await withPublishManifest(pkg, () => exec(publishArgs(pkg, opts), pkg.dir))
+    const { dir, tarball } = await pack(pkg)
+    try {
+      await exec(publishArgs(pkg, opts, tarball), pkg.dir)
+    } finally {
+      rmSync(dir, { force: true, recursive: true })
+    }
   }
 }

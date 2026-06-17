@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun --workspaces install --frozen-lockfile
+      - run: bun install --frozen-lockfile --lockfile-only
       # TODO: enable once existing lint issues are fixed.
       # - run: bun z lint
       - run: bun z build

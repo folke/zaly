@@ -30,7 +30,7 @@
     },
     "packages/agent": {
       "name": "@zaly/agent",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "@zaly/ai": "workspace:*",
         "@zaly/shared": "workspace:*",
@@ -48,7 +48,7 @@
     },
     "packages/ai": {
       "name": "@zaly/ai",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "@zaly/shared": "workspace:*",
       },
@@ -61,9 +61,9 @@
     },
     "packages/cli": {
       "name": "@zaly/cli",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "bin": {
-        "zaly": "./bin/zaly.ts",
+        "zaly": "bin/zaly.ts",
       },
       "dependencies": {
         "@zaly/agent": "workspace:*",
@@ -83,7 +83,7 @@
     },
     "packages/config": {
       "name": "@zaly/config",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
@@ -118,7 +118,7 @@
     },
     "packages/plugin": {
       "name": "@zaly/plugin",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
@@ -132,7 +132,7 @@
     },
     "packages/shared": {
       "name": "@zaly/shared",
-      "version": "0.0.0",
+      "version": "0.0.2",
       "dependencies": {
         "pathe": "^2.0.3",
         "proper-lockfile": "^4.1.2",
@@ -157,7 +157,7 @@
     },
     "packages/tui": {
       "name": "@zaly/tui",
-      "version": "0.0.0",
+      "version": "0.0.3",
       "dependencies": {
         "@zaly/shared": "workspace:*",
         "diff": "^9.0.0",
