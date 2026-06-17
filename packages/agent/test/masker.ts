@@ -33,12 +33,12 @@ const session = await loadSession(path)
 const messages = [...session.messages]
 console.log(`loaded ${messages.length} messages from ${path}`)
 
-const before = await tokenStats(messages)
+const before = tokenStats(messages)
 const masker = new Masker()
 // Force a high-pressure level so the harness always runs the decide
 // pass — otherwise low-pressure sessions would render no masks.
-const masked = masker.apply(messages, { level: 3, limit: 200_000, ratio: 0.99, used: 198_000 })
-const after = await tokenStats(masked)
+const masked = masker.apply(messages, true)
+const after = tokenStats(masked)
 
 function fmt(n: number): string {
   return n.toLocaleString()
@@ -48,8 +48,8 @@ printTokenStats(before)
 console.log("\n=== AFTER (default masker) ===")
 printTokenStats(after)
 
-const saved = before.total.tokens - after.total.tokens
-const pct = before.total.tokens === 0 ? 0 : (saved / before.total.tokens) * 100
+const saved = before.tokens - after.tokens
+const pct = before.tokens === 0 ? 0 : (saved / before.tokens) * 100
 console.log(
   `\nstamped ${masker.stamped} messages — saved ~${fmt(saved)} tokens (${pct.toFixed(1)}%)`
 )

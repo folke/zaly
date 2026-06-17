@@ -1,16 +1,29 @@
-// oxlint-disable no-await-in-loop
-import type { Attachment, Content, Message } from "@zaly/ai"
+import type { Attachment, Message } from "@zaly/ai"
 
-import {
-  attachmentToMeta,
-  compressImages,
-  ContentTransform,
-  errorToMeta,
-  inlineFileSources,
-  metaToText,
-  sanitizeText,
-  truncateText,
-} from "@zaly/ai"
+import { stringifyContent } from "@zaly/ai"
+
+export type AnyType =
+  | Message["role"]
+  | Extract<Message["content"][number], { type: string }>["type"]
+  | "content"
+  | "string"
+
+export type AnyContent = Message["content"]
+export type AnyPart = Exclude<AnyContent[number], string>
+
+export type TokenCount = {
+  type: AnyType
+  name?: string
+  tokens: number
+  children?: TokenCount[]
+}
+
+export type TokenStats = {
+  key: string
+  tokens: number
+  count: number
+  children?: Map<string, TokenStats>
+}
 
 // ── token estimation ───────────────────────────────────────────────────
 
@@ -23,136 +36,132 @@ const ATTACHMENT_TOKENS: Record<Attachment["type"], number> = {
   video: 5000,
 }
 
-const transform = ContentTransform.create()
-  .pipe(attachmentToMeta("audio", "video"))
-  .pipe(inlineFileSources())
-  .pipe(compressImages())
-  .pipe(errorToMeta())
-  .pipe(metaToText())
-  .pipe(sanitizeText())
-  .pipe(truncateText())
-
 function fromText(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN)
 }
 
-function estimateContent(content: Content): number {
-  if (typeof content === "string") return fromText(content)
-  let total = 0
-  for (const p of content) total += estimatePart(p)
-  return total
+function sumTokens(stats: TokenCount[]): number {
+  return stats.reduce((sum, s) => sum + s.tokens, 0)
 }
 
-function estimatePart(p: Message["content"][number]): number {
-  if (!p || typeof p !== "object") return 0
-  const part = p
-  switch (part.type) {
+function estimatePart(p: AnyPart): TokenCount {
+  switch (p.type) {
     case "reasoning":
     case "text": {
-      return fromText(part.text)
+      return { tokens: fromText(p.text), type: p.type }
     }
     case "tool-call": {
-      return fromText(part.name) + fromText(JSON.stringify(part.params ?? {}))
+      return {
+        name: p.name,
+        tokens: fromText(p.name) + fromText(JSON.stringify(p.params ?? {})),
+        type: p.type,
+      }
     }
     case "tool-result": {
-      return fromText(part.name) + estimateContent(part.content)
+      const children = estimateContent(p.content)
+      return {
+        children,
+        name: p.name,
+        tokens: fromText(p.name) + sumTokens(children),
+        type: p.type,
+      }
     }
     case "image":
     case "pdf":
     case "audio":
     case "video": {
-      return ATTACHMENT_TOKENS[part.type]
+      return { tokens: ATTACHMENT_TOKENS[p.type], type: p.type }
+    }
+    case "meta": {
+      const children = p.content ? estimateContent(p.content) : undefined
+      return {
+        children,
+        name: p.tag,
+        tokens: fromText(stringifyContent(p)),
+        type: p.type,
+      }
+    }
+    case "error": {
+      return { tokens: fromText(stringifyContent(p)), type: p.type }
     }
     default: {
-      // meta, error, unknown — JSON-stringify length / 4
-      return fromText(safeJson(part))
+      // @ts-expect-error: exhaustive check
+      throw new Error(`Unknown part type: ${p.type}`)
     }
   }
 }
 
-function safeJson(v: unknown): string {
-  try {
-    return JSON.stringify(v)
-  } catch {
-    return ""
+function estimateContent(content: AnyContent): TokenCount[] {
+  if (typeof content === "string") return [{ tokens: fromText(content), type: "text" }]
+  let tokens = 0
+  const children: TokenCount[] = []
+  for (const p of content) {
+    const partStats = estimatePart(p)
+    tokens += partStats.tokens
+    children.push(partStats)
   }
+  return children
+}
+
+function estimateMessage(m: Message): TokenCount {
+  const type = m.role
+  const children = estimateContent(m.content)
+  return {
+    children,
+    tokens: sumTokens(children),
+    type,
+  }
+}
+
+function addCount(stat: TokenCount, parent: TokenStats): void {
+  const key = stat.name ? `${stat.type}:${stat.name}` : stat.type
+  parent.children ??= new Map()
+  let child = parent.children.get(key)
+  if (!child) {
+    child = { children: new Map(), count: 0, key, tokens: 0 }
+    parent.children.set(key, child)
+  }
+  child.tokens += stat.tokens
+  child.count++
+  if (stat.children) {
+    for (const c of stat.children) addCount(c, child)
+  }
+}
+
+export function tokenStats(msgs: readonly Message[]): TokenStats {
+  const root: TokenStats = { children: new Map(), count: 0, key: "TOTAL", tokens: 0 }
+  for (const m of msgs) {
+    const stats = estimateMessage(m)
+    root.tokens += stats.tokens
+    root.count++
+    addCount(stats, root)
+  }
+  return root
 }
 
 // ── stats ──────────────────────────────────────────────────────────────
 
-interface Bucket {
-  count: number
-  tokens: number
-}
-interface Stats {
-  byRole: Map<string, Map<string, Bucket>>
-  total: Bucket
+function fmtStats(s: TokenStats, indent = 0): string {
+  const header = "  ".repeat(indent) + s.key
+  return `${header.padEnd(28)} ${fmt(s.count).padStart(6)}x ${fmt(s.tokens).padStart(14)}`
 }
 
-export async function tokenStats(msgs: readonly Message[]): Promise<Stats> {
-  const byRole = new Map<string, Map<string, Bucket>>()
-  const total: Bucket = { count: 0, tokens: 0 }
-  for (let m of msgs) {
-    const tm = await transform.runMessage(m)
-    if (!tm) continue
-    m = tm
-    const role = byRole.get(m.role) ?? new Map<string, Bucket>()
-    byRole.set(m.role, role)
-    if (typeof m.content === "string") {
-      const t = fromText(m.content)
-      bump(role, "text", t)
-      total.tokens += t
-      total.count += 1
-      continue
-    }
-    for (const p of m.content) {
-      const t = estimatePart(p)
-      const key =
-        p.type === "tool-result" || p.type === "tool-call" ? `${p.type}:${p.name}` : p.type
-      bump(role, key, t)
-      total.tokens += t
-      total.count += 1
-    }
-  }
-  return { byRole, total }
-}
-
-function bump(m: Map<string, Bucket>, k: string, tokens: number): void {
-  const e = m.get(k) ?? { count: 0, tokens: 0 }
-  e.tokens += tokens
-  e.count += 1
-  m.set(k, e)
-}
-
-// ── print ──────────────────────────────────────────────────────────────
-
-export function formatTokenStats(s: Stats): string {
+export function formatTokenStats(s: TokenStats, indent = 0): string {
   const ret: string[] = []
-  const roles = [...s.byRole.keys()].toSorted()
-  for (const role of roles) {
-    const parts = s.byRole.get(role)!
-    const roleTotal = sumBuckets(parts)
-    ret.push(line(role, roleTotal))
-    const types = [...parts.entries()].toSorted((a, b) => b[1].tokens - a[1].tokens)
-    for (const [type, b] of types) ret.push(line(`  ${type}`, b))
+  const children = s.children
+    ? [...s.children.values()].toSorted((a, b) => b.tokens - a.tokens)
+    : []
+  for (const c of children) {
+    ret.push(fmtStats(c, indent))
+    if (c.children?.size) ret.push(formatTokenStats(c, indent + 1))
+    if (indent === 0) ret.push("─".repeat(51))
   }
-  ret.push("─".repeat(46))
-  ret.push(line("TOTAL", s.total))
+  if (indent === 0) {
+    ret.unshift("─".repeat(51))
+    ret.push(fmtStats(s, indent))
+    ret.push("─".repeat(51))
+  }
   return ret.join("\n")
-}
-
-function sumBuckets(m: Map<string, Bucket>): Bucket {
-  let tokens = 0
-  let count = 0
-  for (const b of m.values()) {
-    tokens += b.tokens
-    count += b.count
-  }
-  return { count, tokens }
-}
-
-function line(label: string, b: Bucket): string {
-  return `${label.padEnd(28)} ${String(b.count).padStart(6)}x ${fmt(b.tokens).padStart(14)}`
 }
 
 function fmt(n: number): string {
