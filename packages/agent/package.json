@@ -57,7 +57,7 @@
     "shell-quote": "^1.8.4"
   },
   "peerDependencies": {
-    "typebox": "^1.2.14"
+    "typebox": "^1.2.16"
   },
   "engines": {
     "bun": ">=1.2",
