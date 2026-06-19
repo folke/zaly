@@ -2,6 +2,11 @@
   "name": "zaly",
   "version": "0.0.3",
   "private": true,
+  "description": "A terminal-native AI coding agent for developers.",
+  "homepage": "https://zaly.dev",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +24,7 @@
     "fmt": "z fmt",
     "knip": "knip",
     "lint": "z lint",
-    "models": "bun --cwd packages/ai run models",
+    "models": "bun run --filter '@zaly/ai' models",
     "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
     "publish": "z publish",
@@ -56,10 +61,5 @@
   },
   "trustedDependencies": [
     "sharp"
-  ],
-  "description": "A terminal-native AI coding agent for developers.",
-  "homepage": "https://zaly.dev",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
-  }
+  ]
 }
