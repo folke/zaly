@@ -1,19 +1,10 @@
-import type { Attachment, Message } from "@zaly/ai"
+import type { AnyContent, AnyPart, AnyType, Attachment, Message } from "@zaly/ai"
 
 import { stringifyContent } from "@zaly/ai"
 
-export type AnyType =
-  | Message["role"]
-  | Extract<Message["content"][number], { type: string }>["type"]
-  | "content"
-  | "string"
-
-export type AnyContent = Message["content"]
-export type AnyPart = Exclude<AnyContent[number], string>
-
 export type TokenCount = {
-  type: AnyType
-  name?: string
+  type: AnyType | Message["role"] | "prompt"
+  kind?: string
   tokens: number
   children?: TokenCount[]
 }
@@ -44,7 +35,7 @@ function sumTokens(stats: TokenCount[]): number {
   return stats.reduce((sum, s) => sum + s.tokens, 0)
 }
 
-function estimatePart(p: AnyPart): TokenCount {
+export function estimatePart(p: AnyPart): TokenCount {
   switch (p.type) {
     case "reasoning":
     case "text": {
@@ -52,7 +43,7 @@ function estimatePart(p: AnyPart): TokenCount {
     }
     case "tool-call": {
       return {
-        name: p.name,
+        kind: p.name,
         tokens: fromText(p.name) + fromText(JSON.stringify(p.params ?? {})),
         type: p.type,
       }
@@ -61,7 +52,7 @@ function estimatePart(p: AnyPart): TokenCount {
       const children = estimateContent(p.content)
       return {
         children,
-        name: p.name,
+        kind: p.name,
         tokens: fromText(p.name) + sumTokens(children),
         type: p.type,
       }
@@ -76,7 +67,7 @@ function estimatePart(p: AnyPart): TokenCount {
       const children = p.content ? estimateContent(p.content) : undefined
       return {
         children,
-        name: p.tag,
+        kind: p.tag,
         tokens: fromText(stringifyContent(p)),
         type: p.type,
       }
@@ -106,15 +97,26 @@ function estimateContent(content: AnyContent): TokenCount[] {
 function estimateMessage(m: Message): TokenCount {
   const type = m.role
   const children = estimateContent(m.content)
+  const kind = m.role === "system" ? m.meta?.kind : undefined
   return {
     children,
+    kind,
     tokens: sumTokens(children),
     type,
   }
 }
 
+function estimatePrompt(prompt: string[]): TokenCount {
+  const children = estimateContent(prompt.map((text) => ({ text, type: "text" })))
+  return {
+    children,
+    tokens: sumTokens(children),
+    type: "prompt",
+  }
+}
+
 function addCount(stat: TokenCount, parent: TokenStats): void {
-  const key = stat.name ? `${stat.type}:${stat.name}` : stat.type
+  const key = stat.kind ? `${stat.type}:${stat.kind}` : stat.type
   parent.children ??= new Map()
   let child = parent.children.get(key)
   if (!child) {
@@ -128,10 +130,12 @@ function addCount(stat: TokenCount, parent: TokenStats): void {
   }
 }
 
-export function tokenStats(msgs: readonly Message[]): TokenStats {
+export function tokenStats(msgs: readonly Message[], prompt?: string[]): TokenStats {
   const root: TokenStats = { children: new Map(), count: 0, key: "TOTAL", tokens: 0 }
-  for (const m of msgs) {
-    const stats = estimateMessage(m)
+  const counts: TokenCount[] = []
+  if (prompt) counts.push(estimatePrompt(prompt))
+  counts.push(...msgs.map(estimateMessage))
+  for (const stats of counts) {
     root.tokens += stats.tokens
     root.count++
     addCount(stats, root)
