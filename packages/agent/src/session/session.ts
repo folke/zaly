@@ -21,7 +21,7 @@ import { uuidv7 } from "../utils/uuid.ts"
 import { JsonlStore } from "./jsonl.ts"
 import { MemoryStore } from "./memory.ts"
 
-const VERSION = 1
+const VERSION = 2
 
 /**
  * Conversation primitive. Owns a DAG of message + compaction + meta
@@ -385,13 +385,12 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       nodes.set(n.uuid, { ...n, settings })
     }
 
+    this.#migrate(nodes)
+
     const messages: SessionMessage[] = []
     for (const n of messageNodes) {
       // add `id`, `ts` and `modelId` (if assistant turn) to the message
       const m = { ...n.message, id: n.uuid, ts: n.ts }
-      const nodeSettings = nodes.get(n.uuid)?.settings ?? settings
-      if (m.role === "assistant")
-        m.meta = { ...m.meta, modelId: m.meta?.modelId ?? nodeSettings.modelId }
       n.message = m
       messages.push(m)
     }
@@ -414,6 +413,37 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       messages: messages.toReversed(),
       nodes,
       settings,
+    }
+  }
+
+  #migrate(nodes: Map<string, SessionNodeView>) {
+    for (const n of nodes.values()) {
+      const version = n.settings.version ?? 0
+      if (version === VERSION) continue
+      n.settings = { ...n.settings, version: VERSION }
+
+      if (n.type === "compact") {
+        n.summary.meta = { kind: "compaction-summary", ...n.summary.meta }
+        continue
+      }
+
+      if (n.type !== "message") continue
+      const m = n.message
+
+      if (m.role === "assistant")
+        // Add missing modelId to assistant messages if not present
+        m.meta = { ...m.meta, modelId: m.meta?.modelId ?? n.settings.modelId }
+      else if (
+        m.role === "system" &&
+        Array.isArray(m.content) &&
+        m.content[0].type === "meta" &&
+        m.content[0].tag === "task"
+      ) {
+        // Missing task meta data kind
+        m.meta = { kind: "task", ...m.meta }
+      }
+
+      n.message = m
     }
   }
 }
