@@ -71,18 +71,13 @@ export class TuiReporter implements LogReporter {
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const nodes = msg.filter((m): m is Node => m instanceof Node)
     msg = msg.filter((m) => !(m instanceof Node))
-    const markdown =
-      (this.#opts.markdown ?? true) &&
-      msg.length === 1 &&
-      typeof msg[0] === "string" &&
-      isMarkdown(msg[0])
+    let text = msg.length === 1 && typeof msg[0] === "string" ? msg[0] : undefined
+    if (msg.length === 0) text = ""
+    const markdown = (this.#opts.markdown ?? true) && text !== undefined && isMarkdown(text)
     const overrides = this.#opts.styles?.[level] ?? {}
     return log(
       {
-        content:
-          msg.length === 1 && typeof msg[0] === "string"
-            ? msg[0]
-            : (ctx) => inspectFormat(msg, { ...this.#opts, style: ctx.style }),
+        content: text ?? ((ctx) => inspectFormat(msg, { ...this.#opts, style: ctx.style })),
         level,
         markdown,
         ...overrides,

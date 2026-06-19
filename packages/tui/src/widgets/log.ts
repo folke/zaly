@@ -114,6 +114,12 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
       : undefined,
     width: "fill",
   } as const
+  if (state.content !== "") {
+    children = [
+      (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
+      ...children,
+    ]
+  }
   return box(
     {
       ...(s.style === "notif"
@@ -132,10 +138,6 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
       visible: state.visible,
     },
     s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx), { flexShrink: 0 }),
-    box(
-      { flexDirection: "column", flexGrow: 1, gap: 1 },
-      (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
-      ...children
-    )
+    box({ flexDirection: "column", flexGrow: 1, gap: 1 }, ...children)
   )
 })

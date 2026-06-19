@@ -100,5 +100,6 @@ async function renderHelp(action: Action, args: ArgsOpts): Promise<string> {
       name: action.cmd,
     },
   })
-  return await renderUsage(cmd)
+  const ret = await renderUsage(cmd)
+  return ret.trimEnd()
 }
