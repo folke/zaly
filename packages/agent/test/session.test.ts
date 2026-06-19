@@ -450,7 +450,7 @@ describe("Session — meta on disk", () => {
     for (const m of metas) {
       expect(m.settings.cwd).toBe("/foo")
       expect(m.settings.sessionId).toBe(s.id)
-      expect(m.settings.version).toBe(1)
+      expect(m.settings.version).toBe(2)
     }
     // The latest session-meta carries the most recent modelId
     const latestMeta = metas.at(-1)

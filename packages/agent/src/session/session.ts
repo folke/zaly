@@ -391,6 +391,11 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     for (const n of messageNodes) {
       // add `id`, `ts` and `modelId` (if assistant turn) to the message
       const m = { ...n.message, id: n.uuid, ts: n.ts }
+      if (m.role === "assistant") {
+        // Add missing modelId to assistant messages if not present
+        const s = nodes.get(n.uuid)?.settings ?? {}
+        m.meta = { ...m.meta, modelId: m.meta?.modelId ?? s.modelId }
+      }
       n.message = m
       messages.push(m)
     }
@@ -430,10 +435,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       if (n.type !== "message") continue
       const m = n.message
 
-      if (m.role === "assistant")
-        // Add missing modelId to assistant messages if not present
-        m.meta = { ...m.meta, modelId: m.meta?.modelId ?? n.settings.modelId }
-      else if (
+      if (
         m.role === "system" &&
         Array.isArray(m.content) &&
         m.content[0].type === "meta" &&
