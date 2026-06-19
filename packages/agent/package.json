@@ -16,10 +16,6 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
-    "./debug": {
-      "bun": "./src/debug/index.ts",
-      "default": "./dist/debug.mjs"
-    },
     "./session": {
       "bun": "./src/session/index.ts",
       "default": "./dist/session.mjs"
@@ -33,7 +29,6 @@
   "publishConfig": {
     "exports": {
       ".": "./dist/index.mjs",
-      "./debug": "./dist/debug.mjs",
       "./session": "./dist/session.mjs",
       "./session/claude": "./dist/session/claude.mjs",
       "./package.json": "./package.json"
