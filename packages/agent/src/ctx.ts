@@ -12,7 +12,7 @@ import type { AgentOptions } from "./types.ts"
 import { Emitter, isInstance, normPath } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
 
-type AgentContextOpts = Omit<AgentOptions, "session"> & { session: Session }
+type AgentContextOptions = Omit<AgentOptions, "session"> & { session: Session }
 
 type Slots = {
   notifier: Notifier
@@ -41,7 +41,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   #skills?: Skills
   #prompt: string[]
 
-  constructor(opts: AgentContextOpts) {
+  constructor(opts: AgentContextOptions) {
     super()
     this.#opts = opts
     this.#cwd = normPath(opts.cwd)
