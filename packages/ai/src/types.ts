@@ -189,6 +189,7 @@ type MessageBase = {
        *  transforms it (see `errorToMeta()`) — until that's wired up
        *  end-to-end, provider adapters throw on a raw `ErrorPart`. */
       content: string | (TextPart | MetaPart | ErrorPart)[]
+      meta?: Record<string, unknown> & { kind?: string }
     }
   | {
       role: "user"
@@ -216,6 +217,10 @@ export type Role = MessageBase["role"]
  *  String shorthands on `user` and `assistant` expand to a single
  *  `TextPart` — they're there for ergonomics, not a different shape. */
 export type Message<T extends Role = Role> = Extract<MessageBase, { role: T }>
+
+export type AnyType = Extract<Message["content"][number], { type: string }>["type"]
+export type AnyContent = Message["content"]
+export type AnyPart = Exclude<AnyContent[number], string>
 
 /** A callable tool exposed to the model.
  *
@@ -311,6 +316,8 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
 export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call"]>[0]
   ? unknown
   : Parameters<T["call"]>[0]
+
+export type SafeParamsOf<T extends Tool = Tool> = Partial<ParamsOf<T>> | undefined
 
 export type MetaOf<T extends Tool = Tool> = T extends Tool<unknown, unknown, infer M> ? M : object
 

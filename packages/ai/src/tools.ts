@@ -2,6 +2,7 @@ import type { Static, TObject, TSchema } from "typebox/type"
 import type {
   Message,
   ParamsOf,
+  SafeParamsOf,
   Streamable,
   Tool,
   ToolCallPart,
@@ -130,13 +131,9 @@ export function* extractToolResults<M extends object = object, T extends string 
  *  shape being exactly `Params`. The return type is `Partial<...>` to
  *  remind callers that any field could legitimately be missing or
  *  off-shape on the failure path. */
-export function safeParseToolParams<T extends Tool = Tool>(
-  params: unknown
-): Partial<ParamsOf<T>> | undefined {
+export function safeParseToolParams<T extends Tool = Tool>(params: unknown): SafeParamsOf<T> {
   params = typeof params === "string" ? safeParseJson(params) : params
-  return typeof params === "object" && params !== null
-    ? (params as Partial<ParamsOf<T>>)
-    : undefined
+  return typeof params === "object" && params !== null ? params : undefined
 }
 
 /** Wrap any thrown value as a `ToolResult` with `isError: true`. The

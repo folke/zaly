@@ -1,10 +1,4 @@
-import type { ContentPart, Message, ReasoningPart, ToolCallPart, ToolResultPart } from "../types.ts"
-
-/** Anything with a discriminator — broad enough to carry the full
- *  message-level part union (`ContentPart` plus `ReasoningPart`,
- *  `ToolCallPart`, `ToolResultPart`) so transcript / summarizer
- *  pipelines can route those kinds through `drop` / `map` too. */
-export type AnyPart = ContentPart | ToolCallPart | ToolResultPart | ReasoningPart
+import type { AnyPart, ContentPart, Message } from "../types.ts"
 
 /**
  * Composable content-transform pipeline.

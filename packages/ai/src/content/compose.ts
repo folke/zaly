@@ -1,7 +1,7 @@
 import type { CompressOpts } from "@zaly/shared/image"
-import type { Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
+import type { AnyPart, Attachment, ContentPart, ImagePart, MetaPart } from "../types.ts"
 import type { Inlined } from "./part.ts"
-import type { AnyPart, ContentTransform } from "./transform.ts"
+import type { ContentTransform } from "./transform.ts"
 
 import { cleanTextAgent } from "@zaly/shared/text"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"

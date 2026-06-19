@@ -1,4 +1,4 @@
-import type { AnyPart, ContentTransform } from "./content/transform.ts"
+import type { ContentTransform } from "./content/transform.ts"
 import type { ModelFilter } from "./models.ts"
 import type {
   CollectOptions,
@@ -10,7 +10,7 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
-import type { Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
+import type { AnyPart, Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
 
 import { BaseCollection } from "@zaly/shared/collection"
 import { authenticate } from "./auth/auth.ts"
