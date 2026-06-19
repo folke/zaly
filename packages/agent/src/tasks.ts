@@ -814,5 +814,9 @@ function formatTaskCompletion(task: DoneTaskInfo): (TextPart | MetaPart)[] {
 
 /** Build an `inject`-ready system message for a finished task. */
 export function taskCompletionMessage(task: DoneTaskInfo): Message<"system"> {
-  return { content: formatTaskCompletion(task), role: "system" }
+  return {
+    content: formatTaskCompletion(task),
+    meta: { kind: "task", taskId: task.id },
+    role: "system",
+  }
 }

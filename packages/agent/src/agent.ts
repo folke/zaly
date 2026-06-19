@@ -15,7 +15,7 @@ import type {
   ToolResult,
 } from "@zaly/ai"
 import type { CompactionOptions } from "./compaction/compactions.ts"
-import type { AgentContext } from "./context.ts"
+import type { AgentContext } from "./ctx.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
 import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, SendMode, StepResult, TurnResult } from "./types.ts"
@@ -168,7 +168,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     let tools = [...this.tools].filter((t) => t.name !== "skill")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
-    const { createAgent } = await import("./context.ts")
+    const { createAgent } = await import("./ctx.ts")
 
     const ret = await createAgent({
       cwd: this.cwd,
@@ -568,6 +568,7 @@ export class Agent extends Emitter<AgentEvents> {
 
   async compact(): Promise<void> {
     const prev = this.#status
+    const pressure = this.pressure
     this.#setStatus("compacting")
     this.#usage.resetLast()
     try {
@@ -577,7 +578,7 @@ export class Agent extends Emitter<AgentEvents> {
         signal: this.#abortController?.signal,
       }
       const compactor = new Compaction(this, opts)
-      await compactor.compact()
+      await compactor.compact(pressure)
     } finally {
       this.#setStatus(prev)
     }

@@ -6,7 +6,7 @@ import type { AgentOptions } from "../src/types.ts"
 
 import { Model } from "@zaly/ai"
 import { normPath } from "@zaly/shared"
-import { createAgent } from "../src/context.ts"
+import { createAgent } from "../src/ctx.ts"
 import { loadClaudeSession } from "../src/session/claude.ts"
 import { Session } from "../src/session/index.ts"
 

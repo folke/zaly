@@ -1,5 +1,6 @@
 import type { Message, ReasoningOptions } from "@zaly/ai"
 import type { Agent } from "../agent.ts"
+import type { ContextPressure } from "../types.ts"
 import type { ToolStatOptions } from "./utils.ts"
 
 import { toXml } from "@zaly/ai"
@@ -47,12 +48,12 @@ export class Compaction {
     this.#opts = { ...defaults, ...opts }
   }
 
-  async compact(): Promise<void> {
+  async compact(pressure: ContextPressure): Promise<void> {
     const { session } = this.#agent
 
     const masker = await this.#agent.ctx.masker()
 
-    const messages = masker ? masker.apply(session.messages, true) : session.messages
+    const messages = masker ? masker.mask(session.messages, pressure) : session.messages
 
     const now = performance.now()
 
@@ -92,6 +93,7 @@ export class Compaction {
         { text: fileUsage, type: "text" },
         { text: bashUsage, type: "text" },
       ],
+      meta: { kind: "compaction-summary" },
       role: "system",
     }
     await session.compact({

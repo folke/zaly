@@ -14,7 +14,7 @@
  *   - pdfs: ~2000 per page, with a byte-based page count guess
  *           (~3 KB / page for typical mixed content) */
 
-import { formatTokenStats, tokenStats } from "../src/debug/tokens.ts"
+import { formatTokenStats, tokenStats } from "../src/context/tokens.ts"
 import { Masker } from "../src/masker.ts"
 import { loadSession } from "./helpers.ts"
 
@@ -33,11 +33,26 @@ const session = await loadSession(path)
 const messages = [...session.messages]
 console.log(`loaded ${messages.length} messages from ${path}`)
 
+// const scoring = new ContextScoring()
+// const scores = scoring.score(messages)
+//
+// for (const s of scores) {
+//   for (const p of s.parts) {
+//     let name = `${p.message.role}:${p.part.type}`
+//     if (p.part.type === "tool-result" || p.part.type === "tool-call") {
+//       name = `tool:${p.part.name}:${p.part.type === "tool-result" ? ">" : "<"}`
+//     }
+//     console.log(`${name.padEnd(20)} ${p.score.toFixed(2).padStart(5)}   ${s.key.slice(0, 200)}`)
+//   }
+// }
+
 const before = tokenStats(messages)
 const masker = new Masker()
 // Force a high-pressure level so the harness always runs the decide
 // pass — otherwise low-pressure sessions would render no masks.
-const masked = masker.apply(messages, true)
+const limit = 270_000
+const used = 170_000
+const masked = masker.mask(messages, { limit, ratio: used / limit, used, level: 1 })
 const after = tokenStats(masked)
 
 function fmt(n: number): string {
@@ -51,7 +66,7 @@ printTokenStats(after)
 const saved = before.tokens - after.tokens
 const pct = before.tokens === 0 ? 0 : (saved / before.tokens) * 100
 console.log(
-  `\nstamped ${masker.stamped} messages — saved ~${fmt(saved)} tokens (${pct.toFixed(1)}%)`
+  `\nstamped ${masker.masked} messages — saved ~${fmt(saved)} tokens (${pct.toFixed(1)}%)`
 )
 
 console.log(masker.stats)
