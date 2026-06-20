@@ -217,6 +217,7 @@ export class App {
   }
 
   async reload(): Promise<void> {
+    this.#ctx.reset("config")
     const config = await this.#ctx.config()
     config.resources.refresh()
     await this.loadResources()
