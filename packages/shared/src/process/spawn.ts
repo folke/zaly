@@ -373,7 +373,8 @@ export async function spawnCmd(...cmd: CmdArgs): Promise<string | undefined> {
     }).result
     if (r.code !== 0)
       throw new Error(`\`${args.join(" ")}\` exited with **code:** \`${r.code}\`:\n${r.stderr}`)
-    return r.stdout.trim()
+    const ret = r.stdout.trim()
+    return ret === "" ? undefined : ret
   } catch (error) {
     if (opts.throw ?? true) throw error
     return
