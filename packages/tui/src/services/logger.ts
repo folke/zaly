@@ -71,6 +71,7 @@ export class TuiReporter implements LogReporter {
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const nodes = msg.filter((m): m is Node => m instanceof Node)
     msg = msg.filter((m) => !(m instanceof Node))
+    msg = this.#opts.stacktrace ? msg : msg.map((v) => (v instanceof Error ? v.message : v))
     let text = msg.length === 1 && typeof msg[0] === "string" ? msg[0] : undefined
     if (msg.length === 0) text = ""
     const markdown = (this.#opts.markdown ?? true) && text !== undefined && isMarkdown(text)
