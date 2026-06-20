@@ -329,12 +329,7 @@ export async function spawnText(
   args: readonly string[] = [],
   opts: SpawnOpts = {}
 ): Promise<string | undefined> {
-  try {
-    const r = await new Spawn(cmd, args, { ...opts, stdout: new TextStream() }).result
-    return r.code === 0 && r.stdout !== "" ? r.stdout : undefined
-  } catch {
-    return undefined
-  }
+  return spawnCmd(cmd, ...args, opts, { throw: false })
 }
 
 /** Spawn a process, pipe `input` to its stdin, and resolve to whether
@@ -356,4 +351,31 @@ function abortError(): Error {
   const e = new Error("aborted")
   e.name = "AbortError"
   return e
+}
+
+export type CmdOpts = SpawnOpts & { throw?: boolean }
+export type CmdArgs = (string | undefined | CmdOpts)[]
+
+export async function spawnCmd(...cmd: CmdArgs): Promise<string | undefined> {
+  const args: string[] = []
+  let opts: CmdOpts = {}
+  for (const p of cmd) {
+    if (p === undefined) continue
+    if (typeof p === "string") args.push(p)
+    else opts = Object.assign(opts, p)
+  }
+  if (!args[0]) throw new Error("Missing command")
+  try {
+    const r = await new Spawn(args[0], args.slice(1), {
+      ...opts,
+      stderr: new TextStream(),
+      stdout: new TextStream(),
+    }).result
+    if (r.code !== 0)
+      throw new Error(`\`${args.join(" ")}\` exited with **code:** \`${r.code}\`:\n${r.stderr}`)
+    return r.stdout.trim()
+  } catch (error) {
+    if (opts.throw ?? true) throw error
+    return
+  }
 }
