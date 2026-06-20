@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { parsePackUri } from "../src/pack/uri.ts"
 
 describe("parsePackUri", () => {
