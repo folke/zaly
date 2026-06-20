@@ -36,6 +36,9 @@ export class App {
   #picker!: Picker
   #composer!: Composer
   #loading = true
+  // Logs added during the loading phase are sticky until the agent is ready,
+  // so that the user can see them (will be at the bottom of the stream)
+  #stickyLogs: Node[] = []
 
   #state = createStore<AppState>({
     busy: true,
@@ -123,7 +126,11 @@ export class App {
       fixedFooterHeight: 5,
       logger: this.#ctx.logger.child("renderer"),
       reporter: {
-        wrap: (node) => box({ padding: [1, 0, 0, 0] }, node),
+        wrap: (node) => {
+          const n = box({ padding: [1, 0, 0, 0], sticky: this.#loading }, node)
+          if (this.#loading) this.#stickyLogs.push(n)
+          return n
+        },
       },
       theme: await this.#ctx.theme(),
     })
@@ -195,6 +202,8 @@ export class App {
     this.#loading = false
     this.#state.busy = false
     this.#state.status = "ready"
+    for (const node of this.#stickyLogs) node.state.sticky = false
+    this.#stickyLogs = []
   }
 
   async initAgent(): Promise<void> {
