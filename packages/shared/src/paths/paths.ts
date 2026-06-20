@@ -6,7 +6,7 @@ import { encodePath, normPath } from "../path.ts"
 import { findUp, gitRoot } from "../utils.ts"
 import { envPaths } from "./env.ts"
 
-let env: EnvPaths | undefined
+let zalyEnv: EnvPaths | undefined
 
 export const zalyPaths = {
   get config(): string {
@@ -14,7 +14,7 @@ export const zalyPaths = {
   },
 
   get env(): EnvPaths {
-    return (env ??= envPaths())
+    return (zalyEnv ??= envPaths())
   },
 
   pluginPath(plugin: string) {
@@ -47,10 +47,11 @@ export function isRemotePath(path: string): boolean {
 export type ProjectPaths = {
   cwd: string
   dotAgents: string[]
-  dotZaly?: string
+  dotZaly: string
   git?: string
   root: string
   stop: string
+  env: EnvPaths
 }
 
 export function projectPaths(cwd?: string): ProjectPaths {
@@ -59,13 +60,18 @@ export function projectPaths(cwd?: string): ProjectPaths {
   let stop: string | undefined
   let dotZaly: string | undefined
   let dotAgents: string[] | undefined
+  let env: EnvPaths | undefined
   return {
     cwd,
     get dotAgents(): string[] {
       return (dotAgents ??= findUp(cwd, ".agents", { all: true, stop: this.stop, type: "dir" }))
     },
-    get dotZaly(): string | undefined {
-      return (dotZaly ??= findUp(cwd, ".zaly", { stop: this.stop, type: "dir" }))
+    get dotZaly(): string {
+      return (dotZaly ??=
+        findUp(cwd, ".zaly", { stop: this.stop, type: "dir" }) ?? join(this.root, ".zaly"))
+    },
+    get env() {
+      return (env ??= envPaths(this.dotZaly))
     },
     get git(): string | undefined {
       return (git ??= gitRoot(cwd))

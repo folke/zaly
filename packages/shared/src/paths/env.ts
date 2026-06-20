@@ -14,7 +14,24 @@ export type EnvPaths = {
 
 export type EnvPathKey = Exclude<keyof EnvPaths, "app">
 
-export function envPaths(): EnvPaths {
+/**
+ * Get the paths for the current environment.
+ * When root is provided, it will be used as the base path for all other paths.
+ * Used for ./.zaly/ project settings
+ */
+export function envPaths(root?: string): EnvPaths {
+  if (root) {
+    return {
+      app: "zaly",
+      cache: join(root, "cache"),
+      config: root, // root is config dir
+      data: join(root, "data"),
+      log: join(root, "log"),
+      state: join(root, "state"),
+      tmp: join(root, "tmp"),
+    }
+  }
+
   let paths: EnvPaths | undefined
   const { env } = process
 
