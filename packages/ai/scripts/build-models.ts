@@ -11,7 +11,6 @@ import type { ModelCatalog, StoredModel } from "../src/models.ts"
  *                             `providerInfo` is attached at lookup time via
  *                             a one-line spread so we don't duplicate
  *                             provider metadata across 2400+ entries.
- *   assets/model-ids.json   — flat sorted array of all ids.
  *
  * Run:  bun packages/ai/scripts/build-providers.ts
  */
@@ -26,7 +25,6 @@ import { overrides } from "./overrides.ts"
 
 const AI_DIR = join(import.meta.dirname, "..")
 const CATALOG_FILE = join(AI_DIR, "assets", "models.json")
-const MODEL_IDS_FILE = join(AI_DIR, "assets", "model-ids.json")
 
 type CatalogModel = ModelInfo & {
   provider?: ModelProviderOverride
@@ -144,12 +142,10 @@ for (const [pid, provider] of Object.entries(raw)) {
 allIds.sort((a, b) => a.localeCompare(b))
 
 writeFileSync(CATALOG_FILE, `${JSON.stringify(out, undefined, 2)}\n`)
-writeFileSync(MODEL_IDS_FILE, `${JSON.stringify(allIds, undefined, 2)}\n`)
 
 const providerCount = Object.keys(out.providers).length
 console.log(`✓ ${providerCount} providers, ${allIds.length} models`)
 console.log(`  wrote: ${CATALOG_FILE.replace(AI_DIR, ".")}`)
-console.log(`         ${MODEL_IDS_FILE.replace(AI_DIR, ".")}`)
 console.log()
 console.log(`skipped (${[...skipped.values()].flat().length}):`)
 for (const [reason, ids] of [...skipped.entries()].toSorted((a, b) => b[1].length - a[1].length)) {

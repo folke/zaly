@@ -2,13 +2,7 @@ import type { ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { modelCollection } from "../src/model.ts"
-import {
-  builtinProviders,
-  filterModel,
-  getModel,
-  listModelIds,
-  parseModelId,
-} from "../src/models.ts"
+import { builtinProviders, filterModel, getModel, parseModelId } from "../src/models.ts"
 
 describe("parseModelId", () => {
   test("two-segment id", () => {
@@ -123,14 +117,7 @@ describe("listModels", () => {
   })
 })
 
-describe("listModelIds / builtinProviders", () => {
-  test("listModelIds returns a non-empty list of strings", async () => {
-    const ids = await listModelIds()
-    expect(Array.isArray(ids)).toBe(true)
-    expect(ids.length).toBeGreaterThan(0)
-    expect(typeof ids[0]).toBe("string")
-  })
-
+describe("listModelIds", () => {
   test("builtinProviders returns the catalog providers map", async () => {
     const provs = await builtinProviders()
     expect(provs).toBeDefined()

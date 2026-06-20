@@ -44,7 +44,8 @@ export function parseModelId(id: string): { provider: string; model: string } {
 let catalogPromise: Promise<ModelCatalog> | undefined
 
 function loadCatalog(): Promise<ModelCatalog> {
-  catalogPromise ??= import("../assets/models.json", { with: { type: "json" } }).then(
+  const url = new URL("../assets/models.json", import.meta.url).href
+  catalogPromise ??= import(url, { with: { type: "json" } }).then(
     (m) => m.default as unknown as ModelCatalog
   )
   return catalogPromise
@@ -156,14 +157,6 @@ export async function listModels(opts?: ModelFilter): Promise<Record<string, Mod
     toModelSpec(id, stored, catalog)
   )
   return await filterModels(models, opts)
-}
-
-/** Flat sorted array of every built-in model id. Custom models are
- *  NOT included — this is a pre-generated compact payload for TUI
- *  autocomplete sources. For custom ids too, walk `listModels`. */
-export async function listModelIds(): Promise<readonly string[]> {
-  const mod = await import("../assets/model-ids.json", { with: { type: "json" } })
-  return mod.default
 }
 
 /** Built-in providers map. Exposed so callers can read endpoint

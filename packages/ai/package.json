@@ -13,7 +13,7 @@
   },
   "files": [
     "dist/**/*",
-    "assets/MODELS_DEV_LICENSE"
+    "assets/*"
   ],
   "type": "module",
   "exports": {
