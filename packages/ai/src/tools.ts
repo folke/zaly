@@ -50,17 +50,20 @@ export function defineTool<
   Result extends TSchema = TSchema,
   Meta extends object = object,
 >(def: ToolDef<Params, Result, Meta>): Tool<Static<Params>, Static<Result>, Meta> {
+  type Out = Tool<Static<Params>, Static<Result>, Meta>
+  // PERF: Keep the `unknown` hop: direct `as Out` makes TS structurally compare
+  // the object against Tool<Static<...>>, which is expensive with TypeBox.
   // oxlint-disable-next-line sort-keys
   const tool = {
     name: def.name,
     desc: def.desc,
     params: def.params,
     parallel: def.parallel,
+    preflight: def.preflight,
     result: def.result,
-    call: async (args, ctx) => def.call(args, ctx),
+    call: def.call as unknown as Out["call"],
     validator: new Validator(def.params, def.result),
-  } as Tool<Static<Params>, Static<Result>, Meta>
-  if (def.preflight) tool.preflight = async (args, ctx) => def.preflight?.(args, ctx)
+  } as unknown as Out
   return tool
 }
 

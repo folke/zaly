@@ -85,7 +85,9 @@ export class Validator<
 
   async #compile(schema: TSchema): Promise<Compiled> {
     const { Compile } = await import("typebox/schema")
+    // PERF: Keep the `unknown` hop: direct `as Compiled` makes TS structurally
+    // compare TypeBox's inferred Compile() return type and adds ~1s to linting.
     // oxlint-disable-next-line new-cap
-    return Compile(schema)
+    return Compile(schema) as unknown as Compiled
   }
 }

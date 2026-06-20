@@ -44,6 +44,7 @@ export function parseModelId(id: string): { provider: string; model: string } {
 let catalogPromise: Promise<ModelCatalog> | undefined
 
 function loadCatalog(): Promise<ModelCatalog> {
+  // PERF: much faster without bundling and much faster ts type checking
   const url = new URL("../assets/models.json", import.meta.url).href
   catalogPromise ??= import(url, { with: { type: "json" } }).then(
     (m) => m.default as unknown as ModelCatalog

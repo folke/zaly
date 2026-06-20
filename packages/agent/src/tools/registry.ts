@@ -18,22 +18,24 @@ export type ToolLoader = () => Promise<Tool>
 export type BuiltinTool = keyof typeof builtin
 export type AnyTool = AnyKey<BuiltinTool>
 
+// PERF: `import("./x")` makes TS load the full module type.
+// The `as string` erases the dynamic import type while emitting the same JS.
 const builtin = {
-  agent_send: () => import("./swarm.ts").then((m) => m.agentSendTool),
-  agent_spawn: () => import("./swarm.ts").then((m) => m.agentSpawnTool),
-  bash: () => import("./bash.ts").then((m) => m.bashTool),
-  edit: () => import("./edit.ts").then((m) => m.editTool),
-  fetch: () => import("./fetch.ts").then((m) => m.fetchTool),
-  find: () => import("./find.ts").then((m) => m.findTool),
-  grep: () => import("./grep.ts").then((m) => m.grepTool),
-  read: () => import("./read.ts").then((m) => m.readTool),
-  search: () => import("./search.ts").then((m) => m.searchTool),
-  subagent: () => import("./subagent.ts").then((m) => m.subagentTool),
-  task_list: () => import("./tasks.ts").then((m) => m.taskListTool),
-  task_poll: () => import("./tasks.ts").then((m) => m.taskPollTool),
-  task_stop: () => import("./tasks.ts").then((m) => m.taskStopTool),
-  wakeup: () => import("./wakeup.ts").then((m) => m.wakeupTool),
-  write: () => import("./write.ts").then((m) => m.writeTool),
+  agent_send: () => import("./swarm.ts" as string).then((m) => m.agentSendTool as Tool),
+  agent_spawn: () => import("./swarm.ts" as string).then((m) => m.agentSpawnTool as Tool),
+  bash: () => import("./bash.ts" as string).then((m) => m.bashTool as Tool),
+  edit: () => import("./edit.ts" as string).then((m) => m.editTool as Tool),
+  fetch: () => import("./fetch.ts" as string).then((m) => m.fetchTool as Tool),
+  find: () => import("./find.ts" as string).then((m) => m.findTool as Tool),
+  grep: () => import("./grep.ts" as string).then((m) => m.grepTool as Tool),
+  read: () => import("./read.ts" as string).then((m) => m.readTool as Tool),
+  search: () => import("./search.ts" as string).then((m) => m.searchTool as Tool),
+  subagent: () => import("./subagent.ts" as string).then((m) => m.subagentTool as Tool),
+  task_list: () => import("./tasks.ts" as string).then((m) => m.taskListTool as Tool),
+  task_poll: () => import("./tasks.ts" as string).then((m) => m.taskPollTool as Tool),
+  task_stop: () => import("./tasks.ts" as string).then((m) => m.taskStopTool as Tool),
+  wakeup: () => import("./wakeup.ts" as string).then((m) => m.wakeupTool as Tool),
+  write: () => import("./write.ts" as string).then((m) => m.writeTool as Tool),
 } as const satisfies Record<string, ToolLoader>
 
 export const toolRegistry = createRegistry<ToolLoader>("tool").from(builtin)

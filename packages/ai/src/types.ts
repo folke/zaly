@@ -10,6 +10,7 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
+import type { MaybePromise } from "@zaly/shared"
 import type { Static, TObject, TSchema } from "typebox/type"
 import type { FinishReason, Usage } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
@@ -278,7 +279,7 @@ export type ToolDef<
   Meta extends object = object,
 > = {
   desc?: string
-  call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>
+  call: (args: Static<Params>, ctx: ToolContext<Meta>) => MaybePromise<Static<Result>>
   preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>
   name: string
   params: Params
