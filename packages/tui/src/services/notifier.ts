@@ -10,6 +10,7 @@ import { overlay } from "../widgets/overlay.ts"
 export type NotifProps = Omit<LogState, "content" | "level"> & {
   level?: LogLevel
   timeout?: number
+  keep?: () => boolean
   onClose?: () => void
 }
 
@@ -48,12 +49,15 @@ export class Notifier {
   #start(notif: Notif) {
     this.#active.set(notif.node, notif)
     notif.node.state.visible = true
-    setTimeout(() => {
+    const t = setInterval(() => {
+      if (notif.opts?.keep?.()) return
+      clearInterval(t)
       this.#active.delete(notif.node)
       this.#ui.close(notif.node)
       notif.opts?.onClose?.()
       this.#check()
     }, notif.opts?.timeout ?? 3000)
+    t.unref()
   }
 
   #check() {
