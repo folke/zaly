@@ -206,6 +206,22 @@ export function appActions({ app }: { app: App }) {
       desc: "Quit zaly.",
       keys: [],
     },
+    "pack.update": {
+      cmd: "update",
+      desc: "Update all installed packs.",
+      fn: async () => {
+        const { packUpdate } = await import("./plugins.ts")
+        await packUpdate(app)
+      },
+    },
+    "pack.updates": {
+      cmd: "updates",
+      desc: "Check for updates of installed packs.",
+      fn: async () => {
+        const { packUpdates } = await import("./plugins.ts")
+        await packUpdates(app, { notify: true })
+      },
+    },
     "session.new": {
       cmd: "new",
       desc: "Start a new session in the current workspace.",

@@ -1,6 +1,6 @@
 import type { Agent } from "@zaly/agent"
 import type { Plugin } from "@zaly/plugin"
-import type { ActionDef, Actions, Renderer } from "@zaly/tui"
+import type { ActionDef, Actions, Node, Renderer } from "@zaly/tui"
 import type { Input } from "@zaly/tui/widgets/input"
 import type { Cli } from "../cli.ts"
 import type { Context } from "../context.ts"
@@ -225,6 +225,10 @@ export class App {
   }
 
   async loadResources(): Promise<void> {
+    const { packUpdates, packInstall } = await import("./plugins.ts")
+    const installed = await packInstall(this)
+    if (!installed) void packUpdates(this)
+
     await import("./plugins.ts").then(({ loadPlugins }) => loadPlugins(this))
     await Promise.all([
       import("./skills.ts").then(({ loadSkills }) => loadSkills(this)),

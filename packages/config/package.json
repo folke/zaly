@@ -17,11 +17,16 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
+    "./pack": {
+      "bun": "./src/pack/index.ts",
+      "default": "./dist/pack.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "exports": {
       ".": "./dist/index.mjs",
+      "./pack": "./dist/pack.mjs",
       "./package.json": "./package.json"
     },
     "access": "public"
@@ -39,7 +44,9 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
+    "@types/semver": "^7.7.1",
     "defu": "^6.1.7",
+    "semver": "^7.8.5",
     "typia": "^12.1.1"
   },
   "engines": {
@@ -48,6 +55,7 @@
   },
   "inlinedDependencies": {
     "defu": "6.1.7",
+    "semver": "7.8.5",
     "typia": "12.1.1"
   },
   "homepage": "https://github.com/folke/zaly/tree/main/packages/config#readme",

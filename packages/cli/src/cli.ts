@@ -34,6 +34,7 @@ export class Cli {
 
   async printConfig(): Promise<void> {
     const config = await this.ctx.config()
+
     const settings: Settings = {
       ...config.settings,
       resources: {
@@ -41,7 +42,10 @@ export class Cli {
         themes: await config.resources.themes(),
         commands: await config.resources.commands(),
         skills: await config.resources.skills(),
-        packs: await config.resources.packs(),
+        packs: config.resources
+          .packs()
+          .map((p) => p.info?.uri)
+          .filter((uri) => typeof uri === "string"),
       },
     }
     const [{ settingsReviverIssues }, { codeToAnsi }, { prettyPath }] = await Promise.all([

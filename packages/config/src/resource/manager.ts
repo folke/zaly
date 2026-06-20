@@ -29,11 +29,7 @@ export class ResourceManager extends ResourceProvider {
       ...res.packs.values(),
       ...(opts.dotAgents ?? []).map(
         (dir) =>
-          new ResourcePaths({
-            dir,
-            settings: { resources: { skills: ["skills"] } },
-            type: opts.type,
-          })
+          new ResourcePaths({ ...opts, dir, settings: { resources: { skills: ["skills"] } } })
       )
     )
   }
@@ -43,10 +39,10 @@ export class ResourceManager extends ResourceProvider {
     this.refresh()
   }
 
-  async packs() {
-    const ret: string[] = []
+  packs() {
+    const ret: ResourcePack[] = []
     for (const res of this.#providers) {
-      if (res instanceof ResourcePaths) ret.push(...res.packs.keys())
+      if (res instanceof ResourcePaths) ret.push(...res.packs.values())
     }
     return ret
   }

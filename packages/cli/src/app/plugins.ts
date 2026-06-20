@@ -1,3 +1,4 @@
+import type { Pack } from "@zaly/config/pack"
 import type { PluginHost } from "@zaly/plugin"
 import type { App } from "./app.ts"
 
@@ -38,4 +39,55 @@ export async function loadPlugins(app: App): Promise<void> {
         title: `Plugin ${result.plugin.name}`,
       })
   }
+}
+
+function packList(packs: Pack[]): string {
+  return packs.map((p) => `- \`${p.uri}\``).join("\n")
+}
+
+export async function packUpdate(app: App): Promise<boolean> {
+  const packs = await app.ctx.packs()
+  const updates = await packs.updates()
+  if (updates.length === 0) {
+    app.notify("All packages are up to date.", { level: "success" })
+    return false
+  }
+  let updating = true
+  app.notify(`Updating packages:\n${packList(updates)}`, {
+    keep: () => updating,
+  })
+  const ok = await app.ctx.logger.try(async () => {
+    await packs.update(updates)
+    app.notify(`Updated:\n${packList(updates)}`, { level: "success" })
+    return true
+  }, "packs")
+  if (!ok) app.notify("Failed to update packages.", { level: "error", timeout: 10_000 })
+  updating = false
+  return true
+}
+
+export async function packInstall(app: App): Promise<boolean> {
+  const packs = await app.ctx.packs()
+  const missing = await packs.missing()
+  if (missing.length === 0) return false
+  let installing = true
+  app.notify(`Installing missing packages:\n${packList(missing)}`, { keep: () => installing })
+  const ok = await app.ctx.logger.try(async () => {
+    await packs.install(missing)
+    app.notify(`Installed:\n${packList(missing)}`, { level: "success" })
+    return true
+  }, "packs")
+  if (!ok) app.notify("Failed to install packages.", { level: "error", timeout: 10_000 })
+  installing = false
+  return true
+}
+
+export async function packUpdates(app: App, opts: { notify?: boolean } = {}): Promise<void> {
+  const packs = await app.ctx.packs()
+  const updates = await packs.updates()
+  if (updates.length === 0) {
+    if (opts.notify) app.notify("All packages are up to date.", { level: "success" })
+    return
+  }
+  app.notify(`Package updates available:\n${packList(updates)}`, { level: "warn" })
 }

@@ -1,9 +1,9 @@
+import type { EnvPaths } from "@zaly/shared/paths"
 import type { Config, LoadedSettings, Settings, SettingsScope } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
 import { zalyPaths } from "@zaly/shared/paths"
 import { stat } from "node:fs/promises"
-import { join } from "pathe"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
 import { settingsReviver } from "./reviver.ts"
@@ -31,11 +31,15 @@ export async function updateSettings(dir: string, patch: Settings): Promise<Sett
 }
 
 async function loadScope<T extends SettingsScope>(
-  dir: string,
   scope: T,
-  exists?: boolean
+  paths: EnvPaths
 ): Promise<LoadedSettings<T>> {
-  return { dir, settings: exists !== false ? await loadSettings(dir) : undefined, type: scope }
+  return {
+    dir: paths.config,
+    paths,
+    scope,
+    settings: await loadSettings(paths.config),
+  }
 }
 
 export type LoadConfigOpts = {
@@ -47,20 +51,15 @@ export type LoadConfigOpts = {
 
 export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
   const cwd = normPath(opts.cwd)
+  const user = await loadScope("user", zalyPaths.env)
+
   const paths = zalyPaths.project(cwd)
+  const project = await loadScope("project", paths.env)
 
-  const user = await loadScope(zalyPaths.config, "user")
-  const project = await loadScope(
-    paths.dotZaly ?? join(paths.root, ".zaly"),
-    "project",
-    paths.dotZaly !== undefined
-  )
-
-  const wsDotZaly = opts.workspace ? zalyPaths.project(opts.workspace).dotZaly : undefined
-  const wsDir = opts.workspace ? (wsDotZaly ?? join(opts.workspace, ".zaly")) : undefined
+  const wsPaths = opts.workspace ? zalyPaths.project(opts.workspace) : undefined
   const workspace =
-    wsDir && wsDir !== project.dir // Only load if workspace is different from project
-      ? await loadScope(wsDir, "workspace", wsDotZaly !== undefined)
+    wsPaths && wsPaths.dotZaly !== paths.dotZaly // Only load if workspace is different from project
+      ? await loadScope("workspace", wsPaths.env)
       : undefined
 
   const config: Omit<Config, "resources"> = {

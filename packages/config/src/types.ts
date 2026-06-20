@@ -1,6 +1,6 @@
 import type { PermissionPresetName } from "@zaly/agent"
 import type { ReasoningEffort, AuthSecrets } from "@zaly/ai"
-import type { ProjectPaths } from "@zaly/shared/paths"
+import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
 
@@ -35,8 +35,9 @@ export type TypiaSettings = Omit<Settings, "keymap"> & {
 export type SettingsScope = "user" | "workspace" | "project"
 
 export type LoadedSettings<T extends SettingsScope = SettingsScope> = {
-  type: T
+  scope: T
   dir: string
+  paths: EnvPaths
   settings?: Settings
 }
 

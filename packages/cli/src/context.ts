@@ -2,6 +2,7 @@ import type { PromptCollection, ToolCollection } from "@zaly/agent"
 import type { Session } from "@zaly/agent/session"
 import type { ModelCollection } from "@zaly/ai"
 import type { Config } from "@zaly/config"
+import type { PackManager } from "@zaly/config/pack"
 import type { LogLevel } from "@zaly/shared/logger"
 import type { Theme } from "@zaly/tui"
 import type { CliArgs } from "./cli.ts"
@@ -185,5 +186,15 @@ export class Context extends BaseLogger {
   async stop(): Promise<void> {
     await this.flush()
     await Promise.all(this.#dispose.map((fn) => Promise.resolve(fn())))
+  }
+
+  async packs(): Promise<PackManager> {
+    const config = await this.config()
+    const { PackManager } = await import("@zaly/config/pack")
+    const packs = config.resources
+      .packs()
+      .map((p) => p.info)
+      .filter((p) => p !== undefined)
+    return new PackManager(packs)
   }
 }

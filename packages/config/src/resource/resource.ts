@@ -1,10 +1,11 @@
 import type { Stats } from "node:fs"
+import type { PackPath } from "../pack/uri.ts"
 import type { LoadedSettings } from "../types.ts"
 
 import { normPath } from "@zaly/shared"
-import { isRemotePath, zalyPaths } from "@zaly/shared/paths"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
+import { packPath } from "../pack/uri.ts"
 
 export type ResourceType = (typeof types)[number]
 
@@ -79,9 +80,9 @@ export class ResourcePaths extends ResourceProvider {
     const res = opts.settings?.resources ?? {}
     const resolve = (t: ResourceType | "packs") => (Array.isArray(res[t]) ? res[t] : [])
     for (const type of types) this.#paths[type] = resolve(type)
-    for (const p of resolve("packs")) {
-      const dir = isRemotePath(p) ? zalyPaths.pluginPath(p) : normPath(this.#dir, p)
-      this.#packs.set(p, new ResourcePack({ dir, source: p }))
+    for (const uri of resolve("packs")) {
+      const info = packPath(uri, { cwd: this.#dir, data: opts.paths.data })
+      this.#packs.set(uri, new ResourcePack({ dir: info.dir, info }))
     }
   }
 
@@ -108,20 +109,20 @@ export class ResourcePaths extends ResourceProvider {
 
 export class ResourcePack extends ResourceProvider {
   #dir: string
-  #source?: string
+  #info?: PackPath
   #stat?: Stats | false
 
-  constructor(opts: { dir: string; source?: string }) {
+  constructor(opts: { dir: string; info?: PackPath }) {
     super()
     this.#dir = opts.dir
-    this.#source = opts.source
+    this.#info = opts.info
   }
 
-  get source() {
-    return this.#source
+  get info(): PackPath | undefined {
+    return this.#info
   }
 
-  get dir() {
+  get dir(): string {
     return this.#dir
   }
 
