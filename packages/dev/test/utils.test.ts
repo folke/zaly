@@ -42,7 +42,9 @@ describe("findPkg", () => {
     const { cwd, dir } = fixture({ name: "@scope/fixture", version: "1.0.0" })
     const slug = dir.split("/").pop()!
 
-    await expect(findPkg({ cwd, filter: "@scope/fixture" })).resolves.toMatchObject({ name: "@scope/fixture" })
+    await expect(findPkg({ cwd, filter: "@scope/fixture" })).resolves.toMatchObject({
+      name: "@scope/fixture",
+    })
     await expect(findPkg({ cwd, filter: slug })).resolves.toMatchObject({ name: "@scope/fixture" })
     await expect(findPkg({ cwd, filter: "other" })).resolves.toBeUndefined()
   })
@@ -119,19 +121,22 @@ describe("findPkg", () => {
 
 describe("package resolution", () => {
   test("allPkgs excludes the root package by default", async () => {
-    const names = (await allPkgs()).map((pkg) => pkg.name)
+    const all = await allPkgs()
+    const names = all.map((pkg) => pkg.name)
     expect(names).toContain("@zaly/shared")
     expect(names).not.toContain("zaly")
   })
 
   test("allPkgs can include the root package", async () => {
-    const names = (await allPkgs({ root: true })).map((pkg) => pkg.name)
+    const all = await allPkgs({ root: true })
+    const names = all.map((pkg) => pkg.name)
     expect(names).toContain("zaly")
   })
 
   test("resolvePkgs returns all packages from the workspace root", async () => {
     process.chdir(workspace)
-    const names = (await resolvePkgs()).map((pkg) => pkg.name)
+    const pkgs = await resolvePkgs()
+    const names = pkgs.map((pkg) => pkg.name)
     expect(names).toContain("@zaly/shared")
     expect(names).not.toContain("zaly")
   })

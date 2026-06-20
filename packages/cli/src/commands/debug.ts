@@ -3,7 +3,7 @@
 import type { Cli } from "../cli.ts"
 import type { CmdArgs } from "../types.ts"
 
-import { tokenStats, formatTokenStats } from "@zaly/agent/debug"
+import { formatTokenStats, tokenStats } from "@zaly/agent"
 import { defineCommand } from "citty"
 
 type DebugArgs = CmdArgs<typeof debugCommand>
@@ -28,6 +28,6 @@ export function debugCommand(cli: Cli) {
 
 async function run(cli: Cli, _args: DebugArgs): Promise<void> {
   const session = await cli.ctx.session()
-  const stats = await tokenStats(session.messages)
+  const stats = tokenStats(session.messages)
   console.log(formatTokenStats(stats))
 }

@@ -1,7 +1,6 @@
 import type { Static, TObject, TSchema } from "typebox/type"
 import type {
   Message,
-  ParamsOf,
   SafeParamsOf,
   Streamable,
   Tool,

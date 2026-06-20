@@ -7,7 +7,6 @@ import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
 import { canonical } from "./keys.ts"
 
-export type { KeyPattern }
 export type KeyPatterns = KeyPattern | readonly KeyPattern[]
 export type KeyHandler = (ev: KeyEvent) => boolean | void
 
