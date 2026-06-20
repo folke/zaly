@@ -1,6 +1,10 @@
 {
   "name": "@zaly/agent",
   "version": "0.0.2",
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/agent#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -62,9 +66,5 @@
     "ignore": "7.0.5",
     "jsonpath-plus": "10.4.0",
     "shell-quote": "1.8.4"
-  },
-  "homepage": "https://github.com/folke/zaly/tree/main/packages/agent#readme",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
   }
 }

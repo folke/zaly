@@ -1,6 +1,10 @@
 {
   "name": "@zaly/plugin",
   "version": "0.0.2",
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/plugin#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -47,9 +51,5 @@
   "inlinedDependencies": {
     "jiti": "2.7.0",
     "typebox": "1.2.16"
-  },
-  "homepage": "https://github.com/folke/zaly/tree/main/packages/plugin#readme",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
   }
 }

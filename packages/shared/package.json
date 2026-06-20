@@ -1,6 +1,10 @@
 {
   "name": "@zaly/shared",
   "version": "0.0.2",
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/shared#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -168,9 +172,5 @@
     ],
     "strip-ansi": "7.2.0",
     "wrap-ansi": "10.0.0"
-  },
-  "homepage": "https://github.com/folke/zaly/tree/main/packages/shared#readme",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
   }
 }

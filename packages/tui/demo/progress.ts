@@ -1,4 +1,5 @@
 import { createRenderer } from "@zaly/tui"
+
 const renderer = await createRenderer()
 renderer.start()
 

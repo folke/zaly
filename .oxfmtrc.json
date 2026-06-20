@@ -9,7 +9,12 @@
   "sortPackageJson": {
     "sortScripts": true
   },
-  "ignorePatterns": ["packages/*/etc/**/*", "packages/*/assets/**/*", "packages/*/src/**/gen/**/*"],
+  "ignorePatterns": [
+    "packages/*/etc/**/*",
+    "packages/*/assets/**/*",
+    "packages/*/src/**/gen/**/*",
+    "CHANGELOG.md"
+  ],
   // "sortTailwindcss": true,
   "sortImports": {
     "newlinesBetween": false,

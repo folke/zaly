@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test"
-
 import { parsePackUri } from "../src/pack/uri.ts"
 
 describe("parsePackUri", () => {
@@ -11,7 +10,10 @@ describe("parsePackUri", () => {
       "git:github.com/user/repo@feat/foo",
       { ref: undefined, repo: "git:github.com/user/repo@feat/foo", type: "git" },
     ],
-    ["https://github.com/user/repo", { ref: undefined, repo: "https://github.com/user/repo", type: "git" }],
+    [
+      "https://github.com/user/repo",
+      { ref: undefined, repo: "https://github.com/user/repo", type: "git" },
+    ],
     ["/absolute/path/to/package", { dir: "/absolute/path/to/package", type: "dir" }],
     ["./relative/path/to/package", { dir: "./relative/path/to/package", type: "dir" }],
     [

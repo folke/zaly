@@ -17,7 +17,10 @@ const rank = <T>(items: Iterable<T>, score: (item: T) => number, limit?: number)
     if (s > 0) ranked.push({ idx, item, score: s, text: String(item) })
     idx++
   }
-  return ranked.toSorted(sorter()).slice(0, limit).map((item) => item.item)
+  return ranked
+    .toSorted(sorter())
+    .slice(0, limit)
+    .map((item) => item.item)
 }
 
 describe("fuzzyScore", () => {

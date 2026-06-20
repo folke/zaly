@@ -1,6 +1,10 @@
 {
   "name": "@zaly/ai",
   "version": "0.0.2",
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/ai#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -47,9 +51,5 @@
   },
   "inlinedDependencies": {
     "jsonrepair": "3.14.0"
-  },
-  "homepage": "https://github.com/folke/zaly/tree/main/packages/ai#readme",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
   }
 }

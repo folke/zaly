@@ -1,6 +1,10 @@
 {
   "name": "@zaly/cli",
   "version": "0.0.2",
+  "homepage": "https://github.com/folke/zaly/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -68,9 +72,5 @@
   },
   "trustedDependencies": [
     "sharp"
-  ],
-  "homepage": "https://github.com/folke/zaly/tree/main/packages/cli#readme",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
-  }
+  ]
 }
