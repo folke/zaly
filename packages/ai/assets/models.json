@@ -10524,6 +10524,51 @@
       },
       "api": "openai"
     },
+    "alibaba-token-plan-cn/kimi-k2.7-code": {
+      "id": "kimi-k2.7-code",
+      "name": "Kimi K2.7 Code",
+      "family": "kimi-k2",
+      "attachment": true,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        },
+        {
+          "type": "budget_tokens"
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-06-12",
+      "last_updated": "2026-06-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "api": "openai"
+    },
     "alibaba-token-plan-cn/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -10635,7 +10680,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 1000000,
         "output": 131072
@@ -16142,6 +16187,44 @@
       },
       "api": "openai"
     },
+    "cortecs/kimi-k2.7-code": {
+      "id": "kimi-k2.7-code",
+      "name": "Kimi K2.7 Code",
+      "family": "kimi-k2",
+      "attachment": true,
+      "reasoning": true,
+      "reasoning_options": [],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-06-12",
+      "last_updated": "2026-06-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 1.28,
+        "output": 4.63,
+        "cache_read": 0.32
+      },
+      "api": "openai"
+    },
     "cortecs/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -16269,6 +16352,49 @@
       "cost": {
         "input": 0.656,
         "output": 2.731
+      },
+      "api": "openai"
+    },
+    "cortecs/glm-5.2": {
+      "id": "glm-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      },
+      "cost": {
+        "input": 1.44,
+        "output": 4.53,
+        "cache_read": 0.39
       },
       "api": "openai"
     },
@@ -20156,7 +20282,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 262144,
         "output": 262144
@@ -21633,39 +21759,6 @@
       },
       "api": "openai"
     },
-    "google/gemma-4-E4B-it": {
-      "id": "gemma-4-E4B-it",
-      "name": "Gemma 4 E4B IT",
-      "family": "gemma",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-04-02",
-      "last_updated": "2026-04-02",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "limit": {
-        "context": 131072,
-        "output": 8192
-      },
-      "api": "openai"
-    },
     "google/gemini-3.1-pro-preview-customtools": {
       "id": "gemini-3.1-pro-preview-customtools",
       "name": "Gemini 3.1 Pro Preview Custom Tools",
@@ -21771,39 +21864,6 @@
         "input": 0.1,
         "output": 0.4,
         "cache_read": 0.025
-      },
-      "api": "openai"
-    },
-    "google/gemma-4-E2B-it": {
-      "id": "gemma-4-E2B-it",
-      "name": "Gemma 4 E2B IT",
-      "family": "gemma",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2026-04-02",
-      "last_updated": "2026-04-02",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "limit": {
-        "context": 131072,
-        "output": 8192
       },
       "api": "openai"
     },
@@ -22311,7 +22371,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 1000000,
         "output": 131072
@@ -35857,6 +35917,40 @@
       "cost": {
         "input": 0.14,
         "output": 0.57
+      },
+      "api": "openai"
+    },
+    "siliconflow-cn/zai-org/GLM-5.2": {
+      "id": "zai-org/GLM-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 205000,
+        "output": 205000
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_write": 0
       },
       "api": "openai"
     },
@@ -54650,7 +54744,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 1000000,
         "output": 131072
@@ -68216,6 +68310,40 @@
       },
       "api": "openai"
     },
+    "siliconflow/zai-org/GLM-5.2": {
+      "id": "zai-org/GLM-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 205000,
+        "output": 205000
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_write": 0
+      },
+      "api": "openai"
+    },
     "siliconflow/zai-org/GLM-4.5-Air": {
       "id": "zai-org/GLM-4.5-Air",
       "name": "zai-org/GLM-4.5-Air",
@@ -68687,16 +68815,7 @@
       "family": "kimi-k2",
       "attachment": true,
       "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
-        }
-      ],
+      "reasoning_options": [],
       "tool_call": true,
       "interleaved": {
         "field": "reasoning_content"
@@ -68738,14 +68857,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
         }
       ],
       "tool_call": true,
@@ -68784,16 +68895,7 @@
       "family": "kimi-k2",
       "attachment": true,
       "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
-        }
-      ],
+      "reasoning_options": [],
       "tool_call": true,
       "interleaved": {
         "field": "reasoning_content"
@@ -68887,9 +68989,8 @@
         {
           "type": "effort",
           "values": [
-            "low",
-            "medium",
-            "high"
+            "high",
+            "max"
           ]
         }
       ],
@@ -68910,7 +69011,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 405504,
         "output": 131072
@@ -80428,16 +80529,7 @@
       "family": "kimi-k2",
       "attachment": true,
       "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
-        }
-      ],
+      "reasoning_options": [],
       "tool_call": true,
       "interleaved": {
         "field": "reasoning_content"
@@ -80478,14 +80570,6 @@
       "reasoning_options": [
         {
           "type": "toggle"
-        },
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
         }
       ],
       "tool_call": true,
@@ -80523,16 +80607,7 @@
       "family": "kimi-k2",
       "attachment": true,
       "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "effort",
-          "values": [
-            "low",
-            "medium",
-            "high"
-          ]
-        }
-      ],
+      "reasoning_options": [],
       "tool_call": true,
       "interleaved": {
         "field": "reasoning_content"
@@ -80624,9 +80699,8 @@
         {
           "type": "effort",
           "values": [
-            "low",
-            "medium",
-            "high"
+            "high",
+            "max"
           ]
         }
       ],
@@ -80647,7 +80721,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 405504,
         "output": 131072
@@ -82862,12 +82936,12 @@
       "open_weights": true,
       "limit": {
         "context": 262144,
-        "output": 16384
+        "output": 262144
       },
       "cost": {
-        "input": 0.74,
-        "output": 3.5,
-        "cache_read": 0.15
+        "input": 0.68,
+        "output": 3.41,
+        "cache_read": 0.144
       },
       "api": "openai",
       "headers": {
@@ -82996,13 +83070,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 262142,
-        "output": 262142
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
-        "input": 0.68,
-        "output": 3.41,
-        "cache_read": 0.34
+        "input": 0.67,
+        "output": 3.5,
+        "cache_read": 0.2
       },
       "api": "openai",
       "headers": {
@@ -84394,6 +84468,45 @@
         "thinkingFormat": "openrouter"
       }
     },
+    "openrouter/poolside/laguna-xs.2": {
+      "id": "poolside/laguna-xs.2",
+      "name": "Laguna XS.2",
+      "attachment": false,
+      "reasoning": true,
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "cost": {
+        "input": 0.1,
+        "output": 0.2,
+        "cache_read": 0.05
+      },
+      "api": "openai",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
     "openrouter/poolside/laguna-xs.2:free": {
       "id": "poolside/laguna-xs.2:free",
       "name": "Laguna XS.2 (free)",
@@ -84404,7 +84517,7 @@
       "interleaved": {
         "field": "reasoning_content"
       },
-      "structured_output": true,
+      "structured_output": false,
       "temperature": true,
       "release_date": "2026-04-28",
       "last_updated": "2026-04-28",
@@ -84436,16 +84549,12 @@
         "thinkingFormat": "openrouter"
       }
     },
-    "openrouter/poolside/laguna-m.1:free": {
-      "id": "poolside/laguna-m.1:free",
-      "name": "Laguna M.1 (free)",
+    "openrouter/poolside/laguna-m.1": {
+      "id": "poolside/laguna-m.1",
+      "name": "Laguna M.1",
       "attachment": false,
       "reasoning": true,
-      "reasoning_options": [],
       "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
       "structured_output": true,
       "temperature": true,
       "release_date": "2026-04-28",
@@ -84458,7 +84567,50 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "cost": {
+        "input": 0.2,
+        "output": 0.4,
+        "cache_read": 0.1
+      },
+      "api": "openai",
+      "headers": {
+        "HTTP-Referer": "https://zaly.sh",
+        "X-Title": "Zaly"
+      },
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "reasoningField": "reasoning",
+        "thinkingFormat": "openrouter"
+      }
+    },
+    "openrouter/poolside/laguna-m.1:free": {
+      "id": "poolside/laguna-m.1:free",
+      "name": "Laguna M.1 (free)",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": false,
+      "temperature": true,
+      "release_date": "2026-04-28",
+      "last_updated": "2026-04-28",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
       "limit": {
         "context": 262144,
         "output": 32768
@@ -84725,15 +84877,15 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
-        "context": 262144,
-        "output": 262144
+        "context": 1048576,
+        "output": 131072
       },
       "cost": {
-        "input": 1.4,
-        "output": 4.4,
-        "cache_read": 0.26
+        "input": 1.2,
+        "output": 4.1,
+        "cache_read": 0.2
       },
       "api": "openai",
       "headers": {
@@ -85049,7 +85201,7 @@
       "cost": {
         "input": 0.075,
         "output": 0.3,
-        "cache_read": 0.037
+        "cache_read": 0.0375
       },
       "api": "openai",
       "headers": {
@@ -90311,6 +90463,7 @@
     "openrouter/nex-agi/nex-n2-pro:free": {
       "id": "nex-agi/nex-n2-pro:free",
       "name": "Nex-N2-Pro (free)",
+      "family": "agi",
       "attachment": true,
       "reasoning": true,
       "reasoning_options": [],
@@ -90481,13 +90634,13 @@
       },
       "open_weights": false,
       "limit": {
-        "context": 262142,
-        "output": 262142
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
-        "input": 0.68,
-        "output": 3.41,
-        "cache_read": 0.34
+        "input": 0.67,
+        "output": 3.5,
+        "cache_read": 0.2
       },
       "api": "openai",
       "headers": {
@@ -91330,9 +91483,8 @@
         "output": 262144
       },
       "cost": {
-        "input": 0.15,
-        "output": 1,
-        "cache_read": 0.05
+        "input": 0.14,
+        "output": 1
       },
       "api": "openai",
       "headers": {
@@ -92390,12 +92542,11 @@
       "open_weights": true,
       "limit": {
         "context": 262144,
-        "output": 81920
+        "output": 262144
       },
       "cost": {
         "input": 0.14,
-        "output": 1,
-        "cache_read": 0.05
+        "output": 1
       },
       "api": "openai",
       "headers": {
@@ -96036,6 +96187,51 @@
       },
       "api": "openai"
     },
+    "alibaba-token-plan/kimi-k2.7-code": {
+      "id": "kimi-k2.7-code",
+      "name": "Kimi K2.7 Code",
+      "family": "kimi-k2",
+      "attachment": true,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        },
+        {
+          "type": "budget_tokens"
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": false,
+      "knowledge": "2025-01",
+      "release_date": "2026-06-12",
+      "last_updated": "2026-06-12",
+      "modalities": {
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 262144
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "api": "openai"
+    },
     "alibaba-token-plan/glm-5.1": {
       "id": "glm-5.1",
       "name": "GLM-5.1",
@@ -96120,6 +96316,50 @@
         "input": 0,
         "output": 0,
         "cache_read": 0
+      },
+      "api": "openai"
+    },
+    "alibaba-token-plan/glm-5.2": {
+      "id": "glm-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
       },
       "api": "openai"
     },
@@ -99309,7 +99549,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 1000000,
         "output": 131072
@@ -101809,7 +102049,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 131072,
         "output": 131072
@@ -111094,7 +111334,7 @@
           "text"
         ]
       },
-      "open_weights": false,
+      "open_weights": true,
       "limit": {
         "context": 1000000,
         "output": 131072
