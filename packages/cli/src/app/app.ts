@@ -59,6 +59,10 @@ export class App {
     return this.#ctx.config
   }
 
+  get settings() {
+    return this.#ctx.config.settings
+  }
+
   get renderer(): Renderer {
     return this.#renderer
   }
@@ -154,7 +158,9 @@ export class App {
     this.#renderer.ui.add(() => appUi({ app: this, composer: this.#composer }))
 
     this.#input = this.#composer.input
-    this.#picker = new Picker(this.#renderer.overlay, this.#input)
+    this.#picker = new Picker(this.#renderer.overlay, this.#input, {
+      maxHeight: this.settings.ui?.listHeight,
+    })
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
         actions: this.#renderer.actions,

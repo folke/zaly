@@ -10,11 +10,16 @@ export type Settings = {
   reasoning?: ReasoningEffort
   tools?: string[]
   ui?: {
-    /** Theme name or path to custom theme file */
-    theme?: string
+    /** Maximum number of visible rows in selection lists, like pickers and autocomplete. */
+    listHeight?: number
     /** Whether to show the reasoning trace in the UI. */
     reasoning?: boolean
+    /** Theme name or path to custom theme file */
+    theme?: string
+    /** What messages to show in the session tree. Defaults to assistant, reasoning, and tools. */
     tree?: ("assistant" | "reasoning" | "tools" | "system")[]
+    /** Maximum number of visible rows in the session tree. */
+    treeHeight?: number
   }
   permissions?: {
     preset?: PermissionPresetName

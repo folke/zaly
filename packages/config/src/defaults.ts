@@ -8,9 +8,11 @@ export const defaultSettings: Settings = {
   },
   reasoning: "medium",
   ui: {
+    listHeight: 8,
     reasoning: true,
     theme: "tokyonight-moon",
     tree: ["assistant", "reasoning", "tools"],
+    treeHeight: 20,
   },
   // FIXME: decide what default tools should be
   tools: [
