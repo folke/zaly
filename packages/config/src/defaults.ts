@@ -5,8 +5,12 @@ export const defaultSettings: Settings = {
   permissions: {
     preset: "permissive",
   },
-  reasoning: "low",
-  theme: "tokyonight-moon",
+  reasoning: "medium",
+  ui: {
+    reasoning: true,
+    theme: "tokyonight-moon",
+    tree: ["assistant", "reasoning", "tools"],
+  },
   // FIXME: decide what default tools should be
   tools: [
     "bash",

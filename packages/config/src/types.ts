@@ -9,8 +9,13 @@ export type Settings = {
   model?: string
   reasoning?: ReasoningEffort
   tools?: string[]
-  /** Theme name or path to custom theme file */
-  theme?: string
+  ui?: {
+    /** Theme name or path to custom theme file */
+    theme?: string
+    /** Whether to show the reasoning trace in the UI. */
+    reasoning?: boolean
+    tree?: ("assistant" | "reasoning" | "tools" | "system")[]
+  }
   permissions?: {
     preset?: PermissionPresetName
     allow?: string[]

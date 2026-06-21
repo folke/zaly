@@ -86,11 +86,10 @@ export async function newSession(app: App) {
   return await switchSession(undefined, app)
 }
 
+export type SessionTreeFilter = "assistant" | "reasoning" | "tools" | "system" | "fallback"
+
 export type SessionTreeOpts = {
-  reasoning?: boolean
-  tools?: boolean
-  system?: boolean
-  fallback?: boolean
+  filter?: SessionTreeFilter[]
 }
 
 type TreeMessage = {
@@ -124,9 +123,13 @@ function clean(s: string): string {
 
 function expand(
   m: Message,
-  opts: SessionTreeOpts & { active?: boolean; head?: boolean } = {}
+  filter: Set<SessionTreeFilter>,
+  opts: { active?: boolean; head?: boolean } = {}
 ): TreeMessage[] {
   const ret: TreeMessage[] = []
+  if (m.role === "system" && !filter.has("system")) return ret
+  if (m.role === "assistant" && !filter.has("assistant")) return ret
+
   const icon = (ctx: RenderCtx, ico?: string) => {
     if (opts.head) return ctx.style.accent(ico ?? icons.head)
     return opts.active
@@ -138,7 +141,7 @@ function expand(
   for (const part of parts) {
     switch (part.type) {
       case "reasoning": {
-        if (!opts.reasoning || part.text.trim() === "") continue
+        if (!filter.has("reasoning") || part.text.trim() === "") continue
         ret.push({
           render: (ctx) => ctx.style.quiet(`${icon(ctx, icons.reasoning)}${clean(part.text)}`),
           role: m.role,
@@ -162,7 +165,7 @@ function expand(
         break
       }
       case "tool-call": {
-        if (!opts.tools) continue
+        if (!filter.has("tools")) continue
         ret.push({
           render: (ctx) =>
             `${icon(ctx)}${ctx.style.syntaxConstant(part.name)}: ${ctx.style.muted(toolParams(part.params, { ...ctx, raw: true }))}`,
@@ -189,7 +192,7 @@ function expand(
 }
 
 export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
-  opts = { fallback: false, reasoning: true, system: false, tools: true, ...opts }
+  const filter = new Set<SessionTreeFilter>(opts.filter ?? ["reasoning", "tools", "assistant"])
   const session = app.agent.session
 
   type Node = TreeItem<
@@ -228,13 +231,12 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
     const isActive = active.has(node.uuid)
     const expanded =
       node.type === "message"
-        ? expand(node.message, {
-            ...opts,
+        ? expand(node.message, filter, {
             active: isActive,
             head: sessionHead === node.uuid,
           })
         : []
-    if (expanded.length === 0 && opts.fallback)
+    if (expanded.length === 0 && filter.has("fallback"))
       expanded.push({
         render: (ctx: RenderCtx) => ctx.style.add("quiet")(`[${node.type}]`),
         role: "system" as const,
