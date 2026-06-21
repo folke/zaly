@@ -6,9 +6,6 @@ export const SettingsSchema = {
             "TypiaSettings.o1": {
                 type: "object",
                 properties: {
-                    $schema: {
-                        type: "string"
-                    },
                     model: {
                         type: "string"
                     },
@@ -30,9 +27,86 @@ export const SettingsSchema = {
                             type: "string"
                         }
                     },
-                    theme: {
-                        type: "string",
-                        description: "Theme name or path to custom theme file"
+                    ui: {
+                        type: "object",
+                        properties: {
+                            collapsedTools: {
+                                type: "array",
+                                items: {
+                                    $ref: "#/components/schemas/AnyTool"
+                                },
+                                description: "Tools that should be rendered collapsed"
+                            },
+                            images: {
+                                type: "boolean",
+                                description: "Render images, if supported by the terminal"
+                            },
+                            listHeight: {
+                                type: "number",
+                                description: "Maximum number of visible rows in selection lists, like pickers and autocomplete."
+                            },
+                            reasoning: {
+                                type: "boolean",
+                                description: "Whether to show the reasoning trace in the UI."
+                            },
+                            theme: {
+                                type: "string",
+                                description: "Theme name or path to custom theme file"
+                            },
+                            tree: {
+                                type: "array",
+                                items: {
+                                    type: "string",
+                                    "enum": [
+                                        "reasoning",
+                                        "tools",
+                                        "system",
+                                        "assistant"
+                                    ]
+                                },
+                                description: "What messages to show in the session tree. Defaults to assistant, reasoning, and tools."
+                            },
+                            treeHeight: {
+                                type: "number",
+                                description: "Maximum number of visible rows in the session tree."
+                            }
+                        },
+                        required: []
+                    },
+                    compaction: {
+                        type: "object",
+                        properties: {
+                            enabled: {
+                                type: "boolean",
+                                description: "Enable automatic compaction when context is full"
+                            },
+                            keepTokens: {
+                                type: "number",
+                                description: "Existing messages up to this many tokens will be preserved in the context"
+                            },
+                            reasoning: {
+                                type: "string",
+                                "enum": [
+                                    "off",
+                                    "minimal",
+                                    "low",
+                                    "medium",
+                                    "high",
+                                    "xhigh",
+                                    "max"
+                                ],
+                                description: "Reasoning effort for the compaction summary"
+                            },
+                            summaryTokens: {
+                                type: "number",
+                                description: "Maximum number of tokens to use for the generated summary"
+                            },
+                            threshold: {
+                                type: "number",
+                                description: "Threshold for automatic compaction."
+                            }
+                        },
+                        required: []
                     },
                     permissions: {
                         type: "object",
@@ -156,11 +230,45 @@ export const SettingsSchema = {
                     secrets: {
                         $ref: "#/components/schemas/AuthSecrets"
                     },
+                    system: {
+                        type: "object",
+                        properties: {
+                            bash: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                },
+                                description: "Command used by the bash tool."
+                            },
+                            git: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                },
+                                description: "Command used for git package packs."
+                            },
+                            npm: {
+                                type: "array",
+                                items: {
+                                    type: "string"
+                                },
+                                description: "Package manager command used for npm package packs."
+                            }
+                        },
+                        required: [],
+                        description: "System integrations and external commands used by zaly."
+                    },
+                    $schema: {
+                        type: "string"
+                    },
                     keymap: {
                         $ref: "#/components/schemas/Recordstringstringstring"
                     }
                 },
                 required: []
+            },
+            AnyTool: {
+                type: "string"
             },
             AuthSecrets: {
                 type: "object",
