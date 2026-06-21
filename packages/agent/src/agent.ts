@@ -573,7 +573,7 @@ export class Agent extends Emitter<AgentEvents> {
     this.#setStatus("compacting")
     this.#usage.resetLast()
     try {
-      const Compaction = await import("./compaction/compactions.ts").then((m) => m.Compaction)
+      const { Compaction } = await import("./compaction/compactions.ts")
       const opts: Partial<CompactionOptions> = {
         ...this.#opts.compaction,
         signal: this.#abortController?.signal,

@@ -243,7 +243,7 @@ export function appActions({ app }: { app: App }) {
       desc: "Show a tree view of the current session's message history.",
       fn: async () => {
         const { sessionTree } = await import("./session.ts")
-        await sessionTree(app, { filter: app.ctx.config.settings.ui?.tree })
+        await sessionTree(app, { filter: app.settings.ui?.tree })
       },
     },
   } as const satisfies Record<string, ActionDef>
