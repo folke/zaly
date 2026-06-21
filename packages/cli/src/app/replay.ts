@@ -8,12 +8,15 @@ const STICKY_TAIL = 20
 
 /** Replay the conversation history for the current session, up to a certain limit. */
 export async function replay(session: Session, app: App) {
+  const reasoning = app.config.settings.ui?.reasoning ?? true
+
   const messages = session.messages.filter((m) => !m.hidden).slice(-REPLAY_LIMIT)
   if (messages.length === 0) return
 
   const tail = messageWidgets(messages.slice(-STICKY_TAIL), {
     composer: app.composer,
     pending: true,
+    reasoning,
   })
 
   const tailWidgets = tail.flatMap(({ widgets }) => widgets)
@@ -21,6 +24,7 @@ export async function replay(session: Session, app: App) {
   const nodes = messageWidgets(messages.slice(0, -STICKY_TAIL), {
     composer: app.composer,
     pending: false,
+    reasoning,
   }).flatMap(({ widgets }) => widgets)
 
   // Render the tail first with sticky:true, so that the end state is visible immediately

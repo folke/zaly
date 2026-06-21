@@ -1,5 +1,6 @@
 import type { Settings } from "./types.ts"
 
+// oxlint-disable-next-line sort-keys
 export const defaultSettings: Settings = {
   model: "openai/gpt-5.5",
   permissions: {

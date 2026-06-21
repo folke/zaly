@@ -19,7 +19,7 @@ export type MessageWidgets = {
 
 export function messageWidgets(
   messages: readonly Message[],
-  opts?: { pending?: boolean; composer?: Composer }
+  opts?: { pending?: boolean; composer?: Composer; reasoning?: boolean }
 ): MessageWidgets[] {
   const ret: MessageWidgets[] = []
   // Pre-index tool results by call id. Single pass — tool messages
@@ -51,10 +51,12 @@ export function messageWidgets(
         ],
       })
     } else if (m.role === "assistant") {
+      const widgets = [...renderAssistant(m, results, pending)]
+      if (widgets.length === 0) continue
       ret.push({
         id: m.id,
         setPending,
-        widgets: [...renderAssistant(m, results, pending)],
+        widgets,
       })
     }
   }
@@ -64,12 +66,13 @@ export function messageWidgets(
 function* renderAssistant(
   msg: Message<"assistant">,
   results: Map<string, ToolResultPart>,
-  pending?: Accessor<boolean>
+  pending?: Accessor<boolean>,
+  opts?: { reasoning?: boolean }
 ): Generator<() => Node> {
   for (const part of toParts(msg.content)) {
     if (part.type === "text" && part.text !== "") {
       yield () => assistantMessage({ content: part.text, pending })
-    } else if (part.type === "reasoning" && part.text !== "") {
+    } else if (part.type === "reasoning" && part.text !== "" && opts?.reasoning !== false) {
       yield () => reasoningMessage({ content: part.text, pending })
     } else if (part.type === "tool-call") {
       yield () => toolCall({ call: part, pending, result: toAccessor(results.get(part.id)) })
