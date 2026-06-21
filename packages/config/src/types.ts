@@ -25,10 +25,12 @@ export type ResolvedSettings = {
     enabled: boolean
     /** Existing messages up to this many tokens will be preserved in the context */
     keepTokens: number
-    /** Maximum number of tokens to use for the generated summary */
-    summaryTokens: number
     /** Reasoning effort for the compaction summary */
     reasoning: ReasoningEffort
+    /** Maximum number of tokens to use for the generated summary */
+    summaryTokens: number
+    /** Threshold for automatic compaction. */
+    threshold: number
   }
   permissions: {
     preset: PermissionPresetName

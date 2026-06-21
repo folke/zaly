@@ -171,7 +171,7 @@ describe("Agent — compaction", () => {
       ],
     ])
     const agent = await loadAgent({
-      compaction: { auto: false },
+      compaction: { enabled: false },
       messages: [{ content: "go", role: "user" }],
       model,
     })

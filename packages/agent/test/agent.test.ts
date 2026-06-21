@@ -211,7 +211,7 @@ describe("Agent — context overflow", () => {
     // test focuses on detection — that the overflow pattern is matched
     // and surfaces as `context-overflow` rather than `error`.
     const result = await runAgent({
-      compaction: { auto: false },
+      compaction: { enabled: false },
       messages: [{ content: "go", role: "user" }],
       model: throwingModel("This model's maximum context length is 8192 tokens."),
     })
@@ -223,7 +223,7 @@ describe("Agent — context overflow", () => {
       [{ finishReason: "stop", type: "finish", usage: { input: 9000, output: 5 } }],
     ])
     const result = await runAgent({
-      compaction: { auto: false },
+      compaction: { enabled: false },
       contextLimit: 8000,
       messages: [{ content: "go", role: "user" }],
       model,

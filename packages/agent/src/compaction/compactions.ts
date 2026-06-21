@@ -1,4 +1,4 @@
-import type { Message, ReasoningOptions } from "@zaly/ai"
+import type { Message, ReasoningEffort } from "@zaly/ai"
 import type { Agent } from "../agent.ts"
 import type { ContextPressure } from "../types.ts"
 import type { ToolStatOptions } from "./utils.ts"
@@ -15,28 +15,28 @@ import {
 } from "./utils.ts"
 
 export type CompactionOptions = {
-  auto: boolean
-  treshold?: number
+  enabled: boolean
+  threshold?: number
   /** Existing messages up to this many tokens will be preserved in the context */
   keepTokens: number
   maxToolResultLen: number
-  maxSummaryTokens: number
+  summaryTokens: number
   bash: ToolStatOptions
   files: ToolStatOptions
   signal?: AbortSignal
-  reasoning?: ReasoningOptions
+  reasoning?: ReasoningEffort
   trigger?: "manual" | "auto"
 }
 
 const defaults: CompactionOptions = {
-  auto: true,
   bash: { limit: 50, minCount: 2, minScore: 0.5, sort: "score" },
+  enabled: true,
   files: { limit: 50, minCount: 1, minScore: 0.5, sort: "score" },
   keepTokens: 20_000,
-  maxSummaryTokens: 10_000,
   maxToolResultLen: 2000,
-  reasoning: { effort: "low" },
-  treshold: 0.95,
+  reasoning: "low",
+  summaryTokens: 10_000,
+  threshold: 0.95,
 }
 
 export class Compaction {
@@ -116,8 +116,8 @@ export class Compaction {
       },
       {
         caching: false,
-        maxTokens: this.#opts.maxSummaryTokens,
-        reasoning: this.#opts.reasoning,
+        maxTokens: this.#opts.summaryTokens,
+        reasoning: this.#opts.reasoning ? { effort: this.#opts.reasoning } : undefined,
         signal: this.#opts.signal,
       }
     )

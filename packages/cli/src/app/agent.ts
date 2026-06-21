@@ -54,6 +54,7 @@ export async function loadAgent(app: App): Promise<Agent> {
       const { allow } = await import("./permissions.ts")
       return await allow(req, app)
     },
+    compaction: () => app.settings.compaction,
     cwd,
     logger: ctx.logger.child("agent"),
     permissions: ctx.flags.yolo

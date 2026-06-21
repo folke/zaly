@@ -8,6 +8,7 @@ import type {
   TokenCount,
   Tool,
 } from "@zaly/ai"
+import type { MaybeGetter } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentStopKind, StepKind } from "./events.ts"
@@ -239,5 +240,5 @@ export interface AgentOptions extends CollectOptions {
    *  unattended runs that should treat ask as allow (yolo-but-richer). */
   allow?: (req: PermissionRequest) => Promise<boolean>
 
-  compaction?: Partial<CompactionOptions>
+  compaction?: MaybeGetter<Partial<CompactionOptions>>
 }

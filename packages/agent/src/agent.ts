@@ -22,7 +22,7 @@ import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, SendMode, StepResult, TurnResult } from "./types.ts"
 
 import { AiError, isContextOverflow, runTool } from "@zaly/ai"
-import { Emitter, toError } from "@zaly/shared"
+import { Emitter, toValue, toError } from "@zaly/shared"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { TokenUsage } from "./utils/usage.ts"
@@ -459,9 +459,10 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   #shouldAutoCompact(): boolean {
-    const auto = this.#opts.compaction?.auto ?? true
+    const opts = toValue(this.#opts.compaction)
+    const auto = opts?.enabled ?? true
     if (!auto) return false
-    const threshold = this.#opts.compaction?.treshold ?? 0.95
+    const threshold = opts?.threshold ?? 0.95
     return this.pressure.ratio >= threshold
   }
 
@@ -575,7 +576,7 @@ export class Agent extends Emitter<AgentEvents> {
     try {
       const { Compaction } = await import("./compaction/compactions.ts")
       const opts: Partial<CompactionOptions> = {
-        ...this.#opts.compaction,
+        ...toValue(this.#opts.compaction),
         signal: this.#abortController?.signal,
       }
       const compactor = new Compaction(this, opts)
@@ -686,7 +687,7 @@ export class Agent extends Emitter<AgentEvents> {
         // Auto-compaction also gates the overflow recovery path. With
         // `auto: false`, overflow stops cleanly instead of attempting
         // a recovery the user explicitly opted out of.
-        if (this.#opts.compaction?.auto === false) return { kind: "context-overflow" }
+        if (toValue(this.#opts.compaction)?.enabled === false) return { kind: "context-overflow" }
         // Compactor mutates the conversation; the rejected message is
         // not committed — next step retries on the compacted state.
         this.#opts.logger

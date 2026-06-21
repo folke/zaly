@@ -14,6 +14,13 @@ export const defaultSettings = {
     tree: ["assistant", "reasoning", "tools"],
     treeHeight: 20,
   },
+  compaction: {
+    enabled: true,
+    keepTokens: 20_000,
+    reasoning: "medium",
+    summaryTokens: 10_000,
+    threshold: 0.95,
+  },
   // FIXME: decide what default tools should be
   tools: [
     "bash",
