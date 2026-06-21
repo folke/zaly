@@ -21,15 +21,15 @@ function genBuiltin(names: readonly string[]): string {
   // extend `Partial<Theme>`. Casting at the load site keeps the const's
   // outer shape clean — `as const satisfies LoaderMap<…>` then verifies
   // the whole thing without complaining about excess properties.
-  const entries = names
-    .map(
-      (n) =>
-        `  "${n}": () => import("../../${ASSET_DIR}/${n}.json").then((m) => m.default as Partial<Theme>),`
-    )
-    .join("\n")
+  const entries = names.map((n) => `  "${n}": () => importTheme("${n}"),`).join("\n")
 
   return `${header}import type { ThemeLoader } from "./registry.ts"
 import type { Theme } from "./types.ts"
+
+function importTheme(path: string): Promise<Partial<Theme>> {
+  const url = new URL(\`../../assets/themes/\${path}.json\`, import.meta.url).href
+  return import(url, { with: { type: "json" } }).then((m) => m.default as Partial<Theme>)
+}
 
 /**
  * Async loader map for every built-in theme. Each entry returns the

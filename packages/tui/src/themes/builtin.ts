@@ -4,6 +4,11 @@
 import type { ThemeLoader } from "./registry.ts"
 import type { Theme } from "./types.ts"
 
+function importTheme(path: string): Promise<Partial<Theme>> {
+  const url = new URL(`../../assets/themes/${path}.json`, import.meta.url).href
+  return import(url, { with: { type: "json" } }).then((m) => m.default as Partial<Theme>)
+}
+
 /**
  * Async loader map for every built-in theme. Each entry returns the
  * raw JSON; `themes/index.ts` wraps these with `resolveTheme` to
@@ -19,64 +24,33 @@ import type { Theme } from "./types.ts"
  * with no cast.
  */
 export const builtin = {
-  "ayu-dark": () =>
-    import("../../assets/themes/ayu-dark.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-frappe": () =>
-    import("../../assets/themes/catppuccin-frappe.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-latte": () =>
-    import("../../assets/themes/catppuccin-latte.json").then((m) => m.default as Partial<Theme>),
-  "catppuccin-macchiato": () =>
-    import("../../assets/themes/catppuccin-macchiato.json").then(
-      (m) => m.default as Partial<Theme>
-    ),
-  "catppuccin-mocha": () =>
-    import("../../assets/themes/catppuccin-mocha.json").then((m) => m.default as Partial<Theme>),
-  dracula: () =>
-    import("../../assets/themes/dracula.json").then((m) => m.default as Partial<Theme>),
-  "github-dark": () =>
-    import("../../assets/themes/github-dark.json").then((m) => m.default as Partial<Theme>),
-  "github-light": () =>
-    import("../../assets/themes/github-light.json").then((m) => m.default as Partial<Theme>),
-  "gruvbox-dark-medium": () =>
-    import("../../assets/themes/gruvbox-dark-medium.json").then((m) => m.default as Partial<Theme>),
-  "material-theme-palenight": () =>
-    import("../../assets/themes/material-theme-palenight.json").then(
-      (m) => m.default as Partial<Theme>
-    ),
-  "min-dark": () =>
-    import("../../assets/themes/min-dark.json").then((m) => m.default as Partial<Theme>),
-  "min-light": () =>
-    import("../../assets/themes/min-light.json").then((m) => m.default as Partial<Theme>),
-  monokai: () =>
-    import("../../assets/themes/monokai.json").then((m) => m.default as Partial<Theme>),
-  "night-owl": () =>
-    import("../../assets/themes/night-owl.json").then((m) => m.default as Partial<Theme>),
-  nord: () => import("../../assets/themes/nord.json").then((m) => m.default as Partial<Theme>),
-  "one-dark-pro": () =>
-    import("../../assets/themes/one-dark-pro.json").then((m) => m.default as Partial<Theme>),
-  "one-light": () =>
-    import("../../assets/themes/one-light.json").then((m) => m.default as Partial<Theme>),
-  poimandres: () =>
-    import("../../assets/themes/poimandres.json").then((m) => m.default as Partial<Theme>),
-  "rose-pine": () =>
-    import("../../assets/themes/rose-pine.json").then((m) => m.default as Partial<Theme>),
-  "solarized-dark": () =>
-    import("../../assets/themes/solarized-dark.json").then((m) => m.default as Partial<Theme>),
-  "solarized-light": () =>
-    import("../../assets/themes/solarized-light.json").then((m) => m.default as Partial<Theme>),
-  "synthwave-84": () =>
-    import("../../assets/themes/synthwave-84.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-day": () =>
-    import("../../assets/themes/tokyonight-day.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-moon": () =>
-    import("../../assets/themes/tokyonight-moon.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-night": () =>
-    import("../../assets/themes/tokyonight-night.json").then((m) => m.default as Partial<Theme>),
-  "tokyonight-storm": () =>
-    import("../../assets/themes/tokyonight-storm.json").then((m) => m.default as Partial<Theme>),
-  vesper: () => import("../../assets/themes/vesper.json").then((m) => m.default as Partial<Theme>),
-  "vitesse-dark": () =>
-    import("../../assets/themes/vitesse-dark.json").then((m) => m.default as Partial<Theme>),
-  "vitesse-light": () =>
-    import("../../assets/themes/vitesse-light.json").then((m) => m.default as Partial<Theme>),
+  "ayu-dark": () => importTheme("ayu-dark"),
+  "catppuccin-frappe": () => importTheme("catppuccin-frappe"),
+  "catppuccin-latte": () => importTheme("catppuccin-latte"),
+  "catppuccin-macchiato": () => importTheme("catppuccin-macchiato"),
+  "catppuccin-mocha": () => importTheme("catppuccin-mocha"),
+  dracula: () => importTheme("dracula"),
+  "github-dark": () => importTheme("github-dark"),
+  "github-light": () => importTheme("github-light"),
+  "gruvbox-dark-medium": () => importTheme("gruvbox-dark-medium"),
+  "material-theme-palenight": () => importTheme("material-theme-palenight"),
+  "min-dark": () => importTheme("min-dark"),
+  "min-light": () => importTheme("min-light"),
+  monokai: () => importTheme("monokai"),
+  "night-owl": () => importTheme("night-owl"),
+  nord: () => importTheme("nord"),
+  "one-dark-pro": () => importTheme("one-dark-pro"),
+  "one-light": () => importTheme("one-light"),
+  poimandres: () => importTheme("poimandres"),
+  "rose-pine": () => importTheme("rose-pine"),
+  "solarized-dark": () => importTheme("solarized-dark"),
+  "solarized-light": () => importTheme("solarized-light"),
+  "synthwave-84": () => importTheme("synthwave-84"),
+  "tokyonight-day": () => importTheme("tokyonight-day"),
+  "tokyonight-moon": () => importTheme("tokyonight-moon"),
+  "tokyonight-night": () => importTheme("tokyonight-night"),
+  "tokyonight-storm": () => importTheme("tokyonight-storm"),
+  vesper: () => importTheme("vesper"),
+  "vitesse-dark": () => importTheme("vitesse-dark"),
+  "vitesse-light": () => importTheme("vitesse-light"),
 } as const satisfies Record<string, ThemeLoader>
