@@ -272,15 +272,17 @@ export interface ToolContext<M extends object = object> {
    *  never sees this. */
   meta?: M
 }
-
+export type StaticOf<T> = T extends TSchema ? Static<T> : unknown
 export type ToolDef<
   Params extends TObject = TObject,
-  Result extends TSchema = TSchema,
+  Result extends TSchema | undefined = undefined,
   Meta extends object = object,
+  Args = Static<Params>,
+  Ret = StaticOf<Result>,
 > = {
   desc?: string
-  call: (args: Static<Params>, ctx: ToolContext<Meta>) => MaybePromise<Static<Result>>
-  preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>
+  call: (args: Args, ctx: ToolContext<Meta>) => MaybePromise<Ret>
+  preflight?: (args: Args, ctx: ToolContext<Meta>) => void | Promise<void>
   name: string
   params: Params
   parallel?: boolean
@@ -290,7 +292,7 @@ export type ToolDef<
 export interface Tool<Params = unknown, Result = unknown, Meta extends object = object> {
   name: string
   desc?: string
-  params: unknown
+  params: Params
   result?: unknown
   /** When `true`, multiple in-flight calls of this tool from the same
    *  assistant message run concurrently. When `false` (default), the
@@ -311,12 +313,14 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
   call(params: Params, ctx: ToolContext<Meta>): Promise<Result>
   // oxlint-disable-next-line typescript/method-signature-style
   preflight?(params: Params, ctx: ToolContext<Meta>): void | Promise<void>
-  _types?: { params: Params; result: Result; meta: Meta }
 }
 
 export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call"]>[0]
   ? unknown
   : Parameters<T["call"]>[0]
+
+export type ResultOf<T extends Tool = Tool> =
+  unknown extends Awaited<ReturnType<T["call"]>> ? unknown : Awaited<ReturnType<T["call"]>>
 
 export type SafeParamsOf<T extends Tool = Tool> = Partial<ParamsOf<T>> | undefined
 

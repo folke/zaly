@@ -4,6 +4,7 @@ import type {
   Content,
   Context,
   Message,
+  MetaOf,
   MetaPart,
   Model,
   ModelStreamOptions,
@@ -313,7 +314,7 @@ export class Agent extends Emitter<AgentEvents> {
     opts: { hidden?: boolean } = {}
   ): Promise<{
     call: ToolCallPart<T["name"], ParamsOf<T>>
-    result: ToolResult<NonNullable<T["_types"]>["meta"]>
+    result: ToolResult<MetaOf<T>>
     messages: [Message<"system">, Message<"assistant">, Message<"tool">]
   }> {
     const tool = this.tools.find((t) => t.name === name) as T | undefined
@@ -356,7 +357,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     if (opts.hidden) for (const m of messages) m.hidden = true
 
-    return { call, messages, result }
+    return { call, messages, result: result as ToolResult<MetaOf<T>> }
   }
 
   notify(type: string, data: Content | Record<string, unknown>): void {

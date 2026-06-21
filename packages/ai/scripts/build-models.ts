@@ -20,6 +20,7 @@ import type { ProviderOverride } from "./overrides.ts"
 
 import { writeFileSync } from "node:fs"
 import { join } from "node:path"
+// @ts-ignore: file is fetched before running this
 import snapshot from "../assets/snapshot.json" with { type: "json" }
 import { overrides } from "./overrides.ts"
 

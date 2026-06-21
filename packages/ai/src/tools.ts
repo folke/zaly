@@ -2,6 +2,7 @@ import type { Static, TObject, TSchema } from "typebox/type"
 import type {
   Message,
   SafeParamsOf,
+  StaticOf,
   Streamable,
   Tool,
   ToolCallPart,
@@ -47,11 +48,10 @@ export function isStreamable(value: unknown): value is Streamable {
  *  ``` */
 export function defineTool<
   Params extends TObject,
-  Result extends TSchema = TSchema,
+  Result extends TSchema | undefined = undefined,
   Meta extends object = object,
->(def: ToolDef<Params, Result, Meta>): Tool<Static<Params>, Static<Result>, Meta> {
-  type Out = Tool<Static<Params>, Static<Result>, Meta>
-  // PERF: Keep the `unknown` hop: direct `as Out` makes TS structurally compare
+>(def: ToolDef<Params, Result, Meta>): Tool<Static<Params>, StaticOf<Result>, Meta> {
+  // PERF: Keep the `never` hop: direct `as Out` makes TS structurally compare
   // the object against Tool<Static<...>>, which is expensive with TypeBox.
   // oxlint-disable-next-line sort-keys
   const tool = {
@@ -61,9 +61,9 @@ export function defineTool<
     parallel: def.parallel,
     preflight: def.preflight,
     result: def.result,
-    call: def.call as unknown as Out["call"],
+    call: def.call as unknown,
     validator: new Validator(def.params, def.result),
-  } as unknown as Out
+  } as never
   return tool
 }
 
