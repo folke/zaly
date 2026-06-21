@@ -57,7 +57,7 @@ export interface AutocompleteOptions extends SearchOptions {
   // name and cast.
   sources: Record<string, CompletionSource<any>>
   /** Cap on rows the popup shows at once. Default: 8. */
-  maxHeight?: number
+  maxHeight?: Reactive<number>
   enabled?: Reactive<boolean>
   reverse?: boolean
 }

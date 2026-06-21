@@ -53,7 +53,11 @@ export class App {
   }
 
   notify: Notifier["notify"] = (msg, opts) => this.#notifier.notify(msg, opts)
-  pick: Picker["pick"] = (options) => this.#picker.pick(options)
+  pick: Picker["pick"] = (options) =>
+    this.#picker.pick({
+      maxHeight: this.settings.ui.listHeight,
+      ...options,
+    })
 
   get config(): Config {
     return this.#ctx.config
@@ -131,6 +135,7 @@ export class App {
       import("@zaly/tui/widgets/box"),
       import("./composer.ts"),
     ])
+
     this.#renderer = await createRenderer({
       fixedFooterHeight: 5,
       logger: this.#ctx.logger.child("renderer"),
@@ -158,9 +163,7 @@ export class App {
     this.#renderer.ui.add(() => appUi({ app: this, composer: this.#composer }))
 
     this.#input = this.#composer.input
-    this.#picker = new Picker(this.#renderer.overlay, this.#input, {
-      maxHeight: this.settings.ui.listHeight,
-    })
+    this.#picker = new Picker(this.#renderer.overlay, this.#input)
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
         actions: this.#renderer.actions,

@@ -41,7 +41,7 @@ export interface SelectState<T extends Option = Option> extends Style {
   /** Max item rows visible at once. The counter (when shown) is an
    *  extra row on top of this, not counted against the cap. Window
    *  slides to keep `active` in view (pin-until-leave). */
-  maxHeight?: number
+  maxHeight?: Reactive<number>
   /** Show a `(active+1 / total)` footer as an extra row when items
    *  don't fit. `undefined` (default) auto-shows when needed;
    *  `false` disables, `true` forces on. */
@@ -177,7 +177,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
   }
 
   get pageSize(): number {
-    return this.state.maxHeight ?? Math.max(this.#items.length, 1)
+    return unwrap(this.state.maxHeight) ?? Math.max(this.#items.length, 1)
   }
 
   protected _render(ctx: RenderCtx): string[] {

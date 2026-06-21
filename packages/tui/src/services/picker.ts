@@ -4,7 +4,7 @@ import type { OverlaySurface } from "../renderer/overlay.ts"
 import type { Input } from "../widgets/input.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { PickerSelectProps, PickerTreeProps } from "../widgets/picker.ts"
-import type { Option, Select, SelectState } from "../widgets/select.ts"
+import type { Option, Select } from "../widgets/select.ts"
 import type { Widget } from "../widgets/widget.ts"
 
 import { createRef, signal } from "../core/reactive.ts"
@@ -21,18 +21,14 @@ export type PickOpts<T extends Option = Option> = {
   details?: Widget | string
 } & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
-export type PickerOpts = Omit<SelectState, "items" | "render" | "active">
-
 export class Picker {
-  #opts: PickerOpts
   #ui: OverlaySurface
   #input: Input
   #open = signal(false)
   #close?: () => void
 
-  constructor(ui: OverlaySurface, input: Input, opts: Partial<PickOpts> = {}) {
+  constructor(ui: OverlaySurface, input: Input) {
     this.#ui = ui
-    this.#opts = opts
     this.#input = input
   }
 
@@ -76,7 +72,6 @@ export class Picker {
   }
 
   async pick<T extends Option = Option>(opts: PickOpts<T>): Promise<T | undefined> {
-    opts = { ...this.#opts, ...opts }
     this.close()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
