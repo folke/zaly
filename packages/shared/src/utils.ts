@@ -185,3 +185,8 @@ export const isInstance = <T>(v: unknown): v is T =>
 export function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   return !!value && typeof value === "object" && typeof (value as any).then === "function"
 }
+
+export type MaybeGetter<T> = T | (() => T)
+export function toValue<T>(value: MaybeGetter<T>): T {
+  return typeof value === "function" ? (value as () => T)() : value
+}
