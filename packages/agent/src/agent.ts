@@ -591,17 +591,25 @@ export class Agent extends Emitter<AgentEvents> {
     void this.emit("tool-calls", { calls })
     for (const call of calls) void this.emit("tool-call", { call })
 
+    const emitted = new Set<string>()
     // The whole batch — including streamable promotion, parallel chains,
     // grace timing, and ownerRound suppression — lives in Tasks.run().
     // What lands back here is a 1:1 array of result parts ready to commit.
     // The skill tool (when active) is passed via `extraTools` so dispatch
     // can resolve `name: "skill"` calls without polluting `tasks.tools`.
-    const resultParts = await this.#tasks.run(calls, await this.#toolContext())
+    const resultParts = await this.#tasks.run(calls, await this.#toolContext(), {
+      onResult: (call, result) => {
+        emitted.add(call.id)
+        void this.emit("tool-result", { call, result })
+      },
+    })
 
     for (let i = 0; i < calls.length; i++) {
+      const call = calls[i]
       const part = resultParts[i]
+      if (emitted.has(call.id)) continue
       void this.emit("tool-result", {
-        call: calls[i],
+        call,
         result: {
           content: part.content,
           error: part.error,

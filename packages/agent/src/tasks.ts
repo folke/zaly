@@ -327,7 +327,11 @@ export class Tasks extends Emitter<TasksEvents> {
    * produced these calls, so freshness checks can scan back through
    * prior tool results.
    */
-  async run(calls: readonly ToolCallPart[], ctx: ToolContext): Promise<ToolResultPart[]> {
+  async run(
+    calls: readonly ToolCallPart[],
+    ctx: ToolContext,
+    opts: { onResult?: (call: ToolCallPart, result: ToolResultPart, idx: number) => void } = {}
+  ): Promise<ToolResultPart[]> {
     const round = Symbol("round")
     const tasks: InternalTask[] = []
     let chainHead: string | undefined
@@ -371,8 +375,27 @@ export class Tasks extends Emitter<TasksEvents> {
       if (task.status === "running" && !parallel) chainHead = task.id
     }
 
+    const parts: ToolResultPart[] = []
+
+    const resultPart = (idx: number): ToolResultPart => {
+      if (parts[idx]) return parts[idx]
+      const task = tasks[idx]
+      if (task.status !== "done") task.ownerRound = undefined
+      const call = calls[idx]
+      const part = this.#buildPart(call, task)
+      parts[idx] = part
+      return part
+    }
+
+    let onResult = opts.onResult
+
     // Race: every task done, OR grace expires, OR ctx.signal aborts.
-    const allDone = Promise.all(tasks.map((t) => t.donePromise))
+    const allDone = Promise.all(
+      tasks.map(async (t, ti) => {
+        await t.donePromise
+        onResult?.(calls[ti], resultPart(ti), ti)
+      })
+    )
     const grace = sleep(this.graceMs)
     const aborted = ctx.signal
       ? new Promise<void>((resolve) => {
@@ -381,18 +404,12 @@ export class Tasks extends Emitter<TasksEvents> {
         })
       : new Promise<void>(() => undefined) // never resolves
     await Promise.race([allDone, grace, aborted])
+    onResult = undefined
 
     // Release ownership on still-active tasks BEFORE building the result
     // array, so the post-round listener sees them as free-floating if
     // they happen to settle in the same tick.
-    const parts: ToolResultPart[] = []
-    for (let i = 0; i < tasks.length; i++) {
-      const task = tasks[i]
-      const call = calls[i]
-      if (task.status !== "done") task.ownerRound = undefined
-      parts.push(this.#buildPart(call, task))
-    }
-    return parts
+    return tasks.map((_, i) => resultPart(i))
   }
 
   // ── Internals ──────────────────────────────────────────────────────
