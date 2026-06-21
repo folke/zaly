@@ -51,6 +51,15 @@ export type ResolvedSettings = {
   }
   keymap?: Record<string, KeyPatterns>
   secrets?: AuthSecrets
+  /** System integrations and external commands used by zaly. */
+  system: {
+    /** Command used by the bash tool. */
+    bash: string[]
+    /** Command used for git package packs. */
+    git: string[]
+    /** Package manager command used for npm package packs. */
+    npm: string[]
+  }
 }
 
 type Simplify<T> = { [K in keyof T]: T[K] } & {}

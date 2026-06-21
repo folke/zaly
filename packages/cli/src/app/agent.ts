@@ -54,6 +54,7 @@ export async function loadAgent(app: App): Promise<Agent> {
       const { allow } = await import("./permissions.ts")
       return await allow(req, app)
     },
+    bash: settings.system.bash,
     compaction: () => app.settings.compaction,
     cwd,
     logger: ctx.logger.child("agent"),

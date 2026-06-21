@@ -198,6 +198,9 @@ export class Context extends BaseLogger {
       .packs()
       .map((p) => p.info)
       .filter((p) => p !== undefined)
-    return new PackManager(packs)
+    return new PackManager(packs, {
+      git: this.config.settings.system.git,
+      npm: this.config.settings.system.npm,
+    })
   }
 }

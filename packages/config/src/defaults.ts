@@ -23,6 +23,11 @@ export const defaultSettings = {
     summaryTokens: 10_000,
     threshold: 0.95,
   },
+  system: {
+    bash: ["bash"],
+    git: ["git"],
+    npm: process.versions.bun ? ["bun"] : ["npm"],
+  },
   // FIXME: decide what default tools should be
   tools: [
     "bash",

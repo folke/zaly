@@ -115,7 +115,11 @@ export const bashTool = defineTool({
       return logState.path
     }
 
-    const proc = new Spawn("bash", ["-c", args.command], {
+    let bash = ctx.bash ?? ["bash"]
+    bash = bash.length === 0 ? ["bash"] : bash
+    const cmd = [...bash, "-c", args.command]
+
+    const proc = new Spawn(cmd[0], cmd.slice(1), {
       cwd,
       maxBuffer: DEFAULT_MAX_BUFFER,
       signal: ctx.signal,

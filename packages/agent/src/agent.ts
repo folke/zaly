@@ -766,6 +766,7 @@ export class Agent extends Emitter<AgentEvents> {
     const masker = await this.#ctx.masker()
     return {
       agent: this,
+      bash: this.#opts.bash,
       cwd: this.cwd,
       isMasked: (msgId: string, partIdx?: number) => masker?.isMasked(msgId, partIdx) ?? false,
       messages: this.session.messages,

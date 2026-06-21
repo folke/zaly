@@ -33,6 +33,7 @@ export type SendMode = "inject" | "append"
 // tests, evals) may pass a smaller context.
 declare module "@zaly/ai" {
   interface ToolContext {
+    bash?: string[]
     /** Data directory for tools to read/write durable files. */
     sessionDir?: string
     /** Permissions registry — manager.validate(scope, input) for tools
@@ -241,4 +242,6 @@ export interface AgentOptions extends CollectOptions {
   allow?: (req: PermissionRequest) => Promise<boolean>
 
   compaction?: MaybeGetter<Partial<CompactionOptions>>
+  /** Override the default `bash` command used by the `bash` tool. */
+  bash?: string[]
 }
