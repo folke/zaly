@@ -17,7 +17,7 @@ export async function loadCommands(app: App): Promise<void> {
   for (const cmd of commands.catalog.values()) {
     ret.push({
       args: cmd.args,
-      cmd: `command:${cmd.name}`,
+      cmd: `${app.settings.actions.commandPrefix ? "command:" : ""}${cmd.name}`,
       desc: cmd.description,
       fn: async ({ args }) => {
         const text = await commands.format(args ?? "", cmd)

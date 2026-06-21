@@ -23,6 +23,10 @@ export const defaultSettings = {
     summaryTokens: 10_000,
     threshold: 0.95,
   },
+  actions: {
+    commandPrefix: false,
+    skillPrefix: true,
+  },
   system: {
     bash: ["bash"],
     git: ["git"],

@@ -9,7 +9,7 @@ export type ResolvedSettings = {
   reasoning: ReasoningEffort
   tools: string[]
   ui: {
-    /** Tools that should be rendered collapsed */
+    /** Tools whose result body should be hidden in the UI. */
     collapsedTools: AnyTool[]
     /** Render images, if supported by the terminal */
     images: boolean
@@ -23,6 +23,12 @@ export type ResolvedSettings = {
     tree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Maximum number of visible rows in the session tree. */
     treeHeight: number
+  }
+  actions: {
+    /** Prefix command actions as `/command:COMMAND_NAME`. Defaults to false, e.g. `/COMMAND_NAME`. */
+    commandPrefix: boolean
+    /** Prefix skill actions as `/skill:SKILL_NAME`. Defaults to true, e.g. `/skill:SKILL_NAME`. */
+    skillPrefix: boolean
   }
   compaction: {
     /** Enable automatic compaction when context is full */
@@ -55,9 +61,9 @@ export type ResolvedSettings = {
   system: {
     /** Command used by the bash tool. */
     bash: string[]
-    /** Command used for git package packs. */
+    /** Command used for git packs. */
     git: string[]
-    /** Package manager command used for npm package packs. */
+    /** Package manager command used for npm packs. */
     npm: string[]
   }
 }

@@ -9,7 +9,7 @@ export async function loadSkills(app: App): Promise<void> {
 
   for (const skill of skills.catalog.values()) {
     actions.push({
-      cmd: `skill:${skill.name}`,
+      cmd: `${app.settings.actions.skillPrefix ? "skill:" : ""}${skill.name}`,
       desc: skill.description,
       fn: async () => {
         const toolUse = await skills.activate(skill.name, app.agent)
