@@ -8,7 +8,7 @@ const STICKY_TAIL = 20
 
 /** Replay the conversation history for the current session, up to a certain limit. */
 export async function replay(session: Session, app: App) {
-  const reasoning = app.settings.ui?.reasoning ?? true
+  const reasoning = app.settings.ui.reasoning
 
   const messages = session.messages.filter((m) => !m.hidden).slice(-REPLAY_LIMIT)
   if (messages.length === 0) return

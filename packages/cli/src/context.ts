@@ -183,7 +183,7 @@ export class Context extends BaseLogger {
     const { loadTheme } = await import("@zaly/tui/themes")
     return await loadTheme({
       dirs: await this.config.resources.themes(),
-      name: name ?? this.config.settings.ui?.theme,
+      name: name ?? this.config.settings.ui.theme,
     })
   }
 

@@ -159,7 +159,7 @@ export class App {
 
     this.#input = this.#composer.input
     this.#picker = new Picker(this.#renderer.overlay, this.#input, {
-      maxHeight: this.settings.ui?.listHeight,
+      maxHeight: this.settings.ui.listHeight,
     })
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({

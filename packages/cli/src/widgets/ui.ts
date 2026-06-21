@@ -51,7 +51,7 @@ export const autocompleteOverlay = (props: {
       return (file: string) => scores.get(resolve(file)) ?? 0
     },
     input: props.composer,
-    maxHeight: props.app.settings.ui?.listHeight ?? 8,
+    maxHeight: props.app.settings.ui.listHeight,
     reverse: true,
     sortEmpty: true,
     sources: {

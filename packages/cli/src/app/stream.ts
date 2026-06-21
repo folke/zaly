@@ -103,7 +103,7 @@ class AgentStream {
     for (const mf of messageWidgets(messages, {
       composer: this.app.composer,
       pending: true,
-      reasoning: this.app.settings.ui?.reasoning ?? true,
+      reasoning: this.app.settings.ui.reasoning,
     })) {
       if (mf.setPending)
         this.#pending.set(mf.id, {

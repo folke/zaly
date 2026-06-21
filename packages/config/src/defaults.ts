@@ -1,7 +1,7 @@
-import type { Settings } from "./types.ts"
+import type { ResolvedSettings } from "./types.ts"
 
 // oxlint-disable-next-line sort-keys
-export const defaultSettings: Settings = {
+export const defaultSettings = {
   model: "openai/gpt-5.5",
   permissions: {
     preset: "permissive",
@@ -32,4 +32,4 @@ export const defaultSettings: Settings = {
     // "task_stop",
     // "wakeup",
   ] as const,
-}
+} satisfies ResolvedSettings

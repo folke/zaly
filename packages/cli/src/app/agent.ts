@@ -43,7 +43,7 @@ export async function loadAgent(app: App): Promise<Agent> {
   const session = await ctx.session()
   const settings = ctx.config.settings
   const ss = session.settings
-  const p = settings.permissions ?? {}
+  const p = settings.permissions
 
   if (ctx.config.user.settings?.secrets) await registerSecrets(ctx.config.user.settings.secrets)
 
@@ -66,12 +66,12 @@ export async function loadAgent(app: App): Promise<Agent> {
   })
 
   agent.ctx.on("reasoning", ({ effort }) => (app.state.reasoning = effort))
-  agent.ctx.reasoning = ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning ?? "medium"
+  agent.ctx.reasoning = ctx.flags.reasoning ?? ss.reasoning ?? settings.reasoning
   app.state.reasoning = agent.ctx.reasoning
 
   const tools = await app.ctx.tools()
   tools.onAny(async () => (agent.ctx.tools = await tools.load()))
-  tools.active = ctx.config.settings.tools ?? []
+  tools.active = ctx.config.settings.tools
 
   const prompts = await ctx.prompts()
   const updatePrompt = async () => {

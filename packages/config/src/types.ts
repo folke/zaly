@@ -1,28 +1,37 @@
 import type { PermissionPresetName } from "@zaly/agent"
-import type { ReasoningEffort, AuthSecrets } from "@zaly/ai"
+import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
 
-export type Settings = {
-  $schema?: string
+export type ResolvedSettings = {
   model?: string
-  reasoning?: ReasoningEffort
-  tools?: string[]
-  ui?: {
+  reasoning: ReasoningEffort
+  tools: string[]
+  ui: {
     /** Maximum number of visible rows in selection lists, like pickers and autocomplete. */
-    listHeight?: number
+    listHeight: number
     /** Whether to show the reasoning trace in the UI. */
-    reasoning?: boolean
+    reasoning: boolean
     /** Theme name or path to custom theme file */
-    theme?: string
+    theme: string
     /** What messages to show in the session tree. Defaults to assistant, reasoning, and tools. */
-    tree?: ("assistant" | "reasoning" | "tools" | "system")[]
+    tree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Maximum number of visible rows in the session tree. */
-    treeHeight?: number
+    treeHeight: number
   }
-  permissions?: {
-    preset?: PermissionPresetName
+  compaction: {
+    /** Enable automatic compaction when context is full */
+    enabled: boolean
+    /** Existing messages up to this many tokens will be preserved in the context */
+    keepTokens: number
+    /** Maximum number of tokens to use for the generated summary */
+    summaryTokens: number
+    /** Reasoning effort for the compaction summary */
+    reasoning: ReasoningEffort
+  }
+  permissions: {
+    preset: PermissionPresetName
     allow?: string[]
     deny?: string[]
     ask?: string[]
@@ -38,6 +47,21 @@ export type Settings = {
   secrets?: AuthSecrets
 }
 
+type Simplify<T> = { [K in keyof T]: T[K] } & {}
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends readonly unknown[]
+    ? T[K]
+    : T[K] extends object
+      ? Simplify<DeepPartial<T[K]>>
+      : T[K]
+}
+
+export type Settings = Simplify<
+  DeepPartial<ResolvedSettings> & {
+    $schema?: string
+  }
+>
+
 export type TypiaSettings = Omit<Settings, "keymap"> & {
   keymap?: Record<string, string | string[]>
 }
@@ -52,7 +76,7 @@ export type LoadedSettings<T extends SettingsScope = SettingsScope> = {
 }
 
 export type Config = {
-  settings: Settings
+  settings: ResolvedSettings
   resources: ResourceManager
   paths: ProjectPaths
   user: LoadedSettings<"user">
