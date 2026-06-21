@@ -1,4 +1,5 @@
 import type { Agent } from "@zaly/agent"
+import type { Config } from "@zaly/config"
 import type { Plugin } from "@zaly/plugin"
 import type { ActionDef, Actions, Node, Renderer } from "@zaly/tui"
 import type { Input } from "@zaly/tui/widgets/input"
@@ -53,6 +54,10 @@ export class App {
 
   notify: Notifier["notify"] = (msg, opts) => this.#notifier.notify(msg, opts)
   pick: Picker["pick"] = (options) => this.#picker.pick(options)
+
+  get config(): Config {
+    return this.#ctx.config
+  }
 
   get renderer(): Renderer {
     return this.#renderer
@@ -172,9 +177,8 @@ export class App {
     const { appActions } = await import("./actions.ts")
     this.#renderer.actions.register(appActions({ app: this }), { default: false })
 
-    const config = await this.#ctx.config()
     const keymap: Record<string, ActionDef> = {}
-    for (const [id, pattern] of Object.entries(config.settings.keymap ?? {})) {
+    for (const [id, pattern] of Object.entries(this.#ctx.config.settings.keymap ?? {})) {
       const keys = typeof pattern === "string" ? [pattern] : pattern
       keymap[id] = { keys }
     }
@@ -217,9 +221,8 @@ export class App {
   }
 
   async reload(): Promise<void> {
-    this.#ctx.reset("config")
-    const config = await this.#ctx.config()
-    config.resources.refresh()
+    await this.#ctx.loadConfig(true)
+    this.#ctx.config.resources.refresh()
     await this.loadResources()
     this.#notifier.notify("Plugins & resources **reloaded**.")
   }

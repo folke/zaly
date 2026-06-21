@@ -5,7 +5,6 @@ import type { App } from "./app.ts"
 import { loadPlugin } from "@zaly/plugin"
 
 export async function loadPlugins(app: App): Promise<void> {
-  const config = await app.ctx.config()
   for (const plugin of app.plugins) {
     try {
       // oxlint-disable-next-line no-await-in-loop
@@ -29,7 +28,7 @@ export async function loadPlugins(app: App): Promise<void> {
   }
 
   app.plugins = []
-  const paths = await config.resources.plugins()
+  const paths = await app.config.resources.plugins()
   const results = await Promise.all(paths.map((path) => loadPlugin(path, host)))
   for (const result of results) {
     if (result.ok) app.plugins.push(result.plugin)

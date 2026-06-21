@@ -33,8 +33,7 @@ export class Cli {
   }
 
   async printConfig(): Promise<void> {
-    const config = await this.ctx.config()
-
+    const config = await this.ctx.loadConfig()
     const settings: Settings = {
       ...config.settings,
       resources: {
@@ -164,6 +163,7 @@ export function mainCommand(cli: Cli) {
     },
     async setup({ args }) {
       cli.args = args as unknown as CliArgs
+      await cli.ctx.loadConfig()
     },
     // Lazy subcommand loading — each module is only imported when its
     // command name appears on the cli. The factory pattern lets us hand

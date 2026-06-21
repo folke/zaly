@@ -16,7 +16,6 @@ import { zalyPaths } from "@zaly/shared/paths"
 import { join } from "pathe"
 
 type Slots = {
-  config: Config
   theme: Theme
   console: CliReporter
   session: Session
@@ -41,6 +40,7 @@ export class Context extends BaseLogger {
   #cache = new LazyCache<Slots>()
   #flush: (() => Promise<void>)[] = []
   #dispose: (() => Promise<void> | void)[] = []
+  #config?: Config
 
   constructor(public args: CliArgs) {
     super()
@@ -125,27 +125,33 @@ export class Context extends BaseLogger {
     })
   }
 
-  config(): Promise<Config> {
-    return this.#cache.need("config", async () => {
-      await this.dotenv()
-      const { loadConfig } = await import("@zaly/config")
-      // oxlint-disable-next-line unicorn/consistent-function-scoping
-      const falsy = (v?: boolean) => (v === false ? v : undefined)
-      return loadConfig({
-        settings: {
-          model: this.flags.model,
-          reasoning: this.flags.reasoning,
-          resources: {
-            commands: falsy(this.flags.commands),
-            plugins: falsy(this.flags.plugins),
-            skills: falsy(this.flags.skills),
-            themes: falsy(this.flags.themes),
-          },
-          theme: this.flags.theme,
-          tools: this.flags.tools,
+  get config(): Config {
+    if (this.#config) return this.#config
+    throw new Error("config not loaded yet")
+  }
+
+  async loadConfig(reload = false): Promise<Config> {
+    if (this.#config && !reload) return this.#config
+    await this.dotenv()
+    const { loadConfig } = await import("@zaly/config")
+    // oxlint-disable-next-line unicorn/consistent-function-scoping
+    const falsy = (v?: boolean) => (v === false ? v : undefined)
+    return (this.#config = await loadConfig({
+      settings: {
+        model: this.flags.model,
+        reasoning: this.flags.reasoning,
+        resources: {
+          commands: falsy(this.flags.commands),
+          plugins: falsy(this.flags.plugins),
+          skills: falsy(this.flags.skills),
+          themes: falsy(this.flags.themes),
         },
-      })
-    })
+        tools: this.flags.tools,
+        ui: {
+          theme: this.flags.theme,
+        },
+      },
+    }))
   }
 
   theme() {
@@ -161,7 +167,6 @@ export class Context extends BaseLogger {
 
   model() {
     return this.#cache.need("model", async () => {
-      await this.config() // Make sure config is loaded so that auth is set up
       const { modelCollection } = await import("@zaly/ai")
       return modelCollection()
     })
@@ -176,10 +181,9 @@ export class Context extends BaseLogger {
 
   async loadTheme(name?: string): Promise<Theme> {
     const { loadTheme } = await import("@zaly/tui/themes")
-    const config = await this.config()
     return await loadTheme({
-      dirs: await config.resources.themes(),
-      name: name ?? config.settings.theme,
+      dirs: await this.config.resources.themes(),
+      name: name ?? this.config.settings.ui?.theme,
     })
   }
 
@@ -189,9 +193,8 @@ export class Context extends BaseLogger {
   }
 
   async packs(): Promise<PackManager> {
-    const config = await this.config()
     const { PackManager } = await import("@zaly/config/pack")
-    const packs = config.resources
+    const packs = this.config.resources
       .packs()
       .map((p) => p.info)
       .filter((p) => p !== undefined)

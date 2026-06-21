@@ -4,8 +4,7 @@ import type { App } from "./app.ts"
 import { Skills } from "@zaly/agent"
 
 export async function loadSkills(app: App): Promise<void> {
-  const config = await app.ctx.config()
-  const skills = await Skills.load({ paths: await config.resources.skills() })
+  const skills = await Skills.load({ paths: await app.config.resources.skills() })
   const actions: Action[] = []
 
   for (const skill of skills.catalog.values()) {

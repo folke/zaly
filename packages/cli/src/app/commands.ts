@@ -4,8 +4,7 @@ import type { App } from "./app.ts"
 import { Commands } from "@zaly/agent"
 
 export async function loadCommands(app: App): Promise<void> {
-  const config = await app.ctx.config()
-  const paths = await config.resources.commands()
+  const paths = await app.config.resources.commands()
 
   const commands = new Commands({
     logger: app.ctx.logger.child("commands"),
