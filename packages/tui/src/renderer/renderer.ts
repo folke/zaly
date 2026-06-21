@@ -1,6 +1,6 @@
 import type { MountCtx, RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
-import type { Owner } from "../core/reactive.ts"
+import type { Owner, Reactive } from "../core/reactive.ts"
 import type { ActionDef } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../services/logger.ts"
 import type { Theme } from "../themes/types.ts"
@@ -15,9 +15,11 @@ import { createCtx } from "../core/ctx.ts"
 import {
   createRoot,
   memo,
+  peek,
   provideContext,
   signal,
   untrack,
+  unwrap,
   useActiveOwner,
 } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
@@ -37,6 +39,7 @@ import { UI } from "./ui.ts"
 export interface RendererOptions {
   stdin?: TerminalReader
   stdout?: TerminalWriter
+  images?: Reactive<boolean>
   theme?: Theme
   /** Baseline footer height in rows — the size the footer occupies in
    *  "steady state" (no autocomplete, no transient widget growth).
@@ -114,15 +117,14 @@ export class Renderer extends Emitter<RenderEvents> {
 
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
-  #theme: Theme | undefined
+
+  #theme = signal<Theme | undefined>(undefined)
+
   /** Root Owner — every surface's function-shape `add` / `append` runs
    *  its child under this Owner via `withOwner(#rootOwner, …)`, so
    *  context values provided here (`RenderContext`, future global
    *  scopes) are visible to every widget body in the tree. */
   readonly #rootOwner: Owner
-  /** Setter for the ambient theme. Wired into `RenderContext.theme` so
-   *  widgets that read it re-fire on swap. */
-  readonly #setTheme: (theme: Theme) => void
   #running = false
   #escTimer: ReturnType<typeof setTimeout> | undefined
   #rendering?: Promise<void>
@@ -164,21 +166,18 @@ export class Renderer extends Emitter<RenderEvents> {
     })
     this.frame = new Frame(this.terminal)
 
-    this.#theme = opts.theme
-
-    // Reactive ambient state — theme is the live source of truth for
-    // the components-facing `RenderContext`. Style derives from it via
-    // a memo so descendants that read `style()` re-fire on theme swap.
-    const [theme, setTheme] = signal<Theme>(opts.theme ?? defaultTheme)
-    const styleAccessor = memo(() => buildStyle(theme()))
-    this.#setTheme = setTheme
+    if (opts.theme) this.#theme.set(opts.theme)
 
     // Root Owner: an entry point for `useContext` walks. Every widget
     // body added via `ui.add(fn)` / `stream.append(fn)` / `overlay.add(fn)`
     // runs under this Owner, so `useContext(RenderContext)` resolves
     // to the values provided here.
     this.#rootOwner = createRoot(() => {
-      provideContext(RenderContext, { style: styleAccessor, theme })
+      provideContext(RenderContext, {
+        images: memo(() => unwrap(opts.images) ?? true),
+        style: memo(() => buildStyle(this.#theme.get())),
+        theme: this.#theme.get,
+      })
       return useActiveOwner() as Owner
     })
 
@@ -274,7 +273,7 @@ export class Renderer extends Emitter<RenderEvents> {
       this.#ctx.width !== this.terminal.cols
     ) {
       this.#ctx = createCtx({
-        theme: this.#theme,
+        theme: peek(this.#theme.get), // Untrack to prevent dep leaks from `ctx.theme` reads in render.
         transmit: (seq) => this.terminal.enqueueTransmit(seq),
         version: this.#ctxVersion,
         width: this.terminal.cols,
@@ -322,14 +321,14 @@ export class Renderer extends Emitter<RenderEvents> {
    *  Nodes that compare cache against `ctx.version` need the version
    *  bump that already happens elsewhere on theme-driven invalidation. */
   set theme(theme: Theme) {
-    this.#setTheme(theme)
-    this.#theme = theme
+    this.#theme.set(theme)
     this.#ctxVersion++
     this.#schedule()
   }
 
+  /** Get the current theme. (tracked) */
   get theme(): Theme {
-    return this.#theme ?? defaultTheme
+    return this.#theme.get() ?? defaultTheme
   }
 
   start(): void {

@@ -9,6 +9,7 @@ export const defaultSettings = {
   reasoning: "medium",
   ui: {
     collapsedTools: ["read"],
+    images: true,
     listHeight: 8,
     reasoning: true,
     theme: "tokyonight-moon",

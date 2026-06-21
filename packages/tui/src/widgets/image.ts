@@ -1,9 +1,12 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Accessor } from "../core/reactive.ts"
 import type { Layout } from "../core/state.ts"
 
 import { fileDetect } from "@zaly/shared/detect"
 import { imageInfo } from "@zaly/shared/image"
 import { Node } from "../core/node.ts"
+import { unwrap, useContext } from "../core/reactive.ts"
+import { RenderContext } from "../core/render.ts"
 import { imageCapabilities } from "../image/capabilities.ts"
 import { encode as encodeIterm2 } from "../image/iterm.ts"
 import {
@@ -44,10 +47,13 @@ export class Image extends Node<ImageState> {
   // the prior placement without flicker.
   readonly #placementId = allocatePlacementId()
   #delete?: () => void
+  #enabled?: Accessor<boolean>
 
   constructor(state: ImageState) {
     super(state)
     this.on("unmount", () => this.#delete?.())
+    const context = useContext(RenderContext)
+    this.#enabled = context?.images
   }
 
   get fallback(): string[] {
@@ -59,10 +65,10 @@ export class Image extends Node<ImageState> {
   }
 
   protected async _render(ctx: RenderCtx): Promise<string[]> {
+    if (unwrap(this.#enabled) === false) return this.fallback
+
     const protocol = imageCapabilities().protocol
-    if (protocol === undefined) {
-      return [this.state.alt ?? `[Image: ${this.state.src}]`]
-    }
+    if (protocol === undefined) return this.fallback
 
     const detected = await fileDetect(this.state.src)
     if (detected?.type !== "image") return this.fallback

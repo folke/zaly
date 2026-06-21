@@ -25,6 +25,8 @@ export type RenderContextValue = {
   theme: Accessor<Theme>
   /** Theme-bound chainable style builder. Derived memo over `theme`. */
   style: Accessor<StyleBuilder>
+  /** Whether to render images (when supported) */
+  images: Accessor<boolean>
 }
 export const RenderContext = createContext<RenderContextValue>()
 

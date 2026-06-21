@@ -11,7 +11,8 @@ import type { TextContent } from "./text.ts"
 
 import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
-import { createAsync, signal } from "../core/reactive.ts"
+import { createAsync, signal, unwrap, useContext } from "../core/reactive.ts"
+import { RenderContext } from "../core/render.ts"
 import { calcLayout, expandTabs, formatText } from "../layout/text.ts"
 import { shikiWorker } from "../shiki/client.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
@@ -58,9 +59,13 @@ export class Markdown extends Node<MarkdownState> {
   #update = signal(0)
   #gen = 0
   #worker: Accessor<number>
+  #images?: Accessor<boolean>
 
   constructor(state: State<MarkdownState>) {
     super(state)
+
+    const context = useContext(RenderContext)
+    this.#images = context?.images
 
     this.#worker = createAsync(
       async () => {
@@ -128,6 +133,7 @@ export class Markdown extends Node<MarkdownState> {
       formatted = await this.#renderer.render(source, {
         ...ctx,
         highlight: (code, lang) => this.#highlight(code, lang, ctx.style.theme.shiki),
+        images: unwrap(this.#images) ?? true,
       })
 
       // prune old entries

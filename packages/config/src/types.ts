@@ -9,6 +9,10 @@ export type ResolvedSettings = {
   reasoning: ReasoningEffort
   tools: string[]
   ui: {
+    /** Tools that should be rendered collapsed */
+    collapsedTools: AnyTool[]
+    /** Render images, if supported by the terminal */
+    images: boolean
     /** Maximum number of visible rows in selection lists, like pickers and autocomplete. */
     listHeight: number
     /** Whether to show the reasoning trace in the UI. */
@@ -19,7 +23,6 @@ export type ResolvedSettings = {
     tree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Maximum number of visible rows in the session tree. */
     treeHeight: number
-    collapsedTools: AnyTool[]
   }
   compaction: {
     /** Enable automatic compaction when context is full */

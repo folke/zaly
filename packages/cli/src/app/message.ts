@@ -4,7 +4,7 @@ import type { App } from "./app.ts"
 
 import { uuidv7 } from "@zaly/agent"
 import { toParts } from "@zaly/ai"
-import { signal, toAccessor } from "@zaly/tui"
+import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
 import { toolCall } from "../widgets/tool.ts"
@@ -68,7 +68,7 @@ export function messageWidgets(
                 call: part,
                 collapsed: collapsed.has(part.name),
                 pending,
-                result: toAccessor(results.get(part.id)),
+                result: results.get(part.id),
               })
           }
         })

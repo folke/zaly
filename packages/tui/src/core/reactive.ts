@@ -69,6 +69,12 @@ export function untrack<T>(fn: () => T): T {
   return activeCtx.run(undefined, fn)
 }
 
+/** Resolve a `Reactive<T>` to its current `T` without subscribing to
+ * any tracking context. */
+export function peek<T>(s: Reactive<T>): T {
+  return untrack(() => unwrap(s))
+}
+
 // ---- context ---------------------------------------------------------
 
 /**
@@ -481,8 +487,8 @@ export function signal<T>(
  * <CodeBlock theme={toAccessor(myStaticTheme)} />
  * ```
  */
-export function toAccessor<T>(value: T): Accessor<T> {
-  return brand(() => value, "get")
+export function toAccessor<T>(fn: () => T): Accessor<T> {
+  return brand(() => fn(), "get")
 }
 
 // ---- effect ----------------------------------------------------------

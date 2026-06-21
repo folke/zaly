@@ -8,7 +8,7 @@ import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 import type { Composer } from "./composer.ts"
 
-import { createRef, createRenderer, createStore, effect, memo } from "@zaly/tui"
+import { createRef, createRenderer, createStore, effect, memo, toAccessor } from "@zaly/tui"
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
@@ -138,6 +138,7 @@ export class App {
 
     this.#renderer = await createRenderer({
       fixedFooterHeight: 5,
+      images: toAccessor(() => this.settings.ui.images),
       logger: this.#ctx.logger.child("renderer"),
       reporter: {
         wrap: (node) => {
@@ -148,6 +149,7 @@ export class App {
       },
       theme: await this.#ctx.theme(),
     })
+
     this.#renderer.stream.on("scroll", ({ offset, total, below }) => {
       this.#state.scroll = { below, offset, total }
     })

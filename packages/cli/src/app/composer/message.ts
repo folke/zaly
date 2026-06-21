@@ -93,6 +93,7 @@ function fileInfo<T extends FilePart>(part: T): T & { src: string; name: string 
     // oxlint-disable-next-line typescript/no-unnecessary-condition
   } else if (source.type === "base64") {
     ret.src = `data:${part.mime};base64,${source.data}`
+    ret.name = `[Image ${part.mime}]`
   }
   return ret
 }
