@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "jiti": "^2.7.0",
-    "typebox": "^1.2.16"
+    "typebox": "^1.2.19"
   },
   "engines": {
     "bun": ">=1.2",

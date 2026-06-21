@@ -43,7 +43,7 @@
     "jsonrepair": "^3.14.0"
   },
   "peerDependencies": {
-    "typebox": "^1.2.16"
+    "typebox": "^1.2.19"
   },
   "engines": {
     "bun": ">=1.2",

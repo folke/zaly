@@ -54,7 +54,7 @@
     "@zaly/plugin": "workspace:*",
     "@zaly/shared": "workspace:*",
     "@zaly/tui": "workspace:*",
-    "sharp": "^0.35.1"
+    "sharp": "^0.35.2"
   },
   "devDependencies": {
     "@zaly/shared": "workspace:*",
