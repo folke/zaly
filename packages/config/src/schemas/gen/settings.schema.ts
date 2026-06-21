@@ -35,7 +35,7 @@ export const SettingsSchema = {
                                 items: {
                                     $ref: "#/components/schemas/AnyTool"
                                 },
-                                description: "Tools that should be rendered collapsed"
+                                description: "Tools whose result body should be hidden in the UI."
                             },
                             images: {
                                 type: "boolean",
@@ -69,6 +69,20 @@ export const SettingsSchema = {
                             treeHeight: {
                                 type: "number",
                                 description: "Maximum number of visible rows in the session tree."
+                            }
+                        },
+                        required: []
+                    },
+                    actions: {
+                        type: "object",
+                        properties: {
+                            commandPrefix: {
+                                type: "boolean",
+                                description: "Prefix command actions as `/command:COMMAND_NAME`. Defaults to false, e.g. `/COMMAND_NAME`."
+                            },
+                            skillPrefix: {
+                                type: "boolean",
+                                description: "Prefix skill actions as `/skill:SKILL_NAME`. Defaults to true, e.g. `/skill:SKILL_NAME`."
                             }
                         },
                         required: []
@@ -245,14 +259,14 @@ export const SettingsSchema = {
                                 items: {
                                     type: "string"
                                 },
-                                description: "Command used for git package packs."
+                                description: "Command used for git packs."
                             },
                             npm: {
                                 type: "array",
                                 items: {
                                     type: "string"
                                 },
-                                description: "Package manager command used for npm package packs."
+                                description: "Package manager command used for npm packs."
                             }
                         },
                         required: [],
