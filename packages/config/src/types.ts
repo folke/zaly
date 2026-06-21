@@ -1,4 +1,4 @@
-import type { PermissionPresetName } from "@zaly/agent"
+import type { AnyTool, PermissionPresetName } from "@zaly/agent"
 import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
@@ -19,6 +19,7 @@ export type ResolvedSettings = {
     tree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Maximum number of visible rows in the session tree. */
     treeHeight: number
+    collapsedTools: AnyTool[]
   }
   compaction: {
     /** Enable automatic compaction when context is full */

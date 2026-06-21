@@ -3,7 +3,7 @@ import type { ParamsOf } from "@zaly/ai"
 import type { ToolRenderer } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
-import { memo } from "@zaly/tui"
+import { memo, unwrap } from "@zaly/tui"
 import { formatLines } from "@zaly/tui/text"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
@@ -74,7 +74,7 @@ export const bashRenderer: ToolRenderer<BashTool | FindTool | GrepTool> = {
       text({
         content: (ctx) =>
           memo(() => {
-            const content = props.result()?.content
+            const content = unwrap(props.result)?.content
             if (!content) return "…"
             return formatLines(justText(content), {
               limit: PREVIEW_LINE_LIMIT,

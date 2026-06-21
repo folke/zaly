@@ -1,5 +1,5 @@
 import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Accessor, Node } from "@zaly/tui"
+import type { Reactive, Node } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared/registry"
 import { bashRenderer } from "./bash.ts"
@@ -27,7 +27,7 @@ export interface ToolResultCtx<T extends Tool = Tool> {
   call: ToolCallPart<T["name"], ParamsOf<T>>
   /** Reactive — `undefined` while in flight, then the resolved
    *  `ToolResult` when the tool returns. */
-  result: Accessor<ToolResult<MetaOf<T>> | undefined>
+  result: Reactive<ToolResult<MetaOf<T>> | undefined>
 }
 
 export type ToolRenderer<T extends Tool = Tool> = {

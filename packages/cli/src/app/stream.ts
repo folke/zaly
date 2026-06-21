@@ -1,13 +1,12 @@
 import type { Message, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
-import type { ToolCallProps } from "../widgets/tool.ts"
 import type { App } from "./app.ts"
 
-import { signal } from "@zaly/tui"
+import { memo, signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
-import { toolCalls } from "../widgets/tool.ts"
+import { toolCall } from "../widgets/tool.ts"
 import { messageWidgets } from "./message.ts"
 
 type StreamingWidget =
@@ -61,20 +60,27 @@ class AgentStream {
 
   onToolCalls(calls: ToolCallPart[]): void {
     const [pending, setPending] = signal(true)
-    const results = new Map<string, Setter<ToolResult | undefined>>()
-    const children: ToolCallProps[] = []
+    const results = new Map<string, { setResult: Setter<ToolResult | undefined> }>()
 
     for (const call of calls) {
       const [result, setResult] = signal<ToolResult | undefined>(undefined)
-      results.set(call.id, setResult)
-      children.push({ call, result })
+      results.set(call.id, { setResult })
+      const active = memo(() => pending() && result() === undefined)
+      this.app.renderer.stream.append(() =>
+        toolCall({
+          call,
+          collapsed: memo(
+            () => this.app.settings.ui.collapsedTools.includes(call.name) || active()
+          ),
+          pending: active,
+          result,
+        })
+      )
     }
-    this.app.renderer.stream.append(() => toolCalls({ calls: children, pending }))
+
     this.active = {
       setPending,
-      setResult(callId, result) {
-        results.get(callId)?.(result)
-      },
+      setResult: (callId, result) => results.get(callId)?.setResult(result),
       type: "tools",
     }
   }
@@ -100,11 +106,7 @@ class AgentStream {
   }
 
   onPending(messages: readonly Message[]): void {
-    for (const mf of messageWidgets(messages, {
-      composer: this.app.composer,
-      pending: true,
-      reasoning: this.app.settings.ui.reasoning,
-    })) {
+    for (const mf of messageWidgets(messages, this.app, { pending: true })) {
       if (mf.setPending)
         this.#pending.set(mf.id, {
           setMessage: mf.setMessage,

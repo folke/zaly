@@ -8,6 +8,7 @@ export const defaultSettings = {
   },
   reasoning: "medium",
   ui: {
+    collapsedTools: ["read"],
     listHeight: 8,
     reasoning: true,
     theme: "tokyonight-moon",

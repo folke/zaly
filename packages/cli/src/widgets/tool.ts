@@ -1,5 +1,5 @@
 import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Accessor, InspectOpts, RenderCtx } from "@zaly/tui"
+import type { Accessor, InspectOpts, Reactive, RenderCtx } from "@zaly/tui"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
@@ -15,9 +15,9 @@ import { toolRenderer } from "./tools/registry.ts"
 
 export type ToolCallProps = {
   call: ToolCallPart
-  result: Accessor<ToolResult | undefined>
-  summary?: Accessor<boolean>
+  result: Reactive<ToolResult | undefined>
   pending?: Accessor<boolean>
+  collapsed?: Reactive<boolean>
 }
 
 export function toolPreview(tool: string, params: string | Record<string, unknown> = "") {
@@ -62,12 +62,13 @@ export const toolCall = widget((props: ToolCallProps) => {
     return r.isError ? "tool_error" : "tool_success"
   })
 
-  const isError = memo(() => props.result()?.isError ?? false)
-
-  const full = memo(() => !(unwrap(props.summary) ?? false))
+  const isError = memo(() => unwrap(props.result)?.isError ?? false)
+  const showResult = memo(() => {
+    if (unwrap(props.collapsed) ?? false) return false
+    return unwrap(props.result) !== undefined
+  })
 
   const renderer = toolRenderer(call.name)
-  const toolCtx = { call, params, result: props.result }
 
   return bubble(
     { pending: props.pending, type: status },
@@ -77,23 +78,19 @@ export const toolCall = widget((props: ToolCallProps) => {
       // Optional description, dimmed
       desc ? text(({ style }) => style.dim(desc)) : undefined,
       show(
-        { when: full },
         {
           use: () =>
             log({
-              content: memo(() => props.result()?.error?.message ?? "Unknown error"),
+              content: memo(() => unwrap(props.result)?.error?.message ?? "Unknown error"),
               level: "error",
-              visible: isError,
             }),
           when: isError,
         },
-        () => renderer.result(toolCtx)
+        {
+          use: () => renderer.result({ call, params, result: props.result }),
+          when: showResult,
+        }
       )
     )
   )
-})
-
-export const toolCalls = widget((props: { calls: ToolCallProps[]; pending: Accessor<boolean> }) => {
-  const pending = memo(() => props.pending() && props.calls.some((c) => c.result() === undefined))
-  return box({}, ...props.calls.map((call) => toolCall({ ...call, summary: pending })))
 })

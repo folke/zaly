@@ -2,7 +2,7 @@ import type { EditTool } from "@zaly/agent"
 import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
 
 import { prettyPath } from "@zaly/shared"
-import { memo } from "@zaly/tui"
+import { memo, unwrap } from "@zaly/tui"
 import { diff } from "@zaly/tui/widgets/diff"
 
 /** Result renderer for the `edit` tool. Renders a unified diff between
@@ -12,11 +12,11 @@ import { diff } from "@zaly/tui/widgets/diff"
 export const editRenderer: ToolRenderer<EditTool> = {
   result(props: ToolResultCtx<EditTool>) {
     const path = memo(() => {
-      const p = props.result()?.meta?.path ?? props.params?.path
+      const p = unwrap(props.result)?.meta?.path ?? props.params?.path
       return p ? prettyPath(p) : "unknown path"
     })
-    const original = memo(() => props.result()?.meta?.original ?? "")
-    const modified = memo(() => props.result()?.meta?.content ?? "")
+    const original = memo(() => unwrap(props.result)?.meta?.original ?? "")
+    const modified = memo(() => unwrap(props.result)?.meta?.content ?? "")
 
     return diff({
       modified,

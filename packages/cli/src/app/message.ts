@@ -1,6 +1,6 @@
 import type { Message, ToolResultPart } from "@zaly/ai"
-import type { Accessor, Node, Setter } from "@zaly/tui"
-import type { Composer } from "./composer.ts"
+import type { Node, Setter } from "@zaly/tui"
+import type { App } from "./app.ts"
 
 import { uuidv7 } from "@zaly/agent"
 import { toParts } from "@zaly/ai"
@@ -17,10 +17,15 @@ export type MessageWidgets = {
   setMessage?: Setter<Message<"user">>
 }
 
+export type MessageWidgetsOpts = {}
+
 export function messageWidgets(
   messages: readonly Message[],
-  opts?: { pending?: boolean; composer?: Composer; reasoning?: boolean }
+  app: App,
+  opts: { pending?: boolean } = {}
 ): MessageWidgets[] {
+  const reasoning = app.settings.ui.reasoning
+  const collapsed = new Set(app.settings.ui.collapsedTools)
   const ret: MessageWidgets[] = []
   // Pre-index tool results by call id. Single pass — tool messages
   // always follow their assistant in the conversation, but the index
@@ -34,7 +39,7 @@ export function messageWidgets(
   for (const m of messages) {
     if (m.hidden) continue
     m.id ??= uuidv7()
-    const [pending, setPending] = opts?.pending ? signal(true) : []
+    const [pending, setPending] = opts.pending ? signal(true) : []
     if (m.role === "user") {
       const [message, setMessage] = signal<Message<"user">>(m)
       ret.push({
@@ -44,38 +49,37 @@ export function messageWidgets(
         widgets: [
           () =>
             userMessage({
-              composer: opts?.composer,
+              composer: app.composer,
               message,
               pending,
             }),
         ],
       })
     } else if (m.role === "assistant") {
-      const widgets = [...renderAssistant(m, results, pending)]
-      if (widgets.length === 0) continue
-      ret.push({
-        id: m.id,
-        setPending,
-        widgets,
-      })
+      const widgets = toParts(m.content)
+        .map((part) => {
+          if (part.type === "text" && part.text !== "")
+            return () => assistantMessage({ content: part.text, pending })
+          else if (part.type === "reasoning" && part.text !== "" && reasoning)
+            return () => reasoningMessage({ content: part.text, pending })
+          else if (part.type === "tool-call") {
+            return () =>
+              toolCall({
+                call: part,
+                collapsed: collapsed.has(part.name),
+                pending,
+                result: toAccessor(results.get(part.id)),
+              })
+          }
+        })
+        .filter((w) => w !== undefined)
+      if (widgets.length > 0)
+        ret.push({
+          id: m.id,
+          setPending,
+          widgets,
+        })
     }
   }
   return ret
-}
-
-function* renderAssistant(
-  msg: Message<"assistant">,
-  results: Map<string, ToolResultPart>,
-  pending?: Accessor<boolean>,
-  opts?: { reasoning?: boolean }
-): Generator<() => Node> {
-  for (const part of toParts(msg.content)) {
-    if (part.type === "text" && part.text !== "") {
-      yield () => assistantMessage({ content: part.text, pending })
-    } else if (part.type === "reasoning" && part.text !== "" && opts?.reasoning !== false) {
-      yield () => reasoningMessage({ content: part.text, pending })
-    } else if (part.type === "tool-call") {
-      yield () => toolCall({ call: part, pending, result: toAccessor(results.get(part.id)) })
-    }
-  }
 }

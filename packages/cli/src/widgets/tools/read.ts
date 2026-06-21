@@ -3,7 +3,7 @@ import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { memo } from "@zaly/tui"
+import { memo, unwrap } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { log } from "@zaly/tui/widgets/log"
@@ -21,14 +21,16 @@ const PREVIEW_LINE_LIMIT = 10
 export const readRenderer: ToolRenderer<ReadTool> = {
   result(props: ToolResultCtx<ReadTool>) {
     const path = memo(() => {
-      const p = props.result()?.meta?.path
+      const p = unwrap(props.result)?.meta?.path
       return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
     })
 
-    const unchanged = memo(() => props.result()?.meta?.unchanged === true)
-    const title = memo(() => (props.result()?.isError === true ? `${path()}  (error)` : path()))
-    const content = memo(() => stripLineNumbers(justText(props.result()?.content ?? "")))
-    const numberOffset = memo(() => props.result()?.meta?.offset ?? props.params?.offset)
+    const unchanged = memo(() => unwrap(props.result)?.meta?.unchanged === true)
+    const title = memo(() =>
+      unwrap(props.result)?.isError === true ? `${path()}  (error)` : path()
+    )
+    const content = memo(() => stripLineNumbers(justText(unwrap(props.result)?.content ?? "")))
+    const numberOffset = memo(() => unwrap(props.result)?.meta?.offset ?? props.params?.offset)
 
     return box(
       {},
