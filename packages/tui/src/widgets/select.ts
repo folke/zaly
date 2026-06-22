@@ -8,7 +8,7 @@ import type { Style } from "../style/types.ts"
 
 import { fitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { Node } from "../core/node.ts"
-import { unwrap } from "../core/reactive.ts"
+import { effect, unwrap } from "../core/reactive.ts"
 import { resolveSize } from "../layout/size.ts"
 
 /** Default shape for selectable options. `text` is the canonical
@@ -65,6 +65,7 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   accept: { item: T }
   /** Fired when the user cancels (esc). */
   cancel: {}
+  changed: { active: number; item: T }
 }
 
 /**
@@ -136,6 +137,14 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
 
   constructor(initial: SelectState<T>) {
     super({ active: 0, ...initial } as SelectState<T>)
+
+    let active = this.active
+    effect(() => {
+      const next = this.active
+      if (next === active) return
+      active = next
+      void this.emit("changed", { active: next, item: this.#items[next] })
+    })
   }
 
   get #direction(): 1 | -1 {
