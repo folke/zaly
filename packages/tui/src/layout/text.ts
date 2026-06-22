@@ -187,3 +187,7 @@ export function countLines(text: string): number {
   }
   return count
 }
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
