@@ -323,6 +323,9 @@ export class Renderer extends Emitter<RenderEvents> {
   set theme(theme: Theme) {
     this.#theme.set(theme)
     this.#ctxVersion++
+    this.stream.invalidate()
+    this.ui.invalidate()
+    this.overlay.invalidate()
     this.#schedule()
   }
 
