@@ -1,8 +1,11 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { StyleBuilder } from "../style/builder.ts"
+import type { Layout } from "../core/state.ts"
+import type { RowItem } from "../layout/flex.ts"
 import type { MdCallbacks } from "./types.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
+import { allocateRow } from "../layout/flex.ts"
+import { calcLayout, formatText } from "../layout/text.ts"
 
 type CellAlign = "left" | "center" | "right"
 
@@ -37,7 +40,7 @@ export function createTableCallbacks(ctx: RenderCtx): TableCallbacks {
       // Children of th/td/tr/thead/tbody are empty strings; all content is
       // in `state`. Format, reset, emit.
       if (state === undefined) return ""
-      const out = formatTable(state, style)
+      const out = formatTable(state, ctx)
       state = undefined
       return `${out}\n\n`
     },
@@ -70,34 +73,36 @@ export function createTableCallbacks(ctx: RenderCtx): TableCallbacks {
   }
 }
 
-/**
- * Format the accumulated table state into a fully-bordered table:
- *
- *     ┌───────┬───────┐
- *     │ col a │ col b │
- *     ├───────┼───────┤
- *     │ one   │ two   │
- *     │ three │ four  │
- *     └───────┴───────┘
- *
- * Columns widen to the widest (ANSI-aware) cell; alignment comes from the
- * per-cell `align` meta. All border glyphs (corners, rules, column
- * separators) are styled via `mdTable`; header cells are pre-styled via
- * `mdTableHeader` at push time.
- */
-function formatTable(state: TableState, style: StyleBuilder): string {
-  const rows = [...state.header, ...state.body]
-  if (rows.length === 0) return ""
-  const nCols = Math.max(...rows.map((r) => r.length))
-  const widths: number[] = Array.from({ length: nCols }, () => 0)
-  for (const row of rows) {
-    for (let i = 0; i < row.length; i++) {
-      widths[i] = Math.max(widths[i], stringWidth(row[i].text))
+function formatTable(state: TableState, ctx: RenderCtx): string {
+  const cols: Layout[] = []
+  const cells = [...state.header, ...state.body]
+  const colCount = Math.max(...cells.map((r) => r.length))
+
+  // 1. Calculate min-content and max-content for each column
+  for (let c = 0; c < colCount; c++) {
+    for (const row of cells) {
+      const cell = row[c] as TableCell | undefined
+      if (!cell) continue // Safety guard for ragged rows
+      const l = calcLayout(cell.text)
+      cols[c] ??= { ...l }
+      cols[c].width = Math.max(cols[c].width, l.width)
+      cols[c].minWidth = Math.max(cols[c].minWidth, l.minWidth)
     }
   }
+  const chromeWidth = 3 * colCount + 1
 
+  const items: RowItem[] = cols.map((c) => ({
+    flex: 1,
+    intrinsicMin: c.minWidth,
+    natural: c.width,
+  }))
+
+  const widths = allocateRow(items, { contentWidth: ctx.width - chromeWidth, gap: 0 })
+
+  // 4. Render output string using the exact final Column Widths
   // Pre-style each piece of chrome once. Each column span on a rule row is
   // `widths[i] + 2` dashes (one cell of padding on each side of the cell).
+  const style = ctx.style
   const v = style.mdTable("│")
   const ruleRow = (left: string, mid: string, right: string): string =>
     style.mdTable(left + widths.map((w) => "─".repeat(w + 2)).join(mid) + right)
@@ -106,10 +111,21 @@ function formatTable(state: TableState, style: StyleBuilder): string {
   const bot = ruleRow("└", "┴", "┘")
 
   const renderRow = (row: TableCell[]): string => {
-    const cells = row.map((cell, i) => padCell(cell.text, widths[i], cell.align))
-    // Pad missing trailing cells (rare — ragged tables) so columns line up.
-    for (let i = row.length; i < nCols; i++) cells.push(" ".repeat(widths[i]))
-    return `${v} ${cells.join(` ${v} `)} ${v}`
+    const formatted = row.map((cell, c) =>
+      formatText(cell.text, { indent: false, width: widths[c], wrapBg: false })
+    )
+    const rows: string[] = []
+    const rowCount = Math.max(...formatted.map((r) => r.length))
+    for (let r = 0; r < rowCount; r++) {
+      const line: string[] = []
+      for (let c = 0; c < colCount; c++) {
+        const t = formatted[c]?.[r] ?? ""
+        line.push(padCell(t, widths[c], row[c]?.align))
+      }
+      rows.push(`${v} ${line.join(` ${v} `)} ${v}`)
+    }
+
+    return rows.join("\n")
   }
 
   const lines: string[] = [top]
