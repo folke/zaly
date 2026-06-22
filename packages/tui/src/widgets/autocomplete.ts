@@ -234,19 +234,21 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     const value = this.#input.state.value ?? ""
     const cursor = this.#input.state.cursor ?? 0
     const tail = value.slice(cursor)
-    if (accepted === undefined) {
-      // Source handled the selection itself (dispatched an action,
-      // etc.) — just clear the selected range.
-      this.#input.state.set({
-        cursor: start,
-        value: value.slice(0, start) + tail,
-      })
-    } else {
-      this.#input.state.set({
-        cursor: start + accepted.length,
-        value: value.slice(0, start) + accepted + tail,
-      })
+    accepted ??= ""
+    const newValue = value.slice(0, start) + accepted + tail
+
+    if (newValue.trim() === "") {
+      // In case the source fully consumed the input, add the fully completed value
+      // to the input history. When not fully consumed, submit will add the completed
+      // value to the history, so we don't need to do it here.
+      const completed = value.slice(0, match.end) + defaultAccept(item) + tail
+      if (completed.trim() !== "") this.#input.historyAdd(completed)
     }
+
+    this.#input.state.set({
+      cursor: start + accepted.length,
+      value: newValue,
+    })
     void this.emit("complete", { item, source: match.source })
     this.hide()
   }
@@ -263,9 +265,8 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
  *  Assumes the item is `MenuItem`-shaped and inserts `value + " "` —
  *  matches the old `trailingSpace: true` behaviour. Returns `undefined`
  *  (clear-only) when the item has no `text`. */
-function defaultAccept(item: Option): string | undefined {
-  const ret = item.text
-  return ret ? `${ret} ` : undefined
+function defaultAccept(item: Option): string {
+  return `${item.text} `
 }
 
 /**

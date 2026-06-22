@@ -376,6 +376,10 @@ export class Input extends Node<InputState, InputEvents> {
     this.state.set({ cursor: start, value: v.slice(0, start) + v.slice(end) })
   }
 
+  historyAdd(value: string): void {
+    this.#historyAdd(value)
+  }
+
   #historyAdd(value: string): void {
     if (value.trim() === "") return
     if (this.#history.at(-1) !== value) {
