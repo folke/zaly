@@ -1,7 +1,7 @@
 import type { ArgsOpts, ArgsResult } from "@zaly/shared/args"
 import type { Logger } from "@zaly/shared/logger"
 
-import { normPath, safeReadFile } from "@zaly/shared"
+import { normPath, prettyPath, safeReadFile, toError } from "@zaly/shared"
 import { basename } from "pathe"
 
 export type Command = {
@@ -9,8 +9,7 @@ export type Command = {
   body: string
   path: string
   description?: string
-  model?: string
-  args?: ArgsOpts
+  args: ArgsOpts
 }
 
 export interface CommandsOptions {
@@ -18,6 +17,8 @@ export interface CommandsOptions {
   paths?: string[]
   logger?: Logger
 }
+
+const BASH_RE = /^!`(.*)`$/
 
 function resolveCommandVar(
   key: string,
@@ -60,8 +61,26 @@ export class Commands {
 
       const { fm, body } = await parseFrontmatter(content)
 
+      const args: ArgsOpts = {}
+      const fmArgs = (fm.args ?? {}) as Record<string, Partial<ArgsOpts[string]>>
+
+      for (const [o, opt] of Object.entries(fmArgs)) {
+        // Set default values for boolean
+        if (opt.type === "boolean") opt.default ??= false
+        // Make string options required if no default is provided
+        else if (opt.type === "string") opt.required ??= opt.default === undefined
+        else {
+          this.#logger?.warn(
+            `Unsupported argument type for \`--${o}\` in command **${name}** at \`${prettyPath(path)}\`\nOnly \`string\` and \`boolean\` are supported. Skipping this argument.`
+          )
+          continue
+        }
+        args[o] = opt as ArgsOpts[string]
+      }
+
       const cmd: Command = {
         ...fm,
+        args,
         body,
         name,
         path,
@@ -81,7 +100,7 @@ export class Commands {
     let args: ArgsResult
     if (typeof input === "string") {
       const { argsParse } = await import("@zaly/shared/args")
-      args = await argsParse(input, cmd.args ?? {})
+      args = await argsParse(input, cmd.args)
     } else args = input
 
     const positionals = args._.join(" ")
@@ -99,13 +118,38 @@ export class Commands {
       repl[k] = Array.isArray(v) ? v.map(String).join(", ") : String(v)
     }
 
-    return cmd.body.replace(
-      /\$(?:\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*|\d+|[@*]))/g,
-      (match, braced, bare) => {
-        const key = braced ?? bare
-        const res = resolveCommandVar(key, args._, repl) ?? process.env[key]
-        return res ?? match
-      }
+    const lines = cmd.body.split("\n")
+    const ret = await Promise.all(
+      lines.map(async (line) => {
+        line = line.replace(
+          /\$(?:\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*|\d+|[@*]))/g,
+          (match, braced, bare) => {
+            const key = braced ?? bare
+            const res = resolveCommandVar(key, args._, repl) ?? process.env[key]
+            return res ?? match
+          }
+        )
+
+        const m = BASH_RE.exec(line)
+        if (m) {
+          const bashCmd = m[1]
+          const { spawnCmd } = await import("@zaly/shared/process")
+
+          const cmdLines: string[] = []
+          cmdLines.push(`\`\`\`shellsession\n$ ${bashCmd}\n`)
+          try {
+            const result = await spawnCmd(bashCmd, { shell: true, throw: true })
+            cmdLines.push(result?.trim() ?? "")
+          } catch (error) {
+            cmdLines.push(toError(error).message.trim())
+          }
+          cmdLines.push("```")
+          return cmdLines.join("\n")
+        }
+        return line
+      })
     )
+
+    return ret.join("\n")
   }
 }

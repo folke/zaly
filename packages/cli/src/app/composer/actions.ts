@@ -8,6 +8,7 @@ import type {
   ComposerSubmitCtx,
 } from "../composer.ts"
 
+import { toError } from "@zaly/shared"
 import { sliceAnsi } from "@zaly/shared/ansi"
 import { argsUsage } from "@zaly/shared/args"
 import { codeToAnsi } from "@zaly/tui"
@@ -58,18 +59,19 @@ export class ActionsComposer implements ComposerPlugin {
     const actionCtx: ActionCtx = { id: action.id, source: "input" }
     if (action.args) {
       const { argsParse } = await import("@zaly/shared/args")
-      const def: ArgsOpts = {
-        help: { short: "h", type: "boolean" },
-        ...(action.source === "commands"
-          ? { preview: { desc: "Show a preview of the command template.", type: "boolean" } }
-          : {}),
-        ...action.args,
+      const def: ArgsOpts = { help: { short: "h", type: "boolean" }, ...action.args }
+      let err: string | undefined
+
+      try {
+        actionCtx.args = await argsParse(args, def)
+      } catch (error) {
+        err = toError(error).message
       }
-      actionCtx.args = await argsParse(args, def)
-      if (actionCtx.args.help) {
+
+      if (err !== undefined || actionCtx.args?.help) {
         const usage = argsUsage(`/${name}`, def)
-        ctx.app.ctx.success(
-          // action.desc ?? name,
+        ctx.app.ctx[err === undefined ? "success" : "error"](
+          ...(err === undefined ? [] : [err]),
           text(async ({ style }) => (await this.format(usage, { ...ctx, style })) ?? usage),
           text(await renderHelp(action, def))
         )
