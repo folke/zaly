@@ -186,11 +186,11 @@ export class Composer {
       validate: (value: string) => this.validate(value),
     }).on("submit", (value) => this.submit(value))).on("history", ({ added }) =>
       updateState((s) => {
-        const history = [...(s?.inputHistory ?? []), added]
-        return { ...s, inputHistory: history.slice(-100) }
+        const history = [...(s?.inputHistory ?? []), added].slice(-100)
+        ret.history = history
+        return { ...s, inputHistory: history }
       })
     )
-
     void loadState().then((state) => {
       ret.history = [...(state.inputHistory ?? []), ...ret.history]
     })
@@ -199,7 +199,8 @@ export class Composer {
 
   async pickHistory(): Promise<void> {
     if (!this.#input) return
-    const history = this.#input.history
+    const state = await loadState()
+    const history = state.inputHistory ?? []
     const items = history.map((text) => ({ text })).toReversed()
     const ret = await this.#app.pick({
       items,
