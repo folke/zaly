@@ -181,10 +181,10 @@ export class Context extends BaseLogger {
 
   async loadTheme(name?: string): Promise<Theme> {
     const { loadTheme } = await import("@zaly/tui/themes")
-    return await loadTheme({
-      dirs: await this.config.resources.themes(),
-      name: name ?? this.config.settings.ui.theme,
-    })
+    const paths = await this.config.resources.themes()
+    const path = paths.find((p) => p.endsWith(`${name}.json`))
+    name ??= this.config.settings.ui.theme
+    return await loadTheme(path ?? name)
   }
 
   async stop(): Promise<void> {
