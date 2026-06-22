@@ -5,6 +5,7 @@ type ParseArgOption = ParseArgsOptionsConfig[string]
 
 export type ArgsOption = ParseArgOption & {
   desc?: string
+  required?: boolean
 }
 export type ArgsOpts = Record<string, ArgsOption>
 
@@ -37,6 +38,14 @@ export async function argsParse<T extends ArgsOpts>(
     args: argv,
     options,
   })
+  const values = parsed.values as Record<string, unknown>
+  if (!values.help) {
+    for (const [key, opt] of Object.entries(options)) {
+      if (opt.required && values[key] === undefined) {
+        throw new Error(`Missing required argument: --${key}`)
+      }
+    }
+  }
   return { ...parsed.values, $: cmd, _: parsed.positionals } as ArgsResult<T>
 }
 
@@ -46,7 +55,8 @@ export function argsUsage(name: string, opts: ArgsOpts): string {
     const flag = `--${neg ? `no-${opt}` : opt}`
     const value = config.type === "string" ? " <value>" : ""
     const short = config.short ? `-${config.short}, ` : ""
-    return `[${short}${flag}${value}]`
+    const ret = `${short}${flag}${value}`
+    return config.required ? ret : `[${ret}]`
   })
   return [name, ...flags, "[args...]"].join(" ")
 }
