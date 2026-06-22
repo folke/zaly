@@ -5,6 +5,7 @@ import type { Composer } from "../app/composer.ts"
 
 import { justText } from "@zaly/ai"
 import { createAsync, createRef, RenderContext, unwrap, useContext } from "@zaly/tui"
+import { markdown } from "@zaly/tui/widgets/markdown"
 import { text } from "@zaly/tui/widgets/text"
 import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
@@ -21,6 +22,7 @@ export const userMessage = widget(
   }) => {
     const { composer, message } = props
     const children = createRef<Box>()
+    const isMd = !!unwrap(message).meta?.markdown
 
     const context = useContext(RenderContext)
 
@@ -38,6 +40,9 @@ export const userMessage = widget(
       { initialValue: justText(unwrap(message).content) }
     )
 
-    return bubble({ childrenBox: children, pending: props.pending, type: "user" }, text(formatted))
+    return bubble(
+      { childrenBox: children, pending: props.pending, type: "user" },
+      isMd ? markdown(formatted) : text(formatted)
+    )
   }
 )
