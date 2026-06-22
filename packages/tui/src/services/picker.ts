@@ -19,6 +19,7 @@ export type PickOpts<T extends Option = Option> = {
   title?: string
   ref?: Ref<Select<T>>
   details?: Widget | string
+  onOpen?: (select: Select<T>) => void
 } & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
 export class Picker {
@@ -79,8 +80,10 @@ export class Picker {
     const ref = createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
-    const menu = ref()
+    const select = ref()
     const ac = new AbortController()
+
+    if (opts.onOpen) opts.onOpen(select)
 
     const done = (value?: T) => {
       if (settled) return
@@ -93,8 +96,8 @@ export class Picker {
     }
 
     node.once("unmount", () => done(), { signal: ac.signal })
-    menu.once("cancel", () => done(), { signal: ac.signal })
-    menu.once("accept", ({ item }) => done(item), { signal: ac.signal })
+    select.once("cancel", () => done(), { signal: ac.signal })
+    select.once("accept", ({ item }) => done(item), { signal: ac.signal })
 
     this.#close = done
 
