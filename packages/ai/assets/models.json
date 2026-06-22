@@ -26326,6 +26326,46 @@
       },
       "api": "openai"
     },
+    "zenmux/z-ai/glm-5.2": {
+      "id": "z-ai/glm-5.2",
+      "name": "GLM 5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.5,
+        "cache_read": 0.26
+      },
+      "api": "openai"
+    },
     "zenmux/z-ai/glm-4.6v-flash-free": {
       "id": "z-ai/glm-4.6v-flash-free",
       "name": "GLM 4.6V Flash (Free)",
@@ -26388,6 +26428,46 @@
       "cost": {
         "input": 0,
         "output": 0
+      },
+      "api": "openai"
+    },
+    "zenmux/z-ai/glm-5.2-free": {
+      "id": "z-ai/glm-5.2-free",
+      "name": "GLM 5.2 (Free)",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      },
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0
       },
       "api": "openai"
     },
@@ -42993,6 +43073,54 @@
         "input": 0.6,
         "output": 2.2,
         "cache_read": 0.11,
+        "cache_write": 0
+      },
+      "api": "openai",
+      "quirks": {
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "zai"
+      }
+    },
+    "zai/glm-5.2": {
+      "id": "glm-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1000000,
+        "output": 131072
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.4,
+        "cache_read": 0.26,
         "cache_write": 0
       },
       "api": "openai",
@@ -83175,8 +83303,8 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 262142,
-        "output": 262142
+        "context": 262144,
+        "output": 65535
       },
       "cost": {
         "input": 0.66,
@@ -84985,12 +85113,12 @@
       "open_weights": true,
       "limit": {
         "context": 1048576,
-        "output": 131072
+        "output": 32768
       },
       "cost": {
-        "input": 1.2,
-        "output": 4.1,
-        "cache_read": 0.2
+        "input": 1,
+        "output": 4,
+        "cache_read": 0.18
       },
       "api": "openai",
       "headers": {
@@ -89332,49 +89460,6 @@
         "thinkingFormat": "openrouter"
       }
     },
-    "openrouter/anthropic/claude-3.5-haiku": {
-      "id": "anthropic/claude-3.5-haiku",
-      "name": "Claude 3.5 Haiku",
-      "family": "claude",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": false,
-      "temperature": true,
-      "knowledge": "2024-07-31",
-      "release_date": "2024-11-04",
-      "last_updated": "2024-11-04",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 200000,
-        "output": 8192
-      },
-      "cost": {
-        "input": 0.8,
-        "output": 4,
-        "cache_read": 0.08,
-        "cache_write": 1
-      },
-      "api": "openai",
-      "headers": {
-        "HTTP-Referer": "https://zaly.sh",
-        "X-Title": "Zaly"
-      },
-      "quirks": {
-        "maxTokensField": "max_tokens",
-        "reasoningField": "reasoning",
-        "thinkingFormat": "openrouter"
-      }
-    },
     "openrouter/anthropic/claude-sonnet-4.5": {
       "id": "anthropic/claude-sonnet-4.5",
       "name": "Claude Sonnet 4.5 (latest)",
@@ -90573,7 +90658,7 @@
       "reasoning": true,
       "reasoning_options": [],
       "tool_call": true,
-      "structured_output": true,
+      "structured_output": false,
       "temperature": true,
       "release_date": "2026-06-08",
       "last_updated": "2026-06-08",
@@ -90589,7 +90674,7 @@
       "open_weights": true,
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 256000
       },
       "cost": {
         "input": 0,
@@ -90739,8 +90824,8 @@
       },
       "open_weights": false,
       "limit": {
-        "context": 262142,
-        "output": 262142
+        "context": 262144,
+        "output": 65535
       },
       "cost": {
         "input": 0.66,
