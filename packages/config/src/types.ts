@@ -1,5 +1,6 @@
 import type { AnyTool, PermissionPresetName } from "@zaly/agent"
 import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
+import type { DeepPartial, Simplify } from "@zaly/shared"
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
 import type { ResourceManager } from "./resource/manager.ts"
@@ -66,15 +67,6 @@ export type ResolvedSettings = {
     /** Package manager command used for npm packs. */
     npm: string[]
   }
-}
-
-type Simplify<T> = { [K in keyof T]: T[K] } & {}
-type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends readonly unknown[]
-    ? T[K]
-    : T[K] extends object
-      ? Simplify<DeepPartial<T[K]>>
-      : T[K]
 }
 
 export type Settings = Simplify<
