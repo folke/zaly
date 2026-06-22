@@ -76,7 +76,7 @@ export type ActionFilter = {
 function filterAction(action: Action, filter: ActionFilter): boolean {
   if (filter.cmd && filter.cmd !== action.cmd) return false
   if (filter.id && filter.id !== action.id) return false
-  if (filter.hidden !== undefined && filter.hidden !== action.hidden) return false
+  if (filter.hidden !== undefined && filter.hidden !== (action.hidden ?? false)) return false
   if (filter.filter && !filter.filter(action)) return false
   if (filter.source && filter.source !== action.source) return false
   return true
