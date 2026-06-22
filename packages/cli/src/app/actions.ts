@@ -114,14 +114,10 @@ export function appActions({ app }: { app: App }) {
     "app.help": {
       cmd: "help",
       desc: "Show or hide the keyboard shortcut help overlay.",
-      fn: (() => {
-        let o: Overlay<[Text]> | undefined
-        return async () => {
-          const { helpOverlay } = await import("../widgets/help.ts")
-          o ??= app.renderer.overlay.add(() => helpOverlay({ actions: app.actions }))
-          o.toggle()
-        }
-      })(),
+      fn: async () => {
+        const { help } = await import("../widgets/help.ts")
+        app.ctx.info(help(app.actions))
+      },
       keys: ["ctrl-h"],
     },
     "app.login": {

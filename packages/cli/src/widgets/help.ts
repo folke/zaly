@@ -1,8 +1,6 @@
-import type { Actions } from "@zaly/tui"
+import type { Action, Actions } from "@zaly/tui"
 
-import { signal } from "@zaly/tui"
-import { overlay } from "@zaly/tui/widgets/overlay"
-import { text } from "@zaly/tui/widgets/text"
+import { capitalize } from "@zaly/tui/text"
 
 /**
  * Help overlay. Reads `renderer.actions` reactively — the list re-
@@ -10,35 +8,33 @@ import { text } from "@zaly/tui/widgets/text"
  * Phase B agent-action registration, future `/reload-plugins`, etc.)
  */
 
-export const helpOverlay = (props: { actions: Actions }) => {
-  const [actions, setActions] = signal(props.actions.list())
-  props.actions.on("change", () => {
-    setActions(props.actions.list())
-  })
-  return overlay(
-    {
-      border: "rounded",
-      borderTitle: "help",
-      borderTitleAlign: "center",
-      padding: [0, 1],
-      width: 52,
-      x: 4,
-      y: 3,
-      zIndex: 20,
-    },
-    text(
-      ({ style }) => {
-        const rows: string[] = []
-        for (const info of actions()) {
-          if (info.hidden || !info.id.startsWith("app.")) continue
-          const name = (info.cmd ?? info.id).padEnd(8)
-          const desc = (info.desc ?? "").padEnd(28)
-          const keys = (info.keys ?? []).join(", ")
-          rows.push(`${style.accent(`/ ${name}`)} ${style.dim(desc)} ${style.primary(keys)}`)
-        }
-        return rows.join("\n")
-      },
-      { wrap: "none" }
-    )
-  )
+export function help(actions: Actions) {
+  const grouped = new Map<string, Action[]>()
+  for (const info of actions.list()) {
+    const name = info.id.split(".")[0] ?? "general"
+    let group = grouped.get(name)
+    if (group === undefined) grouped.set(name, (group = []))
+    group.push(info)
+  }
+  const rows: string[] = ["# Help", ""]
+  const groupNames = [...grouped.keys()].toSorted((a, b) => a.localeCompare(b))
+  for (const group of groupNames) {
+    const cells: string[][] = []
+    for (const info of grouped.get(group) ?? []) {
+      const desc = info.desc ?? ""
+      const keys = (info.keys ?? []).map((k) => `\`${k}\``).join(" / ")
+      const cmd = info.cmd ? `\`/${info.cmd}\`` : ""
+      cells.push([cmd, keys, desc])
+    }
+    const used = [0, 1, 2].map((i) => cells.some((c) => c[i].length > 0))
+    if (!used.some(Boolean)) continue
+    cells.unshift(["---", "---", "---"])
+    cells.unshift(["Action", "Keys", "Description"])
+    rows.push(`## ${capitalize(group)}`)
+    for (const row of cells) {
+      rows.push(`| ${row.filter((_, i) => used[i]).join(" | ")} |`)
+    }
+    rows.push("")
+  }
+  return rows.join("\n").trimEnd()
 }
