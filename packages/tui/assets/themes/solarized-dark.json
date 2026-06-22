@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "solarized-dark",
+  "name": "Solarized Dark",
   "shiki": "solarized-dark",
   "text": "#839496",
   "subtle": "#002b36",

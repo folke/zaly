@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "catppuccin-macchiato",
+  "name": "Catppuccin Macchiato",
   "shiki": "catppuccin-macchiato",
   "text": "#cad3f5",
   "subtle": "#5b6078",

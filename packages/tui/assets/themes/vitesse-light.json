@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "vitesse-light",
+  "name": "Vitesse Light",
   "shiki": "vitesse-light",
   "text": "#393a34",
   "subtle": "#aaaaaa",

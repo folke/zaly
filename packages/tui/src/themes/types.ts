@@ -26,6 +26,8 @@ export type ThemeValue = Color | Style
  * `highlight` is orthogonal — a tinted accent surface, not a tier.
  */
 export type Theme = {
+  id: string
+  name?: string
   /** Optional name of a matching Shiki syntax-highlighting theme. Code
    *  blocks and fenced markdown snippets look this up so highlighting
    *  aligns with the TUI palette. Leave unset for themes without a

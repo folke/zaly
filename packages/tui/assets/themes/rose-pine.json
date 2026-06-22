@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "rose-pine",
+  "name": "Rosé Pine",
   "shiki": "rose-pine",
   "text": "#e0def4",
   "subtle": "#908caa",

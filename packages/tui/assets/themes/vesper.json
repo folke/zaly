@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "vesper",
+  "name": "Vesper",
   "shiki": "vesper",
   "text": "#FFF",
   "ui": {

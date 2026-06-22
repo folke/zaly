@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "one-dark-pro",
+  "name": "One Dark Pro",
   "shiki": "one-dark-pro",
   "text": "#abb2bf",
   "subtle": "#4f5666",

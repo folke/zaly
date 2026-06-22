@@ -32,6 +32,7 @@
     "bg": "#2f334d",
     "fg": "#c8d3f5"
   },
+  "id": "tokyonight-moon",
   "info": "#0db9d7",
   "mdCode": {
     "bg": "#444a73",
@@ -99,6 +100,7 @@
   },
   "mdTable": "#ff966c",
   "muted": "#545c7e",
+  "name": "Tokyo Night Moon",
   "overlay": {
     "bg": "#1e2030",
     "fg": "#c8d3f5"

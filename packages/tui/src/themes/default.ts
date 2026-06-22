@@ -9,7 +9,7 @@ import type { Theme } from "./types.ts"
  * Theme bundled as the default palette for `createCtx()` etc.
  */
 // oxlint-disable-next-line sort-keys
-export const defaults: Theme = {
+export const defaults: Omit<Theme, "id"> = {
   // base colors
   primary: "blue",
   accent: "brightMagenta",

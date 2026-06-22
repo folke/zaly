@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "material-theme-palenight",
+  "name": "Material Theme Palenight",
   "shiki": "material-theme-palenight",
   "text": "#babed8",
   "subtle": "#676E95",

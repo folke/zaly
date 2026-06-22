@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "one-light",
+  "name": "One Light",
   "shiki": "one-light",
   "text": "#383A42",
   "ui": {

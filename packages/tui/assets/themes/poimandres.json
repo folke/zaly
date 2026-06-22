@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "poimandres",
+  "name": "Poimandres",
   "shiki": "poimandres",
   "text": "#a6accd",
   "subtle": "#a6accd",

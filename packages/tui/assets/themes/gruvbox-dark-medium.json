@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "gruvbox-dark-medium",
+  "name": "Gruvbox Dark Medium",
   "shiki": "gruvbox-dark-medium",
   "text": "#ebdbb2",
   "subtle": "#928374",

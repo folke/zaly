@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "synthwave-84",
+  "name": "Synthwave '84",
   "shiki": "synthwave-84",
   "text": "#bbbbbb",
   "ui": {

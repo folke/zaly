@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "min-dark",
+  "name": "Min Dark",
   "shiki": "min-dark",
   "text": "#b392f0",
   "subtle": "#5c5c5c",

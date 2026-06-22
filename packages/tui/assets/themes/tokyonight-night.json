@@ -32,6 +32,7 @@
     "bg": "#292e42",
     "fg": "#c0caf5"
   },
+  "id": "tokyonight-night",
   "info": "#0db9d7",
   "mdCode": {
     "bg": "#414868",
@@ -99,6 +100,7 @@
   },
   "mdTable": "#ff9e64",
   "muted": "#545c7e",
+  "name": "Tokyo Night Night",
   "overlay": {
     "bg": "#16161e",
     "fg": "#c0caf5"

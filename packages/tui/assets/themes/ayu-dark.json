@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "ayu-dark",
+  "name": "Ayu Dark",
   "shiki": "ayu-dark",
   "text": "#bfbdb6",
   "subtle": "#686868",

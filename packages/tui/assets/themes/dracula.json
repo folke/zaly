@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "dracula",
+  "name": "Dracula Theme",
   "shiki": "dracula",
   "text": "#F8F8F2",
   "subtle": "#6272A4",

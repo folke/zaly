@@ -1,10 +1,9 @@
-// oxlint-disable typescript/unified-signatures
 import type { Theme } from "./types.ts"
 
-import { safeStat, withError } from "@zaly/shared"
+import { withError } from "@zaly/shared"
 import { createRegistry } from "@zaly/shared/registry"
 import { readFileSync } from "node:fs"
-import { resolve } from "pathe"
+import { basename } from "pathe"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
 import { builtin } from "./builtin.ts"
 import { defaults } from "./default.ts"
@@ -23,33 +22,24 @@ const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
  * callers `await` explicitly.
  */
 export const themeRegistry = createRegistry<ThemeLoader>("theme").from(builtin)
-themeRegistry.register("ansi", async () => defaults)
+themeRegistry.register("ansi", async () => ({ ...defaults, id: "ansi", name: "Ansi" }))
 
 /**
- * Load a theme by name. Searches `opts.dirs` in order for `<name>.json`,
- * then falls back to the built-in registry. The `"ansi"` synthetic
- * theme returns just `defaults` (no palette).
+ * Load a theme by name or path.
  */
 export async function loadTheme(name?: string): Promise<Theme>
-export async function loadTheme(opts: { name?: string; dirs?: string[] }): Promise<Theme>
-export async function loadTheme(opts: { path: string }): Promise<Theme>
-export async function loadTheme(
-  o?: string | { name?: string; dirs?: string[]; path?: string }
-): Promise<Theme> {
+export async function loadTheme(opts: { name?: string; path?: string }): Promise<Theme>
+export async function loadTheme(o?: string | { name?: string; path?: string }): Promise<Theme> {
   o ??= DEFAULT_THEME
   const opts = typeof o === "string" ? { name: o } : o
 
   if (opts.name?.endsWith(".json")) return loadTheme({ path: opts.name })
   if (opts.path) return loadThemeFile(opts.path)
   if (opts.name) {
-    const files = (opts.dirs ?? []).map((dir) => resolve(dir, `${opts.name}.json`))
-    const file = files.find((path) => safeStat(path)?.isFile())
-    if (file) return loadThemeFile(file)
     if (opts.name === DEFAULT_THEME) return defaultTheme
-    if (themeRegistry.has(opts.name)) return resolveTheme(await themeRegistry.load(opts.name))
-    throw new Error(
-      `Theme "${opts.name}" not found. Searched:\n${files.map((p) => `  - ${p}`).join("\n")}`
-    )
+    if (themeRegistry.has(opts.name))
+      return resolveTheme(await themeRegistry.load(opts.name), opts.name)
+    throw new Error(`Theme "${opts.name}" not found.`)
   }
 
   return defaultTheme
@@ -60,9 +50,9 @@ export async function loadTheme(
  * so we don't pay typia's ~3MB of generated assertions at startup;
  * user-supplied JSON goes through `loadThemeFile` which validates.
  */
-function resolveTheme(theme: unknown): Theme {
+function resolveTheme(theme: unknown, id: string): Theme {
   const { $schema: _, ...rest } = theme as Partial<Theme> & { $schema?: unknown }
-  return { ...defaults, ...rest }
+  return { ...defaults, id, name: id, ...rest }
 }
 
 /**
@@ -78,8 +68,8 @@ async function loadThemeFile(path: string): Promise<Theme> {
   const raw = withError(() => readFileSync(path, "utf8"), `Failed to read theme file at ${path}`)
   const data = withError(() => JSON.parse(raw), `Failed to parse theme JSON at ${path}`)
   const { validateTheme } = await import("../schemas/gen/theme.config.ts")
-  return resolveTheme(validateTheme(data))
+  return resolveTheme(validateTheme(data), basename(path, ".json"))
 }
 
 /** TokyoNight Moon — the default. Sourced from `assets/themes/tokyonight-moon.json`. */
-export const defaultTheme = resolveTheme(moonJson)
+export const defaultTheme = resolveTheme(moonJson, "tokyonight-moon")

@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "monokai",
+  "name": "Monokai",
   "shiki": "monokai",
   "text": "#F8F8F2",
   "subtle": "#666666",

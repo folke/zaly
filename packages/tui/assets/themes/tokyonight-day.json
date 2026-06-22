@@ -32,6 +32,7 @@
     "bg": "#c4c8da",
     "fg": "#3760bf"
   },
+  "id": "tokyonight-day",
   "info": "#07879d",
   "mdCode": {
     "bg": "#a1a6c5",
@@ -99,6 +100,7 @@
   },
   "mdTable": "#b15c00",
   "muted": "#8990b3",
+  "name": "Tokyo Night Day",
   "overlay": {
     "bg": "#d0d5e3",
     "fg": "#3760bf"

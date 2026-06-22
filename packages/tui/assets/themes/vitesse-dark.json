@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "vitesse-dark",
+  "name": "Vitesse Dark",
   "shiki": "vitesse-dark",
   "text": "#dbd7caee",
   "subtle": "#777777",

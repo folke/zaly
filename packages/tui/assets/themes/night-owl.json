@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "night-owl",
+  "name": "Night Owl",
   "shiki": "night-owl",
   "text": "#d6deeb",
   "subtle": "#575656",

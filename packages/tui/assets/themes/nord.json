@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "nord",
+  "name": "Nord",
   "shiki": "nord",
   "text": "#d8dee9ff",
   "subtle": "#4c566a",

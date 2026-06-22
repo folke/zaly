@@ -1,5 +1,7 @@
 {
   "$schema": "file:./../schemas/theme.schema.json",
+  "id": "github-dark",
+  "name": "GitHub Dark",
   "shiki": "github-dark",
   "text": "#e1e4e8",
   "subtle": "#959da5",

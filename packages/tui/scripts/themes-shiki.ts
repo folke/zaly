@@ -141,6 +141,8 @@ function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme>
 
   const out: Partial<Theme> & { $schema: string } = {
     $schema: "file:./../schemas/theme.schema.json",
+    id,
+    name: theme.displayName ?? id,
     /** Matching shiki theme name — used by the markdown/code renderers
      *  so syntax highlighting aligns with the TUI palette. */
     shiki: id,
