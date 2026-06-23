@@ -62,20 +62,23 @@ export async function loadConfig(opts: LoadConfigOpts): Promise<Config> {
       ? await loadScope("workspace", wsPaths.env)
       : undefined
 
+  const mergeSettings = () =>
+    merge({}, opts.settings, project.settings, workspace?.settings, user.settings, defaultSettings)
+
   const config: Omit<Config, "resources"> = {
     paths,
     project,
-    settings: merge(
-      {},
-      opts.settings,
-      project.settings,
-      workspace?.settings,
-      user.settings,
-      defaultSettings
-    ),
+    settings: mergeSettings(),
+    update: async (patch: Settings, scope = "user") => {
+      const s = scope === "user" ? user : project
+      s.settings = await updateSettings(s.dir, patch)
+      config.settings = mergeSettings()
+      if (patch.resources) resources.refresh()
+    },
     user,
     workspace,
   }
+  const resources = new ResourceManager(config, opts)
 
-  return { ...config, resources: new ResourceManager(config, opts) }
+  return Object.assign(config, { resources })
 }

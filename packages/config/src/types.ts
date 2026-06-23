@@ -94,6 +94,7 @@ export type Config = {
   paths: ProjectPaths
   user: LoadedSettings<"user">
   project: LoadedSettings<"project">
+  update: (patch: Settings, scope?: "user" | "project") => Promise<void>
   workspace?: LoadedSettings<"workspace">
 }
 
