@@ -86,6 +86,10 @@
       "bun": "./src/shell.ts",
       "default": "./dist/shell.mjs"
     },
+    "./template": {
+      "bun": "./src/template.ts",
+      "default": "./dist/template.mjs"
+    },
     "./text": {
       "bun": "./src/text.ts",
       "default": "./dist/text.mjs"
@@ -118,6 +122,7 @@
       "./process": "./dist/process.mjs",
       "./registry": "./dist/registry.mjs",
       "./shell": "./dist/shell.mjs",
+      "./template": "./dist/template.mjs",
       "./text": "./dist/text.mjs",
       "./throttle": "./dist/throttle.mjs",
       "./yaml": "./dist/yaml.mjs",

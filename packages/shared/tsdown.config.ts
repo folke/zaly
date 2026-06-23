@@ -45,6 +45,7 @@ export default defineConfig({
     collection: "src/collection.ts",
     throttle: "src/throttle.ts",
     minheap: "src/minheap.ts",
+    template: "src/template.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate
