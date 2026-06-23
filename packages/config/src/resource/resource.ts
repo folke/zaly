@@ -22,13 +22,13 @@ async function expand(res: string, type: ResourceType) {
   const s = await stat(res).catch(() => undefined)
   if (!s) return []
   if (!s.isDirectory()) return [res]
-  const { glob: _glob } = await import("@zaly/shared/glob")
+  const { glob } = await import("@zaly/shared/glob")
   const cwd = normPath(res)
   const ret = await Array.fromAsync(
-    _glob(globs[type], {
+    glob(globs[type], {
       cwd,
       exclude: ["node_modules", ".git", "dist", "build"],
-      follow: true,
+      follow: false,
       hidden: true,
       ignore: false,
       type: "file",

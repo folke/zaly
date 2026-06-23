@@ -9,19 +9,32 @@ import { findUp, gitRoot, safeReadFile, safeStatAsync, toError } from "./utils.t
 
 export type GlobOptions = {
   cwd: string
-  follow: boolean // follow symlinks
-  hidden: boolean // include dot files (those starting with a dot)
-  ignore: boolean // respect ignore files
-  type?: "file" | "dir" // filter by type
-  depth: number // maximum depth to traverse
-  ignoreFiles: string[] // names of ignore files to look for in each directory
-  exclude: string[] // additional ignore rules to apply globally
+  /** follow symlinks **/
+  follow: boolean
+  /** include dot files (those starting with a dot) **/
+  hidden: boolean
+  /** respect ignore files **/
+  ignore: boolean
+  /** filter by type **/
+  type?: "file" | "dir"
+  /** maximum depth to traverse **/
+  depth: number
+  /** names of ignore files to look for in each directory **/
+  ignoreFiles: string[]
+  /** additional ignore rules to apply globally **/
+  exclude: string[]
+  /** callback for each visited file or directory **/
   onVisit?: (rel: string) => void
+  /** callback for each matched file or directory **/
   onMatch?: (rel: string) => void
+  /** callback for errors **/
   onError?: (path: string, error: Error) => void
+  /** abort signal **/
   signal?: AbortSignal
-  limit?: number // maximum number of matches to return
-  throttle?: number // delay in ms between yielding batches of matches (default: 0, i.e. yield one by one)
+  /** maximum number of matches to return **/
+  limit?: number
+  /** delay in ms between yielding batches of matches (default: 0, i.e. yield one by one) **/
+  throttle?: number
 }
 
 const defaults: GlobOptions = {
