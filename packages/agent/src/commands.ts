@@ -1,3 +1,4 @@
+// oxlint-disable no-await-in-loop
 import type { ArgsOpts, ArgsResult } from "@zaly/shared/args"
 import type { Logger } from "@zaly/shared/logger"
 
@@ -16,24 +17,21 @@ export interface CommandsOptions {
   /** SKILL.md paths, sorted from highest to lowest precedence. */
   paths?: string[]
   logger?: Logger
+  /** Bash execution of commands:
+   * - `true`: Use the system default bash shell.
+   * - `false`: Disable bash execution.
+   * - `string[]`: Use a custom bash shell with the provided arguments. */
+  bash?: boolean | string[]
+  /** When `false`, template expressions are disabled and only simple variable interpolation is allowed. */
+  expr?: boolean
 }
+
+type Token =
+  | { type: "text"; value: string }
+  | { type: "block"; value: string; lang?: string; body: string }
+  | { type: "script"; value: string }
 
 const BASH_RE = /^!`(.*)`$/
-
-function resolveCommandVar(
-  key: string,
-  positionals: string[],
-  repl: Record<string, string | undefined>
-): string | undefined {
-  const slice = /^@:(\d+)(?::(\d+))?$/.exec(key)
-  if (slice) {
-    const start = Math.max(Number(slice[1]) - 1, 0)
-    const length = slice.at(2)
-    const end = length === undefined ? undefined : start + Math.max(Number(length), 0)
-    return positionals.slice(start, end).join(" ")
-  }
-  return repl[key]
-}
 
 export class Commands {
   #opts: CommandsOptions
@@ -103,53 +101,87 @@ export class Commands {
       args = await argsParse(input, cmd.args)
     } else args = input
 
-    const positionals = args._.join(" ")
-    const repl: Record<string, string | undefined> = {
-      "*": positionals,
-      "@": positionals,
-      ARGUMENTS: positionals,
+    const { createTemplate } = await import("@zaly/shared/template")
+    const tpl = createTemplate(cmd.body, { expr: this.#opts.expr, name: cmd.name })
+
+    const vars = {
+      env: process.env,
+      ...args,
+      args: args._,
       raw: args.$,
     }
-    for (let i = 0; i < args._.length; i++) {
-      repl[`${i + 1}`] = args._[i]
+
+    const rendered = tpl(vars)
+    if (this.#opts.bash === false) return rendered
+    const bash = Array.isArray(this.#opts.bash) ? this.#opts.bash : ["bash"]
+
+    const lines = rendered.split("\n")
+
+    const ret: string[] = []
+    for (const token of this.#tokenize(lines, cmd)) {
+      let text: string | undefined
+      if (token.type === "script") text = await exec(token.value, { bash })
+      else if (token.type === "block" && /^bash\s*!$/.test(token.lang ?? ""))
+        text = await exec(token.body, { bash })
+      ret.push(text ?? token.value)
     }
-    for (const [k, v] of Object.entries(args)) {
-      if (k === "_" || k === "$" || v === undefined) continue
-      repl[k] = Array.isArray(v) ? v.map(String).join(", ") : String(v)
-    }
-
-    const lines = cmd.body.split("\n")
-    const ret = await Promise.all(
-      lines.map(async (line) => {
-        line = line.replace(
-          /\$(?:\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*|\d+|[@*]))/g,
-          (match, braced, bare) => {
-            const key = braced ?? bare
-            const res = resolveCommandVar(key, args._, repl) ?? process.env[key]
-            return res ?? match
-          }
-        )
-
-        const m = BASH_RE.exec(line)
-        if (m) {
-          const bashCmd = m[1]
-          const { spawnCmd } = await import("@zaly/shared/process")
-
-          const cmdLines: string[] = []
-          cmdLines.push(`\`\`\`shellsession\n$ ${bashCmd}\n`)
-          try {
-            const result = await spawnCmd(bashCmd, { shell: true, throw: true })
-            cmdLines.push(result?.trim() ?? "")
-          } catch (error) {
-            cmdLines.push(toError(error).message.trim())
-          }
-          cmdLines.push("```")
-          return cmdLines.join("\n")
-        }
-        return line
-      })
-    )
 
     return ret.join("\n")
   }
+
+  *#tokenize(lines: string[], cmd: Command): Generator<Token> {
+    let block: string[] = []
+    let marker: RegExp | undefined = undefined
+    let lang: string | undefined = undefined
+    for (const line of lines) {
+      const m = line.match(/^\s*(`{3,}|~{3,})(.*)$/)
+      const script = line.match(BASH_RE)
+      if (marker && line.match(marker)) {
+        block.push(line)
+        yield {
+          body: block.slice(1, -1).join("\n"),
+          lang,
+          type: "block",
+          value: block.join("\n"),
+        }
+        marker = undefined // end of code block
+      } else if (!marker && m) {
+        marker = new RegExp(`^\\s*${m[1]}\\s*$`) // start of code block
+        lang = m[2].trim() || undefined
+        block = [line]
+      } else if (marker) block.push(line)
+      else if (script) yield { type: "script", value: script[1] }
+      else yield { type: "text", value: line }
+    }
+    if (marker) throw new Error(`Unclosed code block in command **${cmd.name}**`)
+  }
+}
+
+async function exec(script: string, opts: { bash?: string[] } = {}): Promise<string | undefined> {
+  if (!script.trim()) return
+  const { spawnCmd } = await import("@zaly/shared/process")
+  let result: string
+  try {
+    const r = await spawnCmd(script, { bash: opts.bash ?? true, throw: true })
+    result = r?.trim() ?? ""
+  } catch (error) {
+    result = toError(error).message.trim()
+  }
+  const md: string[] = []
+  if (script.includes("\n")) {
+    md.push("```bash")
+    md.push(script)
+    md.push("```")
+    md.push("")
+    md.push("```shellsession")
+    md.push(result)
+    md.push("```")
+  } else {
+    md.push("```shellsession")
+    md.push(`$ ${script}`)
+    md.push(result)
+    md.push("```")
+  }
+  md.push("")
+  return md.join("\n")
 }

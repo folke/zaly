@@ -8,6 +8,7 @@ export async function loadCommands(app: App): Promise<void> {
   const paths = await app.config.resources.commands()
 
   const commands = new Commands({
+    bash: app.settings.system.bash,
     logger: app.ctx.logger.child("commands"),
     paths,
   })
