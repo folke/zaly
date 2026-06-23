@@ -1,5 +1,5 @@
 import type { KeyPatterns } from "@zaly/tui"
-import type { Settings, TypiaSettings } from "../../types.ts"
+import type { Config, TypiaConfig } from "../../types.ts"
 
 import { canonical } from "@zaly/tui"
 // IMPORTANT: always use typia import directly, otherwise generates code will
@@ -7,9 +7,9 @@ import { canonical } from "@zaly/tui"
 // oxlint-disable import/no-named-as-default-member
 import typia from "typia"
 
-const validator = typia.createAssertEquals<TypiaSettings>()
+const validator = typia.createAssertEquals<TypiaConfig>()
 
-export function validateSettings(input: unknown): Settings {
+export function validateConfig(input: unknown): Config {
   const ret = validator(input)
   const keymap: Record<string, KeyPatterns> = {}
   for (const [action, pattern] of Object.entries(ret.keymap ?? {})) {

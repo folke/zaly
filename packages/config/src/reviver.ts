@@ -1,4 +1,4 @@
-import type { Settings } from "./types.ts"
+import type { Config } from "./types.ts"
 
 export type ReviverType = "env"
 export type ReviverIssue = { type: ReviverType; path: string; value: string; msg: string }
@@ -12,7 +12,7 @@ export function settingsReviver(key: string, value: unknown) {
   return reviver(key, value)
 }
 
-export function settingsReviverIssues(settings: Settings) {
+export function settingsReviverIssues(settings: Config) {
   const issues: ReviverIssue[] = []
   check("settings", settings, { issues, path: "settings" })
   return issues

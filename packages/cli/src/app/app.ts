@@ -1,5 +1,5 @@
 import type { Agent } from "@zaly/agent"
-import type { Config } from "@zaly/config"
+import type { ConfigManager } from "@zaly/config"
 import type { Plugin } from "@zaly/plugin"
 import type { ActionDef, Actions, Node, Renderer } from "@zaly/tui"
 import type { Input } from "@zaly/tui/widgets/input"
@@ -55,16 +55,16 @@ export class App {
   notify: Notifier["notify"] = (msg, opts) => this.#notifier.notify(msg, opts)
   pick: Picker["pick"] = (options) =>
     this.#picker.pick({
-      maxHeight: this.settings.ui.listHeight,
+      maxHeight: this.$.ui.listHeight,
       ...options,
     })
 
-  get config(): Config {
+  get config(): ConfigManager {
     return this.#ctx.config
   }
 
-  get settings() {
-    return this.#ctx.config.settings
+  get $() {
+    return this.#ctx.config.$
   }
 
   get renderer(): Renderer {
@@ -138,7 +138,7 @@ export class App {
 
     this.#renderer = await createRenderer({
       fixedFooterHeight: 5,
-      images: toAccessor(() => this.settings.ui.images),
+      images: toAccessor(() => this.$.ui.images),
       logger: this.#ctx.logger.child("renderer"),
       reporter: {
         wrap: (node) => {
@@ -189,7 +189,7 @@ export class App {
     this.#renderer.actions.register(appActions({ app: this }), { default: false })
 
     const keymap: Record<string, ActionDef> = {}
-    for (const [id, pattern] of Object.entries(this.#ctx.config.settings.keymap ?? {})) {
+    for (const [id, pattern] of Object.entries(this.#ctx.config.$.keymap ?? {})) {
       const keys = typeof pattern === "string" ? [pattern] : pattern
       keymap[id] = { keys }
     }
@@ -239,7 +239,7 @@ export class App {
   }
 
   async loadResources(): Promise<void> {
-    const { packUpdates, packInstall } = await import("./plugins.ts")
+    const { pluginUpdates: packUpdates, pluginInstall: packInstall } = await import("./plugins.ts")
     const installed = await packInstall(this)
     if (!installed) void packUpdates(this)
 

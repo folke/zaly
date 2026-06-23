@@ -21,16 +21,16 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
-    "./pack": {
-      "bun": "./src/pack/index.ts",
-      "default": "./dist/pack.mjs"
+    "./plugin": {
+      "bun": "./src/plugin/index.ts",
+      "default": "./dist/plugin.mjs"
     },
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "exports": {
       ".": "./dist/index.mjs",
-      "./pack": "./dist/pack.mjs",
+      "./plugin": "./dist/plugin.mjs",
       "./package.json": "./package.json"
     },
     "access": "public"

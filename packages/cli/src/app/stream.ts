@@ -69,9 +69,7 @@ class AgentStream {
       this.app.renderer.stream.append(() =>
         toolCall({
           call,
-          collapsed: memo(
-            () => this.app.settings.ui.collapsedTools.includes(call.name) || active()
-          ),
+          collapsed: memo(() => this.app.$.ui.collapsedTools.includes(call.name) || active()),
           pending: active,
           result,
         })

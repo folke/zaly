@@ -11,7 +11,7 @@ export async function bootstrapModel(
   opts: { notify?: boolean; force?: boolean } = {}
 ): Promise<void> {
   const ctx = app.ctx
-  const settings = ctx.config.settings
+  const settings = ctx.config.$
   const modelId = ctx.flags.model ?? agent.session.settings.modelId ?? settings.model
   if (!modelId) return
   const model = await ctx.model()
@@ -41,11 +41,11 @@ export async function loadAgent(app: App): Promise<Agent> {
   const { createAgent } = await import("@zaly/agent")
   const ctx = app.ctx
   const session = await ctx.session()
-  const settings = ctx.config.settings
+  const settings = ctx.config.$
   const ss = session.settings
   const p = settings.permissions
 
-  if (ctx.config.user.settings?.secrets) await registerSecrets(ctx.config.user.settings.secrets)
+  if (ctx.config.user.$?.secrets) await registerSecrets(ctx.config.user.$.secrets)
 
   const cwd = ctx.flags.cwd ?? ss.cwd ?? ctx.config.paths.cwd
 
@@ -55,7 +55,7 @@ export async function loadAgent(app: App): Promise<Agent> {
       return await allow(req, app)
     },
     bash: settings.system.bash,
-    compaction: () => app.settings.compaction,
+    compaction: () => app.$.compaction,
     cwd,
     logger: ctx.logger.child("agent"),
     permissions: ctx.flags.yolo
@@ -73,7 +73,7 @@ export async function loadAgent(app: App): Promise<Agent> {
 
   const tools = await app.ctx.tools()
   tools.onAny(async () => (agent.ctx.tools = await tools.load()))
-  tools.active = ctx.config.settings.tools
+  tools.active = ctx.config.$.tools
 
   const prompts = await ctx.prompts()
   const updatePrompt = async () => {

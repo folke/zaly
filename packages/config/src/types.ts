@@ -1,11 +1,21 @@
 import type { AnyTool, PermissionPresetName } from "@zaly/agent"
 import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
 import type { DeepPartial, Simplify } from "@zaly/shared"
-import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { KeyPatterns } from "@zaly/tui"
-import type { ResourceManager } from "./resource/manager.ts"
 
-export type ResolvedSettings = {
+export type PluginConfig = {
+  /** Path to the plugin, either a local path or a remote URI. */
+  uri: string
+  /** Whether the plugin is enabled. Defaults to true. */
+  enabled?: boolean
+  /** When set, only include the resources, matching these paths/globs from the plugin. */
+  include?: string[]
+  /** When set, exclude the resources, matching these paths/globs from the plugin.
+   * Exclude is applied after include. */
+  exclude?: string[]
+}
+
+export type ResolvedConfig = {
   model?: string
   reasoning: ReasoningEffort
   tools: string[]
@@ -49,13 +59,7 @@ export type ResolvedSettings = {
     deny?: string[]
     ask?: string[]
   }
-  resources?: {
-    packs?: string[] | false
-    plugins?: string[] | false
-    skills?: string[] | false
-    themes?: string[] | false
-    commands?: string[] | false
-  }
+  plugins?: (string | PluginConfig)[]
   keymap?: Record<string, KeyPatterns>
   secrets?: AuthSecrets
   /** System integrations and external commands used by zaly. */
@@ -69,34 +73,17 @@ export type ResolvedSettings = {
   }
 }
 
-export type Settings = Simplify<
-  DeepPartial<ResolvedSettings> & {
+export type Config = Simplify<
+  DeepPartial<ResolvedConfig> & {
     $schema?: string
   }
 >
 
-export type TypiaSettings = Omit<Settings, "keymap"> & {
+export type TypiaConfig = Omit<Config, "keymap"> & {
   keymap?: Record<string, string | string[]>
 }
 
-export type SettingsScope = "user" | "workspace" | "project"
-
-export type LoadedSettings<T extends SettingsScope = SettingsScope> = {
-  scope: T
-  dir: string
-  paths: EnvPaths
-  settings?: Settings
-}
-
-export type Config = {
-  settings: ResolvedSettings
-  resources: ResourceManager
-  paths: ProjectPaths
-  user: LoadedSettings<"user">
-  project: LoadedSettings<"project">
-  update: (patch: Settings, scope?: "user" | "project") => Promise<void>
-  workspace?: LoadedSettings<"workspace">
-}
+export type ConfigScope = "user" | "workspace" | "project"
 
 export type State = {
   lastModel?: string

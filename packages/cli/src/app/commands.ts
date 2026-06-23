@@ -8,7 +8,7 @@ export async function loadCommands(app: App): Promise<void> {
   const paths = await app.config.resources.commands()
 
   const commands = new Commands({
-    bash: app.settings.system.bash,
+    bash: app.$.system.bash,
     logger: app.ctx.logger.child("commands"),
     paths,
   })
@@ -26,7 +26,7 @@ export async function loadCommands(app: App): Promise<void> {
             type: "boolean",
           },
         },
-        cmd: `${app.settings.actions.commandPrefix ? "command:" : ""}${cmd.name}`,
+        cmd: `${app.$.actions.commandPrefix ? "command:" : ""}${cmd.name}`,
         desc: cmd.description,
 
         fn: async ({ args }) => {

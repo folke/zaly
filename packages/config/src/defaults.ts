@@ -1,4 +1,4 @@
-import type { ResolvedSettings } from "./types.ts"
+import type { ResolvedConfig } from "./types.ts"
 
 // oxlint-disable-next-line sort-keys
 export const defaultSettings = {
@@ -50,4 +50,4 @@ export const defaultSettings = {
     // "wakeup",
     ...(process.env.BRAVE_API_KEY ? ["search"] : []),
   ] as const,
-} satisfies ResolvedSettings
+} satisfies ResolvedConfig

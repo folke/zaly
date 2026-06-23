@@ -1,7 +1,7 @@
 // oxlint-disable sort-keys
 
 import type { PermissionPresetName } from "@zaly/agent"
-import type { Settings } from "@zaly/config"
+import type { Config } from "@zaly/config"
 import type { CmdArgs } from "./types.ts"
 
 import { defineCommand } from "citty"
@@ -34,18 +34,15 @@ export class Cli {
 
   async printConfig(): Promise<void> {
     const config = await this.ctx.loadConfig()
-    const settings: Settings = {
-      ...config.settings,
-      resources: {
-        plugins: await config.resources.plugins(),
-        themes: await config.resources.themes(),
-        commands: await config.resources.commands(),
-        skills: await config.resources.skills(),
-        packs: config.resources
-          .packs()
-          .map((p) => p.info?.uri)
-          .filter((uri) => typeof uri === "string"),
-      },
+    const settings: Config = {
+      ...config.$,
+      plugins: config.resources.list({ plugin: true }).map((p) => p.plugin.uri),
+    }
+    const resources = {
+      plugins: await config.resources.plugins(),
+      themes: await config.resources.themes(),
+      commands: await config.resources.commands(),
+      skills: await config.resources.skills(),
     }
     const [{ settingsReviverIssues }, { codeToAnsi }, { prettyPath }] = await Promise.all([
       import("@zaly/config"),
@@ -58,7 +55,7 @@ export class Cli {
     }
     const env = await this.ctx.dotenv()
     const penv = Object.fromEntries(Object.entries(env).map(([p, v]) => [prettyPath(p), v]))
-    const json = JSON.stringify({ ...settings, env: penv }, undefined, 2)
+    const json = JSON.stringify({ config: settings, env: penv, resources }, undefined, 2)
     const theme = await this.ctx.theme()
     const str = await codeToAnsi(json, "json", { theme: theme.shiki })
     this.ctx.log(str.trim())

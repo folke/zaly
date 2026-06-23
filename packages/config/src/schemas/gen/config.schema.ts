@@ -1,9 +1,9 @@
-import type { TypiaSettings } from "../../types.ts";
-export const SettingsSchema = {
+import type { TypiaConfig } from "../../types.ts";
+export const ConfigSchema = {
     version: "3.0",
     components: {
         schemas: {
-            "TypiaSettings.o1": {
+            "TypiaConfig.o1": {
                 type: "object",
                 properties: {
                     model: {
@@ -155,91 +155,18 @@ export const SettingsSchema = {
                         },
                         required: []
                     },
-                    resources: {
-                        type: "object",
-                        properties: {
-                            packs: {
-                                oneOf: [
-                                    {
-                                        type: "array",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    {
-                                        type: "boolean",
-                                        "enum": [
-                                            false
-                                        ]
-                                    }
-                                ]
-                            },
-                            plugins: {
-                                oneOf: [
-                                    {
-                                        type: "array",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    {
-                                        type: "boolean",
-                                        "enum": [
-                                            false
-                                        ]
-                                    }
-                                ]
-                            },
-                            skills: {
-                                oneOf: [
-                                    {
-                                        type: "array",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    {
-                                        type: "boolean",
-                                        "enum": [
-                                            false
-                                        ]
-                                    }
-                                ]
-                            },
-                            themes: {
-                                oneOf: [
-                                    {
-                                        type: "array",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    {
-                                        type: "boolean",
-                                        "enum": [
-                                            false
-                                        ]
-                                    }
-                                ]
-                            },
-                            commands: {
-                                oneOf: [
-                                    {
-                                        type: "array",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    {
-                                        type: "boolean",
-                                        "enum": [
-                                            false
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        required: []
+                    plugins: {
+                        type: "array",
+                        items: {
+                            oneOf: [
+                                {
+                                    type: "string"
+                                },
+                                {
+                                    $ref: "#/components/schemas/PluginConfig"
+                                }
+                            ]
+                        }
                     },
                     secrets: {
                         $ref: "#/components/schemas/AuthSecrets"
@@ -283,6 +210,36 @@ export const SettingsSchema = {
             },
             AnyTool: {
                 type: "string"
+            },
+            PluginConfig: {
+                type: "object",
+                properties: {
+                    uri: {
+                        type: "string",
+                        description: "Path to the plugin, either a local path or a remote URI."
+                    },
+                    enabled: {
+                        type: "boolean",
+                        description: "Whether the plugin is enabled. Defaults to true."
+                    },
+                    include: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        },
+                        description: "When set, only include the resources, matching these paths/globs from the plugin."
+                    },
+                    exclude: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        },
+                        description: "When set, exclude the resources, matching these paths/globs from the plugin.\nExclude is applied after include."
+                    }
+                },
+                required: [
+                    "uri"
+                ]
             },
             AuthSecrets: {
                 type: "object",
@@ -400,7 +357,7 @@ export const SettingsSchema = {
         items: {
             oneOf: [
                 {
-                    $ref: "#/components/schemas/TypiaSettings.o1"
+                    $ref: "#/components/schemas/TypiaConfig.o1"
                 }
             ]
         },

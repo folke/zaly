@@ -211,6 +211,7 @@ export function appActions({ app }: { app: App }) {
           sort: true,
         })
         app.renderer.theme = ret?.theme ?? current
+        if (ret) await app.ctx.config.update({ ui: { theme: ret.id } })
       },
     },
     "composer.history": {
@@ -228,7 +229,7 @@ export function appActions({ app }: { app: App }) {
       cmd: "update",
       desc: "Update all installed packs.",
       fn: async () => {
-        const { packUpdate } = await import("./plugins.ts")
+        const { pluginUpdate: packUpdate } = await import("./plugins.ts")
         await packUpdate(app)
       },
     },
@@ -236,7 +237,7 @@ export function appActions({ app }: { app: App }) {
       cmd: "updates",
       desc: "Check for updates of installed packs.",
       fn: async () => {
-        const { packUpdates } = await import("./plugins.ts")
+        const { pluginUpdates: packUpdates } = await import("./plugins.ts")
         await packUpdates(app, { notify: true })
       },
     },
@@ -261,7 +262,7 @@ export function appActions({ app }: { app: App }) {
       desc: "Show a tree view of the current session's message history.",
       fn: async () => {
         const { sessionTree } = await import("./session.ts")
-        await sessionTree(app, { filter: app.settings.ui.tree })
+        await sessionTree(app, { filter: app.$.ui.tree })
       },
     },
   } as const satisfies Record<string, ActionDef>

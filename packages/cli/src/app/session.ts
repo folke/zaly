@@ -310,7 +310,7 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   const node = await app.pick({
     active: (item) => item.node?.uuid === sessionHead,
     fuzzy: false,
-    maxHeight: app.settings.ui.treeHeight,
+    maxHeight: app.$.ui.treeHeight,
     render: (item, ctx) => {
       const s = ctx.style
       if (item.root) return s.accent("Session Root")

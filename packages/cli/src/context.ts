@@ -1,8 +1,8 @@
 import type { PromptCollection, ToolCollection } from "@zaly/agent"
 import type { Session } from "@zaly/agent/session"
 import type { ModelCollection } from "@zaly/ai"
-import type { Config } from "@zaly/config"
-import type { PackManager } from "@zaly/config/pack"
+import type { ConfigManager } from "@zaly/config"
+import type { PluginManager } from "@zaly/config/plugin"
 import type { LogLevel } from "@zaly/shared/logger"
 import type { Theme } from "@zaly/tui"
 import type { CliArgs } from "./cli.ts"
@@ -40,7 +40,7 @@ export class Context extends BaseLogger {
   #cache = new LazyCache<Slots>()
   #flush: (() => Promise<void>)[] = []
   #dispose: (() => Promise<void> | void)[] = []
-  #config?: Config
+  #config?: ConfigManager
 
   constructor(public args: CliArgs) {
     super()
@@ -125,27 +125,22 @@ export class Context extends BaseLogger {
     })
   }
 
-  get config(): Config {
+  get config(): ConfigManager {
     if (this.#config) return this.#config
     throw new Error("config not loaded yet")
   }
 
-  async loadConfig(reload = false): Promise<Config> {
+  async loadConfig(reload = false): Promise<ConfigManager> {
     if (this.#config && !reload) return this.#config
     await this.dotenv()
     const { loadConfig } = await import("@zaly/config")
-    // oxlint-disable-next-line unicorn/consistent-function-scoping
-    const falsy = (v?: boolean) => (v === false ? v : undefined)
     return (this.#config = await loadConfig({
+      disabled: (["commands", "plugins", "skills", "themes"] as const).filter(
+        (t) => this.flags[t] === false
+      ),
       settings: {
         model: this.flags.model,
         reasoning: this.flags.reasoning,
-        resources: {
-          commands: falsy(this.flags.commands),
-          plugins: falsy(this.flags.plugins),
-          skills: falsy(this.flags.skills),
-          themes: falsy(this.flags.themes),
-        },
         tools: this.flags.tools,
         ui: {
           theme: this.flags.theme,
@@ -183,7 +178,7 @@ export class Context extends BaseLogger {
     const { loadTheme } = await import("@zaly/tui/themes")
     const paths = await this.config.resources.themes()
     const path = paths.find((p) => p.endsWith(`${name}.json`))
-    name ??= this.config.settings.ui.theme
+    name ??= this.config.$.ui.theme
     return await loadTheme(path ?? name)
   }
 
@@ -192,15 +187,12 @@ export class Context extends BaseLogger {
     await Promise.all(this.#dispose.map((fn) => Promise.resolve(fn())))
   }
 
-  async packs(): Promise<PackManager> {
-    const { PackManager } = await import("@zaly/config/pack")
-    const packs = this.config.resources
-      .packs()
-      .map((p) => p.info)
-      .filter((p) => p !== undefined)
-    return new PackManager(packs, {
-      git: this.config.settings.system.git,
-      npm: this.config.settings.system.npm,
+  async packs(): Promise<PluginManager> {
+    const { PluginManager } = await import("@zaly/config/plugin")
+    const plugins = this.config.resources.list({ plugin: true }).map((p) => p.plugin)
+    return new PluginManager(plugins, {
+      git: this.config.$.system.git,
+      npm: this.config.$.system.npm,
     })
   }
 }

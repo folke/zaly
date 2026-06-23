@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { parsePackUri } from "../src/pack/uri.ts"
+import { pluginUri } from "../src/plugin/uri.ts"
 
 describe("parsePackUri", () => {
   test.each([
@@ -25,6 +25,6 @@ describe("parsePackUri", () => {
       { ref: undefined, repo: "https://user@github.com/org/repo", type: "git" },
     ],
   ] as const)("parses %s", (uri, expected) => {
-    expect(parsePackUri(uri)).toEqual(expected)
+    expect(pluginUri(uri)).toEqual(expected)
   })
 })

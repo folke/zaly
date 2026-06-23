@@ -24,8 +24,8 @@ export function messageWidgets(
   app: App,
   opts: { pending?: boolean } = {}
 ): MessageWidgets[] {
-  const reasoning = app.settings.ui.reasoning
-  const collapsed = new Set(app.settings.ui.collapsedTools)
+  const reasoning = app.$.ui.reasoning
+  const collapsed = new Set(app.$.ui.collapsedTools)
   const ret: MessageWidgets[] = []
   // Pre-index tool results by call id. Single pass — tool messages
   // always follow their assistant in the conversation, but the index
