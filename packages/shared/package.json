@@ -146,7 +146,7 @@
     "@types/shell-quote": "^1.7.5",
     "ignore": "^7.0.5",
     "image-meta": "^0.2.2",
-    "js-yaml": "^5.0.0",
+    "js-yaml": "^5.1.0",
     "picomatch": "^4.0.4",
     "shell-quote": "^1.8.4",
     "slice-ansi": "^9.0.0",
