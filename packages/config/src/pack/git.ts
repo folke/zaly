@@ -150,8 +150,11 @@ export class GitPack extends Pack<"git"> {
   }
 
   async #build() {
+    // Only run npm install if plugins directory exists and package.json exists
+    const d = await safeStatAsync(join(this.dir, "plugins"))
+    if (!d?.isDirectory()) return
     const s = await safeStatAsync(join(this.dir, "package.json"))
-    if (!s) return
+    if (!s?.isFile()) return
     await spawnCmd(...this.opts.npm, "install", { cwd: this.dir })
   }
 }
