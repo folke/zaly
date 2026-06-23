@@ -1,11 +1,10 @@
 import type { Stats } from "node:fs"
-import type { PackPath } from "../pack/uri.ts"
-import type { LoadedSettings, SettingsScope } from "../types.ts"
+import type { PluginRef } from "../plugin/uri.ts"
+import type { ConfigScope } from "../types.ts"
 
 import { normPath } from "@zaly/shared"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
-import { packPath } from "../pack/uri.ts"
 
 export type ResourceType = (typeof types)[number]
 
@@ -38,19 +37,8 @@ async function expand(res: string, type: ResourceType) {
 }
 
 export abstract class ResourceProvider {
-  #resources = new Map<ResourceType, string[]>()
-
-  protected abstract _get(type: ResourceType): Promise<string[] | undefined>
-
-  async get(type: ResourceType) {
-    let ret = this.#resources.get(type)
-    if (!ret) this.#resources.set(type, (ret = (await this._get(type)) ?? []))
-    return ret
-  }
-
-  refresh() {
-    this.#resources.clear()
-  }
+  abstract get(type: ResourceType): Promise<string[]>
+  abstract refresh(): void
 
   async themes() {
     return this.get("themes")
@@ -69,76 +57,36 @@ export abstract class ResourceProvider {
   }
 }
 
-export class ResourcePaths extends ResourceProvider {
-  #opts: LoadedSettings
-  #paths: Partial<Record<ResourceType, string[]>> = {}
-  #packs = new Map<string, ResourcePack>()
-  #dir: string
-
-  constructor(opts: LoadedSettings) {
-    super()
-    this.#opts = opts
-    this.#dir = normPath(opts.dir)
-    const res = opts.settings?.resources ?? {}
-    const resolve = (t: ResourceType | "packs") => (Array.isArray(res[t]) ? res[t] : [])
-    for (const type of types) this.#paths[type] = resolve(type)
-    for (const uri of resolve("packs")) {
-      const info = packPath(uri, { cwd: this.#dir, data: opts.paths.data })
-      this.#packs.set(uri, new ResourcePack({ dir: info.dir, info, scope: opts.scope }))
-    }
-  }
-
-  get scope(): SettingsScope {
-    return this.#opts.scope
-  }
-
-  get packs() {
-    return this.#packs
-  }
-
-  get dir() {
-    return this.#dir
-  }
-
-  async _get(type: ResourceType) {
-    const paths = this.#paths[type] ?? []
-    if (!paths.length) return []
-    const ret = await Promise.all(paths.map((path) => expand(normPath(this.#dir, path), type)))
-    return ret.flat()
-  }
-
-  override refresh() {
-    super.refresh()
-    this.#packs.forEach((pkg) => pkg.refresh())
-  }
-}
-
 export class ResourcePack extends ResourceProvider {
   #dir: string
-  #info?: PackPath
   #stat?: Stats | false
-  #scope: SettingsScope
+  #scope: ConfigScope
+  #use?: Set<ResourceType>
+  #resources = new Map<ResourceType, string[]>()
 
-  constructor(opts: { dir: string; info?: PackPath; scope: SettingsScope }) {
+  constructor(opts: { dir: string; scope: ConfigScope; resources?: ResourceType[] }) {
     super()
     this.#dir = opts.dir
-    this.#info = opts.info
     this.#scope = opts.scope
+    if (opts.resources) this.#use = new Set(opts.resources)
   }
 
-  get scope(): SettingsScope {
+  get scope(): ConfigScope {
     return this.#scope
-  }
-
-  get info(): PackPath | undefined {
-    return this.#info
   }
 
   get dir(): string {
     return this.#dir
   }
 
-  async _get(type: ResourceType) {
+  async get(type: ResourceType) {
+    let ret = this.#resources.get(type)
+    if (!ret) this.#resources.set(type, (ret = await this.#get(type)))
+    return ret
+  }
+
+  async #get(type: ResourceType) {
+    if (this.#use && !this.#use.has(type)) return []
     if (!(await this.exists())) return []
     return await expand(join(this.dir, type), type)
   }
@@ -148,8 +96,20 @@ export class ResourcePack extends ResourceProvider {
     return this.#stat !== false && this.#stat.isDirectory()
   }
 
-  override refresh() {
-    super.refresh()
+  refresh() {
     this.#stat = undefined
+  }
+}
+
+export class PluginPack extends ResourcePack {
+  #plugin: PluginRef
+
+  constructor(opts: { plugin: PluginRef; scope: ConfigScope }) {
+    super({ dir: opts.plugin.dir, scope: opts.scope })
+    this.#plugin = opts.plugin
+  }
+
+  get plugin(): PluginRef {
+    return this.#plugin
   }
 }
