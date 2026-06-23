@@ -1,11 +1,11 @@
 import type { SpawnOpts } from "@zaly/shared/process"
-import type { PackManagerOpts } from "./manager.ts"
-import type { PackPath } from "./uri.ts"
+import type { PluginManagerOpts } from "./manager.ts"
+import type { PluginRef } from "./uri.ts"
 
 import { spawnCmd } from "@zaly/shared/process"
 import { readFile } from "node:fs/promises"
 import { join } from "pathe"
-import { Pack, PackStore } from "./manager.ts"
+import { Plugin, PluginStore } from "./manager.ts"
 
 export type NpmOpts = SpawnOpts & {
   cwd?: string
@@ -81,16 +81,16 @@ export class Npm {
   }
 }
 
-export class NpmPack extends Pack<"npm"> {
+export class NpmPlugin extends Plugin<"npm"> {
   #npm: Npm
 
-  constructor(packPath: PackPath<"npm">, opts: PackManagerOpts) {
-    super(packPath, opts)
-    this.#npm = new Npm(packPath.store, opts.npm)
+  constructor(source: PluginRef<"npm">, opts: PluginManagerOpts) {
+    super(source, opts)
+    this.#npm = new Npm(source.store, opts.npm)
   }
 
   get spec(): string {
-    return `${this.parsed.name}@${this.parsed.version ?? "latest"}`
+    return `${this.source.name}@${this.source.version ?? "latest"}`
   }
 
   async #latest(): Promise<string | undefined> {
@@ -98,7 +98,7 @@ export class NpmPack extends Pack<"npm"> {
   }
 
   async #version(): Promise<string | undefined> {
-    return await this.#npm.version(this.parsed.name)
+    return await this.#npm.version(this.source.name)
   }
 
   async install() {
@@ -131,19 +131,19 @@ export class NpmPack extends Pack<"npm"> {
   }
 }
 
-export class NpmStore extends PackStore<"npm"> {
+export class NpmStore extends PluginStore<"npm"> {
   #npm: Npm
 
-  constructor(store: string, opts: PackManagerOpts) {
+  constructor(store: string, opts: PluginManagerOpts) {
     super(store, opts)
     this.#npm = new Npm(store, opts.npm)
   }
 
-  override async install(packs: Pack<"npm">[]): Promise<void> {
-    await this.#npm.install(packs.map((p) => (p as NpmPack).spec))
+  override async install(packs: Plugin<"npm">[]): Promise<void> {
+    await this.#npm.install(packs.map((p) => (p as NpmPlugin).spec))
   }
 
-  override async update(packs: Pack<"npm">[]): Promise<void> {
+  override async update(packs: Plugin<"npm">[]): Promise<void> {
     await this.install(packs)
   }
 }

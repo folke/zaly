@@ -1,12 +1,12 @@
 import type { SpawnOpts } from "@zaly/shared/process"
-import type { PackManagerOpts } from "./manager.ts"
-import type { PackPath } from "./uri.ts"
+import type { PluginManagerOpts } from "./manager.ts"
+import type { PluginRef } from "./uri.ts"
 
 import { safeStatAsync } from "@zaly/shared"
 import { spawnCmd } from "@zaly/shared/process"
 import { mkdir, rm, unlink, writeFile } from "node:fs/promises"
 import { dirname, join } from "pathe"
-import { Pack } from "./manager.ts"
+import { Plugin } from "./manager.ts"
 
 function asCommit(s?: string): string | undefined {
   return s && /^([0-9a-f]{40})$/.test(s) ? s : undefined
@@ -97,12 +97,12 @@ export class Git {
   }
 }
 
-export class GitPack extends Pack<"git"> {
+export class GitPlugin extends Plugin<"git"> {
   #git: Git
 
-  constructor(packPath: PackPath<"git">, opts: PackManagerOpts) {
-    super(packPath, opts)
-    this.#git = new Git(packPath.dir, opts.git)
+  constructor(source: PluginRef<"git">, opts: PluginManagerOpts) {
+    super(source, opts)
+    this.#git = new Git(source.dir, opts.git)
   }
 
   /** Get target commit for this uri.
@@ -110,7 +110,7 @@ export class GitPack extends Pack<"git"> {
    * Without ref, we fetch the remote HEAD */
   async #target() {
     return asCommit(
-      this.parsed.ref ? await this.#git.ref(this.parsed.ref) : await this.#git.remote()
+      this.source.ref ? await this.#git.ref(this.source.ref) : await this.#git.remote()
     )
   }
 
@@ -119,7 +119,7 @@ export class GitPack extends Pack<"git"> {
   }
 
   async install(): Promise<void> {
-    await this.#git.clone(this.parsed.repo)
+    await this.#git.clone(this.source.repo)
     const didUpdate = await this.update()
     if (!didUpdate) await this.#build()
   }
@@ -128,7 +128,7 @@ export class GitPack extends Pack<"git"> {
     const head = await this.#git.head()
     const target = await this.#target()
     if (head === target) return false
-    await this.#git.fetch(this.parsed.ref ?? "HEAD")
+    await this.#git.fetch(this.source.ref ?? "HEAD")
     await this.#git.checkout("FETCH_HEAD")
     await this.#build()
     return true
@@ -151,10 +151,10 @@ export class GitPack extends Pack<"git"> {
 
   async #build() {
     // Only run npm install if plugins directory exists and package.json exists
-    const d = await safeStatAsync(join(this.dir, "plugins"))
+    const d = await safeStatAsync(join(this.source.dir, "plugins"))
     if (!d?.isDirectory()) return
-    const s = await safeStatAsync(join(this.dir, "package.json"))
+    const s = await safeStatAsync(join(this.source.dir, "package.json"))
     if (!s?.isFile()) return
-    await spawnCmd(...this.opts.npm, "install", { cwd: this.dir })
+    await spawnCmd(...this.opts.npm, "install", { cwd: this.source.dir })
   }
 }
