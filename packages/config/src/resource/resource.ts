@@ -1,6 +1,6 @@
 import type { Stats } from "node:fs"
 import type { PackPath } from "../pack/uri.ts"
-import type { LoadedSettings } from "../types.ts"
+import type { LoadedSettings, SettingsScope } from "../types.ts"
 
 import { normPath } from "@zaly/shared"
 import { stat } from "node:fs/promises"
@@ -70,20 +70,26 @@ export abstract class ResourceProvider {
 }
 
 export class ResourcePaths extends ResourceProvider {
+  #opts: LoadedSettings
   #paths: Partial<Record<ResourceType, string[]>> = {}
   #packs = new Map<string, ResourcePack>()
   #dir: string
 
   constructor(opts: LoadedSettings) {
     super()
+    this.#opts = opts
     this.#dir = normPath(opts.dir)
     const res = opts.settings?.resources ?? {}
     const resolve = (t: ResourceType | "packs") => (Array.isArray(res[t]) ? res[t] : [])
     for (const type of types) this.#paths[type] = resolve(type)
     for (const uri of resolve("packs")) {
       const info = packPath(uri, { cwd: this.#dir, data: opts.paths.data })
-      this.#packs.set(uri, new ResourcePack({ dir: info.dir, info }))
+      this.#packs.set(uri, new ResourcePack({ dir: info.dir, info, scope: opts.scope }))
     }
+  }
+
+  get scope(): SettingsScope {
+    return this.#opts.scope
   }
 
   get packs() {
@@ -111,11 +117,17 @@ export class ResourcePack extends ResourceProvider {
   #dir: string
   #info?: PackPath
   #stat?: Stats | false
+  #scope: SettingsScope
 
-  constructor(opts: { dir: string; info?: PackPath }) {
+  constructor(opts: { dir: string; info?: PackPath; scope: SettingsScope }) {
     super()
     this.#dir = opts.dir
     this.#info = opts.info
+    this.#scope = opts.scope
+  }
+
+  get scope(): SettingsScope {
+    return this.#scope
   }
 
   get info(): PackPath | undefined {
