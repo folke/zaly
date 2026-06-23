@@ -102,10 +102,15 @@ export class Commands {
     } else args = input
 
     const { createTemplate } = await import("@zaly/shared/template")
-    const tpl = createTemplate(cmd.body, { expr: this.#opts.expr, name: cmd.name })
+    const tpl = createTemplate(cmd.body, {
+      expr: this.#opts.expr,
+      format: (value) => {
+        if (value === args._) return args._.join(" ")
+      },
+      name: cmd.name,
+    })
 
     const vars = {
-      env: process.env,
       ...args,
       args: args._,
       raw: args.$,
