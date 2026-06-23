@@ -1,5 +1,5 @@
 // oxlint-disable no-await-in-loop
-import type sharpType from "sharp"
+import type { PngOptions, Sharp, SharpConstructor } from "sharp"
 import type { DetectedFile, DetectedImage } from "../detect/file.ts"
 import type { ImageFormat } from "../detect/image.ts"
 import type { ImageInfo } from "./info.ts"
@@ -17,10 +17,10 @@ import { imageInfo } from "./info.ts"
  *  on purpose (most sharp installs reject `heif({ compression: 'hevc' })`).
  */
 const SHARP_WRITERS = {
-  jpeg: (s: sharpType.Sharp) => s.jpeg(),
-  png: (s: sharpType.Sharp) => s.png(),
-  webp: (s: sharpType.Sharp) => s.webp(),
-} as const satisfies Partial<Record<ImageFormat, (s: sharpType.Sharp) => sharpType.Sharp>>
+  jpeg: (s: Sharp) => s.jpeg(),
+  png: (s: Sharp) => s.png(),
+  webp: (s: Sharp) => s.webp(),
+} as const satisfies Partial<Record<ImageFormat, (s: Sharp) => Sharp>>
 
 export type WritableFormat = keyof typeof SHARP_WRITERS
 
@@ -128,7 +128,7 @@ export async function imageCompress(
 
   // try to compress while preserving the alpha channel (if any) first
   if (format === "png") {
-    const steps: sharpType.PngOptions[] = [
+    const steps: PngOptions[] = [
       { compressionLevel: 9 },
       { palette: true, quality: 80 },
       { palette: true, quality: 50 },
@@ -169,7 +169,7 @@ export interface CompressOpts {
 // the conversion path actually fires. `sharp` is also an
 // `optionalDependencies` — throw a clear, actionable error when the user
 // hits this path without having it installed.
-async function getSharp(): Promise<typeof sharpType> {
+async function getSharp(): Promise<SharpConstructor> {
   try {
     const mod = await import("sharp")
     return mod.default
