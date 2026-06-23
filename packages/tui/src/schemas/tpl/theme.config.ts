@@ -17,6 +17,8 @@ type UserStyle = Omit<Style, "fg" | "bg" | "style"> & { fg?: string; bg?: string
 type UserTheme = {
   $schema?: string
   shiki?: ShikiTheme
+  id: string
+  name?: string
 } & Record<string, string | UserStyle>
 
 type ColorKeys<T> = {
@@ -39,10 +41,12 @@ function toColor(value: unknown) {
 
 const validator = typia.createAssertEquals<Partial<UserTheme>>()
 
+const skipSlots = new Set(["$schema", "shiki", "id", "name"])
+
 export function validateTheme(input: unknown): Partial<UserTheme> {
   const out = validator(input)
   for (const [slot, value] of Object.entries(out)) {
-    if (slot === "$schema" || slot === "shiki" || value === undefined) continue
+    if (skipSlots.has(slot) || value === undefined) continue
     if (typeof value === "string" && toColor(value)) continue
     if (isColorKey(slot)) toColor(value)
     const style = toStyle(value)

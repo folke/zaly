@@ -10,6 +10,8 @@ type UserStyle = Omit<Style, "fg" | "bg" | "style"> & {
 type UserTheme = {
     $schema?: string;
     shiki?: ShikiTheme;
+    id: string;
+    name?: string;
 } & Record<string, string | UserStyle>;
 type ColorKeys<T> = {
     [K in keyof T]-?: [
@@ -128,8 +130,8 @@ function toColor(value: unknown) {
         toLightnessColor(color);
     return toBaseColor(color);
 }
-const validator = (() => { const _iv1 = new Set(["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]); const _av2 = new Set(["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]); const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.$schema || "string" === typeof input.$schema) && (undefined === input.shiki || true === _iv1.has(input.shiki)) && Object.keys(input).every((key: any) => {
-    if (["$schema", "shiki"].some((prop: any) => key === prop))
+const validator = (() => { const _iv1 = new Set(["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]); const _av2 = new Set(["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]); const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.$schema || "string" === typeof input.$schema) && (undefined === input.shiki || true === _iv1.has(input.shiki)) && (undefined === input.id || "string" === typeof input.id) && (undefined === input.name || "string" === typeof input.name) && Object.keys(input).every((key: any) => {
+    if (["$schema", "shiki", "id", "name"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -152,8 +154,18 @@ const validator = (() => { const _iv1 = new Set(["andromeeda", "aurora-x", "ayu-
     path: _path + ".shiki",
     expected: "(\"andromeeda\" | \"aurora-x\" | \"ayu-dark\" | \"ayu-light\" | \"ayu-mirage\" | \"catppuccin-frappe\" | \"catppuccin-latte\" | \"catppuccin-macchiato\" | \"catppuccin-mocha\" | \"dark-plus\" | \"dracula\" | \"dracula-soft\" | \"everforest-dark\" | \"everforest-light\" | \"github-dark\" | \"github-dark-default\" | \"github-dark-dimmed\" | \"github-dark-high-contrast\" | \"github-light\" | \"github-light-default\" | \"github-light-high-contrast\" | \"gruvbox-dark-hard\" | \"gruvbox-dark-medium\" | \"gruvbox-dark-soft\" | \"gruvbox-light-hard\" | \"gruvbox-light-medium\" | \"gruvbox-light-soft\" | \"horizon\" | \"horizon-bright\" | \"houston\" | \"kanagawa-dragon\" | \"kanagawa-lotus\" | \"kanagawa-wave\" | \"laserwave\" | \"light-plus\" | \"material-theme\" | \"material-theme-darker\" | \"material-theme-lighter\" | \"material-theme-ocean\" | \"material-theme-palenight\" | \"min-dark\" | \"min-light\" | \"monokai\" | \"night-owl\" | \"night-owl-light\" | \"nord\" | \"one-dark-pro\" | \"one-light\" | \"plastic\" | \"poimandres\" | \"red\" | \"rose-pine\" | \"rose-pine-dawn\" | \"rose-pine-moon\" | \"slack-dark\" | \"slack-ochin\" | \"snazzy-light\" | \"solarized-dark\" | \"solarized-light\" | \"synthwave-84\" | \"tokyo-night\" | \"vesper\" | \"vitesse-black\" | \"vitesse-dark\" | \"vitesse-light\" | undefined)",
     value: input.shiki
+}, _errorFactory)) && (undefined === input.id || "string" === typeof input.id || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".id",
+    expected: "(string | undefined)",
+    value: input.id
+}, _errorFactory)) && (undefined === input.name || "string" === typeof input.name || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".name",
+    expected: "(string | undefined)",
+    value: input.name
 }, _errorFactory)) && (false === _exceptionable || Object.keys(input).every((key: any) => {
-    if (["$schema", "shiki"].some((prop: any) => key === prop))
+    if (["$schema", "shiki", "id", "name"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -243,10 +255,11 @@ const validator = (() => { const _iv1 = new Set(["andromeeda", "aurora-x", "ayu-
     }
     return input;
 }; })();
+const skipSlots = new Set(["$schema", "shiki", "id", "name"]);
 export function validateTheme(input: unknown): Partial<UserTheme> {
     const out = validator(input);
     for (const [slot, value] of Object.entries(out)) {
-        if (slot === "$schema" || slot === "shiki" || value === undefined)
+        if (skipSlots.has(slot) || value === undefined)
             continue;
         if (typeof value === "string" && toColor(value))
             continue;

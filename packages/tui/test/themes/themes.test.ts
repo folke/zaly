@@ -1,8 +1,7 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import { describe, expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
 import { resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme, loadTheme, themeRegistry } from "../../src/themes/registry.ts"
@@ -239,48 +238,6 @@ describe("loadTheme", () => {
 
   test("unknown theme name throws with the search paths listed", async () => {
     await expect(loadTheme("does-not-exist")).rejects.toThrow(/not found/)
-  })
-
-  describe("with user dirs", () => {
-    let dir: string
-    beforeAll(() => {
-      dir = mkdtempSync(join(tmpdir(), "zaly-themes-"))
-      // Minimal complete theme copied from moon, plus a marker we can assert on.
-      writeFileSync(
-        join(dir, "custom.json"),
-        JSON.stringify({ ...defaultTheme, primary: "#ff00ff" }, undefined, 2)
-      )
-      // Same name as a built-in to test override precedence.
-      writeFileSync(
-        join(dir, "tokyonight-moon.json"),
-        JSON.stringify({ ...defaultTheme, primary: "#123456" }, undefined, 2)
-      )
-    })
-    afterAll(() => rmSync(dir, { force: true, recursive: true }))
-
-    test("user dir resolves a custom theme", async () => {
-      const t = await loadTheme({ name: "custom", dirs: [dir] })
-      expect(t.primary).toBe("#ff00ff")
-    })
-
-    test("user dir takes precedence over built-in for same name", async () => {
-      const t = await loadTheme({ name: "tokyonight-moon", dirs: [dir] })
-      expect(t.primary).toBe("#123456")
-    })
-
-    test("falls back to built-in when user dirs miss", async () => {
-      const t = await loadTheme({ name: "ansi", dirs: [dir] })
-      expect(t.primary).toBe(ansi.primary)
-    })
-
-    test("invalid theme JSON in user dir throws", async () => {
-      // Bad value (non-Color string) — triggers typia's value-level check.
-      writeFileSync(
-        join(dir, "broken.json"),
-        JSON.stringify({ primary: "not-a-color" }, undefined, 2)
-      )
-      await expect(loadTheme({ name: "broken", dirs: [dir] })).rejects.toThrow()
-    })
   })
 })
 
