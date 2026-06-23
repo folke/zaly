@@ -14,8 +14,8 @@ describe("parsePackUri", () => {
       "https://github.com/user/repo",
       { ref: undefined, repo: "https://github.com/user/repo", type: "git" },
     ],
-    ["/absolute/path/to/package", { dir: "/absolute/path/to/package", type: "dir" }],
-    ["./relative/path/to/package", { dir: "./relative/path/to/package", type: "dir" }],
+    ["/absolute/path/to/package", { path: "/absolute/path/to/package", type: "dir" }],
+    ["./relative/path/to/package", { path: "./relative/path/to/package", type: "dir" }],
     [
       "https://user@github.com/org/repo@v1",
       { ref: "v1", repo: "https://user@github.com/org/repo", type: "git" },
