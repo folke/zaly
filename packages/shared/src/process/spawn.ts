@@ -28,6 +28,7 @@ import type { Stream } from "./stream.ts"
 
 import { spawn as nodeSpawn } from "node:child_process"
 import { BufferStream, TextStream } from "./stream.ts"
+import { bash } from "./system.ts"
 
 export interface SpawnOpts<O = Buffer, E = Buffer> {
   cwd?: string
@@ -46,8 +47,14 @@ export interface SpawnOpts<O = Buffer, E = Buffer> {
   signal?: AbortSignal
   /** Cap on combined stdout+stderr bytes; kill on overflow. Default: no cap. */
   maxBuffer?: number
-  /** Run via shell. Default false; enable when `cmd` contains metachars. */
-  shell?: boolean
+  /** Run via shell. Default false; enable when `cmd` contains metachars.
+   * If shell is an array, then it should be a shell command prefix,
+   * where `-c <cmd>` is appended automatically. */
+  shell?: boolean | string[]
+  /** Run via bash. Default false; enable when `cmd` contains bashisms.
+   * If bash is an array, then it should be a bash command prefix,
+   * where `-c <cmd>` is appended automatically. */
+  bash?: boolean | string[]
 }
 
 /** Why the process was killed.
@@ -114,11 +121,27 @@ export class Spawn<O = Buffer, E = Buffer> {
       "pipe",
       "pipe",
     ]
-    this.child = nodeSpawn(cmd, args, {
+
+    let shell = opts.shell
+
+    if (opts.bash && opts.shell) throw new Error("Cannot set both `bash` and `shell` options")
+    if (opts.bash) shell = opts.bash === true ? bash() : opts.bash
+
+    let scmd = cmd
+    let sargs = [...args]
+    if (Array.isArray(shell)) {
+      if (shell.length === 0) throw new Error("Empty shell array")
+      const [sh, ...shArgs] = shell
+      scmd = sh
+      sargs = [...shArgs, "-c", cmd, ...args]
+    }
+
+    this.child = nodeSpawn(scmd, sargs, {
       cwd: opts.cwd,
       env: opts.env,
-      shell: opts.shell ?? false,
+      shell: shell === true,
       stdio,
+      windowsHide: true,
     })
 
     this.#stdout = opts.stdout ?? (new BufferStream() as unknown as Stream<O>)

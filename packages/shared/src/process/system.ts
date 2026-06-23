@@ -70,3 +70,24 @@ function isExecutable(path: string): boolean {
   if (platform === "win32") return true
   return (Number(s.mode) & 0o111) !== 0
 }
+
+export function bash(): [string, ...string[]] {
+  if (platform === "win32") {
+    const dirs = [
+      process.env.ProgramFiles,
+      process.env.ProgramW6432,
+      process.env["ProgramFiles(x86)"],
+    ].filter((v): v is string => !!v)
+    const candidates = [
+      ...dirs.flatMap((dir) => [
+        join(dir, "Git", "bin", "bash.exe"),
+        join(dir, "Git", "usr", "bin", "bash.exe"),
+      ]),
+      String.raw`C:\msys64\usr\bin\bash.exe`,
+    ]
+    const bashPath = which("bash.exe")
+    if (bashPath) return [bashPath]
+    for (const candidate of candidates) if (isExecutable(candidate)) return [candidate]
+  }
+  return ["bash"]
+}
