@@ -20,6 +20,7 @@ export type PickOpts<T extends Option = Option> = {
   ref?: Ref<Select<T>>
   details?: Widget | string
   onOpen?: (select: Select<T>) => void
+  clearInput?: boolean
 } & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
 export class Picker {
@@ -76,7 +77,7 @@ export class Picker {
     this.close()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
-    const prev = this.#input.consume().value
+    const prev = opts.clearInput ? this.#input.consume().value : undefined
     const ref = createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
@@ -90,7 +91,7 @@ export class Picker {
       settled = true
       ac.abort()
       this.#open.set(false)
-      this.#input.replace(prev)
+      if (prev !== undefined) this.#input.replace(prev)
       res.resolve(value)
       this.#ui.close(node)
     }

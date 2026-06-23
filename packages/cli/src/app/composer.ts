@@ -203,11 +203,12 @@ export class Composer {
     const history = state.inputHistory ?? []
     const items = history.map((text) => ({ text })).toReversed()
     const ret = await this.#app.pick({
+      clearInput: false,
       items,
       reverse: true,
       sort: true,
     })
-    if (ret) this.#input.insert(ret.text)
+    if (ret) this.#input.replace(ret.text)
   }
 }
 
