@@ -91,10 +91,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
   }
 
   withActions<A extends NodeActionMap>(actions: A): this & { actions: A } {
-    this.actions ??= {}
-    for (const [id, entry] of Object.entries(actions)) {
-      this.actions[id] = entry
-    }
+    this.actions = { ...this.actions, ...actions }
     return this as this & { actions: A }
   }
 
