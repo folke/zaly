@@ -23067,7 +23067,23 @@
       "cost": {
         "input": 0.1,
         "output": 0.4,
-        "cache_read": 0.02
+        "cache_read": 0.02,
+        "tiers": [
+          {
+            "input": 0.2,
+            "output": 0.8,
+            "cache_read": 0.04,
+            "tier": {
+              "type": "context",
+              "size": 512000
+            }
+          }
+        ],
+        "context_over_200k": {
+          "input": 0.2,
+          "output": 0.8,
+          "cache_read": 0.04
+        }
       },
       "api": "anthropic"
     },
@@ -103089,8 +103105,8 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 262144,
-        "output": 262144
+        "context": 202720,
+        "output": 202720
       },
       "cost": {
         "input": 1.4,
