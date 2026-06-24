@@ -3,7 +3,7 @@ import type { ConfigScope, PluginSpec } from "../types.ts"
 import type { ResourceType } from "./resource.ts"
 
 import { pluginRef } from "../plugin/uri.ts"
-import { PluginPack, ResourcePack, ResourceProvider } from "./resource.ts"
+import { PluginPack, ResourceMatcher, ResourcePack, ResourceProvider } from "./resource.ts"
 
 export type ResourcePackFilter = { scope?: ConfigScope; plugin?: boolean }
 
@@ -11,12 +11,12 @@ export type ResourcePackFilter = { scope?: ConfigScope; plugin?: boolean }
 export class ResourceManager extends ResourceProvider {
   #packs: ResourcePack[] = []
   #opts: ConfigManagerOpts
-  #disabled: Set<ResourceType>
+  #matcher: ResourceMatcher
 
   constructor(config: ConfigManager, opts?: ConfigManagerOpts) {
     super()
     this.#opts = opts ?? {}
-    this.#disabled = new Set(this.#opts.disabled)
+    this.#matcher = new ResourceMatcher(this.#opts.settings?.resources)
 
     // Project resources have the highest precedence
     this.#add(config.project, config.paths.dotAgents)
@@ -73,7 +73,7 @@ export class ResourceManager extends ResourceProvider {
   }
 
   async get(type: ResourceType, scope?: ConfigScope): Promise<string[]> {
-    if (this.#disabled.has(type)) return []
+    if (!this.#matcher.use(type)) return []
     const ret = await Promise.all(this.list({ scope }).map(async (res) => res.get(type)))
     return ret.flat()
   }
