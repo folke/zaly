@@ -59,6 +59,9 @@ export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
   args?: T
   source?: string
   fn?: ActionFn<T>
+  /** Optional numeric priority for ordering in the command palette.
+   * Higher number is higher priority. Defaults to 0 */
+  priority?: number
 }
 
 export type Action<T extends ArgsOpts = ArgsOpts> = ActionDef<T> & { id: string }
@@ -245,16 +248,22 @@ export class Actions extends Emitter<ActionEvents> {
   }
 
   dispatchKey(routed: RoutedKey): boolean {
-    const entries = this.#keymap.get(canonical(routed.pattern)) ?? []
-    const nodeActions = entries.filter((id) => !this.get(id)?.fn)
-    const globalActions = entries.filter((id) => this.get(id)?.fn)
+    const actions = (this.#keymap.get(canonical(routed.pattern)) ?? [])
+      .map((id) => this.get(id))
+      .filter((a): a is Action => !!a)
+      .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    if (!actions.length) return false
+    const nodeActions = actions.filter((a) => !a.fn)
+    const globalActions = actions.filter((a) => a.fn)
     const target = this.#getTarget()
 
     // Phase 1 - Node actions
     // A node's action targets have higher precedence than the node itself
-    for (const t of target ? [...target.actionTargets, target] : []) {
-      for (const a of nodeActions)
-        if (this.dispatch(a, { key: routed, source: "key", target: t })) return true
+    if (nodeActions.length) {
+      for (const t of target ? [...target.actionTargets, target] : []) {
+        for (const a of nodeActions)
+          if (this.dispatch(a, { key: routed, source: "key", target: t })) return true
+      }
     }
 
     // Phase 2 - global actions
