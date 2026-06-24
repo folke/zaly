@@ -1,4 +1,3 @@
-// oxlint-disable unicorn/no-zero-fractions
 /**
  * OKLCH-based tonal scale generation for theme colors.
  *
@@ -29,11 +28,11 @@ const cache = new Map<string, HexColor>()
 // ---------- conversions ----------
 
 function srgbToLinear(c: number): number {
-  return c <= 0.040_45 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
 }
 
 function linearToSrgb(c: number): number {
-  return c <= 0.003_130_8 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055
+  return c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055
 }
 
 export function hexToOklch(hex: string): OKLCH {
@@ -42,15 +41,15 @@ export function hexToOklch(hex: string): OKLCH {
   const g = srgbToLinear(g8 / 255)
   const b = srgbToLinear(b8 / 255)
 
-  const l = 0.412_221_470_8 * r + 0.536_332_536_3 * g + 0.051_445_992_9 * b
-  const m = 0.211_903_498_2 * r + 0.680_699_545_1 * g + 0.107_396_956_6 * b
-  const s = 0.088_302_461_9 * r + 0.281_718_837_6 * g + 0.629_978_700_5 * b
+  const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b
+  const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b
+  const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b
   const lp = Math.cbrt(l)
   const mp = Math.cbrt(m)
   const sp = Math.cbrt(s)
-  const L = 0.210_454_255_3 * lp + 0.793_617_785_0 * mp - 0.004_072_046_8 * sp
-  const a = 1.977_998_495_1 * lp - 2.428_592_205_0 * mp + 0.450_593_709_9 * sp
-  const b2 = 0.025_904_037_1 * lp + 0.782_771_766_2 * mp - 0.808_675_766_0 * sp
+  const L = 0.2104542553 * lp + 0.793617785 * mp - 0.0040720468 * sp
+  const a = 1.9779984951 * lp - 2.428592205 * mp + 0.4505937099 * sp
+  const b2 = 0.0259040371 * lp + 0.7827717662 * mp - 0.808675766 * sp
   const C = Math.hypot(a, b2)
   const h = ((Math.atan2(b2, a) * 180) / Math.PI + 360) % 360
   return { C, L, h }
@@ -61,15 +60,15 @@ function oklchToLinearRgb({ L, C, h }: OKLCH): [number, number, number] {
   const hr = (h * Math.PI) / 180
   const a = C * Math.cos(hr)
   const b2 = C * Math.sin(hr)
-  const lp = L + 0.396_337_777_4 * a + 0.215_803_757_3 * b2
-  const mp = L - 0.105_561_345_8 * a - 0.063_854_172_8 * b2
-  const sp = L - 0.089_484_177_5 * a - 1.291_485_548_0 * b2
+  const lp = L + 0.3963377774 * a + 0.2158037573 * b2
+  const mp = L - 0.1055613458 * a - 0.0638541728 * b2
+  const sp = L - 0.0894841775 * a - 1.291485548 * b2
   const l = lp ** 3
   const m = mp ** 3
   const s = sp ** 3
-  const r = 4.076_741_662_1 * l - 3.307_711_591_3 * m + 0.230_969_929_2 * s
-  const g = -1.268_438_004_6 * l + 2.609_757_401_1 * m - 0.341_319_396_5 * s
-  const b = -0.004_196_086_3 * l - 0.703_418_614_7 * m + 1.707_614_701_0 * s
+  const r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s
+  const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s
+  const b = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s
   return [r, g, b]
 }
 
