@@ -171,6 +171,10 @@ export const ConfigSchema = {
                     secrets: {
                         $ref: "#/components/schemas/AuthSecrets"
                     },
+                    resources: {
+                        $ref: "#/components/schemas/ResourceConfig",
+                        description: "Resource configuration for zaly."
+                    },
                     system: {
                         type: "object",
                         properties: {
@@ -214,10 +218,6 @@ export const ConfigSchema = {
             PluginConfig: {
                 type: "object",
                 properties: {
-                    uri: {
-                        type: "string",
-                        description: "Path to the plugin, either a local path or a remote URI."
-                    },
                     enabled: {
                         type: "boolean",
                         description: "Whether the plugin is enabled. Defaults to true."
@@ -235,6 +235,22 @@ export const ConfigSchema = {
                             type: "string"
                         },
                         description: "When set, exclude the resources, matching these paths/globs from the plugin.\nExclude is applied after include."
+                    },
+                    themes: {
+                        type: "boolean"
+                    },
+                    skills: {
+                        type: "boolean"
+                    },
+                    commands: {
+                        type: "boolean"
+                    },
+                    plugins: {
+                        type: "boolean"
+                    },
+                    uri: {
+                        type: "string",
+                        description: "Path to the plugin, either a local path or a remote URI."
                     }
                 },
                 required: [
@@ -330,6 +346,42 @@ export const ConfigSchema = {
                         ]
                     }
                 ]
+            },
+            ResourceConfig: {
+                type: "object",
+                properties: {
+                    enabled: {
+                        type: "boolean",
+                        description: "Whether the plugin is enabled. Defaults to true."
+                    },
+                    include: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        },
+                        description: "When set, only include the resources, matching these paths/globs from the plugin."
+                    },
+                    exclude: {
+                        type: "array",
+                        items: {
+                            type: "string"
+                        },
+                        description: "When set, exclude the resources, matching these paths/globs from the plugin.\nExclude is applied after include."
+                    },
+                    themes: {
+                        type: "boolean"
+                    },
+                    skills: {
+                        type: "boolean"
+                    },
+                    commands: {
+                        type: "boolean"
+                    },
+                    plugins: {
+                        type: "boolean"
+                    }
+                },
+                required: []
             },
             Recordstringstringstring: {
                 type: "object",
