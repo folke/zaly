@@ -135,6 +135,7 @@ export default defineConfig({
     "typescript/prefer-readonly": "off", // 22
     "typescript/prefer-regexp-exec": "off", // 6
     "typescript/strict-boolean-expressions": "off",
+    "unicorn/max-nested-calls": "off",
     "unicorn/no-null": "error", // 13
     "unicorn/number-literal-case": "off", // disable, since oxfmt formats number literals in lowercase
     "unicorn/prefer-module": "error",
