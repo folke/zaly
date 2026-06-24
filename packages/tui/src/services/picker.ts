@@ -78,7 +78,7 @@ export class Picker {
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
     const prev = opts.clearInput ? this.#input.consume().value : undefined
-    const ref = createRef<Select<T>>()
+    const ref = opts.ref ?? createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#open.set(true)
     const select = ref()

@@ -1,5 +1,6 @@
 import type { Reactive, Ref } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
+import type { NodeActionMap } from "../input/actions.ts"
 import type { ScoredItem, SearchItem } from "../search/matcher.ts"
 import type { SearchItems, SearchOptions } from "../search/search.ts"
 import type { Option, Select, SelectState } from "./select.ts"
@@ -26,6 +27,7 @@ type PickerBaseProps<T extends PickerItem = PickerItem> = SearchOptions<T> & {
   input?: Input | Ref<Input>
   pattern?: Reactive<string>
   reverse?: boolean
+  actions?: NodeActionMap
 }
 
 export type PickerSelectProps<T extends PickerItem = PickerItem> = PickerBaseProps<T> &
@@ -111,6 +113,7 @@ export const picker = widget(
     }
 
     return node.withActions({
+      ...props.actions,
       "picker.next": () => {
         const active = node.active
         const m = matches()

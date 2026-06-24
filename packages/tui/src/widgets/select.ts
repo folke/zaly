@@ -189,6 +189,10 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     return unwrap(this.state.maxHeight) ?? Math.max(this.#items.length, 1)
   }
 
+  get item(): T | undefined {
+    return this.#items[this.active]
+  }
+
   protected _render(ctx: RenderCtx): string[] {
     const items = this.#items
     if (items.length === 0) return []
