@@ -109,16 +109,17 @@ export class ResourcePack extends ResourceProvider {
     return this.#dir
   }
 
-  async get(type: ResourceType) {
+  async get(type: ResourceType, filter = true) {
     let ret = this.#resources.get(type)
-    if (!ret) this.#resources.set(type, (ret = await this.#get(type)))
+    if (!ret) this.#resources.set(type, (ret = await this.#get(type, filter)))
     return ret
   }
 
-  async #get(type: ResourceType) {
-    if (!this.#matcher.use(type)) return []
+  async #get(type: ResourceType, filter = true) {
+    if (filter && !this.#matcher.use(type)) return []
     if (!(await this.exists())) return []
     const ret = await expand(join(this.dir, type), type)
+    if (!filter) return ret
     return ret.filter((path) => this.#matcher.match(path))
   }
 
@@ -129,6 +130,10 @@ export class ResourcePack extends ResourceProvider {
 
   refresh() {
     this.#stat = undefined
+  }
+
+  isPlugin(): this is PluginPack {
+    return false
   }
 }
 
@@ -142,5 +147,9 @@ export class PluginPack extends ResourcePack {
 
   get plugin(): PluginRef {
     return this.#plugin
+  }
+
+  override isPlugin(): this is PluginPack {
+    return true
   }
 }

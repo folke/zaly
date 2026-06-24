@@ -64,10 +64,7 @@ export class ResourceManager extends ResourceProvider {
     return this.#packs.filter((res) => {
       if (!filter) return true
       if (filter.scope && res.scope !== filter.scope) return false
-      if (filter.plugin !== undefined) {
-        const isPlugin = res instanceof PluginPack
-        if (isPlugin !== filter.plugin) return false
-      }
+      if (filter.plugin !== undefined && res.isPlugin() !== filter.plugin) return false
       return true
     })
   }
