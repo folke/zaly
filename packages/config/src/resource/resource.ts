@@ -1,8 +1,10 @@
+import type { Globber } from "@zaly/shared/glob"
 import type { Stats } from "node:fs"
 import type { PluginRef } from "../plugin/uri.ts"
-import type { ConfigScope } from "../types.ts"
+import type { ConfigScope, ResourceFilter } from "../types.ts"
 
 import { normPath } from "@zaly/shared"
+import { globber } from "@zaly/shared/glob"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
 
@@ -57,18 +59,46 @@ export abstract class ResourceProvider {
   }
 }
 
+export class ResourceMatcher {
+  #include?: Globber
+  #exclude?: Globber
+  #types = new Set<ResourceType>()
+  #enabled: boolean
+
+  constructor(opts: ResourceFilter = {}) {
+    this.#enabled = opts.enabled ?? true
+    for (const type of types) {
+      if (!opts.exclude?.includes(type)) this.#types.add(type)
+    }
+    this.#include = opts.include ? globber(opts.include) : undefined
+    this.#exclude = opts.exclude ? globber(opts.exclude) : undefined
+  }
+
+  use(type: ResourceType) {
+    if (!this.#enabled) return false
+    return this.#types.has(type)
+  }
+
+  match(path: string) {
+    if (!this.#enabled) return false
+    if (this.#include && !this.#include(path)) return false
+    if (this.#exclude?.(path)) return false
+    return true
+  }
+}
+
 export class ResourcePack extends ResourceProvider {
   #dir: string
   #stat?: Stats | false
   #scope: ConfigScope
-  #use?: Set<ResourceType>
   #resources = new Map<ResourceType, string[]>()
+  #matcher: ResourceMatcher
 
-  constructor(opts: { dir: string; scope: ConfigScope; resources?: ResourceType[] }) {
+  constructor(opts: { dir: string; scope: ConfigScope; filter?: ResourceFilter }) {
     super()
     this.#dir = opts.dir
     this.#scope = opts.scope
-    if (opts.resources) this.#use = new Set(opts.resources)
+    this.#matcher = new ResourceMatcher(opts.filter)
   }
 
   get scope(): ConfigScope {
@@ -86,9 +116,10 @@ export class ResourcePack extends ResourceProvider {
   }
 
   async #get(type: ResourceType) {
-    if (this.#use && !this.#use.has(type)) return []
+    if (!this.#matcher.use(type)) return []
     if (!(await this.exists())) return []
-    return await expand(join(this.dir, type), type)
+    const ret = await expand(join(this.dir, type), type)
+    return ret.filter((path) => this.#matcher.match(path))
   }
 
   async exists() {
@@ -105,7 +136,7 @@ export class PluginPack extends ResourcePack {
   #plugin: PluginRef
 
   constructor(opts: { plugin: PluginRef; scope: ConfigScope }) {
-    super({ dir: opts.plugin.dir, scope: opts.scope })
+    super({ dir: opts.plugin.dir, filter: opts.plugin, scope: opts.scope })
     this.#plugin = opts.plugin
   }
 

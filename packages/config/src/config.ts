@@ -1,5 +1,5 @@
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
-import type { ResourceType } from "./resource/resource.ts"
+import type { ResourceMatcher, ResourceType } from "./resource/resource.ts"
 import type { ResolvedConfig, Config, ConfigScope } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
@@ -7,6 +7,7 @@ import { zalyPaths } from "@zaly/shared/paths"
 import { stat } from "node:fs/promises"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
+import { resourceMatcher } from "./resource/resource.ts"
 import { settingsReviver } from "./reviver.ts"
 import { merge } from "./utils.ts"
 
@@ -71,6 +72,7 @@ export type ConfigManagerOpts = {
   workspace?: string
   /** Settings to override coming from CLI flags. */
   settings?: Config
+  // FIXME:
   disabled?: ResourceType[]
 }
 

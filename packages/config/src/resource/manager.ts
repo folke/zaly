@@ -1,11 +1,11 @@
 import type { ConfigFile, ConfigManager, ConfigManagerOpts } from "../config.ts"
-import type { ConfigScope } from "../types.ts"
+import type { ConfigScope, PluginSpec } from "../types.ts"
 import type { ResourceType } from "./resource.ts"
 
 import { pluginRef } from "../plugin/uri.ts"
 import { PluginPack, ResourcePack, ResourceProvider } from "./resource.ts"
 
-export type ResourceFilter = { scope?: ConfigScope; plugin?: boolean }
+export type ResourcePackFilter = { scope?: ConfigScope; plugin?: boolean }
 
 /** Resources are sorted from highest to lowest precedence. */
 export class ResourceManager extends ResourceProvider {
@@ -30,25 +30,37 @@ export class ResourceManager extends ResourceProvider {
 
   #add(opts: ConfigFile, dotAgents?: string[]) {
     // Add any file resources from this directory
-    this.#packs.push(new ResourcePack(opts))
+    this.#packs.push(
+      new ResourcePack({ dir: opts.dir, filter: opts.$?.resources, scope: opts.scope })
+    )
 
     // Add any packs from settings.resources.packs
-    for (const spec of opts.$?.plugins ?? []) {
-      const uri = typeof spec === "string" ? spec : spec.uri
-      const plugin = pluginRef(uri, { cwd: opts.dir, data: opts.paths.data })
+    for (const p of opts.$?.plugins ?? []) {
+      const spec: PluginSpec = typeof p === "string" ? { uri: p } : p
+      const plugin = pluginRef(spec, { cwd: opts.dir, data: opts.paths.data })
       const pack = new PluginPack({ plugin, scope: opts.scope })
       this.#packs.push(pack)
     }
 
     // Add any skills from dotAgents paths
+    const res = opts.$?.resources
     for (const dir of dotAgents ?? [])
-      this.#packs.push(new ResourcePack({ dir, resources: ["skills"], scope: opts.scope }))
+      this.#packs.push(
+        new ResourcePack({
+          dir,
+          filter: {
+            ...res,
+            include: ["skills/**"],
+          },
+          scope: opts.scope,
+        })
+      )
     this.refresh()
   }
 
   list(filter?: { plugin: true; scope?: ConfigScope }): PluginPack[]
-  list(filter?: ResourceFilter): ResourcePack[]
-  list(filter?: ResourceFilter): ResourcePack[] {
+  list(filter?: ResourcePackFilter): ResourcePack[]
+  list(filter?: ResourcePackFilter): ResourcePack[] {
     return this.#packs.filter((res) => {
       if (!filter) return true
       if (filter.scope && res.scope !== filter.scope) return false

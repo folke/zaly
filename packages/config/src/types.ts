@@ -3,16 +3,21 @@ import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
 import type { DeepPartial, Simplify } from "@zaly/shared"
 import type { KeyPatterns } from "@zaly/tui"
 
-export type PluginConfig = {
-  /** Path to the plugin, either a local path or a remote URI. */
-  uri: string
+export type ResourceFilter = {
   /** Whether the plugin is enabled. Defaults to true. */
   enabled?: boolean
   /** When set, only include the resources, matching these paths/globs from the plugin. */
   include?: string[]
   /** When set, exclude the resources, matching these paths/globs from the plugin.
+   * Add a resource type to the exclude list to disable that resource type. For example,
+   * `["skills"]` will disable all skills from the plugin.
    * Exclude is applied after include. */
   exclude?: string[]
+}
+
+export type PluginSpec = ResourceFilter & {
+  /** Path to the plugin, either a local path or a remote URI. */
+  uri: string
 }
 
 export type ResolvedConfig = {
@@ -59,9 +64,11 @@ export type ResolvedConfig = {
     deny?: string[]
     ask?: string[]
   }
-  plugins?: (string | PluginConfig)[]
+  plugins?: (string | PluginSpec)[]
   keymap?: Record<string, KeyPatterns>
   secrets?: AuthSecrets
+  /** Resource configuration for zaly. */
+  resources?: ResourceFilter
   /** System integrations and external commands used by zaly. */
   system: {
     /** Command used by the bash tool. */
