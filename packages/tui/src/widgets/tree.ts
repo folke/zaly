@@ -60,10 +60,11 @@ export function tree<T extends TreeItem>(props: TreeProps<T>): Select<T> {
   ret.extendRenderer((prev) => (item, ctx) => {
     const prefix: string[] = []
     const s = ctx.style
+    const itemNode = t.node(item)
     let n = t.node(item)
     while (n?.parent) {
       let icon = ""
-      if (n !== item) icon = n.last ? "  " : icons.vertical
+      if (n !== itemNode) icon = n.last ? "  " : icons.vertical
       else icon = n.last ? icons.last : icons.middle
       prefix.unshift(icon)
       n = t.node(n.parent)
