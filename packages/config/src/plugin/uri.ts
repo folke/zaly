@@ -1,5 +1,3 @@
-import type { PluginSpec } from "../types.ts"
-
 import { encodePath, normPath } from "@zaly/shared"
 import { join } from "pathe"
 
@@ -21,14 +19,14 @@ type PU =
 
 export type PluginType = PU["type"]
 export type PluginUri<T extends PluginType = PluginType> = Extract<PU, { type: T }>
-export type PluginRef<T extends PluginType = PluginType> = PluginUri<T> &
-  PluginSpec & {
-    /** Absolute path for this pack. */
-    dir: string
+export type PluginRef<T extends PluginType = PluginType> = PluginUri<T> & {
+  uri: string
+  /** Absolute path for this pack. */
+  dir: string
 
-    /** Shared store root for packs of this type. */
-    store: string
-  }
+  /** Shared store root for packs of this type. */
+  store: string
+}
 
 export function pluginUri(
   uri: `git:${string}` | `http:${string}` | `https:${string}` | `ssh:${string}`
@@ -47,12 +45,12 @@ export function pluginUri(uri: string): PluginUri {
     : { ref, repo: `${g.protocol}:${g.target}`, type: "git" }
 }
 
-export function pluginRef(spec: PluginSpec, opts: { cwd: string; data: string }): PluginRef {
-  const parsed = pluginUri(spec.uri)
+export function pluginRef(uri: string, opts: { cwd: string; data: string }): PluginRef {
+  const parsed = pluginUri(uri)
   const store = join(opts.data, "packs", parsed.type)
   let dir: string
   if (parsed.type === "dir") dir = normPath(opts.cwd, parsed.path)
   else if (parsed.type === "git") dir = join(store, encodePath(parsed.repo))
   else dir = join(store, "node_modules", parsed.name)
-  return { ...spec, ...parsed, dir, store }
+  return { ...parsed, dir, store, uri }
 }

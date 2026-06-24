@@ -158,21 +158,14 @@ export const ConfigSchema = {
                     plugins: {
                         type: "array",
                         items: {
-                            oneOf: [
-                                {
-                                    type: "string"
-                                },
-                                {
-                                    $ref: "#/components/schemas/PluginConfig"
-                                }
-                            ]
+                            type: "string"
                         }
                     },
                     secrets: {
                         $ref: "#/components/schemas/AuthSecrets"
                     },
                     resources: {
-                        $ref: "#/components/schemas/ResourceConfig",
+                        $ref: "#/components/schemas/RecordstringResourceFilter",
                         description: "Resource configuration for zaly."
                     },
                     system: {
@@ -214,48 +207,6 @@ export const ConfigSchema = {
             },
             AnyTool: {
                 type: "string"
-            },
-            PluginConfig: {
-                type: "object",
-                properties: {
-                    enabled: {
-                        type: "boolean",
-                        description: "Whether the plugin is enabled. Defaults to true."
-                    },
-                    include: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        },
-                        description: "When set, only include the resources, matching these paths/globs from the plugin."
-                    },
-                    exclude: {
-                        type: "array",
-                        items: {
-                            type: "string"
-                        },
-                        description: "When set, exclude the resources, matching these paths/globs from the plugin.\nExclude is applied after include."
-                    },
-                    themes: {
-                        type: "boolean"
-                    },
-                    skills: {
-                        type: "boolean"
-                    },
-                    commands: {
-                        type: "boolean"
-                    },
-                    plugins: {
-                        type: "boolean"
-                    },
-                    uri: {
-                        type: "string",
-                        description: "Path to the plugin, either a local path or a remote URI."
-                    }
-                },
-                required: [
-                    "uri"
-                ]
             },
             AuthSecrets: {
                 type: "object",
@@ -347,7 +298,16 @@ export const ConfigSchema = {
                     }
                 ]
             },
-            ResourceConfig: {
+            RecordstringResourceFilter: {
+                type: "object",
+                properties: {},
+                required: [],
+                description: "Construct a type with a set of properties K of type T",
+                additionalProperties: {
+                    $ref: "#/components/schemas/ResourceFilter"
+                }
+            },
+            ResourceFilter: {
                 type: "object",
                 properties: {
                     enabled: {
@@ -366,19 +326,7 @@ export const ConfigSchema = {
                         items: {
                             type: "string"
                         },
-                        description: "When set, exclude the resources, matching these paths/globs from the plugin.\nExclude is applied after include."
-                    },
-                    themes: {
-                        type: "boolean"
-                    },
-                    skills: {
-                        type: "boolean"
-                    },
-                    commands: {
-                        type: "boolean"
-                    },
-                    plugins: {
-                        type: "boolean"
+                        description: "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
                     }
                 },
                 required: []

@@ -1,5 +1,6 @@
 import type { Globber } from "@zaly/shared/glob"
 import type { Stats } from "node:fs"
+import type { ConfigFile } from "../config.ts"
 import type { PluginRef } from "../plugin/uri.ts"
 import type { ConfigScope, ResourceFilter } from "../types.ts"
 
@@ -8,9 +9,10 @@ import { globber } from "@zaly/shared/glob"
 import { stat } from "node:fs/promises"
 import { join } from "pathe"
 
-export type ResourceType = (typeof types)[number]
+export type ResourceType = (typeof RESOURCE_TYPES)[number]
 
-const types = ["plugins", "skills", "commands", "themes"] as const
+export const RESOURCE_TYPES = ["plugins", "skills", "commands", "themes"] as const
+const types = new Set<string>(RESOURCE_TYPES)
 
 const globs = {
   commands: "*.md",
@@ -60,18 +62,26 @@ export abstract class ResourceProvider {
 }
 
 export class ResourceMatcher {
+  #dir: string
   #include?: Globber
   #exclude?: Globber
   #types = new Set<ResourceType>()
   #enabled: boolean
 
-  constructor(opts: ResourceFilter = {}) {
+  constructor(dir: string, opts: ResourceFilter = {}) {
+    this.#dir = dir
     this.#enabled = opts.enabled ?? true
-    for (const type of types) {
+    for (const type of RESOURCE_TYPES) {
       if (!opts.exclude?.includes(type)) this.#types.add(type)
     }
-    this.#include = opts.include ? globber(opts.include) : undefined
+    this.#include = opts.include
+      ? globber(opts.include.map((t) => (types.has(t) ? `${t}/**` : t)))
+      : undefined
     this.#exclude = opts.exclude ? globber(opts.exclude) : undefined
+  }
+
+  get enabled() {
+    return this.#enabled
   }
 
   use(type: ResourceType) {
@@ -81,41 +91,93 @@ export class ResourceMatcher {
 
   match(path: string) {
     if (!this.#enabled) return false
-    if (this.#include && !this.#include(path)) return false
-    if (this.#exclude?.(path)) return false
+    if (!path.startsWith(this.#dir)) return false
+    const rel = path.slice(this.#dir.length + 1)
+    if (this.#include && !this.#include(rel)) return false
+    if (this.#exclude?.(rel)) return false
     return true
   }
 }
 
+export type ResourcePackOpts = {
+  config: ConfigFile
+  dir: string
+  plugin?: PluginRef
+}
+
+export type PluginPack = ResourcePack & { plugin: PluginRef }
+
 export class ResourcePack extends ResourceProvider {
+  #config: ConfigFile
   #dir: string
   #stat?: Stats | false
-  #scope: ConfigScope
   #resources = new Map<ResourceType, string[]>()
   #matcher: ResourceMatcher
+  #plugin?: PluginRef
+  #disabled: Set<ResourceType>
 
-  constructor(opts: { dir: string; scope: ConfigScope; filter?: ResourceFilter }) {
+  constructor(
+    ref: string | PluginRef,
+    config: ConfigFile,
+    opts: { disabled?: ResourceType[] } = {}
+  ) {
     super()
-    this.#dir = opts.dir
-    this.#scope = opts.scope
-    this.#matcher = new ResourceMatcher(opts.filter)
+    this.#config = config
+    this.#dir = normPath(typeof ref === "string" ? ref : ref.dir)
+    this.#plugin = typeof ref === "string" ? undefined : ref
+    this.#matcher = new ResourceMatcher(this.dir, this.filter)
+    this.#disabled = new Set(opts.disabled)
+  }
+
+  get filter(): ResourceFilter {
+    return this.#config.$?.resources?.[this.id] ?? {}
+  }
+
+  async updateFilter(filter: ResourceFilter) {
+    await this.#config.update((prev) => {
+      const next = { ...prev }
+      next.resources ??= {}
+      next.resources[this.id] = filter
+      return next
+    })
+    this.#matcher = new ResourceMatcher(this.dir, this.filter)
+    this.refresh()
+  }
+
+  get id() {
+    if (this.#dir === this.#config.dir) return "."
+    return this.#plugin?.uri ?? this.#dir
+  }
+
+  get enabled() {
+    return this.#matcher.enabled
+  }
+
+  get plugin(): PluginRef | undefined {
+    return this.#plugin
   }
 
   get scope(): ConfigScope {
-    return this.#scope
+    return this.#config.scope
   }
 
   get dir(): string {
     return this.#dir
   }
 
-  async get(type: ResourceType, filter = true) {
+  async get(type: ResourceType) {
     let ret = this.#resources.get(type)
-    if (!ret) this.#resources.set(type, (ret = await this.#get(type, filter)))
+    if (!ret) this.#resources.set(type, (ret = await this.#get(type)))
     return ret
   }
 
+  async all(type: ResourceType): Promise<Map<string, boolean>> {
+    const all = await this.#get(type, false)
+    return new Map(all.map((path) => [path, this.#matcher.match(path)]))
+  }
+
   async #get(type: ResourceType, filter = true) {
+    if (this.#disabled.has(type)) return []
     if (filter && !this.#matcher.use(type)) return []
     if (!(await this.exists())) return []
     const ret = await expand(join(this.dir, type), type)
@@ -132,24 +194,7 @@ export class ResourcePack extends ResourceProvider {
     this.#stat = undefined
   }
 
-  isPlugin(): this is PluginPack {
-    return false
-  }
-}
-
-export class PluginPack extends ResourcePack {
-  #plugin: PluginRef
-
-  constructor(opts: { plugin: PluginRef; scope: ConfigScope }) {
-    super({ dir: opts.plugin.dir, filter: opts.plugin, scope: opts.scope })
-    this.#plugin = opts.plugin
-  }
-
-  get plugin(): PluginRef {
-    return this.#plugin
-  }
-
-  override isPlugin(): this is PluginPack {
-    return true
+  isPlugin() {
+    return !!this.#plugin
   }
 }

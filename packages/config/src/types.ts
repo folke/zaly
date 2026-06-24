@@ -15,11 +15,6 @@ export type ResourceFilter = {
   exclude?: string[]
 }
 
-export type PluginSpec = ResourceFilter & {
-  /** Path to the plugin, either a local path or a remote URI. */
-  uri: string
-}
-
 export type ResolvedConfig = {
   model?: string
   reasoning: ReasoningEffort
@@ -64,11 +59,11 @@ export type ResolvedConfig = {
     deny?: string[]
     ask?: string[]
   }
-  plugins?: (string | PluginSpec)[]
+  plugins?: string[]
   keymap?: Record<string, KeyPatterns>
   secrets?: AuthSecrets
   /** Resource configuration for zaly. */
-  resources?: ResourceFilter
+  resources?: Record<string, ResourceFilter>
   /** System integrations and external commands used by zaly. */
   system: {
     /** Command used by the bash tool. */

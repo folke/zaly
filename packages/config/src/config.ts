@@ -47,8 +47,11 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> {
     return this.#config
   }
 
-  async update(patch: Config): Promise<this> {
-    this.#config = await writeJson<Config>(this.path, (prev) => merge({}, patch, prev))
+  async update(patch: Config | ((prev?: Config) => Config)): Promise<this> {
+    this.#config = await writeJson<Config>(
+      this.path,
+      typeof patch === "function" ? patch : (prev) => merge({}, patch, prev)
+    )
     return this
   }
 
@@ -69,6 +72,7 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> {
 export type ConfigManagerOpts = {
   cwd?: string
   workspace?: string
+  disabled?: ResourceType[]
   /** Settings to override coming from CLI flags. */
   settings?: Config
 }

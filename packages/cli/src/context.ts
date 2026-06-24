@@ -135,14 +135,12 @@ export class Context extends BaseLogger {
     await this.dotenv()
     const { loadConfig } = await import("@zaly/config")
     return (this.#config = await loadConfig({
+      disabled: (["commands", "plugins", "skills", "themes"] as const).filter(
+        (t) => this.flags[t] === false
+      ),
       settings: {
         model: this.flags.model,
         reasoning: this.flags.reasoning,
-        resources: {
-          exclude: (["commands", "plugins", "skills", "themes"] as const).filter(
-            (t) => this.flags[t] === false
-          ),
-        },
         tools: this.flags.tools,
         ui: {
           theme: this.flags.theme,
