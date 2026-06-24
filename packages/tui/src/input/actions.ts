@@ -247,14 +247,14 @@ export class Actions extends Emitter<ActionEvents> {
     return false
   }
 
-  dispatchKey(routed: RoutedKey): boolean {
+  dispatchKey(routed: RoutedKey, opts: { node?: boolean; global?: boolean } = {}): boolean {
     const actions = (this.#keymap.get(canonical(routed.pattern)) ?? [])
       .map((id) => this.get(id))
       .filter((a): a is Action => !!a)
       .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
     if (!actions.length) return false
-    const nodeActions = actions.filter((a) => !a.fn)
-    const globalActions = actions.filter((a) => a.fn)
+    const nodeActions = (opts.node ?? true) ? actions.filter((a) => !a.fn) : []
+    const globalActions = (opts.global ?? true) ? actions.filter((a) => a.fn) : []
     const target = this.#getTarget()
 
     // Phase 1 - Node actions

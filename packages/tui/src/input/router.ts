@@ -139,8 +139,8 @@ export class InputRouter extends Emitter<InputRouterEvents> {
     void this.emit("key", { event })
     const routed = makeRoutedKey(event)
 
-    // Phase 1 - actions
-    if (this.#actions?.dispatchKey(routed)) return true
+    // Phase 1 - node actions
+    if (this.#actions?.dispatchKey(routed, { global: false, node: true })) return true
 
     // Phase 2 — per-node key bubble. Most-local wins.
     for (let node: Node | undefined = this.#focused; node !== undefined; node = node.parent) {
@@ -148,7 +148,8 @@ export class InputRouter extends Emitter<InputRouterEvents> {
       if (routed.stopped) return true
     }
 
-    return false
+    // Phase 3 - global actions
+    return this.#actions?.dispatchKey(routed, { global: true, node: false }) ?? false
   }
 
   #dispatchPaste(text: string): boolean {
