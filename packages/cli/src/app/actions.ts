@@ -241,6 +241,18 @@ export function appActions({ app }: { app: App }) {
         await packUpdates(app, { notify: true })
       },
     },
+    "resources.pick": {
+      cmd: "resources",
+      desc: "Pick which resources are enabled in the current workspace.",
+      fn: async () => {
+        const { pickResources } = await import("./resources.ts")
+        await pickResources(app)
+      },
+    },
+    // "resources.toggle": {
+    //   desc: "Toggle a resource on or off.",
+    //   keys: ["space", "enter", "ctrl-x"],
+    // },
     "session.new": {
       cmd: "new",
       desc: "Start a new session in the current workspace.",
