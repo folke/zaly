@@ -4,6 +4,7 @@ import type { Dirent } from "node:fs"
 
 import { readdir, realpath } from "node:fs/promises"
 import { dirname } from "pathe"
+import { _globber } from "#glob"
 import { normPath } from "./path.ts"
 import { findUp, gitRoot, safeReadFile, safeStatAsync, toError } from "./utils.ts"
 
@@ -94,15 +95,9 @@ async function readIgnore(path: string): Promise<Ignore | undefined> {
   return content === undefined ? undefined : ignore().add(content)
 }
 
-async function matcher(patterns: string[]) {
-  if (process.versions.bun) {
-    const { Glob } = await import("bun")
-    const globs = patterns.map((p) => new Glob(p))
-    return (path: string) => globs.some((g) => g.match(path))
-  }
-  const { default: picomatch } = await import("picomatch")
-  const isMatch = picomatch(patterns, { dot: true })
-  return (path: string) => isMatch(path)
+export type Globber = (path: string) => boolean
+export function globber(patterns: string[]): Globber {
+  return _globber(patterns)
 }
 
 const CONCURRENCY = 16
@@ -143,7 +138,7 @@ export async function* glob(
     (p) => p.trim() !== ""
   )
   o.depth = Math.min(o.depth, maxPatternDepth(patterns))
-  const match = patterns.length > 0 ? await matcher([...patterns]) : () => true
+  const match = patterns.length > 0 ? globber([...patterns]) : () => true
   const visited = o.follow ? new Set<string>([await realpath(root)]) : undefined
   const matches: string[] = []
   let count = 0

@@ -6,7 +6,7 @@ export default defineConfig({
     // (marked, ~100ms cold) is only pulled by the markdown widget. Keeping
     // both external lets the main bundle stay lean and defers marked until
     // `await import("#md")` actually runs.
-    neverBundle: ["#ansi"],
+    neverBundle: ["#ansi", "#glob"],
     onlyBundle: [
       "ansi-regex",
       "ansi-styles",
@@ -21,11 +21,14 @@ export default defineConfig({
       "wrap-ansi",
       "js-yaml",
       "shell-quote",
+      "picomatch",
     ],
   },
   entry: {
     "ansi.node": "src/runtime/ansi.node.ts",
     "ansi.bun": "src/runtime/ansi.bun.ts",
+    "glob.node": "src/runtime/glob.node.ts",
+    "glob.bun": "src/runtime/glob.bun.ts",
     ansi: "src/ansi.ts",
     cache: "src/cache.ts",
     detect: "src/detect/index.ts",
@@ -48,9 +51,9 @@ export default defineConfig({
     template: "src/template.ts",
   },
   exports: {
-    // `ansi`/`md` are entries only so tsdown emits them as separate
+    // `ansi`/`glob` are entries only so tsdown emits them as separate
     // chunks (for `publishConfig.imports` to point at). They're not
     // part of the public surface.
-    exclude: ["ansi.*"],
+    exclude: ["ansi.*", "glob.*"],
   },
 })

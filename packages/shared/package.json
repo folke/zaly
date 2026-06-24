@@ -19,6 +19,10 @@
     "#ansi": {
       "bun": "./src/runtime/ansi.bun.ts",
       "default": "./dist/ansi.node.mjs"
+    },
+    "#glob": {
+      "bun": "./src/runtime/glob.bun.ts",
+      "default": "./dist/glob.node.mjs"
     }
   },
   "exports": {
