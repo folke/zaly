@@ -63,6 +63,7 @@ export function tree<T extends TreeItem>(props: TreeProps<T>): Select<T> {
     const itemNode = t.node(item)
     let n = t.node(item)
     while (n?.parent) {
+      if (props.root !== true && n.parent === props.tree) break
       let icon = ""
       if (n !== itemNode) icon = n.last ? "  " : icons.vertical
       else icon = n.last ? icons.last : icons.middle
