@@ -1,11 +1,10 @@
 import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
-import type { ActionDef, Theme } from "@zaly/tui"
-import type { PickerItem } from "@zaly/tui/widgets/picker"
-import type { Option, Select } from "@zaly/tui/widgets/select"
+import type { ActionDef } from "@zaly/tui"
+import type { Option } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
-import { formatNumber, prettyPath } from "@zaly/shared"
-import { createRef, defineAction, untrack } from "@zaly/tui"
+import { prettyPath } from "@zaly/shared"
+import { defineAction } from "@zaly/tui"
 import { REASONING_EFFORTS } from "../context.ts"
 
 export type AppAction = keyof ReturnType<typeof appActions>
@@ -43,33 +42,8 @@ export function appActions({ app }: { app: App }) {
       cmd: "model",
       desc: "Switch the model used for future agent turns.",
       fn: async (ctx) => {
-        const model = await app.ctx.model()
-        const filter = ctx.args?._.join(" ") ?? ""
-        const models = await model.list({
-          auth: ctx.args?.all ? undefined : true,
-          filter: filter.length > 0 ? filter : undefined,
-        })
-
-        const items: Option[] = []
-        for (const m of models) {
-          items.push({
-            desc: [
-              formatNumber(m.contextSize),
-              m.reasoning ? "reasoning" : undefined,
-              ...m.input.filter((mod) => mod !== "text").toSorted(),
-            ]
-              .filter(Boolean)
-              .join(", "),
-            name: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
-            text: m.id,
-          })
-        }
-        const ret = await app.pick({
-          items,
-          reverse: true,
-          sort: ["score:desc", "idx"],
-        })
-        if (ret) model.active = await model.load(ret.text)
+        const { pickModel } = await import("./model.ts")
+        await pickModel(app, { all: ctx.args?.all, filter: ctx.args?._.join(" ") })
       },
     }),
     "app.cancel": {
@@ -175,45 +149,8 @@ export function appActions({ app }: { app: App }) {
       cmd: "theme",
       desc: "Choose a color theme for the current TUI session.",
       fn: async () => {
-        const { themeRegistry, loadTheme } = await import("@zaly/tui/themes")
-        const custom = await app.ctx.config.resources.themes()
-
-        // All themes (including duplicates), sorted by highest to lowest precedence.
-        const all = await Promise.all([...custom, ...themeRegistry.keys()].map(loadTheme))
-
-        // Filter out duplicates, keeping the first (highest precedence) theme with a given ID.
-        const seen = new Set<string>()
-        const themes = all.filter((t) => {
-          if (seen.has(t.id)) return false
-          seen.add(t.id)
-          return true
-        })
-
-        type ThemeItem = PickerItem & { theme: Theme; id: string }
-
-        const items: ThemeItem[] = themes
-          .map((t) => ({
-            id: t.id,
-            // name: t.name ?? t.id,
-            text: t.name ?? t.id,
-            theme: t,
-          }))
-          .toSorted((a, b) => a.text.localeCompare(b.text))
-
-        const current = untrack(() => app.renderer.theme)
-        const ret = await app.pick({
-          active: items.findIndex((i) => i.id === current.id),
-          items,
-          ref: createRef<Select<ThemeItem>>(undefined, {
-            onSet: (select) => {
-              select.on("changed", async ({ item }) => (app.renderer.theme = item.theme))
-            },
-          }),
-          reverse: true,
-          sort: true,
-        })
-        app.renderer.theme = ret?.theme ?? current
-        if (ret) await app.ctx.config.update({ ui: { theme: ret.id } })
+        const { pickTheme } = await import("./themes.ts")
+        await pickTheme(app)
       },
     },
     "composer.history": {
@@ -251,10 +188,6 @@ export function appActions({ app }: { app: App }) {
         await pickResources(app)
       },
     },
-    // "resources.toggle": {
-    //   desc: "Toggle a resource on or off.",
-    //   keys: ["space", "enter", "ctrl-x"],
-    // },
     "session.new": {
       cmd: "new",
       desc: "Start a new session in the current workspace.",

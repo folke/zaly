@@ -3,29 +3,6 @@ import type { AppState } from "../types.ts"
 import type { App } from "./app.ts"
 
 import { registerSecrets } from "@zaly/ai"
-import { toError } from "@zaly/shared"
-
-export async function bootstrapModel(
-  agent: Agent,
-  app: App,
-  opts: { notify?: boolean; force?: boolean } = {}
-): Promise<void> {
-  const ctx = app.ctx
-  const settings = ctx.config.$
-  const modelId = ctx.flags.model ?? agent.session.settings.modelId ?? settings.model
-  if (!modelId) return
-  const model = await ctx.model()
-  if (model.active && !opts.force) return
-  try {
-    model.active = await model.load({ apiKey: ctx.flags.apiKey, id: modelId })
-  } catch (error) {
-    if (opts.notify)
-      app.notify(`Failed to load model **${modelId}**:\n${toError(error).message}`, {
-        level: "error",
-        title: "Model Load Error",
-      })
-  }
-}
 
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
@@ -39,6 +16,7 @@ export async function bootstrapModel(
  */
 export async function loadAgent(app: App): Promise<Agent> {
   const { createAgent } = await import("@zaly/agent")
+  const { bootstrapModel } = await import("./model.ts")
   const ctx = app.ctx
   const session = await ctx.session()
   const settings = ctx.config.$

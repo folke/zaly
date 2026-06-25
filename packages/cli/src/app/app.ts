@@ -12,7 +12,7 @@ import { createRef, createRenderer, createStore, effect, memo, toAccessor } from
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
-import { attachState, bootstrapModel, loadAgent } from "./agent.ts"
+import { attachState, loadAgent } from "./agent.ts"
 
 /**
  * App = the long-lived glue between Agent and Renderer. Startup is
@@ -226,6 +226,7 @@ export class App {
     attachState(this.#agent, this.#state)
 
     await this.loadResources()
+    const { bootstrapModel } = await import("./model.ts")
     await bootstrapModel(this.#agent, this, { notify: true })
 
     void import("./stream.ts").then(({ attachStream }) => attachStream(this))
