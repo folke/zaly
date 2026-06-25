@@ -1,4 +1,10 @@
-import type { ResourceFilter, ResourcePack, ResourceType } from "@zaly/config"
+import type {
+  ConfigScope,
+  ResourceFilter,
+  ResourcePack,
+  ResourcePackFilter,
+  ResourceType,
+} from "@zaly/config"
 import type { AnyStyle, RenderCtx } from "@zaly/tui"
 import type { Option, Select } from "@zaly/tui/widgets/select"
 import type { TreeItem } from "@zaly/tui/widgets/tree"
@@ -139,8 +145,8 @@ class Resources {
     })
   }
 
-  async tree(): Promise<ResourceItem> {
-    const packs = this.app.ctx.config.resources.list()
+  async tree(filter?: ResourcePackFilter): Promise<ResourceItem> {
+    const packs = this.app.ctx.config.resources.list(filter)
     const root: ResourceItem = {
       children: [],
       enabled: true,
@@ -185,9 +191,16 @@ class Resources {
   }
 }
 
-export async function pickResources(app: App) {
+export async function pickResources(app: App, opts: { scope?: ConfigScope } = {}) {
   const resources = new Resources(app)
-  const root = await resources.tree()
+  const root = await resources.tree({ scope: opts.scope })
+  if (!root.children?.length) {
+    app.notify(`No ${opts.scope ? `**${opts.scope}** ` : ""}resources found.`, {
+      level: "warn",
+      title: "Resources",
+    })
+    return
+  }
   const ref = createRef<Select<ResourceItem>>()
   const action = app.actions.get("resources.toggle")
   const keys = (action?.keys ?? ["space", "enter"]).map((k) => `\`<${k}>\``).join(" / ")
@@ -210,7 +223,7 @@ export async function pickResources(app: App) {
     maxHeight: app.$.ui.treeHeight,
     ref,
     render: (item, ctx) => item.render(ctx),
-    title: "Select resources to enable",
+    title: `Manage ${opts.scope ?? "all"} resources`,
     tree: root,
   })
   await resources.save()

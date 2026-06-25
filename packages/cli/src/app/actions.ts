@@ -180,14 +180,29 @@ export function appActions({ app }: { app: App }) {
         await packUpdates(app, { notify: true })
       },
     },
-    "resources.pick": {
+    "resources.pick": defineAction({
+      args: {
+        project: {
+          desc: "Configure project resources only.",
+          short: "p",
+          type: "boolean",
+        },
+        user: {
+          desc: "Configure user resources only.",
+          short: "u",
+          type: "boolean",
+        },
+      },
       cmd: "resources",
       desc: "Pick which resources are enabled in the current workspace.",
-      fn: async () => {
+      fn: async ({ args }) => {
         const { pickResources } = await import("./resources.ts")
-        await pickResources(app)
+        await pickResources(app, {
+          // oxlint-disable-next-line no-nested-ternary
+          scope: args?.project ? "project" : args?.user ? "user" : undefined,
+        })
       },
-    },
+    }),
     "session.new": {
       cmd: "new",
       desc: "Start a new session in the current workspace.",
