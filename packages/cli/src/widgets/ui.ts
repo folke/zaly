@@ -4,7 +4,7 @@ import type { App } from "../app/app.ts"
 import type { Composer } from "../app/composer.ts"
 
 import { extractFileUsage } from "@zaly/agent"
-import { memo } from "@zaly/tui"
+import { memo, toAccessor } from "@zaly/tui"
 import { autocomplete } from "@zaly/tui/widgets/autocomplete"
 import { box } from "@zaly/tui/widgets/box"
 import { actionsSource, filesSource } from "@zaly/tui/widgets/completions"
@@ -51,7 +51,7 @@ export const autocompleteOverlay = (props: {
       return (file: string) => scores.get(resolve(file)) ?? 0
     },
     input: props.composer,
-    maxHeight: memo(() => props.app.$.ui.listHeight),
+    maxHeight: toAccessor(() => props.app.$.ui.listHeight),
     reverse: true,
     sortEmpty: true,
     sources: {
