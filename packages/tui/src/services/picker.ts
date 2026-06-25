@@ -19,7 +19,6 @@ export type PickOpts<T extends Option = Option> = {
   title?: string
   ref?: Ref<Select<T>>
   details?: Widget | string
-  onOpen?: (select: Select<T>) => void
   clearInput?: boolean
 } & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
@@ -83,8 +82,6 @@ export class Picker {
     this.#open.set(true)
     const select = ref()
     const ac = new AbortController()
-
-    if (opts.onOpen) opts.onOpen(select)
 
     const done = (value?: T) => {
       if (settled) return

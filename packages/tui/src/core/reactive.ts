@@ -911,19 +911,35 @@ export function createIterable<T>(
   )
 }
 
-export type Ref<T> = (() => T) & { value: T }
+export interface Ref<T> {
+  (): T
+  get value(): T | undefined
+  set value(value: T)
+}
 
-export function createRef<T>(value?: T): Ref<T> {
-  let current: T | undefined = value
+export function createRef<T>(
+  value?: T,
+  opts: { onSet?: (value: T, prev: T | undefined) => void | (() => void) } = {}
+): Ref<T> {
+  let current = value
+  let cleanup: (() => void) | undefined
+
   const get = (): T => {
     if (current === undefined) throw new Error("Ref value accessed before initialization")
     return current
   }
+
   Object.defineProperty(get, "value", {
-    get,
+    get: () => current,
     set: (v: T) => {
+      if (current === v) return
+      cleanup?.()
+      cleanup = undefined
+      const prev = current
       current = v
+      cleanup = opts.onSet?.(v, prev) ?? undefined
     },
   })
+
   return get as Ref<T>
 }

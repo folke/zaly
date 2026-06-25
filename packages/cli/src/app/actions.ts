@@ -1,11 +1,11 @@
 import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
 import type { ActionDef, Theme } from "@zaly/tui"
 import type { PickerItem } from "@zaly/tui/widgets/picker"
-import type { Option } from "@zaly/tui/widgets/select"
+import type { Option, Select } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
 import { formatNumber, prettyPath } from "@zaly/shared"
-import { defineAction, untrack } from "@zaly/tui"
+import { createRef, defineAction, untrack } from "@zaly/tui"
 import { REASONING_EFFORTS } from "../context.ts"
 
 export type AppAction = keyof ReturnType<typeof appActions>
@@ -189,7 +189,9 @@ export function appActions({ app }: { app: App }) {
           return true
         })
 
-        const items: (PickerItem & { id: string; theme: Theme })[] = themes
+        type ThemeItem = PickerItem & { theme: Theme; id: string }
+
+        const items: ThemeItem[] = themes
           .map((t) => ({
             id: t.id,
             // name: t.name ?? t.id,
@@ -202,11 +204,11 @@ export function appActions({ app }: { app: App }) {
         const ret = await app.pick({
           active: items.findIndex((i) => i.id === current.id),
           items,
-          onOpen: (select) => {
-            select.on("changed", async ({ item }) => {
-              app.renderer.theme = item.theme
-            })
-          },
+          ref: createRef<Select<ThemeItem>>(undefined, {
+            onSet: (select) => {
+              select.on("changed", async ({ item }) => (app.renderer.theme = item.theme))
+            },
+          }),
           reverse: true,
           sort: true,
         })
