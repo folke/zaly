@@ -44,5 +44,7 @@ export async function pickTheme(app: App) {
     sort: true,
   })
   app.renderer.theme = ret?.theme ?? current
-  if (ret) await app.ctx.config.update({ ui: { theme: ret.id } })
+  if (!ret) return
+  await app.ctx.config.update({ ui: { theme: ret.id } })
+  return ret.id
 }

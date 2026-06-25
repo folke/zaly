@@ -207,7 +207,7 @@ export async function pickResources(app: App, opts: { scope?: ConfigScope } = {}
   await app.pick({
     actions: {
       "resources.toggle": {
-        desc: "Manage resources",
+        desc: "Toggle a resource",
         fn: () => {
           const select = ref()
           const active = select.item

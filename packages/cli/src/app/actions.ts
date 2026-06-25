@@ -159,6 +159,14 @@ export function appActions({ app }: { app: App }) {
       fn: () => void app.composer.pickHistory(),
       keys: ["ctrl-r"],
     },
+    "config.edit": {
+      cmd: "config",
+      desc: "Edit the current workspace configuration.",
+      fn: async () => {
+        const { editConfig } = await import("./config.ts")
+        await editConfig(app)
+      },
+    },
     "global.quit": {
       cmd: "quit",
       desc: "Quit zaly.",
