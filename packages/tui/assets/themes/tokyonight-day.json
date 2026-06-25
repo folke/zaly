@@ -118,7 +118,7 @@
   "subtle": "#d0d5e3",
   "success": "#118c74",
   "syntaxBoolean": {
-    "fg": "#b15c00"
+    "fg": "#188092"
   },
   "syntaxBracket": {
     "fg": "#6172b0"
@@ -136,7 +136,7 @@
     "fg": "#2e7de9"
   },
   "syntaxNumber": {
-    "fg": "#188092"
+    "fg": "#b15c00"
   },
   "syntaxSpecial": {
     "fg": "#188092"
