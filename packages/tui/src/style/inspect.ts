@@ -55,7 +55,7 @@ export function inspectFormat(msg: unknown[], opts: InspectOpts = {}): string {
   return ret.map((v) => (typeof v === "string" ? v : inspect(v, opts))).join(" ")
 }
 
-export function inspect(value: unknown, opts: InspectOpts): string {
+export function inspect(value: unknown, opts: InspectOpts = {}): string {
   opts = { colors: hasColors, null: true, undefined: true, ...opts }
   const indent = opts.indent ?? 2
   const s = opts.colors ? (opts.style ?? styleBuilder()) : styleBuilder(false)

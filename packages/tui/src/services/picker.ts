@@ -26,7 +26,7 @@ export class Picker {
   #ui: OverlaySurface
   #input: Input
   #open = signal(false)
-  #close?: () => void
+  #active: Overlay[] = []
 
   constructor(ui: OverlaySurface, input: Input) {
     this.#ui = ui
@@ -67,18 +67,26 @@ export class Picker {
     )
   }
 
-  close() {
-    if (this.#close) this.#close()
-    this.#close = undefined
+  close(opts: { all?: boolean } = {}) {
+    while (this.#active.length > 0) {
+      const node = this.#active.pop()!
+      this.#ui.close(node)
+      if (!opts.all) break
+    }
+  }
+
+  get active() {
+    return this.#active.at(-1)
   }
 
   async pick<T extends Option = Option>(opts: PickOpts<T>): Promise<T | undefined> {
-    this.close()
+    this.active?.hide()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
-    const prev = opts.clearInput ? this.#input.consume().value : undefined
+    const prev = (opts.clearInput ?? this.#active.length) ? this.#input.consume().value : undefined
     const ref = opts.ref ?? createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
+    this.#active.push(node)
     this.#open.set(true)
     const select = ref()
     const ac = new AbortController()
@@ -87,17 +95,17 @@ export class Picker {
       if (settled) return
       settled = true
       ac.abort()
-      this.#open.set(false)
+      this.#active = this.#active.filter((n) => n !== node)
       if (prev !== undefined) this.#input.replace(prev)
       res.resolve(value)
       this.#ui.close(node)
+      this.active?.show()
+      this.#open.set(this.#active.length > 0)
     }
 
     node.once("unmount", () => done(), { signal: ac.signal })
     select.once("cancel", () => done(), { signal: ac.signal })
     select.once("accept", ({ item }) => done(item), { signal: ac.signal })
-
-    this.#close = done
 
     return res.promise
   }
