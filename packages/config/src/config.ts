@@ -1,9 +1,11 @@
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
+import type { PropPath, PropValue } from "@zaly/shared/prop"
 import type { ResourceType } from "./resource/resource.ts"
 import type { Config, ConfigScope, ResolvedConfig } from "./types.ts"
 
 import { normPath, readJson, withError, writeJson } from "@zaly/shared"
 import { zalyPaths } from "@zaly/shared/paths"
+import { propGet, propSet } from "@zaly/shared/prop"
 import { stat } from "node:fs/promises"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
@@ -53,6 +55,18 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> {
       typeof patch === "function" ? patch : (prev) => merge({}, patch, prev)
     )
     return this
+  }
+
+  propGet<K extends PropPath<Config>>(path: K): PropValue<Config, K> | undefined {
+    return this.#config ? propGet(this.#config, path) : undefined
+  }
+
+  async propSet<K extends PropPath<Config>>(path: K, value: PropValue<Config, K>): Promise<this> {
+    return this.update((prev) => {
+      const next = { ...prev }
+      propSet(next, path, value)
+      return next
+    })
   }
 
   async refresh(): Promise<this> {

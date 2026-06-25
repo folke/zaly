@@ -82,6 +82,10 @@
       "bun": "./src/process/index.ts",
       "default": "./dist/process.mjs"
     },
+    "./prop": {
+      "bun": "./src/prop.ts",
+      "default": "./dist/prop.mjs"
+    },
     "./registry": {
       "bun": "./src/registry.ts",
       "default": "./dist/registry.mjs"
@@ -124,6 +128,7 @@
       "./minheap": "./dist/minheap.mjs",
       "./paths": "./dist/paths.mjs",
       "./process": "./dist/process.mjs",
+      "./prop": "./dist/prop.mjs",
       "./registry": "./dist/registry.mjs",
       "./shell": "./dist/shell.mjs",
       "./template": "./dist/template.mjs",

@@ -134,12 +134,7 @@ export class ResourcePack extends ResourceProvider {
   }
 
   async updateFilter(filter: ResourceFilter) {
-    await this.#config.update((prev) => {
-      const next = { ...prev }
-      next.resources ??= {}
-      next.resources[this.id] = filter
-      return next
-    })
+    await this.#config.propSet(["resources", this.id], filter)
     this.#matcher = new ResourceMatcher(this.dir, this.filter)
     this.refresh()
   }
