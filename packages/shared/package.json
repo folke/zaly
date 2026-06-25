@@ -173,7 +173,7 @@
     "is-fullwidth-code-point": "5.1.0",
     "js-yaml": "5.1.0",
     "picomatch": "4.0.4",
-    "shell-quote": "1.8.4",
+    "shell-quote": "1.9.0",
     "slice-ansi": "9.0.0",
     "string-width": [
       "8.2.0",
