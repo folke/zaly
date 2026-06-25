@@ -10,7 +10,7 @@ export const defaultSettings = {
   ui: {
     collapsedTools: ["read"],
     images: true,
-    listHeight: 8,
+    listHeight: 10,
     reasoning: true,
     theme: "tokyonight-moon",
     tree: ["assistant", "reasoning", "tools"],
