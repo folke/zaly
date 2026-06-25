@@ -112,8 +112,7 @@
     "italic": true
   },
   "selection": {
-    "bg": "#2d3f76",
-    "bold": true
+    "bg": "#2d3f76"
   },
   "shiki": "tokyo-night",
   "subtle": "#1e2030",
