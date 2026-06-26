@@ -35,6 +35,7 @@ export default defineConfig({
     collection: "src/collection.ts",
     detect: "src/detect/index.ts",
     prop: "src/prop.ts",
+    json: "src/json.ts",
     env: "src/env.ts",
     find: "src/find.ts",
     glob: "src/glob.ts",

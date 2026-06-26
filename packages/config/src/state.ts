@@ -1,6 +1,6 @@
 import type { State } from "./types.ts"
 
-import { safeReadJson, writeJson } from "@zaly/shared"
+import { safeReadJson, writeJson } from "@zaly/shared/json"
 import { zalyPaths } from "@zaly/shared/paths"
 import { merge } from "./utils.ts"
 

@@ -23,7 +23,7 @@ export async function loadAgent(app: App): Promise<Agent> {
   const ss = session.settings
   const p = settings.permissions
 
-  if (ctx.config.user.$?.secrets) await registerSecrets(ctx.config.user.$.secrets)
+  if (ctx.config.user.$.secrets) await registerSecrets(ctx.config.user.$.secrets)
 
   const cwd = ctx.flags.cwd ?? ss.cwd ?? ctx.config.paths.cwd
 

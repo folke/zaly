@@ -13,7 +13,7 @@ import { REASONING_EFFORTS } from "../context.ts"
 
 type ConfigProp<T = unknown> = PropPath<Config, T>
 type ConfigValue<T extends ConfigProp> = PropValue<Config, T>
-type ConfigItem<T extends ConfigProp = ConfigProp, V = NonNullable<ConfigValue<T>>> = PickerItem & {
+type ConfigItem<T extends ConfigProp = ConfigProp, V = ConfigValue<T>> = PickerItem & {
   name: string
   prop: T
   value?: V
@@ -51,15 +51,14 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
     const def = propGet(defaultSettings as Config, item.prop) as ConfigValue<T>
     if (def !== undefined && item.options && !item.options.find((o) => is(o, def)))
       throw new Error(`Default value ${inspect(def)} not in options for ${inspect(item.prop)}`)
-    let value = config.propGet(item.prop) ?? def
+    let value = config.get(item.prop) ?? def
     const options = item.options
 
     let t = item.toggle
     t ??= options
       ? () => {
-          let idx = value === undefined ? -1 : options.findIndex((o) => is(o, value))
-          idx = idx === -1 ? 0 : (idx + 1) % options.length
-          value = options[idx]
+          const idx = value === undefined ? -1 : options.findIndex((o) => is(o, value))
+          value = options[(idx + 1) % options.length]
         }
       : undefined
     if (!t) throw new Error(`Options must be provided for ${inspect(item.prop)}`)
@@ -161,7 +160,7 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
   for (const item of items) {
     if (is(item.value, item.initial)) continue
     // oxlint-disable-next-line no-await-in-loop
-    await config.propSet(item.prop, is(item.value, item.default) ? undefined : item.value)
+    await config.set(item.prop, is(item.value, item.default) ? undefined : item.value)
     changed = true
   }
   if (!changed) return

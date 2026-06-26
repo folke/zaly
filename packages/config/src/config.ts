@@ -1,40 +1,33 @@
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
-import type { PropPath, PropValue } from "@zaly/shared/prop"
 import type { ResourceType } from "./resource/resource.ts"
 import type { Config, ConfigScope, ResolvedConfig } from "./types.ts"
 
-import { normPath, readJson, withError, writeJson } from "@zaly/shared"
+import { normPath } from "@zaly/shared"
+import { JsonFile } from "@zaly/shared/json"
 import { zalyPaths } from "@zaly/shared/paths"
-import { propGet, propSet } from "@zaly/shared/prop"
-import { stat } from "node:fs/promises"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
 import { settingsReviver } from "./reviver.ts"
 import { merge } from "./utils.ts"
 
-export class ConfigFile<T extends ConfigScope = ConfigScope> {
-  #config?: Config
+export class ConfigFile<T extends ConfigScope = ConfigScope> extends JsonFile<Config, Config> {
   #scope: T
   #paths: EnvPaths
-  #path: string
 
-  private constructor(paths: EnvPaths, scope: ConfigScope) {
+  protected constructor(paths: EnvPaths, scope: T) {
+    super(normPath(paths.config, "config.json"), {
+      default: {},
+      reviver: settingsReviver,
+      validate: (data) =>
+        import("./schemas/gen/config.ts").then(({ validateConfig }) => validateConfig(data)),
+    })
     this.#paths = paths
-    this.#scope = scope as T
-    this.#path = normPath(paths.config, "config.json")
+    this.#scope = scope
   }
 
   static async load<T extends ConfigScope>(paths: EnvPaths, scope: T): Promise<ConfigFile<T>> {
     const file = new ConfigFile<T>(paths, scope)
     return await file.refresh()
-  }
-
-  get dir(): string {
-    return this.#paths.config
-  }
-
-  get path(): string {
-    return this.#path
   }
 
   get paths(): EnvPaths {
@@ -45,41 +38,8 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> {
     return this.#scope
   }
 
-  get $(): Config | undefined {
-    return this.#config
-  }
-
-  async update(patch: Config | ((prev?: Config) => Config)): Promise<this> {
-    this.#config = await writeJson<Config>(
-      this.path,
-      typeof patch === "function" ? patch : (prev) => merge({}, patch, prev)
-    )
-    return this
-  }
-
-  propGet<K extends PropPath<Config>>(path: K): PropValue<Config, K> | undefined {
-    return this.#config ? propGet(this.#config, path) : undefined
-  }
-
-  async propSet<K extends PropPath<Config>>(path: K, value: PropValue<Config, K>): Promise<this> {
-    return this.update((prev) => {
-      const next = { ...prev }
-      propSet(next, path, value)
-      return next
-    })
-  }
-
-  async refresh(): Promise<this> {
-    this.#config = undefined
-    const { validateConfig } = await import("./schemas/gen/config.ts")
-    const s = await stat(this.path).catch(() => undefined)
-    if (!s?.isFile()) return this
-    const data = await withError(
-      () => readJson(this.path, settingsReviver),
-      `Failed to load config from \`${this.path}\``
-    )
-    this.#config = validateConfig(data)
-    return this
+  override async update(patch: Config | ((prev?: Config) => Config)): Promise<this> {
+    return super.update(typeof patch === "function" ? patch : (prev) => merge({}, patch, prev))
   }
 }
 

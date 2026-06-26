@@ -66,6 +66,10 @@
       "bun": "./src/image/index.ts",
       "default": "./dist/image.mjs"
     },
+    "./json": {
+      "bun": "./src/json.ts",
+      "default": "./dist/json.mjs"
+    },
     "./logger": {
       "bun": "./src/logger.ts",
       "default": "./dist/logger.mjs"
@@ -124,6 +128,7 @@
       "./find": "./dist/find.mjs",
       "./glob": "./dist/glob.mjs",
       "./image": "./dist/image.mjs",
+      "./json": "./dist/json.mjs",
       "./logger": "./dist/logger.mjs",
       "./minheap": "./dist/minheap.mjs",
       "./paths": "./dist/paths.mjs",

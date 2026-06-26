@@ -31,7 +31,7 @@ export class ResourceManager extends ResourceProvider {
     this.#packs.push(new ResourcePack(config.dir, config))
 
     // Add any packs from settings.resources.packs
-    for (const uri of config.$?.plugins ?? []) {
+    for (const uri of config.$.plugins ?? []) {
       const plugin = pluginRef(uri, { cwd: config.dir, data: config.paths.data })
       const pack = new ResourcePack(plugin, config)
       this.#packs.push(pack)
