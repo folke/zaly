@@ -18,16 +18,18 @@ export async function pickModel(
 
   const items: Option[] = []
   for (const m of models) {
+    const name = (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name
     items.push({
       desc: [
         formatNumber(m.contextSize),
         m.reasoning ? "reasoning" : undefined,
         ...m.input.filter((mod) => mod !== "text").toSorted(),
+        m.env?.toSorted().map((e) => `$${e}`),
       ]
         .filter(Boolean)
         .join(", "),
-      name: (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name,
-      text: m.id,
+      name,
+      text: `${m.id} ${name}`,
     })
   }
   const ret = await app.pick({
