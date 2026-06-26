@@ -64,6 +64,11 @@ function inspectNumber(value: number): string {
     .replace(/,/g, "_")
 }
 
+function inspectField(key: string, s: StyleBuilder): string {
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) return s.syntaxField(key)
+  return s.syntaxString(JSON.stringify(key))
+}
+
 export function inspect(value: unknown, opts: InspectOpts = {}): string {
   opts = { colors: hasColors, null: true, undefined: true, ...opts }
   const indent = opts.indent ?? 2
@@ -115,7 +120,7 @@ export function inspect(value: unknown, opts: InspectOpts = {}): string {
           .filter(
             ([_, val]) => !((val === undefined && !opts.undefined) || (val === null && !opts.null))
           )
-          .map(([key, val]) => `${s.syntaxField(key)}: ${$inspect(val, depth + 1)}`)
+          .map(([key, val]) => `${inspectField(key, s)}: ${$inspect(val, depth + 1)}`)
         if (indent) {
           const padding = " ".repeat(indent * depth)
           return `${sym["{"]}\n${padding}${entries.join(`${sym[","]}\n${padding}`)}\n${" ".repeat(indent * (depth - 1))}${sym["}"]}`
