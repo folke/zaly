@@ -142,7 +142,7 @@ export class App {
       logger: this.#ctx.logger.child("renderer"),
       reporter: {
         wrap: (node) => {
-          const n = box({ padding: [1, 0, 0, 0], sticky: this.#loading }, node)
+          const n = box({ padding: [1, 0, 0, 1], sticky: this.#loading }, node)
           if (this.#loading) this.#stickyLogs.push(n)
           return n
         },
