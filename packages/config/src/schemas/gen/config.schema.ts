@@ -55,7 +55,7 @@ export const ConfigSchema = {
                                 type: "string",
                                 description: "Theme name or path to custom theme file"
                             },
-                            tree: {
+                            sessionTree: {
                                 type: "array",
                                 items: {
                                     type: "string",

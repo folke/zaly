@@ -10,8 +10,8 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     if (undefined === value)
         return true;
     return false;
-})); const _io1 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.collapsedTools || Array.isArray(input.collapsedTools) && input.collapsedTools.every((elem: any, _index3: number) => "string" === typeof elem)) && (undefined === input.images || "boolean" === typeof input.images) && (undefined === input.listHeight || "number" === typeof input.listHeight) && (undefined === input.reasoning || "boolean" === typeof input.reasoning) && (undefined === input.theme || "string" === typeof input.theme) && (undefined === input.tree || Array.isArray(input.tree) && input.tree.every((elem: any, _index4: number) => "reasoning" === elem || "tools" === elem || "system" === elem || "assistant" === elem)) && (undefined === input.treeHeight || "number" === typeof input.treeHeight) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-    if (["collapsedTools", "images", "listHeight", "reasoning", "theme", "tree", "treeHeight"].some((prop: any) => key === prop))
+})); const _io1 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.collapsedTools || Array.isArray(input.collapsedTools) && input.collapsedTools.every((elem: any, _index3: number) => "string" === typeof elem)) && (undefined === input.images || "boolean" === typeof input.images) && (undefined === input.listHeight || "number" === typeof input.listHeight) && (undefined === input.reasoning || "boolean" === typeof input.reasoning) && (undefined === input.theme || "string" === typeof input.theme) && (undefined === input.sessionTree || Array.isArray(input.sessionTree) && input.sessionTree.every((elem: any, _index4: number) => "reasoning" === elem || "tools" === elem || "system" === elem || "assistant" === elem)) && (undefined === input.treeHeight || "number" === typeof input.treeHeight) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    if (["collapsedTools", "images", "listHeight", "reasoning", "theme", "sessionTree", "treeHeight"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -295,28 +295,28 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".theme",
     expected: "(string | undefined)",
     value: input.theme
-}, _errorFactory)) && (undefined === input.tree || (Array.isArray(input.tree) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory)) && (undefined === input.sessionTree || (Array.isArray(input.sessionTree) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".tree",
+    path: _path + ".sessionTree",
     expected: "(Array<\"reasoning\" | \"tools\" | \"system\" | \"assistant\"> | undefined)",
-    value: input.tree
-}, _errorFactory)) && input.tree.every((elem: any, _index18: number) => "reasoning" === elem || "tools" === elem || "system" === elem || "assistant" === elem || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    value: input.sessionTree
+}, _errorFactory)) && input.sessionTree.every((elem: any, _index18: number) => "reasoning" === elem || "tools" === elem || "system" === elem || "assistant" === elem || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".tree[" + _index18 + "]",
+    path: _path + ".sessionTree[" + _index18 + "]",
     expected: "(\"assistant\" | \"reasoning\" | \"system\" | \"tools\")",
     value: elem
 }, _errorFactory)) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
-    path: _path + ".tree",
+    path: _path + ".sessionTree",
     expected: "(Array<\"reasoning\" | \"tools\" | \"system\" | \"assistant\"> | undefined)",
-    value: input.tree
+    value: input.sessionTree
 }, _errorFactory)) && (undefined === input.treeHeight || "number" === typeof input.treeHeight || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".treeHeight",
     expected: "(number | undefined)",
     value: input.treeHeight
 }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-    if (["collapsedTools", "images", "listHeight", "reasoning", "theme", "tree", "treeHeight"].some((prop: any) => key === prop))
+    if (["collapsedTools", "images", "listHeight", "reasoning", "theme", "sessionTree", "treeHeight"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
