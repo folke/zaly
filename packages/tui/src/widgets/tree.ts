@@ -1,6 +1,7 @@
 import type { Option, Select, SelectState } from "./select.ts"
 
 import { select } from "./select.ts"
+import { widget } from "./widget.ts"
 
 export type TreeItem<T extends Option = Option> = T & {
   children?: TreeItem<T>[]
@@ -49,7 +50,7 @@ class Tree<T extends TreeItem> {
   }
 }
 
-export function tree<T extends TreeItem>(props: TreeProps<T>): Select<T> {
+export const tree = widget(<T extends TreeItem>(props: TreeProps<T>): Select<T> => {
   const t = new Tree(props.tree)
   const items = props.root === true ? t.items : t.items.slice(1)
   const activeFn = typeof props.active === "function" ? props.active : (i: T) => i === props.active
@@ -75,4 +76,4 @@ export function tree<T extends TreeItem>(props: TreeProps<T>): Select<T> {
   })
 
   return ret
-}
+})
