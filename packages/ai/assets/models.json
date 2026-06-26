@@ -23589,7 +23589,7 @@
           "cache_write": 1.5
         }
       },
-      "api": "openai"
+      "api": "anthropic"
     },
     "opencode-go/qwen3.7-max": {
       "id": "qwen3.7-max",
@@ -23621,7 +23621,7 @@
         "cache_read": 0.5,
         "cache_write": 3.125
       },
-      "api": "openai"
+      "api": "anthropic"
     },
     "opencode-go/kimi-k2.7-code": {
       "id": "kimi-k2.7-code",
@@ -23803,7 +23803,7 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 512000,
+        "context": 1000000,
         "output": 131072
       },
       "cost": {
@@ -24022,7 +24022,7 @@
           "cache_write": 2.5
         }
       },
-      "api": "openai"
+      "api": "anthropic"
     },
     "digitalocean/anthropic-claude-haiku-4.5": {
       "id": "anthropic-claude-haiku-4.5",
@@ -50985,37 +50985,6 @@
       },
       "api": "openai"
     },
-    "llmgateway/mistral-ocr-latest": {
-      "id": "mistral-ocr-latest",
-      "name": "Mistral OCR",
-      "family": "mistral",
-      "attachment": true,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": false,
-      "temperature": true,
-      "release_date": "2025-03-06",
-      "last_updated": "2025-03-06",
-      "modalities": {
-        "input": [
-          "text",
-          "image"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 0,
-        "output": 0
-      },
-      "cost": {
-        "input": 0,
-        "output": 0
-      },
-      "api": "openai"
-    },
     "llmgateway/claude-sonnet-4-6": {
       "id": "claude-sonnet-4-6",
       "name": "Claude Sonnet 4.6",
@@ -72803,35 +72772,6 @@
       },
       "api": "openai"
     },
-    "ovhcloud/llama-3.1-8b-instruct": {
-      "id": "llama-3.1-8b-instruct",
-      "name": "Llama-3.1-8B-Instruct",
-      "attachment": false,
-      "reasoning": false,
-      "tool_call": true,
-      "structured_output": true,
-      "temperature": true,
-      "release_date": "2025-06-11",
-      "last_updated": "2025-06-11",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "limit": {
-        "context": 131072,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0.11,
-        "output": 0.11
-      },
-      "api": "openai"
-    },
     "ovhcloud/qwen3-coder-30b-a3b-instruct": {
       "id": "qwen3-coder-30b-a3b-instruct",
       "name": "Qwen3-Coder-30B-A3B-Instruct",
@@ -73216,11 +73156,12 @@
       "id": "meta-llama/Llama-3.3-70B-Instruct",
       "name": "Llama 3.3 70B Instruct",
       "family": "llama",
-      "attachment": false,
+      "attachment": true,
       "reasoning": false,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
+      "knowledge": "2023-12",
       "release_date": "2024-08-01",
       "last_updated": "2025-12-23",
       "modalities": {
@@ -73277,10 +73218,11 @@
       "name": "Qwen3 235B A22B Instruct 2507",
       "family": "qwen",
       "attachment": false,
-      "reasoning": false,
+      "reasoning": true,
       "tool_call": true,
       "structured_output": true,
       "temperature": true,
+      "knowledge": "2025-04",
       "release_date": "2025-07-29",
       "last_updated": "2026-01-29",
       "modalities": {
@@ -85359,9 +85301,8 @@
         "output": 256000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.375,
+        "output": 2.025
       },
       "api": "openai",
       "headers": {
@@ -85401,13 +85342,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 256000,
-        "output": 256000
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.66,
+        "output": 3.41,
+        "cache_read": 0.144
       },
       "api": "openai",
       "headers": {
@@ -85530,7 +85471,7 @@
         }
       ],
       "tool_call": true,
-      "structured_output": false,
+      "structured_output": true,
       "temperature": true,
       "release_date": "2026-04-02",
       "last_updated": "2026-04-02",
@@ -86600,7 +86541,8 @@
       "modalities": {
         "input": [
           "text",
-          "image"
+          "image",
+          "pdf"
         ],
         "output": [
           "text"
@@ -86987,12 +86929,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 200000,
-        "output": 128000
+        "context": 202752,
+        "output": 131072
       },
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.4,
+        "output": 1.75,
+        "cache_read": 0.08
       },
       "api": "openai",
       "headers": {
@@ -87123,13 +87066,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 200000,
+        "context": 202752,
         "output": 128000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.98,
+        "output": 3.08,
+        "cache_read": 0.182
       },
       "api": "openai",
       "headers": {
@@ -87209,13 +87152,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 1024000,
-        "output": 128000
+        "context": 1048576,
+        "output": 32768
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.95,
+        "output": 3,
+        "cache_read": 0.18
       },
       "api": "openai",
       "headers": {
@@ -87430,13 +87373,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 198000,
+        "context": 202752,
         "output": 128000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.6,
+        "output": 1.92,
+        "cache_read": 0.12
       },
       "api": "openai",
       "headers": {
@@ -88986,11 +88929,11 @@
       "open_weights": true,
       "limit": {
         "context": 131072,
-        "output": 32768
+        "output": 131072
       },
       "cost": {
-        "input": 0.039,
-        "output": 0.18
+        "input": 0.03,
+        "output": 0.15
       },
       "api": "openai",
       "headers": {
@@ -91441,11 +91384,11 @@
       "open_weights": true,
       "limit": {
         "context": 262144,
-        "output": 262144
+        "output": 16384
       },
       "cost": {
-        "input": 0.09,
-        "output": 0.45
+        "input": 0.085,
+        "output": 0.4
       },
       "api": "openai",
       "headers": {
@@ -92881,13 +92824,13 @@
       },
       "open_weights": false,
       "limit": {
-        "context": 256000,
-        "output": 256000
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.66,
+        "output": 3.41,
+        "cache_read": 0.144
       },
       "api": "openai",
       "headers": {
@@ -94040,8 +93983,8 @@
         "output": 32000
       },
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.04815,
+        "output": 0.19305
       },
       "api": "openai",
       "headers": {
@@ -94695,13 +94638,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 256000,
-        "output": 64000
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.11,
+        "output": 0.8,
+        "cache_read": 0.07
       },
       "api": "openai",
       "headers": {
@@ -94881,13 +94824,12 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 256000,
+        "context": 131072,
         "output": 64000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.385,
+        "output": 2.45
       },
       "api": "openai",
       "headers": {
@@ -95615,12 +95557,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 128000,
-        "output": 32000
+        "context": 163840,
+        "output": 32768
       },
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.5,
+        "output": 2.15,
+        "cache_read": 0.35
       },
       "api": "openai",
       "headers": {
@@ -95670,13 +95613,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 1024000,
-        "output": 384000
+        "context": 1000000,
+        "output": 65536
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.09,
+        "output": 0.18,
+        "cache_read": 0.02
       },
       "api": "openai",
       "headers": {
@@ -95716,12 +95659,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 128000,
-        "output": 32000
+        "context": 163840,
+        "output": 32768
       },
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.27,
+        "output": 0.95,
+        "cache_read": 0.13
       },
       "api": "openai",
       "headers": {
@@ -95771,13 +95715,13 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 1024000,
+        "context": 1048576,
         "output": 384000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.435,
+        "output": 0.87,
+        "cache_read": 0.003625
       },
       "api": "openai",
       "headers": {
@@ -95943,8 +95887,8 @@
         "output": 16000
       },
       "cost": {
-        "input": 0,
-        "output": 0
+        "input": 0.2002,
+        "output": 0.8001
       },
       "api": "openai",
       "headers": {
@@ -95988,9 +95932,8 @@
         "output": 64000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.2288,
+        "output": 0.3432
       },
       "api": "openai",
       "headers": {
@@ -96074,13 +96017,12 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 200000,
-        "output": 128000
+        "context": 196608,
+        "output": 196608
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.12,
+        "output": 0.48
       },
       "api": "openai",
       "headers": {
@@ -96250,8 +96192,8 @@
         "output": 196608
       },
       "cost": {
-        "input": 0.24,
-        "output": 0.96
+        "input": 0.18,
+        "output": 0.72
       },
       "api": "openai",
       "headers": {
@@ -96330,9 +96272,9 @@
         "output": 80000
       },
       "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
+        "input": 0.3,
+        "output": 1.2,
+        "cache_read": 0.06
       },
       "api": "openai",
       "headers": {
@@ -104900,8 +104842,8 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 131000,
-        "output": 131000
+        "context": 262144,
+        "output": 262144
       },
       "cost": {
         "input": 1.74,
