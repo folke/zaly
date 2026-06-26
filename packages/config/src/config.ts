@@ -1,6 +1,6 @@
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { ResourceType } from "./resource/resource.ts"
-import type { Config, ConfigScope, ResolvedConfig } from "./types.ts"
+import type { Config, ConfigScope, ResolvedConfig, State } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
 import { JsonFile } from "@zaly/shared/json"
@@ -60,6 +60,7 @@ export class ConfigManager {
   #workspace?: ConfigFile<"workspace">
   #paths: ProjectPaths
   #resources?: ResourceManager
+  #state!: JsonFile<State, State>
 
   constructor(opts: ConfigManagerOpts) {
     this.#opts = opts
@@ -80,6 +81,10 @@ export class ConfigManager {
       this.#user.$,
       defaultSettings
     ))
+  }
+
+  get state(): JsonFile<State, State> {
+    return this.#state
   }
 
   get $(): ResolvedConfig {
@@ -122,6 +127,12 @@ export class ConfigManager {
         this.#workspace = await ConfigFile.load(wsPaths.env, "workspace")
       }
     }
+    this.#state = new JsonFile(zalyPaths.state, {
+      default: {},
+      validate: (data) =>
+        import("./schemas/gen/state.ts").then(({ validateState }) => validateState(data)),
+    })
+    await this.#state.refresh()
     this.#config = undefined
     this.#resources = undefined
     return this

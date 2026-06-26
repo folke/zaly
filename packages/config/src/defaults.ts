@@ -2,7 +2,6 @@ import type { ResolvedConfig } from "./types.ts"
 
 // oxlint-disable-next-line sort-keys
 export const defaultSettings = {
-  model: "openai/gpt-5.5",
   permissions: {
     preset: "permissive",
   },

@@ -8,7 +8,6 @@ import type { CompletionSource } from "@zaly/tui/widgets/autocomplete"
 import type { Input, InputValue } from "@zaly/tui/widgets/input"
 import type { App } from "./app.ts"
 
-import { loadState, updateState } from "@zaly/config"
 import { input } from "@zaly/tui/widgets/input"
 import { ActionsComposer } from "./composer/actions.ts"
 import { BashComposer } from "./composer/bash.ts"
@@ -182,25 +181,23 @@ export class Composer {
         return false
       },
       format: (value, ctx) => this.format(value, ctx),
+      history: this.#app.config.state.$.inputHistory ?? [],
       placeholder: "Ask zaly anything…",
       validate: (value: string) => this.validate(value),
     }).on("submit", (value) => this.submit(value))).on("history", ({ added }) =>
-      updateState((s) => {
+      this.#app.config.state.update((s) => {
         const history = [...(s?.inputHistory ?? []), added].slice(-100)
         ret.history = history
         return { ...s, inputHistory: history }
       })
     )
-    void loadState().then((state) => {
-      ret.history = [...(state.inputHistory ?? []), ...ret.history]
-    })
     return this.#input
   }
 
   async pickHistory(): Promise<void> {
     if (!this.#input) return
-    const state = await loadState()
-    const history = state.inputHistory ?? []
+    await this.#app.config.state.refresh()
+    const history = this.#app.config.state.$.inputHistory ?? []
     const items = history.map((text) => ({ text })).toReversed()
     const ret = await this.#app.pick({
       clearInput: false,
