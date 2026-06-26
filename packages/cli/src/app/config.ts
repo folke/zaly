@@ -1,15 +1,16 @@
-import type { Config } from "@zaly/config"
+import type { Config, ResolvedConfig } from "@zaly/config"
 import type { MaybePromise } from "@zaly/shared"
 import type { PropPath, PropValue } from "@zaly/shared/prop"
+import type { ToggleItem } from "@zaly/tui/services/picker"
 import type { PickerItem } from "@zaly/tui/widgets/picker"
 import type { OptionRenderCtx, Select } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
+import { toolRegistry } from "@zaly/agent"
 import { defaultSettings } from "@zaly/config"
-import { stringWidth } from "@zaly/shared/ansi"
+import { fitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { propGet } from "@zaly/shared/prop"
-import { createRef, inspect, signal } from "@zaly/tui"
-import { markdown } from "@zaly/tui/widgets/markdown"
+import { createRef, inspect } from "@zaly/tui"
 import { isDeepStrictEqual as is } from "node:util"
 import { REASONING_EFFORTS } from "../context.ts"
 
@@ -30,6 +31,8 @@ type OptionOpts<T extends ConfigProp> = Partial<ConfigItem<T>> &
   (Pick<ConfigItem<T>, "options"> | Pick<ConfigItem<T>, "toggle">)
 type ToggleOpts<T extends ConfigProp<boolean>> = Omit<OptionOpts<T>, "options" | "toggle">
 
+type SessionTreeSection = ResolvedConfig["ui"]["sessionTree"][number]
+
 function renderItem(item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): [string, string] {
   const s = ctx.style
   const v = item.value
@@ -41,7 +44,7 @@ function renderItem(item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): [string
   let value: string
   if (v === undefined) value = s.muted("unset")
   else if (typeof v === "boolean") value = v ? s.mdListChecked("[x]") : s.mdListUnchecked("[ ]")
-  else value = inspect(v, { style: s })
+  else value = inspect(v, { indent: 0, style: s })
   return [label, value]
 }
 
@@ -55,17 +58,80 @@ function renderer() {
     items = ctx.items
     const rendered = items.map((item) => renderItem(item, ctx))
     labelWidth = rendered.reduce((max, [label]) => Math.max(max, stringWidth(label)), 0)
-    valueWidth = rendered.reduce((max, [, value]) => Math.max(max, stringWidth(value)), 0)
+    valueWidth = Math.min(
+      50,
+      rendered.reduce((max, [, value]) => Math.max(max, stringWidth(value)), 0)
+    )
   }
 
   return (item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): string => {
     update(ctx)
     const s = ctx.style
     const [label, value] = renderItem(item, ctx)
-    const labelStr = `${label}${" ".repeat(labelWidth - stringWidth(label))}`
-    const valueStr = `${value}${" ".repeat(valueWidth - stringWidth(value))}`
+    const labelStr = fitAnsi(label, labelWidth)
+    const valueStr = fitAnsi(value, valueWidth)
     return `${labelStr}    ${valueStr}    ${item.desc ? s.muted(item.desc) : ""}`
   }
+}
+
+export async function pickTools(tools: string[] | undefined, app: App): Promise<string[]> {
+  const items: ToggleItem[] = []
+  const all = await Promise.all(toolRegistry.keys().map((t) => toolRegistry.load(t)))
+  const used = tools ?? defaultSettings.tools
+  const seen = new Set<string>()
+  for (const tool of all) {
+    const enabled = used.includes(tool.name)
+    if (enabled) seen.add(tool.name)
+    items.push({
+      desc: tool.desc,
+      enabled,
+      name: tool.name,
+      text: tool.name,
+    })
+  }
+  for (const name of used) {
+    if (seen.has(name)) continue
+    items.unshift({
+      desc: "Unknown tool. Has the plugin that provided this tool been removed?",
+      enabled: true,
+      name,
+      text: name,
+    })
+  }
+  await app.pick({
+    details: "Toggle tools to enable or disable them.",
+    items,
+    maxHeight: app.$.ui.listHeight,
+    multi: true,
+    title: "Pick Tools",
+  })
+  const enabled: string[] = []
+  for (const item of items) if (item.enabled && item.name) enabled.push(item.name)
+  return enabled
+}
+
+export async function pickSessionTree(
+  value: undefined | SessionTreeSection[],
+  app: App
+): Promise<SessionTreeSection[]> {
+  const enabled: SessionTreeSection[] = value ?? defaultSettings.ui.sessionTree
+  const all: ResolvedConfig["ui"]["sessionTree"] = ["assistant", "reasoning", "tools", "system"]
+  const items: ToggleItem[] = all.map((name) => ({
+    desc: `Show ${name} in the session tree`,
+    enabled: enabled.includes(name),
+    name,
+    text: name,
+  }))
+  await app.pick({
+    details: "Toggle tools to enable or disable them.",
+    items,
+    maxHeight: app.$.ui.listHeight,
+    multi: true,
+    title: "Pick Tools",
+  })
+  return items
+    .filter((item) => item.enabled && item.name)
+    .map((item) => item.name as SessionTreeSection)
 }
 
 export async function editConfig(app: App, opts: { scope?: "user" | "project" } = {}) {
@@ -129,6 +195,14 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
     }),
     option({
+      desc: "Enabled tools for the agent",
+      name: "Tools",
+      prop: ["tools"],
+      async toggle() {
+        this.value = await pickTools(this.value, app)
+      },
+    }),
+    option({
       desc: "Color theme for the UI",
       name: "Theme",
       prop: ["ui", "theme"],
@@ -143,6 +217,23 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       name: "Show Reasoning",
       prop: ["ui", "reasoning"],
     }),
+    option({
+      desc: "Visible sections in the session tree",
+      name: "Session Tree",
+      prop: ["ui", "sessionTree"],
+      async toggle() {
+        this.value = await pickSessionTree(this.value, app)
+      },
+    }),
+    // option({
+    //   desc: "Manage Resources",
+    //   name: "Resources",
+    //   prop: ["resources"],
+    //   async toggle() {
+    //     const { pickResources } = await import("./resources.ts")
+    //     await pickResources(app, { scope: opts.scope })
+    //   },
+    // }),
     toggle({
       desc: "Render images, if supported by the terminal",
       name: "Show Images",
@@ -229,14 +320,7 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
     }),
   ]
 
-  const [whichKey, setWhichKey] = signal("")
-  const ref = createRef<Select<ConfigItem>>(undefined, {
-    onSet: (select) => {
-      select.once("mount", () =>
-        setWhichKey(app.actions.whichKey(select, { filter: { hidden: false } }))
-      )
-    },
-  })
+  const ref = createRef<Select<ConfigItem>>()
   await app.pick({
     actions: {
       "config.reset": {
@@ -266,12 +350,12 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
         priority: 10,
       },
     },
-    details: () => markdown(whichKey),
     items,
     maxHeight: app.$.ui.listHeight,
     ref,
     render: renderer(),
     title: `Edit ${scope} config`,
+    whichKey: true,
   })
 
   let changed = false

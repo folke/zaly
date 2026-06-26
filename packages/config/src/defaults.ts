@@ -11,8 +11,8 @@ export const defaultSettings = {
     images: true,
     listHeight: 10,
     reasoning: true,
+    sessionTree: ["assistant", "reasoning", "tools"],
     theme: "tokyonight-moon",
-    tree: ["assistant", "reasoning", "tools"],
     treeHeight: 20,
   },
   compaction: {

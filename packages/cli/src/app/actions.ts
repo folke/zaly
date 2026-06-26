@@ -247,7 +247,7 @@ export function appActions({ app }: { app: App }) {
       desc: "Show a tree view of the current session's message history.",
       fn: async () => {
         const { sessionTree } = await import("./session.ts")
-        await sessionTree(app, { filter: app.$.ui.tree })
+        await sessionTree(app, { filter: app.$.ui.sessionTree })
       },
     },
   } as const satisfies Record<string, ActionDef>

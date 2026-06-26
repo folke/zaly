@@ -33,7 +33,7 @@ export type ResolvedConfig = {
     /** Theme name or path to custom theme file */
     theme: string
     /** What messages to show in the session tree. Defaults to assistant, reasoning, and tools. */
-    tree: ("assistant" | "reasoning" | "tools" | "system")[]
+    sessionTree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Maximum number of visible rows in the session tree. */
     treeHeight: number
   }
