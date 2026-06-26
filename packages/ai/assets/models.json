@@ -12352,6 +12352,51 @@
       },
       "api": "openai"
     },
+    "fireworks-ai/accounts/fireworks/routers/glm-5p2-fast": {
+      "id": "accounts/fireworks/routers/glm-5p2-fast",
+      "name": "GLM 5.2 Fast",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        },
+        {
+          "type": "effort",
+          "values": [
+            "high",
+            "max"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "temperature": true,
+      "release_date": "2026-06-26",
+      "last_updated": "2026-06-26",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 1048575,
+        "output": 131072
+      },
+      "cost": {
+        "input": 2.1,
+        "output": 6.6,
+        "cache_read": 0.21
+      },
+      "api": "openai"
+    },
     "fireworks-ai/accounts/fireworks/routers/kimi-k2p7-code-fast": {
       "id": "accounts/fireworks/routers/kimi-k2p7-code-fast",
       "name": "Kimi K2.7 Code Fast",
@@ -12808,7 +12853,7 @@
       },
       "open_weights": true,
       "limit": {
-        "context": 1048576,
+        "context": 1048575,
         "output": 131072
       },
       "cost": {
@@ -19328,6 +19373,49 @@
       "cost": {
         "input": 0.3,
         "output": 0.9
+      },
+      "api": "openai"
+    },
+    "nebius/zai-org/GLM-5.2": {
+      "id": "zai-org/GLM-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 432000,
+        "output": 432000
+      },
+      "cost": {
+        "input": 1.4,
+        "output": 4.4
       },
       "api": "openai"
     },
@@ -38361,88 +38449,6 @@
       "open_weights": true,
       "limit": {
         "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
-    "xiaomi-token-plan-ams/mimo-v2-pro": {
-      "id": "mimo-v2-pro",
-      "name": "MiMo-V2-Pro",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
-    "xiaomi-token-plan-ams/mimo-v2-omni": {
-      "id": "mimo-v2-omni",
-      "name": "MiMo-V2-Omni",
-      "family": "mimo",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 262144,
         "output": 131072
       },
       "cost": {
@@ -58544,143 +58550,6 @@
       },
       "api": "openai"
     },
-    "xiaomi/mimo-v2-omni": {
-      "id": "mimo-v2-omni",
-      "name": "MiMo-V2-Omni",
-      "family": "mimo",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 262144,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0.4,
-        "output": 2,
-        "cache_read": 0.08
-      },
-      "api": "openai"
-    },
-    "xiaomi/mimo-v2-flash": {
-      "id": "mimo-v2-flash",
-      "name": "MiMo-V2-Flash",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12-01",
-      "release_date": "2025-12-16",
-      "last_updated": "2026-02-04",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": true,
-      "limit": {
-        "context": 262144,
-        "output": 65536
-      },
-      "cost": {
-        "input": 0.1,
-        "output": 0.3,
-        "cache_read": 0.01
-      },
-      "api": "openai"
-    },
-    "xiaomi/mimo-v2-pro": {
-      "id": "mimo-v2-pro",
-      "name": "MiMo-V2-Pro",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 1,
-        "output": 3,
-        "cache_read": 0.2,
-        "tiers": [
-          {
-            "input": 2,
-            "output": 6,
-            "cache_read": 0.4,
-            "tier": {
-              "type": "context",
-              "size": 256000
-            }
-          }
-        ],
-        "context_over_200k": {
-          "input": 2,
-          "output": 6,
-          "cache_read": 0.4
-        }
-      },
-      "api": "openai"
-    },
     "xiaomi/mimo-v2.5-pro": {
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
@@ -72193,88 +72062,6 @@
       },
       "api": "openai"
     },
-    "xiaomi-token-plan-cn/mimo-v2-omni": {
-      "id": "mimo-v2-omni",
-      "name": "MiMo-V2-Omni",
-      "family": "mimo",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 262144,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
-    "xiaomi-token-plan-cn/mimo-v2-pro": {
-      "id": "mimo-v2-pro",
-      "name": "MiMo-V2-Pro",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
     "xiaomi-token-plan-cn/mimo-v2.5-pro": {
       "id": "mimo-v2.5-pro",
       "name": "MiMo-V2.5-Pro",
@@ -72487,6 +72274,47 @@
       "cost": {
         "input": 0.9,
         "output": 0.9
+      },
+      "api": "openai"
+    },
+    "scaleway/glm-5.2": {
+      "id": "glm-5.2",
+      "name": "GLM-5.2",
+      "family": "glm",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "effort",
+          "values": [
+            "none",
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      ],
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-06-13",
+      "last_updated": "2026-06-13",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 256000,
+        "output": 16384
+      },
+      "cost": {
+        "input": 1.8,
+        "output": 5.5
       },
       "api": "openai"
     },
@@ -73213,6 +73041,42 @@
       },
       "api": "openai"
     },
+    "friendli/google/gemma-4-31B-it": {
+      "id": "google/gemma-4-31B-it",
+      "name": "Gemma 4 31B IT",
+      "family": "gemma",
+      "attachment": true,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
+      "tool_call": true,
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2026-04-02",
+      "last_updated": "2026-04-02",
+      "modalities": {
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 262144,
+        "output": 32768
+      },
+      "cost": {
+        "input": 0.14,
+        "output": 0.4
+      },
+      "api": "openai"
+    },
     "friendli/Qwen/Qwen3-235B-A22B-Instruct-2507": {
       "id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
       "name": "Qwen3 235B A22B Instruct 2507",
@@ -73354,6 +73218,45 @@
         "input": 1.4,
         "output": 4.4,
         "cache_read": 0.26
+      },
+      "api": "openai"
+    },
+    "friendli/deepseek-ai/DeepSeek-V3.2": {
+      "id": "deepseek-ai/DeepSeek-V3.2",
+      "name": "DeepSeek-V3.2",
+      "family": "deepseek",
+      "attachment": false,
+      "reasoning": true,
+      "reasoning_options": [
+        {
+          "type": "toggle"
+        }
+      ],
+      "tool_call": true,
+      "interleaved": {
+        "field": "reasoning_content"
+      },
+      "structured_output": true,
+      "temperature": true,
+      "release_date": "2025-12-01",
+      "last_updated": "2025-12-01",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "open_weights": true,
+      "limit": {
+        "context": 163840,
+        "output": 163840
+      },
+      "cost": {
+        "input": 0.5,
+        "output": 1.5,
+        "cache_read": 0.25
       },
       "api": "openai"
     },
@@ -94736,7 +94639,7 @@
       },
       "cost": {
         "input": 0.2885,
-        "output": 3.17
+        "output": 2.65
       },
       "api": "openai",
       "headers": {
@@ -95979,7 +95882,8 @@
       },
       "cost": {
         "input": 0.2288,
-        "output": 0.3432
+        "output": 0.3432,
+        "cache_read": 0.02288
       },
       "api": "openai",
       "headers": {
@@ -118636,88 +118540,6 @@
       "open_weights": true,
       "limit": {
         "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
-    "xiaomi-token-plan-sgp/mimo-v2-pro": {
-      "id": "mimo-v2-pro",
-      "name": "MiMo-V2-Pro",
-      "family": "mimo",
-      "attachment": false,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 1048576,
-        "output": 131072
-      },
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cache_read": 0
-      },
-      "api": "openai"
-    },
-    "xiaomi-token-plan-sgp/mimo-v2-omni": {
-      "id": "mimo-v2-omni",
-      "name": "MiMo-V2-Omni",
-      "family": "mimo",
-      "attachment": true,
-      "reasoning": true,
-      "reasoning_options": [
-        {
-          "type": "toggle"
-        }
-      ],
-      "tool_call": true,
-      "interleaved": {
-        "field": "reasoning_content"
-      },
-      "temperature": true,
-      "knowledge": "2024-12",
-      "release_date": "2026-03-18",
-      "last_updated": "2026-03-18",
-      "modalities": {
-        "input": [
-          "text",
-          "image",
-          "audio",
-          "video",
-          "pdf"
-        ],
-        "output": [
-          "text"
-        ]
-      },
-      "open_weights": false,
-      "limit": {
-        "context": 262144,
         "output": 131072
       },
       "cost": {
