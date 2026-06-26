@@ -7,6 +7,7 @@ import { parse as shellParse } from "shell-quote"
 export interface Segment {
   cmd: string
   args: string[]
+  dyn?: Set<string>
   /** File paths the segment reads from (`< file` redirects). Built-in
    *  tools may add inferred reads in the policy layer. */
   reads: string[]
@@ -37,6 +38,7 @@ type Token = string | Op | Glob | Comment
 
 const COMMAND_SEPS = new Set(["|", "&&", "||", ";"])
 const REDIRECT_OPS = new Set([">", ">>", "<", ">&", "<&"])
+const DYN_SENTINEL = "\u{E000}"
 
 /** Parse a bash command line. Returns segments with a flag for
  *  unsupported constructs that force "ask" downstream. Heredocs,
@@ -57,7 +59,9 @@ export function parseBash(input: string): ParseResult {
 
   let rawTokens: Token[]
   try {
-    rawTokens = shellParse(input) as Token[]
+    rawTokens = shellParse(input, (e) =>
+      e === "" ? undefined : `${DYN_SENTINEL}\${${e}}`
+    ) as Token[]
   } catch (error) {
     return { ok: false, reason: `tokenize: ${(error as Error).message}` }
   }
@@ -100,9 +104,10 @@ function parseSegment(
 ):
   | { ok: true; segment: Omit<Segment, "hasCommandSubst"> | undefined }
   | { ok: false; reason: string } {
-  const args: string[] = []
-  const reads: string[] = []
-  const writes: { path: string; mode: "trunc" | "append" }[] = []
+  let args: string[] = []
+  let reads: string[] = []
+  let writes: { path: string; mode: "trunc" | "append" }[] = []
+  const dyn = new Set<string>()
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i]
@@ -126,6 +131,7 @@ function parseSegment(
     if ("pattern" in t) {
       // Pass globs through as their pattern — policy layer decides.
       args.push(t.pattern)
+      dyn.add(t.pattern)
       continue
     }
 
@@ -155,6 +161,17 @@ function parseSegment(
     return { ok: false, reason: `unsupported op: ${t.op}` }
   }
 
+  const dynPath = (p: string) => {
+    if (!p.includes(DYN_SENTINEL)) return p
+    p = p.replaceAll(DYN_SENTINEL, "")
+    dyn.add(p)
+    return p
+  }
+
+  args = args.map((a) => dynPath(a))
+  writes = writes.map((w) => ({ ...w, path: dynPath(w.path) }))
+  reads = reads.map(dynPath)
+
   // Strip leading wrapper commands (`time`, `nohup`, `nice`, …) so the
   // policy sees the real command being run. `time bun test` evaluates
   // as `bun test`; a bare `time` (or `time (subshell)` after flatten)
@@ -169,6 +186,7 @@ function parseSegment(
     segment: {
       args: unwrapped.slice(1),
       cmd: unwrapped[0],
+      dyn,
       reads,
       writes,
     },

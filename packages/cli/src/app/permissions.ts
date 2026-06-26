@@ -44,6 +44,7 @@ export async function allow(req: PermissionRequest, app: App): Promise<boolean> 
   const ret = await app.pick<(typeof items)[number]>({ details, items, title })
   if (ret === undefined || ret.value === false) return false
   if (ret.value !== true) {
+    // FIXME: save in (project) config
     const perms = await app.agent.ctx.permissions()
     const s = ret.value
     if (s.kind === "rule") perms.addRule({ ...s, policy: "allow" })

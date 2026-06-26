@@ -134,10 +134,15 @@ function resolveRule(
   rel: string,
   rules: readonly Rule<"read" | "write">[]
 ): Rule<"read" | "write"> | undefined {
+  // FIXME: work-around for `path must not be empty`, but obvioulsy not correct
+  // Can be triggered with something like `bash(a=/etc; b=hostname; cat "$a/$b")`
+  if (rel === "") return undefined
   for (const rule of rules) {
     const norm = normalizePattern(rule.pattern, workspace)
     if (norm === undefined) continue
-    if (ignore().add(norm).ignores(rel)) return rule
+    try {
+      if (ignore().add(norm).ignores(rel)) return rule
+    } catch {}
   }
 }
 

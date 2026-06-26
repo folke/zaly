@@ -76,6 +76,16 @@ export const bashHandler: PermissionHandler<"bash"> = {
       const writes = [...(spec?.writes?.(seg.args) ?? []), ...seg.writes.map((w) => w.path)]
 
       for (const path of reads) {
+        if (seg.dyn?.has(path)) {
+          segVerdict = combine(segVerdict, "ask")
+          segReason ??= `${seg.cmd}: read ${path}: dynamic path`
+          suggestions.push({
+            kind: "rule",
+            pattern: `${seg.cmd}:*`,
+            scope: "bash",
+          })
+          continue
+        }
         const r = ctx.validate("read", path)
         segVerdict = combine(segVerdict, r.verdict)
         if (r.verdict !== "allow") {
@@ -86,6 +96,16 @@ export const bashHandler: PermissionHandler<"bash"> = {
       }
       if (segVerdict !== "deny") {
         for (const path of writes) {
+          if (seg.dyn?.has(path)) {
+            segVerdict = combine(segVerdict, "ask")
+            segReason ??= `${seg.cmd}: write ${path}: dynamic path`
+            suggestions.push({
+              kind: "rule",
+              pattern: `${seg.cmd}:*`,
+              scope: "bash",
+            })
+            continue
+          }
           const w = ctx.validate("write", path)
           segVerdict = combine(segVerdict, w.verdict)
           if (w.verdict !== "allow") {
