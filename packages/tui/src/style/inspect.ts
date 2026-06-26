@@ -55,6 +55,15 @@ export function inspectFormat(msg: unknown[], opts: InspectOpts = {}): string {
   return ret.map((v) => (typeof v === "string" ? v : inspect(v, opts))).join(" ")
 }
 
+function inspectNumber(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    notation: "standard",
+    useGrouping: true,
+  })
+    .format(value)
+    .replace(/,/g, "_")
+}
+
 export function inspect(value: unknown, opts: InspectOpts = {}): string {
   opts = { colors: hasColors, null: true, undefined: true, ...opts }
   const indent = opts.indent ?? 2
@@ -81,7 +90,7 @@ export function inspect(value: unknown, opts: InspectOpts = {}): string {
         return s.syntaxNumber(`${v}n`)
       }
       case "number": {
-        return s.syntaxNumber(String(v))
+        return s.syntaxNumber(inspectNumber(v))
       }
       case "string": {
         return s.syntaxString(JSON.stringify(v))

@@ -16,7 +16,9 @@ export type ResourceFilter = {
 }
 
 export type ResolvedConfig = {
+  /** Defaul model to use for the agent **/
   model?: string
+  /** Default reasoning effort **/
   reasoning: ReasoningEffort
   tools: string[]
   ui: {
@@ -35,11 +37,22 @@ export type ResolvedConfig = {
     /** Maximum number of visible rows in the session tree. */
     treeHeight: number
   }
-  actions: {
-    /** Prefix command actions as `/command:COMMAND_NAME`. Defaults to false, e.g. `/COMMAND_NAME`. */
-    commandPrefix: boolean
-    /** Prefix skill actions as `/skill:SKILL_NAME`. Defaults to true, e.g. `/skill:SKILL_NAME`. */
-    skillPrefix: boolean
+  skills: {
+    /** Allow skills to be used by the agent. Defaults to true. */
+    enabled: boolean
+    /** Show skill actions. Defaults to true. */
+    actions?: boolean
+    /** Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME` */
+    actionPrefix?: string
+  }
+  /** Template commands **/
+  commands: {
+    /** Prefix for command actions. Defaults to `` */
+    actionPrefix?: string
+    /** Allow bash execution in commands. Defaults to true. */
+    bash?: boolean
+    /** Allow js expressions in command templates. Defaults to true. */
+    expr?: boolean
   }
   compaction: {
     /** Enable automatic compaction when context is full */
@@ -54,6 +67,7 @@ export type ResolvedConfig = {
     threshold: number
   }
   permissions: {
+    /** Permissions preset to use. Defaults to "permissive". */
     preset: PermissionPresetName
     allow?: string[]
     deny?: string[]

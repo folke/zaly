@@ -21,7 +21,8 @@ export type Option = {
 }
 
 export type OptionRenderCtx<T> = RenderCtx & {
-  visible: T[]
+  visible: readonly T[]
+  items: readonly T[]
   active?: boolean
 }
 
@@ -63,8 +64,8 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   complete: { item: T }
   /** Fired when the user picks the active item. Payload is the item. */
   accept: { item: T }
-  /** Fired when the user cancels (esc). */
-  cancel: {}
+  /** Fired when the user closes the select (esc). */
+  close: {}
   changed: { active: number; item: T }
 }
 
@@ -88,8 +89,8 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
       if (items.length === 0) return
       void this.emit("accept", { item: items[this.active] })
     },
-    "select.cancel": (): void => {
-      void this.emit("cancel")
+    "select.close": (): void => {
+      void this.emit("close")
     },
     "select.complete": (): void => {
       const items = this.#items
@@ -216,7 +217,12 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
     const rows: string[] = []
     for (let i = start; i < start + height; i++) {
       const item = items[i]
-      let row = renderer(item, { ...ctx, active: i === active, visible })
+      let row = renderer(item, {
+        ...ctx,
+        active: i === active,
+        items,
+        visible,
+      })
       row = fitAnsi(row, width)
       rows.push(i === active ? ctx.style.optionActive(row) : row)
     }
@@ -242,7 +248,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
   }
 
   defaultRenderer(): OptionRender<Option> {
-    let visible: Option[] = []
+    let visible: readonly Option[] = []
     let labelWidth = 0
 
     const update = (ctx: OptionRenderCtx<Option>) => {

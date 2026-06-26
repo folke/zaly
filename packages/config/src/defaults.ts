@@ -22,9 +22,15 @@ export const defaultSettings = {
     summaryTokens: 10_000,
     threshold: 0.95,
   },
-  actions: {
-    commandPrefix: false,
-    skillPrefix: true,
+  skills: {
+    actionPrefix: "skill:",
+    actions: true,
+    enabled: true,
+  },
+  commands: {
+    actionPrefix: "",
+    bash: true,
+    expr: true,
   },
   system: {
     bash: ["bash"],

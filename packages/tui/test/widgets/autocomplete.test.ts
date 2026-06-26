@@ -105,7 +105,7 @@ describe("autocomplete", () => {
     i.state.set({ cursor: 3, value: "/he" })
     await yieldMain()
     expect(ac.visible).toBe(true)
-    ac.select.actions["select.cancel"]()
+    ac.select.actions["select.close"]()
     expect(ac.visible).toBe(false)
     const rows = await ac.render(ctx)
     expect(rows).toEqual([])

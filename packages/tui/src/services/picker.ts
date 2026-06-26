@@ -104,7 +104,7 @@ export class Picker {
     }
 
     node.once("unmount", () => done(), { signal: ac.signal })
-    select.once("cancel", () => done(), { signal: ac.signal })
+    select.once("close", () => done(), { signal: ac.signal })
     select.once("accept", ({ item }) => done(item), { signal: ac.signal })
 
     return res.promise

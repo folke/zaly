@@ -14,7 +14,7 @@ export type Command = {
 }
 
 export interface CommandsOptions {
-  /** SKILL.md paths, sorted from highest to lowest precedence. */
+  /** cmd.md paths, sorted from highest to lowest precedence. */
   paths?: string[]
   logger?: Logger
   /** Bash execution of commands:

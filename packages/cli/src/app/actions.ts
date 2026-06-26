@@ -159,14 +159,29 @@ export function appActions({ app }: { app: App }) {
       fn: () => void app.composer.pickHistory(),
       keys: ["ctrl-r"],
     },
-    "config.edit": {
+    "config.edit": defineAction({
+      args: {
+        project: {
+          desc: "Edit the project config file",
+          short: "p",
+          type: "boolean",
+        },
+        user: {
+          desc: "Edit the user config file.",
+          short: "u",
+          type: "boolean",
+        },
+      },
       cmd: "config",
       desc: "Edit the current workspace configuration.",
-      fn: async () => {
+      fn: async ({ args }) => {
         const { editConfig } = await import("./config.ts")
-        await editConfig(app)
+        await editConfig(app, {
+          // oxlint-disable-next-line no-nested-ternary
+          scope: args?.project ? "project" : args?.user ? "user" : undefined,
+        })
       },
-    },
+    }),
     "global.quit": {
       cmd: "quit",
       desc: "Quit zaly.",

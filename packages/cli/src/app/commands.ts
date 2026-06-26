@@ -26,7 +26,7 @@ export async function loadCommands(app: App): Promise<void> {
             type: "boolean",
           },
         },
-        cmd: `${app.$.actions.commandPrefix ? "command:" : ""}${cmd.name}`,
+        cmd: `${app.$.commands.actionPrefix?.replace(/^\//, "") ?? "command:"}${cmd.name}`,
         desc: cmd.description,
 
         fn: async ({ args }) => {

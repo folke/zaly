@@ -110,9 +110,8 @@ export const defaultActions: Record<BuiltinAction, ActionDef> = {
     hidden: true,
     keys: ["enter"],
   },
-  "select.cancel": {
-    desc: "cancel the select",
-    hidden: true,
+  "select.close": {
+    desc: "close",
     keys: ["esc"],
   },
   "select.complete": {

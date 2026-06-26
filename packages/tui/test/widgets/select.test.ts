@@ -66,8 +66,8 @@ describe("menu", () => {
   test("cancel emits cancel", () => {
     const m = select({ items })
     const fn = vi.fn()
-    m.on("cancel", fn)
-    m.actions["select.cancel"]()
+    m.on("close", fn)
+    m.actions["select.close"]()
     expect(fn).toHaveBeenCalledTimes(1)
   })
 

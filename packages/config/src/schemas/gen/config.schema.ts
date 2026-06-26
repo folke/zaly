@@ -7,7 +7,8 @@ export const ConfigSchema = {
                 type: "object",
                 properties: {
                     model: {
-                        type: "string"
+                        type: "string",
+                        description: "Defaul model to use for the agent *"
                     },
                     reasoning: {
                         type: "string",
@@ -19,7 +20,8 @@ export const ConfigSchema = {
                             "high",
                             "xhigh",
                             "max"
-                        ]
+                        ],
+                        description: "Default reasoning effort *"
                     },
                     tools: {
                         type: "array",
@@ -73,19 +75,42 @@ export const ConfigSchema = {
                         },
                         required: []
                     },
-                    actions: {
+                    skills: {
                         type: "object",
                         properties: {
-                            commandPrefix: {
+                            enabled: {
                                 type: "boolean",
-                                description: "Prefix command actions as `/command:COMMAND_NAME`. Defaults to false, e.g. `/COMMAND_NAME`."
+                                description: "Allow skills to be used by the agent. Defaults to true."
                             },
-                            skillPrefix: {
+                            actions: {
                                 type: "boolean",
-                                description: "Prefix skill actions as `/skill:SKILL_NAME`. Defaults to true, e.g. `/skill:SKILL_NAME`."
+                                description: "Show skill actions. Defaults to true."
+                            },
+                            actionPrefix: {
+                                type: "string",
+                                description: "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`"
                             }
                         },
                         required: []
+                    },
+                    commands: {
+                        type: "object",
+                        properties: {
+                            actionPrefix: {
+                                type: "string",
+                                description: "Prefix for command actions. Defaults to ``"
+                            },
+                            bash: {
+                                type: "boolean",
+                                description: "Allow bash execution in commands. Defaults to true."
+                            },
+                            expr: {
+                                type: "boolean",
+                                description: "Allow js expressions in command templates. Defaults to true."
+                            }
+                        },
+                        required: [],
+                        description: "Template commands *"
                     },
                     compaction: {
                         type: "object",
@@ -132,7 +157,8 @@ export const ConfigSchema = {
                                     "readonly",
                                     "permissive",
                                     "yolo"
-                                ]
+                                ],
+                                description: "Permissions preset to use. Defaults to \"permissive\"."
                             },
                             allow: {
                                 type: "array",

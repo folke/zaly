@@ -164,7 +164,7 @@ export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
     // item's value; Enter selects, giving the source a chance to execute.
     this.select.on("complete", ({ item }) => this.#complete(item))
     this.select.on("accept", ({ item }) => this.#accept(item))
-    this.select.on("cancel", () => cancel(true))
+    this.select.on("close", () => cancel(true))
   }
 
   get #input(): Input | undefined {

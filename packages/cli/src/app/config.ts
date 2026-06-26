@@ -6,8 +6,10 @@ import type { OptionRenderCtx, Select } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
 import { defaultSettings } from "@zaly/config"
+import { stringWidth } from "@zaly/shared/ansi"
 import { propGet } from "@zaly/shared/prop"
-import { createRef, inspect } from "@zaly/tui"
+import { createRef, inspect, signal } from "@zaly/tui"
+import { markdown } from "@zaly/tui/widgets/markdown"
 import { isDeepStrictEqual as is } from "node:util"
 import { REASONING_EFFORTS } from "../context.ts"
 
@@ -19,28 +21,51 @@ type ConfigItem<T extends ConfigProp = ConfigProp, V = ConfigValue<T>> = PickerI
   value?: V
   default?: V
   initial?: V
-  desc?: string
+  desc: string
   options?: readonly V[]
   toggle: () => MaybePromise
 }
 type OptionOpts<T extends ConfigProp> = Partial<ConfigItem<T>> &
-  Pick<ConfigItem<T>, "name" | "prop"> &
+  Pick<ConfigItem<T>, "name" | "prop" | "desc"> &
   (Pick<ConfigItem<T>, "options"> | Pick<ConfigItem<T>, "toggle">)
 type ToggleOpts<T extends ConfigProp<boolean>> = Omit<OptionOpts<T>, "options" | "toggle">
 
-function render(item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): string {
+function renderItem(item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): [string, string] {
   const s = ctx.style
   const v = item.value
   const isDefault = is(v, item.default)
-  const name = s.add({
+  const label = s.add({
     bold: !isDefault,
     dim: isDefault && !ctx.active,
-  })(item.name.padEnd(20))
+  })(item.name)
   let value: string
   if (v === undefined) value = s.muted("unset")
   else if (typeof v === "boolean") value = v ? s.mdListChecked("[x]") : s.mdListUnchecked("[ ]")
   else value = inspect(v, { style: s })
-  return `${name} ${value}`
+  return [label, value]
+}
+
+function renderer() {
+  let items: readonly ConfigItem[] = []
+  let labelWidth = 0
+  let valueWidth = 0
+
+  const update = (ctx: OptionRenderCtx<ConfigItem>) => {
+    if (ctx.items === items) return
+    items = ctx.items
+    const rendered = items.map((item) => renderItem(item, ctx))
+    labelWidth = rendered.reduce((max, [label]) => Math.max(max, stringWidth(label)), 0)
+    valueWidth = rendered.reduce((max, [, value]) => Math.max(max, stringWidth(value)), 0)
+  }
+
+  return (item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): string => {
+    update(ctx)
+    const s = ctx.style
+    const [label, value] = renderItem(item, ctx)
+    const labelStr = `${label}${" ".repeat(labelWidth - stringWidth(label))}`
+    const valueStr = `${value}${" ".repeat(valueWidth - stringWidth(value))}`
+    return `${labelStr}    ${valueStr}    ${item.desc ? s.muted(item.desc) : ""}`
+  }
 }
 
 export async function editConfig(app: App, opts: { scope?: "user" | "project" } = {}) {
@@ -49,8 +74,10 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
 
   function option<T extends ConfigProp>(item: OptionOpts<T>): ConfigItem<T> {
     const def = propGet(defaultSettings as Config, item.prop) as ConfigValue<T>
-    if (def !== undefined && item.options && !item.options.find((o) => is(o, def)))
-      throw new Error(`Default value ${inspect(def)} not in options for ${inspect(item.prop)}`)
+    if (def !== undefined && item.options && item.options.find((o) => is(o, def)) === undefined)
+      throw new Error(
+        `Default value ${inspect(def)} not in options for ${inspect(item.prop)}\n${inspect(item.options)}`
+      )
     let value = config.get(item.prop) ?? def
     const options = item.options
 
@@ -86,11 +113,23 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
 
   const items: ConfigItem[] = [
     option({
+      desc: "Default reasoning effort",
       name: "Reasoning Effort",
       options: REASONING_EFFORTS,
       prop: ["reasoning"],
     }),
     option({
+      desc: "Default model to use for the agent",
+      name: "Model",
+      prop: ["model"],
+      async toggle() {
+        const { pickModel } = await import("./model.ts")
+        const model = await pickModel(app)
+        if (model) this.value = model.id
+      },
+    }),
+    option({
+      desc: "Color theme for the UI",
       name: "Theme",
       prop: ["ui", "theme"],
       async toggle() {
@@ -100,39 +139,118 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
     }),
     toggle({
+      desc: "Show agent reasoning traces in the UI",
       name: "Show Reasoning",
       prop: ["ui", "reasoning"],
     }),
     toggle({
+      desc: "Render images, if supported by the terminal",
       name: "Show Images",
       prop: ["ui", "images"],
     }),
     option({
+      desc: "Maximum number of visible rows in selection lists, like pickers and autocomplete",
       name: "List Height",
       options: [10, 20, 30, 40],
       prop: ["ui", "listHeight"],
     }),
     option({
+      desc: "Maximum number of visible rows for trees, like the session and resources tree",
       name: "Tree Height",
       options: [10, 20, 30, 40],
       prop: ["ui", "treeHeight"],
     }),
-    toggle({
-      name: "Auto Compaction",
-      prop: ["compaction", "enabled"],
-    }),
     option({
+      desc: "Permissions preset to use",
       name: "Permissions Preset",
       options: ["strict", "readonly", "permissive", "yolo"],
       prop: ["permissions", "preset"],
     }),
+    toggle({
+      desc: "Allow skills to be used by the agent",
+      name: "Enable Skills",
+      prop: ["skills", "enabled"],
+    }),
+    toggle({
+      desc: "Show skill actions",
+      name: "Show Skill Actions",
+      prop: ["skills", "actions"],
+    }),
+    option({
+      desc: "Prefix for skill actions",
+      name: "Skill Action Prefix",
+      options: ["skill:", "", "sk:"],
+      prop: ["skills", "actionPrefix"],
+    }),
+    option({
+      desc: "Prefix for command actions",
+      name: "Command Action Prefix",
+      options: ["", "cmd:", "command:"],
+      prop: ["commands", "actionPrefix"],
+    }),
+    toggle({
+      desc: "Allow bash execution in commands",
+      name: "Allow Bash in Commands",
+      prop: ["commands", "bash"],
+    }),
+    toggle({
+      desc: "Allow js expressions in command templates",
+      name: "Allow JS Expressions in Commands",
+      prop: ["commands", "expr"],
+    }),
+    toggle({
+      desc: "Enable automatic compaction when context is full",
+      name: "Auto Compaction",
+      prop: ["compaction", "enabled"],
+    }),
+    option({
+      desc: "Existing messages up to this many tokens will be preserved in the context",
+      name: "Compaction Keep Tokens",
+      options: [10_000, 20_000, 30_000, 40_000],
+      prop: ["compaction", "keepTokens"],
+    }),
+    option({
+      desc: "Reasoning effort for the compaction summary",
+      name: "Compaction Reasoning Effort",
+      options: REASONING_EFFORTS,
+      prop: ["compaction", "reasoning"],
+    }),
+    option({
+      desc: "Maximum number of tokens to use for the generated summary",
+      name: "Compaction Summary Tokens",
+      options: [5000, 10_000, 20_000],
+      prop: ["compaction", "summaryTokens"],
+    }),
+    option({
+      desc: "Threshold for automatic compaction",
+      name: "Compaction Threshold",
+      options: [0.75, 0.85, 0.95],
+      prop: ["compaction", "threshold"],
+    }),
   ]
 
-  const ref = createRef<Select<ConfigItem>>()
-  const action = app.actions.get("config.toggle")
-  const keys = (action?.keys ?? ["space", "enter"]).map((k) => `\`<${k}>\``).join(" / ")
+  const [whichKey, setWhichKey] = signal("")
+  const ref = createRef<Select<ConfigItem>>(undefined, {
+    onSet: (select) => {
+      select.once("mount", () =>
+        setWhichKey(app.actions.whichKey(select, { filter: { hidden: false } }))
+      )
+    },
+  })
   await app.pick({
     actions: {
+      "config.reset": {
+        desc: "Reset a config option",
+        fn: () => {
+          const select = ref()
+          const active = select.item
+          if (!active) return
+          active.value = active.default
+          select.invalidate()
+        },
+        keys: ["ctrl-x"],
+        priority: 10,
+      },
       "config.toggle": {
         desc: "Toggle a config option",
         fn: () => {
@@ -144,15 +262,15 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
             select.invalidate()
           })()
         },
-        keys: ["space", "enter"],
+        keys: ["tab", "enter"],
         priority: 10,
       },
     },
-    details: `Use ${keys} to toggle a config option. Press \`<esc>\` to close.`,
+    details: () => markdown(whichKey),
     items,
     maxHeight: app.$.ui.listHeight,
     ref,
-    render,
+    render: renderer(),
     title: `Edit ${scope} config`,
   })
 

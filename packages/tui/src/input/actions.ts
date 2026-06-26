@@ -70,15 +70,20 @@ export type ActionMap = Record<string, ActionDef>
 
 export type ActionFilter = {
   cmd?: string
-  id?: string
+  id?: string | RegExp
   hidden?: boolean
   source?: string
   filter?: (info: Action) => boolean
 }
 
-function filterAction(action: Action, filter: ActionFilter): boolean {
+function filterAction(action?: Action, filter?: ActionFilter): action is Action {
+  if (!action) return false
+  if (!filter) return true
   if (filter.cmd && filter.cmd !== action.cmd) return false
-  if (filter.id && filter.id !== action.id) return false
+  if (filter.id) {
+    if (typeof filter.id === "string" && filter.id !== action.id) return false
+    if (filter.id instanceof RegExp && !filter.id.test(action.id)) return false
+  }
   if (filter.hidden !== undefined && filter.hidden !== (action.hidden ?? false)) return false
   if (filter.filter && !filter.filter(action)) return false
   if (filter.source && filter.source !== action.source) return false
@@ -250,7 +255,7 @@ export class Actions extends Emitter<ActionEvents> {
   dispatchKey(routed: RoutedKey, opts: { node?: boolean; global?: boolean } = {}): boolean {
     const actions = (this.#keymap.get(canonical(routed.pattern)) ?? [])
       .map((id) => this.get(id))
-      .filter((a): a is Action => !!a)
+      .filter((a) => filterAction(a))
       .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
     if (!actions.length) return false
     const nodeActions = (opts.node ?? true) ? actions.filter((a) => !a.fn) : []
@@ -292,5 +297,22 @@ export class Actions extends Emitter<ActionEvents> {
       }
     }
     this.#keymap = out
+  }
+
+  whichKey(node: Node, opts: { filter?: ActionFilter } = {}): string {
+    const ret: string[] = []
+    const actions = Object.keys(node.actions ?? {})
+      .map((id) => this.get(id))
+      .filter((a) => filterAction(a, opts.filter))
+      .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    const used = new Set<string>()
+    for (const action of actions) {
+      const keys = (action.keys ?? []).map((k) => canonical(k)).filter((k) => !used.has(k))
+      if (keys.length === 0) continue
+      keys.forEach((k) => used.add(k))
+      const str = keys.map((k) => `\`<${k}>\``).join(" / ")
+      ret.push(`- ${str}: ${action.desc ?? action.cmd ?? action.id}`)
+    }
+    return ret.join("\n")
   }
 }
