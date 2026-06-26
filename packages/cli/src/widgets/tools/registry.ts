@@ -6,6 +6,7 @@ import { bashRenderer } from "./bash.ts"
 import { defaultRenderer } from "./default.ts"
 import { editRenderer } from "./edit.ts"
 import { readRenderer } from "./read.ts"
+import { skillRenderer } from "./skill.ts"
 import { writeRenderer } from "./write.ts"
 
 /**
@@ -48,6 +49,7 @@ const builtin = {
   find: () => bashRenderer as ToolRenderer,
   grep: () => bashRenderer as ToolRenderer,
   read: () => readRenderer as ToolRenderer,
+  skill: () => skillRenderer as ToolRenderer,
   write: () => writeRenderer as ToolRenderer,
 } as const satisfies Record<string, ToolResultLoader>
 

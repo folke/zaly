@@ -10,7 +10,7 @@ export async function loadSkills(app: App): Promise<void> {
   for (const skill of skills.catalog.values()) {
     actions.push({
       cmd: `${app.$.actions.skillPrefix ? "skill:" : ""}${skill.name}`,
-      desc: skill.description,
+      desc: skill.desc,
       fn: async () => {
         const toolUse = await skills.activate(skill.name, app.agent)
         if (!toolUse) app.notify(`Skill \`${skill.name}\` already activated.`, { level: "warn" })

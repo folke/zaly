@@ -12,6 +12,8 @@ import { Type } from "typebox"
 export type SkillMeta = {
   name: string
   mtime: number
+  desc: string
+  path: string
   unchanged?: boolean
 }
 
@@ -44,7 +46,7 @@ export type SkillTool = Tool<{ name: string }, unknown, SkillMeta>
 
 export interface SkillEntry {
   name: string
-  description: string
+  desc: string
   mtime: number
   body: string
   /** Absolute path to the SKILL.md file. */
@@ -97,7 +99,7 @@ export class Skills {
       if (!meta.name || !meta.description || this.catalog.has(meta.name)) return
       return {
         body,
-        description: meta.description,
+        desc: meta.description,
         dir,
         mtime,
         name: meta.name,
@@ -168,10 +170,11 @@ export class Skills {
     // Refresh the skill entry so we have an up-to-date mtime for staleness checks in `isActivated`.
     skill = await this.#update(skill)
 
+    ctx.meta = { desc: skill.desc, mtime: skill.mtime, name: skill.name, path: skill.path }
     const activated = await this.isActivated(skill, ctx)
     if (activated) {
-      ctx.meta = { mtime: skill.mtime, name: skill.name, unchanged: true }
       // Already activated and fresh — no need to reload or update the tool result.
+      ctx.meta.unchanged = true
       return [
         {
           content: `skill "${skill.name}" unchanged since last read: ${skill.path}`,
@@ -180,10 +183,8 @@ export class Skills {
         },
       ]
     }
-    ctx.meta = { mtime: skill.mtime, name: skill.name }
 
     const references = await listReferences(skill.dir)
-
     return [
       {
         data: { dir: skill.dir, name: skill.name, references },
@@ -222,7 +223,7 @@ export class Skills {
       "should follow them directly. Bundled files are listed in the " +
       "result but not eagerly read — fetch the ones the skill's " +
       "instructions reference via the `read` tool."
-    const lines = [...this.catalog.values()].map((s) => `- ${s.name}: ${s.description}`)
+    const lines = [...this.catalog.values()].map((s) => `- ${s.name}: ${s.desc}`)
     return `${header}\n\nAvailable skills:\n${lines.join("\n")}`
   }
 }

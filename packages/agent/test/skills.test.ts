@@ -51,7 +51,7 @@ describe("Skills — catalog", () => {
     })
     const skills = await Skills.load({ paths: [path] })
     expect(skills.catalog.size).toBe(1)
-    expect(skills.catalog.get("pdf")?.description).toBe("Work with PDFs")
+    expect(skills.catalog.get("pdf")?.desc).toBe("Work with PDFs")
   })
 
   test("first occurrence wins on name collision", async () => {
@@ -66,7 +66,7 @@ describe("Skills — catalog", () => {
       meta: { description: "second", name: "shared" },
     })
     const skills = await Skills.load({ paths: [a, b] })
-    expect(skills.catalog.get("shared")?.description).toBe("first")
+    expect(skills.catalog.get("shared")?.desc).toBe("first")
   })
 
   test("dirs lists the skill base directories", async () => {
@@ -164,7 +164,7 @@ describe("Skills — frontmatter parsing", () => {
       "---\nname: colons\ndescription: Use this when: things have colons\n---\nbody"
     )
     const skills = await Skills.load({ paths: [path] })
-    expect(skills.catalog.get("colons")?.description).toBe("Use this when: things have colons")
+    expect(skills.catalog.get("colons")?.desc).toBe("Use this when: things have colons")
   })
 
   test("strips surrounding quotes from values", async () => {
@@ -173,7 +173,7 @@ describe("Skills — frontmatter parsing", () => {
     const path = join(dir, "SKILL.md")
     writeFileSync(path, `---\nname: "quoted"\ndescription: 'q-desc'\n---\nbody`)
     const skills = await Skills.load({ paths: [path] })
-    expect(skills.catalog.get("quoted")?.description).toBe("q-desc")
+    expect(skills.catalog.get("quoted")?.desc).toBe("q-desc")
   })
 
   test("missing description → skill skipped", async () => {
