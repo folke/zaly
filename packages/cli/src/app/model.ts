@@ -36,6 +36,7 @@ export async function pickModel(
     sort: ["score:desc", "idx"],
   })
   if (!ret) return
+  void app.config.state.update({ lastModel: ret.text })
   model.active = await model.load(ret.text)
   return model.active
 }
@@ -47,12 +48,21 @@ export async function bootstrapModel(
 ): Promise<void> {
   const ctx = app.ctx
   const settings = ctx.config.$
-  const modelId = ctx.flags.model ?? agent.session.settings.modelId ?? settings.model
+
+  // Resolve model ID from flags, session, config, or last used model
+  const modelId =
+    ctx.flags.model ??
+    agent.session.settings.modelId ??
+    settings.model ??
+    app.config.state.$.lastModel
   if (!modelId) return
+
   const model = await ctx.model()
   if (model.active && !opts.force) return
   try {
     model.active = await model.load({ apiKey: ctx.flags.apiKey, id: modelId })
+    // Only update lastModel from flags if it could actually be loaded
+    if (ctx.flags.model) void app.config.state.update({ lastModel: ctx.flags.model })
   } catch (error) {
     if (opts.notify)
       app.notify(`Failed to load model **${modelId}**:\n${toError(error).message}`, {
