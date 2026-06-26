@@ -6,13 +6,12 @@ import type {
   ResourceType,
 } from "@zaly/config"
 import type { AnyStyle, RenderCtx } from "@zaly/tui"
-import type { Option, Select } from "@zaly/tui/widgets/select"
+import type { Option } from "@zaly/tui/widgets/select"
 import type { TreeItem } from "@zaly/tui/widgets/tree"
 import type { App } from "./app.ts"
 
 import { RESOURCE_TYPES } from "@zaly/config"
 import { prettyPath } from "@zaly/shared"
-import { createRef } from "@zaly/tui"
 import { capitalize } from "@zaly/tui/text"
 import { basename, dirname } from "pathe"
 
@@ -201,30 +200,13 @@ export async function pickResources(app: App, opts: { scope?: ConfigScope } = {}
     })
     return
   }
-  const ref = createRef<Select<ResourceItem>>()
-  const action = app.actions.get("resources.toggle")
-  const keys = (action?.keys ?? ["space", "enter"]).map((k) => `\`<${k}>\``).join(" / ")
   await app.pick({
-    actions: {
-      "resources.toggle": {
-        desc: "Toggle a resource",
-        fn: () => {
-          const select = ref()
-          const active = select.item
-          if (!active) return
-          active.enabled = !active.enabled
-          select.invalidate()
-        },
-        keys: ["space", "enter"],
-        priority: 10,
-      },
-    },
-    details: `Use ${keys} to toggle a resource on or off. Press \`<esc>\` to close.`,
     maxHeight: app.$.ui.treeHeight,
-    ref,
+    multi: { render: false },
     render: (item, ctx) => item.render(ctx),
     title: `Manage ${opts.scope ?? "all"} resources`,
     tree: root,
+    whichKey: true,
   })
   await resources.save()
 }
