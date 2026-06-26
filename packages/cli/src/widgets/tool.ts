@@ -1,5 +1,5 @@
 import type { Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Accessor, InspectOpts, Reactive, RenderCtx } from "@zaly/tui"
+import type { Accessor, InspectOpts, Reactive } from "@zaly/tui"
 import type { BubbleType } from "./bubble.ts"
 
 import { safeParseToolParams } from "@zaly/ai"
@@ -20,24 +20,44 @@ export type ToolCallProps = {
   collapsed?: Reactive<boolean>
 }
 
+const COMMON_PARAMS = ["path", "command", "url", "pattern", "glob"]
+
+/** Render a tool call preview: `toolName(param)` */
 export function toolPreview(tool: string, params: string | Record<string, unknown> = "") {
-  return text((ctx) => renderToolCall(tool, { ...ctx, params }))
+  return text((ctx) => {
+    const { style, width } = ctx
+    const p = toolParams(params, { width: Math.min(80, width - tool.length - 2) })
+    return `${style.primary.bold(tool)}(${p})`
+  })
 }
 
+/** Convert tool params to a string for preview:
+ * - If `params` is a string, try to parse it as JSON first.
+ * - If `params` is an object, extract the first common param if available.
+ * - Otherwise, inspect the value with optional quoting and truncation.
+ */
 export function toolParams(
   params: unknown = "",
-  opts: InspectOpts & { raw?: boolean; width?: number } = {}
+  opts: InspectOpts & { quote?: boolean; width?: number } = {}
 ) {
-  const parsed = params ? (safeParseToolParams<Tool<Record<string, unknown>>>(params) ?? {}) : {}
-  const p = parsed.path ?? parsed.command ?? parsed.url ?? parsed.pattern ?? parsed.glob ?? parsed
-  const ret = typeof p === "string" && opts.raw ? p : inspect(p, { indent: 0, ...opts })
-  return opts.width ? truncateAnsi(ret, opts.width) : ret
-}
+  // Try to parse params as JSON if it's a string
+  if (typeof params === "string")
+    params = safeParseToolParams<Tool<Record<string, unknown>>>(params) ?? params
 
-export function renderToolCall(tool: string, ctx: RenderCtx & { params?: unknown }) {
-  const { style, width } = ctx
-  const params = toolParams(ctx.params, { width: Math.min(80, width - tool.length - 2) })
-  return `${style.primary.bold(tool)}(${params})`
+  let value = params
+
+  // Check if params is an object and extract the first common param if available
+  if (typeof params === "object" && params !== null && !Array.isArray(params)) {
+    const rec = params as Record<string, unknown>
+    const key = COMMON_PARAMS.find((k) => rec[k] !== undefined)
+    value = key ? rec[key] : params
+  }
+
+  const ret =
+    typeof value === "string" && opts.quote === false
+      ? value
+      : inspect(value, { indent: 0, ...opts })
+  return opts.width ? truncateAnsi(ret, opts.width) : ret
 }
 
 /**
@@ -74,7 +94,7 @@ export const toolCall = widget((props: ToolCallProps) => {
     { pending: props.pending, type: status },
     box(
       { flexDirection: "column" },
-      toolPreview(call.name, params),
+      renderer.call({ call, params, result: props.result }),
       // Optional description, dimmed
       desc ? text(({ style }) => style.dim(desc)) : undefined,
       show(

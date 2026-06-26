@@ -168,7 +168,7 @@ function expand(
         if (!filter.has("tools")) continue
         ret.push({
           render: (ctx) =>
-            `${icon(ctx)}${ctx.style.syntaxConstant(part.name)}: ${ctx.style.muted(toolParams(part.params, { ...ctx, raw: true }))}`,
+            `${icon(ctx)}${ctx.style.syntaxConstant(part.name)}: ${ctx.style.muted(toolParams(part.params, { ...ctx, quote: false }))}`,
           role: m.role,
           text: `tool ${part.name} ${typeof part.params === "string" ? part.params : JSON.stringify(part.params)}`,
         })
