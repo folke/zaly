@@ -222,7 +222,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
         active: i === active,
         items,
         visible,
-      })
+      }).replace(/\n/g, " ")
       row = fitAnsi(row, width)
       rows.push(i === active ? ctx.style.optionActive(row) : row)
     }
