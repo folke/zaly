@@ -1,9 +1,14 @@
 import type { Agent } from "@zaly/agent"
-import type { Model } from "@zaly/ai"
-import type { Option } from "@zaly/tui/widgets/select"
+import type { Model, ModelSpec } from "@zaly/ai"
+import type { PickerItem } from "@zaly/tui/widgets/picker"
 import type { App } from "./app.ts"
 
 import { formatNumber, toError } from "@zaly/shared"
+import { memo, signal } from "@zaly/tui"
+
+type ModelItem = PickerItem & {
+  model: ModelSpec
+}
 
 export async function pickModel(
   app: App,
@@ -11,15 +16,25 @@ export async function pickModel(
 ): Promise<Model | undefined> {
   const model = await app.ctx.model()
   const filter = opts?.filter ?? ""
+
+  const [all, setAll] = signal(opts?.all ?? false)
+
   const models = await model.list({
-    auth: opts?.all ? undefined : true,
     filter: filter.length > 0 ? filter : undefined,
   })
 
-  const items: Option[] = []
-  for (const m of models) {
+  const auth = new Set(
+    await model
+      .list({
+        auth: true,
+        filter: filter.length > 0 ? filter : undefined,
+      })
+      .then((spec) => spec.map((m) => m.id))
+  )
+
+  const modelItems: ModelItem[] = models.map((m) => {
     const name = (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name
-    items.push({
+    return {
       desc: [
         formatNumber(m.contextSize),
         m.reasoning ? "reasoning" : undefined,
@@ -28,18 +43,36 @@ export async function pickModel(
       ]
         .filter(Boolean)
         .join(", "),
+      model: m,
       name,
       text: `${m.id} ${name}`,
-    })
-  }
+    }
+  })
+
+  const items = memo(() => {
+    const want = all() ? () => true : (id: string) => auth.has(id)
+    return modelItems.filter((m) => want(m.model.id))
+  })
+
   const ret = await app.pick({
+    actions: {
+      "models.toggleAll": {
+        cmd: "toggle-all",
+        desc: "Toggle showing all models, including those without local auth",
+        fn: () => setAll((prev) => !prev),
+        keys: ["ctrl-a"],
+      },
+    },
     items,
     reverse: true,
     sort: ["score:desc", "idx"],
+    title: "Select a model to use for this session (or type to filter)",
+    whichKey: true,
   })
+
   if (!ret) return
-  void app.config.state.update({ lastModel: ret.text })
-  model.active = await model.load(ret.text)
+  void app.config.state.update({ lastModel: ret.model.id })
+  model.active = await model.load(ret.model.id)
   return model.active
 }
 
