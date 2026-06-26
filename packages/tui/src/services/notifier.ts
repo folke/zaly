@@ -31,6 +31,7 @@ export class Notifier {
       const notif = this.#active.get(node)
       if (!notif) return
       notif.state = state
+      setImmediate(() => this.#check())
     })
   }
 
@@ -61,19 +62,18 @@ export class Notifier {
   }
 
   #check() {
-    if (this.#queue.length === 0) return
-
-    const termHeight = this.#ui.$r.terminal.rows
-    let y = 2
-    for (const n of this.#active.values()) {
-      if (!n.state) return // wait till it renders
-      y = Math.max(y, n.state.y + n.state.height + 1)
+    while (this.#queue.length) {
+      const termHeight = this.#ui.$r.terminal.rows
+      let y = 2
+      for (const n of this.#active.values()) {
+        if (!n.state) return // wait till it renders
+        y = Math.max(y, n.state.y + n.state.height + 1)
+      }
+      if (termHeight - y < 10) return // Don't start if less than 10 rows remain below the last notif
+      const next = this.#queue.shift()!
+      next.node.state.y = y
+      this.#start(next)
     }
-    if (termHeight - y < 10) return // Don't start if less than 10 rows remain below the last notif
-
-    const next = this.#queue.shift()!
-    next.node.state.y = y
-    this.#start(next)
   }
 
   notify(msg: string, opts?: NotifProps): Overlay {
