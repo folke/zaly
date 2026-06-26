@@ -57,6 +57,9 @@ export interface SelectState<T extends Option = Option> extends Style {
    *  `name ?? text` as the label and `desc` as the right-column hint. */
   render?: Reactive<OptionRender<T> | undefined>
   reverse?: boolean
+  /** Whether there are more items available than are currently shown. This is a hint for the
+   *  default renderer to show a "more" indicator in the counter. */
+  more?: boolean
 }
 
 export interface SelectEvents<T extends Option = Option> extends BaseEvents {
@@ -230,7 +233,7 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
 
     if (this.state.counter ?? items.length > height) {
       const shown = items.length === 0 ? 0 : active + 1
-      const label = `(${shown}/${items.length})`
+      const label = `(${shown}/${items.length}${this.state.more ? "+" : ""})`
       rows.push(ctx.style.gutter(fitAnsi(label, width)))
     }
 

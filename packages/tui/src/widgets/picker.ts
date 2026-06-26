@@ -100,17 +100,17 @@ export const picker = widget(
         .filter(([item]) => item.score)
         .map(([, i]) => i)
 
-    if (props.filter === false) {
+    effect(() => {
+      const m = matches()
+      node.state.more = m.length >= searcher.limit
+      if (props.filter !== false) return
       // When not filtering, go to the next match when the pattern changes
-      effect(() => {
-        const m = matches()
-        if (m.length === 0 || pattern() === "") return
-        untrack(() => {
-          const active = node.active
-          node.active = m.find((i) => i >= active) ?? m[0]
-        })
+      if (m.length === 0 || pattern() === "") return
+      untrack(() => {
+        const active = node.active
+        node.active = m.find((i) => i >= active) ?? m[0]
       })
-    }
+    })
 
     return node.withActions({
       ...props.actions,

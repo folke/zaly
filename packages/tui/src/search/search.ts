@@ -68,6 +68,10 @@ export class Searcher<T extends SearchItem = SearchItem> {
     }
   }
 
+  get limit(): number {
+    return this.#opts.limit ?? (this.#sorter ? SEARCH_LIMIT : Infinity)
+  }
+
   async #search(
     items: SearchItems<T>,
     query = "",
@@ -80,7 +84,7 @@ export class Searcher<T extends SearchItem = SearchItem> {
     m.init(query)
     const f = this.#opts.frecency?.()
     const s = this.#sorter
-    const limit = this.#opts.limit ?? (this.#sorter ? SEARCH_LIMIT : Infinity)
+    const limit = this.limit
     const ret: ScoredItem<T>[] = []
     let match = (item: T) => this.#matcher.update(item)
     const topk =
