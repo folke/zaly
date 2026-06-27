@@ -66,6 +66,25 @@ interface JwtPayload {
   [k: string]: unknown
 }
 
+/** Auth provider for the synthetic `openai-codex` provider id. Returns
+ *  `undefined` for every other model so it composes cleanly via
+ *  `chainAuth(codexAuth, envAuth)`. */
+export const codexAuth: OAuthProvider = {
+  async getAuth(model: ModelSpec): Promise<AuthCredentials | undefined> {
+    if (model.apiKey) return undefined // respect explicit API keys (e.g. from envAuth or secretsAuth)
+    if (!model.id.startsWith("openai-codex/")) return
+    const creds = await getCodexCredentials()
+    if (creds === undefined) return undefined
+    return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
+  },
+  async login(opts?: OAuthOptions): Promise<AuthCredentials> {
+    if (!opts) throw new Error("Login options are required for codexAuth.login")
+    const creds = await loginCodex(opts)
+    return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
+  },
+  priority: 10, // higher than envAuth to take precedence when both are registered,
+}
+
 // ── JWT helpers ─────────────────────────────────────────────────────────
 
 function decodeJwt(token: string): JwtPayload | undefined {
@@ -400,23 +419,4 @@ function buildCodexHeaders(creds: CodexCredentials): Record<string, string> {
     "chatgpt-account-id": creds.accountId,
     originator: "zaly",
   }
-}
-
-/** Auth provider for the synthetic `openai-codex` provider id. Returns
- *  `undefined` for every other model so it composes cleanly via
- *  `chainAuth(codexAuth, envAuth)`. */
-export const codexAuth: OAuthProvider = {
-  async getAuth(model: ModelSpec): Promise<AuthCredentials | undefined> {
-    if (model.apiKey) return undefined // respect explicit API keys (e.g. from envAuth or secretsAuth)
-    if (!model.id.startsWith("openai-codex/")) return
-    const creds = await getCodexCredentials()
-    if (creds === undefined) return undefined
-    return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
-  },
-  async login(opts?: OAuthOptions): Promise<AuthCredentials> {
-    if (!opts) throw new Error("Login options are required for codexAuth.login")
-    const creds = await loginCodex(opts)
-    return { apiKey: creds.access, headers: buildCodexHeaders(creds) }
-  },
-  priority: 10, // higher than envAuth to take precedence when both are registered,
 }

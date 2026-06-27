@@ -12,6 +12,7 @@
 
 import type { MaybePromise } from "@zaly/shared"
 import type { Static, TObject, TSchema } from "typebox/type"
+import type { AnyAuthProvider } from "./auth/auth.ts"
 import type { FinishReason, Usage } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
 
@@ -489,20 +490,31 @@ export interface ModelInfo {
   experimental?: {
     modes?: ExperimentalModes
   }
+  provider?: ModelProviderOverride
 }
 
 /** Metadata for one provider endpoint — one-to-one with the
  *  models.dev `Provider` schema. */
 export interface ProviderInfo {
+  /** Provider id **/
   id: string
+  api: AnyProvider
+  /** Base URL for API requests **/
   baseUrl?: string
-  /** Env-var names consulted for credentials, in priority order.
-   *  The first element is the conventional one (`OPENAI_API_KEY`
-   *  etc.); downstream entries are fallbacks. */
-  env: string[]
+  /** Provider name **/
   name: string
   /** Docs link for this provider's model list. */
   doc: string
+  /** Custom auth providers for this provider */
+  // FIXME: hook up the auth provider registry so we can validate these against the known set
+  auth?: AnyAuthProvider[]
+  /** Env-var names consulted for credentials, in priority order.
+   *  The first element is the conventional one (`OPENAI_API_KEY`
+   *  etc.); downstream entries are fallbacks. */
+  env?: string[]
+  headers?: Record<string, string>
+  quirks?: Quirks
+  models: Record<string, ModelInfo>
 }
 
 // ── Runtime API types ───────────────────────────────────────────────────

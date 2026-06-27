@@ -2,7 +2,7 @@ import type { ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { modelCollection } from "../src/model.ts"
-import { builtinProviders, filterModel, getModel, parseModelId } from "../src/models.ts"
+import { filterModel, getModel, parseModelId } from "../src/models.ts"
 
 describe("parseModelId", () => {
   test("two-segment id", () => {
@@ -114,18 +114,5 @@ describe("listModels", () => {
     // also register customs (the customModels Map is module-global) and
     // those would leak in here when the full suite runs.
     expect(missing).toBeUndefined()
-  })
-})
-
-describe("listModelIds", () => {
-  test("builtinProviders returns the catalog providers map", async () => {
-    const provs = await builtinProviders()
-    expect(provs).toBeDefined()
-    expect(typeof provs).toBe("object")
-    // Every entry has at least the basic ProviderInfo fields.
-    for (const [, info] of Object.entries(provs)) {
-      expect(typeof info.id).toBe("string")
-      expect(Array.isArray(info.env)).toBe(true)
-    }
   })
 })

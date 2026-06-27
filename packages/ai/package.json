@@ -33,7 +33,7 @@
   "scripts": {
     "build": "z build",
     "lint": "z lint",
-    "models": "bun scripts/fetch-models.ts && bun scripts/build-models.ts",
+    "models": "bun scripts/fetch-models.ts",
     "test": "z test"
   },
   "dependencies": {

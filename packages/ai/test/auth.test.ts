@@ -19,7 +19,15 @@ const baseSpec: ModelSpec = {
 const withEnv = (envs: string[]): ModelSpec => ({
   ...baseSpec,
   env: envs,
-  provider: { doc: "", env: envs, id: "x", models: {}, name: "x", npm: "x" } as ProviderInfo,
+  provider: {
+    doc: "",
+    env: envs,
+    id: "x",
+    models: {},
+    name: "x",
+    npm: "x",
+    api: "",
+  } as ProviderInfo,
 })
 
 describe("envAuth", () => {

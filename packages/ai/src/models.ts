@@ -1,21 +1,8 @@
 import type { AuthProvider } from "./auth/auth.ts"
-import type { AnyProvider } from "./providers/registry.ts"
-import type { Modality, ModelInfo, ModelSpec, ProviderInfo, Quirks } from "./types.ts"
+import type { Modality, ModelSpec } from "./types.ts"
 
 import { hasAuth } from "./auth/auth.ts"
-
-export type StoredModel = ModelInfo & {
-  api: AnyProvider
-  baseUrl?: string
-  quirks?: Quirks
-  headers?: Record<string, string>
-}
-
-/** On-disk catalog shape emitted by `scripts/build-providers.ts`. */
-export interface ModelCatalog {
-  providers: Record<string, ProviderInfo>
-  models: Record<string, StoredModel>
-}
+import { loadCatalog } from "./models/catalog.ts"
 
 /** Split a model URI into `{ provider, model }`. Throws on malformed
  *  input — a typo at the call site is more useful surfaced here than
@@ -34,24 +21,6 @@ export function parseModelId(id: string): { provider: string; model: string } {
   return { model, provider }
 }
 
-// ── Catalog loading ─────────────────────────────────────────────────────
-//
-// One JSON import covers the whole catalog — both the `providers` map
-// (shared metadata) and the `models` map (pre-resolved ModelOptions,
-// minus `providerInfo` which is joined in at lookup time from the
-// `providers` map).
-
-let catalogPromise: Promise<ModelCatalog> | undefined
-
-function loadCatalog(): Promise<ModelCatalog> {
-  // PERF: much faster without bundling and much faster ts type checking
-  const url = new URL("../assets/models.json", import.meta.url).href
-  catalogPromise ??= import(url, { with: { type: "json" } }).then(
-    (m) => m.default as unknown as ModelCatalog
-  )
-  return catalogPromise
-}
-
 // ── Runtime-registered custom catalog ───────────────────────────────────
 
 /** Look up model options by id. Custom models win over built-ins.
@@ -60,8 +29,7 @@ function loadCatalog(): Promise<ModelCatalog> {
  *  `providerInfo` from the shared providers map. */
 export async function getModel(id: string): Promise<ModelSpec | undefined> {
   const catalog = await loadCatalog()
-  const stored = catalog.models[id] as StoredModel | undefined
-  return stored ? toModelSpec(id, stored, catalog) : undefined
+  return catalog.model(id)
 }
 
 /** Predicate inputs for narrowing a model list.
@@ -125,10 +93,10 @@ function matchesModality(m: ModelSpec, spec: NonNullable<ModelFilter["modality"]
  *  custom models. For just ids (autocomplete sources), use
  *  `listModelIds` — one compact JSON, no catalog load needed. */
 export async function filterModels(
-  models: ModelSpec[],
+  models: readonly ModelSpec[],
   opts?: ModelFilter
 ): Promise<Record<string, ModelSpec>> {
-  models.sort((a, b) => {
+  models = models.toSorted((a, b) => {
     const ap = a.provider?.name ?? "0"
     const bp = b.provider?.name ?? "0"
     if (ap && bp && ap !== bp) return ap.localeCompare(bp)
@@ -152,42 +120,6 @@ export async function filterModels(
  *  custom models. For just ids (autocomplete sources), use
  *  `listModelIds` — one compact JSON, no catalog load needed. */
 export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
-  // FIXME: filter should also apply to custom models?
   const catalog = await loadCatalog()
-  const models: ModelSpec[] = Object.entries(catalog.models).map(([id, stored]) =>
-    toModelSpec(id, stored, catalog)
-  )
-  return await filterModels(models, opts)
-}
-
-/** Built-in providers map. Exposed so callers can read endpoint
- *  metadata directly (names, docs URLs, env-var names) for pickers
- *  or admin tooling. */
-export async function builtinProviders(): Promise<Readonly<Record<string, ProviderInfo>>> {
-  const catalog = await loadCatalog()
-  return catalog.providers
-}
-
-function toModelSpec(id: string, model: StoredModel, catalog: ModelCatalog): ModelSpec {
-  const provider = catalog.providers[parseModelId(id).provider] as ProviderInfo | undefined
-  if (!provider)
-    throw new Error(`Provider "${parseModelId(id).provider}" not found for model "${id}".`)
-  // oxlint-disable-next-line sort-keys
-  return {
-    id,
-    name: model.name,
-    model: model.id,
-    api: model.api,
-    baseUrl: model.baseUrl ?? provider.baseUrl,
-    headers: model.headers,
-    reasoning: model.reasoning,
-    input: model.modalities.input,
-    output: model.modalities.output,
-    maxTokens: model.limit.output,
-    contextSize: model.limit.context,
-    quirks: model.quirks,
-    env: provider.env,
-    provider,
-    info: model,
-  }
+  return await filterModels(catalog.models, opts)
 }

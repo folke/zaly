@@ -1,4 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs"
+import type { ModelInfo } from "../src/types.ts"
+
+import { formatSize } from "@zaly/shared"
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 /**
  * Fetch the models.dev catalog, snapshot it to `assets/models.json`,
@@ -7,69 +10,36 @@ import { join } from "node:path"
  * Run:  bun packages/ai/scripts/fetch-models.ts
  */
 import { gzipSync } from "node:zlib"
+import { downloadCatalog } from "../src/models/catalog.ts"
 
-const CATALOG_URL = "https://models.dev/api.json"
 const OUT_DIR = join(import.meta.dirname, "..", "assets")
-// Raw snapshot — unfiltered. `build-providers.ts` filters this down
-// into the runtime-consumed `assets/models.json`.
-const OUT_FILE = join(OUT_DIR, "snapshot.json")
 
-interface Provider {
-  id: string
-  name: string
-  env: string[]
-  npm: string
-  api?: string
-  doc: string
-  models: Record<string, ModelMeta>
-}
-
-interface ModelMeta {
-  id: string
-  name: string
-  reasoning: boolean
-  tool_call: boolean
-  attachment: boolean
-  modalities: { input: string[]; output: string[] }
-  limit: { context: number; input?: number; output: number }
-  cost?: Record<string, number | Record<string, number>>
-  provider?: { shape?: "completions" | "responses" }
-  status?: string
-}
-
-console.log(`→ GET ${CATALOG_URL}`)
 const t0 = performance.now()
-const res = await fetch(CATALOG_URL)
-if (!res.ok) {
-  console.error(`✖ ${res.status} ${res.statusText}`)
-  process.exit(1)
-}
-const raw = await res.text()
 const ms = Math.round(performance.now() - t0)
-console.log(`✓ ${(raw.length / 1024).toFixed(1)} KB in ${ms}ms\n`)
-
-mkdirSync(OUT_DIR, { recursive: true })
-writeFileSync(OUT_FILE, raw)
-console.log(`→ wrote ${OUT_FILE}`)
+const catalog = await downloadCatalog(OUT_DIR)
+const raw = readFileSync(join(OUT_DIR, "snapshot.json"), "utf8")
+const cleaned = readFileSync(join(OUT_DIR, "models.json"), "utf8")
+console.log(`✓ ${formatSize(raw.length)} in ${ms}ms\n`)
+console.log(`→ supported providers/models: ${formatSize(cleaned.length)}`)
 
 // ── stats ────────────────────────────────────────────────────────────────
 
-const catalog: Record<string, Provider> = JSON.parse(raw)
-const providers = Object.values(catalog)
-const allModels: (ModelMeta & { providerId: string })[] = []
+const providers = Object.values(catalog.$).filter((p) => !!p)
+const allModels: (ModelInfo & { providerId: string })[] = []
 for (const p of providers) {
   for (const m of Object.values(p.models)) allModels.push(Object.assign(m, { providerId: p.id }))
 }
 
-const gzipped = gzipSync(Buffer.from(raw)).length
+const gzipped = gzipSync(Buffer.from(cleaned)).length
 
 console.log()
 console.log("── size ─────────────────────────────────────────────────────")
-console.log(`  raw JSON:    ${(raw.length / 1024).toFixed(1)} KB`)
-console.log(`  gzipped:     ${(gzipped / 1024).toFixed(1)} KB`)
-console.log(`  providers:   ${providers.length}`)
-console.log(`  models:      ${allModels.length}`)
-console.log(`  avg bytes/model (raw):  ${Math.round(raw.length / allModels.length)}`)
+console.log(`  raw JSON:     ${formatSize(raw.length)}`)
+console.log(`  cleaned JSON: ${formatSize(cleaned.length)}`)
+console.log(`  gzipped:      ${formatSize(gzipped)}`)
+console.log(`  providers:    ${providers.length}`)
+console.log(`  models:       ${allModels.length}`)
+console.log(`  avg bytes/model (raw):  ${Math.round(cleaned.length / allModels.length)}`)
 
 console.log()
 console.log("── adapter families (by npm) ────────────────────────────────")
@@ -81,14 +51,8 @@ for (const [npm, count] of [...byNpm.entries()].toSorted((a, b) => b[1] - a[1]))
 
 console.log()
 console.log("── providers per adapter we support (openai family) ─────────")
-const OPENAI_FAMILY = new Set([
-  "@ai-sdk/openai",
-  "@ai-sdk/openai-compatible",
-  "@openrouter/ai-sdk-provider",
-])
-const ANTHROPIC_FAMILY = new Set(["@ai-sdk/anthropic"])
-const supported = providers.filter((p) => OPENAI_FAMILY.has(p.npm) || ANTHROPIC_FAMILY.has(p.npm))
-const skipped = providers.filter((p) => !OPENAI_FAMILY.has(p.npm) && !ANTHROPIC_FAMILY.has(p.npm))
+const supported = providers.filter((p) => catalog.provider(p.id))
+const skipped = providers.filter((p) => !catalog.provider(p.id))
 const supportedModels = supported.reduce((n, p) => n + Object.keys(p.models).length, 0)
 console.log(`  supported:   ${supported.length} providers · ${supportedModels} models`)
 console.log(`  skipped:     ${skipped.length} providers · ${skipped.map((p) => p.id).join(", ")}`)
