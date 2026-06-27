@@ -86,7 +86,7 @@ function toModelSpec(model: ModelResponse, show: ShowResponse, baseUrl: string):
       release_date: date(model.modified_at),
       tool_call: capabilities.has("tools"),
     },
-    providerInfo: {
+    provider: {
       id: "ollama",
       name: "Ollama",
     },

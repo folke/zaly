@@ -646,7 +646,7 @@ export interface ModelSpec extends ProviderOptions {
   /** Catalog model info */
   info?: Partial<ModelInfo>
   /** Catalog provider info */
-  providerInfo?: Partial<ProviderInfo>
+  provider?: Partial<ProviderInfo>
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */

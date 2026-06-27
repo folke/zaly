@@ -33,7 +33,7 @@ export async function pickModel(
   )
 
   const modelItems: ModelItem[] = models.map((m) => {
-    const name = (m.providerInfo?.name ? `[${m.providerInfo.name}] ` : "") + m.name
+    const name = (m.provider?.name ? `[${m.provider.name}] ` : "") + m.name
     return {
       desc: [
         formatNumber(m.contextSize),

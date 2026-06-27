@@ -77,7 +77,7 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
       tool_call: model.capabilities?.trained_for_tool_use ?? false,
     },
     env: ["LM_STUDIO_API_KEY"],
-    providerInfo: {
+    provider: {
       id: "lm-studio",
       name: "LM Studio",
     },

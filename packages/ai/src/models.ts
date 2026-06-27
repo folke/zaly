@@ -129,8 +129,8 @@ export async function filterModels(
   opts?: ModelFilter
 ): Promise<Record<string, ModelSpec>> {
   models.sort((a, b) => {
-    const ap = a.providerInfo?.name ?? "0"
-    const bp = b.providerInfo?.name ?? "0"
+    const ap = a.provider?.name ?? "0"
+    const bp = b.provider?.name ?? "0"
     if (ap && bp && ap !== bp) return ap.localeCompare(bp)
     const ka = a.info?.release_date ?? a.info?.last_updated ?? a.id
     const kb = b.info?.release_date ?? b.info?.last_updated ?? b.id
@@ -187,7 +187,7 @@ function toModelSpec(id: string, model: StoredModel, catalog: ModelCatalog): Mod
     contextSize: model.limit.context,
     quirks: model.quirks,
     env: provider.env,
-    providerInfo: provider,
+    provider,
     info: model,
   }
 }
