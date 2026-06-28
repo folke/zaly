@@ -275,7 +275,7 @@ class ModelCollection extends BaseCollection<
 
   async load(opts: ModelOpts): Promise<Model> {
     const id = typeof opts === "string" ? opts : opts.id
-    return loadModel(opts, await this.get(id), this.#auth)
+    return loadModel(opts, await this.get(id), { auth: this.#auth, logger: this.#logger })
   }
 
   async list(filter?: ModelFilter): Promise<ModelSpec[]> {
