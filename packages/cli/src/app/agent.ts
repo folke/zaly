@@ -31,6 +31,11 @@ export async function loadAgent(app: App): Promise<Agent> {
     bash: settings.system.bash,
     compaction: () => app.$.compaction,
     cwd,
+    loadModel: async (id) => {
+      // Load the model using the proper model registry and auth manager
+      const model = await ctx.model()
+      return await model.load(id)
+    },
     logger: ctx.logger.child("agent"),
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }

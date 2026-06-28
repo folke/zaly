@@ -251,4 +251,6 @@ export interface AgentOptions extends CollectOptions {
   compaction?: MaybeGetter<Partial<CompactionOptions>>
   /** Override the default `bash` command used by the `bash` tool. */
   bash?: string[]
+
+  loadModel?: (id: string) => Promise<Model>
 }
