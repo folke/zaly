@@ -111,8 +111,8 @@ function date(value: Date | string): string {
 export default async function OllamaPlugin(api: PluginApi) {
   // oxlint-disable-next-line sort-keys
   api.model.register({
-    id: "ollama",
-    name: "Ollama",
+    id: "ollama-local",
+    name: "Ollama (local)",
     api: "openai",
     baseUrl: `${OLLAMA}/v1`,
     models: () =>

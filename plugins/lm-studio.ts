@@ -79,8 +79,8 @@ function toModel(model: LMStudioModel): ModelInfo {
 export default async function LMStudioPlugin(api: PluginApi) {
   // oxlint-disable-next-line sort-keys
   api.model.register({
-    id: "lm-studio",
-    name: "LM Studio",
+    id: "lm-studio-local",
+    name: "LMStudio (local)",
     api: "openai",
     baseUrl: `${LM_STUDIO}/v1`,
     env: ["LM_STUDIO_API_KEY"],
