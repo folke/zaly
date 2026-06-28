@@ -83,7 +83,6 @@ export default async function LMStudioPlugin(api: PluginApi) {
     name: "LMStudio (local)",
     api: "openai",
     baseUrl: `${LM_STUDIO}/v1`,
-    env: ["LM_STUDIO_API_KEY"],
     models: () =>
       fetchModels().catch((error) => {
         const err = error instanceof Error ? error : new Error(String(error))
