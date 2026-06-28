@@ -89,7 +89,7 @@ async function run(cli: Cli, args: ModelsArgs): Promise<void> {
       m.reasoning ? "**✓**" : "",
       `\`${formatNumber(m.contextSize)}\``,
       m.input.toSorted().join(", "),
-      m.info?.release_date ?? "",
+      m.release_date ?? "",
     ]
     rows.push(`| ${row.join(" | ")} |`)
   }

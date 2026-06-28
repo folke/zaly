@@ -99,7 +99,7 @@ export function createOpenAIResponses(config: ProviderOptions = {}): Provider<"o
         signal: req.opts.signal,
       })
       if (!response.ok || response.body === null) {
-        throw await formatError(response, req.model.quirks?.friendlyErrors)
+        throw await formatError(response, req.model.provider.quirks?.friendlyErrors)
       }
       yield* parseStream(response.body, req.opts.signal)
     },
@@ -185,7 +185,7 @@ type ResponsesContentBlock =
 
 async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
   const { ctx, model, opts } = req
-  const quirks = model.quirks ?? {}
+  const quirks = model.provider.quirks ?? {}
 
   const input: ResponsesInputItem[] = []
   // Sequential — one source message can fan out to multiple input items
@@ -199,7 +199,7 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
 
   const out: ResponsesRequest = {
     input,
-    model: model.modelId,
+    model: model.model,
     stream: true,
   }
 

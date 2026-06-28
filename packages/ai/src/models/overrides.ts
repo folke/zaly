@@ -47,10 +47,10 @@ export const modelProviders: Record<string, ModelProvider> = {
     // codex variants automatically; the explicit entries cover the
     // dual-routed mainline models. New mainline GPT-5.x reasoning
     // models would need to be added here as they release.
-    models: (catalog: ModelCatalog) => {
-      const models: Record<string, ModelInfo> = {}
-      const openai = catalog.$.openai
-      if (!openai) return {}
+    models: async (catalog: ModelCatalog) => {
+      const models: ModelInfo[] = []
+      const openai = catalog.provider("openai")
+      if (!openai) return []
       const rules = [
         /^openai\/.*codex.*/,
         "openai/gpt-5.1",
@@ -65,12 +65,14 @@ export const modelProviders: Record<string, ModelProvider> = {
         }
         return false
       }
-      for (const [mid, m] of Object.entries(openai.models)) {
-        if (!matches(`openai/${mid}`)) continue
-        models[mid] = {
+      const openaiModels =
+        typeof openai.models === "function" ? await openai.models(catalog) : openai.models
+      for (const m of openaiModels) {
+        if (!matches(`openai/${m.id}`)) continue
+        models.push({
           ...m,
-          limit: { ...m.limit, context: Math.min(270_000, m.limit.context) },
-        }
+          contextSize: Math.min(270_000, m.contextSize), // codex backend has a 270k context limit
+        })
       }
       return models
     },

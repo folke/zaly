@@ -23,6 +23,7 @@ export async function pickModel(
     filter: filter.length > 0 ? filter : undefined,
   })
 
+  // FIXME: can be done more efficiently
   const auth = new Set(
     await model
       .list({
@@ -33,13 +34,13 @@ export async function pickModel(
   )
 
   const modelItems: ModelItem[] = models.map((m) => {
-    const name = (m.provider?.name ? `[${m.provider.name}] ` : "") + m.name
+    const name = (m.provider.name ? `[${m.provider.name}] ` : "") + m.name
     return {
       desc: [
         formatNumber(m.contextSize),
         m.reasoning ? "reasoning" : undefined,
         ...m.input.filter((mod) => mod !== "text").toSorted(),
-        m.env?.toSorted().map((e) => `$${e}`),
+        m.provider.env?.toSorted().map((e) => `$${e}`),
       ]
         .filter(Boolean)
         .join(", "),

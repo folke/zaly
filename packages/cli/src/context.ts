@@ -165,7 +165,7 @@ export class Context extends BaseLogger {
     return this.#cache.need("model", async () => {
       const auth = await this.auth()
       const { modelCollection } = await import("@zaly/ai")
-      return modelCollection(auth)
+      return modelCollection({ auth, logger: this.logger.child("model") })
     })
   }
 

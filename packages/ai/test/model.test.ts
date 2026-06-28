@@ -21,28 +21,33 @@ providerRegistry.register(
 
 const models = modelCollection()
 
-models.register([
-  {
-    cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
-    id: "mock-cost-test/cheap",
-    contextSize: 100_000,
-    maxTokens: 4096,
-    input: ["text"],
-    name: "Cheap",
-    api: "mock-cost-test" as never,
-    reasoning: false,
-  },
-  {
-    // No cost field — augmentation should be a no-op.
-    id: "mock-cost-test/freebie",
-    contextSize: 100_000,
-    maxTokens: 4096,
-    input: ["text"],
-    name: "Freebie",
-    api: "mock-cost-test" as never,
-    reasoning: false,
-  },
-])
+models.register({
+  name: "Mock Cost Test",
+  api: "mock-api",
+  id: "mock-cost-test",
+  models: [
+    {
+      id: "cheap",
+      cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
+      contextSize: 100_000,
+      maxTokens: 4096,
+      input: ["text"],
+      name: "Cheap",
+      api: "mock-cost-test" as never,
+      reasoning: false,
+    },
+    {
+      id: "freebie",
+      // No cost field — augmentation should be a no-op.
+      contextSize: 100_000,
+      maxTokens: 4096,
+      input: ["text"],
+      name: "Freebie",
+      api: "mock-cost-test" as never,
+      reasoning: false,
+    },
+  ],
+})
 
 describe("loadModel — error paths", () => {
   test("throws a helpful error for unknown ids", async () => {

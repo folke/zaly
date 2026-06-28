@@ -1,8 +1,12 @@
-import type { Model, ModelFilter, ModelOpts, ModelReg, ModelSpec } from "@zaly/ai"
+import type { Model, ModelFilter, ModelOpts, ModelProvider, ModelSpec } from "@zaly/ai"
 import type { Collection } from "@zaly/shared/collection"
 import type { Plugin } from "../plugin.ts"
 
-export class ModelApi implements Collection<Model | undefined, Promise<ModelSpec[]>, ModelSpec> {
+export class ModelApi implements Collection<
+  Model | undefined,
+  Promise<ModelSpec[]>,
+  ModelProvider
+> {
   #plugin: Plugin
 
   constructor(plugin: Plugin) {
@@ -29,7 +33,7 @@ export class ModelApi implements Collection<Model | undefined, Promise<ModelSpec
     return this.#model.load(opts)
   }
 
-  register(spec: ModelReg | ModelReg[]) {
-    this.#plugin.cleanup(this.#model.register(spec))
+  register(provider: ModelProvider) {
+    this.#plugin.cleanup(this.#model.register(provider))
   }
 }

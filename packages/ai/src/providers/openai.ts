@@ -115,7 +115,7 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
         const text = await response.text().catch(() => "")
         throw new Error(`OpenAI ${response.status}: ${text || response.statusText}`)
       }
-      yield* parseStream(response.body, req.model.quirks, req.opts.signal)
+      yield* parseStream(response.body, req.model.provider.quirks, req.opts.signal)
     },
   }
 }
@@ -189,7 +189,7 @@ type OpenAIContentPart =
 
 async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   const { ctx, model, opts } = req
-  const quirks = model.quirks ?? {}
+  const quirks = model.provider.quirks ?? {}
   // Sequential await — a single source message can produce multiple
   // wire messages (tool results with image/audio attachments emit a
   // tool message + a synthetic user message carrying the attachments,
@@ -207,7 +207,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   }
   const out: OpenAIChatRequest = {
     messages,
-    model: model.modelId,
+    model: model.model,
     stream: true,
     stream_options: { include_usage: true },
   }

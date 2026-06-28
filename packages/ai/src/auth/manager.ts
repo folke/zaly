@@ -57,7 +57,7 @@ export class AuthManager {
   #opts: AuthManagerOpts
   #json?: JsonFile<AuthSecrets, AuthSecrets>
   #bashCache = new Map<string, string>()
-  #oauthProm: Record<string, Promise<ApiKey | undefined>> = {}
+  #serialized: Record<string, Promise<unknown>> = {}
   static #basic?: AuthManager
 
   private constructor(json?: JsonFile<AuthSecrets, AuthSecrets>, opts: AuthManagerOpts = {}) {
@@ -75,26 +75,21 @@ export class AuthManager {
     return new AuthManager(json, opts)
   }
 
+  // FIXME: should work on provider
   async getAuth(model: ModelSpec): Promise<ApiKey | undefined> {
     if (model.apiKey) {
       const key = await resolveApiKey(model.apiKey)
       if (key) return { key: await this.resolve(key.key), source: "model" }
     }
 
-    const provider = model.providerId
+    const provider = model.provider.id
 
     const secret = this.get(provider)
     if (secret?.type === "api-key")
       return { ...secret, key: await this.resolve(secret.key), source: "store" }
 
     if (secret?.type === "oauth") {
-      // When listing models, we may call `getAuth` for each model in parallel.
-      // We don't want to refresh the same OAuth token multiple times,
-      // so we cache the promise for the refresh operation.
-      const prom = (this.#oauthProm[provider] ??= this.#fromOauth(secret, model).finally(() => {
-        delete this.#oauthProm[provider]
-      }))
-      const ret = await prom
+      const ret = await this.#serialize(provider, () => this.#fromOauth(secret, model))
       if (ret) return ret
     }
 
@@ -112,6 +107,7 @@ export class AuthManager {
         login: () => this.#oauthLogin(provider, { ...opts, method: "browser" }),
         method: "oauth-browser",
       })
+
     if (oauth?.deviceUrl && opts.onUrl)
       logins.push({
         desc: `Login to ${provider.name} via device code`,
@@ -153,14 +149,21 @@ export class AuthManager {
     return { ...apiKey, source: "oauth" }
   }
 
+  async #serialize<T>(id: string, fn: () => Promise<T>): Promise<T> {
+    const prom = (this.#serialized[id] ??= fn().finally(() => {
+      delete this.#serialized[id]
+    }))
+    return prom as Promise<T>
+  }
+
   async #fromOauth(secret: OAuthSecret, model: ModelSpec): Promise<ApiKey | undefined> {
     const tokens = secret.tokens
     const expired = tokens.expires - Date.now() < REFRESH_LEEWAY_MS
     if (!expired || !tokens.refresh)
       return { headers: secret.headers, key: secret.key, source: "oauth" }
     const oauth = await this.#oauthOpts(model.provider)
-    if (!oauth || !model.provider) return
-    const id = model.providerId
+    if (!oauth) return
+    const id = model.provider.id
     const { OAuth } = await import("./oauth/client.ts")
     const client = new OAuth({ ...oauth, id })
     const current = await client.refresh(tokens.refresh)
@@ -170,7 +173,7 @@ export class AuthManager {
   }
 
   static async fromEnv(model: ModelSpec): Promise<ApiKey | undefined> {
-    const envs = model.env ?? []
+    const envs = model.provider.env ?? []
     for (const name of envs) {
       const value = process.env[name]
       if (value) return { key: value, source: "env" }
@@ -217,12 +220,14 @@ export class AuthManager {
     if (this.#opts.bash !== false && secret.startsWith("!")) {
       let value = this.#bashCache.get(secret)
       if (value) return value
-      const { spawnCmd } = await import("@zaly/shared/process")
-      const r = await spawnCmd(secret.slice(1), {
-        bash: this.#opts.bash ?? true,
-        throw: true,
+      value = await this.#serialize(secret, async () => {
+        const { spawnCmd } = await import("@zaly/shared/process")
+        const r = await spawnCmd(secret.slice(1), {
+          bash: this.#opts.bash ?? true,
+          throw: true,
+        })
+        return r?.trim() ?? ""
       })
-      value = r?.trim() ?? ""
       this.#bashCache.set(secret, value)
       return value
     }

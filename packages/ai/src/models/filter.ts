@@ -25,7 +25,12 @@ export type ModelFilter = {
 
 export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
   const auth = opts?.auth === true ? AuthManager.basic() : opts?.auth
-  if (auth !== undefined && !(await auth.getAuth(m))) return false
+  if (
+    auth !== undefined &&
+    (m.provider.oauth || m.provider.env?.length) &&
+    !(await auth.getAuth(m))
+  )
+    return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
   if (opts?.contextSize !== undefined && m.contextSize < opts.contextSize) return false
@@ -67,11 +72,11 @@ export async function filterModels(
   opts?: ModelFilter
 ): Promise<Record<string, ModelSpec>> {
   models = models.toSorted((a, b) => {
-    const ap = a.provider?.name ?? "0"
-    const bp = b.provider?.name ?? "0"
+    const ap = a.provider.name
+    const bp = b.provider.name
     if (ap && bp && ap !== bp) return ap.localeCompare(bp)
-    const ka = a.info?.release_date ?? a.info?.last_updated ?? a.id
-    const kb = b.info?.release_date ?? b.info?.last_updated ?? b.id
+    const ka = a.release_date ?? a.last_updated ?? a.id
+    const kb = b.release_date ?? b.last_updated ?? b.id
     if (ka !== kb) return -ka.localeCompare(kb)
     return a.name.localeCompare(b.name)
   })

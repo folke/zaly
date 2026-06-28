@@ -404,33 +404,6 @@ export interface Cost {
   output_audio?: number
 }
 
-/** Per-model provider overrides. When present, the adapter applies
- *  these on top of the preset defaults — lets individual models in a
- *  catalog target a different npm module, base URL, wire shape, or
- *  inject extra headers / body fields. Rare but used by hybrid
- *  catalogs (google-vertex, some aggregators). */
-export interface ModelProviderOverride {
-  npm?: string
-  api?: string
-  shape?: "completions" | "responses"
-  body?: Record<string, JsonValue>
-  headers?: Record<string, string>
-}
-
-/** Experimental / preview modes for a model. Keys are mode names
- *  (`"search"`, `"vision"`, …) — providers use them to expose beta
- *  behaviour behind extra request fields. */
-export type ExperimentalModes = Record<
-  string,
-  {
-    cost?: Cost
-    provider?: {
-      body?: Record<string, JsonValue>
-      headers?: Record<string, string>
-    }
-  }
->
-
 /** Metadata for one model. One-to-one with the models.dev `Model`
  *  schema. Loaded lazily per-provider via `getModel(id)` or eagerly
  *  via `listModels()`.
@@ -438,61 +411,36 @@ export type ExperimentalModes = Record<
  *  Runtime invariant enforced by the catalog (not by the TS type):
  *  when `reasoning === false`, `cost.reasoning` is absent. */
 export interface ModelInfo {
-  /** Model id local to its provider — e.g. `"gpt-4o"` or
-   *  `"claude-sonnet-4-5"`. The full URI is constructed by the
-   *  caller as `"<provider>/<id>"`. */
   id: string
   name: string
-  /** Loose family grouping (`"gpt"`, `"claude"`, `"gemini"`, …).
-   *  Informational; adapters don't branch on it. */
-  family?: string
-  /** Accepts file attachments (images / pdfs / etc.). */
-  attachment: boolean
+  /** Model specific baseUrl override **/
+  baseUrl?: string
+  /** adapter to use: anthropic, openai, openai-responses, etc. */
+  api?: AnyProvider
+  /** Input modalities this model accepts */
+  input: Modality[]
+  output?: Modality[]
+  /** Max output tokens this model accepts */
+  maxTokens: number
+  /** Max context size for this model */
+  contextSize: number
   /** Emits reasoning / thinking tokens. */
-  reasoning: boolean
-  /** Supports tool calling. Informational — we filter non-tool models
-   *  out of the generated catalog, so at runtime this is effectively
-   *  always true. Optional to make `addModels` ergonomic. */
-  tool_call?: boolean
-  /** Reasoning tokens interleave with output.
-   *  - `true` — field defaults to `"reasoning_content"`.
-   *  - `{ field }` — explicit field name (`"reasoning_content"` on
-   *    most OpenAI-compatibles; `"reasoning_details"` on a few). */
-  interleaved?: true | { field: "reasoning_content" | "reasoning_details" }
-  /** Supports `response_format: { type: "json_schema", … }`. */
-  structured_output?: boolean
-  /** Accepts a `temperature` parameter. Reasoning models typically
-   *  set this `false` (temperature is ignored or rejected). */
-  temperature?: boolean
+  reasoning?: boolean
   /** Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`. */
   knowledge?: string
   /** Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational. */
   release_date?: string
   /** Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational. */
   last_updated?: string
-  modalities: {
-    input: Modality[]
-    output: Modality[]
-  }
   /** Model weights are publicly released. Informational. */
   open_weights?: boolean
   /** Pricing per million tokens. `context_over_200k` is the higher
    *  tier some providers bill for prompts over 200K tokens. */
   cost?: Cost & { context_over_200k?: Cost }
-  limit: {
-    context: number
-    input?: number
-    output: number
-  }
-  /** Lifecycle signal. `"deprecated"` entries are filtered out of our
-   *  generated slices so this narrows to `"alpha" | "beta" | undefined`
-   *  in practice, but the type includes `"deprecated"` for callers
-   *  that read the raw catalog. */
-  status?: "alpha" | "beta" | "deprecated"
-  experimental?: {
-    modes?: ExperimentalModes
-  }
-  provider?: ModelProviderOverride
+  /** Supports tool calling. Informational — we filter non-tool models
+   *  out of the generated catalog, so at runtime this is effectively
+   *  always true. Optional to make `addModels` ergonomic. */
+  tool_call?: boolean
 }
 
 /** Metadata for one provider endpoint — one-to-one with the
@@ -500,20 +448,21 @@ export interface ModelInfo {
 export interface ModelProvider {
   /** Provider id **/
   id: string
-  api: AnyProvider
-  /** Base URL for API requests **/
-  baseUrl?: string
   /** Provider name **/
   name: string
+  api: AnyProvider
+  apiKey?: string
+  /** Base URL for API requests **/
+  baseUrl?: string
   /** Docs link for this provider's model list. */
-  doc: string
+  doc?: string
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */
   env?: string[]
   headers?: Record<string, string>
   quirks?: Quirks
-  models: Record<string, ModelInfo> | ((catalog: ModelCatalog) => Record<string, ModelInfo>)
+  models: ModelInfo[] | ((catalog: ModelCatalog) => MaybePromise<ModelInfo[]>)
   oauth?: OAuthOptions | ((provider: ModelProvider) => MaybePromise<OAuthOptions>)
 }
 
@@ -635,40 +584,12 @@ export interface Quirks {
  *
  *  Collapsing ModelInfo in avoids the `options.info.limit.context`
  *  ceremony; everything a user touches lives at one level. */
-export interface ModelSpec extends ProviderOptions {
+export interface ModelSpec extends ProviderOptions, ModelInfo {
   /** Full model URI: `"<provider>/<id>"` */
   id: string
   /** Model id without the provider prefix. */
-  modelId: string
-  /** Provider id */
-  providerId: string
-  /** Human-friendly display name */
-  name: string
-  /** adapter to use: anthropic, openai, openai-responses, etc. */
-  api: AnyProvider
-  /** Is this a reasoning model? */
-  reasoning?: boolean
-  /** Input modalities this model accepts */
-  input: Modality[]
-  output?: Modality[]
-  cost?: ModelInfo["cost"]
-  /** Max output tokens this model accepts */
-  maxTokens: number
-  /** Max context size for this model */
-  contextSize: number
-  /** Adapter-dispatch quirks. See `Quirks` */
-  quirks?: Quirks
-  /** Catalog model info */
-  info?: Partial<ModelInfo>
+  model: string
   /** Catalog provider info */
-  provider?: ModelProvider
-  /** Env-var names consulted for credentials, in priority order.
-   *  The first element is the conventional one (`OPENAI_API_KEY`
-   *  etc.); downstream entries are fallbacks. */
-  env?: string[]
-}
-
-export type ModelReg = Omit<ModelSpec, "modelId" | "providerId"> & {
-  modelId?: string
-  providerId?: string
+  provider: ModelProvider
+  api: AnyProvider
 }

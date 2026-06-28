@@ -1,3 +1,4 @@
+import type { Logger } from "@zaly/shared/logger"
 import type { ContentTransform } from "./content/transform.ts"
 import type { ModelFilter } from "./models/filter.ts"
 import type {
@@ -10,8 +11,17 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
-import type { AnyPart, Attachment, Cost, Message, Modality, ModelReg, ModelSpec } from "./types.ts"
+import type {
+  AnyPart,
+  Attachment,
+  Cost,
+  Message,
+  Modality,
+  ModelProvider,
+  ModelSpec,
+} from "./types.ts"
 
+import { toError } from "@zaly/shared"
 import { BaseCollection } from "@zaly/shared/collection"
 import { AuthManager } from "./auth/manager.ts"
 import { attachmentToMeta } from "./content/compose.ts"
@@ -206,20 +216,60 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
   return cost
 }
 
-class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpec[]>, ModelSpec> {
-  #auth?: AuthManager
+export type ModelCollectionOpts = {
+  auth?: AuthManager
+  logger?: Logger
+}
 
-  constructor(auth?: AuthManager) {
+class ModelCollection extends BaseCollection<
+  Model | undefined,
+  Promise<ModelSpec[]>,
+  ModelProvider
+> {
+  #auth?: AuthManager
+  #logger?: Logger
+  #specCache = new Map<string, ModelSpec[]>()
+
+  constructor(opts: ModelCollectionOpts = {}) {
     super(undefined)
-    this.#auth = auth
+    this.#auth = opts.auth
+    this.#logger = opts.logger
   }
 
   get auth(): AuthManager | undefined {
     return this.#auth
   }
 
+  async #specs(provider: ModelProvider): Promise<ModelSpec[]> {
+    const cached = this.#specCache.get(provider.id)
+    if (cached) return cached
+    try {
+      const specs = await loadCatalog().then((c) => c.modelSpecs(provider))
+      this.#specCache.set(provider.id, specs)
+      return specs
+    } catch (error) {
+      this.#specCache.set(provider.id, [])
+      if (this.#logger)
+        this.#logger.error(
+          `Failed to load model specs for provider \`${provider.id}\`:\n${toError(error).message}`
+        )
+      else throw error
+    }
+    return []
+  }
+
+  async #registeredSpecs(): Promise<ModelSpec[]> {
+    const specs = await Promise.all(this.registered.map((p) => this.#specs(p)))
+    const ret: Record<string, ModelSpec> = {}
+    for (const spec of specs.flat()) ret[spec.id] = spec
+    return Object.values(ret)
+  }
+
   async get(id: string): Promise<ModelSpec | undefined> {
-    const spec = this.registered.findLast((r) => r.id === id)
+    const { provider: pid } = parseModelId(id)
+    const provider = this.registered.findLast((r) => r.id === pid)
+    const specs = provider ? await this.#specs(provider) : undefined
+    const spec = specs?.find((s) => s.id === id)
     return spec ?? (await getModel(id))
   }
 
@@ -233,22 +283,13 @@ class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpe
     if (filter?.auth === true && this.#auth) filter = { ...filter, auth: this.#auth }
     const [models, custom] = await Promise.all([
       loadCatalog().then((c) => c.list(filter)),
-      filterModels(this.registered, { ...filter, auth: undefined }),
+      filterModels(await this.#registeredSpecs(), { ...filter, auth: undefined }),
     ])
     for (const m of Object.values(custom)) models[m.id] = m
     return Object.values(models)
   }
-
-  override register(spec: ModelReg | ModelReg[]): () => void {
-    const specs = Array.isArray(spec) ? spec : [spec]
-    const offs = specs.map((r) => {
-      const parsed = parseModelId(r.id)
-      return super.register({ ...r, modelId: parsed.model, providerId: parsed.provider })
-    })
-    return () => offs.forEach((off) => off())
-  }
 }
 
-export function modelCollection(auth?: AuthManager): ModelCollection {
-  return new ModelCollection(auth)
+export function modelCollection(opts: ModelCollectionOpts = {}): ModelCollection {
+  return new ModelCollection(opts)
 }

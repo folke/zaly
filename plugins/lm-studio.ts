@@ -1,4 +1,4 @@
-import type { ModelSpec } from "@zaly/ai"
+import type { ModelInfo } from "@zaly/ai"
 import type { PluginApi } from "@zaly/plugin"
 
 interface ModelsResponse {
@@ -45,11 +45,9 @@ interface LMStudioModel {
 
 const LM_STUDIO = "http://localhost:1234"
 
-export async function fetchModels(baseUrl = LM_STUDIO): Promise<ModelSpec[]> {
-  const models = await lmstudio<ModelsResponse>(`${baseUrl}/api/v1/models`)
-  return models.models
-    .filter((model) => model.type === "llm")
-    .map((model) => toModelSpec(model, baseUrl))
+export async function fetchModels(): Promise<ModelInfo[]> {
+  const models = await lmstudio<ModelsResponse>(`${LM_STUDIO}/api/v1/models`)
+  return models.models.filter((model) => model.type === "llm").map((model) => toModel(model))
 }
 
 async function lmstudio<T>(url: string, init: RequestInit = {}): Promise<T> {
@@ -59,28 +57,17 @@ async function lmstudio<T>(url: string, init: RequestInit = {}): Promise<T> {
   return (await res.json()) as T
 }
 
-function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
+function toModel(model: LMStudioModel): ModelInfo {
   const context = model.loaded_instances[0]?.config.context_length ?? model.max_context_length
   const output = Math.min(context, 8192)
   const vision = model.capabilities?.vision ?? false
 
   // oxlint-disable-next-line sort-keys
   return {
-    id: `lm-studio/${model.key}`,
+    id: model.key,
     name: model.display_name,
-    model: model.key,
-    api: "openai",
-    baseUrl: `${baseUrl}/v1`,
-    info: {
-      family: model.architecture ?? undefined,
-      open_weights: true,
-      tool_call: model.capabilities?.trained_for_tool_use ?? false,
-    },
-    env: ["LM_STUDIO_API_KEY"],
-    provider: {
-      id: "lm-studio",
-      name: "LM Studio",
-    },
+    tool_call: model.capabilities?.trained_for_tool_use ?? false,
+    open_weights: true,
     contextSize: context,
     maxTokens: output,
     input: vision ? ["text", "image"] : ["text"],
@@ -90,13 +77,20 @@ function toModelSpec(model: LMStudioModel, baseUrl: string): ModelSpec {
 }
 
 export default async function LMStudioPlugin(api: PluginApi) {
-  try {
-    const models = await fetchModels()
-    api.model.register(models)
-  } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error))
-    api.ui.notify(`Failed to fetch models. Is LM Studio running?\n* ${err.message}`, {
-      level: "warn",
-    })
-  }
+  // oxlint-disable-next-line sort-keys
+  api.model.register({
+    id: "lm-studio",
+    name: "LM Studio",
+    api: "openai",
+    baseUrl: `${LM_STUDIO}/v1`,
+    env: ["LM_STUDIO_API_KEY"],
+    models: () =>
+      fetchModels().catch((error) => {
+        const err = error instanceof Error ? error : new Error(String(error))
+        api.ui.notify(`Failed to fetch models. Is LM Studio running?\n* ${err.message}`, {
+          level: "warn",
+        })
+        return []
+      }),
+  })
 }

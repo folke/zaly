@@ -1,35 +1,50 @@
 import type { AuthManager } from "../src/index.ts"
-import type { ModelSpec } from "../src/types.ts"
+import type { ModelInfo, ModelProvider, ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
-import { getModel } from "../src/index.ts"
-import { modelCollection } from "../src/model.ts"
+import { getModel, loadCatalog } from "../src/index.ts"
+import { modelCollection, parseModelId } from "../src/model.ts"
 import { filterModel } from "../src/models/filter.ts"
 
-const customSpec = (overrides: Partial<ModelSpec> = {}): ModelSpec => ({
-  id: "mocks-x/model-x",
-  modelId: "model-x",
-  providerId: "mocks-x",
+const customModel = (overrides: Partial<ModelInfo> = {}): ModelInfo => ({
+  id: overrides.id ?? "mock-x/model-x",
   contextSize: 1000,
   maxTokens: 100,
   input: ["text"],
   name: "Model X",
-  api: "mock-models-test",
   reasoning: false,
   ...overrides,
 })
 
+const catalog = await loadCatalog()
+
+const customSpec = async (overrides: Partial<ModelSpec> = {}): Promise<ModelSpec> => {
+  const provider = customProvider(overrides)
+  const ret = await catalog.modelSpecs(provider)
+  return ret[0]
+}
+
+const customProvider = (overrides: Partial<ModelSpec> = {}): ModelProvider => {
+  const { provider, model } = parseModelId(overrides.id ?? "mock-x/model-x")
+  return {
+    id: provider,
+    name: "Mock",
+    api: "mock",
+    models: [customModel({ ...overrides, id: model })],
+  }
+}
+
 describe("addModels / getModel", () => {
   test("custom registration is retrievable", async () => {
     const models = modelCollection()
-    models.register(customSpec({ id: "mock-models-test/foo", name: "Foo" }))
+    models.register(customProvider({ id: "mock-models-test/foo", name: "Foo" }))
     const m = await models.get("mock-models-test/foo")
     expect(m?.name).toBe("Foo")
   })
 
   test("custom registrations override built-ins with the same id", async () => {
     const models = modelCollection()
-    models.register(customSpec({ id: "mock-models-test/override-target", name: "Custom" }))
+    models.register(customProvider({ id: "mock-models-test/override-target", name: "Custom" }))
     const m = await models.get("mock-models-test/override-target")
     expect(m?.name).toBe("Custom")
   })
@@ -39,14 +54,15 @@ describe("addModels / getModel", () => {
   })
 })
 
-describe("filterModel", () => {
-  const visionModel: ModelSpec = customSpec({
-    id: "vision",
+describe("filterModel", async () => {
+  const visionModel: ModelSpec = await customSpec({
+    id: "mock/vision",
     input: ["text", "image"],
     output: ["text", "image"],
     reasoning: true,
   })
-  const textModel: ModelSpec = customSpec({ id: "text" })
+  const textModel: ModelSpec = await customSpec({ id: "mock/text" })
+  textModel.provider.env = ["MOCK_API_KEY"]
 
   test("reasoning filter narrows by capability", async () => {
     expect(await filterModel(visionModel, { reasoning: true })).toBe(true)
@@ -79,7 +95,7 @@ describe("filterModel", () => {
 describe("listModels", () => {
   test("includes custom models", async () => {
     const models = modelCollection()
-    models.register(customSpec({ id: "mock-models-test/listed" }))
+    models.register(customProvider({ id: "mock-models-test/listed" }))
     const all = await models.list()
     const model = all.find((m) => m.id === "mock-models-test/listed")
     expect(model).toBeDefined()
@@ -89,7 +105,7 @@ describe("listModels", () => {
     // Use auth filter that rejects everything: built-ins drop out,
     // custom registrations stay (they bypass the filter).
     const models = modelCollection()
-    models.register(customSpec({ id: "mock-models-test/listed-filter" }))
+    models.register(customProvider({ id: "mock-models-test/listed-filter" }))
     const out = await models.list({ auth: { getAuth: () => undefined } as unknown as AuthManager })
     const listed = out.find((m) => m.id === "mock-models-test/listed-filter")
     const missing = out.find((m) => m.id === "anthropic/claude-sonnet-4-6")

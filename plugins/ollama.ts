@@ -1,4 +1,4 @@
-import type { ModelSpec } from "@zaly/ai"
+import type { ModelInfo } from "@zaly/ai"
 import type { PluginApi } from "@zaly/plugin"
 
 interface ModelResponse {
@@ -41,18 +41,18 @@ export interface ListResponse {
 
 const OLLAMA = "http://localhost:11434"
 
-export async function fetchModels(baseUrl = OLLAMA): Promise<ModelSpec[]> {
-  const tags = await ollama<ListResponse>(`${baseUrl}/api/tags`)
+export async function fetchModels(): Promise<ModelInfo[]> {
+  const tags = await ollama<ListResponse>(`${OLLAMA}/api/tags`)
 
   return await Promise.all(
     tags.models.map(async (model) => {
-      const details = await ollama<ShowResponse>(`${baseUrl}/api/show`, {
+      const details = await ollama<ShowResponse>(`${OLLAMA}/api/show`, {
         body: JSON.stringify({ model: model.name }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       })
 
-      return toModelSpec(model, details, baseUrl)
+      return toModel(model, details)
     })
   )
 }
@@ -63,35 +63,24 @@ async function ollama<T>(url: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T
 }
 
-function toModelSpec(model: ModelResponse, show: ShowResponse, baseUrl: string): ModelSpec {
+function toModel(model: ModelResponse, show: ShowResponse): ModelInfo {
   const capabilities = new Set(show.capabilities)
   const context = contextLength(show) ?? 131_072
   const output = outputLength(show) ?? Math.min(context, 8192)
   const vision = capabilities.has("vision") || show.projector_info !== undefined
-  const family = show.details.family || model.details.family || undefined
 
   // oxlint-disable-next-line sort-keys
   return {
-    id: `ollama/${model.name}`,
-    model: model.model,
+    id: model.name,
     name: model.name,
-    baseUrl: `${baseUrl}/v1`,
     contextSize: context,
     maxTokens: output,
     input: vision ? ["text", "image"] : ["text"],
     output: ["text"],
-    info: {
-      family,
-      open_weights: true,
-      release_date: date(model.modified_at),
-      tool_call: capabilities.has("tools"),
-    },
-    provider: {
-      id: "ollama",
-      name: "Ollama",
-    },
-    api: "openai",
+    release_date: date(model.modified_at),
+    open_weights: true,
     reasoning: capabilities.has("thinking"),
+    tool_call: capabilities.has("tools"),
   }
 }
 
@@ -120,13 +109,18 @@ function date(value: Date | string): string {
 }
 
 export default async function OllamaPlugin(api: PluginApi) {
-  try {
-    const models = await fetchModels()
-    api.model.register(models)
-  } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error))
-    api.ui.notify(`Failed to fetch models. Is Ollama running?\n* ${err.message}`, {
-      level: "warn",
-    })
-  }
+  // oxlint-disable-next-line sort-keys
+  api.model.register({
+    id: "ollama",
+    name: "Ollama",
+    api: "openai",
+    baseUrl: `${OLLAMA}/v1`,
+    models: () =>
+      fetchModels().catch((error) => {
+        api.ui.notify(`Failed to fetch models. Is Ollama running?\n* ${error.message}`, {
+          level: "warn",
+        })
+        return []
+      }),
+  })
 }

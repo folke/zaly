@@ -1,4 +1,4 @@
-import type { ModelInfo } from "../src/types.ts"
+import type { CatalogModel } from "../src/models/catalog.ts"
 
 import { formatSize } from "@zaly/shared"
 import { readFileSync } from "node:fs"
@@ -25,7 +25,7 @@ console.log(`→ supported providers/models: ${formatSize(cleaned.length)}`)
 // ── stats ────────────────────────────────────────────────────────────────
 
 const providers = Object.values(catalog.$).filter((p) => !!p)
-const allModels: (ModelInfo & { providerId: string })[] = []
+const allModels: (CatalogModel & { providerId: string })[] = []
 for (const p of providers) {
   for (const m of Object.values(p.models)) allModels.push(Object.assign(m, { providerId: p.id }))
 }

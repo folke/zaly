@@ -228,7 +228,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
     messages: await toAnthropicMessages(conversational, caching),
-    model: model.modelId,
+    model: model.model,
     stream: true,
   }
 
@@ -254,7 +254,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  applyThinking(out, model.modelId, opts.reasoning, maxTokens)
+  applyThinking(out, model.model, opts.reasoning, maxTokens)
 
   return out
 }

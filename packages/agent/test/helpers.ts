@@ -20,8 +20,13 @@ import { Session } from "../src/session/index.ts"
  *  trip thresholds. */
 const mockSpec: Model["spec"] = {
   id: "mock/x",
-  modelId: "x",
-  providerId: "mock",
+  model: "x",
+  provider: {
+    id: "mock",
+    name: "Mock",
+    api: "mock",
+    models: [],
+  },
   contextSize: 1_000_000,
   maxTokens: 16_000,
   input: ["text", "image"],
