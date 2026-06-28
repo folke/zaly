@@ -187,9 +187,6 @@ export const ConfigSchema = {
                             type: "string"
                         }
                     },
-                    secrets: {
-                        $ref: "#/components/schemas/AuthSecrets"
-                    },
                     resources: {
                         $ref: "#/components/schemas/RecordstringResourceFilter",
                         description: "Resource configuration for zaly."
@@ -233,96 +230,6 @@ export const ConfigSchema = {
             },
             AnyTool: {
                 type: "string"
-            },
-            AuthSecrets: {
-                type: "object",
-                properties: {},
-                required: [],
-                additionalProperties: {
-                    $ref: "#/components/schemas/Secret"
-                }
-            },
-            Secret: {
-                oneOf: [
-                    {
-                        type: "object",
-                        properties: {
-                            source: {
-                                type: "string",
-                                "enum": [
-                                    "env"
-                                ]
-                            },
-                            key: {
-                                type: "string"
-                            }
-                        },
-                        required: [
-                            "source",
-                            "key"
-                        ]
-                    },
-                    {
-                        type: "object",
-                        properties: {
-                            source: {
-                                type: "string",
-                                "enum": [
-                                    "exec"
-                                ]
-                            },
-                            cmd: {
-                                type: "string"
-                            },
-                            args: {
-                                type: "array",
-                                items: {
-                                    type: "string"
-                                }
-                            }
-                        },
-                        required: [
-                            "source",
-                            "cmd"
-                        ]
-                    },
-                    {
-                        type: "object",
-                        properties: {
-                            source: {
-                                type: "string",
-                                "enum": [
-                                    "file"
-                                ]
-                            },
-                            path: {
-                                type: "string"
-                            }
-                        },
-                        required: [
-                            "source",
-                            "path"
-                        ]
-                    },
-                    {
-                        type: "object",
-                        properties: {
-                            source: {
-                                type: "string",
-                                "enum": [
-                                    "literal"
-                                ]
-                            },
-                            value: {
-                                type: "string"
-                            }
-                        },
-                        required: [
-                            "source",
-                            "value"
-                        ]
-                    }
-                ]
             },
             RecordstringResourceFilter: {
                 type: "object",

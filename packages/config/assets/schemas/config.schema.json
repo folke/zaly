@@ -183,9 +183,6 @@
         "type": "string"
       }
     },
-    "secrets": {
-      "$ref": "#/definitions/AuthSecrets"
-    },
     "resources": {
       "$ref": "#/definitions/RecordstringResourceFilter",
       "description": "Resource configuration for zaly."
@@ -229,96 +226,6 @@
   "definitions": {
     "AnyTool": {
       "type": "string"
-    },
-    "AuthSecrets": {
-      "type": "object",
-      "properties": {},
-      "required": [],
-      "additionalProperties": {
-        "$ref": "#/definitions/Secret"
-      }
-    },
-    "Secret": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "source": {
-              "type": "string",
-              "enum": [
-                "env"
-              ]
-            },
-            "key": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "source",
-            "key"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "source": {
-              "type": "string",
-              "enum": [
-                "exec"
-              ]
-            },
-            "cmd": {
-              "type": "string"
-            },
-            "args": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "source",
-            "cmd"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "source": {
-              "type": "string",
-              "enum": [
-                "file"
-              ]
-            },
-            "path": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "source",
-            "path"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "source": {
-              "type": "string",
-              "enum": [
-                "literal"
-              ]
-            },
-            "value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "source",
-            "value"
-          ]
-        }
-      ]
     },
     "RecordstringResourceFilter": {
       "type": "object",
