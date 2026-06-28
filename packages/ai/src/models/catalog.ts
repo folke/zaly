@@ -122,7 +122,7 @@ export async function downloadCatalog(dir: string): Promise<ModelCatalog> {
   const data = JSON.parse(raw)
   if (!isCatalog(data))
     throw new Error(`Invalid catalog format: expected object with "providers" key`)
-  const cat = new ModelCatalog(data)
+  const cat = await ModelCatalog.load(data)
   const entries = Object.entries(cat.$).filter(([pid]) => !!cat.provider(pid))
   const cleaned = JSON.stringify(Object.fromEntries(entries)) // strip unsupported providers
   await writeFile(`${dir}/snapshot.json`, raw, "utf8")
@@ -139,7 +139,7 @@ export class ModelCatalog {
   #providers = new Map<string, ModelProvider>()
   #models = new Map<string, ModelSpec>()
 
-  constructor(cat: Catalog) {
+  private constructor(cat: Catalog) {
     this.#catalog = cat
   }
 
@@ -147,9 +147,10 @@ export class ModelCatalog {
     return this.#catalog
   }
 
-  static async load(path?: string): Promise<ModelCatalog> {
-    const url = path
-      ? pathToFileURL(normPath(path))
+  static async load(cat?: string | Catalog): Promise<ModelCatalog> {
+    if (cat && typeof cat !== "string") return new ModelCatalog(cat).#load()
+    const url = cat
+      ? pathToFileURL(normPath(cat))
       : new URL("../../assets/models.json", import.meta.url)
     const m = await import(url.href, { with: { type: "json" } })
     return new ModelCatalog(m.default as unknown as Catalog).#load()

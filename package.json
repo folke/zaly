@@ -24,7 +24,7 @@
     "fmt": "z fmt",
     "knip": "knip",
     "lint": "z lint",
-    "models": "bun run --filter '@zaly/ai' models",
+    "models": "bun run --cwd 'packages/ai' models",
     "out": "bun outdated; bun outdated --filter '*'",
     "pkg": "bun --workspaces install",
     "publish": "z publish",
