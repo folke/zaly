@@ -8,6 +8,7 @@ import type { PickerItem, PickerSelectProps, PickerTreeProps } from "../widgets/
 import type { Option, Select } from "../widgets/select.ts"
 import type { Widget } from "../widgets/widget.ts"
 
+import { fitAnsi } from "@zaly/shared/ansi"
 import { createRef, signal } from "../core/reactive.ts"
 import { isMarkdown } from "../style/inspect.ts"
 import { divider } from "../widgets/divider.ts"
@@ -89,7 +90,7 @@ export class Picker {
     if (opts.render !== false)
       select.extendRenderer((prev) => (item, ctx) => {
         const s = ctx.style
-        const row = prev(item, ctx)
+        const row = prev(item, { ...ctx, width: ctx.width - 4 })
         const enabled = item.enabled
         if (enabled === undefined) return row
         return `${enabled ? s.mdListChecked("[x]") : s.mdListUnchecked("[ ]")} ${row}`
