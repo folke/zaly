@@ -71,7 +71,16 @@ export class TuiReporter implements LogReporter {
   #defaultFactory(level: LogLevel, msg: unknown[]): Node {
     const nodes = msg.filter((m): m is Node => m instanceof Node)
     msg = msg.filter((m) => !(m instanceof Node))
+
+    // Convert Error objects to their message unless stacktrace is requested.
     msg = this.#opts.stacktrace ? msg : msg.map((v) => (v instanceof Error ? v.message : v))
+
+    // If all remaining messages are strings, join them into one string for the log content.
+    if (msg.length && msg.every((m) => typeof m === "string")) msg = [msg.join(" ")]
+
+    // If there's exactly one string message, use it as the log content;
+    // otherwise, leave it undefined to be formatted with `inspect()`.
+    // Text allow markdown if the message looks like markdown and the option is enabled.
     let text = msg.length === 1 && typeof msg[0] === "string" ? msg[0] : undefined
     if (msg.length === 0) text = ""
     const markdown = (this.#opts.markdown ?? true) && text !== undefined && isMarkdown(text)
