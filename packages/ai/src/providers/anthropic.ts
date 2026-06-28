@@ -11,6 +11,7 @@ import type {
 import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
 
 import { safeStringify } from "@zaly/shared"
+import { resolveApiKey } from "../auth/manager.ts"
 import {
   attachmentToMeta,
   compressImages,
@@ -90,18 +91,19 @@ export function createAnthropic(config: ProviderOptions = {}): Provider<"anthrop
   const baseUrl = (config.baseUrl ?? "https://api.anthropic.com/v1").replace(/\/$/, "")
   const doFetch = config.fetch ?? fetch
 
-  const auth = (): Record<string, string> => (config.apiKey ? { "x-api-key": config.apiKey } : {})
-
   return {
     id: "anthropic",
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = await buildRequest(req)
+      const apiKey = await resolveApiKey(config.apiKey)
+      const auth = (): Record<string, string> => (apiKey?.key ? { "x-api-key": apiKey.key } : {})
       const response = await doFetch(`${baseUrl}/messages`, {
         body: safeStringify(body),
         headers: {
           "Content-Type": "application/json",
           "anthropic-version": "2023-06-01",
           ...auth(),
+          ...apiKey?.headers,
           ...config.headers,
         },
         method: "POST",
@@ -226,7 +228,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
   const out: AnthropicRequest = {
     max_tokens: maxTokens,
     messages: await toAnthropicMessages(conversational, caching),
-    model: model.model,
+    model: model.modelId,
     stream: true,
   }
 
@@ -252,7 +254,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  applyThinking(out, model.model, opts.reasoning, maxTokens)
+  applyThinking(out, model.modelId, opts.reasoning, maxTokens)
 
   return out
 }

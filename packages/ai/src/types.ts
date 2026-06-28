@@ -12,7 +12,9 @@
 
 import type { MaybePromise } from "@zaly/shared"
 import type { Static, TObject, TSchema } from "typebox/type"
-import type { AnyAuthProvider } from "./auth/auth.ts"
+import type { ApiKey } from "./auth/manager.ts"
+import type { OAuthOptions } from "./auth/oauth/types.ts"
+import type { ModelCatalog } from "./models/catalog.ts"
 import type { FinishReason, Usage } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
 
@@ -495,7 +497,7 @@ export interface ModelInfo {
 
 /** Metadata for one provider endpoint — one-to-one with the
  *  models.dev `Provider` schema. */
-export interface ProviderInfo {
+export interface ModelProvider {
   /** Provider id **/
   id: string
   api: AnyProvider
@@ -505,16 +507,14 @@ export interface ProviderInfo {
   name: string
   /** Docs link for this provider's model list. */
   doc: string
-  /** Custom auth providers for this provider */
-  // FIXME: hook up the auth provider registry so we can validate these against the known set
-  auth?: AnyAuthProvider[]
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */
   env?: string[]
   headers?: Record<string, string>
   quirks?: Quirks
-  models: Record<string, ModelInfo>
+  models: Record<string, ModelInfo> | ((catalog: ModelCatalog) => Record<string, ModelInfo>)
+  oauth?: OAuthOptions | ((provider: ModelProvider) => MaybePromise<OAuthOptions>)
 }
 
 // ── Runtime API types ───────────────────────────────────────────────────
@@ -524,12 +524,13 @@ export interface ProviderInfo {
  *  imports — types.ts is the leaf module every other file depends on. */
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
 
+export type ProviderApiKey = string | ApiKey
 /** Adapter-construction config. Generic across provider families;
  *  adapter-specific wire quirks live in `Quirks` below so the options
  *  shape stays uniform regardless of which family is used. */
 export interface ProviderOptions {
   /** API key. Falls back to `ModelSpec.apiKey` or the first set env var in `ModelSpec.env`. */
-  apiKey?: string
+  apiKey?: ProviderApiKey | (() => MaybePromise<ProviderApiKey | undefined>)
   /** Base URL override. Falls back to `ModelSpec.baseUrl`. */
   baseUrl?: string
   /** Extra headers merged onto every request. */
@@ -638,7 +639,9 @@ export interface ModelSpec extends ProviderOptions {
   /** Full model URI: `"<provider>/<id>"` */
   id: string
   /** Model id without the provider prefix. */
-  model: string
+  modelId: string
+  /** Provider id */
+  providerId: string
   /** Human-friendly display name */
   name: string
   /** adapter to use: anthropic, openai, openai-responses, etc. */
@@ -658,9 +661,14 @@ export interface ModelSpec extends ProviderOptions {
   /** Catalog model info */
   info?: Partial<ModelInfo>
   /** Catalog provider info */
-  provider?: Partial<ProviderInfo>
+  provider?: ModelProvider
   /** Env-var names consulted for credentials, in priority order.
    *  The first element is the conventional one (`OPENAI_API_KEY`
    *  etc.); downstream entries are fallbacks. */
   env?: string[]
+}
+
+export type ModelReg = Omit<ModelSpec, "modelId" | "providerId"> & {
+  modelId?: string
+  providerId?: string
 }

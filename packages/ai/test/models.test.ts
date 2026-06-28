@@ -1,30 +1,15 @@
+import type { AuthManager } from "../src/index.ts"
 import type { ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
+import { getModel } from "../src/index.ts"
 import { modelCollection } from "../src/model.ts"
-import { filterModel, getModel, parseModelId } from "../src/models.ts"
-
-describe("parseModelId", () => {
-  test("two-segment id", () => {
-    expect(parseModelId("anthropic/claude-sonnet-4-5")).toEqual({
-      model: "claude-sonnet-4-5",
-      provider: "anthropic",
-    })
-  })
-  test("multi-segment model name only splits on the first slash", () => {
-    expect(parseModelId("openrouter/kimi/k2")).toEqual({ model: "kimi/k2", provider: "openrouter" })
-  })
-  test("throws on missing provider", () => {
-    expect(() => parseModelId("just-the-model")).toThrow(/Invalid model id/)
-  })
-  test("throws on missing model", () => {
-    expect(() => parseModelId("provider/")).toThrow(/Invalid model id/)
-  })
-})
+import { filterModel } from "../src/models/filter.ts"
 
 const customSpec = (overrides: Partial<ModelSpec> = {}): ModelSpec => ({
-  id: "model-x",
-  model: "model-x",
+  id: "mocks-x/model-x",
+  modelId: "model-x",
+  providerId: "mocks-x",
   contextSize: 1000,
   maxTokens: 100,
   input: ["text"],
@@ -80,8 +65,8 @@ describe("filterModel", () => {
   })
 
   test("auth filter delegates to AuthProvider.getAuth", async () => {
-    const yes = { getAuth: () => ({ apiKey: "k" }) }
-    const no = { getAuth: () => undefined }
+    const yes = { getAuth: () => ({ apiKey: "k" }) } as unknown as AuthManager
+    const no = { getAuth: () => undefined } as unknown as AuthManager
     expect(await filterModel(textModel, { auth: yes })).toBe(true)
     expect(await filterModel(textModel, { auth: no })).toBe(false)
   })
@@ -105,7 +90,7 @@ describe("listModels", () => {
     // custom registrations stay (they bypass the filter).
     const models = modelCollection()
     models.register(customSpec({ id: "mock-models-test/listed-filter" }))
-    const out = await models.list({ auth: { getAuth: () => undefined } })
+    const out = await models.list({ auth: { getAuth: () => undefined } as unknown as AuthManager })
     const listed = out.find((m) => m.id === "mock-models-test/listed-filter")
     const missing = out.find((m) => m.id === "anthropic/claude-sonnet-4-6")
     expect(listed).toBeDefined()

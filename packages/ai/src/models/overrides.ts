@@ -18,12 +18,8 @@
  */
 
 import type { BuiltinProvider } from "../providers/registry.ts"
-import type { ModelInfo, ProviderInfo, Quirks } from "../types.ts"
+import type { ModelInfo, ModelProvider, Quirks } from "../types.ts"
 import type { ModelCatalog } from "./catalog.ts"
-
-export type ModelProvider = Omit<ProviderInfo, "id" | "models"> & {
-  models: Record<string, ModelInfo> | ((catalog: ModelCatalog) => Record<string, ModelInfo>)
-}
 
 export interface ProviderOverride {
   api?: BuiltinProvider
@@ -41,11 +37,11 @@ export const modelProviders: Record<string, ModelProvider> = {
   // released codex variants get picked up automatically.
   // oxlint-disable-next-line sort-keys
   "openai-codex": {
+    id: "openai-codex",
     api: "openai-responses",
     baseUrl: "https://chatgpt.com/backend-api/codex",
     doc: "https://platform.openai.com/docs/models",
     name: "OpenAI Codex (ChatGPT)",
-    auth: ["codex"],
     quirks: {
       friendlyErrors: "codex",
       maxTokensField: "none",
@@ -53,6 +49,7 @@ export const modelProviders: Record<string, ModelProvider> = {
       responsesStore: false,
       responsesSystemAs: "instructions",
     },
+    oauth: async () => import("../auth/openai-codex.ts").then((m) => m.codexOauth),
     // The codex backend serves the codex-family models plus a curated
     // set of mainline gpt-5.x reasoning models. Pattern catches future
     // codex variants automatically; the explicit entries cover the

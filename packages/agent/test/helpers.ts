@@ -19,8 +19,9 @@ import { Session } from "../src/session/index.ts"
  *  Numbers chosen large enough that test scenarios never accidentally
  *  trip thresholds. */
 const mockSpec: Model["spec"] = {
-  id: "x",
-  model: "x",
+  id: "mock/x",
+  modelId: "x",
+  providerId: "mock",
   contextSize: 1_000_000,
   maxTokens: 16_000,
   input: ["text", "image"],

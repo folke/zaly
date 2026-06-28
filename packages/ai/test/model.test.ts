@@ -25,7 +25,6 @@ models.register([
   {
     cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
     id: "mock-cost-test/cheap",
-    model: "cheap",
     contextSize: 100_000,
     maxTokens: 4096,
     input: ["text"],
@@ -36,7 +35,6 @@ models.register([
   {
     // No cost field — augmentation should be a no-op.
     id: "mock-cost-test/freebie",
-    model: "freebie",
     contextSize: 100_000,
     maxTokens: 4096,
     input: ["text"],

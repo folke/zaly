@@ -1,10 +1,9 @@
 import type { PromptCtx } from "./registry.ts"
 
-import { parseModelId } from "@zaly/ai"
-
 export async function prompt(ctx: PromptCtx): Promise<string> {
   const model = ctx.model.spec
-  const { provider, model: modelId } = parseModelId(ctx.model.id)
+  const provider = model.providerId
+  const modelId = model.modelId
   const modsIn = model.input
   const modsOut = model.output ?? []
   const info = model.info

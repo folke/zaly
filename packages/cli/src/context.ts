@@ -1,6 +1,6 @@
 import type { PromptCollection, ToolCollection } from "@zaly/agent"
 import type { Session } from "@zaly/agent/session"
-import type { ModelCollection } from "@zaly/ai"
+import type { AuthManager, ModelCollection } from "@zaly/ai"
 import type { ConfigManager } from "@zaly/config"
 import type { PluginManager } from "@zaly/config/plugin"
 import type { LogLevel } from "@zaly/shared/logger"
@@ -23,6 +23,7 @@ type Slots = {
   tools: ToolCollection
   model: ModelCollection
   prompts: PromptCollection
+  auth: AuthManager
 }
 export const REASONING_EFFORTS = [
   "off",
@@ -162,8 +163,9 @@ export class Context extends BaseLogger {
 
   model() {
     return this.#cache.need("model", async () => {
+      const auth = await this.auth()
       const { modelCollection } = await import("@zaly/ai")
-      return modelCollection()
+      return modelCollection(auth)
     })
   }
 
@@ -171,6 +173,16 @@ export class Context extends BaseLogger {
     return this.#cache.need("prompts", async () => {
       const { promptCollection } = await import("@zaly/agent")
       return promptCollection()
+    })
+  }
+
+  auth() {
+    return this.#cache.need("auth", async () => {
+      const { AuthManager } = await import("@zaly/ai")
+      return AuthManager.load(join(zalyPaths.env.state, "auth.json"), {
+        bash: this.config.$.system.bash,
+        logger: this.logger.child("auth"),
+      })
     })
   }
 

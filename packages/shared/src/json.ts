@@ -73,6 +73,7 @@ export type JsonFileOpts<T extends JsonObject = JsonObject, D extends T | undefi
   /** Reviver for JSON.parse. */
   reviver?: JsonReviver
   validate?: (data: unknown) => MaybePromise<T>
+  mode?: number
 }
 
 export class JsonFile<T extends JsonObject = JsonObject, D extends T | undefined = undefined> {

@@ -1,16 +1,29 @@
 import type { BuiltinProvider } from "../providers/registry.ts"
-import type { ModelInfo, ModelSpec, ProviderInfo } from "../types.ts"
+import type { ModelInfo, ModelSpec, ModelProvider } from "../types.ts"
+import type { ModelFilter } from "./filter.ts"
 
 import { normPath } from "@zaly/shared"
 import { mkdir, writeFile } from "node:fs/promises"
 import { pathToFileURL } from "node:url"
+import { filterModels } from "./filter.ts"
 import { modelProviders, overrides } from "./overrides.ts"
 
-type CatalogProvider = Omit<ProviderInfo, "quirks" | "headers"> & {
+type CatalogProvider = {
+  id: string
   /** NPM package name for the provider's adapter. */
   npm: string
   /** Base URL for the provider's API. */
   api?: string
+  /** Provider id **/
+  /** Provider name **/
+  name: string
+  /** Docs link for this provider's model list. */
+  doc: string
+  /** Env-var names consulted for credentials, in priority order.
+   *  The first element is the conventional one (`OPENAI_API_KEY`
+   *  etc.); downstream entries are fallbacks. */
+  env?: string[]
+  models: Record<string, ModelInfo>
 }
 
 type Catalog = Record<string, CatalogProvider | undefined>
@@ -28,6 +41,11 @@ let catalog: Promise<ModelCatalog> | undefined
 
 function isCatalog(data: unknown): data is Catalog {
   return typeof data === "object" && data !== null && !Array.isArray(data)
+}
+
+export async function getModel(id: string): Promise<ModelSpec | undefined> {
+  const cat = await loadCatalog()
+  return cat.get(id)
 }
 
 export async function downloadCatalog(dir: string): Promise<ModelCatalog> {
@@ -53,7 +71,7 @@ export async function loadCatalog(path?: string): Promise<ModelCatalog> {
 
 export class ModelCatalog {
   #catalog!: Catalog
-  #providers = new Map<string, ProviderInfo>()
+  #providers = new Map<string, ModelProvider>()
   #models = new Map<string, ModelSpec>()
 
   constructor(cat: Catalog) {
@@ -95,24 +113,28 @@ export class ModelCatalog {
     return this
   }
 
-  provider(id: string): ProviderInfo | undefined {
+  provider(id: string): ModelProvider | undefined {
     return this.#providers.get(id)
   }
 
-  model(id: string): ModelSpec | undefined {
-    return this.#models.get(id)
+  get(modelId: string): ModelSpec | undefined {
+    return this.#models.get(modelId)
   }
 
-  get providers(): readonly ProviderInfo[] {
+  get providers(): readonly ModelProvider[] {
     return [...this.#providers.values()]
   }
 
   get models(): readonly ModelSpec[] {
     return [...this.#models.values()]
   }
+
+  async list(filter?: ModelFilter): Promise<Record<string, ModelSpec>> {
+    return filterModels(this.models, filter)
+  }
 }
 
-function toProviderInfo(p?: CatalogProvider): ProviderInfo | undefined {
+function toProviderInfo(p?: CatalogProvider): ModelProvider | undefined {
   if (!p) return
   const override = overrides[p.id]
   const api = override?.api ?? npmToApi[p.npm]
@@ -130,7 +152,7 @@ function toProviderInfo(p?: CatalogProvider): ProviderInfo | undefined {
   }
 }
 
-function toModelSpec(model: ModelInfo, provider: ProviderInfo): ModelSpec {
+function toModelSpec(model: ModelInfo, provider: ModelProvider): ModelSpec {
   const id = `${provider.id}/${model.id}`
   let api = provider.api
   const override = overrides[provider.id]
@@ -138,8 +160,9 @@ function toModelSpec(model: ModelInfo, provider: ProviderInfo): ModelSpec {
   // oxlint-disable-next-line sort-keys
   return {
     id,
+    providerId: provider.id,
     name: model.name,
-    model: model.id,
+    modelId: model.id,
     api,
     baseUrl: model.provider?.api ?? provider.baseUrl,
     headers: provider.headers,

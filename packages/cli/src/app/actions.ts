@@ -1,4 +1,4 @@
-import type { OAuthProvider, ReasoningEffort } from "@zaly/ai"
+import type { ModelProvider, ReasoningEffort } from "@zaly/ai"
 import type { ActionDef } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
@@ -95,9 +95,9 @@ export function appActions({ app }: { app: App }) {
     },
     "app.login": {
       cmd: "login",
-      desc: "Authorize zaly with your ChatGPT account for Codex models.",
+      desc: "Authenticate with the current model provider to enable access to private models.",
       fn: () => {
-        void runCodexLogin().catch((error) => {
+        void login(app).catch((error) => {
           app.ctx.error(
             `[login] failed: ${error instanceof Error ? error.message : String(error)}\n`
           )
@@ -257,24 +257,33 @@ export function appActions({ app }: { app: App }) {
  *  stdout. Browser is opened via the platform `open` / `xdg-open` /
  *  `start` helper; on bind failure the URL is printed for the user to
  *  copy manually. */
-async function runCodexLogin(): Promise<void> {
-  process.stdout.write("[login] starting OpenAI Codex (ChatGPT) authorization…\n")
-  const { authRegistry } = await import("@zaly/ai")
+async function login(app: App, provider?: ModelProvider): Promise<void> {
+  const auth = await app.ctx.auth()
+  provider ??= app.agent.model?.spec.provider
+  if (!provider) throw new Error("No model provider configured for the current model")
 
-  const codexAuth = (await authRegistry.load("codex")) as OAuthProvider
-
-  const creds = await codexAuth.login({
-    onAuthUrl: ({ url }) => {
+  const methods = await auth.login(provider, {
+    onUrl: ({ url }) => {
       console.info(
         `**[login]** open this URL in your browser if it doesn't open automatically:\n  [${url}](${url})`
       )
       void openBrowser(url)
     },
-    onProgress: (message) => {
-      console.info(`**[login]** ${message}**`)
-    },
+    // onPrompt: async (msg) => {
+    //   const input = app.composer.input
+    //   console.log(`**[login]** ${msg}**`)
+    // },
   })
-  console.info(`[login] linked ChatGPT account \`${creds.accountId}\`.`)
+
+  const item = await app.pick({
+    active: 0,
+    items: methods.map((m) => ({ method: m, name: m.desc, text: m.desc })),
+  })
+  if (!item) return
+
+  await item.method.login()
+
+  app.ctx.success(`[login] success! You can now use the ${provider.name} model.`)
 }
 
 /** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures

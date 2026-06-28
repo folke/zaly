@@ -6,7 +6,7 @@
  *  rules, square-bracket tagline. The whole page is ~3KB inline so the
  *  user sees it instantly even on a flaky network. */
 
-interface PageOpts {
+type PageOpts = {
   tagline: string
   heading: string
   italic: string
@@ -22,7 +22,7 @@ function page(opts: PageOpts): string {
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>zaly · openai-codex</title>
+<title>${opts.tagline}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -128,22 +128,29 @@ function page(opts: PageOpts): string {
 `
 }
 
-export function oauthSuccessPage(): string {
+export function oauthSuccessPage(provider: string): string {
   return page({
-    body: "Your ChatGPT account is now linked to zaly. The terminal will pick up your new credentials automatically.",
+    body: `Your ${provider} account is now linked to zaly. The terminal will pick up your new credentials automatically.`,
     heading: "Authorized.",
     italic: "you're in.",
-    tagline: "zaly · openai-codex",
+    tagline: `zaly · ${provider}`,
     tone: "ok",
   })
 }
 
-export function oauthErrorPage(detail: string): string {
+export function oauthErrorPage(provider: string, error: string): string {
   return page({
-    body: detail,
+    body: error,
     heading: "Login failed.",
     italic: "try again.",
-    tagline: "zaly · openai-codex",
+    tagline: `zaly · ${provider}`,
     tone: "error",
   })
+}
+
+export function oauthPages(provider: string) {
+  return {
+    error: (error: string) => oauthErrorPage(provider, error),
+    success: () => oauthSuccessPage(provider),
+  }
 }

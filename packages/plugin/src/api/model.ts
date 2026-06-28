@@ -1,8 +1,6 @@
-import type { AuthLoader, AuthProvider, Model, ModelFilter, ModelSpec, ModelOpts } from "@zaly/ai"
+import type { Model, ModelFilter, ModelOpts, ModelReg, ModelSpec } from "@zaly/ai"
 import type { Collection } from "@zaly/shared/collection"
 import type { Plugin } from "../plugin.ts"
-
-import { toLoader } from "../plugin.ts"
 
 export class ModelApi implements Collection<Model | undefined, Promise<ModelSpec[]>, ModelSpec> {
   #plugin: Plugin
@@ -31,13 +29,7 @@ export class ModelApi implements Collection<Model | undefined, Promise<ModelSpec
     return this.#model.load(opts)
   }
 
-  register(spec: ModelSpec | ModelSpec[]) {
+  register(spec: ModelReg | ModelReg[]) {
     this.#plugin.cleanup(this.#model.register(spec))
-  }
-
-  async registerAuthProvider(name: string, provider: AuthLoader | AuthProvider) {
-    this.#plugin.assertLoaded()
-    const { authRegistry } = await import("@zaly/ai")
-    this.#plugin.cleanup(authRegistry.register(name, toLoader(provider)))
   }
 }

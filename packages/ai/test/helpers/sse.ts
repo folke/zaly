@@ -33,7 +33,8 @@ export function streamReq(
   const spec: ModelSpec = {
     id: model,
     name: model,
-    model,
+    modelId: model,
+    providerId: "mock",
     api: "mock",
     input: ["text"],
     output: ["text"],

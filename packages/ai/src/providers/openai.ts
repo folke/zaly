@@ -20,6 +20,7 @@ import type {
 } from "../types.ts"
 
 import { safeStringify } from "@zaly/shared"
+import { resolveApiKey } from "../auth/manager.ts"
 import {
   attachmentToMeta,
   compressImages,
@@ -92,18 +93,19 @@ export function createOpenAI(config: ProviderOptions = {}): Provider<"openai"> {
   const baseUrl = (config.baseUrl ?? "https://api.openai.com/v1").replace(/\/$/, "")
   const doFetch = config.fetch ?? fetch
 
-  const auth = (): Record<string, string> =>
-    config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}
-
   return {
     id: "openai",
     async *stream(req: ProviderRequest): AsyncIterable<StreamEvent> {
       const body = await buildRequest(req)
+      const apiKey = await resolveApiKey(config.apiKey)
+      const auth = (): Record<string, string> =>
+        apiKey?.key ? { Authorization: `Bearer ${apiKey.key}` } : {}
       const response = await doFetch(`${baseUrl}/chat/completions`, {
         body: safeStringify(body),
         headers: {
           "Content-Type": "application/json",
           ...auth(),
+          ...apiKey?.headers,
           ...config.headers,
         },
         method: "POST",
@@ -205,7 +207,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   }
   const out: OpenAIChatRequest = {
     messages,
-    model: model.model,
+    model: model.modelId,
     stream: true,
     stream_options: { include_usage: true },
   }

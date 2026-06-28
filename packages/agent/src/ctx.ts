@@ -143,6 +143,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     this.#session = s
     const modelId = s.settings.modelId
     if (modelId && modelId !== this.model?.id) {
+      // FIXME: can't work
       const { loadModel } = await import("@zaly/ai")
       this.model = await loadModel(modelId)
     }

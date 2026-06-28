@@ -1,2 +1,2 @@
-export * from "./auth.ts"
-export type * from "./secrets.ts"
+export * from "./manager.ts"
+export * from "./oauth/index.ts"

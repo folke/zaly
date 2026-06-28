@@ -1,36 +1,6 @@
-import type { AuthProvider } from "./auth/auth.ts"
-import type { Modality, ModelSpec } from "./types.ts"
+import type { Modality, ModelSpec } from "../types.ts"
 
-import { hasAuth } from "./auth/auth.ts"
-import { loadCatalog } from "./models/catalog.ts"
-
-/** Split a model URI into `{ provider, model }`. Throws on malformed
- *  input — a typo at the call site is more useful surfaced here than
- *  via a downstream "unknown provider" error.
- *
- *  Examples:
- *    `"anthropic/claude-sonnet-4-5"` → `{ provider: "anthropic", model: "claude-sonnet-4-5" }`
- *    `"openrouter/kimi/k2"`          → `{ provider: "openrouter", model: "kimi/k2" }` */
-export function parseModelId(id: string): { provider: string; model: string } {
-  const [, provider, model] = /^([^/]+)\/(.+)$/.exec(id) ?? []
-  if (!provider || !model) {
-    throw new Error(
-      `Invalid model id "${id}": expected "<provider>/<model>" (e.g. "anthropic/claude-sonnet-4-5").`
-    )
-  }
-  return { model, provider }
-}
-
-// ── Runtime-registered custom catalog ───────────────────────────────────
-
-/** Look up model options by id. Custom models win over built-ins.
- *  Built-in entries come pre-resolved from the generator — quirks,
- *  baseUrl, headers, maxTokens are all baked in; we just attach
- *  `providerInfo` from the shared providers map. */
-export async function getModel(id: string): Promise<ModelSpec | undefined> {
-  const catalog = await loadCatalog()
-  return catalog.model(id)
-}
+import { AuthManager } from "../auth/manager.ts"
 
 /** Predicate inputs for narrowing a model list.
  *
@@ -42,8 +12,8 @@ export async function getModel(id: string): Promise<ModelSpec | undefined> {
  *                  against INPUT (common case — "accepts image").
  *                  Explicit form `{ input?, output? }` lets callers
  *                  narrow on generation direction too. */
-export interface ModelFilter {
-  auth?: AuthProvider | true
+export type ModelFilter = {
+  auth?: AuthManager | true
   reasoning?: boolean
   contextSize?: number
   modality?:
@@ -54,8 +24,8 @@ export interface ModelFilter {
 }
 
 export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
-  if (opts?.auth !== undefined && !(await hasAuth(m, opts.auth === true ? undefined : opts.auth)))
-    return false
+  const auth = opts?.auth === true ? AuthManager.basic() : opts?.auth
+  if (auth !== undefined && !(await auth.getAuth(m))) return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
   if (opts?.contextSize !== undefined && m.contextSize < opts.contextSize) return false
@@ -106,6 +76,9 @@ export async function filterModels(
     return a.name.localeCompare(b.name)
   })
 
+  // PERF: resolve to basic auth once, not per model.
+  if (opts?.auth === true) opts = { ...opts, auth: AuthManager.basic() }
+
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.
   const verdicts = await Promise.all(models.map((m) => filterModel(m, opts)))
@@ -114,12 +87,4 @@ export async function filterModels(
     if (verdicts[i]) out[m.id] = m
   }
   return out
-}
-
-/** Every model we know about, keyed by id. Includes runtime-registered
- *  custom models. For just ids (autocomplete sources), use
- *  `listModelIds` — one compact JSON, no catalog load needed. */
-export async function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>> {
-  const catalog = await loadCatalog()
-  return await filterModels(catalog.models, opts)
 }

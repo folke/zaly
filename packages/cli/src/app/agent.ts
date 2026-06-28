@@ -2,8 +2,6 @@ import type { Agent } from "@zaly/agent"
 import type { AppState } from "../types.ts"
 import type { App } from "./app.ts"
 
-import { registerSecrets } from "@zaly/ai"
-
 /** Default tool list when `--tools` isn't passed. Mirrors the previous
  *  hard-coded set; can be narrowed per-run via `--tools a,b,c`. */
 
@@ -22,8 +20,6 @@ export async function loadAgent(app: App): Promise<Agent> {
   const settings = ctx.config.$
   const ss = session.settings
   const p = settings.permissions
-
-  if (ctx.config.user.$.secrets) await registerSecrets(ctx.config.user.$.secrets)
 
   const cwd = ctx.flags.cwd ?? ss.cwd ?? ctx.config.paths.cwd
 

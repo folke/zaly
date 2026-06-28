@@ -1,5 +1,5 @@
 import type { ContentTransform } from "./content/transform.ts"
-import type { ModelFilter } from "./models.ts"
+import type { ModelFilter } from "./models/filter.ts"
 import type {
   CollectOptions,
   Context,
@@ -10,13 +10,14 @@ import type {
   Usage,
 } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
-import type { AnyPart, Attachment, Cost, Message, Modality, ModelSpec } from "./types.ts"
+import type { AnyPart, Attachment, Cost, Message, Modality, ModelReg, ModelSpec } from "./types.ts"
 
 import { BaseCollection } from "@zaly/shared/collection"
-import { authenticate } from "./auth/auth.ts"
+import { AuthManager } from "./auth/manager.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
-import { filterModels, getModel, listModels } from "./models.ts"
+import { getModel, loadCatalog } from "./models/catalog.ts"
+import { filterModels } from "./models/filter.ts"
 import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
@@ -31,6 +32,23 @@ export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions
 export type ModelOpts = string | ({ id: string } & Partial<ModelSpec>)
 export type { ModelCollection }
+
+/** Split a model URI into `{ provider, model }`. Throws on malformed
+ *  input — a typo at the call site is more useful surfaced here than
+ *  via a downstream "unknown provider" error.
+ *
+ *  Examples:
+ *    `"anthropic/claude-sonnet-4-5"` → `{ provider: "anthropic", model: "claude-sonnet-4-5" }`
+ *    `"openrouter/kimi/k2"`          → `{ provider: "openrouter", model: "kimi/k2" }` */
+export function parseModelId(id: string): { provider: string; model: string } {
+  const [, provider, model] = /^([^/]+)\/(.+)$/.exec(id) ?? []
+  if (!provider || !model) {
+    throw new Error(
+      `Invalid model id "${id}": expected "<provider>/<model>" (e.g. "anthropic/claude-sonnet-4-5").`
+    )
+  }
+  return { model, provider }
+}
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -137,24 +155,28 @@ export class Model<T extends AnyProvider = string> {
  * The id is looked up in the catalog for a base spec, which is then
  * overridden by any fields in the input spec.
  */
-export async function loadModel(model: ModelOpts, base?: ModelSpec): Promise<Model> {
+export async function loadModel(
+  model: ModelOpts,
+  base?: ModelSpec,
+  auth?: AuthManager
+): Promise<Model> {
   const id = typeof model === "string" ? model : model.id
   const overrides = typeof model === "string" ? {} : model
   base ??= await getModel(id)
   if (base === undefined)
     throw new Error(`Model \`${id}\` not found. Has the model been registered?`)
   const spec: ModelSpec = { ...base, ...overrides }
-  const creds = await authenticate(spec)
+  auth ??= AuthManager.basic()
   const provider = await providerRegistry.load(spec.api, {
     ...spec,
-    apiKey: creds?.apiKey,
+    apiKey: () => auth.getAuth(spec),
     // Default retry on the request side — pre-stream only (`withRetry`
     // never restarts a body that's already started consuming, which
     // would waste already-generated tokens). Covers connection
     // resets, 5xx, 429s. Mid-stream SSE failures still propagate.
     // Callers can pass their own `fetch` to opt out / customise.
     fetch: withRetry(spec.fetch ?? fetch),
-    headers: { ...creds?.headers, ...spec.headers },
+    headers: spec.headers,
   })
 
   return new Model({ id, provider, spec })
@@ -185,6 +207,17 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
 }
 
 class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpec[]>, ModelSpec> {
+  #auth?: AuthManager
+
+  constructor(auth?: AuthManager) {
+    super(undefined)
+    this.#auth = auth
+  }
+
+  get auth(): AuthManager | undefined {
+    return this.#auth
+  }
+
   async get(id: string): Promise<ModelSpec | undefined> {
     const spec = this.registered.findLast((r) => r.id === id)
     return spec ?? (await getModel(id))
@@ -192,25 +225,30 @@ class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpe
 
   async load(opts: ModelOpts): Promise<Model> {
     const id = typeof opts === "string" ? opts : opts.id
-    return loadModel(opts, await this.get(id))
+    return loadModel(opts, await this.get(id), this.#auth)
   }
 
   async list(filter?: ModelFilter): Promise<ModelSpec[]> {
+    // Use the collection's auth manager if the caller wants to filter by auth but didn't supply one.
+    if (filter?.auth === true && this.#auth) filter = { ...filter, auth: this.#auth }
     const [models, custom] = await Promise.all([
-      listModels(filter),
+      loadCatalog().then((c) => c.list(filter)),
       filterModels(this.registered, { ...filter, auth: undefined }),
     ])
     for (const m of Object.values(custom)) models[m.id] = m
     return Object.values(models)
   }
 
-  override register(spec: ModelSpec | ModelSpec[]): () => void {
+  override register(spec: ModelReg | ModelReg[]): () => void {
     const specs = Array.isArray(spec) ? spec : [spec]
-    const offs = specs.map((s) => super.register(s))
+    const offs = specs.map((r) => {
+      const parsed = parseModelId(r.id)
+      return super.register({ ...r, modelId: parsed.model, providerId: parsed.provider })
+    })
     return () => offs.forEach((off) => off())
   }
 }
 
-export function modelCollection() {
-  return new ModelCollection(undefined)
+export function modelCollection(auth?: AuthManager): ModelCollection {
+  return new ModelCollection(auth)
 }

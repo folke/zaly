@@ -1,5 +1,5 @@
 import type { AnyTool, PermissionPresetName } from "@zaly/agent"
-import type { AuthSecrets, ReasoningEffort } from "@zaly/ai"
+import type { ReasoningEffort } from "@zaly/ai"
 import type { DeepPartial, Simplify } from "@zaly/shared"
 import type { KeyPatterns } from "@zaly/tui"
 
@@ -75,7 +75,6 @@ export type ResolvedConfig = {
   }
   plugins?: string[]
   keymap?: Record<string, KeyPatterns>
-  secrets?: AuthSecrets
   /** Resource configuration for zaly. */
   resources?: Record<string, ResourceFilter>
   /** System integrations and external commands used by zaly. */
