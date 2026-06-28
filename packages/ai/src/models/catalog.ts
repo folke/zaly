@@ -141,14 +141,13 @@ function toProviderInfo(p?: CatalogProvider): ModelProvider | undefined {
   if (!api) return
   return {
     api,
-    baseUrl: override?.baseUrl ?? p.api,
+    baseUrl: p.api,
     doc: p.doc,
     env: p.env ?? [],
-    headers: override?.headers,
     id: p.id,
     models: p.models,
     name: p.name,
-    quirks: override?.quirks,
+    ...override,
   }
 }
 

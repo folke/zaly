@@ -17,16 +17,8 @@
  * provider has a quirk models.dev's catalog can't express.
  */
 
-import type { BuiltinProvider } from "../providers/registry.ts"
-import type { ModelInfo, ModelProvider, Quirks } from "../types.ts"
+import type { ModelInfo, ModelProvider } from "../types.ts"
 import type { ModelCatalog } from "./catalog.ts"
-
-export interface ProviderOverride {
-  api?: BuiltinProvider
-  baseUrl?: string
-  headers?: Record<string, string>
-  quirks?: Quirks
-}
 
 export const modelProviders: Record<string, ModelProvider> = {
   // ── OpenAI Codex (ChatGPT subscription backend) ─────────────────────
@@ -86,7 +78,7 @@ export const modelProviders: Record<string, ModelProvider> = {
 }
 
 // oxlint-disable-next-line sort-keys
-export const overrides: Record<string, ProviderOverride | undefined> = {
+export const overrides: Record<string, Partial<ModelProvider> | undefined> = {
   // ── Native OpenAI ─────────────────────────────────────────────────
   openai: {
     quirks: {
