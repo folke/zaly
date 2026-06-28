@@ -24,6 +24,7 @@ export type PickOpts<T extends Option = Option> = {
   ref?: Ref<Select<T>>
   details?: Widget | string
   clearInput?: boolean
+  restoreInput?: boolean
   whichKey?: boolean | ActionFilter
 } & (Omit<PickerSelectProps<T>, "input"> | Omit<PickerTreeProps<T>, "input">)
 
@@ -125,9 +126,9 @@ export class Picker {
     this.active?.hide()
     const res = Promise.withResolvers<T | undefined>()
     let settled = false
-    // FIXME: clearInput and replace with prev
-    const prevInput =
-      (opts.clearInput ?? this.#active.length) ? this.#input.consume().value : undefined
+    const clear = opts.clearInput ?? true
+    const restore = opts.restoreInput ?? true
+    const prevInput = clear ? this.#input.consume().value : undefined
     const ref = opts.ref ?? createRef<Select<T>>()
     const node = this.#ui.open(() => this.#pick({ ...opts, input: this.#input, ref }))
     this.#active.push(node)
@@ -140,7 +141,8 @@ export class Picker {
       settled = true
       ac.abort()
       this.#active = this.#active.filter((n) => n !== node)
-      if (prevInput !== undefined) this.#input.replace(prevInput)
+      if (restore && prevInput !== undefined) this.#input.replace(prevInput)
+      else if (!restore) this.#input.consume()
       res.resolve(value)
       this.#ui.close(node)
       this.active?.show()
@@ -150,6 +152,7 @@ export class Picker {
     node.once("unmount", () => done(), { signal: ac.signal })
     select.once("close", () => done(), { signal: ac.signal })
     select.once("accept", ({ item }) => done(item), { signal: ac.signal })
+    select.once("complete", ({ item }) => done(item), { signal: ac.signal })
 
     return res.promise
   }
