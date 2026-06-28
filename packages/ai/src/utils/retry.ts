@@ -96,7 +96,6 @@ export function withRetry(fetchImpl: FetchLike, opts: RetryOptions = {}): FetchL
 
       // Honour Retry-After for 429/503 if present; otherwise
       // exponential backoff with full jitter.
-      // FIXME: should at least log any retry
       const ra = response?.headers.get("retry-after") ?? undefined
       const raMs = ra === undefined ? undefined : retryAfterMs(ra)
       const wait =

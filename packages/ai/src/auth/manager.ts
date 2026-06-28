@@ -53,6 +53,10 @@ export async function resolveApiKey(key: ProviderOptions["apiKey"]): Promise<Api
   return typeof ret === "string" ? { key: ret, source: "model" } : ret
 }
 
+function isProvider(it: ModelProvider | ModelSpec): it is ModelProvider {
+  return (it as { models: unknown }).models !== undefined
+}
+
 export class AuthManager {
   #opts: AuthManagerOpts
   #json?: JsonFile<AuthSecrets, AuthSecrets>
@@ -75,25 +79,35 @@ export class AuthManager {
     return new AuthManager(json, opts)
   }
 
-  // FIXME: should work on provider
-  async getAuth(model: ModelSpec): Promise<ApiKey | undefined> {
-    if (model.apiKey) {
+  async getAuth(it: ModelSpec | ModelProvider): Promise<ApiKey | undefined> {
+    const provider = isProvider(it) ? it : it.provider
+    const model = isProvider(it) ? undefined : it
+
+    // 1. Explicit apiKey has been set for the model. (typically coming from --api-key)
+    if (model?.apiKey) {
       const key = await resolveApiKey(model.apiKey)
       if (key) return { key: await this.resolve(key.key), source: "model" }
     }
 
-    const provider = model.provider.id
-
-    const secret = this.get(provider)
+    // 2. api-key from the store
+    const secret = this.get(provider.id)
     if (secret?.type === "api-key")
       return { ...secret, key: await this.resolve(secret.key), source: "store" }
 
+    // 3. oauth from the store
     if (secret?.type === "oauth") {
-      const ret = await this.#serialize(provider, () => this.#fromOauth(secret, model))
+      const ret = await this.#serialize(provider.id, () => this.#fromOauth(secret, provider))
       if (ret) return ret
     }
 
-    return AuthManager.fromEnv(model)
+    // 4. apiKey from the model provider (typically with env vars)
+    if (provider.apiKey) {
+      const key = await resolveApiKey(provider.apiKey)
+      if (key) return { key: await this.resolve(key.key), source: "model" }
+    }
+
+    // 5. any env vars configured for the provider
+    return this.#fromEnv(provider)
   }
 
   async login(provider: ModelProvider, opts: LoginCallbacks): Promise<AuthLogin[]> {
@@ -156,14 +170,14 @@ export class AuthManager {
     return prom as Promise<T>
   }
 
-  async #fromOauth(secret: OAuthSecret, model: ModelSpec): Promise<ApiKey | undefined> {
+  async #fromOauth(secret: OAuthSecret, provider: ModelProvider): Promise<ApiKey | undefined> {
     const tokens = secret.tokens
     const expired = tokens.expires - Date.now() < REFRESH_LEEWAY_MS
     if (!expired || !tokens.refresh)
       return { headers: secret.headers, key: secret.key, source: "oauth" }
-    const oauth = await this.#oauthOpts(model.provider)
+    const oauth = await this.#oauthOpts(provider)
     if (!oauth) return
-    const id = model.provider.id
+    const id = provider.id
     const { OAuth } = await import("./oauth/client.ts")
     const client = new OAuth({ ...oauth, id })
     const current = await client.refresh(tokens.refresh)
@@ -172,8 +186,8 @@ export class AuthManager {
     return { ...apiKey, source: "oauth" }
   }
 
-  static async fromEnv(model: ModelSpec): Promise<ApiKey | undefined> {
-    const envs = model.provider.env ?? []
+  async #fromEnv(provider: ModelProvider): Promise<ApiKey | undefined> {
+    const envs = provider.env ?? []
     for (const name of envs) {
       const value = process.env[name]
       if (value) return { key: value, source: "env" }

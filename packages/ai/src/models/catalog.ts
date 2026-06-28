@@ -257,7 +257,6 @@ function toModelSpec(model: ModelInfo, provider: ModelProvider): ModelSpec {
     id,
     model: model.id,
     api,
-    apiKey: provider.apiKey,
     baseUrl: model.baseUrl ?? provider.baseUrl,
     headers: provider.headers,
     provider,

@@ -168,7 +168,7 @@ export class Model<T extends AnyProvider = string> {
 export async function loadModel(
   model: ModelOpts,
   base?: ModelSpec,
-  auth?: AuthManager
+  ctx?: ModelCtx
 ): Promise<Model> {
   const id = typeof model === "string" ? model : model.id
   const overrides = typeof model === "string" ? {} : model
@@ -176,7 +176,7 @@ export async function loadModel(
   if (base === undefined)
     throw new Error(`Model \`${id}\` not found. Has the model been registered?`)
   const spec: ModelSpec = { ...base, ...overrides }
-  auth ??= AuthManager.basic()
+  const auth = ctx?.auth ?? AuthManager.basic()
   const provider = await providerRegistry.load(spec.api, {
     ...spec,
     apiKey: () => auth.getAuth(spec),
@@ -216,7 +216,7 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
   return cost
 }
 
-export type ModelCollectionOpts = {
+export type ModelCtx = {
   auth?: AuthManager
   logger?: Logger
 }
@@ -230,7 +230,7 @@ class ModelCollection extends BaseCollection<
   #logger?: Logger
   #specCache = new Map<string, ModelSpec[]>()
 
-  constructor(opts: ModelCollectionOpts = {}) {
+  constructor(opts: ModelCtx = {}) {
     super(undefined)
     this.#auth = opts.auth
     this.#logger = opts.logger
@@ -290,6 +290,6 @@ class ModelCollection extends BaseCollection<
   }
 }
 
-export function modelCollection(opts: ModelCollectionOpts = {}): ModelCollection {
+export function modelCollection(opts: ModelCtx = {}): ModelCollection {
   return new ModelCollection(opts)
 }
