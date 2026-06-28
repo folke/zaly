@@ -10,6 +10,7 @@ import type {
 } from "@zaly/ai"
 import type { MaybeGetter } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
+import type { Agent } from "./agent.ts"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentStopKind, StepKind } from "./events.ts"
 import type { MaskOptions } from "./masker.ts"
@@ -33,6 +34,12 @@ export type SendMode = "inject" | "append"
 // tests, evals) may pass a smaller context.
 declare module "@zaly/ai" {
   interface ToolContext {
+    /** Reference to the running agent — surfaced for tools that need to
+     *  schedule future inject-style work (`wakeup`, future
+     *  notifications). Only populated when invoked through an `Agent`;
+     *  one-shot harnesses leave it undefined. */
+    agent?: Agent
+    /** Override the default `bash` command used by the `bash` tool. */
     bash?: string[]
     /** Data directory for tools to read/write durable files. */
     sessionDir?: string

@@ -36,17 +36,6 @@ export interface WakeupContext {
   agent?: Agent
 }
 
-// FIXME:
-declare module "@zaly/ai" {
-  interface ToolContext {
-    /** Reference to the running agent — surfaced for tools that need to
-     *  schedule future inject-style work (`wakeup`, future
-     *  notifications). Only populated when invoked through an `Agent`;
-     *  one-shot harnesses leave it undefined. */
-    agent?: Agent
-  }
-}
-
 // oxlint-disable-next-line sort-keys -- semantic field order: name, desc, params, call
 export const wakeupTool = defineTool({
   name: "wakeup",
