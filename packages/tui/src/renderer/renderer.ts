@@ -352,6 +352,9 @@ export class Renderer extends Emitter<RenderEvents> {
     // setInterval(() => {
     //   console.log(this.stats.get())
     // }, 5000)
+    process.on("unhandledRejection", (reason) =>
+      this.logger.child("unhandledRejection").error("Unhandled Rejection:", reason)
+    )
   }
 
   stop(): void {

@@ -182,7 +182,6 @@ export class Terminal {
         })
       }
       process.once("uncaughtException", onCrash)
-      process.once("unhandledRejection", onCrash)
       process.once("SIGINT", bye)
       process.once("SIGTERM", bye)
       const onExit = (): void => this.stop()
@@ -192,7 +191,6 @@ export class Terminal {
         process.off("SIGTERM", bye)
         process.off("exit", onExit)
         process.off("uncaughtException", onCrash)
-        process.off("unhandledRejection", onCrash)
       }
     }
   }

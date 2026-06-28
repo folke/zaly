@@ -288,11 +288,23 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // and re-scheduled the surface, so skip caching. The re-paint will
     // run a fresh `_render` against the latest state.
     const stamp = this.#invalidations
-    const rows = await this._render(ctx)
-    if (this.#invalidations === stamp) {
-      this.#cache = { rows, version: ctx.version, width: ctx.width }
+    try {
+      const rows = await this._render(ctx)
+      if (this.#invalidations === stamp) {
+        this.#cache = { rows, version: ctx.version, width: ctx.width }
+      }
+      return rows
+    } catch (error) {
+      this.logger?.error(error)
+      // Don't cache the error result — a later invalidate should
+      // re-render and give the user a chance to recover.
+      this.#cache = undefined
+      return [
+        ctx.style.error(
+          `[Node render error: ${error instanceof Error ? error.message : String(error)}]`
+        ),
+      ]
     }
-    return rows
   }
 
   protected abstract _render(ctx: RenderCtx): Promise<string[]> | string[]
