@@ -36,7 +36,6 @@ export class Notifier {
     this.#ac?.abort()
     this.#ac = new AbortController()
     const opts = { signal: this.#ac.signal }
-    // FIXME: session-start/resume  never triggers, since attach happens AFTER start
     agent.session
       .on(
         "compact",

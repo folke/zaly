@@ -55,12 +55,15 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     this.onEmitError = (error) => this.#opts.logger?.child("context").error(error)
 
     this.on("model", async ({ model }) => {
+      if (!this.#session.started) return
       if (model) await this.session.update({ modelId: model.id })
     })
       .on("reasoning", async ({ effort }) => {
+        if (!this.#session.started) return
         await this.session.update({ reasoning: effort })
       })
       .on("cwd", ({ cwd }) => {
+        if (!this.#session.started) return
         this.#cache.forget("permissions") // reset permissions to force reload with new cwd
         void this.session.update({ cwd })
       })

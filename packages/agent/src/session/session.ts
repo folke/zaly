@@ -144,6 +144,10 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#path
   }
 
+  get started(): boolean {
+    return this.#started
+  }
+
   /** Current session settings, merged with defaults. */
   get settings(): SessionSettings {
     return { ...this.#opts.defaults, ...this.#settings }

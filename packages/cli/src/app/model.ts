@@ -19,11 +19,6 @@ export async function pickModel(
 
   const [all, setAll] = signal(opts?.all ?? false)
 
-  const models = await model.list({
-    filter: filter.length > 0 ? filter : undefined,
-  })
-
-  // FIXME: can be done more efficiently
   const auth = new Set(
     await model
       .list({
@@ -33,6 +28,9 @@ export async function pickModel(
       .then((spec) => spec.map((m) => m.id))
   )
 
+  const models = await model.list({
+    filter: filter.length > 0 ? filter : undefined,
+  })
   const modelItems: ModelItem[] = models.map((m) => {
     const name = (m.provider.name ? `[${m.provider.name}] ` : "") + m.name
     return {
