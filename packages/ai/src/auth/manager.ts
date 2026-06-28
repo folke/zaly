@@ -18,7 +18,7 @@ export type OAuthSecret = {
 export type AuthSecret = ApiKeySecret | OAuthSecret
 export type AuthSecrets = Record<string, AuthSecret>
 
-export type AuthSource = "store" | "env" | "oauth" | "model"
+export type AuthSource = "store" | "env" | "oauth" | "model" | "provider"
 
 export type ApiKey = {
   key: string
@@ -48,9 +48,17 @@ export type AuthManagerOpts = {
 
 const REFRESH_LEEWAY_MS = 60_000
 
-export async function resolveApiKey(key: ProviderOptions["apiKey"]): Promise<ApiKey | undefined> {
+/** Resolve an API key from a string, function, or object.
+ * This does NOT resolve env vars or bash commands; use `AuthManager.resolve` for that. */
+export async function resolveApiKey(
+  key: ProviderOptions["apiKey"],
+  source: AuthSource = "model"
+): Promise<ApiKey | undefined> {
   const ret = typeof key === "function" ? await key() : key
-  return typeof ret === "string" ? { key: ret, source: "model" } : ret
+  if (!ret) return
+  return typeof ret === "string"
+    ? { key: ret, source }
+    : { headers: ret.headers, key: ret.key, source }
 }
 
 function isProvider(it: ModelProvider | ModelSpec): it is ModelProvider {
@@ -79,20 +87,28 @@ export class AuthManager {
     return new AuthManager(json, opts)
   }
 
+  /** Check if a provider requires authentication (via OAuth, API key, or env vars). */
+  needAuth(provider: ModelProvider): boolean {
+    return !!(provider.oauth ?? provider.apiKey ?? provider.env?.length)
+  }
+
   async getAuth(it: ModelSpec | ModelProvider): Promise<ApiKey | undefined> {
     const provider = isProvider(it) ? it : it.provider
     const model = isProvider(it) ? undefined : it
 
     // 1. Explicit apiKey has been set for the model. (typically coming from --api-key)
     if (model?.apiKey) {
-      const key = await resolveApiKey(model.apiKey)
-      if (key) return { key: await this.resolve(key.key), source: "model" }
+      let ret = await resolveApiKey(model.apiKey, "model")
+      ret = await this.#resolve(ret, provider)
+      if (ret) return ret
     }
 
     // 2. api-key from the store
     const secret = this.get(provider.id)
-    if (secret?.type === "api-key")
-      return { ...secret, key: await this.resolve(secret.key), source: "store" }
+    if (secret?.type === "api-key") {
+      const ret = await this.#resolve({ ...secret, source: "store" }, provider)
+      if (ret) return ret
+    }
 
     // 3. oauth from the store
     if (secret?.type === "oauth") {
@@ -102,14 +118,16 @@ export class AuthManager {
 
     // 4. apiKey from the model provider (typically with env vars)
     if (provider.apiKey) {
-      const key = await resolveApiKey(provider.apiKey)
-      if (key) return { key: await this.resolve(key.key), source: "model" }
+      let ret = await resolveApiKey(provider.apiKey, "provider")
+      ret = await this.#resolve(ret, provider)
+      if (ret) return ret
     }
 
     // 5. any env vars configured for the provider
     return this.#fromEnv(provider)
   }
 
+  /** Return a list of available login methods for the provider, including OAuth and API key. */
   async login(provider: ModelProvider, opts: LoginCallbacks): Promise<AuthLogin[]> {
     if (!this.#json) throw new Error("AuthManager is not configured with a JSON store")
 
@@ -148,6 +166,7 @@ export class AuthManager {
     return typeof oauth === "function" ? oauth(provider) : oauth
   }
 
+  /** Perform an OAuth login flow and store the resulting tokens in the JSON store. */
   async #oauthLogin(
     provider: ModelProvider,
     opts: LoginCallbacks & Pick<OAuthLogin, "method">
@@ -163,6 +182,7 @@ export class AuthManager {
     return { ...apiKey, source: "oauth" }
   }
 
+  /** Serialize a promise by ID, so that concurrent calls with the same ID will share the same promise. */
   async #serialize<T>(id: string, fn: () => Promise<T>): Promise<T> {
     const prom = (this.#serialized[id] ??= fn().finally(() => {
       delete this.#serialized[id]
@@ -170,6 +190,7 @@ export class AuthManager {
     return prom as Promise<T>
   }
 
+  /** Attempt to refresh an OAuth token if it is expired, and return the ApiKey. */
   async #fromOauth(secret: OAuthSecret, provider: ModelProvider): Promise<ApiKey | undefined> {
     const tokens = secret.tokens
     const expired = tokens.expires - Date.now() < REFRESH_LEEWAY_MS
@@ -186,6 +207,7 @@ export class AuthManager {
     return { ...apiKey, source: "oauth" }
   }
 
+  /** Check for any configured environment variables for the provider and return the first one that is set. */
   async #fromEnv(provider: ModelProvider): Promise<ApiKey | undefined> {
     const envs = provider.env ?? []
     for (const name of envs) {
@@ -220,16 +242,35 @@ export class AuthManager {
     })
   }
 
-  async resolve(secret: string): Promise<string> {
+  /** Resolve an ApiKey object, replacing env vars and executing bash commands if configured. */
+  async #resolve(apiKey: ApiKey | undefined, provider: ModelProvider): Promise<ApiKey | undefined> {
+    if (!apiKey) return
+    const key = await this.resolve(apiKey.key, provider)
+    if (!key) return
+    return { headers: apiKey.headers, key, source: apiKey.source }
+  }
+
+  /** Resolve a secret string, replacing env vars and executing bash commands if configured. */
+  async resolve(secret: string, provider: ModelProvider): Promise<string | undefined> {
     secret = secret.trim()
     if (this.#opts.env !== false) {
-      const m = secret.match(/^(?:\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*))$/)
-      if (m) {
-        const name = m[1] || m[2]
-        const value = process.env[name]
-        if (!value) throw new Error(`Environment variable \`$${name}\` is not set`)
-        return value
+      const missing: string[] = []
+      const value = secret.replace(
+        /\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g,
+        (match, braced, bare) => {
+          const name = braced ?? bare
+          const res = process.env[name]
+          if (res === undefined) missing.push(name)
+          return res ?? match
+        }
+      )
+      if (missing.length) {
+        this.logger?.warn(
+          `Missing env API key \`${secret}\` for **${provider.name}**:\n- ${missing.join("\n- ")}`
+        )
+        return
       }
+      return value
     }
     if (this.#opts.bash !== false && secret.startsWith("!")) {
       let value = this.#bashCache.get(secret)
@@ -242,6 +283,10 @@ export class AuthManager {
         })
         return r?.trim() ?? ""
       })
+      if (value === "") {
+        this.logger?.warn(`Empty bash API key \`${secret}\` for **${provider.name}**`)
+        return
+      }
       this.#bashCache.set(secret, value)
       return value
     }
