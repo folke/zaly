@@ -137,7 +137,9 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
       gap: 1,
       visible: state.visible,
     },
-    s.style === "notif" ? undefined : text((ctx) => renderPrefix(state, ctx), { flexShrink: 0 }),
+    s.style === "notif"
+      ? undefined
+      : text((ctx) => renderPrefix(state, ctx), { flexShrink: 0, wrap: "none" }),
     box({ flexDirection: "column", flexGrow: 1, gap: 1 }, ...children)
   )
 })

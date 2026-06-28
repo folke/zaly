@@ -44,7 +44,7 @@ export class Text extends Node<TextStyle> {
   }
 
   override async layout(ctx: RenderCtx) {
-    return calcLayout(await textContent(this.state.content, ctx))
+    return calcLayout(await textContent(this.state.content, ctx), { wrap: this.state.wrap })
   }
 }
 
