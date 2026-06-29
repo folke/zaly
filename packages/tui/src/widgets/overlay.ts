@@ -14,6 +14,10 @@ export interface OverlayState {
   verticalAnchor?: "top" | "center" | "bottom"
   horizontalAnchor?: "left" | "center" | "right"
   relative?: "screen" | "ui" | "stream"
+  /** If true, the overlay will be automatically removed from the renderer when closed.
+   * When false, the overlay will remain in the renderer but will be hidden.
+   * Default: true. */
+  removeOnClose?: boolean
 }
 
 export type Overlay<T extends Node[] = Node[]> = Box<OverlayState> & { children: T }
@@ -22,5 +26,13 @@ export function overlay<T extends Node[] = Node[]>(
   state: State<OverlayState & BoxStyle>,
   ...children: T
 ): Overlay<T> {
-  return box({ visible: false, ...state }, ...children) as Overlay<T>
+  const node = box({ visible: false, ...state }, ...children) as Overlay<T>
+  node.withActions({
+    "overlay.close": {
+      desc: "Close overlay",
+      fn: () => (node.state.removeOnClose ? node.ctx?.overlay.remove(node) : node.hide()),
+      keys: ["esc", "ctrl-c"],
+    },
+  })
+  return node
 }
