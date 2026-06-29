@@ -71,6 +71,7 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     const i = this.#overlays.indexOf(overlay)
     if (i === -1) return this
     this.#overlays.splice(i, 1)
+    void overlay.emit("close")
     if (overlay.mounted) overlay.unmount()
     overlay.off("invalidate", this.invalidate)
     this.invalidate()

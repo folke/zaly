@@ -1,3 +1,4 @@
+import type { Emitter } from "@zaly/shared"
 import type { Node } from "../core/node.ts"
 import type { State } from "../core/state.ts"
 import type { Box, BoxStyle } from "./box.ts"
@@ -20,7 +21,13 @@ export interface OverlayState {
   removeOnClose?: boolean
 }
 
-export type Overlay<T extends Node[] = Node[]> = Box<OverlayState> & { children: T }
+type OverlayEvents = {
+  close: {}
+}
+
+export type Overlay<T extends Node[] = Node[]> = Box<OverlayState> & {
+  children: T
+} & Emitter<OverlayEvents>
 
 export function overlay<T extends Node[] = Node[]>(
   state: State<OverlayState & BoxStyle>,
@@ -30,7 +37,7 @@ export function overlay<T extends Node[] = Node[]>(
   node.withActions({
     "overlay.close": {
       desc: "Close overlay",
-      fn: () => (node.state.removeOnClose ? node.ctx?.overlay.remove(node) : node.hide()),
+      fn: () => ((node.state.removeOnClose ?? true) ? node.ctx?.overlay.remove(node) : node.hide()),
       keys: ["esc", "ctrl-c"],
     },
   })
