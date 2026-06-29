@@ -17,7 +17,7 @@ import { widget } from "@zaly/tui/widgets/widget"
 export const statusline = widget((props: AppState) =>
   box(
     { flexDirection: "row", gap: 1 },
-    spinner({ color: "accent", idle: "✓", running: memo(() => props.busy) }),
+    spinner({ color: "accent", idle: "✓", running: memo(() => props.loading) }),
     text(
       ({ style: s }) => {
         if (props.step < 0) return "" // subscribe to step for usage refresh

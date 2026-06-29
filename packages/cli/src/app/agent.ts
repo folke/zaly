@@ -108,6 +108,7 @@ export function attachState(agent: Agent, state: AppState): void {
     .on("stop", ({ kind }) => {
       if (kind !== "error") return
       state.status = "error"
+      state.busy = false
       const err = agent.lastStop?.error
       if (err) console.error(`${err.name}: ${err.message}`)
     })

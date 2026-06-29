@@ -351,7 +351,6 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
     },
     items,
-    maxHeight: app.$.ui.listHeight,
     ref,
     render: renderer(),
     title: `Edit ${scope} config`,

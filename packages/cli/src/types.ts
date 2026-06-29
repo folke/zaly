@@ -1,4 +1,4 @@
-import type { PermissionPresetName, TokenUsage } from "@zaly/agent"
+import type { AgentStatus, PermissionPresetName, TokenUsage } from "@zaly/agent"
 import type { Model, ReasoningEffort } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
@@ -41,10 +41,18 @@ export interface Flags {
 
 export type AppState = {
   step: number
+  /** Whether the agent is currently processing a request. */
   busy: boolean
+  /** True if the agent is busy, or the app is doing something like OAuth login. */
+  loading: boolean
+  /** The currently active model. */
   model?: Model
-  status: string
+  /** The current status of the agent and app */
+  status: AgentStatus | "error" | "loading" | "ready"
+  /** The current token usage statistics. */
   usage?: TokenUsage
+  /** The current reasoning effort. */
   reasoning?: ReasoningEffort
+  /** The current scroll position of the render stream */
   scroll: { offset: number; total: number; below: number }
 }

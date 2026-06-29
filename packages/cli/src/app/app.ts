@@ -43,10 +43,12 @@ export class App {
 
   #state = createStore<AppState>({
     busy: true,
+    loading: true,
     scroll: { below: 0, offset: 0, total: 0 },
     status: "loading",
     step: 0,
   })
+  #working = signal(0)
 
   private constructor(ctx: Context) {
     this.#ctx = ctx
@@ -175,8 +177,10 @@ export class App {
       })
     )
     effect(() => {
-      if (this.#state.status === "error") this.#renderer.terminal.setProgress("error")
-      else if (this.#state.busy) this.#renderer.terminal.setProgress("loading")
+      this.#state.loading = this.#state.busy || this.#working.get() > 0
+    })
+    effect(() => {
+      if (this.#state.loading) this.#renderer.terminal.setProgress("loading")
       else this.#renderer.terminal.setProgress()
     })
 
@@ -194,6 +198,16 @@ export class App {
       keymap[id] = { keys }
     }
     this.#renderer.actions.register(keymap, { default: false })
+  }
+
+  /** Wrap a function in a working counter, so that the progress indicator is shown while the function is running. */
+  async do<T>(fn: () => T): Promise<Awaited<T>> {
+    this.#working.set((n) => n + 1)
+    try {
+      return await fn()
+    } finally {
+      this.#working.set((n) => n - 1)
+    }
   }
 
   #handleInitError(error: unknown): void {
