@@ -118,8 +118,12 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
         // pair on `BoxStyle`). We pass ctx unchanged and trust the
         // overlay's own state to size correctly.
         const rows = await node.render(ctx)
+        const height = rows.length
+        const width = Math.max(...rows.map((r) => stringWidth(r)))
+
         let x = node.state.x
         let y = node.state.y
+        if (x < 1 && x > 0) x = Math.floor(this.$r.terminal.cols * x)
         if (x < 0) x = this.$r.terminal.cols + x // Allow negative x to position relative to right edge
 
         let refY = 1
@@ -132,20 +136,21 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
           refHeight = this.$r.stream.liveHeight
         }
 
+        if (y < 1 && y > 0) y = Math.floor(refHeight * y)
+
         const anchorY = y < 0 ? refY + refHeight + y : refY + y - 1
 
-        const a = node.state.verticalAnchor ?? "top"
-        if (a === "bottom") y = anchorY - rows.length + 1
-        else if (a === "center") y = anchorY - Math.floor(rows.length / 2)
+        const va = node.state.verticalAnchor ?? "top"
+        if (va === "bottom") y = anchorY - height + 1
+        else if (va === "center") y = anchorY - Math.floor(height / 2)
         else y = anchorY
+
+        const ha = node.state.horizontalAnchor ?? "left"
+        if (ha === "right") x = x - width + 1
+        else if (ha === "center") x -= Math.floor(width / 2)
+
         painted.push({ rows, x, y })
-        void this.emit("render-node", {
-          height: rows.length,
-          node,
-          width: Math.max(...rows.map((r) => stringWidth(r))),
-          x,
-          y,
-        })
+        void this.emit("render-node", { height, node, width, x, y })
       })
     )
     for (const { rows, x, y } of painted) {
