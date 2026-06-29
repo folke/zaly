@@ -2,7 +2,7 @@ import type { MaybePromise } from "@zaly/shared"
 import type { JsonFile } from "@zaly/shared/json"
 import type { Logger } from "@zaly/shared/logger"
 import type { ModelSpec, ModelProvider, ProviderOptions } from "../types.ts"
-import type { OAuthCallbacks, OAuthLogin, OAuthOptions, OAuthTokens } from "./oauth/types.ts"
+import type { OAuthCallbacks, OAuthLogin, OAuthOptions, OAuthToken } from "./oauth/types.ts"
 
 import { loadJsonFile } from "@zaly/shared/json"
 
@@ -13,7 +13,7 @@ export type ApiKeySecret = {
 } & StoredApiKey
 export type OAuthSecret = {
   type: "oauth"
-  tokens: OAuthTokens
+  token: OAuthToken
 } & StoredApiKey
 export type AuthSecret = ApiKeySecret | OAuthSecret
 export type AuthSecrets = Record<string, AuthSecret>
@@ -30,10 +30,10 @@ export type AuthLoginMethod = "api-key" | "oauth-browser" | "oauth-device" | "en
 export type AuthLogin = {
   method: AuthLoginMethod
   desc: string
-  login: () => Promise<ApiKey>
+  login: (opts: LoginCallbacks) => Promise<ApiKey | undefined>
 }
 
-export type LoginCallbacks = OAuthCallbacks
+export type LoginCallbacks = OAuthCallbacks & {}
 
 export type AuthManagerOpts = {
   logger?: Logger
@@ -128,35 +128,45 @@ export class AuthManager {
   }
 
   /** Return a list of available login methods for the provider, including OAuth and API key. */
-  async login(provider: ModelProvider, opts: LoginCallbacks): Promise<AuthLogin[]> {
+  async login(provider: ModelProvider): Promise<AuthLogin[]> {
     if (!this.#json) throw new Error("AuthManager is not configured with a JSON store")
 
     const logins: AuthLogin[] = []
     const oauth = await this.#oauthOpts(provider)
-    if (oauth?.authorizeUrl)
+
+    if (oauth?.browser)
       logins.push({
         desc: `Login to ${provider.name} via browser`,
-        login: () => this.#oauthLogin(provider, { ...opts, method: "browser" }),
+        login: (opts: LoginCallbacks) => this.#oauthLogin(provider, { ...opts, method: "browser" }),
         method: "oauth-browser",
       })
 
-    if (oauth?.deviceUrl && opts.onUrl)
+    if (oauth?.device)
       logins.push({
-        desc: `Login to ${provider.name} via device code`,
-        login: () => this.#oauthLogin(provider, { ...opts, method: "device" }),
+        desc: `Login to ${provider.name} via device code (headless)`,
+        login: (opts: LoginCallbacks) => this.#oauthLogin(provider, { ...opts, method: "device" }),
         method: "oauth-device",
       })
-    if (opts.onPrompt)
-      logins.push({
-        desc: `Login to ${provider.name} via API key`,
-        login: async () => {
-          const key = await opts.onPrompt?.(`Enter API key for ${provider.name}:`)
-          if (!key) throw new Error("API key not provided")
-          await this.set(provider.id, { key, type: "api-key" })
-          return { key, source: "store" }
-        },
-        method: "api-key",
-      })
+
+    logins.push({
+      desc: `Login to ${provider.name} with an API key`,
+      login: async (opts: LoginCallbacks) => {
+        await opts.notify?.({
+          details: `Enter the API key for ${provider.name}.\n> Submit an empty value to remove the stored API key.`,
+          title: `Login to **${provider.name}** with an API key`,
+        })
+        let key = await opts.prompt?.(`Enter API key for ${provider.name}:`)
+        if (key === undefined || opts.signal?.aborted) return
+        key = key.trim()
+        if (key) await this.set(provider.id, { key, type: "api-key" })
+        else {
+          await this.delete(provider.id)
+          return
+        }
+        return { key, source: "store" }
+      },
+      method: "api-key",
+    })
     return logins
   }
 
@@ -170,15 +180,27 @@ export class AuthManager {
   async #oauthLogin(
     provider: ModelProvider,
     opts: LoginCallbacks & Pick<OAuthLogin, "method">
-  ): Promise<ApiKey> {
+  ): Promise<ApiKey | undefined> {
     const oauth = await this.#oauthOpts(provider)
     if (!oauth) throw new Error(`OAuth not configured for ${provider.id}`)
-    const id = provider.id
-    const { OAuth } = await import("./oauth/client.ts")
-    const client = new OAuth({ ...oauth, id })
-    const tokens = await client.login({ logger: this.#opts.logger, ...opts })
-    const apiKey = await client.apiKey(tokens)
-    await this.set(id, { tokens, ...apiKey, type: "oauth" })
+
+    let token: OAuthToken | undefined
+
+    if (opts.method === "device") {
+      if (!oauth.device) throw new Error(`OAuth device flow not configured for ${provider.id}`)
+      const { deviceCodeLogin } = await import("./oauth/device.ts")
+      token = await deviceCodeLogin({ ...opts, ...oauth, ...oauth.device })
+    }
+
+    if (opts.method === "browser") {
+      if (!oauth.browser) throw new Error(`OAuth browser flow not configured for ${provider.id}`)
+      const { browserLogin } = await import("./oauth/browser.ts")
+      token = await browserLogin({ ...opts, ...oauth, ...oauth.browser })
+    }
+
+    if (!token) return
+    const apiKey = await oauth.apiKey(token)
+    await this.set(provider.id, { token, ...apiKey, type: "oauth" })
     return { ...apiKey, source: "oauth" }
   }
 
@@ -192,18 +214,17 @@ export class AuthManager {
 
   /** Attempt to refresh an OAuth token if it is expired, and return the ApiKey. */
   async #fromOauth(secret: OAuthSecret, provider: ModelProvider): Promise<ApiKey | undefined> {
-    const tokens = secret.tokens
-    const expired = tokens.expires - Date.now() < REFRESH_LEEWAY_MS
-    if (!expired || !tokens.refresh)
+    const token = secret.token
+    const expired = token.expires - Date.now() < REFRESH_LEEWAY_MS
+    if (!expired || !token.refresh)
       return { headers: secret.headers, key: secret.key, source: "oauth" }
     const oauth = await this.#oauthOpts(provider)
     if (!oauth) return
     const id = provider.id
-    const { OAuth } = await import("./oauth/client.ts")
-    const client = new OAuth({ ...oauth, id })
-    const current = await client.refresh(tokens.refresh)
-    const apiKey = await client.apiKey(current)
-    await this.set(id, { tokens: current, ...apiKey, type: "oauth" })
+    const { refreshToken } = await import("./oauth/token.ts")
+    const current = await refreshToken(token, oauth)
+    const apiKey = await oauth.apiKey(current)
+    await this.set(id, { token: current, ...apiKey, type: "oauth" })
     return { ...apiKey, source: "oauth" }
   }
 

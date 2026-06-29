@@ -258,6 +258,11 @@ class ModelCollection extends BaseCollection<
     return []
   }
 
+  async providers(): Promise<ModelProvider[]> {
+    const catalog = await loadCatalog()
+    return [...this.registered, ...catalog.providers]
+  }
+
   async #registeredSpecs(): Promise<ModelSpec[]> {
     const specs = await Promise.all(this.registered.map((p) => this.#specs(p)))
     const ret: Record<string, ModelSpec> = {}

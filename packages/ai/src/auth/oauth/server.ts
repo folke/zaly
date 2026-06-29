@@ -1,19 +1,14 @@
-import type { OAuthLogin } from "./types.ts"
+import type { OAuthBrowserLogin } from "./types.ts"
 
 import { createServer } from "node:http"
 
-export async function captureCode(
-  opts: OAuthLogin & {
-    provider: string
-    state: string
-    redirectUri: string
-  }
-): Promise<string> {
+type OAuthCapture = OAuthBrowserLogin & { state: string }
+
+export async function captureCode(opts: OAuthCapture): Promise<string | undefined> {
   let server: CallbackServer | undefined
-  const racers: Promise<string>[] = []
+  const racers: Promise<string | undefined>[] = []
   try {
     server = await createOAuthServer(opts)
-    opts.logger?.info(`Listening for OAuth callback on ${opts.redirectUri}`)
     racers.push(server.waitForCode())
   } catch (error) {
     opts.logger?.warn(
@@ -21,16 +16,18 @@ export async function captureCode(
     )
   }
 
-  if (opts.onPrompt) {
+  if (opts.prompt) {
     racers.push(
-      opts.onPrompt("Paste the callback URL:").then((input) => parseManualInput(input, opts.state))
+      opts
+        .prompt("Paste the authorization code or redirect URL here")
+        .then((input) => (input ? parseManualInput(input, opts.state) : undefined))
     )
   }
 
   if (opts.signal) {
     racers.push(
-      new Promise<string>((_, reject) => {
-        opts.signal!.addEventListener("abort", () => reject(new Error("Login aborted")), {
+      new Promise<string | undefined>((resolve) => {
+        opts.signal!.addEventListener("abort", () => resolve(undefined), {
           once: true,
         })
       })
@@ -76,17 +73,11 @@ export type CallbackServer = {
   close: () => void
 }
 
-export type CallbackServerOpts = {
-  provider: string
-  state: string
-  redirectUri: string
-}
-
-export async function createOAuthServer(opts: CallbackServerOpts): Promise<CallbackServer> {
+export async function createOAuthServer(opts: OAuthCapture): Promise<CallbackServer> {
   const codeProm = Promise.withResolvers<string>()
   const { oauthPages } = await import("./page.ts")
-  const pages = oauthPages(opts.provider)
-  const uri = new URL(opts.redirectUri)
+  const pages = oauthPages(opts.name)
+  const uri = new URL(opts.redirectUrl)
   const path = uri.pathname
 
   const server = createServer((req, res) => {

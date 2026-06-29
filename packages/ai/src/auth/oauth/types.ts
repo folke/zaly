@@ -1,6 +1,7 @@
 import type { MaybePromise } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
 import type { ApiKey } from "../manager.ts"
+import type { safeFetch } from "./utils.ts"
 
 export type OAuthMethod = "browser" | "device"
 
@@ -10,10 +11,9 @@ export type OAuthTokenResponse = {
   expires_in?: number
   token_type?: string
   scope?: string
-  [key: string]: unknown
 }
 
-export type OAuthTokens = {
+export type OAuthToken = {
   access: string
   refresh?: string
   /** Wall-clock ms epoch the access token expires at. */
@@ -21,18 +21,14 @@ export type OAuthTokens = {
 }
 
 export type OAuthCallbacks = {
-  /** Called when a browser URL is ready. */
-  onUrl?: (info: { url: string; instructions: string }) => MaybePromise
+  /** Called when a browser URL is ready to open. */
+  browse?: (url: string) => MaybePromise
+  /** Notify with details about the login flow. */
+  notify?: (opts: { title: string; details?: string }) => MaybePromise
+  /** Prompt the user for input. */
+  prompt?: (msg: string) => Promise<string | undefined>
   /** Called when a device-code flow is ready for user action. */
-  onDeviceCode?: (info: {
-    userCode: string
-    verificationUrl: string
-    verificationUrlComplete?: string
-    expiresIn: number
-    interval: number
-  }) => MaybePromise
-  /** Optional manual paste fallback for browser flows. */
-  onPrompt?: (msg: string) => Promise<string>
+  onDeviceCode?: (opts: OAuthDeviceCode) => MaybePromise
   /** Abort the in-flight login. */
   signal?: AbortSignal
 }
@@ -42,34 +38,69 @@ export type OAuthLogin = OAuthCallbacks & {
   logger?: Logger
 }
 
-export type OAuthDeviceCodeResponse = {
-  device_code?: string
-  user_code?: string
-  verification_uri?: string
-  verification_url?: string
-  verification_uri_complete?: string
-  verification_url_complete?: string
-  expires_in?: number
-  interval?: number
-  [key: string]: unknown
+export type OAuthDeviceCode = {
+  deviceCode: string
+  userCode: string
+  verificationUrl: string
+  /** Wall-clock ms epoch the device code expires at. */
+  expires: number
+  interval: number
 }
 
-export type OAuthOptions = {
-  id: string
-  name?: string
+export type OAuthOptions = OAuthProvider & {
+  device?: OAuthDeviceOpts
+  browser?: OAuthBrowserOpts
+  apiKey: (token: OAuthToken) => MaybePromise<ApiKey>
+}
+
+export type OAuthProvider = {
+  name: string
   clientId: string
   tokenUrl: string
-  scope: string
-
-  /** Browser/PKCE authorization endpoint. Enables `method: "browser"`. */
-  authorizeUrl?: string
-  authorizeParams?: Record<string, string>
-  redirectUri: string
-
-  /** Device-code endpoint. Enables `method: "device"`. */
-  deviceUrl?: string
-
-  /** Convert a raw OAuth token response to provider-specific credentials. */
-  toTokens?: (response: OAuthTokenResponse) => MaybePromise<OAuthTokens>
-  toApiKey?: (creds: OAuthTokens) => ApiKey
 }
+
+export type OAuthRequest = {
+  params?: Record<string, string>
+  headers?: Record<string, string>
+  signal?: AbortSignal
+}
+
+export type OAuthTokenRequest = OAuthProvider & OAuthRequest
+
+export type OAuthExchangeCodeRequest = OAuthTokenRequest & {
+  code: string
+  verifier: string
+  redirectUrl: string
+}
+
+export type OAuthLoginCtx = OAuthLogin &
+  OAuthProvider & {
+    fetch: typeof safeFetch
+  }
+
+export type OAuthBrowserOpts = {
+  redirectUrl: string
+  authorizeUrl: string | URL
+  scope: string
+}
+
+export type OAuthDeviceOpts = {
+  start: (ctx: OAuthLoginCtx) => Promise<OAuthDeviceCode>
+  poll: (
+    device: OAuthDeviceCode,
+    ctx: OAuthLoginCtx
+  ) => Promise<
+    (OAuthToken & { ok: true }) | { ok: false; status: "pending" | "slow_down" | (string & {}) }
+  >
+}
+
+export type OAuthBrowserLogin = OAuthProvider & OAuthLogin & OAuthBrowserOpts
+export type OAuthDeviceLogin = OAuthProvider & OAuthLogin & OAuthDeviceOpts
+
+export type OAuthResponse<T> = { error: (msg?: string) => never } & (
+  | {
+      ok: true
+      json: T
+    }
+  | { ok: false; json?: T }
+)
