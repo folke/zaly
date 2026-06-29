@@ -60,6 +60,7 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     this.#overlays.push(resolved)
     this.#overlays.sort((a, b) => (a.state.zIndex ?? 0) - (b.state.zIndex ?? 0))
     resolved.on("invalidate", this.invalidate)
+    resolved.on("unmount", () => this.remove(resolved))
     const ctx = this.mountCtx
     if (this.running && ctx) resolved.mount(ctx)
     if (resolved.visible) this.invalidate()
@@ -69,8 +70,8 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
   remove(overlay: Overlay): this {
     const i = this.#overlays.indexOf(overlay)
     if (i === -1) return this
-    if (overlay.mounted) overlay.unmount()
     this.#overlays.splice(i, 1)
+    if (overlay.mounted) overlay.unmount()
     overlay.off("invalidate", this.invalidate)
     this.invalidate()
     return this
