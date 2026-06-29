@@ -422,7 +422,7 @@ function mount(state = {}) {
         },
         events: router,
         bind: (binding) => actions.bind(binding),
-        blur: () => router.focus(undefined),
+        blur: (node) => router.blur(node),
         focus: (node) => router.focus(node),
       },
     })

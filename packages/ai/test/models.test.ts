@@ -81,8 +81,11 @@ describe("filterModel", async () => {
   })
 
   test("auth filter delegates to AuthProvider.getAuth", async () => {
-    const yes = { getAuth: () => ({ apiKey: "k" }) } as unknown as AuthManager
-    const no = { getAuth: () => undefined } as unknown as AuthManager
+    const yes = {
+      getAuth: () => ({ apiKey: "k" }),
+      needAuth: () => true,
+    } as unknown as AuthManager
+    const no = { getAuth: () => undefined, needAuth: () => true } as unknown as AuthManager
     expect(await filterModel(textModel, { auth: yes })).toBe(true)
     expect(await filterModel(textModel, { auth: no })).toBe(false)
   })
@@ -106,7 +109,9 @@ describe("listModels", () => {
     // custom registrations stay (they bypass the filter).
     const models = modelCollection()
     models.register(customProvider({ id: "mock-models-test/listed-filter" }))
-    const out = await models.list({ auth: { getAuth: () => undefined } as unknown as AuthManager })
+    const out = await models.list({
+      auth: { getAuth: () => undefined, needAuth: () => true } as unknown as AuthManager,
+    })
     const listed = out.find((m) => m.id === "mock-models-test/listed-filter")
     const missing = out.find((m) => m.id === "anthropic/claude-sonnet-4-6")
     expect(listed).toBeDefined()

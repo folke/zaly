@@ -28,7 +28,7 @@ function setup() {
           },
           events: router,
           bind: (binding) => actions.bind(binding),
-          blur: () => router.focus(undefined),
+          blur: (n) => router.blur(n),
           focus: (n) => router.focus(n),
         },
       })
@@ -43,6 +43,8 @@ describe("InputRouter — focus", () => {
     const router = new InputRouter()
     const a = text("a")
     const b = text("b")
+    a.mount(mockMountCtx())
+    b.mount(mockMountCtx())
     let aFocus = 0,
       aBlur = 0,
       bFocus = 0
@@ -62,6 +64,7 @@ describe("InputRouter — focus", () => {
   test("focusing the same node twice is a no-op", () => {
     const router = new InputRouter()
     const a = text("a")
+    a.mount(mockMountCtx())
     let focusCount = 0
     a.on("focus", () => focusCount++)
     router.focus(a)
@@ -74,6 +77,7 @@ describe("InputRouter — key dispatch", () => {
   test("key events reach the focused node", () => {
     const router = new InputRouter()
     const n = text("x")
+    n.mount(mockMountCtx())
     const received: string[] = []
     n.on("key", (ev) => received.push(ev.key.name))
     router.focus(n)
@@ -86,6 +90,8 @@ describe("InputRouter — key dispatch", () => {
     const parent: Box = box({})
     const child = text("c")
     parent.add(child)
+    parent.mount(mockMountCtx())
+    child.mount(mockMountCtx())
     const seen: string[] = []
     child.on("key", () => seen.push("child"))
     parent.on("key", () => seen.push("parent"))
@@ -99,6 +105,8 @@ describe("InputRouter — key dispatch", () => {
     const parent: Box = box({})
     const child = text("c")
     parent.add(child)
+    parent.mount(mockMountCtx())
+    child.mount(mockMountCtx())
     const seen: string[] = []
     child.on("key", (ev) => {
       seen.push("child")
@@ -244,6 +252,7 @@ describe("InputRouter — paste", () => {
   test("paste events reach the focused node with the full text", () => {
     const router = new InputRouter()
     const n = text("x")
+    n.mount(mockMountCtx())
     const texts: string[] = []
     n.on("paste", (ev) => texts.push(ev.paste.text))
     router.focus(n)
@@ -256,6 +265,8 @@ describe("InputRouter — paste", () => {
     const parent: Box = box({})
     const child = text("c")
     parent.add(child)
+    parent.mount(mockMountCtx())
+    child.mount(mockMountCtx())
     const seen: string[] = []
     child.on("paste", (ev) => {
       seen.push(`child:${ev.paste.text}`)

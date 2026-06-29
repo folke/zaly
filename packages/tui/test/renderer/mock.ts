@@ -32,7 +32,7 @@ export function mockMountCtx(
       },
       events: router,
       bind: (binding) => actions.bind(binding),
-      blur: () => router.focus(undefined),
+      blur: (n) => router.blur(n),
       focus: (node) => router.focus(node),
     },
     overlay: {
