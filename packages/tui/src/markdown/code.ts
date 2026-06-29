@@ -2,6 +2,7 @@ import type { MarkdownCtx } from "./renderer.ts"
 import type { MdCallbacks } from "./types.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
+import { formatText } from "../layout/text.ts"
 
 /**
  * Build the `code` callback. The returned closure captures ctx/style/highlighter
@@ -20,8 +21,13 @@ export function createCodeCallback(ctx: MarkdownCtx): NonNullable<MdCallbacks["c
     // and shiki's per-token colors show through on top of the backdrop.
     const wrap = highlighted === text ? s.mdCodeBlock : s.mdCodeBlock.fg("inherit")
     const hpad = 2
-    const lines = `\n${highlighted}\n`.split("\n")
-    const width = Math.max(...lines.map(stringWidth)) + hpad * 2
+    const maxWidth = ctx.width
+    const lines = formatText(`\n${highlighted}\n`, {
+      width: maxWidth - hpad * 2,
+      wrap: "word",
+    })
+    let width = Math.max(...lines.map(stringWidth)) + hpad * 2
+    width = Math.min(width, maxWidth) // leave room for the border
     // Left-align with a fixed `hpad` of leading whitespace; pad the
     // right to fill the bg out to `width`. Centering would push short
     // lines toward the middle, which reads as visually misaligned code.
