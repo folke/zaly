@@ -8,7 +8,6 @@ import type { PickerItem, PickerSelectProps, PickerTreeProps } from "../widgets/
 import type { Option, Select } from "../widgets/select.ts"
 import type { Widget } from "../widgets/widget.ts"
 
-import { fitAnsi } from "@zaly/shared/ansi"
 import { createRef, signal } from "../core/reactive.ts"
 import { isMarkdown } from "../style/inspect.ts"
 import { divider } from "../widgets/divider.ts"
@@ -121,6 +120,14 @@ export class Picker {
 
   get active() {
     return this.#active.at(-1)
+  }
+
+  suspend() {
+    this.active?.hide()
+  }
+
+  resume() {
+    this.active?.show()
   }
 
   async pick<T extends Option = Option>(opts: PickOpts<T>): Promise<T | undefined> {
