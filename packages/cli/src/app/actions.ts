@@ -1,4 +1,4 @@
-import type { ModelProvider, ReasoningEffort } from "@zaly/ai"
+import type { ReasoningEffort } from "@zaly/ai"
 import type { ActionDef } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
@@ -94,17 +94,23 @@ export function appActions({ app }: { app: App }) {
       },
       keys: ["ctrl-h"],
     },
-    "app.login": {
-      cmd: "login",
-      desc: "Authenticate with the current model provider to enable access to private models.",
-      fn: () => {
-        void login(app).catch((error) => {
-          app.ctx.error(
-            `[login] failed: ${error instanceof Error ? error.message : String(error)}\n`
-          )
-        })
+    "app.login": defineAction({
+      args: {
+        model: {
+          desc: "Authenticate with the current model provider",
+          short: "m",
+          type: "boolean",
+        },
       },
-    },
+      cmd: "login",
+      desc: "Authenticate with a model provider",
+      fn: async ({ args }) => {
+        const { listProviders, login } = await import("./provider.ts")
+        // oxlint-disable-next-line unicorn/prefer-ternary
+        if (args?.model) await login(app)
+        else await listProviders(app)
+      },
+    }),
     "app.pwd": {
       cmd: "pwd",
       desc: "Show the workspace directory the agent is running in.",
@@ -252,52 +258,4 @@ export function appActions({ app }: { app: App }) {
       },
     },
   } as const satisfies Record<string, ActionDef>
-}
-
-/** Drive the codex PKCE login flow with progress messages streamed to
- *  stdout. Browser is opened via the platform `open` / `xdg-open` /
- *  `start` helper; on bind failure the URL is printed for the user to
- *  copy manually. */
-async function login(app: App, provider?: ModelProvider): Promise<void> {
-  const auth = await app.ctx.auth()
-  provider ??= app.agent.model?.spec.provider
-  if (!provider) throw new Error("No model provider configured for the current model")
-
-  const methods = await auth.login(provider, {
-    onUrl: ({ url }) => {
-      console.info(
-        `**[login]** open this URL in your browser if it doesn't open automatically:\n  [${url}](${url})`
-      )
-      void openBrowser(url)
-    },
-    // onPrompt: async (msg) => {
-    //   const input = app.composer.input
-    //   console.log(`**[login]** ${msg}**`)
-    // },
-  })
-
-  const item = await app.pick({
-    active: 0,
-    items: methods.map((m) => ({ method: m, name: m.desc, text: m.desc })),
-  })
-  if (!item) return
-
-  await item.method.login()
-
-  app.ctx.success(`[login] success! You can now use the ${provider.name} model.`)
-}
-
-/** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures
- *  are silent — the URL has already been printed for the user. */
-async function openBrowser(url: string): Promise<void> {
-  let cmd: string[]
-  if (process.platform === "darwin") cmd = ["open", url]
-  else if (process.platform === "win32") cmd = ["cmd", "/c", "start", "", url]
-  else cmd = ["xdg-open", url]
-  const { spawn } = await import("node:child_process")
-  try {
-    spawn(cmd[0], cmd.slice(1), { detached: true, stdio: "ignore" }).unref()
-  } catch {
-    // No `open` available — user can copy from the printed URL.
-  }
 }
