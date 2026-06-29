@@ -70,7 +70,7 @@ export type InputRouterEvents = {
  * Paste events follow a simple emit-and-bubble path — no keymap.
  */
 export class InputRouter extends Emitter<InputRouterEvents> {
-  #focused: Node | undefined
+  #focused: Node[] = []
   /** Set by the Renderer so keymap-matched action ids can be
    *  dispatched through the catalog. */
   #actions: Actions | undefined
@@ -89,25 +89,53 @@ export class InputRouter extends Emitter<InputRouterEvents> {
 
   /** Currently-focused node, or `undefined` when none. */
   get focused(): Node | undefined {
-    return this.#focused
+    this.#focused = this.#focused.filter((n) => n.mounted)
+    return this.#focused.at(-1)
   }
 
   /**
-   * Move focus to `node` (or clear it with `undefined`). Emits `blur`
+   * Move focus to `node`. Emits `blur`
    * on the previously-focused node and `focus` on the new one.
    * Focusing the already-focused node is a no-op.
    */
-  focus(node: Node | undefined): void {
-    if (this.#focused === node) return
-    const prev = this.#focused
-    this.#focused = node
+  focus(node: Node): void {
+    // If the node is already focused, or not mounted, do nothing
+    if (!node.mounted || this.focused === node) return
+
+    const prev = this.focused
+
+    // Remove the node from the focus stack if it exists, then push it to the top
+    this.#focused = this.#focused.filter((n) => n !== node)
+    this.#focused.push(node)
+
     if (prev !== undefined) {
       void prev.emit("blur")
       void this.emit("blur", { node: prev })
     }
-    if (node !== undefined) {
-      void node.emit("focus")
-      void this.emit("focus", { node })
+
+    void node.emit("focus")
+    void this.emit("focus", { node })
+  }
+
+  /** Clear focus from `node`. Emits `blur` on the node and `focus`
+   * on the next-most-recently-focused node, if any. */
+  blur(node: Node): void {
+    const top = this.focused
+
+    // Remove the node from the focus stack if it exists
+    this.#focused = this.#focused.filter((n) => n !== node)
+
+    // If the node is not the currently focused node, do nothing
+    if (top !== node) return
+
+    const next = this.focused
+
+    void node.emit("blur")
+    void this.emit("blur", { node })
+
+    if (next !== undefined) {
+      void next.emit("focus")
+      void this.emit("focus", { node: next })
     }
   }
 
@@ -143,7 +171,7 @@ export class InputRouter extends Emitter<InputRouterEvents> {
     if (this.#actions?.dispatchKey(routed, { global: false, node: true })) return true
 
     // Phase 2 — per-node key bubble. Most-local wins.
-    for (let node: Node | undefined = this.#focused; node !== undefined; node = node.parent) {
+    for (let node: Node | undefined = this.focused; node !== undefined; node = node.parent) {
       void node.emit("key", { key: routed })
       if (routed.stopped) return true
     }
@@ -154,7 +182,7 @@ export class InputRouter extends Emitter<InputRouterEvents> {
 
   #dispatchPaste(text: string): boolean {
     const routed = makeRoutedPaste(text)
-    let node = this.#focused
+    let node = this.focused
     while (node !== undefined) {
       void node.emit("paste", { paste: routed })
       if (routed.stopped) return true

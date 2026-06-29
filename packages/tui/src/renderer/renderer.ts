@@ -433,7 +433,7 @@ export class Renderer extends Emitter<RenderEvents> {
       getNode: (id) => this.getNode(id),
       input: {
         bind: (binding) => this.actions.bind(binding),
-        blur: () => this.input.focus(undefined),
+        blur: (node) => this.input.blur(node),
         events: this.input,
         focus: (node) => this.input.focus(node),
         get terminalFocus(): boolean {

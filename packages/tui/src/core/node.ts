@@ -409,6 +409,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     this.#mountAc = undefined
     for (const c of this.#children) c.unmount()
     void this.emit("unmount")
+    this.#ctx.input.blur(this)
     this.#ctx = undefined
     return this
   }
@@ -432,7 +433,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
 
   /** Release focus. No-op when not mounted. */
   blur(): this {
-    this.#ctx?.input.blur()
+    this.#ctx?.input.blur(this)
     return this
   }
 

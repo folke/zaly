@@ -67,7 +67,7 @@ export interface MountCtx {
     /** Move focus to `node`. Mirrors `router.focus(node)`. */
     readonly focus: (node: Node) => void
     /** Clear focus. */
-    readonly blur: () => void
+    readonly blur: (node: Node) => void
   }
 
   /** Action registry — widgets and plugins can `register` catalog
