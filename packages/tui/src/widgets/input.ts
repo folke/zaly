@@ -2,6 +2,7 @@ import type { MaybePromise } from "@zaly/shared"
 import type { DetectedFile } from "@zaly/shared/detect"
 import type { RenderCtx } from "../core/ctx.ts"
 import type { BaseEvents } from "../core/node.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { StyleState } from "../core/state.ts"
 import type { NodeActionMap } from "../input/actions.ts"
 import type { RoutedKey } from "../input/router.ts"
@@ -13,7 +14,7 @@ import { sliceAnsi, splitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { fileDetect } from "@zaly/shared/detect"
 import { basename } from "pathe"
 import { Node } from "../core/node.ts"
-import { untrack } from "../core/reactive.ts"
+import { untrack, unwrap } from "../core/reactive.ts"
 import { clipboard } from "../input/clipboard.ts"
 import { formatText } from "../layout/text.ts"
 
@@ -21,7 +22,7 @@ export interface InputState extends StyleState {
   /** Current text content. May include `\n` for multi-line input. */
   value?: string
   /** Shown dim when `value` is empty. */
-  placeholder?: string
+  placeholder?: Reactive<string | undefined>
   /** Cursor position as a char index in `value`. Clamped to `[0, value.length]`. */
   cursor?: number
   /** Render width. Defaults to `fill`. */
@@ -505,7 +506,8 @@ export class Input extends Node<InputState, InputEvents> {
     // span survives wrapping.
     let content: string
     if (value === "") {
-      content = placeholder ? ` ${ctx.style.quiet(placeholder)}` : ""
+      const ph = unwrap(placeholder)
+      content = ph ? ` ${ctx.style.quiet(ph)}` : ""
     } else {
       content = value
       for (const att of this.#staged) {
