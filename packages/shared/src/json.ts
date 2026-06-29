@@ -9,7 +9,7 @@ import { atomicWriteFile, safeStringify, withError, withLock } from "./utils.ts"
 
 export type JsonObject = { [Key in string]: JsonValue }
 export type JsonArray = JsonValue[] | readonly JsonValue[]
-export type JsonPrimitive = string | number | boolean | null
+export type JsonPrimitive = string | number | boolean | null | undefined
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray
 
 /** Reviver type for JSON.parse.

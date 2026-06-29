@@ -15,6 +15,7 @@ export type PluginHost = {
   renderer: Renderer
   pick: Picker["pick"]
   notify: Notifier["notify"]
+  prompt: (msg: string) => Promise<string | undefined>
   loadTheme: (name: string) => Promise<Theme>
   tools: ToolCollection
   model: ModelCollection

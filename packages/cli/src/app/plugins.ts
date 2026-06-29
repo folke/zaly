@@ -22,6 +22,7 @@ export async function loadPlugins(app: App): Promise<void> {
     model: await app.ctx.model(),
     notify: app.notify,
     pick: app.pick,
+    prompt: (msg: string) => app.prompt.open(msg),
     prompts: await app.ctx.prompts(),
     renderer: app.renderer,
     tools: await app.ctx.tools(),

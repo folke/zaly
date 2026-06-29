@@ -54,7 +54,8 @@ export function appActions({ app }: { app: App }) {
         return () => {
           if (exit) app.exit()
           else {
-            if (app.input.length > 0) return (app.input = "")
+            if (app.composer.value.length > 0) return (app.composer.value = "")
+            if (app.prompt.isOpen()) return app.prompt.close()
             if (app.picker.isOpen()) return app.picker.close()
             exit = true
             app.notify("Press `Ctrl-C` again to exit.", {
@@ -71,7 +72,7 @@ export function appActions({ app }: { app: App }) {
     "app.clear": {
       cmd: "clear",
       desc: "Clear the current composer input.",
-      fn: () => (app.input = ""),
+      fn: () => (app.composer.value = ""),
     },
     "app.compact": {
       cmd: "compact",

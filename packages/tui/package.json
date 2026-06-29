@@ -51,6 +51,10 @@
       "bun": "./src/services/picker.ts",
       "default": "./dist/services/picker.mjs"
     },
+    "./services/prompt": {
+      "bun": "./src/services/prompt.ts",
+      "default": "./dist/services/prompt.mjs"
+    },
     "./style": {
       "bun": "./src/style/index.ts",
       "default": "./dist/style.mjs"
@@ -171,6 +175,7 @@
       "./services/logger": "./dist/services/logger.mjs",
       "./services/notifier": "./dist/services/notifier.mjs",
       "./services/picker": "./dist/services/picker.mjs",
+      "./services/prompt": "./dist/services/prompt.mjs",
       "./style": "./dist/style.mjs",
       "./text": "./dist/text.mjs",
       "./themes": "./dist/themes.mjs",

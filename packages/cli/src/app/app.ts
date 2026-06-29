@@ -8,9 +8,10 @@ import type { Context } from "../context.ts"
 import type { AppState } from "../types.ts"
 import type { Composer } from "./composer.ts"
 
-import { createRef, createRenderer, createStore, effect, memo, toAccessor } from "@zaly/tui"
+import { createRef, createRenderer, createStore, effect, memo, signal, toAccessor } from "@zaly/tui"
 import { Notifier } from "@zaly/tui/services/notifier"
 import { Picker } from "@zaly/tui/services/picker"
+import { Prompt } from "@zaly/tui/services/prompt"
 import { appUi, autocompleteOverlay } from "../widgets/ui.ts"
 import { attachState, loadAgent } from "./agent.ts"
 
@@ -35,6 +36,7 @@ export class App {
   #exitPromise!: ReturnType<typeof Promise.withResolvers>
   #notifier!: Notifier
   #picker!: Picker
+  #prompt!: Prompt
   #composer!: Composer
   #loading = true
   // Logs added during the loading phase are sticky until the agent is ready,
@@ -65,6 +67,10 @@ export class App {
     return this.#ctx.config
   }
 
+  get prompt(): Prompt {
+    return this.#prompt
+  }
+
   get $() {
     return this.#ctx.config.$
   }
@@ -88,14 +94,6 @@ export class App {
 
   get composer(): Composer {
     return this.#composer
-  }
-
-  get input() {
-    return this.composer.value
-  }
-
-  set input(value: string) {
-    this.composer.value = value
   }
 
   get actions(): Actions {
@@ -165,17 +163,25 @@ export class App {
 
     this.#composer = createComposer(this)
     this.#renderer.ui.add(() => appUi({ app: this, composer: this.#composer }))
-
     this.#input = this.#composer.input
+
     this.#picker = new Picker(this.#renderer.overlay, this.#input)
+    this.#prompt = new Prompt(this.renderer.overlay, this.#input)
+
+    effect(() => {
+      if (this.#prompt.isOpen()) this.#picker.suspend()
+      else this.#picker.resume()
+    })
+
     this.#renderer.overlay.add(() =>
       autocompleteOverlay({
         actions: this.#renderer.actions,
         app: this,
         composer: createRef(this.#input),
-        enabled: memo(() => !this.#picker.isOpen()),
+        enabled: memo(() => !this.#picker.isOpen() && !this.#prompt.isOpen()),
       })
     )
+
     effect(() => {
       this.#state.loading = this.#state.busy || this.#working.get() > 0
     })
