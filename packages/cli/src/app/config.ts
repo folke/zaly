@@ -3,14 +3,14 @@ import type { MaybePromise } from "@zaly/shared"
 import type { PropPath, PropValue } from "@zaly/shared/prop"
 import type { ToggleItem } from "@zaly/tui/services/picker"
 import type { PickerItem } from "@zaly/tui/widgets/picker"
-import type { OptionRenderCtx, Select } from "@zaly/tui/widgets/select"
+import type { OptionRenderCtx } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
 import { toolRegistry } from "@zaly/agent"
 import { defaultSettings } from "@zaly/config"
 import { fitAnsi, stringWidth } from "@zaly/shared/ansi"
 import { propGet } from "@zaly/shared/prop"
-import { createRef, inspect } from "@zaly/tui"
+import { inspect } from "@zaly/tui"
 import { isDeepStrictEqual as is } from "node:util"
 import { REASONING_EFFORTS } from "../context.ts"
 
@@ -320,13 +320,11 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
     }),
   ]
 
-  const ref = createRef<Select<ConfigItem>>()
   await app.pick({
     actions: {
       "config.reset": {
         desc: "Reset a config option",
-        fn: () => {
-          const select = ref()
+        fn: ({ node: select }) => {
           const active = select.item
           if (!active) return
           active.value = active.default
@@ -337,8 +335,7 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
       "config.toggle": {
         desc: "Toggle a config option",
-        fn: () => {
-          const select = ref()
+        fn: ({ node: select }) => {
           const active = select.item
           if (!active) return
           void (async () => {
@@ -351,7 +348,6 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
     },
     items,
-    ref,
     render: renderer(),
     title: `Edit ${scope} config`,
     whichKey: true,

@@ -1,10 +1,9 @@
 import type { AuthSource, ModelProvider } from "@zaly/ai"
 import type { Accessor } from "@zaly/tui"
-import type { Select } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
 import { toError } from "@zaly/shared"
-import { createRef, memo, signal } from "@zaly/tui"
+import { memo, signal } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
 import { divider } from "@zaly/tui/widgets/divider"
 import { input } from "@zaly/tui/widgets/input"
@@ -57,14 +56,11 @@ export async function listProviders(app: App): Promise<void> {
     return a.text.localeCompare(b.text)
   })
 
-  const ref = createRef<Select<(typeof items)[0]>>()
-
   await app.pick({
     actions: {
       "provider.login": {
         desc: "Login to the selected provider",
-        fn: () => {
-          const select = ref()
+        fn: ({ node: select }) => {
           const item = select.item
           if (!item) return
           const provider = item.provider
@@ -85,7 +81,6 @@ export async function listProviders(app: App): Promise<void> {
     },
     items,
     multi: { action: false, render: true },
-    ref,
     render: (item, ctx) => {
       const s = ctx.style
       // const icon = item.enabled ? s.accent(`●`) : s.muted("○")
@@ -191,7 +186,7 @@ export async function login(app: App, provider?: ModelProvider): Promise<void> {
   app.picker.suspend()
 
   try {
-    const apiKey = await app.do(() =>
+    const apiKey = await app.withLoading(() =>
       item.method.login({
         browse: (url) => void openBrowser(url),
         notify: (opts) => {

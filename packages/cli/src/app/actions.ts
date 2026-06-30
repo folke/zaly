@@ -194,20 +194,50 @@ export function appActions({ app }: { app: App }) {
       desc: "Quit zaly.",
       keys: [],
     },
-    "pack.update": {
-      cmd: "update",
-      desc: "Update all installed packs.",
+    "plugins.install": defineAction({
+      args: {
+        plugins: {
+          desc: "The plugin URI(s) to install.",
+          multiple: true,
+          positional: true,
+          type: "string",
+        },
+        project: {
+          desc: "Install a plugin in the current project.",
+          short: "p",
+          type: "boolean",
+        },
+        user: {
+          desc: "Install a plugin in the user config.",
+          short: "u",
+          type: "boolean",
+        },
+      },
+      cmd: "install",
+      desc: "Install one or more plugins",
+      fn: async ({ args }) => {
+        const { installPlugins } = await import("./plugins.ts")
+        await installPlugins(app, {
+          plugins: args?.plugins,
+          // oxlint-disable-next-line no-nested-ternary
+          scope: args?.project ? "project" : args?.user ? "user" : undefined,
+        })
+      },
+    }),
+    "plugins.manage": {
+      cmd: "plugins",
+      desc: "Manage installed plugins.",
       fn: async () => {
-        const { pluginUpdate } = await import("./plugins.ts")
-        await app.do(() => pluginUpdate(app))
+        const { managePlugins } = await import("./plugins.ts")
+        await managePlugins(app)
       },
     },
-    "pack.updates": {
-      cmd: "updates",
-      desc: "Check for updates of installed packs.",
+    "plugins.update": {
+      cmd: "update",
+      desc: "Update all installed plugins.",
       fn: async () => {
-        const { pluginUpdates } = await import("./plugins.ts")
-        await app.do(() => pluginUpdates(app, { notify: true }))
+        const { updatePlugins: pluginUpdate } = await import("./plugins.ts")
+        await pluginUpdate(app)
       },
     },
     "resources.pick": defineAction({

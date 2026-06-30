@@ -206,14 +206,27 @@ export class App {
     this.#renderer.actions.register(keymap, { default: false })
   }
 
-  /** Wrap a function in a working counter, so that the progress indicator is shown while the function is running. */
-  async do<T>(fn: () => T): Promise<Awaited<T>> {
+  /** Show loading indicator until the returned disposable is disposed, or until the returned promise resolves. */
+  withLoading(): Disposable
+  withLoading<T>(fn: () => T): Promise<Awaited<T>>
+  withLoading<T>(fn?: () => T): Disposable | Promise<Awaited<T>> {
     this.#working.set((n) => n + 1)
-    try {
-      return await fn()
-    } finally {
-      this.#working.set((n) => n - 1)
+
+    let loading = true
+    const done = () => {
+      if (loading) this.#working.set((n) => n - 1)
+      loading = false
     }
+
+    if (!fn) return { [Symbol.dispose]: () => done() }
+
+    return (async () => {
+      try {
+        return await fn()
+      } finally {
+        done()
+      }
+    })() as Promise<Awaited<T>>
   }
 
   #handleInitError(error: unknown): void {
@@ -260,9 +273,9 @@ export class App {
   }
 
   async loadResources(): Promise<void> {
-    const { pluginUpdates: packUpdates, pluginInstall: packInstall } = await import("./plugins.ts")
-    const installed = await packInstall(this)
-    if (!installed) void packUpdates(this)
+    const { pluginUpdates, installMissing } = await import("./plugins.ts")
+    const installed = await installMissing(this)
+    if (!installed) void pluginUpdates(this)
 
     await import("./plugins.ts").then(({ loadPlugins }) => loadPlugins(this))
     await Promise.all([
