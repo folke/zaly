@@ -188,7 +188,20 @@ export async function login(app: App, provider?: ModelProvider): Promise<void> {
   try {
     const apiKey = await app.withLoading(() =>
       item.method.login({
-        browse: (url) => void openBrowser(url),
+        browse: (url) => {
+          void openBrowser(url).then(async (ok) => {
+            if (ok)
+              return app.notify(`Opened URL in your browser:\n${url}`, {
+                level: "info",
+                title: "Login",
+              })
+            const { clipboard } = await import("@zaly/tui/clipboard")
+            try {
+              await clipboard.write(url)
+              app.notify(`Copied URL to clipboard:\n${url}`, { level: "info", title: "Login" })
+            } catch {}
+          })
+        },
         notify: (opts) => {
           setDetails(`# ${opts.title}\n\n${opts.details ?? ""}`)
         },
@@ -220,7 +233,7 @@ export async function login(app: App, provider?: ModelProvider): Promise<void> {
 
 /** Best-effort cross-platform `xdg-open`/`open`/`start` shim. Failures
  *  are silent — the URL has already been printed for the user. */
-async function openBrowser(url: string): Promise<void> {
+async function openBrowser(url: string): Promise<boolean> {
   let cmd: string[]
   if (process.platform === "darwin") cmd = ["open", url]
   else if (process.platform === "win32") cmd = ["cmd", "/c", "start", "", url]
@@ -228,7 +241,9 @@ async function openBrowser(url: string): Promise<void> {
   const { spawn } = await import("node:child_process")
   try {
     spawn(cmd[0], cmd.slice(1), { detached: true, stdio: "ignore" }).unref()
+    return true
   } catch {
     // No `open` available — user can copy from the printed URL.
+    return false
   }
 }

@@ -35,6 +35,10 @@
       "bun": "./src/style/ansi.ts",
       "default": "./dist/ansi.mjs"
     },
+    "./clipboard": {
+      "bun": "./src/input/clipboard.ts",
+      "default": "./dist/clipboard.mjs"
+    },
     "./markdown": {
       "bun": "./src/markdown/index.ts",
       "default": "./dist/markdown.mjs"
@@ -171,6 +175,7 @@
     "exports": {
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
+      "./clipboard": "./dist/clipboard.mjs",
       "./markdown": "./dist/markdown.mjs",
       "./services/logger": "./dist/services/logger.mjs",
       "./services/notifier": "./dist/services/notifier.mjs",

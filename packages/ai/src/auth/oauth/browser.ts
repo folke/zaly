@@ -17,7 +17,7 @@ export async function browserLogin(opts: OAuthBrowserLogin): Promise<OAuthToken 
 
   const u = url.toString()
 
-  await opts.browse?.(u)
+  void opts.browse?.(u)
   await opts.notify?.({
     details: `Open [this URL](${u}) in your browser and complete login,
 or paste the authorization code / redirect URL here.
