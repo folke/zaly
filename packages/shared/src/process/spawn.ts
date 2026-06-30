@@ -33,8 +33,8 @@ import { bash } from "./system.ts"
 export interface SpawnOpts<O = Buffer, E = Buffer> {
   cwd?: string
   env?: NodeJS.ProcessEnv
-  stdout?: Stream<O>
-  stderr?: Stream<E>
+  stdout?: Stream<O> | false
+  stderr?: Stream<E> | false
   /** Piped to the child's stdin and closed. To keep stdin open for
    *  `proc.write(...)` calls, omit this and instead opt-in via
    *  `keepStdinOpen: true`. */
@@ -118,8 +118,8 @@ export class Spawn<O = Buffer, E = Buffer> {
 
     const stdio: SpawnOptions["stdio"] = [
       opts.stdin === undefined && !opts.keepStdinOpen ? "ignore" : "pipe",
-      "pipe",
-      "pipe",
+      opts.stdout === false ? "ignore" : "pipe",
+      opts.stderr === false ? "ignore" : "pipe",
     ]
 
     let shell = opts.shell
@@ -144,8 +144,12 @@ export class Spawn<O = Buffer, E = Buffer> {
       windowsHide: true,
     })
 
-    this.#stdout = opts.stdout ?? (new BufferStream() as unknown as Stream<O>)
-    this.#stderr = opts.stderr ?? (new BufferStream() as unknown as Stream<E>)
+    this.#stdout =
+      (opts.stdout === false ? undefined : opts.stdout) ??
+      (new BufferStream() as unknown as Stream<O>)
+    this.#stderr =
+      (opts.stderr === false ? undefined : opts.stderr) ??
+      (new BufferStream() as unknown as Stream<E>)
 
     if (opts.signal) {
       this.#onAbort = (): void => this.#escalateKill("abort")
@@ -363,7 +367,7 @@ export async function spawnWithInput(
   input: string
 ): Promise<boolean> {
   try {
-    const r = await new Spawn(cmd, args, { stdin: input }).result
+    const r = await new Spawn(cmd, args, { stderr: false, stdin: input, stdout: false }).result
     return r.code === 0
   } catch {
     return false
