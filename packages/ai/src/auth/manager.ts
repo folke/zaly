@@ -23,6 +23,7 @@ export type AuthSource = "store" | "env" | "oauth" | "model" | "provider"
 export type ApiKey = {
   key: string
   source: AuthSource
+  details?: string
   headers?: Record<string, string>
 }
 
@@ -233,7 +234,7 @@ export class AuthManager {
     const envs = provider.env ?? []
     for (const name of envs) {
       const value = process.env[name]
-      if (value) return { key: value, source: "env" }
+      if (value) return { details: name, key: value, source: "env" }
     }
   }
 

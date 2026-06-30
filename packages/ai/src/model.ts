@@ -293,6 +293,17 @@ class ModelCollection extends BaseCollection<
     for (const m of Object.values(custom)) models[m.id] = m
     return Object.values(models)
   }
+
+  override register(provider: ModelProvider): () => void {
+    Object.defineProperty(provider, "source", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return "custom" as const
+      },
+    })
+    return super.register(provider)
+  }
 }
 
 export function modelCollection(opts: ModelCtx = {}): ModelCollection {

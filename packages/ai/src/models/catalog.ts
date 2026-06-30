@@ -224,6 +224,9 @@ function toProviderInfo(p?: CatalogProvider): ModelProvider | undefined {
     id: p.id,
     models,
     name: p.name,
+    get source() {
+      return "models.dev" as const
+    },
     ...override,
   }
 }

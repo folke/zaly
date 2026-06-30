@@ -1,4 +1,4 @@
-import type { ModelProvider } from "@zaly/ai"
+import type { AuthSource, ModelProvider } from "@zaly/ai"
 import type { Accessor } from "@zaly/tui"
 import type { Select } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
@@ -13,15 +13,26 @@ import { overlay } from "@zaly/tui/widgets/overlay"
 import { show } from "@zaly/tui/widgets/show"
 import { text } from "@zaly/tui/widgets/text"
 
+type AuthStatus = {
+  source: AuthSource | "no-auth"
+  details?: string
+}
+
+const recommended = new Set(["openai", "openai-codex", "anthropic", "openrouter", "google"])
+
+function isRecommended(p: ModelProvider): boolean {
+  return recommended.has(p.id) || p.source === "custom"
+}
+
 export async function listProviders(app: App): Promise<void> {
   const model = await app.ctx.model()
   const auth = await app.ctx.auth()
   const providers = await model.providers()
 
-  const authStatus = async (p: ModelProvider) => {
-    if (!p.oauth && !p.env?.length && !p.apiKey) return "no-auth"
+  const authStatus = async (p: ModelProvider): Promise<AuthStatus | undefined> => {
+    if (!p.oauth && !p.env?.length && !p.apiKey) return { source: "no-auth" }
     const a = await auth.getAuth(p)
-    return a?.source
+    return a ? { details: a.details, source: a.source } : undefined
   }
 
   const items = await Promise.all(
@@ -31,12 +42,16 @@ export async function listProviders(app: App): Promise<void> {
         desc: p.doc,
         enabled: !!status,
         provider: p,
+        status,
         text: p.name,
       }
     })
   )
 
   items.sort((a, b) => {
+    const ar = isRecommended(a.provider) ? 0 : 1
+    const br = isRecommended(b.provider) ? 0 : 1
+    if (ar !== br) return ar - br
     if (a.enabled && !b.enabled) return -1
     if (!a.enabled && b.enabled) return 1
     return a.text.localeCompare(b.text)
@@ -71,6 +86,29 @@ export async function listProviders(app: App): Promise<void> {
     items,
     multi: { action: false, render: true },
     ref,
+    render: (item, ctx) => {
+      const s = ctx.style
+      // const icon = item.enabled ? s.accent(`●`) : s.muted("○")
+      let statusText = "not connected"
+      const source = item.status?.source
+      if (source === "oauth") statusText = "oauth"
+      else if (source === "env") statusText = "env"
+      else if (source === "store") statusText = "API key"
+      else if (source === "no-auth") statusText = "no auth"
+      else if (source === "model") statusText = "model API Key"
+      else if (source === "provider") statusText = "provider API Key"
+      statusText = statusText.padEnd(25)
+      const d = item.status?.details
+      const envs = [...(item.provider.env ?? [])]
+      let env = d && envs.includes(d) ? d : (envs[0] as string | undefined)
+      const isActive = d && env === d
+      if (env) {
+        env = env.padEnd(30)
+        env = isActive ? s.syntaxDelimiter("$") + s.syntaxConstant(env) : s.muted(`$${env}`)
+      } else env = "".padEnd(31)
+      const status = item.enabled ? s.success(`✓ ${statusText}`) : s.muted(`• ${statusText}`)
+      return `${s.optionName(item.text.padEnd(33))} ${status} ${env} ${item.desc ? s.muted(item.desc) : ""}`
+    },
     title: "Select a provider",
     whichKey: true,
   })

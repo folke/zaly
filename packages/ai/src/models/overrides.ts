@@ -33,7 +33,7 @@ export const modelProviders: Record<string, ModelProvider> = {
     api: "openai-responses",
     baseUrl: "https://chatgpt.com/backend-api/codex",
     doc: "https://platform.openai.com/docs/models",
-    name: "OpenAI Codex (ChatGPT)",
+    name: "OpenAI Codex (ChatGPT Plus/Pro)",
     quirks: {
       friendlyErrors: "codex",
       maxTokensField: "none",

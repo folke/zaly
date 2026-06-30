@@ -62,6 +62,7 @@ export async function pickModel(
         keys: ["ctrl-a"],
       },
     },
+    details: "Use `/login` to authenticate with a provider to unlock more models.",
     items,
     reverse: true,
     sort: ["score:desc", "idx"],

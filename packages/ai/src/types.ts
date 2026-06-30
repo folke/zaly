@@ -464,6 +464,7 @@ export interface ModelProvider {
   quirks?: Quirks
   models: ModelInfo[] | ((catalog: ModelCatalog) => MaybePromise<ModelInfo[]>)
   oauth?: OAuthOptions | ((provider: ModelProvider) => MaybePromise<OAuthOptions>)
+  source?: "models.dev" | "custom"
 }
 
 // ── Runtime API types ───────────────────────────────────────────────────
