@@ -69,7 +69,7 @@ export interface SelectEvents<T extends Option = Option> extends BaseEvents {
   accept: { item: T }
   /** Fired when the user closes the select (esc). */
   close: {}
-  changed: { active: number; item: T }
+  changed: { active: number; item?: T }
 }
 
 /**

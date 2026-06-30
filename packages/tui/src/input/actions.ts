@@ -1,3 +1,4 @@
+import type { MaybePromise } from "@zaly/shared"
 import type { ArgsOpts, ArgsResult } from "@zaly/shared/args"
 import type { Node } from "../core/node.ts"
 import type { KeyPattern } from "./keys.ts"
@@ -12,12 +13,9 @@ import { canonical } from "./keys.ts"
  * fired by a key, programmatic dispatch, command palette, or a plugin,
  * handlers see a uniform payload.
  */
-export interface ActionCtx<T extends ArgsOpts = ArgsOpts> {
+export type ActionCtx<T extends ArgsOpts = ArgsOpts, N = void> = {
   /** The action id being dispatched. */
   readonly id: string
-  /** The node whose `actions[id]` handler matched, or `undefined` when
-   *  the action was handled by a catalog-level `fn` (not tied to a
-   *  specific node). */
   readonly node?: Node
   /** The node dispatch started from — typically the focused node for
    *  key- or palette-triggered actions. `undefined` for purely
@@ -28,9 +26,18 @@ export interface ActionCtx<T extends ArgsOpts = ArgsOpts> {
   /** When `source === "key"`, the originating routed key event. */
   readonly key?: RoutedKey
   args?: ArgsResult<T>
-}
+} & (N extends Node
+  ? {
+      /** The node whose `actions[id]` handler matched, or `undefined` when
+       *  the action was handled by a catalog-level `fn` (not tied to a
+       *  specific node). */
+      readonly node: N
+    }
+  : {})
 
-export type ActionFn<T extends ArgsOpts = ArgsOpts> = (ctx: ActionCtx<T>) => unknown
+export type ActionFn<T extends ArgsOpts = ArgsOpts, N = void> = (
+  ctx: ActionCtx<T, N>
+) => MaybePromise<unknown>
 
 export type KeyBinding = Omit<ActionDef, "fn" | "keys"> & {
   id: string
@@ -51,20 +58,20 @@ export type KeyBinding = Omit<ActionDef, "fn" | "keys"> & {
  *   widget instance). When absent, dispatch walks the focus chain
  *   looking for a node with `actions[id]`.
  */
-export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
+export interface ActionDef<T extends ArgsOpts = ArgsOpts, N = void> {
   cmd?: string
   desc?: string
   keys?: readonly string[]
   hidden?: boolean
   args?: T
   source?: string
-  fn?: ActionFn<T>
+  fn?: ActionFn<T, N>
   /** Optional numeric priority for ordering in the command palette.
    * Higher number is higher priority. Defaults to 0 */
   priority?: number
 }
 
-export type Action<T extends ArgsOpts = ArgsOpts> = ActionDef<T> & { id: string }
+export type Action<T extends ArgsOpts = ArgsOpts, N = void> = ActionDef<T, N> & { id: string }
 
 export type ActionMap = Record<string, ActionDef>
 
@@ -99,10 +106,12 @@ function filterAction(action?: Action, filter?: ActionFilter): action is Action 
  *  on mount, the metadata (everything except `fn`) is auto-registered
  *  into `ctx.actions` with `extend: false`, so it contributes defaults
  *  without clobbering anything the user already configured. */
-export type NodeAction = ((ctx: ActionCtx) => void) | (ActionDef & { fn: (ctx: ActionCtx) => void })
+export type NodeAction<T extends Node = Node> =
+  | ActionFn<ArgsOpts, T>
+  | (ActionDef<ArgsOpts, T> & { fn: ActionFn<ArgsOpts, T> })
 
 /** Shape of a Node's `actions` dict — full action ids as keys. */
-export type NodeActionMap = Record<string, NodeAction>
+export type NodeActionMap<T extends Node = Node> = Record<string, NodeAction<T>>
 
 type ActionEvents = {
   change: {}
@@ -244,7 +253,7 @@ export class Actions extends Emitter<ActionEvents> {
       const entry = node.actions?.[id]
       const fn = typeof entry === "function" ? entry : entry?.fn
       if (typeof fn === "function") {
-        const ctx: ActionCtx = { id, node, source, target, ...partial }
+        const ctx = { id, node, source, target, ...partial }
         this.#logger.try(() => fn(ctx), { id, name: "dispatch", source })
         return true
       }

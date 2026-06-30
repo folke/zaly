@@ -27,7 +27,7 @@ type PickerBaseProps<T extends PickerItem = PickerItem> = SearchOptions<T> & {
   input?: Input | Ref<Input>
   pattern?: Reactive<string>
   reverse?: boolean
-  actions?: NodeActionMap
+  actions?: NodeActionMap<Select<T>>
 }
 
 export type PickerSelectProps<T extends PickerItem = PickerItem> = PickerBaseProps<T> &
