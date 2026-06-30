@@ -38,7 +38,6 @@ export async function pickModel(
         formatNumber(m.contextSize),
         m.reasoning ? "reasoning" : undefined,
         ...m.input.filter((mod) => mod !== "text").toSorted(),
-        m.provider.env?.toSorted().map((e) => `$${e}`),
       ]
         .filter(Boolean)
         .join(", "),
