@@ -299,8 +299,8 @@ export class Actions extends Emitter<ActionEvents> {
     this.#keymap = out
   }
 
-  whichKey(node: Node, opts: { filter?: ActionFilter } = {}): string {
-    const ret: string[] = []
+  whichKey(node: Node, opts: { filter?: ActionFilter } = {}): (Action & { keys: string[] })[] {
+    const ret: (Action & { keys: string[] })[] = []
     const actions = Object.keys(node.actions ?? {})
       .map((id) => this.get(id))
       .filter((a) => filterAction(a, opts.filter))
@@ -310,9 +310,8 @@ export class Actions extends Emitter<ActionEvents> {
       const keys = (action.keys ?? []).map((k) => canonical(k)).filter((k) => !used.has(k))
       if (keys.length === 0) continue
       keys.forEach((k) => used.add(k))
-      const str = keys.map((k) => `\`<${k}>\``).join(" / ")
-      ret.push(`- ${str}: ${action.desc ?? action.cmd ?? action.id}`)
+      ret.push({ ...action, keys })
     }
-    return ret.join("\n")
+    return ret
   }
 }

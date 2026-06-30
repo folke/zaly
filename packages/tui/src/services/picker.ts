@@ -62,12 +62,8 @@ export class Picker {
     if (opts.multi)
       this.#multi(select as unknown as Select<ToggleItem>, opts.multi === true ? {} : opts.multi)
 
-    if (opts.whichKey) {
-      const [whichKey, setWhichKey] = signal("")
-      const filter = opts.whichKey === true ? { hidden: false } : opts.whichKey
-      select.once("mount", () => setWhichKey(this.#ui.$r.actions.whichKey(select, { filter })))
-      children.push(markdown(whichKey))
-    }
+    const wk = this.#whichKey(select as unknown as Select, opts.whichKey)
+    if (wk) children.push(wk)
 
     if (children.length > 0) children.push(divider({ style: "border" }))
     return overlay(
@@ -83,6 +79,26 @@ export class Picker {
       ...children,
       select
     )
+  }
+
+  #whichKey(select: Select, opts: PickOpts["whichKey"]): Node | undefined {
+    if (opts === false || opts === undefined) return
+    const filter = opts === true ? { hidden: false } : opts
+    const ret = text((ctx) => {
+      const s = ctx.style
+      const bo = s.syntaxDelimiter.dim("<")
+      const bc = s.syntaxDelimiter.dim(">")
+      const wk = this.#ui.$r.actions.whichKey(select, { filter })
+      const parts = wk.map((a) => {
+        const name = s.muted(a.desc ?? a.cmd ?? a.id)
+        const keys = a.keys.map((k) => bo + s.syntaxSpecial.dim(k) + bc).join(s.delim.dim("/"))
+        return `${keys} ${name.toLowerCase()}`
+      })
+      return parts.join(s.delim(" • "))
+    })
+
+    select.once("mount", () => ret.invalidate())
+    return ret
   }
 
   #multi(select: Select<ToggleItem>, opts: { action?: boolean; render?: boolean } = {}) {

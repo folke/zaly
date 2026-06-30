@@ -1,5 +1,6 @@
 import type { LogLevel } from "@zaly/shared/logger"
 import type { Node } from "../core/node.ts"
+import type { Reactive } from "../core/reactive.ts"
 import type { OverlayRenderState, OverlaySurface } from "../renderer/overlay.ts"
 import type { LogState } from "../widgets/log.ts"
 import type { Overlay } from "../widgets/overlay.ts"
@@ -35,7 +36,7 @@ export class Notifier {
     })
   }
 
-  #notif(msg: string, opts?: NotifProps) {
+  #notif(msg: Reactive<string>, opts?: NotifProps) {
     return overlay(
       { padding: [0, 0], width: 40, x: -40, y: 1, zIndex: 1000 },
       log({
@@ -76,7 +77,7 @@ export class Notifier {
     }
   }
 
-  notify(msg: string, opts?: NotifProps): Overlay {
+  notify(msg: Reactive<string>, opts?: NotifProps): Overlay {
     const node = this.#ui.add(() => this.#notif(msg, opts))
     this.#queue.push({ node, opts })
     setImmediate(() => this.#check())
