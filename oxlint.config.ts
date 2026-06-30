@@ -1,17 +1,14 @@
 import { defineConfig } from "oxlint"
 
-function restrictedImport(
-  kind: "name" | "regex",
+function restrictedImport<K extends "name" | "regex">(
+  kind: K,
   values: string | string[],
   message: string,
   enabled = true
-) {
+): K extends "name" ? { name: string; message: string }[] : { regex: string; message: string }[] {
   if (!enabled) return []
   const vv = Array.isArray(values) ? values : [values]
-  return vv.map((value) => ({
-    [kind]: value,
-    message,
-  }))
+  return vv.map((value) => ({ [kind]: value, message })) as any
 }
 
 function restrictedImports(

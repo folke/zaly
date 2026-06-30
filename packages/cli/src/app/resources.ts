@@ -1,10 +1,4 @@
-import type {
-  ConfigScope,
-  ResourceFilter,
-  ResourcePack,
-  ResourcePackFilter,
-  ResourceType,
-} from "@zaly/config"
+import type { ResourceFilter, ResourcePack, ResourcePackFilter, ResourceType } from "@zaly/config"
 import type { AnyStyle, RenderCtx } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
 import type { TreeItem } from "@zaly/tui/widgets/tree"
