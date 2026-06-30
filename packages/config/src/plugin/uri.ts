@@ -1,3 +1,5 @@
+import type { ConfigScope } from "../types.ts"
+
 import { encodePath, normPath } from "@zaly/shared"
 import { join } from "pathe"
 
@@ -26,6 +28,7 @@ export type PluginRef<T extends PluginType = PluginType> = PluginUri<T> & {
 
   /** Shared store root for packs of this type. */
   store: string
+  scope: ConfigScope
 }
 
 export function pluginUri(
@@ -45,12 +48,15 @@ export function pluginUri(uri: string): PluginUri {
     : { ref, repo: `${g.protocol}:${g.target}`, type: "git" }
 }
 
-export function pluginRef(uri: string, opts: { cwd: string; data: string }): PluginRef {
+export function pluginRef(
+  uri: string,
+  opts: { cwd: string; data: string; scope: ConfigScope }
+): PluginRef {
   const parsed = pluginUri(uri)
   const store = join(opts.data, "packs", parsed.type)
   let dir: string
   if (parsed.type === "dir") dir = normPath(opts.cwd, parsed.path)
   else if (parsed.type === "git") dir = join(store, encodePath(parsed.repo))
   else dir = join(store, "node_modules", parsed.name)
-  return { ...parsed, dir, store, uri }
+  return { ...parsed, dir, scope: opts.scope, store, uri }
 }
