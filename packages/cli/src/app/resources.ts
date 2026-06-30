@@ -190,9 +190,9 @@ class Resources {
   }
 }
 
-export async function pickResources(app: App, opts: { scope?: ConfigScope } = {}) {
+export async function pickResources(app: App, opts: ResourcePackFilter = {}) {
   const resources = new Resources(app)
-  const root = await resources.tree({ scope: opts.scope })
+  const root = await resources.tree(opts)
   if (!root.children?.length) {
     app.notify(`No ${opts.scope ? `**${opts.scope}** ` : ""}resources found.`, {
       level: "warn",

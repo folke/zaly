@@ -212,6 +212,10 @@ export function appActions({ app }: { app: App }) {
     },
     "resources.pick": defineAction({
       args: {
+        plugin: {
+          desc: "Configure plugin resources only.",
+          type: "boolean",
+        },
         project: {
           desc: "Configure project resources only.",
           short: "p",
@@ -228,6 +232,7 @@ export function appActions({ app }: { app: App }) {
       fn: async ({ args }) => {
         const { pickResources } = await import("./resources.ts")
         await pickResources(app, {
+          plugin: args?.plugin ? true : undefined,
           // oxlint-disable-next-line no-nested-ternary
           scope: args?.project ? "project" : args?.user ? "user" : undefined,
         })
