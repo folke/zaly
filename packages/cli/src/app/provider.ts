@@ -90,6 +90,7 @@ function authOverlay(props: AuthProps) {
       borderTitleAlign: "right",
       borderTitleStyle: "accent",
       horizontalAnchor: "center",
+      maxWidth: "80%",
       style: "overlay",
       verticalAnchor: "center",
       visible: memo(() => props.prompt() !== undefined || props.details() !== ""),
