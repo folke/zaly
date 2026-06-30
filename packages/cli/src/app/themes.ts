@@ -37,7 +37,10 @@ export async function pickTheme(app: App) {
     items,
     ref: createRef<Select<ThemeItem>>(undefined, {
       onSet: (select) => {
-        select.on("changed", async ({ item }) => (app.renderer.theme = item.theme))
+        select.on("changed", async ({ item }) => {
+          if (!item) return
+          app.renderer.theme = item.theme
+        })
       },
     }),
     reverse: true,
