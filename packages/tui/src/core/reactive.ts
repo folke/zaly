@@ -856,7 +856,7 @@ export function createProgressive<T>(
     void (async () => {
       try {
         setLoading(true)
-        let prev = performance.now()
+        let prev = 0
         const result = await fn({
           set: (value: T) => {
             if (ac.signal.aborted || my !== gen) return
