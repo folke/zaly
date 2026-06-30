@@ -198,16 +198,16 @@ export function appActions({ app }: { app: App }) {
       cmd: "update",
       desc: "Update all installed packs.",
       fn: async () => {
-        const { pluginUpdate: packUpdate } = await import("./plugins.ts")
-        await packUpdate(app)
+        const { pluginUpdate } = await import("./plugins.ts")
+        await app.do(() => pluginUpdate(app))
       },
     },
     "pack.updates": {
       cmd: "updates",
       desc: "Check for updates of installed packs.",
       fn: async () => {
-        const { pluginUpdates: packUpdates } = await import("./plugins.ts")
-        await packUpdates(app, { notify: true })
+        const { pluginUpdates } = await import("./plugins.ts")
+        await app.do(() => pluginUpdates(app, { notify: true }))
       },
     },
     "resources.pick": defineAction({
