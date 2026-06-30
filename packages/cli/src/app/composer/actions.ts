@@ -93,7 +93,8 @@ async function renderHelp(action: Action, args: ArgsOpts): Promise<string> {
           alias: v.short ? [v.short] : undefined,
           default: v.default,
           description: v.desc,
-          type: v.type,
+          required: v.required ?? false,
+          type: v.positional ? "positional" : v.type,
         },
       ])
     ) as ArgsDef,
