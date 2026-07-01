@@ -194,7 +194,6 @@ export function mainCommand(cli: Cli) {
     // each subcommand the shared `cli` so it can read `cli.config`.
     subCommands: {
       models: () => import("./commands/models.ts").then((m) => m.modelsCommand(cli)),
-      debug: () => import("./commands/debug.ts").then((m) => m.debugCommand(cli)),
       session: () => import("./commands/session.ts").then((m) => m.sessionCommand(cli)),
     },
     // Citty fires `run` AFTER a subcommand returns, so guard against the
