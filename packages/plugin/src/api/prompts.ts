@@ -21,7 +21,7 @@ export class PromptsApi implements Collection<AnyPrompt[], Prompt[], Prompt> {
     this.#prompts.active = prompts
   }
 
-  async render(prompts?: string[]): Promise<string[]> {
+  async render(prompts?: string[]): Promise<Prompt<string>[]> {
     const model = this.#plugin.ctx.model
     if (!model) return []
     return this.#prompts.render({

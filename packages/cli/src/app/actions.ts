@@ -16,6 +16,14 @@ export type AppAction = keyof ReturnType<typeof appActions>
  */
 export function appActions({ app }: { app: App }) {
   return {
+    "agent.context": {
+      cmd: "context",
+      desc: "Show a tree view of the current session's context.",
+      fn: async () => {
+        const { contextTree } = await import("./context.ts")
+        await contextTree(app)
+      },
+    },
     "agent.effort": {
       cmd: "effort",
       desc: "Change how much reasoning the model uses for future turns.",

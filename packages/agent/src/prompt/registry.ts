@@ -9,9 +9,9 @@ export interface PromptCtx {
 }
 
 export type PromptLoader = (ctx: PromptCtx) => Promise<string>
-export type Prompt = {
+export type Prompt<T extends string | PromptLoader = string | PromptLoader> = {
   name: string
-  text: string | PromptLoader
+  text: T
 }
 export type { PromptCollection }
 
@@ -40,16 +40,19 @@ class PromptCollection extends BaseCollection<AnyPrompt[], Prompt[], Prompt> {
     return [...ret.values()]
   }
 
-  async render(ctx: PromptCtx & { prompts?: string[] }): Promise<string[]> {
+  async render(ctx: PromptCtx & { prompts?: string[] }): Promise<Prompt<string>[]> {
     const all = new Map(this.list().map((p) => [p.name, p]))
     const ret = await Promise.all(
       (ctx.prompts ?? this.active).map(async (p) => {
         const def = all.get(p)
         if (!def) throw new Error(`Unknown prompt: ${p}`)
-        return typeof def.text === "string" ? def.text : def.text(ctx)
+        return {
+          name: def.name,
+          text: typeof def.text === "string" ? def.text : await def.text(ctx),
+        }
       })
     )
-    return ret.map((p) => p.trim()).filter((p) => p.length > 0)
+    return ret.map((p) => ({ name: p.name, text: p.text.trim() })).filter((p) => p.text.length > 0)
   }
 }
 

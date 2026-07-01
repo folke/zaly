@@ -1,9 +1,10 @@
-import type { AnyContent, AnyPart, AnyType, Attachment, Message } from "@zaly/ai"
+import type { AnyContent, AnyPart, AnyType, Attachment, Message, Tool } from "@zaly/ai"
+import type { Prompt } from "../prompt/registry.ts"
 
 import { stringifyContent } from "@zaly/ai"
 
 export type TokenCount = {
-  type: AnyType | Message["role"] | "prompt"
+  type: AnyType | Message["role"] | "prompt" | "tool-schema" | "system-prompt"
   kind?: string
   tokens: number
   children?: TokenCount[]
@@ -106,39 +107,63 @@ function estimateMessage(m: Message): TokenCount {
   }
 }
 
-function estimatePrompt(prompt: string[]): TokenCount {
-  const children = estimateContent(prompt.map((text) => ({ text, type: "text" })))
+function estimatePrompt(prompt: Prompt<string>[], tools?: Tool[]): TokenCount {
+  const children: TokenCount[] = prompt.map((p) => ({
+    kind: p.name,
+    tokens: fromText(p.text),
+    type: "prompt" as const,
+  }))
+  children.push(
+    ...(tools?.map((t) => ({
+      kind: t.name,
+      tokens: fromText(t.name) + fromText(JSON.stringify(t.params ?? {})),
+      type: "tool-schema" as const,
+    })) ?? [])
+  )
   return {
     children,
     tokens: sumTokens(children),
-    type: "prompt",
+    type: "system-prompt" as const,
   }
 }
 
-function addCount(stat: TokenCount, parent: TokenStats): void {
-  const key = stat.kind ? `${stat.type}:${stat.kind}` : stat.type
-  parent.children ??= new Map()
-  let child = parent.children.get(key)
-  if (!child) {
-    child = { children: new Map(), count: 0, key, tokens: 0 }
-    parent.children.set(key, child)
+function addCount(stat: TokenCount, parent: TokenStats, expand?: (c: TokenCount) => boolean): void {
+  const keys = stat.kind ? [stat.type, stat.kind] : [stat.type]
+  let child: TokenStats | undefined
+
+  for (const key of keys) {
+    parent.children ??= new Map()
+    child = parent.children.get(key)
+    if (!child) {
+      child = { children: new Map(), count: 0, key, tokens: 0 }
+      parent.children.set(key, child)
+    }
+    child.tokens += stat.tokens
+    child.count++
+    parent = child
   }
-  child.tokens += stat.tokens
-  child.count++
-  if (stat.children) {
-    for (const c of stat.children) addCount(c, child)
+
+  if (stat.children && child && (!expand || expand(stat))) {
+    for (const c of stat.children) addCount(c, child, expand)
   }
 }
 
-export function tokenStats(msgs: readonly Message[], prompt?: string[]): TokenStats {
+export function tokenStats(
+  msgs: readonly Message[],
+  opts: {
+    prompt?: Prompt<string>[]
+    tools?: Tool[]
+    expand?: (c: TokenCount) => boolean
+  } = {}
+): TokenStats {
   const root: TokenStats = { children: new Map(), count: 0, key: "TOTAL", tokens: 0 }
   const counts: TokenCount[] = []
-  if (prompt) counts.push(estimatePrompt(prompt))
+  if (opts.prompt) counts.push(estimatePrompt(opts.prompt, opts.tools))
   counts.push(...msgs.map(estimateMessage))
   for (const stats of counts) {
     root.tokens += stats.tokens
     root.count++
-    addCount(stats, root)
+    addCount(stats, root, opts.expand)
   }
   return root
 }
@@ -169,5 +194,5 @@ export function formatTokenStats(s: TokenStats, indent = 0): string {
 }
 
 function fmt(n: number): string {
-  return n.toLocaleString()
+  return n.toLocaleString("en-US").replace(/,/g, "_")
 }

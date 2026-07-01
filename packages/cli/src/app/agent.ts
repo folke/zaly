@@ -19,7 +19,7 @@ export async function loadAgent(app: App): Promise<Agent> {
   const session = await ctx.session()
   const settings = ctx.config.$
   const ss = session.settings
-  const p = settings.permissions
+  const perm = settings.permissions
 
   const cwd = ctx.flags.cwd ?? ss.cwd ?? ctx.config.paths.cwd
 
@@ -40,8 +40,8 @@ export async function loadAgent(app: App): Promise<Agent> {
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }
       : {
-          preset: ctx.flags.permission ?? p.preset,
-          rules: { allow: p.allow, ask: p.ask, deny: p.deny },
+          preset: ctx.flags.permission ?? perm.preset,
+          rules: { allow: perm.allow, ask: perm.ask, deny: perm.deny },
         },
     session,
   })
@@ -57,7 +57,9 @@ export async function loadAgent(app: App): Promise<Agent> {
   const prompts = await ctx.prompts()
   const updatePrompt = async () => {
     const model = agent.ctx.model
-    agent.ctx.prompt = model ? await prompts.render({ cwd: agent.ctx.cwd, model }) : []
+    agent.ctx.prompt = (model ? await prompts.render({ cwd: agent.ctx.cwd, model }) : []).map(
+      (p) => p.text
+    )
   }
   prompts.onAny(updatePrompt)
   agent.ctx.on("cwd", updatePrompt)
