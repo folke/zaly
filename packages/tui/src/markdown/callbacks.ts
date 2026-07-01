@@ -53,7 +53,7 @@ export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
       // we prefix those empty lines with "│ " they render as styled empty
       // rows between the last line of the quote and the block separator.
       // Trim first so the quote stops cleanly.
-      const prefixed = lines.map((line, l) => `${s.add(lineStyle)(icons.quote)} ${line}`).join("\n")
+      const prefixed = lines.map((line) => `${s.add(lineStyle)(icons.quote)} ${line}`).join("\n")
       return `${prefixed}\n\n`
     },
 

@@ -5,20 +5,20 @@ import { defineAction } from "@zaly/tui"
 export default async function DebugPlugin(api: PluginApi) {
   api.ui.registerActions(
     defineAction({
-      cmd: "debug",
-      desc: "Print debug info about the current session, including prompts and tools.",
       args: {
         prompts: {
+          desc: "Print the active prompts",
           short: "p",
           type: "boolean",
-          desc: "Print the active prompts",
         },
         tools: {
+          desc: "Print the active tools",
           short: "t",
           type: "boolean",
-          desc: "Print the active tools",
         },
       },
+      cmd: "debug",
+      desc: "Print debug info about the current session, including prompts and tools.",
       fn: async ({ args }) => {
         const any = args?.prompts ?? args?.tools
 

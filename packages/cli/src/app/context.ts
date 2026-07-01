@@ -59,13 +59,6 @@ export async function contextTree(app: App) {
           },
         }
       : undefined,
-    whichKey: true,
-    maxHeight: app.config.$.ui.treeHeight,
-    root: false,
-    tree: root,
-    title: memo(
-      () => `Context Token Usage (${!showAll() && effectiveItems ? "effective" : "raw"})`
-    ),
     details: `The tree shows the token usage of the current context, including prompts, messages, and tools.
 
 > [!NOTE]
@@ -76,6 +69,7 @@ export async function contextTree(app: App) {
 ${effective ? `  - \`${formatNumber(all.tokens - effective.tokens)}\` masked out` : ""}
 ${effective ? `  - \`${formatNumber(effective.tokens)}\` effective __(${pct}%)__` : ""}
 `,
+    maxHeight: app.config.$.ui.treeHeight,
     render: (item, ctx) => {
       const s = ctx.style
       const pw = ctx.prefixWidth ?? 0
@@ -84,5 +78,11 @@ ${effective ? `  - \`${formatNumber(effective.tokens)}\` effective __(${pct}%)__
       const tokens = fmt(item.tokens).padStart(14)
       return `${s.delim("○")} ${s.primary(item.key)} ${s.syntaxNumber(count)}${s.syntaxDelimiter("x")} ${s.syntaxNumber(tokens)}${s.muted(" tokens")}`
     },
+    root: false,
+    title: memo(
+      () => `Context Token Usage (${!showAll() && effectiveItems ? "effective" : "raw"})`
+    ),
+    tree: root,
+    whichKey: true,
   })
 }

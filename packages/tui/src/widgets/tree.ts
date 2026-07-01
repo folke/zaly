@@ -1,7 +1,8 @@
+import type { Reactive } from "../core/reactive.ts"
 import type { Option, Select, SelectState } from "./select.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
-import { memo, unwrap, type Reactive } from "../core/reactive.ts"
+import { memo, unwrap } from "../core/reactive.ts"
 import { select } from "./select.ts"
 import { widget } from "./widget.ts"
 
@@ -54,8 +55,8 @@ class Tree<T extends TreeItem> {
 
 export const tree = widget(
   <T extends TreeItem>(props: TreeProps<T>): Select<T> & { items: Reactive<T[]> } => {
-    const tree = memo(() => new Tree(unwrap(props.tree)))
-    const items = memo(() => (props.root === true ? tree().items : tree().items.slice(1)))
+    const builder = memo(() => new Tree(unwrap(props.tree)))
+    const items = memo(() => (props.root === true ? builder().items : builder().items.slice(1)))
 
     const activeFn =
       typeof props.active === "function" ? props.active : (i: T) => i === props.active
@@ -64,7 +65,7 @@ export const tree = widget(
     const ret = select({ ...props, active: active === -1 ? 0 : active, items })
 
     ret.extendRenderer((prev) => (item, ctx) => {
-      const t = tree()
+      const t = builder()
       const path: string[] = []
       const s = ctx.style
       const itemNode = t.node(item)
