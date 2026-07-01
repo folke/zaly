@@ -17,6 +17,7 @@ export type CliArgs = CmdArgs<typeof mainCommand>
 export class Cli {
   #args?: CliArgs
   #ctx?: Context
+  #errors = new Set<unknown>()
 
   set args(args: CliArgs) {
     this.#args = args
@@ -30,6 +31,27 @@ export class Cli {
   get ctx(): Context {
     this.#ctx ??= new Context(this.args)
     return this.#ctx
+  }
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn()
+    } catch (error) {
+      try {
+        this.ctx.logger.error("Error:", error)
+        this.#errors.add(error) // track errors that have been logged
+      } catch {}
+      throw error
+    }
+  }
+
+  async stop(): Promise<void> {
+    await this.ctx.stop()
+    const e = console.error.bind(console)
+    console.error = (...msg: unknown[]) => {
+      if (this.#errors.has(msg[0])) return
+      e(...msg)
+    }
   }
 
   async printConfig(): Promise<void> {
@@ -158,9 +180,9 @@ export function mainCommand(cli: Cli) {
         description: "Print the resolved config and exit",
       },
     },
-    async setup({ args }) {
+    setup: async ({ args }) => {
       cli.args = args as unknown as CliArgs
-      await cli.ctx.loadConfig()
+      await cli.run(() => cli.ctx.loadConfig())
     },
     // Lazy subcommand loading — each module is only imported when its
     // command name appears on the cli. The factory pattern lets us hand
@@ -179,10 +201,10 @@ export function mainCommand(cli: Cli) {
       if (cli.args.printConfig) return await cli.printConfig()
       if (cli.args.listThemes) return await cli.listThemes()
       const { run } = await import("./commands/tui.ts")
-      await run(cli)
+      await cli.run(() => run(cli))
     },
     async cleanup() {
-      await cli.ctx.stop()
+      await cli.stop()
     },
   })
 }

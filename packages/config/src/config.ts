@@ -1,9 +1,10 @@
+import type { Logger } from "@zaly/shared/logger"
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { ResourceType } from "./resource/resource.ts"
 import type { Config, ConfigScope, ResolvedConfig, State } from "./types.ts"
 
 import { normPath } from "@zaly/shared"
-import { JsonFile } from "@zaly/shared/json"
+import { JsonFile, loadJsonFile } from "@zaly/shared/json"
 import { zalyPaths } from "@zaly/shared/paths"
 import { defaultSettings } from "./defaults.ts"
 import { ResourceManager } from "./resource/manager.ts"
@@ -14,9 +15,10 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> extends JsonFile<Co
   #scope: T
   #paths: EnvPaths
 
-  protected constructor(paths: EnvPaths, scope: T) {
+  protected constructor(paths: EnvPaths, scope: T, logger: Logger) {
     super(normPath(paths.config, "config.json"), {
       default: {},
+      logger: logger.child(`config:${scope}`),
       reviver: settingsReviver,
       validate: (data) =>
         import("./schemas/gen/config.ts").then(({ validateConfig }) => validateConfig(data)),
@@ -25,8 +27,12 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> extends JsonFile<Co
     this.#scope = scope
   }
 
-  static async load<T extends ConfigScope>(paths: EnvPaths, scope: T): Promise<ConfigFile<T>> {
-    const file = new ConfigFile<T>(paths, scope)
+  static async load<T extends ConfigScope>(
+    paths: EnvPaths,
+    scope: T,
+    logger: Logger
+  ): Promise<ConfigFile<T>> {
+    const file = new ConfigFile<T>(paths, scope, logger)
     return await file.refresh()
   }
 
@@ -49,6 +55,7 @@ export type ConfigManagerOpts = {
   disabled?: ResourceType[]
   /** Settings to override coming from CLI flags. */
   settings?: Config
+  logger: Logger
 }
 
 export class ConfigManager {
@@ -119,16 +126,17 @@ export class ConfigManager {
   }
 
   async refresh(): Promise<this> {
-    this.#user = await ConfigFile.load(zalyPaths.env, "user")
-    this.#project = await ConfigFile.load(this.#paths.env, "project")
+    this.#user = await ConfigFile.load(zalyPaths.env, "user", this.#opts.logger)
+    this.#project = await ConfigFile.load(this.#paths.env, "project", this.#opts.logger)
     if (this.#opts.workspace) {
       const wsPaths = zalyPaths.project(this.#opts.workspace)
       if (wsPaths.dotZaly !== this.#paths.dotZaly) {
-        this.#workspace = await ConfigFile.load(wsPaths.env, "workspace")
+        this.#workspace = await ConfigFile.load(wsPaths.env, "workspace", this.#opts.logger)
       }
     }
     this.#state = new JsonFile(zalyPaths.state, {
       default: {},
+      logger: this.#opts.logger.child("state"),
       validate: (data) =>
         import("./schemas/gen/state.ts").then(({ validateState }) => validateState(data)),
     })

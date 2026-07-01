@@ -191,6 +191,14 @@ export class App {
     })
 
     this.#renderer.start()
+
+    // Replay logs that were captured during startup, before the renderer was ready.
+    try {
+      for (const log of this.#ctx.startupLogs) this.#renderer.logger.$log(log.level, ...log.msg)
+    } catch (error) {
+      this.#ctx.logger.error("Error replaying logs:", error)
+    }
+
     await this.#renderer.render()
   }
 

@@ -31,7 +31,7 @@ export class CliReporter extends TuiReporter {
 
   async #append(node: () => Node): Promise<void> {
     const { createCtx, createRender } = await import("@zaly/tui")
-    this.#renderCtx ??= await createCtx({ theme: await this.#ctx.theme() })
+    this.#renderCtx ??= await createCtx({ theme: await this.#ctx.theme().catch(() => undefined) })
     const rows = await createRender(node, this.#renderCtx)
     process.stdout.write(`${rows.join("\n")}\n`)
   }

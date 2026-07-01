@@ -1,9 +1,10 @@
+import type { Logger } from "./logger.ts"
 import type { PropPath, PropValue } from "./prop.ts"
 import type { MaybePromise } from "./types.ts"
 
 import { readFile, stat } from "node:fs/promises"
 import { dirname } from "pathe"
-import { normPath } from "./path.ts"
+import { normPath, prettyPath } from "./path.ts"
 import { propGet, propSet } from "./prop.ts"
 import { atomicWriteFile, safeStringify, withError, withLock } from "./utils.ts"
 
@@ -74,6 +75,7 @@ export type JsonFileOpts<T extends JsonObject = JsonObject, D extends T | undefi
   reviver?: JsonReviver
   validate?: (data: unknown) => MaybePromise<T>
   mode?: number
+  logger?: Logger
 }
 
 export class JsonFile<T extends JsonObject = JsonObject, D extends T | undefined = undefined> {
@@ -107,17 +109,25 @@ export class JsonFile<T extends JsonObject = JsonObject, D extends T | undefined
   }
 
   async refresh(): Promise<this> {
-    this.#data = undefined
-    this.#loaded = true
-    const s = await stat(this.path).catch(() => undefined)
-    if (!s?.isFile()) return this
-    let data = await withError(
-      () => readJson(this.path, this.#opts.reviver),
-      `Failed to load json file at \`${this.path}\``
-    )
-    if (this.#opts.validate) data = await this.#opts.validate(data)
-    this.#data = data as T | undefined
-    return this
+    try {
+      this.#data = undefined
+      this.#loaded = true
+      const s = await stat(this.path).catch(() => undefined)
+      if (!s?.isFile()) return this
+      let data = await withError(
+        () => readJson(this.path, this.#opts.reviver),
+        `Failed to load json file at \`${prettyPath(this.path)}\``
+      )
+      if (this.#opts.validate) data = await this.#opts.validate(data)
+      this.#data = data as T | undefined
+      return this
+    } catch (error) {
+      if (this.#opts.logger) {
+        this.#opts.logger.error(error)
+        return this
+      }
+      throw error
+    }
   }
 
   async update(data: T | ((prev?: T) => T)): Promise<this> {

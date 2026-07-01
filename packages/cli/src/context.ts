@@ -3,7 +3,7 @@ import type { Session } from "@zaly/agent/session"
 import type { AuthManager, ModelCollection } from "@zaly/ai"
 import type { ConfigManager } from "@zaly/config"
 import type { PluginManager } from "@zaly/config/plugin"
-import type { LogLevel } from "@zaly/shared/logger"
+import type { LogEntry, LogLevel } from "@zaly/shared/logger"
 import type { Theme } from "@zaly/tui"
 import type { CliArgs } from "./cli.ts"
 import type { CliReporter } from "./reporter.ts"
@@ -42,13 +42,19 @@ export class Context extends BaseLogger {
   #flush: (() => Promise<void>)[] = []
   #dispose: (() => Promise<void> | void)[] = []
   #config?: ConfigManager
+  #startupLogs: LogEntry[] = []
 
   constructor(public args: CliArgs) {
     super()
     this.#dispose.push(installLogger(this.#logger))
     this.#logger.attach("cli", (entry) => {
+      this.#startupLogs.push(entry)
       void this.#reporter().then((c) => c.$log(entry))
     })
+  }
+
+  get startupLogs(): LogEntry[] {
+    return this.#startupLogs
   }
 
   get logger(): Logger {
@@ -139,6 +145,7 @@ export class Context extends BaseLogger {
       disabled: (["commands", "plugins", "skills", "themes"] as const).filter(
         (t) => this.flags[t] === false
       ),
+      logger: this.logger.child("config"),
       settings: {
         model: this.flags.model,
         reasoning: this.flags.reasoning,
