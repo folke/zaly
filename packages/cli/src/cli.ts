@@ -101,6 +101,11 @@ export function mainCommand(cli: Cli) {
       description: "Conversational coding agent",
     },
     args: {
+      debug: {
+        type: "boolean",
+        alias: ["d"],
+        description: "Enable debug logging",
+      },
       model: {
         type: "string",
         alias: ["m"],

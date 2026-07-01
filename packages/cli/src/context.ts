@@ -37,7 +37,7 @@ export const REASONING_EFFORTS = [
 
 export class Context extends BaseLogger {
   #flags?: Flags
-  #logger = new Logger({ name: "cli" }, { level: "info" })
+  #logger: Logger
   #cache = new LazyCache<Slots>()
   #flush: (() => Promise<void>)[] = []
   #dispose: (() => Promise<void> | void)[] = []
@@ -46,6 +46,7 @@ export class Context extends BaseLogger {
 
   constructor(public args: CliArgs) {
     super()
+    this.#logger = new Logger({ name: "cli" }, { level: args.debug ? "debug" : "info" })
     this.#dispose.push(installLogger(this.#logger))
     this.#logger.attach("cli", (entry) => {
       this.#startupLogs.push(entry)
