@@ -54,7 +54,8 @@ export const ModelsSchema = {
                             "enum": [
                                 "models.dev",
                                 "builtin",
-                                "custom"
+                                "custom",
+                                "models.json"
                             ]
                         },
                         replaceModels: {
