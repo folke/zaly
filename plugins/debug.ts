@@ -1,20 +1,42 @@
 import type { PluginApi } from "@zaly/plugin"
 
-import { formatTokenStats, tokenStats } from "@zaly/agent"
+import { defineAction } from "@zaly/tui"
 
 export default async function DebugPlugin(api: PluginApi) {
-  api.ui.registerActions({
-    cmd: "debug",
-    desc: "A debug action that shows a notification when triggered",
-    fn: async () => {
-      api.ui.notify("Debug action performed!")
-      const prompt = await api.prompts.render()
-      const tools = await api.tools.load()
-      for (const p of prompt) console.log(p)
-      console.log("Loaded tools:", Object.fromEntries(tools.map((t) => [t.name, t.params])))
-      const stats = tokenStats(api.agent.messages, prompt)
-      console.log(formatTokenStats(stats))
-    },
-    id: "debug",
-  })
+  api.ui.registerActions(
+    defineAction({
+      cmd: "debug",
+      desc: "Print debug info about the current session, including prompts and tools.",
+      args: {
+        prompts: {
+          short: "p",
+          type: "boolean",
+          desc: "Print the active prompts",
+        },
+        tools: {
+          short: "t",
+          type: "boolean",
+          desc: "Print the active tools",
+        },
+      },
+      fn: async ({ args }) => {
+        const any = args?.prompts ?? args?.tools
+
+        const prompt = await api.prompts.render()
+        const tools = await api.tools.load()
+        console.info("# Debug Info")
+
+        if (args?.prompts || !any) {
+          console.info("## Prompts")
+          for (const p of prompt) console.log(p.text)
+        }
+
+        if (args?.tools || !any) {
+          console.info("## Tools")
+          for (const t of tools) console.log(t.name, t.params)
+        }
+      },
+      id: "debug",
+    })
+  )
 }

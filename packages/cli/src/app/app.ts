@@ -137,6 +137,8 @@ export class App {
     ])
 
     this.#renderer = await createRenderer({
+      // altScreen: true,
+      // mouse: true,
       fixedFooterHeight: 5,
       images: toAccessor(() => this.$.ui.images),
       logger: this.#ctx.logger.child("renderer"),
