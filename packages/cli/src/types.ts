@@ -23,6 +23,7 @@ export type CmdArgs<C> = {
 }
 
 export interface Flags {
+  debug?: boolean
   cwd?: string
   model?: string
   apiKey?: string

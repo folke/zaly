@@ -141,6 +141,7 @@ export class App {
       images: toAccessor(() => this.$.ui.images),
       logger: this.#ctx.logger.child("renderer"),
       reporter: {
+        stacktrace: this.#ctx.flags.debug,
         wrap: (node) => {
           const n = box({ padding: [1, 0, 0, 1], sticky: this.#loading }, node)
           if (this.#loading) this.#stickyLogs.push(n)
