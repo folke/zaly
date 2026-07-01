@@ -64,9 +64,10 @@ export function formatSize(bytes: number, digits = 2): string {
   return `${bytes.toFixed(digits)} ${units[i]}`
 }
 
-export function formatNumber(n: number): string {
+export function formatNumber(n: number, opts?: Intl.NumberFormatOptions): string {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
     notation: n >= 1000 ? "compact" : "standard",
+    ...opts,
   }).format(n)
 }

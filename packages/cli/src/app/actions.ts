@@ -63,6 +63,14 @@ export function appActions({ app }: { app: App }) {
         })
       },
     }),
+    "agent.session": {
+      cmd: "session",
+      desc: "Show the current session's id, path, and settings.",
+      fn: async () => {
+        const { sessionInfo } = await import("./session.ts")
+        await sessionInfo(app)
+      },
+    },
     "app.cancel": {
       cmd: "cancel",
       desc: "Clear the composer, close the picker, or press twice to exit zaly.",

@@ -1,5 +1,5 @@
 import type { Session, SessionInfo, SessionNode } from "@zaly/agent/session"
-import type { Message, TextPart } from "@zaly/ai"
+import type { Message, TextPart, Usage } from "@zaly/ai"
 import type { AnyStyle, RenderCtx } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
 import type { TreeItem } from "@zaly/tui/widgets/tree"
@@ -7,7 +7,7 @@ import type { Flags } from "../types.ts"
 import type { App } from "./app.ts"
 
 import { loadSession, resumeSession } from "@zaly/agent/session"
-import { normPath, safeStatAsync } from "@zaly/shared"
+import { formatNumber, normPath, prettyPath, safeStatAsync } from "@zaly/shared"
 import { toolParams } from "../widgets/tool.ts"
 
 export async function bootstrapSession(flags: Flags): Promise<Session> {
@@ -326,4 +326,71 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   const { replay } = await import("./replay.ts")
   app.renderer.stream.reset()
   await Promise.all([replay(session, app), app.agent.ctx.useSession(session)])
+}
+
+function usageStats(usage: Usage) {
+  return {
+    "cache read": usage.cacheRead,
+    "cache write": usage.cacheWrite,
+    input: usage.input,
+    output: usage.output,
+    reasoning: usage.reasoning,
+    total: usage.input + usage.output + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0),
+  }
+}
+
+export async function sessionInfo(app: App) {
+  const session = app.agent.session
+  const info: string[] = ["## Current session"]
+
+  const path = session.path ?? session.dir
+  info.push(`- **path:** \`${prettyPath(path, "~")}\``)
+
+  info.push("### Messages")
+  const stats = new Map<string, number>()
+  for (const m of session.messages) {
+    stats.set(m.role, (stats.get(m.role) ?? 0) + 1)
+  }
+  for (const [role, count] of stats.entries()) {
+    info.push(`- **${role}:** \`${count}\``)
+  }
+  info.push(`- **total:** \`${session.messages.length}\``)
+
+  info.push(`> [!TIP]
+> Use \`/tree\` to view the session tree`)
+
+  info.push("### Token Usage")
+  const usage = usageStats(app.agent.usage)
+  for (const [key, value] of Object.entries(usage)) {
+    if (!value) continue
+    info.push(`- **${key}:** \`${formatNumber(value, { notation: "standard" })}\``)
+  }
+  info.push(`> [!TIP]
+> Use \`/context\` to view a detailed breakdown of token usage, including prompts, messages, and tools.`)
+
+  info.push("### Estimated Cost")
+  const cost = usageStats(app.agent.usage.cost)
+  for (const [key, value] of Object.entries(cost)) {
+    if (!value) continue
+    info.push(`- **${key}:** \`$${formatNumber(value, { notation: "standard" })}\``)
+  }
+
+  info.push("> [!NOTE]")
+  info.push(
+    "> Cost is estimated from model catalog pricing and may not reflect subscriptions or provider discounts."
+  )
+
+  info.push("### Details")
+
+  info.push(`- **id:** \`${session.id}\``)
+  for (const [key, value] of Object.entries(session.settings)) {
+    if (key === "sessionId") continue
+    const v =
+      typeof value === "string" && ["cwd", "workspace"].includes(key)
+        ? prettyPath(value, "~")
+        : value
+    info.push(`- **${key}:** \`${v}\``)
+  }
+
+  app.ctx.info(`${info.join("\n")}\n`)
 }
