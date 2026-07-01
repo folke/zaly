@@ -24,6 +24,7 @@ export type OptionRenderCtx<T> = RenderCtx & {
   visible: readonly T[]
   items: readonly T[]
   active?: boolean
+  prefixWidth?: number
 }
 
 /** Per-row rendering hook. `ctx.active` lets callers branch on selection

@@ -59,8 +59,9 @@ export const picker = widget(
     let items: Reactive<SearchItems<T>>
     if (isTree(props)) {
       props = { filter: false, fuzzy: false, sort: false, ...props }
-      node = tree(props)
-      items = [...unwrap(node.state.items)]
+      const t = tree(props)
+      node = t
+      items = t.items
     } else {
       node = select({ ...props, items: [] })
       items = props.items

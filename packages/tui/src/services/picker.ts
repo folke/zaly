@@ -1,5 +1,5 @@
 import type { Node } from "../core/node.ts"
-import type { Ref } from "../core/reactive.ts"
+import type { Reactive, Ref } from "../core/reactive.ts"
 import type { ActionFilter } from "../input/actions.ts"
 import type { OverlaySurface } from "../renderer/overlay.ts"
 import type { Input } from "../widgets/input.ts"
@@ -19,7 +19,7 @@ import { text } from "../widgets/text.ts"
 export type ToggleItem = PickerItem & { enabled?: boolean }
 
 export type PickOpts<T extends Option = Option> = {
-  title?: string
+  title?: Reactive<string>
   multi?: boolean | { action?: boolean; render?: boolean }
   ref?: Ref<Select<T>>
   details?: Widget | string
@@ -47,10 +47,7 @@ export class Picker {
     opts: PickOpts<T> & { input: Input; ref: Ref<Select<T>> }
   ): Overlay {
     const children: Node[] = []
-    if (opts.title)
-      children.push(
-        isMarkdown(opts.title) ? markdown(opts.title) : text(opts.title, { style: "borderTitle" })
-      )
+    if (opts.title) children.push(markdown(opts.title, { style: "borderTitle" }))
     if (opts.details) {
       if (typeof opts.details === "string")
         children.push(isMarkdown(opts.details) ? markdown(opts.details) : text(opts.details))

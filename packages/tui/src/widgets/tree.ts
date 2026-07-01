@@ -1,5 +1,7 @@
 import type { Option, Select, SelectState } from "./select.ts"
 
+import { stringWidth } from "@zaly/shared/ansi"
+import { memo, unwrap, type Reactive } from "../core/reactive.ts"
 import { select } from "./select.ts"
 import { widget } from "./widget.ts"
 
@@ -9,7 +11,7 @@ export type TreeItem<T extends Option = Option> = T & {
 }
 
 export type TreeProps<T extends TreeItem = TreeItem> = Omit<SelectState<T>, "items" | "active"> & {
-  tree: T
+  tree: Reactive<T>
   /** If true, the root node will be rendered and selectable. Defaults to false. */
   root?: boolean
   active?: T | ((item: T) => boolean)
@@ -50,30 +52,40 @@ class Tree<T extends TreeItem> {
   }
 }
 
-export const tree = widget(<T extends TreeItem>(props: TreeProps<T>): Select<T> => {
-  const t = new Tree(props.tree)
-  const items = props.root === true ? t.items : t.items.slice(1)
-  const activeFn = typeof props.active === "function" ? props.active : (i: T) => i === props.active
-  const active = props.active ? items.findIndex((i) => activeFn(i)) : -1
+export const tree = widget(
+  <T extends TreeItem>(props: TreeProps<T>): Select<T> & { items: Reactive<T[]> } => {
+    const tree = memo(() => new Tree(unwrap(props.tree)))
+    const items = memo(() => (props.root === true ? tree().items : tree().items.slice(1)))
 
-  const ret = select({ ...props, active: active === -1 ? 0 : active, items })
+    const activeFn =
+      typeof props.active === "function" ? props.active : (i: T) => i === props.active
+    const active = props.active ? items().findIndex((i) => activeFn(i)) : -1
 
-  ret.extendRenderer((prev) => (item, ctx) => {
-    const prefix: string[] = []
-    const s = ctx.style
-    const itemNode = t.node(item)
-    let n = t.node(item)
-    while (n?.parent) {
-      if (props.root !== true && n.parent === props.tree) break
-      let icon = ""
-      if (n !== itemNode) icon = n.last ? "  " : icons.vertical
-      else icon = n.last ? icons.last : icons.middle
-      prefix.unshift(icon)
-      n = t.node(n.parent)
-    }
-    const text = prev(item, ctx).replace(/\s+/g, " ")
-    return `${s.gutter(prefix.join(""))}${text}`
-  })
+    const ret = select({ ...props, active: active === -1 ? 0 : active, items })
 
-  return ret
-})
+    ret.extendRenderer((prev) => (item, ctx) => {
+      const t = tree()
+      const path: string[] = []
+      const s = ctx.style
+      const itemNode = t.node(item)
+      let n = t.node(item)
+      while (n?.parent) {
+        if (props.root !== true && n.parent === props.tree) break
+        let icon = ""
+        if (n !== itemNode) icon = n.last ? "  " : icons.vertical
+        else icon = n.last ? icons.last : icons.middle
+        path.unshift(icon)
+        n = t.node(n.parent)
+      }
+      const prefix = path.join("")
+      const prefixWidth = stringWidth(prefix)
+      const text = prev(item, { ...ctx, prefixWidth, width: ctx.width - prefixWidth }).replace(
+        /\s/g,
+        " "
+      )
+      return `${s.gutter(prefix)}${text}`
+    })
+
+    return Object.assign(ret, { items })
+  }
+)
