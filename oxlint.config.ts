@@ -110,6 +110,7 @@ export default defineConfig({
     "no-restricted-imports": ["error", restrictedImports({ allowIndex: false })],
     "no-ternary": "off",
     "no-underscore-dangle": "off", // 4
+    "no-unnecessary-type-assertion": "off", // way too many false positives
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { location: "start", terms: ["todo", "fixme", "bug"] }],
     "oxc/no-barrel-file": "off",
