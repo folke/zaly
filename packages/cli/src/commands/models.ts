@@ -48,7 +48,7 @@ export function modelsCommand(cli: Cli) {
         required: false,
       },
     },
-    run: ({ args }) => run(cli, args as unknown as ModelsArgs),
+    run: ({ args }) => cli.run(() => run(cli, args as unknown as ModelsArgs)),
   })
 }
 
@@ -56,7 +56,7 @@ async function run(cli: Cli, args: ModelsArgs): Promise<void> {
   // Default: only models the current auth chain can authenticate.
   // `--all`: every catalog row, regardless of local credentials.
   const ctx = cli.ctx
-  const model = await ctx.model()
+  const model = await ctx.models()
   const cs = args.contextSize ? args.contextSize.match(/^(\d+)\s*([kmb])?$/i) : undefined
   let contextSize: number | undefined
   if (cs) {

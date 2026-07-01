@@ -38,12 +38,21 @@ export function appActions({ app }: { app: App }) {
           short: "a",
           type: "boolean",
         },
+        refresh: {
+          desc: "Refresh the model list from the provider",
+          short: "r",
+          type: "boolean",
+        },
       },
       cmd: "model",
       desc: "Switch the model used for future agent turns.",
       fn: async (ctx) => {
         const { pickModel } = await import("./model.ts")
-        await pickModel(app, { all: ctx.args?.all, filter: ctx.args?._.join(" ") })
+        await pickModel(app, {
+          all: ctx.args?.all,
+          filter: ctx.args?._.join(" "),
+          refresh: ctx.args?.refresh,
+        })
       },
     }),
     "app.cancel": {

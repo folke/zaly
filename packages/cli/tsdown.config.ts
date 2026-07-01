@@ -1,4 +1,6 @@
+import { replacePlugin } from "rolldown/plugins"
 import { defineConfig } from "tsdown"
+import pkg from "./package.json" with { type: "json" }
 
 export default defineConfig({
   entry: {
@@ -12,6 +14,7 @@ export default defineConfig({
   },
   outputOptions: {
     plugins: [
+      replacePlugin({ __VERSION__: JSON.stringify(pkg.version) }),
       {
         name: "fix-shebang",
         renderChunk(code, chunk) {

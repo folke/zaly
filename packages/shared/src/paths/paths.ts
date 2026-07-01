@@ -17,6 +17,11 @@ export const zalyPaths = {
     return (zalyEnv ??= envPaths())
   },
 
+  /** models.json ModelProvider overrides */
+  get models(): string {
+    return join(this.env.config, "models.json")
+  },
+
   pluginPath(plugin: string) {
     return join(this.plugins, encodePath(plugin))
   },

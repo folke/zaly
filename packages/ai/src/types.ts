@@ -10,7 +10,7 @@
  * `design.sketch.ts` at the package root for the side-by-side comparison.
  */
 
-import type { MaybePromise } from "@zaly/shared"
+import type { MaybePromise, Simplify } from "@zaly/shared"
 import type { Static, TObject, TSchema } from "typebox/type"
 import type { ApiKey } from "./auth/manager.ts"
 import type { OAuthOptions } from "./auth/oauth/types.ts"
@@ -394,7 +394,7 @@ export type Modality = "text" | "audio" | "image" | "video" | "pdf"
 /** Per-tier cost. Values are USD per **million tokens** (models.dev
  *  convention). Optional fields are only present when the provider
  *  publishes distinct pricing for that axis. */
-export interface Cost {
+export type Cost = {
   input: number
   output: number
   reasoning?: number
@@ -410,20 +410,20 @@ export interface Cost {
  *
  *  Runtime invariant enforced by the catalog (not by the TS type):
  *  when `reasoning === false`, `cost.reasoning` is absent. */
-export interface ModelInfo {
+export type ModelInfo = {
   id: string
-  name: string
+  name?: string
   /** Model specific baseUrl override **/
   baseUrl?: string
   /** adapter to use: anthropic, openai, openai-responses, etc. */
   api?: AnyProvider
   /** Input modalities this model accepts */
-  input: Modality[]
+  input?: Modality[]
   output?: Modality[]
   /** Max output tokens this model accepts */
-  maxTokens: number
+  maxTokens?: number
   /** Max context size for this model */
-  contextSize: number
+  contextSize?: number
   /** Emits reasoning / thinking tokens. */
   reasoning?: boolean
   /** Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`. */
@@ -445,12 +445,13 @@ export interface ModelInfo {
 
 /** Metadata for one provider endpoint — one-to-one with the
  *  models.dev `Provider` schema. */
-export interface ModelProvider {
+export type ModelProvider<S extends boolean = boolean> = {
   /** Provider id **/
   id: string
   /** Provider name **/
   name: string
-  api: AnyProvider
+  /** Adapter family to use for this provider. */
+  api?: AnyProvider
   apiKey?: string
   /** Base URL for API requests **/
   baseUrl?: string
@@ -462,9 +463,11 @@ export interface ModelProvider {
   env?: string[]
   headers?: Record<string, string>
   quirks?: Quirks
-  models: ModelInfo[] | ((catalog: ModelCatalog) => MaybePromise<ModelInfo[]>)
+  models?: S extends true
+    ? ModelInfo[]
+    : ModelInfo[] | ((catalog: ModelCatalog) => MaybePromise<ModelInfo[]>)
   oauth?: OAuthOptions | ((provider: ModelProvider) => MaybePromise<OAuthOptions>)
-  source?: "models.dev" | "custom"
+  source?: "models.dev" | "builtin" | "custom" | "models.json"
 }
 
 // ── Runtime API types ───────────────────────────────────────────────────
@@ -500,7 +503,7 @@ export interface ProviderOptions {
  *  `quirks` field.
  *
  *  Add new axes here as they surface; start minimal. */
-export interface Quirks {
+export type Quirks = {
   /** Which wire field carries the max-output-tokens cap, per adapter
    *  family.
    *
@@ -588,9 +591,26 @@ export interface Quirks {
 export interface ModelSpec extends ProviderOptions, ModelInfo {
   /** Full model URI: `"<provider>/<id>"` */
   id: string
+  /** Model display name. Optional; defaults to `id`. */
+  name: string
   /** Model id without the provider prefix. */
   model: string
   /** Catalog provider info */
   provider: ModelProvider
   api: AnyProvider
+  /** Input modalities this model accepts */
+  input: Modality[]
+  /** Max output tokens this model accepts */
+  maxTokens: number
+  /** Max context size for this model */
+  contextSize: number
 }
+
+export type ProviderOverride<S extends boolean = boolean> = Partial<
+  Omit<ModelProvider<S>, "id">
+> & {
+  id: string
+  replaceModels?: boolean
+}
+
+export type ModelsJson = Record<string, Simplify<Omit<ProviderOverride<true>, "id" | "oauth">>>

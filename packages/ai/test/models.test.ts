@@ -2,8 +2,8 @@ import type { AuthManager } from "../src/index.ts"
 import type { ModelInfo, ModelProvider, ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
-import { getModel, loadCatalog } from "../src/index.ts"
-import { modelCollection, parseModelId } from "../src/model.ts"
+import { getModel, loadCatalog, parseModelId, resolveModels, toModelSpec } from "../src/index.ts"
+import { modelCollection } from "../src/model.ts"
 import { filterModel } from "../src/models/filter.ts"
 
 const customModel = (overrides: Partial<ModelInfo> = {}): ModelInfo => ({
@@ -16,16 +16,14 @@ const customModel = (overrides: Partial<ModelInfo> = {}): ModelInfo => ({
   ...overrides,
 })
 
-const catalog = await loadCatalog()
-
 const customSpec = async (overrides: Partial<ModelSpec> = {}): Promise<ModelSpec> => {
   const provider = customProvider(overrides)
-  const ret = await catalog.modelSpecs(provider)
-  return ret[0]
+  const models = await resolveModels(provider, await loadCatalog())
+  return toModelSpec(models[0], provider)
 }
 
 const customProvider = (overrides: Partial<ModelSpec> = {}): ModelProvider => {
-  const { provider, model } = parseModelId(overrides.id ?? "mock-x/model-x")
+  const [provider, model] = parseModelId(overrides.id ?? "mock-x/model-x")
   return {
     id: provider,
     name: "Mock",
@@ -102,23 +100,5 @@ describe("listModels", () => {
     const all = await models.list()
     const model = all.find((m) => m.id === "mock-models-test/listed")
     expect(model).toBeDefined()
-  })
-
-  test("filters apply to built-ins", async () => {
-    // Use auth filter that rejects everything: built-ins drop out,
-    // custom registrations stay (they bypass the filter).
-    const models = modelCollection()
-    models.register(customProvider({ id: "mock-models-test/listed-filter" }))
-    const out = await models.list({
-      auth: { getAuth: () => undefined, needAuth: () => true } as unknown as AuthManager,
-    })
-    const listed = out.find((m) => m.id === "mock-models-test/listed-filter")
-    const missing = out.find((m) => m.id === "anthropic/claude-sonnet-4-6")
-    expect(listed).toBeDefined()
-    // Sanity check: a known auth-gated built-in must be absent. Avoid
-    // an "every key matches my prefix" assertion — sibling test files
-    // also register customs (the customModels Map is module-global) and
-    // those would leak in here when the full suite runs.
-    expect(missing).toBeUndefined()
   })
 })

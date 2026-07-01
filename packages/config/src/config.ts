@@ -1,3 +1,4 @@
+import type { ModelsJson } from "@zaly/ai"
 import type { Logger } from "@zaly/shared/logger"
 import type { EnvPaths, ProjectPaths } from "@zaly/shared/paths"
 import type { ResourceType } from "./resource/resource.ts"
@@ -68,6 +69,7 @@ export class ConfigManager {
   #paths: ProjectPaths
   #resources?: ResourceManager
   #state!: JsonFile<State, State>
+  #models!: JsonFile<ModelsJson, ModelsJson>
 
   constructor(opts: ConfigManagerOpts) {
     this.#opts = opts
@@ -118,6 +120,10 @@ export class ConfigManager {
     return this.#workspace
   }
 
+  get models(): JsonFile<ModelsJson, ModelsJson> {
+    return this.#models
+  }
+
   async update(patch: Config, scope: "user" | "project" = "user"): Promise<void> {
     const file = scope === "user" ? this.#user : this.#project
     await file.update(patch)
@@ -128,6 +134,12 @@ export class ConfigManager {
   async refresh(): Promise<this> {
     this.#user = await ConfigFile.load(zalyPaths.env, "user", this.#opts.logger)
     this.#project = await ConfigFile.load(this.#paths.env, "project", this.#opts.logger)
+    this.#models = await loadJsonFile(zalyPaths.models, {
+      default: {} as ModelsJson,
+      logger: this.#opts.logger.child("models"),
+      validate: (data) =>
+        import("./schemas/gen/models.ts").then(({ validateModels }) => validateModels(data)),
+    })
     if (this.#opts.workspace) {
       const wsPaths = zalyPaths.project(this.#opts.workspace)
       if (wsPaths.dotZaly !== this.#paths.dotZaly) {

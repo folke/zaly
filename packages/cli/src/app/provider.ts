@@ -20,11 +20,11 @@ type AuthStatus = {
 const recommended = new Set(["openai", "openai-codex", "anthropic", "openrouter", "google"])
 
 function isRecommended(p: ModelProvider): boolean {
-  return recommended.has(p.id) || p.source === "custom"
+  return recommended.has(p.id) || p.source !== "models.dev"
 }
 
 export async function listProviders(app: App): Promise<void> {
-  const model = await app.ctx.model()
+  const model = await app.ctx.models()
   const auth = await app.ctx.auth()
   const providers = await model.providers()
 

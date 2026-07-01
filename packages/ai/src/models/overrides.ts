@@ -17,10 +17,11 @@
  * provider has a quirk models.dev's catalog can't express.
  */
 
-import type { ModelInfo, ModelProvider } from "../types.ts"
+import type { ModelProvider } from "../types.ts"
 import type { ModelCatalog } from "./catalog.ts"
 
-export const modelProviders: Record<string, ModelProvider> = {
+// oxlint-disable-next-line sort-keys
+export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined> = {
   // ── OpenAI Codex (ChatGPT subscription backend) ─────────────────────
   // Synthetic provider that clones the codex-family models from the
   // openai catalog and routes them at the chatgpt.com backend used by
@@ -48,39 +49,20 @@ export const modelProviders: Record<string, ModelProvider> = {
     // dual-routed mainline models. New mainline GPT-5.x reasoning
     // models would need to be added here as they release.
     models: async (catalog: ModelCatalog) => {
-      const models: ModelInfo[] = []
       const openai = catalog.provider("openai")
       if (!openai) return []
-      const rules = [
-        /^openai\/.*codex.*/,
-        "openai/gpt-5.1",
-        "openai/gpt-5.2",
-        "openai/gpt-5.4",
-        "openai/gpt-5.4-mini",
-        "openai/gpt-5.5",
-      ]
-      const matches = (fullId: string): boolean => {
-        for (const rule of rules) {
-          if (typeof rule === "string" ? rule === fullId : rule.test(fullId)) return true
-        }
-        return false
-      }
-      const openaiModels =
-        typeof openai.models === "function" ? await openai.models(catalog) : openai.models
-      for (const m of openaiModels) {
-        if (!matches(`openai/${m.id}`)) continue
-        models.push({
-          ...m,
-          contextSize: Math.min(270_000, m.contextSize), // codex backend has a 270k context limit
-        })
-      }
-      return models
+      const want = new Set(["gpt-5.1", "gpt-5.2", "gpt-5.4", "gpt-5.4-mini", "gpt-5.5"])
+      return (
+        (openai.models ?? [])
+          .filter((m) => want.has(m.id) || m.id.includes("codex"))
+          // oxlint-disable-next-line oxc/no-map-spread
+          .map((m) => ({
+            ...m,
+            contextSize: Math.min(270_000, m.contextSize ?? 270_000), // codex backend has a 270k context limit
+          }))
+      )
     },
   },
-}
-
-// oxlint-disable-next-line sort-keys
-export const overrides: Record<string, Partial<ModelProvider> | undefined> = {
   // ── Native OpenAI ─────────────────────────────────────────────────
   openai: {
     quirks: {

@@ -65,7 +65,7 @@ function matchesModality(m: ModelSpec, spec: NonNullable<ModelFilter["modality"]
 export async function filterModels(
   models: readonly ModelSpec[],
   opts?: ModelFilter
-): Promise<Record<string, ModelSpec>> {
+): Promise<ModelSpec[]> {
   models = models.toSorted((a, b) => {
     const ap = a.provider.name
     const bp = b.provider.name
@@ -82,9 +82,7 @@ export async function filterModels(
   // Run filters in parallel — `auth.getAuth` may be async (OAuth,
   // keychain); sequential await would serialise 2400 lookups.
   const verdicts = await Promise.all(models.map((m) => filterModel(m, opts)))
-  const out: Record<string, ModelSpec> = {}
-  for (const [i, m] of models.entries()) {
-    if (verdicts[i]) out[m.id] = m
-  }
+  const out: ModelSpec[] = []
+  for (const [i, m] of models.entries()) if (verdicts[i]) out.push(m)
   return out
 }

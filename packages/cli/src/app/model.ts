@@ -12,9 +12,10 @@ type ModelItem = PickerItem & {
 
 export async function pickModel(
   app: App,
-  opts?: { all?: boolean; filter?: string }
+  opts?: { all?: boolean; filter?: string; refresh?: boolean }
 ): Promise<Model | undefined> {
-  const model = await app.ctx.model()
+  const model = await app.ctx.models()
+  if (opts?.refresh) model.refresh()
   const filter = opts?.filter ?? ""
 
   const [all, setAll] = signal(opts?.all ?? false)
@@ -52,6 +53,8 @@ export async function pickModel(
     return modelItems.filter((m) => want(m.model.id))
   })
 
+  const active = items().findIndex((m) => m.model.id === model.active?.id)
+
   const ret = await app.pick({
     actions: {
       "models.toggleAll": {
@@ -61,6 +64,7 @@ export async function pickModel(
         keys: ["ctrl-a"],
       },
     },
+    active: active !== -1 ? active : undefined,
     details: "Use `/login` to authenticate with a provider to unlock more models.",
     items,
     reverse: true,
@@ -91,7 +95,7 @@ export async function bootstrapModel(
     app.config.state.$.lastModel
   if (!modelId) return
 
-  const model = await ctx.model()
+  const model = await ctx.models()
   if (model.active && !opts.force) return
   try {
     model.active = await model.load({ apiKey: ctx.flags.apiKey, id: modelId })

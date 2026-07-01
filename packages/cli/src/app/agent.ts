@@ -33,8 +33,8 @@ export async function loadAgent(app: App): Promise<Agent> {
     cwd,
     loadModel: async (id) => {
       // Load the model using the proper model registry and auth manager
-      const model = await ctx.model()
-      return await model.load(id)
+      const models = await ctx.models()
+      return await models.load(id)
     },
     logger: ctx.logger.child("agent"),
     permissions: ctx.flags.yolo
@@ -62,9 +62,9 @@ export async function loadAgent(app: App): Promise<Agent> {
   prompts.onAny(updatePrompt)
   agent.ctx.on("cwd", updatePrompt)
 
-  const model = await app.ctx.model()
-  model.on("active", ({ active }) => (agent.ctx.model = active))
-  model.on("register", async ({ value: spec }) => {
+  const models = await app.ctx.models()
+  models.on("active", ({ active }) => (agent.ctx.model = active))
+  models.on("register", async ({ value: spec }) => {
     if (app.ready) return
     // Plugins can register models during startup
     if (!agent.model || agent.model.id === spec.id)
@@ -76,7 +76,7 @@ export async function loadAgent(app: App): Promise<Agent> {
     // no-op if set through model.active, but needed when switching
     // via agent.ctx.useSession(), since that loads the session's model
     // directly into agent.ctx.model, bypassing model.active's setter.
-    if (model.active !== agent.ctx.model) model.active = agent.ctx.model
+    if (models.active !== agent.ctx.model) models.active = agent.ctx.model
     await updatePrompt()
   })
 

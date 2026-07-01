@@ -1,5 +1,7 @@
+import type { JsonFile } from "@zaly/shared/json"
 import type { Logger } from "@zaly/shared/logger"
 import type { ContentTransform } from "./content/transform.ts"
+import type { ModelCatalog } from "./models/catalog.ts"
 import type { ModelFilter } from "./models/filter.ts"
 import type {
   CollectOptions,
@@ -18,16 +20,17 @@ import type {
   Message,
   Modality,
   ModelProvider,
+  ModelsJson,
   ModelSpec,
+  ProviderOverride,
 } from "./types.ts"
 
-import { toError } from "@zaly/shared"
+import { prettyPath } from "@zaly/shared"
 import { BaseCollection } from "@zaly/shared/collection"
 import { AuthManager } from "./auth/manager.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel, loadCatalog } from "./models/catalog.ts"
-import { filterModels } from "./models/filter.ts"
 import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
@@ -42,23 +45,6 @@ export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions
 export type ModelOpts = string | ({ id: string } & Partial<ModelSpec>)
 export type { ModelCollection }
-
-/** Split a model URI into `{ provider, model }`. Throws on malformed
- *  input — a typo at the call site is more useful surfaced here than
- *  via a downstream "unknown provider" error.
- *
- *  Examples:
- *    `"anthropic/claude-sonnet-4-5"` → `{ provider: "anthropic", model: "claude-sonnet-4-5" }`
- *    `"openrouter/kimi/k2"`          → `{ provider: "openrouter", model: "kimi/k2" }` */
-export function parseModelId(id: string): { provider: string; model: string } {
-  const [, provider, model] = /^([^/]+)\/(.+)$/.exec(id) ?? []
-  if (!provider || !model) {
-    throw new Error(
-      `Invalid model id "${id}": expected "<provider>/<model>" (e.g. "anthropic/claude-sonnet-4-5").`
-    )
-  }
-  return { model, provider }
-}
 
 /** A loaded model, ready to stream. Wraps the underlying `Provider`
  *  with the model id and quirks pre-attached, so callers just supply
@@ -219,63 +205,58 @@ function computeCost(usage: Usage, prices: Cost): TokenCount {
 export type ModelCtx = {
   auth?: AuthManager
   logger?: Logger
+  json?: JsonFile<ModelsJson, ModelsJson>
 }
 
 class ModelCollection extends BaseCollection<
   Model | undefined,
   Promise<ModelSpec[]>,
-  ModelProvider
+  ProviderOverride
 > {
   #auth?: AuthManager
   #logger?: Logger
-  #specCache = new Map<string, ModelSpec[]>()
+  #catalog?: ModelCatalog
+  #json?: JsonFile<ModelsJson, ModelsJson>
 
   constructor(opts: ModelCtx = {}) {
     super(undefined)
     this.#auth = opts.auth
     this.#logger = opts.logger
+    this.#json = opts.json
+    this.on("register", () => this.refresh())
+    this.on("unregister", () => this.refresh())
   }
 
-  get auth(): AuthManager | undefined {
-    return this.#auth
-  }
-
-  async #specs(provider: ModelProvider): Promise<ModelSpec[]> {
-    const cached = this.#specCache.get(provider.id)
-    if (cached) return cached
-    try {
-      const specs = await loadCatalog().then((c) => c.modelSpecs(provider))
-      this.#specCache.set(provider.id, specs)
-      return specs
-    } catch (error) {
-      this.#specCache.set(provider.id, [])
-      if (this.#logger)
-        this.#logger.error(
-          `Failed to load model specs for provider \`${provider.id}\`:\n${toError(error).message}`
-        )
-      else throw error
+  async catalog() {
+    if (this.#catalog) return this.#catalog
+    const overrides = [...this.registered]
+    if (this.#json) {
+      try {
+        await this.#json.refresh()
+        for (const [pid, p] of Object.entries(this.#json.$))
+          overrides.push({ id: pid, ...p, source: "models.json" })
+      } catch (error) {
+        const path = prettyPath(this.#json.path)
+        this.#logger?.error(`Failed to refresh \`${path}\`:`, error)
+      }
     }
-    return []
+    const cat = await loadCatalog()
+    this.#catalog = await cat.fork(overrides, { logger: this.#logger })
+    return this.#catalog
   }
 
-  async providers(): Promise<ModelProvider[]> {
-    const catalog = await loadCatalog()
-    return [...this.registered, ...catalog.providers]
+  refresh(): void {
+    this.#catalog = undefined
   }
 
-  async #registeredSpecs(): Promise<ModelSpec[]> {
-    const specs = await Promise.all(this.registered.map((p) => this.#specs(p)))
-    const ret: Record<string, ModelSpec> = {}
-    for (const spec of specs.flat()) ret[spec.id] = spec
-    return Object.values(ret)
+  async providers(): Promise<readonly ModelProvider<true>[]> {
+    const cat = await this.catalog()
+    return cat.providers
   }
 
   async get(id: string): Promise<ModelSpec | undefined> {
-    const { provider: pid } = parseModelId(id)
-    const provider = this.registered.findLast((r) => r.id === pid)
-    const specs = provider ? await this.#specs(provider) : undefined
-    const spec = specs?.find((s) => s.id === id)
-    return spec ?? (await getModel(id))
+    const cat = await this.catalog()
+    return cat.get(id)
   }
 
   async load(opts: ModelOpts): Promise<Model> {
@@ -284,25 +265,13 @@ class ModelCollection extends BaseCollection<
   }
 
   async list(filter?: ModelFilter): Promise<ModelSpec[]> {
-    // Use the collection's auth manager if the caller wants to filter by auth but didn't supply one.
-    if (filter?.auth === true && this.#auth) filter = { ...filter, auth: this.#auth }
-    const [models, custom] = await Promise.all([
-      loadCatalog().then((c) => c.list(filter)),
-      filterModels(await this.#registeredSpecs(), { ...filter, auth: undefined }),
-    ])
-    for (const m of Object.values(custom)) models[m.id] = m
-    return Object.values(models)
+    const cat = await this.catalog()
+    // Apply our auth manager if auth filtering is requested
+    return cat.list({ ...filter, auth: filter?.auth ? this.#auth : undefined })
   }
 
-  override register(provider: ModelProvider): () => void {
-    Object.defineProperty(provider, "source", {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return "custom" as const
-      },
-    })
-    return super.register(provider)
+  override register(provider: ProviderOverride): () => void {
+    return super.register({ ...provider, source: "custom" })
   }
 }
 

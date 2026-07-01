@@ -21,7 +21,7 @@ type Slots = {
   session: Session
   dotenv: Record<string, string[]>
   tools: ToolCollection
-  model: ModelCollection
+  models: ModelCollection
   prompts: PromptCollection
   auth: AuthManager
 }
@@ -168,11 +168,11 @@ export class Context extends BaseLogger {
     })
   }
 
-  model() {
-    return this.#cache.need("model", async () => {
+  models() {
+    return this.#cache.need("models", async () => {
       const auth = await this.auth()
       const { modelCollection } = await import("@zaly/ai")
-      return modelCollection({ auth, logger: this.logger.child("model") })
+      return modelCollection({ auth, json: this.config.models, logger: this.logger.child("model") })
     })
   }
 

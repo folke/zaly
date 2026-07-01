@@ -22,7 +22,7 @@ export async function loadPlugins(app: App): Promise<void> {
     loadTheme: (name: string) => app.ctx.loadTheme(name),
     log: app.ctx,
     logger: app.ctx.logger.child("plugin"),
-    model: await app.ctx.model(),
+    model: await app.ctx.models(),
     notify: app.notify,
     pick: app.pick,
     prompt: (msg: string) => app.prompt.open(msg),

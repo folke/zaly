@@ -1,12 +1,22 @@
+import type { MaybePromise } from "@zaly/shared"
+import type { Logger } from "@zaly/shared/logger"
 import type { BuiltinProvider } from "../providers/registry.ts"
-import type { ModelInfo, ModelSpec, ModelProvider, Modality, JsonValue, Cost } from "../types.ts"
+import type {
+  Cost,
+  JsonValue,
+  Modality,
+  ModelInfo,
+  ModelProvider,
+  ModelSpec,
+  ProviderOverride,
+} from "../types.ts"
 import type { ModelFilter } from "./filter.ts"
 
 import { normPath } from "@zaly/shared"
 import { mkdir, writeFile } from "node:fs/promises"
 import { pathToFileURL } from "node:url"
 import { filterModels } from "./filter.ts"
-import { modelProviders, overrides } from "./overrides.ts"
+import { builtinOverrides } from "./overrides.ts"
 
 type CatalogProvider = {
   id: string
@@ -101,6 +111,8 @@ const npmToApi: Record<string, BuiltinProvider | undefined> = {
 }
 
 const CATALOG_URL = "https://models.dev/api.json"
+export const DEFAULT_CONTEXT_SIZE = 128_000
+export const DEFAULT_MAX_TOKENS = 16_000
 
 let catalog: Promise<ModelCatalog> | undefined
 
@@ -111,6 +123,22 @@ function isCatalog(data: unknown): data is Catalog {
 export async function getModel(id: string): Promise<ModelSpec | undefined> {
   const cat = await loadCatalog()
   return cat.get(id)
+}
+
+/** Split a model URI into `{ provider, model }`. Throws on malformed
+ *  input — a typo at the call site is more useful surfaced here than
+ *  via a downstream "unknown provider" error.
+ *
+ *  Examples:
+ *    `"anthropic/claude-sonnet-4-5"` → `{ provider: "anthropic", model: "claude-sonnet-4-5" }`
+ *    `"openrouter/kimi/k2"`          → `{ provider: "openrouter", model: "kimi/k2" }` */
+export function parseModelId(id: string): [string, string] {
+  const idx = id.indexOf("/")
+  if (idx === -1)
+    throw new Error(
+      `Invalid model id "${id}": expected "<provider>/<model>" (e.g. "anthropic/claude-sonnet-4-5").`
+    )
+  return [id.slice(0, idx), id.slice(idx + 1)]
 }
 
 export async function downloadCatalog(dir: string): Promise<ModelCatalog> {
@@ -135,9 +163,9 @@ export async function loadCatalog(path?: string): Promise<ModelCatalog> {
 }
 
 export class ModelCatalog {
-  #catalog!: Catalog
-  #providers = new Map<string, ModelProvider>()
-  #models = new Map<string, ModelSpec>()
+  #catalog: Catalog
+  #providers = new Map<string, ModelProvider<true>>()
+  #overrides = new Map<string, ModelProvider<true>>()
 
   private constructor(cat: Catalog) {
     this.#catalog = cat
@@ -156,64 +184,114 @@ export class ModelCatalog {
     return new ModelCatalog(m.default as unknown as Catalog).#load()
   }
 
+  async fork(
+    overrides: ProviderOverride[] = [],
+    opts: { logger?: Logger } = {}
+  ): Promise<ModelCatalog> {
+    const cat = new ModelCatalog(this.#catalog)
+    cat.#providers = this.#providers
+    return cat.#update(overrides, opts)
+  }
+
   async #load() {
     for (const [pid, p] of Object.entries(this.#catalog)) {
       const info = toProviderInfo(p)
       if (info) this.#providers.set(pid, info)
     }
-    for (const [pid, p] of Object.entries(modelProviders)) this.#providers.set(pid, p)
+    // Initial load just uses the built-in overrides
+    return await this.#update()
+  }
 
-    for (const p of this.#providers.values()) {
-      // PERF: fast-path for static model objects
-      const specs =
+  async #update(
+    overrides: ProviderOverride[] = [],
+    opts: { logger?: Logger } = {}
+  ): Promise<ModelCatalog> {
+    this.#overrides.clear()
+    const providers: ProviderOverride[] = []
+    for (const [pid, p] of Object.entries(builtinOverrides))
+      providers.push({ id: pid, ...p, source: "builtin" })
+    providers.push(...overrides)
+
+    // Rebuild the provider map from scratch, merging any runtime-registered
+    // providers with the catalog's.
+    this.#overrides.clear()
+    for (const p of providers) {
+      const next: ModelProvider = { name: p.id, ...p }
+      const prev = this.#overrides.get(next.id) ?? this.#providers.get(next.id)
+      const nextModels = p.replaceModels ? [] : [...(prev?.models ?? [])]
+
+      try {
         // oxlint-disable-next-line no-await-in-loop
-        typeof p.models === "function" ? await this.modelSpecs(p) : this.#modelSpecs(p.models, p)
-      for (const spec of specs) this.#models.set(spec.id, spec)
+        nextModels.push(...(await resolveModels(next, this)))
+      } catch (error) {
+        if (!opts.logger) throw error
+        opts.logger.error(`Failed to load models for provider \`${next.id}\`:`, error)
+      }
+      this.#overrides.set(next.id, { ...prev, ...next, models: nextModels })
+    }
+
+    for (const p of this.#overrides.values()) {
+      const models = new Map<string, ModelInfo>()
+      for (const m of p.models ?? []) {
+        const prev = models.get(m.id)
+        models.set(m.id, { ...prev, ...m })
+      }
+      p.models = [...models.values()]
     }
     return this
   }
 
-  #modelSpecs(models: ModelInfo[], provider: ModelProvider): ModelSpec[] {
-    return models.map((m) => toModelSpec(m, provider))
-  }
-
-  async modelSpecs(provider: ModelProvider): Promise<ModelSpec[]> {
-    const models =
-      typeof provider.models === "function" ? await provider.models(this) : provider.models
-    return this.#modelSpecs(models, provider)
-  }
-
-  provider(id: string): ModelProvider | undefined {
-    return this.#providers.get(id)
+  provider(id: string): ModelProvider<true> | undefined {
+    return this.#overrides.get(id) ?? this.#providers.get(id)
   }
 
   get(modelId: string): ModelSpec | undefined {
-    return this.#models.get(modelId)
+    const [pid, mid] = parseModelId(modelId)
+    const provider = this.provider(pid)
+    if (!provider) return
+    const info = provider.models?.find((m) => m.id === mid)
+    return info ? toModelSpec(info, provider) : undefined
   }
 
-  get providers(): readonly ModelProvider[] {
-    return [...this.#providers.values()]
+  get providers(): readonly ModelProvider<true>[] {
+    const ret: ModelProvider<true>[] = [...this.#overrides.values()]
+    for (const p of this.#providers.values()) if (!this.#overrides.has(p.id)) ret.push(p)
+    return ret
   }
 
   get models(): readonly ModelSpec[] {
-    return [...this.#models.values()]
+    const ret: ModelSpec[] = []
+    for (const p of this.providers) {
+      if (!p.models) continue
+      ret.push(...p.models.map((m) => toModelSpec(m, p)))
+    }
+    return ret
   }
 
-  async list(filter?: ModelFilter): Promise<Record<string, ModelSpec>> {
+  async list(filter?: ModelFilter): Promise<ModelSpec[]> {
     return filterModels(this.models, filter)
   }
 }
 
-function toProviderInfo(p?: CatalogProvider): ModelProvider | undefined {
+export function resolveModels(
+  provider: ModelProvider,
+  cat: ModelCatalog
+): MaybePromise<ModelInfo[]> {
+  const models = provider.models
+  if (models === undefined) return []
+  if (Array.isArray(models)) return [...models]
+  return models(cat)
+}
+
+function toProviderInfo(p?: CatalogProvider): ModelProvider<true> | undefined {
   if (!p) return
-  const override = overrides[p.id]
-  const api = override?.api ?? npmToApi[p.npm]
+  const api = npmToApi[p.npm]
   if (!api) return
   const models: ModelInfo[] = []
   for (const m of Object.values(p.models)) {
     if (m.status === "deprecated") continue
     if (!m.tool_call) continue
-    models.push(toModelInfo(m))
+    models.push(toModelInfo(m, p.id))
   }
   if (!models.length) return
   return {
@@ -224,16 +302,15 @@ function toProviderInfo(p?: CatalogProvider): ModelProvider | undefined {
     id: p.id,
     models,
     name: p.name,
-    get source() {
-      return "models.dev" as const
-    },
-    ...override,
+    source: "models.dev",
   }
 }
 
-function toModelInfo(m: CatalogModel): ModelInfo {
+function toModelInfo(m: CatalogModel, pid: string): ModelInfo {
+  const override = builtinOverrides[pid]
   return {
-    api: m.provider?.npm ? npmToApi[m.provider.npm] : undefined,
+    // Only use the model's provider npm if the override doesn't specify an api.
+    api: m.provider?.npm && !override?.api ? npmToApi[m.provider.npm] : undefined,
     baseUrl: m.provider?.api,
     contextSize: m.limit.context,
     cost: m.cost,
@@ -250,17 +327,18 @@ function toModelInfo(m: CatalogModel): ModelInfo {
   }
 }
 
-function toModelSpec(model: ModelInfo, provider: ModelProvider): ModelSpec {
+export function toModelSpec(model: ModelInfo, provider: ModelProvider): ModelSpec {
   const id = `${provider.id}/${model.id}`
-  let api = provider.api
-  const override = overrides[provider.id]
-  if (model.api && !override?.api) api = model.api ?? provider.api
   // oxlint-disable-next-line sort-keys
   return {
+    name: id,
+    input: ["text"],
+    maxTokens: DEFAULT_MAX_TOKENS,
+    contextSize: DEFAULT_CONTEXT_SIZE,
     ...model,
     id,
     model: model.id,
-    api,
+    api: model.api ?? provider.api ?? "openai",
     baseUrl: model.baseUrl ?? provider.baseUrl,
     headers: provider.headers,
     provider,
