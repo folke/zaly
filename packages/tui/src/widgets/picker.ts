@@ -103,12 +103,14 @@ export const picker = widget(
     effect(() => {
       const m = matches()
       node.state.more = m.length >= searcher.limit
-      if (props.filter !== false) return
-      // When not filtering, go to the next match when the pattern changes
       if (m.length === 0 || pattern() === "") return
       untrack(() => {
-        const active = node.active
-        node.active = m.find((i) => i >= active) ?? m[0]
+        // When filtering, go to the first (best) match.
+        // When not filtering, go to the first match that is at or after the current active index, or the first match if none are after.
+        if (props.filter === false) {
+          const active = node.active
+          node.active = m.find((i) => i >= active) ?? m[0]
+        } else node.active = 0
       })
     })
 
