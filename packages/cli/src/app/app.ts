@@ -237,7 +237,6 @@ export class App {
     })() as Promise<Awaited<T>>
   }
 
-  // FIXME: tui/agent is broken at this point, so we need to exit
   #handleInitError(error: unknown): void {
     this.#ctx.logger.child("app").error(error)
     this.#state.busy = false

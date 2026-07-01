@@ -16,7 +16,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun --workspaces install --frozen-lockfile
       - run: bun run models
-      #- run: bun z lint packages/ai
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore(models): update models.dev catalog"
