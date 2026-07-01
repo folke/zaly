@@ -97,7 +97,7 @@ export function mainCommand(cli: Cli) {
   return defineCommand({
     meta: {
       name: "zaly",
-      version: "0.0.0",
+      version: typeof __VERSION__ === "string" ? __VERSION__ : "dev",
       description: "Conversational coding agent",
     },
     args: {
