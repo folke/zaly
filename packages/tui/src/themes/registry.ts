@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs"
 import { basename } from "pathe"
 import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "json" }
 import { builtin } from "./builtin.ts"
-import { defaults } from "./default.ts"
+import { defaults, ansi } from "./default.ts"
 
 /** Built-in theme names plus the synthetic `"ansi"` palette (no JSON
  *  — falls back to `defaults` only). */
@@ -24,7 +24,7 @@ const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
 export const themeRegistry = createRegistry<ThemeLoader>("theme").from(builtin)
 // NOTE: remove the ansi theme for now, since it looks kinda broken and not really possible
 // to fix properly
-// themeRegistry.register("ansi", async () => ({ ...ansi }))
+themeRegistry.register("ansi", async () => ({ ...ansi }))
 
 /**
  * Load a theme by name or path.
