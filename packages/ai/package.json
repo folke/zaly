@@ -40,7 +40,8 @@
     "@zaly/shared": "workspace:*"
   },
   "devDependencies": {
-    "jsonrepair": "^3.14.1"
+    "jsonrepair": "^3.14.1",
+    "mitata": "^1.0.34"
   },
   "peerDependencies": {
     "typebox": "^1.3.2"

@@ -231,7 +231,9 @@
     "shiki": "^4.3.0"
   },
   "devDependencies": {
+    "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
+    "mitata": "^1.0.34",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.1",
     "typia": "^12.1.1",
