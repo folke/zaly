@@ -275,7 +275,7 @@ export class ContextScoring {
     let turn = 0
     for (let $m = this.#messages.length - 1; $m >= 0; $m--) {
       const m = this.#messages[$m]
-      if (m.role === "user") turn++
+      if (m.role === "assistant") turn++
 
       if (!Array.isArray(m.content)) continue
 
