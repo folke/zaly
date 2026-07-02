@@ -392,6 +392,10 @@ export class Stream extends Surface<StreamEvents> {
         if (newVisible.length < liveHeight)
           newVisible.push(...liveRows.slice(0, liveHeight - newVisible.length))
       }
+    }
+
+    // Relocate kitty placements for virtual scrolling or alt-screen.
+    if (this.#scrollTop > 0 || this.terminal.altScreen) {
       const kittyPlacements = bumpKittyPlacements(newVisible)
       if (kittyPlacements) {
         newVisible = kittyPlacements.rows
