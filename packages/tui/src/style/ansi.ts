@@ -157,6 +157,38 @@ export function reapplyStyle(s: string, escape: string): string {
   return result + s.slice(lastPos)
 }
 
+export function stripAnsiBg(s: string): string {
+  return s.replaceAll(/\x1b\[([0-9;]*)m/g, (match, raw: string) => {
+    const next = stripBgParams(raw)
+    if (next === raw) return match
+    return next === "" ? "" : `\x1b[${next}m`
+  })
+}
+
+function stripBgParams(raw: string): string {
+  if (raw === "") return raw
+  const params = raw.split(";").map(Number)
+  const ret: number[] = []
+  for (let i = 0; i < params.length; i++) {
+    const p = params[i]
+    if ((p >= 40 && p <= 47) || (p >= 100 && p <= 107) || p === 49) continue
+    if (p === 48) {
+      const mode = params[i + 1]
+      if (mode === 2) {
+        i += 4
+        continue
+      }
+      if (mode === 5) {
+        i += 2
+        continue
+      }
+      continue
+    }
+    ret.push(p)
+  }
+  return ret.join(";")
+}
+
 export function ansiBg(str: string, idx: number): AnsiColor | undefined {
   const cell = sliceAnsi(str, idx, idx + 1)
 
