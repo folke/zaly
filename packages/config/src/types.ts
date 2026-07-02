@@ -22,6 +22,9 @@ export type ResolvedConfig = {
   reasoning: ReasoningEffort
   tools: string[]
   ui: {
+    /** scrollback: preserves terminal scrollback/search; footer scrolls away with mouse wheel because the terminal is scrolling
+   /* fullscreen: alternate screen + mouse; footer stays fixed; dedicated app viewport */
+    mode: "scrollback" | "fullscreen"
     /** Tools whose result body should be hidden in the UI. */
     collapsedTools: AnyTool[]
     /** Render images, if supported by the terminal */

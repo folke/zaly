@@ -32,6 +32,14 @@ export const ConfigSchema = {
                     ui: {
                         type: "object",
                         properties: {
+                            mode: {
+                                type: "string",
+                                "enum": [
+                                    "scrollback",
+                                    "fullscreen"
+                                ],
+                                description: "scrollback: preserves terminal scrollback/search; footer scrolls away with mouse wheel because the terminal is scrolling\n/* fullscreen: alternate screen + mouse; footer stays fixed; dedicated app viewport"
+                            },
                             collapsedTools: {
                                 type: "array",
                                 items: {

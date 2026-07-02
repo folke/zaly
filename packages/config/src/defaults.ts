@@ -10,6 +10,7 @@ export const defaultSettings = {
     collapsedTools: ["read"],
     images: true,
     listHeight: 10,
+    mode: "scrollback",
     reasoning: true,
     sessionTree: ["assistant", "reasoning", "tools"],
     theme: "tokyonight-moon",

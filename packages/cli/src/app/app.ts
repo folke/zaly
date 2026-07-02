@@ -135,13 +135,13 @@ export class App {
       import("@zaly/tui/widgets/box"),
       import("./composer.ts"),
     ])
-
+    const mode = this.$.ui.mode
     this.#renderer = await createRenderer({
-      // altScreen: true,
-      // mouse: true,
+      altScreen: mode === "fullscreen",
       fixedFooterHeight: 5,
       images: toAccessor(() => this.$.ui.images),
       logger: this.#ctx.logger.child("renderer"),
+      mouse: mode === "fullscreen",
       reporter: {
         stacktrace: this.#ctx.flags.debug,
         wrap: (node) => {

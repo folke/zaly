@@ -27,6 +27,7 @@ type ConfigItem<T extends ConfigProp = ConfigProp, V = ConfigValue<T>> = PickerI
   options?: readonly V[]
   toggle: () => MaybePromise
   render?: (value: V, ctx: RenderCtx) => string
+  notify?: (value: V) => string | undefined
 }
 type OptionOpts<T extends ConfigProp> = Partial<ConfigItem<T>> &
   Pick<ConfigItem<T>, "name" | "prop" | "desc"> &
@@ -160,6 +161,8 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       ? () => {
           const idx = value === undefined ? -1 : options.findIndex((o) => is(o, value))
           value = options[(idx + 1) % options.length]
+          const notif = item.notify?.(value)
+          if (notif) app.notify(notif, { level: "info" })
         }
       : undefined
     if (!t) throw new Error(`Options must be provided for ${inspect(item.prop)}`)
@@ -222,6 +225,13 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
         const theme = await pickTheme(app)
         if (theme) this.value = theme
       },
+    }),
+    option({
+      desc: "Fullscreen mode enables mouse support and a fixed footer, but looses native scrollback and search. (requires restart)",
+      name: "Terminal mode",
+      notify: () => "Restart `zaly` for the new terminal mode to take effect.",
+      options: ["scrollback", "fullscreen"],
+      prop: ["ui", "mode"],
     }),
     toggle({
       desc: "Show agent reasoning traces in the UI",
