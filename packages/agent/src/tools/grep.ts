@@ -76,7 +76,7 @@ export const grepTool = defineTool({
       Type.Integer({
         default: 0,
         description: "Context lines before/after each match. 0-5.",
-        maximum: 5,
+        maximum: 10,
         minimum: 0,
       })
     ),
