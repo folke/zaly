@@ -236,6 +236,23 @@ describe("glob", () => {
     })
   })
 
+  describe("limit and batching", () => {
+    test("limit stops after the requested number of matches", async () => {
+      const result = await collect("**/*", { cwd: root, limit: 2 })
+      expect(result).toHaveLength(2)
+    })
+
+    test("throttle yields matches in batches", async () => {
+      const batches: string[][] = []
+      for await (const batch of glob("**/*", { cwd: root, throttle: 1 })) {
+        expect(Array.isArray(batch)).toBe(true)
+        batches.push(batch)
+      }
+      expect(batches.flat()).toContain("README.md")
+      expect(batches.length).toBeGreaterThan(0)
+    })
+  })
+
   describe("callbacks", () => {
     test("onMatch fires for each match", async () => {
       const onMatch = vi.fn()

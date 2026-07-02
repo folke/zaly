@@ -9,6 +9,9 @@ import {
   findUp,
   gitRoot,
   hash,
+  isInstance,
+  isPromiseLike,
+  randomHash,
   safeFn,
   safeParseJson,
   safeReadFile,
@@ -55,6 +58,10 @@ describe("hash", () => {
   })
   test("string and equivalent bytes hash identically", () => {
     expect(hash("abc")).toBe(hash(new TextEncoder().encode("abc")))
+  })
+
+  test("randomHash returns requested-length hex-ish strings", () => {
+    expect(randomHash(8)).toMatch(/^[0-9a-f]{8}$/)
   })
 })
 
@@ -144,6 +151,20 @@ describe("findUp / gitRoot", () => {
   })
   test("findUp matches directories, not just files", () => {
     expect(findUp(nested, ".git")).toBe(join(dir, ".git"))
+  })
+
+  test("findUp can collect all matches and filter by type", () => {
+    writeFileSync(join(nested, "marker.txt"), "")
+    try {
+      expect(findUp(nested, "marker.txt", { all: true })).toEqual([
+        join(nested, "marker.txt"),
+        join(dir, "marker.txt"),
+      ])
+      expect(findUp(nested, ".git", { type: "file" })).toBeUndefined()
+      expect(findUp(nested, ".git", { type: "dir" })).toBe(join(dir, ".git"))
+    } finally {
+      rmSync(join(nested, "marker.txt"), { force: true })
+    }
   })
 })
 
@@ -272,6 +293,21 @@ describe("misc utilities", () => {
   test("toValue resolves values and getters", () => {
     expect(toValue(1)).toBe(1)
     expect(toValue(() => 2)).toBe(2)
+  })
+
+  test("isInstance excludes plain objects/null/arrays but accepts class instances", () => {
+    class Thing {}
+    expect(isInstance(new Thing())).toBe(true)
+    expect(isInstance({})).toBe(false)
+    expect(isInstance(null)).toBe(false)
+    expect(isInstance([])).toBe(false)
+  })
+
+  test("isPromiseLike checks for object thenables", () => {
+    expect(isPromiseLike({ then: () => {} })).toBe(true)
+    expect(isPromiseLike(Promise.resolve())).toBe(true)
+    expect(isPromiseLike(null)).toBe(false)
+    expect(isPromiseLike({ then: "nope" })).toBe(false)
   })
 })
 
