@@ -114,6 +114,10 @@ export class Terminal {
     return this.#reserveBottom > 0 ? this.rows - this.#reserveBottom + 1 : 0
   }
 
+  get altScreen(): boolean {
+    return this.#altScreen
+  }
+
   get mouse(): boolean {
     return this.#mouse
   }

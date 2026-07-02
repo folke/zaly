@@ -428,13 +428,18 @@ export class Stream extends Surface<StreamEvents> {
   #paint(plan: StreamRenderPlan): void {
     if (plan.old.deleteVirtualPlacements)
       plan.frame.queue((terminal) => terminal.write(plan.old.deleteVirtualPlacements!()))
-    this.#paintCommits(plan)
+
+    // In normal screen mode, committed rows are promoted to the terminal's
+    // native scrollback. In alt-screen mode, zaly's internal #scrollback is
+    // the only history, so there is nothing useful to promote.
+    if (!this.terminal.altScreen) this.#commitToScrollback(plan)
+
     this.#clearAboveVisible(plan)
     this.#paintVirtualScroll(plan)
     this.#paintVisible(plan)
   }
 
-  #paintCommits(plan: StreamRenderPlan): void {
+  #commitToScrollback(plan: StreamRenderPlan): void {
     // Paint each batch of to-be-committed rows at the top of the scroll
     // region, then \n them off. Batched because the scroll region only has
     // `liveHeight` rows.
