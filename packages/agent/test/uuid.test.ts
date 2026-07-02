@@ -35,7 +35,8 @@ describe("uuidv7", () => {
     const id = uuidv7()
     expect(isUuidv7(id)).toBe(true)
     expect(isUuidv7(id.toUpperCase())).toBe(true)
-    expect(isUuidv7(id.replace("-7", "-6"))).toBe(false)
+    const wrongVersion = `${id.slice(0, 14)}6${id.slice(15)}`
+    expect(isUuidv7(wrongVersion)).toBe(false)
     expect(isUuidv7("not-a-uuid")).toBe(false)
   })
 
