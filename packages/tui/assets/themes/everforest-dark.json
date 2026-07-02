@@ -1,0 +1,118 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "id": "everforest-dark",
+  "name": "Everforest Dark",
+  "shiki": "everforest-dark",
+  "text": "#d3c6aa",
+  "subtle": "#859289",
+  "ui": {
+    "bg": "#2d353b",
+    "fg": "#d3c6aa"
+  },
+  "primary": "#a7c080",
+  "accent": "#899e6f",
+  "success": "#a7c080",
+  "info": "#83c092",
+  "warn": "#bf983d",
+  "error": "#da6362",
+  "muted": "#859289",
+  "border": "#2d353b",
+  "code": {
+    "bg": "#272e33"
+  },
+  "mdCodeBlock": {
+    "bg": "#272e33"
+  },
+  "overlay": {
+    "bg": "#2d353b"
+  },
+  "highlight": {
+    "bg": "#414b51"
+  },
+  "selection": {
+    "bg": "#414b51"
+  },
+  "diffAdd": {
+    "bg": "#354947",
+    "fg": "#a7c080"
+  },
+  "diffDel": {
+    "bg": "#4e3e42",
+    "fg": "#e67e80"
+  },
+  "diffTitle": {
+    "fg": "#dbbc7f"
+  },
+  "comment": {
+    "italic": true,
+    "fg": "#859289"
+  },
+  "syntaxNumber": {
+    "fg": "#d699b6"
+  },
+  "syntaxString": {
+    "fg": "#dbbc7f"
+  },
+  "syntaxBoolean": {
+    "fg": "#d699b6"
+  },
+  "syntaxFunction": {
+    "fg": "#a7c080"
+  },
+  "syntaxField": {
+    "fg": "#d3c6aa"
+  },
+  "syntaxSpecial": {
+    "fg": "#e67e80"
+  },
+  "syntaxDelimiter": {
+    "fg": "#d3c6aa"
+  },
+  "syntaxBracket": {
+    "fg": "#d3c6aa"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#e67e80"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#e67e80"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#e69875"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#dbbc7f"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#a7c080"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#7fbbb3"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#d699b6"
+  },
+  "mdBold": {
+    "bold": true
+  },
+  "mdItalic": {
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#d699b6"
+  },
+  "mdCode": {
+    "fg": "#a7c080"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#859289"
+  }
+}

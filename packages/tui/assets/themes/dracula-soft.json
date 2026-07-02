@@ -1,0 +1,119 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "id": "dracula-soft",
+  "name": "Dracula Theme Soft",
+  "shiki": "dracula-soft",
+  "text": "#f6f6f4",
+  "subtle": "#7b7f8b",
+  "ui": {
+    "bg": "#282A36",
+    "fg": "#f6f6f4"
+  },
+  "primary": "#bf9eee",
+  "accent": "#f286c4",
+  "success": "#62e884",
+  "info": "#97e1f1",
+  "warn": "#97e1f1",
+  "error": "#ee6666",
+  "muted": "#7b7f8b",
+  "border": "#bf9eee",
+  "code": {
+    "bg": "#282A36"
+  },
+  "mdCodeBlock": {
+    "bg": "#282A36"
+  },
+  "overlay": {
+    "bg": "#262626"
+  },
+  "highlight": {
+    "bg": "#44475A"
+  },
+  "selection": {
+    "bg": "#44475A"
+  },
+  "diffAdd": {
+    "bg": "#2d443f",
+    "fg": "#62e884"
+  },
+  "diffDel": {
+    "bg": "#6b3740",
+    "fg": "#ee6666"
+  },
+  "diffTitle": {
+    "fg": "#7b7f8b"
+  },
+  "comment": {
+    "fg": "#7b7f8b"
+  },
+  "syntaxNumber": {
+    "fg": "#bf9eee"
+  },
+  "syntaxString": {
+    "fg": "#e7ee98"
+  },
+  "syntaxBoolean": {
+    "fg": "#bf9eee"
+  },
+  "syntaxFunction": {
+    "fg": "#62e884"
+  },
+  "syntaxField": {
+    "fg": "#f6f6f4"
+  },
+  "syntaxConstant": {
+    "fg": "#bf9eee"
+  },
+  "syntaxSpecial": {
+    "fg": "#f286c4"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#bf9eee"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#FFB86C"
+  },
+  "mdItalic": {
+    "italic": true,
+    "fg": "#e7ee98"
+  },
+  "mdLink": {
+    "fg": "#97e1f1"
+  },
+  "mdQuote": {
+    "italic": true,
+    "fg": "#e7ee98"
+  },
+  "mdCode": {
+    "fg": "#62e884"
+  },
+  "mdHr": {
+    "fg": "#7b7f8b"
+  }
+}

@@ -25,8 +25,10 @@ const PANEL_WIDTH = 25
 // so the render shows how palette-only terminals resolve every slot.
 let names: string[] = [...themeRegistry.keys()].toSorted()
 
-const filter = new Set(process.argv.slice(2).map((s) => s.toLowerCase()))
-if (filter.size > 0) names = names.filter((n) => filter.has(n.toLowerCase()))
+console.log(names)
+
+const filter = process.argv.slice(2).map((s) => s.toLowerCase())
+if (filter.length > 0) names = names.filter((n) => filter.some((f) => n.toLowerCase().includes(f)))
 
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })

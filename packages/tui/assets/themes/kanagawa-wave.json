@@ -1,0 +1,115 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "id": "kanagawa-wave",
+  "name": "Kanagawa Wave",
+  "shiki": "kanagawa-wave",
+  "text": "#DCD7BA",
+  "subtle": "#727169",
+  "ui": {
+    "bg": "#1F1F28",
+    "fg": "#DCD7BA"
+  },
+  "primary": "#6A9589",
+  "accent": "#957FB8",
+  "success": "#76946A",
+  "info": "#6A9589",
+  "warn": "#FF9E3B",
+  "error": "#E82424",
+  "muted": "#727169",
+  "border": "#16161D",
+  "code": {
+    "bg": "#1F1F28"
+  },
+  "mdCodeBlock": {
+    "bg": "#1F1F28"
+  },
+  "overlay": {
+    "bg": "#1F1F28"
+  },
+  "highlight": {
+    "bg": "#223249"
+  },
+  "selection": {
+    "bg": "#223249"
+  },
+  "diffAdd": {
+    "bg": "#252928",
+    "fg": "#76946A"
+  },
+  "diffDel": {
+    "fg": "#C34043"
+  },
+  "comment": {
+    "fg": "#727169"
+  },
+  "syntaxNumber": {
+    "fg": "#D27E99"
+  },
+  "syntaxString": {
+    "fg": "#98BB6C"
+  },
+  "syntaxBoolean": {
+    "fg": "#FFA066"
+  },
+  "syntaxFunction": {
+    "fg": "#7E9CD8"
+  },
+  "syntaxField": {
+    "fg": "#DCD7BA"
+  },
+  "syntaxDelimiter": {
+    "fg": "#9CABCA"
+  },
+  "syntaxBracket": {
+    "fg": "#9CABCA"
+  },
+  "mdHeading": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading1": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading2": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading3": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading4": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading5": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdHeading6": {
+    "fg": "#98BB6C",
+    "bold": true
+  },
+  "mdBold": {
+    "bold": true
+  },
+  "mdItalic": {
+    "italic": true,
+    "fg": "#E46876"
+  },
+  "mdLink": {
+    "underline": true,
+    "fg": "#7FB4CA"
+  },
+  "mdQuote": {
+    "italic": true
+  },
+  "mdCode": {
+    "fg": "#98BB6C"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#9CABCA"
+  }
+}

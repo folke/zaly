@@ -1,0 +1,115 @@
+{
+  "$schema": "file:./../schemas/theme.schema.json",
+  "id": "kanagawa-dragon",
+  "name": "Kanagawa Dragon",
+  "shiki": "kanagawa-dragon",
+  "text": "#C5C9C5",
+  "subtle": "#A6A69C",
+  "ui": {
+    "bg": "#181616",
+    "fg": "#C5C9C5"
+  },
+  "primary": "#6A9589",
+  "accent": "#A292A3",
+  "success": "#8A9A7B",
+  "info": "#8EA4A2",
+  "warn": "#FF9E3B",
+  "error": "#E82424",
+  "muted": "#A6A69C",
+  "border": "#0D0C0C",
+  "code": {
+    "bg": "#181616"
+  },
+  "mdCodeBlock": {
+    "bg": "#181616"
+  },
+  "overlay": {
+    "bg": "#181616"
+  },
+  "highlight": {
+    "bg": "#223249"
+  },
+  "selection": {
+    "bg": "#223249"
+  },
+  "diffAdd": {
+    "bg": "#22251f",
+    "fg": "#76946A"
+  },
+  "diffDel": {
+    "fg": "#C34043"
+  },
+  "comment": {
+    "fg": "#737C73"
+  },
+  "syntaxNumber": {
+    "fg": "#A292A3"
+  },
+  "syntaxString": {
+    "fg": "#8A9A7B"
+  },
+  "syntaxBoolean": {
+    "fg": "#B6927B"
+  },
+  "syntaxFunction": {
+    "fg": "#8BA4B0"
+  },
+  "syntaxField": {
+    "fg": "#C5C9C5"
+  },
+  "syntaxDelimiter": {
+    "fg": "#9E9B93"
+  },
+  "syntaxBracket": {
+    "fg": "#9E9B93"
+  },
+  "mdHeading": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading1": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading2": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading3": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading4": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading5": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdHeading6": {
+    "fg": "#8A9A7B",
+    "bold": true
+  },
+  "mdBold": {
+    "bold": true
+  },
+  "mdItalic": {
+    "italic": true,
+    "fg": "#C4746E"
+  },
+  "mdLink": {
+    "underline": true,
+    "fg": "#949FB5"
+  },
+  "mdQuote": {
+    "italic": true
+  },
+  "mdCode": {
+    "fg": "#8A9A7B"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#9E9B93"
+  }
+}
