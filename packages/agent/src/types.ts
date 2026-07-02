@@ -13,7 +13,7 @@ import type { Logger } from "@zaly/shared/logger"
 import type { Agent } from "./agent.ts"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentStopKind, StepKind } from "./events.ts"
-import type { MaskOptions } from "./masker.ts"
+import type { MaskerOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
 import type { PermissionScope, PermissionScopes } from "./permissions/handlers/registry.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
@@ -237,7 +237,7 @@ export interface AgentOptions extends CollectOptions {
    *
    *  Default off. Pass `true` to enable, or a `MaskOptions` object to
    *  tune `tools` / `keepRecent`. */
-  mask?: MaybeGetter<MaskOptions>
+  mask?: MaybeGetter<MaskerOptions>
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Resolver for `ask` permission verdicts. The agent invokes this

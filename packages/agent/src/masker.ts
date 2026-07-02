@@ -1,16 +1,15 @@
-import type { AnyPart, Message, Role } from "@zaly/ai"
+import type { AnyPart, Message, Role, Tool } from "@zaly/ai"
 import type { MaybeGetter } from "@zaly/shared"
 import type { Agent } from "./agent.ts"
 import type { MsgPart } from "./context/scoring.ts"
 import type { Session } from "./session/session.ts"
-import type { ContextPressure } from "./types.ts"
 
 import { toValue } from "@zaly/shared"
 import { ContextScoring } from "./context/scoring.ts"
 import { estimatePart, tokenStats } from "./context/tokens.ts"
 
 /** Top-level masking config. */
-export type MaskOptions = {
+export type MaskerOptions = {
   enabled?: boolean
   /** Don't mask tool-result parts whose original content is shorter
    *  than this (estimated tokens). Skips tiny "ok"-style success
@@ -27,13 +26,21 @@ export type MaskOptions = {
   target?: number
 }
 
+export type MaskOpts = {
+  force?: boolean
+  limit?: number
+  ratio?: number
+  tools?: Tool[]
+  prompt?: string[]
+}
+
 const defaults = {
   delta: 0.25,
   enabled: true,
   keepTurns: 20,
   minTokens: 50,
   target: 0.5,
-} as const satisfies Required<MaskOptions>
+} as const satisfies Required<MaskerOptions>
 
 /** In-place mask projection for the request stream.
  *
@@ -51,23 +58,41 @@ const defaults = {
  *  rises automatically to avoid repeated no-op cache busts.
  */
 export class Masker {
-  #o: MaybeGetter<MaskOptions>
+  #o: MaybeGetter<MaskerOptions>
   #stats = new Map<Role, Record<string, number>>()
   #masked = new Map<string, Map<number, AnyPart>>()
   #threshold?: number
-  #session: Session
+  #agent: Agent
 
-  constructor(session: Session, opts: MaybeGetter<MaskOptions> = {}) {
+  constructor(agent: Agent, opts: MaybeGetter<MaskerOptions> = {}) {
     this.#o = opts
-    this.#session = session
+    this.#agent = agent
+    agent.on("context", async (ctx) => (ctx.messages = await this.mask(ctx.messages)))
+    agent.ctx.on("session", () => this.reset())
   }
 
-  get #opts(): Required<MaskOptions> {
+  get #opts(): Required<MaskerOptions> {
     return { ...defaults, ...toValue(this.#o) }
   }
 
   get enabled(): boolean {
     return this.#opts.enabled
+  }
+
+  get #session(): Session {
+    return this.#agent.session
+  }
+
+  #maskOpts(opts?: MaskOpts): Required<MaskOpts> {
+    const pressure = this.#agent.pressure
+    return {
+      force: false,
+      limit: pressure.limit,
+      prompt: this.#agent.prompt,
+      ratio: pressure.ratio,
+      tools: this.#agent.tools,
+      ...opts,
+    }
   }
 
   reset(): void {
@@ -92,25 +117,16 @@ export class Masker {
     return partIdx === undefined ? parts.size > 0 : parts.has(partIdx)
   }
 
-  attach(agent: Agent) {
-    agent.on(
-      "context",
-      async (ctx, a) => (ctx.messages = await this.mask(ctx.messages, a.pressure))
-    )
-    agent.ctx.on("session", ({ session }) => {
-      this.#session = session
-      this.reset()
-    })
-  }
-
   /** Apply masks and return the projected message array.
    *
    *  Always rebuild once after startup/session reset: `pressure.ratio`
    *  may describe a previously masked projection, while this instance has
    *  no mask decisions yet. After that, rebuild only when projected
    *  pressure crosses the hysteresis threshold. */
-  async mask(messages: readonly Message[], pressure: ContextPressure): Promise<Message[]> {
+  async mask(messages: readonly Message[], opts?: MaskOpts): Promise<Message[]> {
     if (!this.enabled || messages.length === 0) return [...messages]
+
+    const resolved = this.#maskOpts(opts)
 
     // Masker has not yet been initialized for this session.
     // Use the session's mask checkpoint to restore the last threshold
@@ -127,12 +143,12 @@ export class Masker {
         const idx = messages.findIndex((m) => m.id === cp.messageId)
         // NOTE: the checkpoint message should exists. If not mask all, just in case
         // Rebuild the mask decisions
-        this.#update(idx === -1 ? messages : messages.slice(0, idx + 1), pressure)
+        this.#update(idx === -1 ? messages : messages.slice(0, idx + 1), resolved)
       }
     }
 
     // If the current pressure ratio exceeds the threshold, rebuild the mask decisions.
-    if (pressure.ratio >= this.#threshold) {
+    if (resolved.ratio >= this.#threshold || resolved.force) {
       const messageId = messages.at(-1)?.id
       if (!messageId) throw new Error("Message in masker without ID. Should never happen.")
       // Create a checkpoint first, with the CURRENT threshold, not the new one.
@@ -140,7 +156,7 @@ export class Masker {
         messageId,
         threshold: this.#threshold,
       })
-      this.#update(messages, pressure)
+      this.#update(messages, resolved)
     }
     return this.#mask(messages)
   }
@@ -152,16 +168,16 @@ export class Masker {
   }
 
   /** Recompute mask decisions for the current message history. */
-  #update(messages: readonly Message[], pressure: ContextPressure): void {
+  #update(messages: readonly Message[], opts: Required<MaskOpts>): void {
     this.#masked.clear()
     this.#stats.clear()
     this.#threshold ??= this.#opts.target + this.#opts.delta
-    const usage = tokenStats(messages)
+    const usage = tokenStats(messages, { prompt: opts.prompt, tools: opts.tools })
     // `pressure.ratio` is based on the current projected/masked request,
     // not the raw session. Raw history may exceed model context; masking
     // only needs to keep the projected request in a safe band.
     const targetRatio = Math.max(this.#opts.target, this.#threshold - this.#opts.delta)
-    const target = pressure.limit * targetRatio
+    const target = opts.limit * targetRatio
 
     // Return when already under target.
     if (usage.tokens <= target) return
@@ -210,7 +226,7 @@ export class Masker {
     }
 
     this.#threshold = Math.max(
-      (usage.tokens - masked) / pressure.limit + this.#opts.delta,
+      (usage.tokens - masked) / opts.limit + this.#opts.delta,
       this.#opts.target + this.#opts.delta
     )
   }

@@ -15,6 +15,7 @@
  *           (~3 KB / page for typical mixed content) */
 
 import { formatTokenStats, tokenStats } from "../src/context/tokens.ts"
+import { createAgent } from "../src/ctx.ts"
 import { Masker } from "../src/masker.ts"
 import { loadSession } from "./helpers.ts"
 
@@ -32,6 +33,7 @@ function printTokenStats(stats: Awaited<ReturnType<typeof tokenStats>>): void {
 const session = await loadSession(path)
 const messages = [...session.messages]
 console.log(`loaded ${messages.length} messages from ${path}`)
+const agent = await createAgent({ session })
 
 // const scoring = new ContextScoring()
 // const scores = scoring.score(messages)
@@ -47,13 +49,13 @@ console.log(`loaded ${messages.length} messages from ${path}`)
 // }
 
 const before = tokenStats(messages)
-const masker = new Masker(session)
+const masker = new Masker(agent)
 // Force a high-pressure level so the harness always runs the decide
 // pass — otherwise low-pressure sessions would render no masks.
 const limit = 270_000
 const used = 170_000
 
-const masked = await masker.mask(messages, { limit, ratio: used / limit, used, level: 1 })
+const masked = await masker.mask(messages, { limit, ratio: used / limit })
 const after = tokenStats(masked)
 
 function fmt(n: number): string {

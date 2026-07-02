@@ -70,11 +70,10 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   }
 
   private async start() {
-    const [masker, notifier] = await Promise.all([this.masker(), this.notifier()])
+    const [_masker, notifier] = await Promise.all([this.masker(), this.notifier()])
 
     if (!this.model) throw new Error("model is required to start agent session")
 
-    if (masker) masker.attach(this.agent)
     if (notifier) notifier.attach(this.agent)
 
     await this.session.start({
@@ -228,7 +227,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
       "masker",
       async (opts?: AgentOptions["mask"]) => {
         const { Masker } = await import("./masker.ts")
-        return new Masker(this.#session, opts)
+        return new Masker(this.agent, opts)
       },
       this.#opts.mask
     )

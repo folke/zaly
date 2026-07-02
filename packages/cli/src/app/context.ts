@@ -38,7 +38,7 @@ export async function contextTree(app: App) {
 
   const all = tokenStats(app.agent.messages, { expand, prompt, tools })
   const effective = masker?.enabled
-    ? tokenStats(await masker.mask(app.agent.messages, app.agent.pressure), {
+    ? tokenStats(await masker.mask(app.agent.messages), {
         expand,
         prompt,
         tools,
