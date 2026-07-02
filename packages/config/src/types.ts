@@ -66,6 +66,23 @@ export type ResolvedConfig = {
     /** Threshold for automatic compaction. */
     threshold: number
   }
+  masking: {
+    /** Whether to enable masking. Defaults to true. */
+    enabled: boolean
+    /** Don't mask tool-result parts whose original content is shorter
+     *  than this (estimated tokens). Skips tiny "ok"-style success
+     *  messages where the stub would be larger than the original.
+     *  Doesn't apply to attachments (always worth masking). */
+    minTokens: number
+    /** How many turns to keep in the tail of the conversation, regardless
+     *  of score. Defaults to 20. */
+    keepTurns: number
+    /** How far above the target ratio to trigger a new masking pass.
+     *  Defaults to 0.25 (25%). */
+    delta: number
+    /** Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%). */
+    target: number
+  }
   permissions: {
     /** Permissions preset to use. Defaults to "permissive". */
     preset: PermissionPresetName

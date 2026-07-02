@@ -37,7 +37,7 @@ export async function contextTree(app: App) {
   const expand = (c: TokenCount) => !collapsed.has(c.type) && !(c.kind && collapsed.has(c.kind))
 
   const all = tokenStats(app.agent.messages, { expand, prompt, tools })
-  const effective = masker
+  const effective = masker?.enabled
     ? tokenStats(masker.mask(app.agent.messages, app.agent.pressure), { expand, prompt, tools })
     : undefined
 
@@ -59,7 +59,8 @@ export async function contextTree(app: App) {
           },
         }
       : undefined,
-    details: `The tree shows the token usage of the current context, including prompts, messages, and tools.
+    details:
+      `The tree shows the token usage of the current context, including prompts, messages, and tools.
 
 > [!NOTE]
 > Token counts are **estimated** and may not be exact.
@@ -68,7 +69,7 @@ export async function contextTree(app: App) {
 - **tokens:** \`${formatNumber(all.tokens)}\`
 ${effective ? `  - \`${formatNumber(all.tokens - effective.tokens)}\` masked out` : ""}
 ${effective ? `  - \`${formatNumber(effective.tokens)}\` effective __(${pct}%)__` : ""}
-`,
+`.replace(/\n+$/, "\n"),
     maxHeight: app.config.$.ui.treeHeight,
     render: (item, ctx) => {
       const s = ctx.style

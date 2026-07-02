@@ -1,13 +1,16 @@
 import type { AnyPart, Message, Role } from "@zaly/ai"
+import type { MaybeGetter } from "@zaly/shared"
 import type { Agent } from "./agent.ts"
 import type { MsgPart } from "./context/scoring.ts"
 import type { ContextPressure } from "./types.ts"
 
+import { toValue } from "@zaly/shared"
 import { ContextScoring } from "./context/scoring.ts"
 import { estimatePart, tokenStats } from "./context/tokens.ts"
 
 /** Top-level masking config. */
 export type MaskOptions = {
+  enabled?: boolean
   /** Don't mask tool-result parts whose original content is shorter
    *  than this (estimated tokens). Skips tiny "ok"-style success
    *  messages where the stub would be larger than the original.
@@ -25,10 +28,11 @@ export type MaskOptions = {
 
 const defaults = {
   delta: 0.25,
+  enabled: true,
   keepTurns: 20,
   minTokens: 50,
   target: 0.5,
-}
+} as const satisfies Required<MaskOptions>
 
 /** In-place mask projection for the request stream.
  *
@@ -46,13 +50,21 @@ const defaults = {
  *  rises automatically to avoid repeated no-op cache busts.
  */
 export class Masker {
-  readonly #opts: Required<MaskOptions>
+  #o: MaybeGetter<MaskOptions>
   #stats = new Map<Role, Record<string, number>>()
   #masked = new Map<string, Map<number, AnyPart>>()
   #threshold?: number
 
-  constructor(opts: MaskOptions = {}) {
-    this.#opts = { ...defaults, ...opts }
+  constructor(opts: MaybeGetter<MaskOptions> = {}) {
+    this.#o = opts
+  }
+
+  get #opts(): Required<MaskOptions> {
+    return { ...defaults, ...toValue(this.#o) }
+  }
+
+  get enabled(): boolean {
+    return this.#opts.enabled
   }
 
   reset(): void {
@@ -71,6 +83,7 @@ export class Masker {
   }
 
   isMasked(msgId: string, partIdx?: number): boolean {
+    if (!this.enabled) return false
     const parts = this.#masked.get(msgId)
     if (parts === undefined) return false
     return partIdx === undefined ? parts.size > 0 : parts.has(partIdx)
@@ -88,6 +101,7 @@ export class Masker {
    *  no mask decisions yet. After that, rebuild only when projected
    *  pressure crosses the hysteresis threshold. */
   mask(messages: readonly Message[], pressure: ContextPressure): Message[] {
+    if (!this.enabled) return [...messages]
     // Always rebuild once after startup/session reset: pressure.ratio may
     // describe a previously masked projection, while #masked is empty here.
     if (this.#threshold === undefined || pressure.ratio >= this.#threshold) {

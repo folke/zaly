@@ -3,8 +3,8 @@ import * as __typia_transform__assertGuard from "typia/lib/internal/_assertGuard
 import type { KeyPatterns } from "@zaly/tui";
 import type { Config, TypiaConfig } from "../../types.ts";
 import { canonical } from "@zaly/tui";
-const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.model || "string" === typeof input.model) && (undefined === input.reasoning || "off" === input.reasoning || "minimal" === input.reasoning || "low" === input.reasoning || "medium" === input.reasoning || "high" === input.reasoning || "xhigh" === input.reasoning || "max" === input.reasoning) && (undefined === input.tools || Array.isArray(input.tools) && input.tools.every((elem: any, _index1: number) => "string" === typeof elem)) && (undefined === input.ui || "object" === typeof input.ui && null !== input.ui && false === Array.isArray(input.ui) && _io1(input.ui, true && _exceptionable)) && (undefined === input.skills || "object" === typeof input.skills && null !== input.skills && false === Array.isArray(input.skills) && _io2(input.skills, true && _exceptionable)) && (undefined === input.commands || "object" === typeof input.commands && null !== input.commands && false === Array.isArray(input.commands) && _io3(input.commands, true && _exceptionable)) && (undefined === input.compaction || "object" === typeof input.compaction && null !== input.compaction && false === Array.isArray(input.compaction) && _io4(input.compaction, true && _exceptionable)) && (undefined === input.permissions || "object" === typeof input.permissions && null !== input.permissions && false === Array.isArray(input.permissions) && _io5(input.permissions, true && _exceptionable)) && (undefined === input.plugins || Array.isArray(input.plugins) && input.plugins.every((elem: any, _index2: number) => "string" === typeof elem)) && (undefined === input.resources || "object" === typeof input.resources && null !== input.resources && false === Array.isArray(input.resources) && _io6(input.resources, true && _exceptionable)) && (undefined === input.system || "object" === typeof input.system && null !== input.system && false === Array.isArray(input.system) && _io8(input.system, true && _exceptionable)) && (undefined === input.$schema || "string" === typeof input.$schema) && (undefined === input.keymap || "object" === typeof input.keymap && null !== input.keymap && false === Array.isArray(input.keymap) && _io9(input.keymap, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-    if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
+const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.model || "string" === typeof input.model) && (undefined === input.reasoning || "off" === input.reasoning || "minimal" === input.reasoning || "low" === input.reasoning || "medium" === input.reasoning || "high" === input.reasoning || "xhigh" === input.reasoning || "max" === input.reasoning) && (undefined === input.tools || Array.isArray(input.tools) && input.tools.every((elem: any, _index1: number) => "string" === typeof elem)) && (undefined === input.ui || "object" === typeof input.ui && null !== input.ui && false === Array.isArray(input.ui) && _io1(input.ui, true && _exceptionable)) && (undefined === input.skills || "object" === typeof input.skills && null !== input.skills && false === Array.isArray(input.skills) && _io2(input.skills, true && _exceptionable)) && (undefined === input.commands || "object" === typeof input.commands && null !== input.commands && false === Array.isArray(input.commands) && _io3(input.commands, true && _exceptionable)) && (undefined === input.compaction || "object" === typeof input.compaction && null !== input.compaction && false === Array.isArray(input.compaction) && _io4(input.compaction, true && _exceptionable)) && (undefined === input.masking || "object" === typeof input.masking && null !== input.masking && false === Array.isArray(input.masking) && _io5(input.masking, true && _exceptionable)) && (undefined === input.permissions || "object" === typeof input.permissions && null !== input.permissions && false === Array.isArray(input.permissions) && _io6(input.permissions, true && _exceptionable)) && (undefined === input.plugins || Array.isArray(input.plugins) && input.plugins.every((elem: any, _index2: number) => "string" === typeof elem)) && (undefined === input.resources || "object" === typeof input.resources && null !== input.resources && false === Array.isArray(input.resources) && _io7(input.resources, true && _exceptionable)) && (undefined === input.system || "object" === typeof input.system && null !== input.system && false === Array.isArray(input.system) && _io9(input.system, true && _exceptionable)) && (undefined === input.$schema || "string" === typeof input.$schema) && (undefined === input.keymap || "object" === typeof input.keymap && null !== input.keymap && false === Array.isArray(input.keymap) && _io10(input.keymap, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "masking", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -38,33 +38,40 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     if (undefined === value)
         return true;
     return false;
-})); const _io5 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.preset || "strict" === input.preset || "readonly" === input.preset || "permissive" === input.preset || "yolo" === input.preset) && (undefined === input.allow || Array.isArray(input.allow) && input.allow.every((elem: any, _index5: number) => "string" === typeof elem)) && (undefined === input.deny || Array.isArray(input.deny) && input.deny.every((elem: any, _index6: number) => "string" === typeof elem)) && (undefined === input.ask || Array.isArray(input.ask) && input.ask.every((elem: any, _index7: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+})); const _io5 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.minTokens || "number" === typeof input.minTokens) && (undefined === input.keepTurns || "number" === typeof input.keepTurns) && (undefined === input.delta || "number" === typeof input.delta) && (undefined === input.target || "number" === typeof input.target) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    if (["enabled", "minTokens", "keepTurns", "delta", "target"].some((prop: any) => key === prop))
+        return true;
+    const value = input[key];
+    if (undefined === value)
+        return true;
+    return false;
+})); const _io6 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.preset || "strict" === input.preset || "readonly" === input.preset || "permissive" === input.preset || "yolo" === input.preset) && (undefined === input.allow || Array.isArray(input.allow) && input.allow.every((elem: any, _index5: number) => "string" === typeof elem)) && (undefined === input.deny || Array.isArray(input.deny) && input.deny.every((elem: any, _index6: number) => "string" === typeof elem)) && (undefined === input.ask || Array.isArray(input.ask) && input.ask.every((elem: any, _index7: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
     if (["preset", "allow", "deny", "ask"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
         return true;
     return false;
-})); const _io6 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
+})); const _io7 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
     const value = input[key];
     if (undefined === value)
         return true;
-    return "object" === typeof value && null !== value && false === Array.isArray(value) && _io7(value, true && _exceptionable);
-}); const _io7 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.include || Array.isArray(input.include) && input.include.every((elem: any, _index8: number) => "string" === typeof elem)) && (undefined === input.exclude || Array.isArray(input.exclude) && input.exclude.every((elem: any, _index9: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+    return "object" === typeof value && null !== value && false === Array.isArray(value) && _io8(value, true && _exceptionable);
+}); const _io8 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.include || Array.isArray(input.include) && input.include.every((elem: any, _index8: number) => "string" === typeof elem)) && (undefined === input.exclude || Array.isArray(input.exclude) && input.exclude.every((elem: any, _index9: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
     if (["enabled", "include", "exclude"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
         return true;
     return false;
-})); const _io8 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.bash || Array.isArray(input.bash) && input.bash.every((elem: any, _index10: number) => "string" === typeof elem)) && (undefined === input.git || Array.isArray(input.git) && input.git.every((elem: any, _index11: number) => "string" === typeof elem)) && (undefined === input.npm || Array.isArray(input.npm) && input.npm.every((elem: any, _index12: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+})); const _io9 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.bash || Array.isArray(input.bash) && input.bash.every((elem: any, _index10: number) => "string" === typeof elem)) && (undefined === input.git || Array.isArray(input.git) && input.git.every((elem: any, _index11: number) => "string" === typeof elem)) && (undefined === input.npm || Array.isArray(input.npm) && input.npm.every((elem: any, _index12: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
     if (["bash", "git", "npm"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
         return true;
     return false;
-})); const _io9 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
+})); const _io10 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
     const value = input[key];
     if (undefined === value)
         return true;
@@ -134,15 +141,25 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".compaction",
     expected: "(__type.o4 | undefined)",
     value: input.compaction
+}, _errorFactory)) && (undefined === input.masking || ("object" === typeof input.masking && null !== input.masking && false === Array.isArray(input.masking) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".masking",
+    expected: "(__type.o5 | undefined)",
+    value: input.masking
+}, _errorFactory)) && _ao5(input.masking, _path + ".masking", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".masking",
+    expected: "(__type.o5 | undefined)",
+    value: input.masking
 }, _errorFactory)) && (undefined === input.permissions || ("object" === typeof input.permissions && null !== input.permissions && false === Array.isArray(input.permissions) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".permissions",
-    expected: "(__type.o5 | undefined)",
+    expected: "(__type.o6 | undefined)",
     value: input.permissions
-}, _errorFactory)) && _ao5(input.permissions, _path + ".permissions", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory)) && _ao6(input.permissions, _path + ".permissions", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".permissions",
-    expected: "(__type.o5 | undefined)",
+    expected: "(__type.o6 | undefined)",
     value: input.permissions
 }, _errorFactory)) && (undefined === input.plugins || (Array.isArray(input.plugins) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
@@ -164,7 +181,7 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".resources",
     expected: "(Record<string, ResourceFilter> | undefined)",
     value: input.resources
-}, _errorFactory)) && _ao6(input.resources, _path + ".resources", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory)) && _ao7(input.resources, _path + ".resources", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".resources",
     expected: "(Record<string, ResourceFilter> | undefined)",
@@ -172,12 +189,12 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
 }, _errorFactory)) && (undefined === input.system || ("object" === typeof input.system && null !== input.system && false === Array.isArray(input.system) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".system",
-    expected: "(__type.o6 | undefined)",
+    expected: "(__type.o7 | undefined)",
     value: input.system
-}, _errorFactory)) && _ao8(input.system, _path + ".system", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory)) && _ao9(input.system, _path + ".system", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".system",
-    expected: "(__type.o6 | undefined)",
+    expected: "(__type.o7 | undefined)",
     value: input.system
 }, _errorFactory)) && (undefined === input.$schema || "string" === typeof input.$schema || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
@@ -189,13 +206,13 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
     path: _path + ".keymap",
     expected: "(Record<string, string | string[]> | undefined)",
     value: input.keymap
-}, _errorFactory)) && _ao9(input.keymap, _path + ".keymap", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}, _errorFactory)) && _ao10(input.keymap, _path + ".keymap", true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".keymap",
     expected: "(Record<string, string | string[]> | undefined)",
     value: input.keymap
 }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-    if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
+    if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "masking", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
         return true;
     const value = input[key];
     if (undefined === value)
@@ -364,7 +381,44 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
         expected: "undefined",
         value: value
     }, _errorFactory);
-}))); const _ao5 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.preset || "strict" === input.preset || "readonly" === input.preset || "permissive" === input.preset || "yolo" === input.preset || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}))); const _ao5 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".enabled",
+    expected: "(boolean | undefined)",
+    value: input.enabled
+}, _errorFactory)) && (undefined === input.minTokens || "number" === typeof input.minTokens || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".minTokens",
+    expected: "(number | undefined)",
+    value: input.minTokens
+}, _errorFactory)) && (undefined === input.keepTurns || "number" === typeof input.keepTurns || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".keepTurns",
+    expected: "(number | undefined)",
+    value: input.keepTurns
+}, _errorFactory)) && (undefined === input.delta || "number" === typeof input.delta || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".delta",
+    expected: "(number | undefined)",
+    value: input.delta
+}, _errorFactory)) && (undefined === input.target || "number" === typeof input.target || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    method: "typia.createAssertEquals",
+    path: _path + ".target",
+    expected: "(number | undefined)",
+    value: input.target
+}, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
+    if (["enabled", "minTokens", "keepTurns", "delta", "target"].some((prop: any) => key === prop))
+        return true;
+    const value = input[key];
+    if (undefined === value)
+        return true;
+    return __typia_transform__assertGuard._assertGuard(_exceptionable, {
+        method: "typia.createAssertEquals",
+        path: _path + __typia_transform__accessExpressionAsString._accessExpressionAsString(key),
+        expected: "undefined",
+        value: value
+    }, _errorFactory);
+}))); const _ao6 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.preset || "strict" === input.preset || "readonly" === input.preset || "permissive" === input.preset || "yolo" === input.preset || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".preset",
     expected: "(\"permissive\" | \"readonly\" | \"strict\" | \"yolo\" | undefined)",
@@ -426,7 +480,7 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
         expected: "undefined",
         value: value
     }, _errorFactory);
-}))); const _ao6 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
+}))); const _ao7 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
     const value = input[key];
     if (undefined === value)
         return true;
@@ -435,13 +489,13 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
         path: _path + __typia_transform__accessExpressionAsString._accessExpressionAsString(key),
         expected: "ResourceFilter",
         value: value
-    }, _errorFactory)) && _ao7(value, _path + __typia_transform__accessExpressionAsString._accessExpressionAsString(key), true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+    }, _errorFactory)) && _ao8(value, _path + __typia_transform__accessExpressionAsString._accessExpressionAsString(key), true && _exceptionable) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
         method: "typia.createAssertEquals",
         path: _path + __typia_transform__accessExpressionAsString._accessExpressionAsString(key),
         expected: "ResourceFilter",
         value: value
     }, _errorFactory);
-}); const _ao7 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}); const _ao8 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".enabled",
     expected: "(boolean | undefined)",
@@ -488,7 +542,7 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
         expected: "undefined",
         value: value
     }, _errorFactory);
-}))); const _ao8 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.bash || (Array.isArray(input.bash) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
+}))); const _ao9 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.bash || (Array.isArray(input.bash) || __typia_transform__assertGuard._assertGuard(_exceptionable, {
     method: "typia.createAssertEquals",
     path: _path + ".bash",
     expected: "(Array<string> | undefined)",
@@ -545,7 +599,7 @@ const validator = (() => { const _io0 = (input: any, _exceptionable: boolean = t
         expected: "undefined",
         value: value
     }, _errorFactory);
-}))); const _ao9 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
+}))); const _ao10 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
     const value = input[key];
     if (undefined === value)
         return true;

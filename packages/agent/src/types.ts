@@ -237,7 +237,7 @@ export interface AgentOptions extends CollectOptions {
    *
    *  Default off. Pass `true` to enable, or a `MaskOptions` object to
    *  tune `tools` / `keepRecent`. */
-  mask?: boolean | MaskOptions
+  mask?: MaybeGetter<MaskOptions>
 
   // ── Recovery ───────────────────────────────────────────────────────
   /** Resolver for `ask` permission verdicts. The agent invokes this
