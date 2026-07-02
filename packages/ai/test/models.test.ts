@@ -1,10 +1,12 @@
 import type { AuthManager } from "../src/index.ts"
+import type { ModelCatalog } from "../src/models/catalog.ts"
 import type { ModelInfo, ModelProvider, ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { getModel, loadCatalog, parseModelId, resolveModels, toModelSpec } from "../src/index.ts"
 import { modelCollection } from "../src/model.ts"
 import { filterModel } from "../src/models/filter.ts"
+import { builtinOverrides } from "../src/models/overrides.ts"
 
 const customModel = (overrides: Partial<ModelInfo> = {}): ModelInfo => ({
   id: overrides.id ?? "mock-x/model-x",
@@ -90,6 +92,29 @@ describe("filterModel", async () => {
 
   test("no opts → always true", async () => {
     expect(await filterModel(textModel)).toBe(true)
+  })
+})
+
+describe("builtinOverrides", () => {
+  test("openai-codex returns no cloned models without an openai provider", async () => {
+    const models = builtinOverrides["openai-codex"]?.models as (catalog: ModelCatalog) => Promise<ModelInfo[]>
+    const catalog = { provider: () => undefined } as unknown as ModelCatalog
+    await expect(models(catalog)).resolves.toEqual([])
+  })
+
+  test("openai-codex clones codex and selected GPT models with capped context", async () => {
+    const models = builtinOverrides["openai-codex"]?.models as (catalog: ModelCatalog) => Promise<ModelInfo[]>
+    const openai = customProvider({ id: "openai/gpt-5.5", contextSize: 500_000 })
+    const openaiModels = openai.models as ModelInfo[]
+    openaiModels.push(customModel({ id: "gpt-4", contextSize: 128_000 }))
+    openaiModels.push(customModel({ id: "codex-mini", contextSize: 300_000 }))
+    const catalog = {
+      provider: (id: string) => (id === "openai" ? openai : undefined),
+    } as unknown as ModelCatalog
+
+    const cloned = await models(catalog)
+    expect(cloned.map((m) => m.id)).toEqual(["gpt-5.5", "codex-mini"])
+    expect(cloned.map((m) => m.contextSize)).toEqual([270_000, 270_000])
   })
 })
 

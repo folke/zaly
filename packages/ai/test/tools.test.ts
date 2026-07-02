@@ -1,8 +1,28 @@
+import type { Message, Streamable, ToolResult } from "../src/types.ts"
+
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { stringifyContent } from "../src/content/format.ts"
 import { AiError } from "../src/error.ts"
-import { defineTool, runTool } from "../src/tools.ts"
+import {
+  extractToolCalls,
+  extractToolResults,
+  isStreamable,
+  pairedToolIds,
+  safeParseToolParams,
+  defineTool,
+  runTool,
+} from "../src/tools.ts"
+
+const makeStreamable = (
+  result: ToolResult & { running: boolean } = { content: "done", isError: false, running: false }
+): Streamable => ({
+  abort: () => {},
+  done: Promise.resolve(),
+  poll: () => result,
+})
+
+const noopCall = () => "nope"
 
 const Adder = defineTool({
   desc: "add two numbers",
@@ -264,6 +284,143 @@ describe("runTool — output validation", () => {
 
   test("throws when output violates the schema (implementation bug, not LLM error)", async () => {
     await expect(runTool(Echo, { n: 1 }, {})).rejects.toThrow()
+  })
+})
+
+describe("tool message helpers", () => {
+  const messages: Message[] = [
+    { role: "user", content: "hi" },
+    {
+      role: "assistant",
+      content: [
+        { type: "text", text: "calling" },
+        { type: "tool-call", id: "a", name: "read", params: { path: "a.txt" } },
+        { type: "tool-call", id: "b", name: "write", params: "{\"path\":\"b.txt\"}" },
+      ],
+    },
+    {
+      role: "tool",
+      content: [
+        { type: "tool-result", id: "a", name: "read", content: "ok" },
+        { type: "tool-result", id: "orphan", name: "read", content: "ignored" },
+      ],
+    },
+    {
+      role: "assistant",
+      content: [{ type: "tool-call", id: "c", name: "read", params: 42 }],
+    },
+  ]
+
+  test("pairedToolIds returns result ids that have an assistant call", () => {
+    expect([...pairedToolIds(messages)]).toEqual(["a"])
+  })
+
+  test("extractToolCalls scans newest-first and can filter by tool name", () => {
+    expect([...extractToolCalls(messages)].map(({ p }) => p.id)).toEqual(["c", "b", "a"])
+    expect([...extractToolCalls(messages, ["write"])].map(({ p }) => p.id)).toEqual(["b"])
+  })
+
+  test("extractToolResults scans newest-first and can filter by tool name", () => {
+    expect([...extractToolResults(messages)].map(({ p }) => p.id)).toEqual(["orphan", "a"])
+    expect([...extractToolResults(messages, ["read"])].map(({ p }) => p.id)).toEqual([
+      "orphan",
+      "a",
+    ])
+  })
+
+  test("safeParseToolParams accepts objects and JSON strings only", () => {
+    expect(safeParseToolParams({ path: "a.txt" })).toEqual({ path: "a.txt" })
+    expect(safeParseToolParams('{"path":"b.txt"}')).toEqual({ path: "b.txt" })
+    expect(safeParseToolParams("not json")).toBeUndefined()
+    expect(safeParseToolParams(42)).toBeUndefined()
+  })
+})
+
+describe("streamable tools", () => {
+  test("isStreamable recognizes poll/abort/done shape", () => {
+    expect(isStreamable(makeStreamable())).toBe(true)
+    expect(isStreamable({ abort: () => {}, done: Promise.resolve() })).toBe(false)
+    expect(isStreamable(undefined)).toBe(false)
+  })
+
+  test("runTool returns stream handle when streaming is requested", async () => {
+    const stream = makeStreamable()
+    const Streaming = defineTool({
+      name: "stream",
+      params: Type.Object({}),
+      call: () => stream,
+    })
+
+    await expect(runTool(Streaming, {}, {}, { streaming: true })).resolves.toBe(stream)
+  })
+
+  test("runTool waits for stream and merges context meta into final snapshot", async () => {
+    const Streaming = defineTool({
+      name: "stream",
+      params: Type.Object({}),
+      call: (_params, ctx) => {
+        ;(ctx.meta as Record<string, unknown>).seen = true
+        return makeStreamable({ content: [{ type: "text", text: "done" }], isError: false, running: false })
+      },
+    })
+
+    await expect(runTool(Streaming, {}, {})).resolves.toEqual({
+      content: [{ type: "text", text: "done" }],
+      error: undefined,
+      isError: false,
+      meta: { seen: true },
+    })
+  })
+})
+
+describe("runTool — preflight and meta", () => {
+  test("preflight failure returns an error result and skips call", async () => {
+    const Tool = defineTool({
+      name: "preflight",
+      params: Type.Object({}),
+      preflight: () => {
+        throw new Error("blocked")
+      },
+      call: noopCall,
+    })
+
+    const r = await runTool(Tool, {}, {})
+    expect(r.isError).toBe(true)
+    expect(r.error?.message).toBe("blocked")
+  })
+
+  test("preflight can be disabled and meta is omitted when empty", async () => {
+    const Tool = defineTool({
+      name: "preflight",
+      params: Type.Object({}),
+      preflight: () => {
+        throw new Error("blocked")
+      },
+      call: () => "ok",
+    })
+
+    await expect(runTool(Tool, {}, {}, { preflight: false })).resolves.toEqual({
+      content: "ok",
+      isError: false,
+      meta: undefined,
+    })
+  })
+
+  test("tool-written meta is attached to successful results", async () => {
+    const Tool = defineTool({
+      name: "meta",
+      params: Type.Object({}),
+      call: (_params, ctx) => {
+        ;(ctx.meta as Record<string, unknown>).path = "file.txt"
+        return "ok"
+      },
+    })
+
+    await expect(runTool(Tool, {}, {})).resolves.toEqual({
+      content: "ok",
+      isError: false,
+      meta: { path: "file.txt" },
+    })
   })
 })
 
