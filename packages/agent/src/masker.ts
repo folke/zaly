@@ -2,6 +2,7 @@ import type { AnyPart, Message, Role } from "@zaly/ai"
 import type { MaybeGetter } from "@zaly/shared"
 import type { Agent } from "./agent.ts"
 import type { MsgPart } from "./context/scoring.ts"
+import type { Session } from "./session/session.ts"
 import type { ContextPressure } from "./types.ts"
 
 import { toValue } from "@zaly/shared"
@@ -54,9 +55,11 @@ export class Masker {
   #stats = new Map<Role, Record<string, number>>()
   #masked = new Map<string, Map<number, AnyPart>>()
   #threshold?: number
+  #session: Session
 
-  constructor(opts: MaybeGetter<MaskOptions> = {}) {
+  constructor(session: Session, opts: MaybeGetter<MaskOptions> = {}) {
     this.#o = opts
+    this.#session = session
   }
 
   get #opts(): Required<MaskOptions> {
@@ -90,8 +93,14 @@ export class Masker {
   }
 
   attach(agent: Agent) {
-    agent.on("context", (ctx, a) => (ctx.messages = this.mask(ctx.messages, a.pressure)))
-    agent.ctx.on("session", () => this.reset())
+    agent.on(
+      "context",
+      async (ctx, a) => (ctx.messages = await this.mask(ctx.messages, a.pressure))
+    )
+    agent.ctx.on("session", ({ session }) => {
+      this.#session = session
+      this.reset()
+    })
   }
 
   /** Apply masks and return the projected message array.
@@ -100,11 +109,37 @@ export class Masker {
    *  may describe a previously masked projection, while this instance has
    *  no mask decisions yet. After that, rebuild only when projected
    *  pressure crosses the hysteresis threshold. */
-  mask(messages: readonly Message[], pressure: ContextPressure): Message[] {
-    if (!this.enabled) return [...messages]
-    // Always rebuild once after startup/session reset: pressure.ratio may
-    // describe a previously masked projection, while #masked is empty here.
-    if (this.#threshold === undefined || pressure.ratio >= this.#threshold) {
+  async mask(messages: readonly Message[], pressure: ContextPressure): Promise<Message[]> {
+    if (!this.enabled || messages.length === 0) return [...messages]
+
+    // Masker has not yet been initialized for this session.
+    // Use the session's mask checkpoint to restore the last threshold
+    // and rebuild the mask decisions up to that point.
+    if (this.#threshold === undefined) {
+      const cp = this.#session.maskCheckpoint
+      if (!cp) {
+        // No checkpoint means the session has never been masked before, so
+        // just set to the default threshold for the first pass, so that the next pass will
+        // trigger only if the pressure exceeds the target + delta.
+        this.#threshold = this.#opts.target + this.#opts.delta
+      } else {
+        this.#threshold = cp.threshold
+        const idx = messages.findIndex((m) => m.id === cp.messageId)
+        // NOTE: the checkpoint message should exists. If not mask all, just in case
+        // Rebuild the mask decisions
+        this.#update(idx === -1 ? messages : messages.slice(0, idx + 1), pressure)
+      }
+    }
+
+    // If the current pressure ratio exceeds the threshold, rebuild the mask decisions.
+    if (pressure.ratio >= this.#threshold) {
+      const messageId = messages.at(-1)?.id
+      if (!messageId) throw new Error("Message in masker without ID. Should never happen.")
+      // Create a checkpoint first, with the CURRENT threshold, not the new one.
+      await this.#session.addMaskCheckpoint({
+        messageId,
+        threshold: this.#threshold,
+      })
       this.#update(messages, pressure)
     }
     return this.#mask(messages)

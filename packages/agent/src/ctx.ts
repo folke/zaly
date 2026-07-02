@@ -1,7 +1,7 @@
 import type { Model, ReasoningEffort, Tool } from "@zaly/ai"
 import type { Agent } from "./agent.ts"
 import type { AgentStatus } from "./events.ts"
-import type { Masker, MaskOptions } from "./masker.ts"
+import type { Masker } from "./masker.ts"
 import type { Notifier, NotifyOptions } from "./notify.ts"
 import type { PermissionManager, PermissionOptions } from "./permissions/manager.ts"
 import type { Session } from "./session/session.ts"
@@ -226,9 +226,9 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   async masker(): Promise<Masker | undefined> {
     return this.#cache.want(
       "masker",
-      async (opts?: MaskOptions) => {
+      async (opts?: AgentOptions["mask"]) => {
         const { Masker } = await import("./masker.ts")
-        return new Masker(opts)
+        return new Masker(this.#session, opts)
       },
       this.#opts.mask
     )

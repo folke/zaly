@@ -21,6 +21,7 @@ type SessionN = {
   | { type: "session-resume" }
   | { type: "session-settings"; settings: SessionSettings }
   | { type: "message"; message: Message }
+  | { type: "mask-checkpoint"; threshold: number; messageId: string }
   | {
       type: "compact"
       /** Whether the loop kicked off compaction itself or the user did. */
@@ -40,6 +41,8 @@ type SessionN = {
 )
 type SessionNodeType = SessionN["type"]
 
+export type MaskCheckpoint = { messageId: string; threshold: number }
+
 export type SessionMessage = Message & { ts: number; id: string }
 
 export type SessionNode<T extends SessionNodeType = SessionNodeType> = Extract<
@@ -56,6 +59,7 @@ export type SessionView = {
   messages: Message[]
   nodes: Map<string, SessionNodeView>
   compact?: SessionNode<"compact">
+  maskCheckpoint?: MaskCheckpoint
 }
 
 export type SessionSettings = {

@@ -53,7 +53,7 @@ export class Compaction {
 
     const masker = await this.#agent.ctx.masker()
 
-    const messages = masker ? masker.mask(session.messages, pressure) : session.messages
+    const messages = masker ? await masker.mask(session.messages, pressure) : session.messages
 
     const now = performance.now()
 

@@ -47,12 +47,13 @@ console.log(`loaded ${messages.length} messages from ${path}`)
 // }
 
 const before = tokenStats(messages)
-const masker = new Masker()
+const masker = new Masker(session)
 // Force a high-pressure level so the harness always runs the decide
 // pass — otherwise low-pressure sessions would render no masks.
 const limit = 270_000
 const used = 170_000
-const masked = masker.mask(messages, { limit, ratio: used / limit, used, level: 1 })
+
+const masked = await masker.mask(messages, { limit, ratio: used / limit, used, level: 1 })
 const after = tokenStats(masked)
 
 function fmt(n: number): string {
