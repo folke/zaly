@@ -41,14 +41,26 @@ describe("compaction usage extraction", () => {
       { content: "u1", role: "user" },
       {
         content: [
-          { content: "read", id: "r1", meta: { full: true, path: "a.ts" }, name: "read", type: "tool-result" },
+          {
+            content: "read",
+            id: "r1",
+            meta: { full: true, path: "a.ts" },
+            name: "read",
+            type: "tool-result",
+          },
         ],
         role: "tool",
         ts: 100,
       },
       {
         content: [
-          { content: "write", id: "w1", meta: { path: "a.ts" }, name: "write", type: "tool-result" },
+          {
+            content: "write",
+            id: "w1",
+            meta: { path: "a.ts" },
+            name: "write",
+            type: "tool-result",
+          },
           { content: "edit", id: "e1", meta: { path: "b.ts" }, name: "edit", type: "tool-result" },
           { content: "ignored", id: "x", name: "read", type: "tool-result" },
         ],
@@ -69,7 +81,12 @@ describe("compaction usage extraction", () => {
     const messages: Message[] = [
       {
         content: [
-          { id: "b1", name: "bash", params: { command: "cat file && bun test" }, type: "tool-call" },
+          {
+            id: "b1",
+            name: "bash",
+            params: { command: "cat file && bun test" },
+            type: "tool-call",
+          },
           { id: "b2", name: "bash", params: { command: "bun test" }, type: "tool-call" },
           { id: "b3", name: "bash", params: { command: "echo 'a\\nb'" }, type: "tool-call" },
           { id: "b4", name: "bash", params: "not json", type: "tool-call" },
@@ -80,7 +97,7 @@ describe("compaction usage extraction", () => {
     ]
 
     const bashUsage = extractBashUsage(messages)
-    expect(bashUsage).toMatchObject([{ command: "bun test", count: 2, lastTs: 300, lastTurn: 0 }])
+    expect(bashUsage).toMatchObject([{ command: "bun test", count: 2, lastTs: 300, lastTurn: 1 }])
     expect(formatBashUsage(bashUsage)).toContain("<bash-commands>")
     expect(formatBashUsage([])).toBe("(no bash commands found)")
   })
@@ -116,7 +133,7 @@ describe("compaction usage extraction", () => {
     expect(conversation).toContain("<conversation>")
     expect(conversation).toContain("[User]: hello")
     expect(conversation).toContain("<tool-call>read")
-    expect(conversation).toContain("<tool-result>\n  {\"tool\":\"read\",\"error\":true}")
+    expect(conversation).toContain('<tool-result>\n  {"tool":"read","error":true}')
     expect(conversation).toContain("0123…")
     expect(conversation).not.toContain("thinking")
     expect(conversation).toContain("<error>")
@@ -126,7 +143,16 @@ describe("compaction usage extraction", () => {
     expect(formatFileUsage([])).toBe("(no file ops found)")
     expect(
       formatFileUsage([
-        { count: 3, edits: 1, lastTs: 0, lastTurn: Infinity, path: "a.ts", reads: 1, score: 2.5, writes: 1 },
+        {
+          count: 3,
+          edits: 1,
+          lastTs: 0,
+          lastTurn: Infinity,
+          path: "a.ts",
+          reads: 1,
+          score: 2.5,
+          writes: 1,
+        },
       ])
     ).toContain("<files>")
   })
