@@ -328,13 +328,14 @@ export async function sessionTree(app: App, opts: SessionTreeOpts = {}) {
   await Promise.all([replay(session, app), app.agent.ctx.useSession(session)])
 }
 
-function usageStats(usage: Usage) {
+function usageStats(usage: Usage): Record<string, number> {
+  // oxlint-disable-next-line sort-keys
   return {
-    "cache read": usage.cacheRead,
-    "cache write": usage.cacheWrite,
     input: usage.input,
     output: usage.output,
-    reasoning: usage.reasoning,
+    "cache read": usage.cacheRead ?? 0,
+    "cache write": usage.cacheWrite ?? 0,
+    reasoning: usage.reasoning ?? 0,
     total: usage.input + usage.output + (usage.cacheRead ?? 0) + (usage.cacheWrite ?? 0),
   }
 }
@@ -360,20 +361,30 @@ export async function sessionInfo(app: App) {
 > Use \`/tree\` to view the session tree`)
 
   info.push("### Token Usage")
-  const usage = usageStats(app.agent.usage)
-  for (const [key, value] of Object.entries(usage)) {
-    if (!value) continue
-    info.push(`- **${key}:** \`${formatNumber(value, { notation: "standard" })}\``)
+  const cols = [
+    usageStats(app.agent.usage),
+    usageStats(app.agent.usage.total),
+    usageStats(app.agent.usage.cost),
+  ]
+  info.push("| | Context | Session | Est. Cost |")
+  info.push("| - | -: | -: | -: |")
+  for (const [key, last] of Object.entries(cols[0])) {
+    if (cols.every((c) => !c[key])) continue
+    const total = cols[1][key]
+    const cost = cols[2][key]
+    const l = last ? `\`${formatNumber(last, { notation: "compact" })}\`` : "-"
+    const t = total ? `\`${formatNumber(total, { notation: "compact" })}\`` : "-"
+    const c = cost
+      ? `\`$${formatNumber(cost, { minimumFractionDigits: 1, notation: "standard" })}\``
+      : "-"
+    info.push(`| **${key}** | ${l} | ${t} | ${c} |`)
   }
-  info.push(`> [!TIP]
-> Use \`/context\` to view a detailed breakdown of token usage, including prompts, messages, and tools.`)
 
-  info.push("### Estimated Cost")
-  const cost = usageStats(app.agent.usage.cost)
-  for (const [key, value] of Object.entries(cost)) {
-    if (!value) continue
-    info.push(`- **${key}:** \`$${formatNumber(value, { notation: "standard" })}\``)
-  }
+  info.push(`> [!TIP]`)
+  info.push(
+    `> Use \`/context\` to view a detailed breakdown of token usage, including prompts, messages, and tools.`
+  )
+  info.push("")
 
   info.push("> [!NOTE]")
   info.push(
