@@ -89,7 +89,7 @@ export default defineConfig({
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     "import/exports-last": "off", // 41
     "import/group-exports": "off", // 106
-    "import/no-cycle": ["error", { maxDepth: 3 }],
+    "import/no-cycle": ["error"],
     "import/no-duplicates": "error",
     "import/no-named-as-default-member": "error",
     "import/no-named-export": "off", // 165

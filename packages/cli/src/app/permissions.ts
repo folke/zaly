@@ -6,7 +6,7 @@ import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { text } from "@zaly/tui/widgets/text"
 import { bubble } from "../widgets/bubble.ts"
-import { toolPreview } from "../widgets/tool.ts"
+import { toolPreview } from "../widgets/params.ts"
 
 export async function allow(req: PermissionRequest, app: App): Promise<boolean> {
   const items: (Option & { value: boolean | Suggestion })[] = []

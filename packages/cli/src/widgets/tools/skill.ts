@@ -6,7 +6,7 @@ import { box } from "@zaly/tui/widgets/box"
 import { log } from "@zaly/tui/widgets/log"
 import { markdown } from "@zaly/tui/widgets/markdown"
 import { show } from "@zaly/tui/widgets/show"
-import { toolPreview } from "../tool.ts"
+import { toolPreview } from "../params.ts"
 
 /** Result renderer for the `read` tool. Once the file contents land,
  *  render them as a syntax-highlighted code block titled with the path.

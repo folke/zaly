@@ -8,7 +8,7 @@ import type { App } from "./app.ts"
 
 import { loadSession, resumeSession } from "@zaly/agent/session"
 import { formatNumber, normPath, prettyPath, safeStatAsync } from "@zaly/shared"
-import { toolParams } from "../widgets/tool.ts"
+import { toolParams } from "../widgets/params.ts"
 
 export async function bootstrapSession(flags: Flags): Promise<Session> {
   const filter = flags.session ?? normPath()

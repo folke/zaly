@@ -3,7 +3,7 @@ import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
 import { stringifyContent } from "@zaly/ai"
 import { unwrap } from "@zaly/tui"
 import { text } from "@zaly/tui/widgets/text"
-import { toolPreview } from "../tool.ts"
+import { toolPreview } from "../params.ts"
 
 /** Generic fallback renderer — dim text preview of the result content,
  *  truncated to 500 chars. Used for any tool that doesn't have a
