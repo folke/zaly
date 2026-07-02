@@ -96,7 +96,7 @@
   },
   "mdQuote": {
     "fg": "#848cb5",
-    "italic": true
+    "italic": false
   },
   "mdTable": "#b15c00",
   "muted": "#8990b3",
