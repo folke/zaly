@@ -104,10 +104,10 @@ describe("markdown — block callbacks", () => {
     expect(render("alpha\n\nbeta")).toContain("alpha\n\nbeta")
   })
 
-  test("blockquote prefixes each line with styled │", async () => {
+  test("blockquote prefixes each line with styled ┃", async () => {
     const open = expectedOpen("mdQuote")
     const out = render("> quote")
-    expect(out).toContain(`${open}│ quote${RESET}`)
+    expect(out).toContain(`${open}┃${RESET} quote`)
   })
 
   test("hr fills width with ─", async () => {

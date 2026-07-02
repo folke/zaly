@@ -1,10 +1,13 @@
+// oxlint-disable unicorn/no-await-expression-member
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
+import { pathToFileURL } from "node:url"
 import { join } from "pathe"
-import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { fileData, fileHash } from "../../src/detect/data.ts"
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
+import { fileData, fileHash, isBinaryData } from "../../src/detect/data.ts"
 import { detect, fileDetect, isFileFormat, isFileType } from "../../src/detect/file.ts"
 import { imageDetector } from "../../src/detect/image.ts"
+import { detectTextFormat } from "../../src/detect/text.ts"
 
 // Smallest possible PNG signature + IHDR for a 1×1 image. Enough for
 // magic-byte sniffing; image-meta can also parse it.
@@ -98,6 +101,18 @@ describe("fileDetect — magic bytes", () => {
     const r = await fileDetect(p)
     expect(r?.type).toBe("image")
     if (r?.type === "image") expect(r.format).toBe("svg")
+  })
+  test("AVIF and HEIC by ISOBMFF brand", async () => {
+    const avif = writeTmp("avif.bin", Buffer.from("\0\0\0\0ftypavifxxxx", "binary"))
+    const heic = writeTmp("heic.bin", Buffer.from("\0\0\0\0ftypheicxxxx", "binary"))
+    expect((await fileDetect(avif))?.format).toBe("avif")
+    expect((await fileDetect(heic))?.format).toBe("heic")
+  })
+  test("Netpbm variants by subtype byte", async () => {
+    expect((await fileDetect(writeTmp("p1.bin", Buffer.from("P1\n"))))?.format).toBe("pbm")
+    expect((await fileDetect(writeTmp("p2.bin", Buffer.from("P2\n"))))?.format).toBe("pgm")
+    expect((await fileDetect(writeTmp("p3.bin", Buffer.from("P3\n"))))?.format).toBe("ppm")
+    expect((await fileDetect(writeTmp("p7.bin", Buffer.from("P7\n"))))?.format).toBe("pam")
   })
   test("PDF", async () => {
     const p = writeTmp("doc.bin", PDF_HEADER)
@@ -203,6 +218,73 @@ describe("detect — direct engine usage on FileData", () => {
     const r = file && detect(imageDetector, file)
     expect(r?.type).toBe("image")
     expect(r?.format).toBe("png")
+  })
+})
+
+describe("fileData", () => {
+  test("reads file:// URLs and records the original URL", async () => {
+    const p = writeTmp("url.txt", Buffer.from("hello"))
+    const url = pathToFileURL(p).href
+    const file = await fileData(url)
+    expect(file?.path).toBe(p)
+    expect(file?.url).toBe(url)
+    expect(Buffer.from(file?.data ?? []).toString()).toBe("hello")
+  })
+
+  test("returns undefined for invalid file URLs", async () => {
+    expect(await fileData("file://not a valid file url")).toBeUndefined()
+  })
+
+  test("fetches http URLs when no local data is available", async () => {
+    const fetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("hello", { headers: { "content-type": "text/plain" } }))
+    try {
+      const file = await fileData("https://example.com/file.txt")
+      expect(fetch).toHaveBeenCalledOnce()
+      expect(file?.mime).toBe("text/plain")
+      expect(Buffer.from(file?.data ?? []).toString()).toBe("hello")
+    } finally {
+      fetch.mockRestore()
+    }
+  })
+
+  test("returns undefined for failed http fetches", async () => {
+    const fetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("no", { status: 404 }))
+    try {
+      expect(await fileData("https://example.com/missing")).toBeUndefined()
+    } finally {
+      fetch.mockRestore()
+    }
+  })
+})
+
+describe("isBinaryData", () => {
+  test("empty data and allowed whitespace controls are not binary", () => {
+    expect(isBinaryData(new Uint8Array())).toBe(false)
+    expect(isBinaryData(Buffer.from("\t\n\r"))).toBe(false)
+  })
+
+  test("DEL/control-byte ratio above threshold is binary", () => {
+    expect(isBinaryData(Buffer.from([127, 127, 65, 66]), 0.25)).toBe(true)
+  })
+})
+
+describe("detectTextFormat", () => {
+  test("prefers MIME over path/content", () => {
+    expect(detectTextFormat({ data: Buffer.from("{}"), mime: "text/csv", path: "x.json" })).toBe(
+      "csv"
+    )
+  })
+
+  test("detects common extensions and content peeks", () => {
+    expect(detectTextFormat({ data: Buffer.from(""), path: "x.htm" })).toBe("html")
+    expect(detectTextFormat({ data: Buffer.from(""), path: "x.svg" })).toBe("xml")
+    expect(detectTextFormat({ data: Buffer.from(" <!DOCTYPE html>") })).toBe("html")
+    expect(detectTextFormat({ data: Buffer.from(" [1,2]") })).toBe("json")
+    expect(detectTextFormat({ data: Buffer.from(" plain") })).toBe("plain")
   })
 })
 

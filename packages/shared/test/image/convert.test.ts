@@ -1,7 +1,7 @@
 import type { ImageInfo } from "../../src/image/info.ts"
 
 import { describe, expect, test } from "vitest"
-import { imageConvert } from "../../src/image/convert.ts"
+import { imageCompress, imageConvert, isWritable } from "../../src/image/convert.ts"
 
 const fakeImage = (format: ImageInfo["format"]): ImageInfo => ({
   data: Buffer.from([1, 2, 3]),
@@ -10,6 +10,16 @@ const fakeImage = (format: ImageInfo["format"]): ImageInfo => ({
   path: "/tmp/fake-source",
   type: "image",
   width: 1,
+})
+
+describe("isWritable", () => {
+  test("recognizes formats sharp can write", () => {
+    expect(isWritable(fakeImage("png"))).toBe(true)
+    expect(isWritable(fakeImage("jpeg"))).toBe(true)
+    expect(isWritable(fakeImage("webp"))).toBe(true)
+    expect(isWritable(fakeImage("gif"))).toBe(false)
+    expect(isWritable({ data: Buffer.from("text"), format: "plain", type: "text" } as any)).toBe(false)
+  })
 })
 
 describe("imageConvert", () => {
@@ -31,5 +41,12 @@ describe("imageConvert", () => {
     // resolves cleanly is the assertion.
     const img = fakeImage("jpeg")
     await expect(imageConvert(img, "jpeg")).resolves.toBe(img)
+  })
+})
+
+describe("imageCompress", () => {
+  test("returns small writable images unchanged without loading sharp", async () => {
+    const img = fakeImage("webp")
+    await expect(imageCompress(img, { maxBytes: img.data.length })).resolves.toBe(img)
   })
 })

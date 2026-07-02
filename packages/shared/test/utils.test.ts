@@ -1,18 +1,23 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { join, resolve } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
-import { normPath, prettyPath } from "../src/path.ts"
+import { decodePath, encodePath, normPath, prettyPath } from "../src/path.ts"
 import {
+  atomicWriteFile,
+  clamp,
   findUp,
   gitRoot,
   hash,
   safeFn,
+  safeParseJson,
   safeReadFile,
   safeReadFileSync,
   safeStat,
   safeStringify,
   toError,
+  toValue,
+  withError,
 } from "../src/utils.ts"
 
 describe("safeFn", () => {
@@ -34,6 +39,13 @@ describe("safeAsyncFn", () => {
   })
   test("returns undefined on rejection", async () => {
     expect(await safeFn(async () => Promise.reject(new Error("nope")))()).toBeUndefined()
+  })
+})
+
+describe("safeParseJson", () => {
+  test("parses valid JSON and returns undefined for invalid JSON", () => {
+    expect(safeParseJson('{"ok":true}')).toEqual({ ok: true })
+    expect(safeParseJson("nope")).toBeUndefined()
   })
 })
 
@@ -61,6 +73,9 @@ describe("toError", () => {
 describe("safeStringify", () => {
   test("standard JSON output", () => {
     expect(safeStringify({ a: 1 })).toBe('{"a":1}')
+  })
+  test("applies replacer after bigint coercion", () => {
+    expect(safeStringify({ keep: true, n: 10n }, (key, value) => (key === "keep" ? undefined : value))).toBe('{"n":"10"}')
   })
   test("bigint coerced to string", () => {
     expect(safeStringify({ n: 10n })).toBe('{"n":"10"}')
@@ -197,6 +212,18 @@ describe("normPath", () => {
   })
 })
 
+describe("encodePath / decodePath", () => {
+  test("round-trips separators and escape characters", () => {
+    const path = "/tmp/a+b%/C:/file"
+    expect(decodePath(encodePath(path))).toBe(path)
+    expect(encodePath(path)).toBe("+tmp+a++b%%+C%+file")
+  })
+
+  test("decodes single escapes", () => {
+    expect(decodePath("a+b%c++d%%e")).toBe("a/b:c+d%e")
+  })
+})
+
 describe("prettyPath", () => {
   test("returns '.' for the cwd itself", () => {
     expect(prettyPath(process.cwd())).toBe(".")
@@ -210,5 +237,56 @@ describe("prettyPath", () => {
     // run from inside $HOME, the result is a plain relative path instead.
     const out = prettyPath(p)
     expect(out === "~/some/path" || !out.startsWith("..")).toBe(true)
+  })
+  test("returns an absolute path for paths outside the base", () => {
+    expect(prettyPath("/var/log", "/tmp/project")).toBe("/var/log")
+  })
+  test("uses ~/ prefix when the base is home", () => {
+    expect(prettyPath(join(homedir(), "x"), homedir())).toBe("~/x")
+  })
+})
+
+describe("error helpers", () => {
+  test("wrapError via withError annotates sync failures", () => {
+    expect(() => withError(() => {
+      throw new Error("boom")
+    }, "while testing")).toThrow("while testing: boom")
+  })
+
+  test("withError annotates async failures", async () => {
+    await expect(withError(async () => {
+      throw new Error("async boom")
+    }, "while async")).rejects.toThrow("while async: async boom")
+  })
+})
+
+describe("misc utilities", () => {
+  test("clamp respects optional min and max", () => {
+    expect(clamp(5, 1, 10)).toBe(5)
+    expect(clamp(-1, 1, 10)).toBe(1)
+    expect(clamp(20, 1, 10)).toBe(10)
+    expect(clamp(5, 10)).toBe(10)
+    expect(clamp(5, undefined, 3)).toBe(3)
+  })
+
+  test("toValue resolves values and getters", () => {
+    expect(toValue(1)).toBe(1)
+    expect(toValue(() => 2)).toBe(2)
+  })
+})
+
+describe("atomicWriteFile", () => {
+  test("creates parent directories and writes atomically", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "zaly-atomic-"))
+    const file = join(dir, "nested", "file.txt")
+    try {
+      await atomicWriteFile(file, "hello")
+      expect(readFileSync(file, "utf8")).toBe("hello")
+      await atomicWriteFile(file, "world")
+      expect(readFileSync(file, "utf8")).toBe("world")
+      expect(existsSync(`${file}.${process.pid}`)).toBe(false)
+    } finally {
+      rmSync(dir, { force: true, recursive: true })
+    }
   })
 })
