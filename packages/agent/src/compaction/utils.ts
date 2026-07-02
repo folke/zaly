@@ -86,7 +86,7 @@ function turnInfo(messages: readonly Message[]) {
   let turn = 0
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i]
-    if (m.role === "user") turn++
+    if (m.role === "assistant") turn++
     weights[i] = Math.exp(-LAMBDA * turn)
     turns[i] = turn
   }
