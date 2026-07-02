@@ -23,7 +23,10 @@ const PANEL_WIDTH = 25
 // Pull every bundled theme from the async loader map, plus the pure-ansi
 // fallback (not a JSON — loaded via `loadTheme("ansi")`) as a final column
 // so the render shows how palette-only terminals resolve every slot.
-const names: string[] = [...themeRegistry.keys(), "ansi"].toSorted()
+let names: string[] = [...themeRegistry.keys()].toSorted()
+
+const filter = new Set(process.argv.slice(2).map((s) => s.toLowerCase()))
+if (filter.size > 0) names = names.filter((n) => filter.has(n.toLowerCase()))
 
 for (let i = 0; i < names.length; i += CHUNK) {
   const row = box({ flexDirection: "row", gap: 1 })
@@ -33,7 +36,7 @@ for (let i = 0; i < names.length; i += CHUNK) {
       { border: true, borderTitle: name, borderTitleStyle: theme.borderTitle, style: "ui" },
       text(({ style }) =>
         Object.keys(theme)
-          .filter((k) => k !== "bg" && k !== "shiki")
+          .filter((k) => k !== "bg" && k !== "shiki" && k !== "id" && k !== "name")
           .map((k) => style.add(k)(k))
           .join("\n")
       )

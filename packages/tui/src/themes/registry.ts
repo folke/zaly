@@ -22,7 +22,9 @@ const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
  * callers `await` explicitly.
  */
 export const themeRegistry = createRegistry<ThemeLoader>("theme").from(builtin)
-themeRegistry.register("ansi", async () => ({ ...defaults, id: "ansi", name: "Ansi" }))
+// NOTE: remove the ansi theme for now, since it looks kinda broken and not really possible
+// to fix properly
+// themeRegistry.register("ansi", async () => ({ ...ansi }))
 
 /**
  * Load a theme by name or path.

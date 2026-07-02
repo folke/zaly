@@ -29,9 +29,6 @@
   "highlight": {
     "bg": "#cccfd7"
   },
-  "optionActive": {
-    "bg": "#ccd0da"
-  },
   "selection": {
     "bg": "#cccfd7"
   },

@@ -22,9 +22,6 @@
   "highlight": {
     "bg": "#212121"
   },
-  "optionActive": {
-    "bg": "#212121"
-  },
   "diffAdd": {
     "bg": "#273322"
   },

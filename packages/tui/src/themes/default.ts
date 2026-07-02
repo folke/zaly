@@ -93,3 +93,13 @@ export const defaults: Omit<Theme, "id"> = {
   diffLine: "gutter",
   diffTitle: "title",
 }
+
+// oxlint-disable-next-line sort-keys
+export const ansi: Theme = {
+  id: "ansi",
+  name: "ANSI",
+  ...defaults,
+  selection: { inverse: true },
+  diffAdd: { fg: "success" },
+  diffDel: { fg: "error" },
+}

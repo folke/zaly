@@ -29,9 +29,6 @@
   "highlight": {
     "bg": "#eaeaea"
   },
-  "optionActive": {
-    "bg": "#f7f7f7"
-  },
   "selection": {
     "bg": "#eaeaea"
   },
