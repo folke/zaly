@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { uuidv7 } from "../src/utils/uuid.ts"
+import { isUuidv7, isUuidv7Like, uuidv7 } from "../src/utils/uuid.ts"
 
 const SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
@@ -29,5 +29,24 @@ describe("uuidv7", () => {
     const ms = parseInt(id.replaceAll("-", "").slice(0, 12), 16)
     expect(ms).toBeGreaterThanOrEqual(before)
     expect(ms).toBeLessThanOrEqual(after)
+  })
+
+  test("isUuidv7 validates canonical UUIDv7 shape", () => {
+    const id = uuidv7()
+    expect(isUuidv7(id)).toBe(true)
+    expect(isUuidv7(id.toUpperCase())).toBe(true)
+    expect(isUuidv7(id.replace("-7", "-6"))).toBe(false)
+    expect(isUuidv7("not-a-uuid")).toBe(false)
+  })
+
+  test("isUuidv7Like accepts current v7 prefixes and rejects short/invalid/old/future prefixes", () => {
+    const id = uuidv7()
+    expect(isUuidv7Like(id.slice(0, 8))).toBe(true)
+    expect(isUuidv7Like("123456")).toBe(false)
+    expect(isUuidv7Like("zzzzzzz")).toBe(false)
+    expect(isUuidv7Like("00000000-0000-7000-8000-000000000000")).toBe(false)
+
+    const future = (Date.now() + 2 * 3600 * 1000).toString(16).padStart(12, "0")
+    expect(isUuidv7Like(`${future.slice(0, 8)}-${future.slice(8)}`)).toBe(false)
   })
 })

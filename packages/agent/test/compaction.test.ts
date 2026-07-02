@@ -1,7 +1,14 @@
 import type { Message, Usage } from "@zaly/ai"
 
 import { describe, expect, test } from "vitest"
-import { messageTail } from "../src/compaction/utils.ts"
+import {
+  extractBashUsage,
+  extractConversation,
+  extractFileUsage,
+  formatBashUsage,
+  formatFileUsage,
+  messageTail,
+} from "../src/compaction/utils.ts"
 import { MemoryStore, Session } from "../src/session/index.ts"
 
 const u = (text: string): Message => ({ content: text, role: "user" })
@@ -26,6 +33,103 @@ const usage = (input: number, output = 0, extra: Partial<Usage> = {}): Usage => 
   input,
   output,
   ...extra,
+})
+
+describe("compaction usage extraction", () => {
+  test("extractFileUsage tallies read/write/edit counts and supports sort/filter options", () => {
+    const messages: Message[] = [
+      { content: "u1", role: "user" },
+      {
+        content: [
+          { content: "read", id: "r1", meta: { full: true, path: "a.ts" }, name: "read", type: "tool-result" },
+        ],
+        role: "tool",
+        ts: 100,
+      },
+      {
+        content: [
+          { content: "write", id: "w1", meta: { path: "a.ts" }, name: "write", type: "tool-result" },
+          { content: "edit", id: "e1", meta: { path: "b.ts" }, name: "edit", type: "tool-result" },
+          { content: "ignored", id: "x", name: "read", type: "tool-result" },
+        ],
+        role: "tool",
+        ts: 200,
+      },
+    ]
+
+    expect(extractFileUsage(messages, { sort: "key" })).toMatchObject([
+      { count: 2, edits: 0, lastTs: 200, path: "a.ts", reads: 1, writes: 1 },
+      { count: 1, edits: 1, lastTs: 200, path: "b.ts", reads: 0, writes: 0 },
+    ])
+    expect(extractFileUsage(messages, { minCount: 2 })).toHaveLength(1)
+    expect(extractFileUsage(messages, { limit: 1 })).toHaveLength(1)
+  })
+
+  test("extractBashUsage parses commands, filters plumbing, and formats results", () => {
+    const messages: Message[] = [
+      {
+        content: [
+          { id: "b1", name: "bash", params: { command: "cat file && bun test" }, type: "tool-call" },
+          { id: "b2", name: "bash", params: { command: "bun test" }, type: "tool-call" },
+          { id: "b3", name: "bash", params: { command: "echo 'a\\nb'" }, type: "tool-call" },
+          { id: "b4", name: "bash", params: "not json", type: "tool-call" },
+        ],
+        role: "assistant",
+        ts: 300,
+      },
+    ]
+
+    const bashUsage = extractBashUsage(messages)
+    expect(bashUsage).toMatchObject([{ command: "bun test", count: 2, lastTs: 300, lastTurn: 0 }])
+    expect(formatBashUsage(bashUsage)).toContain("<bash-commands>")
+    expect(formatBashUsage([])).toBe("(no bash commands found)")
+  })
+
+  test("extractConversation flattens and sanitizes messages for summarization", () => {
+    const conversation = extractConversation(
+      [
+        u("hello"),
+        {
+          content: [
+            { text: "thinking", type: "reasoning" },
+            { id: "call", name: "read", params: { path: "a.ts" }, type: "tool-call" },
+          ],
+          role: "assistant",
+        },
+        {
+          content: [
+            {
+              content: "0123456789",
+              id: "call",
+              isError: true,
+              name: "read",
+              type: "tool-result",
+            },
+          ],
+          role: "tool",
+        },
+        { content: [{ code: "NOPE", message: "bad", type: "error" }], role: "user" },
+      ],
+      { maxToolResultLen: 4 }
+    )
+
+    expect(conversation).toContain("<conversation>")
+    expect(conversation).toContain("[User]: hello")
+    expect(conversation).toContain("<tool-call>read")
+    expect(conversation).toContain("<tool-result>\n  {\"tool\":\"read\",\"error\":true}")
+    expect(conversation).toContain("0123…")
+    expect(conversation).not.toContain("thinking")
+    expect(conversation).toContain("<error>")
+  })
+
+  test("formatFileUsage formats empty and populated file tables", () => {
+    expect(formatFileUsage([])).toBe("(no file ops found)")
+    expect(
+      formatFileUsage([
+        { count: 3, edits: 1, lastTs: 0, lastTurn: Infinity, path: "a.ts", reads: 1, score: 2.5, writes: 1 },
+      ])
+    ).toContain("<files>")
+  })
 })
 
 describe("messageTail", () => {

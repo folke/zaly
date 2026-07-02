@@ -1,5 +1,5 @@
 // ── Frecency tuning ───────────────────────────────────────────────────
-// Half-life measured in user turns, not wall time — what matters for
+// Half-life measured in assistant turns, not wall time — what matters for
 // compaction context is what's been hot in the agent's *recent
 // experience*, regardless of how long the user spent between turns.
 // 60 turns is a middle ground: actively-iterated work stays at the top

@@ -1,6 +1,8 @@
+import type { Message } from "@zaly/ai"
+
 import { describe, expect, test } from "vitest"
 import { truncate } from "../src/utils/truncate.ts"
-import { addUsage } from "../src/utils/usage.ts"
+import { addUsage, TokenUsage } from "../src/utils/usage.ts"
 
 describe("truncate", () => {
   test("returns small text untouched", () => {
@@ -96,5 +98,56 @@ describe("addUsage", () => {
   test("treats absent counts on one side as 0 for that side", () => {
     const r = addUsage({ cacheRead: 50, input: 1, output: 1 }, { input: 1, output: 1 })
     expect(r.cacheRead).toBe(50)
+  })
+
+  test("recursively sums nested cost usage", () => {
+    expect(
+      addUsage(
+        { cost: { input: 1, output: 2 }, input: 10, output: 20 },
+        { cost: { input: 3, output: 4, reasoning: 5 }, input: 30, output: 40 }
+      )
+    ).toEqual({
+      cost: { input: 4, output: 6, reasoning: 5 },
+      input: 40,
+      output: 60,
+    })
+  })
+})
+
+describe("TokenUsage", () => {
+  test("starts empty and exposes last/total/context accessors", () => {
+    const usage = new TokenUsage()
+    expect(usage.last).toEqual({ input: 0, output: 0 })
+    expect(usage.total).toEqual({ input: 0, output: 0 })
+    expect(usage.cost).toEqual({ input: 0, output: 0 })
+    expect(usage.contextSize).toBe(0)
+
+    usage.add({ cacheRead: 3, cacheWrite: 4, cost: { input: 1, output: 2 }, input: 10, output: 20, reasoning: 5 })
+    expect(usage.input).toBe(10)
+    expect(usage.output).toBe(20)
+    expect(usage.cacheRead).toBe(3)
+    expect(usage.cacheWrite).toBe(4)
+    expect(usage.reasoning).toBe(5)
+    expect(usage.contextSize).toBe(37)
+    expect(usage.total).toEqual({ cacheRead: 3, cacheWrite: 4, cost: { input: 1, output: 2 }, input: 10, output: 20, reasoning: 5 })
+  })
+
+  test("seeds totals from assistant message usage and ignores other messages", () => {
+    const usage = new TokenUsage([
+      { content: "ignored", role: "user" },
+      { content: "counted", meta: { usage: { input: 5, output: 6 } }, role: "assistant" },
+      { content: "ignored", role: "assistant" },
+    ] as Message[])
+
+    expect(usage.last).toEqual({ input: 5, output: 6 })
+    expect(usage.total).toEqual({ input: 5, output: 6 })
+  })
+
+  test("resetLast clears only the last usage", () => {
+    const usage = new TokenUsage()
+    usage.add({ input: 1, output: 2 })
+    usage.resetLast()
+    expect(usage.last).toEqual({ input: 0, output: 0 })
+    expect(usage.total).toEqual({ input: 1, output: 2 })
   })
 })
