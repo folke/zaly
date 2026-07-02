@@ -107,10 +107,10 @@ function estimateMessage(m: Message): TokenCount {
   }
 }
 
-function estimatePrompt(prompt: Prompt<string>[], tools?: Tool[]): TokenCount {
+function estimatePrompt(prompt: (string | Prompt<string>)[], tools?: Tool[]): TokenCount {
   const children: TokenCount[] = prompt.map((p) => ({
-    kind: p.name,
-    tokens: fromText(p.text),
+    kind: typeof p === "string" ? undefined : p.name,
+    tokens: fromText(typeof p === "string" ? p : p.text),
     type: "prompt" as const,
   }))
   children.push(
@@ -151,7 +151,7 @@ function addCount(stat: TokenCount, parent: TokenStats, expand?: (c: TokenCount)
 export function tokenStats(
   msgs: readonly Message[],
   opts: {
-    prompt?: Prompt<string>[]
+    prompt?: (string | Prompt<string>)[]
     tools?: Tool[]
     expand?: (c: TokenCount) => boolean
   } = {}
