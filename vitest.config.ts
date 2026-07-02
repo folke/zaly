@@ -22,9 +22,15 @@ export default defineConfig({
     },
     environment: "node",
     update: "new",
+    coverage: {
+      include: [`${pkgDir}/*/src/**/*.ts`],
+    },
     projects: packages.map((name) => ({
       extends: true,
-      test: { name: `@zaly/${name}`, root: `${pkgDir}/${name}` },
+      test: {
+        name: `@zaly/${name}`,
+        root: `${pkgDir}/${name}`,
+      },
     })),
   },
 })
