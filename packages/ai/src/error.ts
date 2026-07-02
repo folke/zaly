@@ -40,7 +40,14 @@ export class AiError extends Error implements ErrorInfo {
    *  whose underlying message is generic). */
   static from(error: unknown, opts?: Partial<ErrorInfo>): AiError {
     if (error instanceof AiError) return error
-    if (isErrorInfo(error)) return new AiError({ ...error, ...opts })
+    if (isErrorInfo(error))
+      return new AiError({
+        code: error.code,
+        data: error.data,
+        message: error.message,
+        retryable: error.retryable,
+        ...opts,
+      })
     return new AiError({
       cause: error,
       code: "ERROR",
