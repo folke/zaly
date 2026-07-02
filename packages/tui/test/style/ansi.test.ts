@@ -1,6 +1,6 @@
 import { hasAnsi, RESET, splitAnsi } from "@zaly/shared/ansi"
 import { describe, expect, test } from "vitest"
-import { hyperlink } from "../../src/style/ansi.ts"
+import { hyperlink, stripAnsiBg } from "../../src/style/ansi.ts"
 import { openStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 
@@ -132,6 +132,25 @@ describe("splitAnsi", () => {
     const [l0, l1] = splitAnsi(s)
     expect(l0).toContain("hello")
     expect(l1).toContain("world")
+  })
+})
+
+describe("stripAnsiBg", () => {
+  test("removes standard and bright background SGR codes", () => {
+    expect(stripAnsiBg("\x1b[41mred bg\x1b[49m plain")).toBe("red bg plain")
+    expect(stripAnsiBg("\x1b[104mbright bg\x1b[49m plain")).toBe("bright bg plain")
+  })
+
+  test("removes truecolor background SGR codes while preserving foreground", () => {
+    expect(stripAnsiBg("\x1b[31;48;2;1;2;3mtext\x1b[39;49m")).toBe(
+      "\x1b[31mtext\x1b[39m"
+    )
+  })
+
+  test("preserves attrs, foreground colors, and full resets", () => {
+    expect(stripAnsiBg("\x1b[1;38;2;4;5;6;48;2;1;2;3mtext\x1b[0m")).toBe(
+      "\x1b[1;38;2;4;5;6mtext\x1b[0m"
+    )
   })
 })
 

@@ -139,6 +139,80 @@ describe("Decoder — ESC handling", () => {
   })
 })
 
+describe("Decoder — mouse", () => {
+  test("decodes SGR scroll wheel events", () => {
+    expect(new Decoder().feed("\x1b[<64;10;5M")).toEqual([
+      {
+        alt: false,
+        ctrl: false,
+        deltaY: -1,
+        kind: "scroll",
+        meta: false,
+        shift: false,
+        type: "mouse",
+        x: 10,
+        y: 5,
+      },
+    ])
+    expect(new Decoder().feed("\x1b[<65;10;5M")).toMatchObject([{ deltaY: 1, kind: "scroll" }])
+  })
+
+  test("decodes SGR left button down, drag, and up events", () => {
+    const out = new Decoder().feed("\x1b[<0;10;5M\x1b[<32;12;7M\x1b[<0;12;7m")
+    expect(out).toEqual([
+      {
+        alt: false,
+        button: "left",
+        ctrl: false,
+        kind: "down",
+        meta: false,
+        shift: false,
+        type: "mouse",
+        x: 10,
+        y: 5,
+      },
+      {
+        alt: false,
+        button: "left",
+        ctrl: false,
+        kind: "drag",
+        meta: false,
+        shift: false,
+        type: "mouse",
+        x: 12,
+        y: 7,
+      },
+      {
+        alt: false,
+        button: "left",
+        ctrl: false,
+        kind: "up",
+        meta: false,
+        shift: false,
+        type: "mouse",
+        x: 12,
+        y: 7,
+      },
+    ])
+  })
+
+  test("preserves mouse modifier bits", () => {
+    expect(new Decoder().feed("\x1b[<28;3;4M")).toEqual([
+      {
+        alt: true,
+        button: "left",
+        ctrl: true,
+        kind: "down",
+        meta: false,
+        shift: true,
+        type: "mouse",
+        x: 3,
+        y: 4,
+      },
+    ])
+  })
+})
+
 describe("Decoder — paste + focus", () => {
   test("bracketed paste emits a single PasteEvent", () => {
     const d = new Decoder()

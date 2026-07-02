@@ -1,6 +1,6 @@
 import type { Node } from "../../src/core/node.ts"
 
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { createRenderer } from "../../src/index.ts"
 import { box } from "../../src/widgets/box.ts"
 import { input } from "../../src/widgets/input.ts"
@@ -63,6 +63,37 @@ describe("renderer.findNode — filter by type or predicate", () => {
     const r = await renderer()
     r.ui.root.add(box({}, text("x")))
     expect(r.findNode("input")).toEqual([])
+  })
+})
+
+describe("renderer mouse routing", () => {
+  test("routes scroll to stream scrolling and left drag to selection", async () => {
+    const r = await renderer()
+    const scroll = vi.spyOn(r.stream, "scroll").mockResolvedValue(undefined)
+
+    r.input.dispatch({ alt: false, ctrl: false, deltaY: 1, kind: "scroll", meta: false, shift: false, type: "mouse", x: 1, y: 1 })
+    expect(scroll).toHaveBeenCalledWith(1)
+    expect(r.selection.selection).toBeUndefined()
+
+    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "down", meta: false, shift: false, type: "mouse", x: 2, y: 3 })
+    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "drag", meta: false, shift: false, type: "mouse", x: 5, y: 6 })
+
+    expect(r.selection.selection).toMatchObject({
+      anchor: { col: 2, row: 3, surface: "screen" },
+      focus: { col: 5, row: 6, surface: "screen" },
+    })
+    expect(scroll).toHaveBeenCalledTimes(1)
+  })
+
+  test("esc clears active selection", async () => {
+    const r = await renderer()
+    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "down", meta: false, shift: false, type: "mouse", x: 2, y: 3 })
+    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "drag", meta: false, shift: false, type: "mouse", x: 5, y: 6 })
+    expect(r.selection.selection).toBeDefined()
+
+    r.input.dispatch({ event: { alt: false, ctrl: false, meta: false, name: "esc", shift: false }, type: "key" })
+
+    expect(r.selection.selection).toBeUndefined()
   })
 })
 

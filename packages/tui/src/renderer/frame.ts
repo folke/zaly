@@ -1,6 +1,8 @@
+import type { RenderCtx } from "../core/ctx.ts"
 import type { Terminal } from "./terminal.ts"
 
 import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
+import { stripAnsiBg } from "../style/ansi.ts"
 
 export type FrameOp = (terminal: Terminal) => void
 
@@ -55,6 +57,20 @@ export class RenderFrame {
     const prefix = sliceAnsi(base, 0, start)
     const pad = " ".repeat(Math.max(0, start - stringWidth(prefix)))
     this.set(row, `${prefix}${pad}${content}${sliceAnsi(base, start + width)}`)
+  }
+
+  highlight(row: number, from: number | undefined, to: number | undefined, ctx: RenderCtx): void {
+    if (row < 1 || row > this.#next.length) return
+    const start = from ? Math.max(0, from - 1) : 0
+    const end = to ? Math.max(start, to - 1) : ctx.width
+    if (end <= start) return
+    const base = this.get(row)
+    const width = stringWidth(base)
+    if (start >= width) return
+    const clampedEnd = Math.min(end, width)
+    const text = sliceAnsi(base, start, clampedEnd)
+    const highlighted = ctx.style.selection(stripAnsiBg(text))
+    this.set(row, `${sliceAnsi(base, 0, start)}${highlighted}${sliceAnsi(base, clampedEnd)}`)
   }
 
   queue(op: FrameOp): void {

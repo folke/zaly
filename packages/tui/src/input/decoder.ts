@@ -10,17 +10,20 @@ import type { KeyEvent } from "./keys.ts"
  * an idle-timer tick to emit a bare `esc` event when no follow-up arrives.
  */
 
+export type MouseButton = "left" | "middle" | "right"
+
 export type MouseEvent = {
   type: "mouse"
-  kind: "scroll"
   x: number
   y: number
-  deltaY: number
   alt: boolean
   ctrl: boolean
   meta: boolean
   shift: boolean
-}
+} & (
+  | { kind: "scroll"; deltaY: number }
+  | { kind: "down" | "drag" | "up"; button: MouseButton }
+)
 
 export type InputEvent =
   | { type: "key"; event: KeyEvent }
@@ -183,7 +186,7 @@ const SS3_NAMES: Partial<Record<string, string>> = { P: "f1", Q: "f2", R: "f3", 
 
 function handleCsi(params: string, final: string, out: InputEvent[]): void {
   if ((final === "M" || final === "m") && params.startsWith("<")) {
-    handleMouse(params, out)
+    handleMouse(params, final, out)
     return
   }
 
@@ -209,7 +212,7 @@ function handleCsi(params: string, final: string, out: InputEvent[]): void {
   // Unrecognized CSI — drop. (Cursor-position responses, etc.)
 }
 
-function handleMouse(params: string, out: InputEvent[]): void {
+function handleMouse(params: string, final: string, out: InputEvent[]): void {
   const parts = params
     .slice(1)
     .split(";")
@@ -219,17 +222,43 @@ function handleMouse(params: string, out: InputEvent[]): void {
 
   const code = button & 0b11
   const scroll = (button & 0b0100_0000) !== 0
-  if (!scroll) return
-
   const mods = mouseModBits(button)
+  if (scroll) {
+    out.push({
+      ...mods,
+      deltaY: code === 0 ? -1 : 1,
+      kind: "scroll",
+      type: "mouse",
+      x,
+      y,
+    })
+    return
+  }
+
+  const mouseButton = buttonName(code)
+  if (!mouseButton) return
+  const kind = mouseKind(button, final)
   out.push({
     ...mods,
-    deltaY: code === 0 ? -1 : 1,
-    kind: "scroll",
+    button: mouseButton,
+    kind,
     type: "mouse",
     x,
     y,
   })
+}
+
+function mouseKind(button: number, final: string): "down" | "drag" | "up" {
+  if (final === "m") return "up"
+  if ((button & 0b0010_0000) !== 0) return "drag"
+  return "down"
+}
+
+function buttonName(code: number): MouseButton | undefined {
+  if (code === 0) return "left"
+  if (code === 1) return "middle"
+  if (code === 2) return "right"
+  return undefined
 }
 
 function mouseModBits(button: number): Pick<KeyEvent, "alt" | "ctrl" | "meta" | "shift"> {

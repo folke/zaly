@@ -32,6 +32,7 @@ import { styleBuilder as buildStyle } from "../style/builder.ts"
 import { defaultTheme } from "../themes/registry.ts"
 import { Frame } from "./frame.ts"
 import { OverlaySurface } from "./overlay.ts"
+import { SelectionLayer } from "./selection.ts"
 import { Stream } from "./stream.ts"
 import { Terminal } from "./terminal.ts"
 import { UI } from "./ui.ts"
@@ -107,6 +108,7 @@ export class Renderer extends Emitter<RenderEvents> {
   readonly stream: Stream
   readonly ui: UI
   readonly overlay: OverlaySurface
+  readonly selection: SelectionLayer
   readonly terminal: Terminal
   readonly input: InputRouter
   readonly frame: Frame
@@ -188,6 +190,12 @@ export class Renderer extends Emitter<RenderEvents> {
     // Surfaces render into the shared frame; the renderer owns scheduling,
     // lifecycle events, and paint order.
     this.overlay = new OverlaySurface(this)
+    this.selection = new SelectionLayer({
+      invalidate: () => {
+        this.overlay.invalidate()
+        this.#schedule()
+      },
+    })
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
 
     this.input = new InputRouter(this.logger.child({ name: "input" }))
@@ -204,7 +212,11 @@ export class Renderer extends Emitter<RenderEvents> {
     this.actions.setTargetResolver(() => this.input.focused)
     this.input.setActions(this.actions)
     this.input.on("mouse", ({ event }) => {
-      void this.stream.scroll(event.deltaY)
+      if (event.kind === "scroll") void this.stream.scroll(event.deltaY)
+      else this.selection.mouse(event)
+    })
+    this.input.on("key", ({ event }) => {
+      if (event.name === "esc") this.selection.clear()
     })
     // Rebuild the Router's keymap whenever the catalog changes. Action
     // `.keys` fields are the single source of truth for default
@@ -516,6 +528,7 @@ export class Renderer extends Emitter<RenderEvents> {
     frame.commitBase()
     await render(this.overlay)
     if (this.#debug) this.#renderDebug(frame)
+    this.selection.render(frame, this.ctx)
     // Flush any side-channel transmits (e.g. KGP image data queued by
     // Image widgets during render) BEFORE entering the synced frame.
     // The terminal stores transmitted bytes globally — placements in
