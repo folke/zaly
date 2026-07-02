@@ -346,7 +346,7 @@ function thinkingBudget(
 function supportsAdaptiveThinking(model: string): boolean {
   if (isMythos(model)) return true
   const parsed = parseClaudeVersion(model)
-  return parsed !== undefined && parsed.major >= 4 && parsed.minor >= 6
+  return parsed !== undefined && ((parsed.major >= 4 && parsed.minor >= 6) || parsed.major >= 5)
 }
 
 function adaptiveEffort(
@@ -382,9 +382,9 @@ function isMythos(model: string): boolean {
 function parseClaudeVersion(
   model: string
 ): { family: string; major: number; minor: number } | undefined {
-  const match = /^claude-([a-z]+)-(\d+)-(\d+)(?:-|$)/.exec(model)
+  const match = /^claude-([a-z]+)-(\d+)(?:-(\d+))?(?:-|$)/.exec(model)
   if (!match) return undefined
-  return { family: match[1], major: Number(match[2]), minor: Number(match[3]) }
+  return { family: match[1], major: Number(match[2]), minor: Number(match[3] || "0") }
 }
 
 async function toAnthropicMessages(
