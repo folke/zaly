@@ -142,7 +142,7 @@ export function withError<T>(fn: () => T, errorMsg: string): T {
 }
 
 export function clamp(num: number, min?: number, max?: number): number {
-  return Math.min(max ?? num, Math.max(min ?? num, num))
+  return Math.min(max ?? Infinity, Math.max(min ?? num, num))
 }
 
 export async function withLock<T>(path: string, fn: () => Promise<T>): Promise<T> {
