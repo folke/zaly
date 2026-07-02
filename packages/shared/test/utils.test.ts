@@ -296,18 +296,26 @@ describe("misc utilities", () => {
   })
 
   test("isInstance excludes plain objects/null/arrays but accepts class instances", () => {
-    class Thing {}
+    class Thing {
+      value = 1
+    }
     expect(isInstance(new Thing())).toBe(true)
     expect(isInstance({})).toBe(false)
-    expect(isInstance(null)).toBe(false)
+    expect(isInstance(JSON.parse("null"))).toBe(false)
     expect(isInstance([])).toBe(false)
   })
 
   test("isPromiseLike checks for object thenables", () => {
-    expect(isPromiseLike({ then: () => {} })).toBe(true)
+    const thenable = {} as { then?: () => void }
+    // oxlint-disable-next-line unicorn/no-thenable
+    thenable.then = () => {}
+    const notThenable = {} as { then?: unknown }
+    // oxlint-disable-next-line unicorn/no-thenable
+    notThenable.then = "nope"
+    expect(isPromiseLike(thenable)).toBe(true)
     expect(isPromiseLike(Promise.resolve())).toBe(true)
-    expect(isPromiseLike(null)).toBe(false)
-    expect(isPromiseLike({ then: "nope" })).toBe(false)
+    expect(isPromiseLike(undefined)).toBe(false)
+    expect(isPromiseLike(notThenable)).toBe(false)
   })
 })
 

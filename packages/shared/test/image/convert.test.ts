@@ -49,9 +49,7 @@ describe("imageConvert", () => {
   test("converts with sharp when the source format is not accepted", async () => {
     const img = fakeImage("svg", svg(`convert-${Date.now()}`))
     const out = await imageConvert(img, "png")
-    expect(out?.format).toBe("png")
-    expect(out?.width).toBe(20)
-    expect(out?.height).toBe(10)
+    expect(out).toMatchObject({ format: "png", height: 10, width: 20 })
     expect(out?.data.length).toBeGreaterThan(0)
   })
 })
