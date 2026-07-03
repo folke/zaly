@@ -154,6 +154,7 @@ export class App {
     })
 
     this.#renderer.selection.on("selection", async ({ text }) => {
+      if (!this.$.ui.copyOnSelect) return
       if (text.trim() === "") return
       const { clipboard } = await import("@zaly/tui/clipboard")
       const ok = await this.ctx.logger.try(() => clipboard.write(text))

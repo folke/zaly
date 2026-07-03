@@ -260,6 +260,11 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       name: "Show Images",
       prop: ["ui", "images"],
     }),
+    toggle({
+      desc: "Copy selected text to clipboard (only relevant for fullscreen mode)",
+      name: "Copy on Select",
+      prop: ["ui", "copyOnSelect"],
+    }),
     option({
       desc: "Maximum number of visible rows in selection lists, like pickers and autocomplete",
       name: "List Height",

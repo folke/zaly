@@ -40,6 +40,9 @@ export const ConfigSchema = {
                                 ],
                                 description: "scrollback: preserves terminal scrollback/search; footer scrolls away with mouse wheel because the terminal is scrolling\n/* fullscreen: alternate screen + mouse; footer stays fixed; dedicated app viewport"
                             },
+                            copyOnSelect: {
+                                type: "boolean"
+                            },
                             collapsedTools: {
                                 type: "array",
                                 items: {
