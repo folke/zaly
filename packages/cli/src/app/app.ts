@@ -153,6 +153,18 @@ export class App {
       theme: await this.#ctx.theme(),
     })
 
+    this.#renderer.selection.on("selection", async ({ text }) => {
+      if (text.trim() === "") return
+      const { clipboard } = await import("@zaly/tui/clipboard")
+      const ok = await this.ctx.logger.try(() => clipboard.write(text))
+      if (ok)
+        this.#notifier.notify(`Copied ${text.length} characters to clipboard`, {
+          level: "info",
+          timeout: 2000,
+          title: "Clipboard",
+        })
+    })
+
     this.#renderer.stream.on("scroll", ({ offset, total, below }) => {
       this.#state.scroll = { below, offset, total }
     })
