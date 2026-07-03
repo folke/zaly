@@ -146,7 +146,7 @@ export class App {
       import("@zaly/tui/widgets/box"),
       import("./composer.ts"),
     ])
-    const mode = this.$.ui.mode
+    const mode = this.ctx.flags.mode ?? this.$.ui.mode
     this.#renderer = await createRenderer({
       altScreen: mode === "fullscreen",
       fixedFooterHeight: 5,

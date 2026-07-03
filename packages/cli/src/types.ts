@@ -26,6 +26,7 @@ export interface Flags {
   debug?: boolean
   cwd?: string
   model?: string
+  mode?: "fullscreen" | "scrollback"
   apiKey?: string
   tools?: string[]
   reasoning?: ReasoningEffort

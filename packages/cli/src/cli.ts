@@ -184,6 +184,11 @@ export function mainCommand(cli: Cli) {
         type: "boolean",
         description: "Print the resolved config and exit",
       },
+      mode: {
+        type: "enum",
+        options: ["scrollback", "fullscreen"],
+        description: "Terminal mode",
+      },
     },
     setup: async ({ args }) => {
       cli.args = args as unknown as CliArgs
