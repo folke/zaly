@@ -97,7 +97,9 @@ describe("SelectionLayer", () => {
   })
 
   test("double click selects a word-like token at the point", () => {
-    const s = layer({ frameSlice: () => ({ from: 1, line: "run packages/tui-test @scope/pkg", to: 33 }) })
+    const s = layer({
+      frameSlice: () => ({ from: 1, line: "run packages/tui-test @scope/pkg", to: 33 }),
+    })
 
     s.mouse({ ...base, button: "left", click: 2, kind: "down", x: 8, y: 1 })
 
@@ -276,7 +278,7 @@ describe("SelectionLayer", () => {
 
     s.clear()
 
-    expect(s.text).toBe("")
+    expect(s.text).toBe(undefined)
   })
 
   test("clear removes selection and invalidates once", () => {
@@ -359,7 +361,8 @@ describe("SelectionLayer", () => {
   test("screen-started selection into stream remains screen anchored", () => {
     const s = layer({
       stream: true,
-      streamFromScreen: (point) => (point.row >= 3 ? { col: point.col, row: point.row + 100 } : undefined),
+      streamFromScreen: (point) =>
+        point.row >= 3 ? { col: point.col, row: point.row + 100 } : undefined,
     })
 
     s.mouse({ ...base, button: "left", kind: "down", x: 2, y: 1 })
