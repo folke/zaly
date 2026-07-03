@@ -10,6 +10,7 @@ export type TemplateOpts = {
   name?: string
   expr?: boolean
   format?: (value: unknown) => string | undefined
+  helpers?: Record<string, unknown>
 }
 
 const exprRe = /\{\{([\s\S]*?)\}\}/g
@@ -129,6 +130,7 @@ export class Template<T extends TemplateVars = TemplateVars> {
         },
         json: (value: unknown) => JSON.stringify(value, undefined, 2),
         vars,
+        ...this.#opts.helpers,
       },
       {
         codeGeneration: { strings: false, wasm: false },
