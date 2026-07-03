@@ -15,7 +15,7 @@ import { codeToAnsi } from "@zaly/tui"
 import { text } from "@zaly/tui/widgets/text"
 import { defineCommand, renderUsage } from "citty"
 
-const actionRe = () => /^\s*\/([a-zA-Z_:-]+)(?:\s+(.*))?$/
+const actionRe = () => /^\s*:([a-zA-Z_:-]+)(?:\s+(.*))?$/
 
 export class ActionsComposer implements ComposerPlugin {
   name = "actions"
@@ -31,7 +31,7 @@ export class ActionsComposer implements ComposerPlugin {
     const args = actionMatch[2] || ""
     value = await codeToAnsi(`${cmd} ${args}`, "bash", { theme: s.theme.shiki })
     value = s.primary(cmd) + sliceAnsi(value, cmd.length)
-    return `${s.divider("/")}${value}`
+    return `${s.divider(":")}${value}`
   }
 
   validate(value: string, ctx: ComposerCtx): true | string {

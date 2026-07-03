@@ -182,7 +182,7 @@ export class Composer {
       },
       format: (value, ctx) => this.format(value, ctx),
       history: this.#app.config.state.$.inputHistory ?? [],
-      placeholder: "Ask zaly anything…",
+      placeholder: "Ask zaly anything… (: for actions)",
       validate: (value: string) => this.validate(value),
     }).on("submit", (value) => this.submit(value))).on("history", ({ added }) =>
       this.#app.config.state.update((s) => {
