@@ -6,6 +6,12 @@ import { stripAnsiBg } from "../style/ansi.ts"
 
 export type FrameOp = (terminal: Terminal) => void
 
+export type LineSlice = {
+  from: number
+  line: string
+  to?: number
+}
+
 export class Frame {
   #base: (string | undefined)[] = []
   #current: (string | undefined)[] = []
@@ -59,18 +65,27 @@ export class RenderFrame {
     this.set(row, `${prefix}${pad}${content}${sliceAnsi(base, start + width)}`)
   }
 
-  highlight(row: number, from: number | undefined, to: number | undefined, ctx: RenderCtx): void {
+  slice(row: number, from: number | undefined, to: number | undefined, width = this.terminal.cols): LineSlice | undefined {
     if (row < 1 || row > this.#next.length) return
     const start = from ? Math.max(0, from - 1) : 0
-    const end = to ? Math.max(start, to - 1) : ctx.width
+    const end = to ? Math.max(start, to - 1) : width
     if (end <= start) return
-    const base = this.get(row)
-    const width = stringWidth(base)
-    if (start >= width) return
-    const clampedEnd = Math.min(end, width)
-    const text = sliceAnsi(base, start, clampedEnd)
+    const line = this.get(row)
+    const lineWidth = stringWidth(line)
+    if (start >= lineWidth) return
+    const clampedEnd = Math.min(end, lineWidth)
+    return { from: start + 1, line, to: clampedEnd + 1 }
+  }
+
+  highlight(row: number, from: number | undefined, to: number | undefined, ctx: RenderCtx): LineSlice | undefined {
+    const ret = this.slice(row, from, to, ctx.width)
+    if (!ret) return
+    const start = ret.from - 1
+    const end = (ret.to ?? ctx.width + 1) - 1
+    const text = sliceAnsi(ret.line, start, end)
     const highlighted = ctx.style.selection(stripAnsiBg(text))
-    this.set(row, `${sliceAnsi(base, 0, start)}${highlighted}${sliceAnsi(base, clampedEnd)}`)
+    this.set(row, `${sliceAnsi(ret.line, 0, start)}${highlighted}${sliceAnsi(ret.line, end)}`)
+    return ret
   }
 
   queue(op: FrameOp): void {

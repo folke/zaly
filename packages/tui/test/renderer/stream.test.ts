@@ -59,6 +59,18 @@ describe("Stream selection coordinates", () => {
     expect(stream.toScreen({ col: 1, row: 2 })).toEqual({ col: 1, row: 1 })
     expect(stream.toScreen({ col: 1, row: 6 })).toEqual({ col: 1, row: 5 })
   })
+
+  test("returns stream rows by document row", async () => {
+    const { stream } = mount(20, 5)
+    stream.append(() => text("a\nb\nc\nd\ne\nf"))
+    await stream.render()
+
+    expect(stream.getRow(1)).toBe("a")
+    expect(stream.getRow(2)).toBe("b")
+    expect(stream.getRow(6)).toBe("f")
+    expect(stream.getRow(0)).toBeUndefined()
+    expect(stream.getRow(7)).toBeUndefined()
+  })
 })
 
 describe("Stream.flush — first render", () => {

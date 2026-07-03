@@ -26,6 +26,7 @@ type StreamSnapshot = {
   bottom: number
   deleteVirtualPlacements?: () => string
   historyLength: number
+  rows: string[]
   scrollTop: number
   top: number
   virtual: boolean
@@ -115,6 +116,7 @@ export class Stream extends Surface<StreamEvents> {
   #snapshot: StreamSnapshot = {
     bottom: 0,
     historyLength: 0,
+    rows: [],
     scrollTop: 0,
     top: 1,
     virtual: false,
@@ -217,6 +219,10 @@ export class Stream extends Surface<StreamEvents> {
    */
   get rows(): readonly string[] {
     return this.#snapshot.visible
+  }
+
+  getRow(row: number): string | undefined {
+    return this.#snapshot.rows[row - 1]
   }
 
   fromScreen(point: Point): Point | undefined {
@@ -420,6 +426,7 @@ export class Stream extends Surface<StreamEvents> {
       bottom: liveHeight,
       deleteVirtualPlacements: deleteImages,
       historyLength,
+      rows: [...this.#scrollback, ...liveRows],
       scrollTop: this.#scrollTop === 0 ? maxTop : this.#scrollTop,
       top: liveHeight - newVisible.length + 1,
       virtual: this.#scrollTop > 0,
@@ -577,6 +584,7 @@ export class Stream extends Surface<StreamEvents> {
     this.#snapshot = {
       ...this.#snapshot,
       bottom: this.terminal.scrollBottom,
+      rows: [],
       scrollTop: 0,
       top: 1,
       virtual: false,

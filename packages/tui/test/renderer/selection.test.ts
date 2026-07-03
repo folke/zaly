@@ -16,6 +16,7 @@ type TestRendererOpts = {
   stream?: boolean
   streamBounds?: { top: number; bottom: number }
   streamFromScreen?: (point: Point) => Point | undefined
+  streamGetRow?: (row: number) => string | undefined
   streamToScreen?: (point: Point) => Point
   ui?: boolean
 }
@@ -33,6 +34,7 @@ function testRenderer(opts: TestRendererOpts = {}): Renderer & { $emit: ReturnTy
       bounds: opts.streamBounds ?? { bottom: 5, top: 1 },
       contains: vi.fn(() => opts.stream ?? false),
       fromScreen: vi.fn(opts.streamFromScreen ?? ((point) => point)),
+      getRow: vi.fn(opts.streamGetRow ?? (() => undefined)),
       toScreen: vi.fn(opts.streamToScreen ?? ((point) => point)),
     },
     ui: {
@@ -116,6 +118,97 @@ describe("SelectionLayer", () => {
     expect(frame.get(2)).toBe("al\x1b[7mpha\x1b[0m")
     expect(frame.get(3)).toBe("\x1b[7mbravo\x1b[0m")
     expect(frame.get(4)).toBe("\x1b[7mcha\x1b[0mrlie")
+  })
+
+  test("stores normalized text for highlighted screen selections", () => {
+    const s = layer()
+    const { ctx, frame } = testFrame()
+    frame.set(1, "  \x1b[31mfoo\x1b[0m  ")
+    frame.set(2, "  bar  ")
+    frame.set(3, "  ")
+    frame.set(4, "  baz  ")
+    s.mouse({ ...base, button: "left", kind: "down", x: 1, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 7, y: 4 })
+
+    s.render(frame, ctx)
+
+    expect(s.text).toBe("foo\nbar\n\nbaz")
+  })
+
+  test("uses full rows for common indent detection", () => {
+    const s = layer()
+    const { ctx, frame } = testFrame()
+    frame.set(1, "  cd packages/tui  ")
+    frame.set(2, "  98 pass  ")
+    frame.set(3, "  0 fail  ")
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 9, y: 3 })
+
+    s.render(frame, ctx)
+
+    expect(s.text).toBe("cd packages/tui\n98 pass\n0 fail")
+  })
+
+  test("stores normalized text for clipped stream selections", () => {
+    const s = layer({
+      stream: true,
+      streamBounds: { bottom: 3, top: 2 },
+      streamFromScreen: (point) => ({ col: point.col, row: point.row + 100 }),
+      streamGetRow: (row) => {
+        if (row === 101) return "above"
+        if (row === 102) return "  \x1b[31mfoo\x1b[0m  "
+        if (row === 103) return "  bar  "
+        if (row === 104) return "below"
+      },
+      streamToScreen: (point) => ({ col: point.col, row: point.row - 100 }),
+    })
+    const { ctx, frame } = testFrame()
+    frame.set(1, "above")
+    frame.set(2, "  \x1b[31mfoo\x1b[0m  ")
+    frame.set(3, "  bar  ")
+    frame.set(4, "below")
+    s.mouse({ ...base, button: "left", kind: "down", x: 1, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 20, y: 4 })
+
+    s.render(frame, ctx)
+
+    expect(s.text).toBe("foo\nbar")
+  })
+
+  test("stream selection text ignores overlaid screen contents", () => {
+    const s = layer({
+      stream: true,
+      streamBounds: { bottom: 2, top: 1 },
+      streamFromScreen: (point) => ({ col: point.col, row: point.row + 100 }),
+      streamGetRow: (row) => {
+        if (row === 101) return "  stream one  "
+        if (row === 102) return "  stream two  "
+      },
+      streamToScreen: (point) => ({ col: point.col, row: point.row - 100 }),
+    })
+    const { ctx, frame } = testFrame()
+    frame.set(1, "  overlay one  ")
+    frame.set(2, "  overlay two  ")
+    s.mouse({ ...base, button: "left", kind: "down", x: 1, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 20, y: 2 })
+
+    s.render(frame, ctx)
+
+    expect(s.text).toBe("stream one\nstream two")
+  })
+
+  test("clear removes selection text", () => {
+    const s = layer()
+    const { ctx, frame } = testFrame()
+    frame.set(1, "hello")
+    s.mouse({ ...base, button: "left", kind: "down", x: 1, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 6, y: 1 })
+    s.render(frame, ctx)
+    expect(s.text).toBe("hello")
+
+    s.clear()
+
+    expect(s.text).toBe("")
   })
 
   test("clear removes selection and invalidates once", () => {

@@ -521,9 +521,10 @@ export class Renderer extends Emitter<RenderEvents> {
     await render(this.stream)
     await render(this.ui)
     frame.commitBase()
+    this.selection.renderStream(frame, this.ctx)
     await render(this.overlay)
     if (this.#debug) this.#renderDebug(frame)
-    this.selection.render(frame, this.ctx)
+    this.selection.renderScreen(frame, this.ctx)
     // Flush any side-channel transmits (e.g. KGP image data queued by
     // Image widgets during render) BEFORE entering the synced frame.
     // The terminal stores transmitted bytes globally — placements in

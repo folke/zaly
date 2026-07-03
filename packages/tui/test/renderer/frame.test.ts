@@ -13,27 +13,38 @@ function testFrame() {
   }
 }
 
+describe("RenderFrame.slice", () => {
+  test("returns a full line plus the clamped selected range", () => {
+    const { frame } = testFrame()
+    frame.set(1, "hello")
+
+    expect(frame.slice(1, -10, 4)).toEqual({ from: 1, line: "hello", to: 4 })
+    expect(frame.slice(1, 5, 5)).toBeUndefined()
+    expect(frame.slice(10, 1, 2)).toBeUndefined()
+  })
+})
+
 describe("RenderFrame.highlight", () => {
   test("wraps a screen-column range in inverse video", () => {
     const { ctx, frame } = testFrame()
     frame.set(1, "hello world")
-    frame.highlight(1, 3, 7, ctx)
+    expect(frame.highlight(1, 3, 7, ctx)).toEqual({ from: 3, line: "hello world", to: 7 })
     expect(frame.get(1)).toBe("he\x1b[7mllo \x1b[0mworld")
   })
 
   test("clamps ranges and ignores empty or offscreen highlights", () => {
     const { ctx, frame } = testFrame()
     frame.set(1, "hello")
-    frame.highlight(1, -10, 4, ctx)
-    frame.highlight(1, 5, 5, ctx)
-    frame.highlight(10, 1, 2, ctx)
+    expect(frame.highlight(1, -10, 4, ctx)).toEqual({ from: 1, line: "hello", to: 4 })
+    expect(frame.highlight(1, 5, 5, ctx)).toBeUndefined()
+    expect(frame.highlight(10, 1, 2, ctx)).toBeUndefined()
     expect(frame.get(1)).toBe("\x1b[7mhel\x1b[0mlo")
   })
 
   test("preserves surrounding ANSI-styled content", () => {
     const { ctx, frame } = testFrame()
     frame.set(1, "a\x1b[31mbcd\x1b[0me")
-    frame.highlight(1, 2, 4, ctx)
+    expect(frame.highlight(1, 2, 4, ctx)).toEqual({ from: 2, line: "a\x1b[31mbcd\x1b[0me", to: 4 })
     expect(frame.get(1)).toContain("\x1b[7m")
     expect(frame.get(1)).toContain("\x1b[0m")
     expect(frame.get(1)).toContain("\x1b[31m")
