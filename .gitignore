@@ -8,6 +8,7 @@ node_modules
 out
 dist
 *.tgz
+build
 
 # api-extractor staging (the .api.md report under etc/ is committed)
 temp
