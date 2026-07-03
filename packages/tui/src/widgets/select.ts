@@ -143,12 +143,12 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
   constructor(initial: SelectState<T>) {
     super({ active: 0, ...initial } as SelectState<T>)
 
-    let active = this.active
+    let active = this.item
     effect(() => {
-      const next = this.active
+      const next = this.item
       if (next === active) return
       active = next
-      void this.emit("changed", { active: next, item: this.#items[next] })
+      void this.emit("changed", { active: this.active, item: next })
     })
   }
 
@@ -171,9 +171,9 @@ export class Select<T extends Option = Option> extends Node<SelectState<T>, Sele
   }
 
   get active(): number {
+    const a = this.state.active ?? 0
     const n = this.#items.length
     if (n === 0) return 0
-    const a = this.state.active ?? 0
     return Math.max(0, Math.min(n - 1, a))
   }
 
