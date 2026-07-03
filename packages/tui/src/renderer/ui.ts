@@ -132,7 +132,7 @@ export class UI extends Surface {
   }
 
   get bounds(): { top: number; bottom: number } {
-    const top = this.terminal.footerTop
+    const top = this.terminal.footerTop || this.terminal.rows + 1
     return { bottom: this.terminal.rows, top }
   }
 }

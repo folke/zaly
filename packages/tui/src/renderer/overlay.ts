@@ -2,6 +2,7 @@ import type { MountCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
 import type { Overlay } from "../widgets/overlay.ts"
 import type { RenderFrame } from "./frame.ts"
+import type { Point } from "./surface.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { createNode, withOwner } from "../core/reactive.ts"
@@ -12,10 +13,12 @@ export type OverlayRenderState = {
   y: number
   width: number
   height: number
+  zIndex: number
+  node: Overlay
 }
 
 export type OverlaySurfaceEvents = {
-  "render-node": { node: Node } & OverlayRenderState
+  "render-node": OverlayRenderState
 }
 
 /**
@@ -38,6 +41,12 @@ export type OverlaySurfaceEvents = {
 export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
   readonly type = "overlay"
   readonly #overlays: Overlay[] = []
+  /** Cached render state for each active overlay, in z-order (low -> high). */
+  #state: OverlayRenderState[] = []
+
+  get state(): readonly OverlayRenderState[] {
+    return [...this.#state]
+  }
 
   get bounds(): { top: number; bottom: number } {
     return { bottom: this.$r.terminal.rows, top: 1 }
@@ -50,6 +59,19 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
   /** Active overlays in paint order (low → high z-index). */
   get active(): readonly Overlay[] {
     return this.#overlays.filter((o) => o.visible && o.ctx !== undefined)
+  }
+
+  /** Return the topmost overlay at the given `(row, col)`, if any. */
+  at({ row, col }: Point): OverlayRenderState | undefined {
+    return this.#state.findLast((s) => {
+      if (row < s.y || row >= s.y + s.height) return false
+      if (col < s.x || col >= s.x + s.width) return false
+      return true
+    })
+  }
+
+  override contains(point: Point): boolean {
+    return this.at(point) !== undefined
   }
 
   /** Register an overlay with the surface. Function form runs `fn`
@@ -112,7 +134,7 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
   async _render(frame: RenderFrame): Promise<void> {
     const painted: { x: number; y: number; rows: string[] }[] = []
     const ctx = this.$r.ctx
-    await Promise.all(
+    this.#state = await Promise.all(
       this.active.map(async (node) => {
         // Width and height are honoured by the box layout itself
         // (`width: "fit" | number` and the `height` + `verticalAlign`
@@ -151,7 +173,9 @@ export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
         else if (ha === "center") x -= Math.floor(width / 2)
 
         painted.push({ rows, x, y })
-        void this.emit("render-node", { height, node, width, x, y })
+        const s: OverlayRenderState = { height, node, width, x, y, zIndex: node.state.zIndex ?? 0 }
+        void this.emit("render-node", s)
+        return s
       })
     )
     for (const { rows, x, y } of painted) {

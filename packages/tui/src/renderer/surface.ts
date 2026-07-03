@@ -15,6 +15,11 @@ import { untrack } from "../core/reactive.ts"
  */
 export type SurfaceEvents = {}
 
+export type Point = {
+  row: number
+  col: number
+}
+
 /**
  * Shared base for the three renderer surfaces (`Stream`, `UI`,
  * `OverlaySurface`). Owns the common lifecycle and paint bookkeeping:
@@ -55,6 +60,12 @@ export abstract class Surface<E extends {} = never> extends Emitter<SurfaceEvent
         this.unmountAll()
         this.#mountCtx = undefined
       })
+  }
+
+  /** Check if this surface contains the given screen position */
+  contains(point: Point): boolean {
+    const { top, bottom } = this.bounds
+    return point.row >= top && point.row <= bottom
   }
 
   get dirty(): boolean {

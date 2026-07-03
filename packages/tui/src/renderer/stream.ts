@@ -3,6 +3,7 @@ import type { Node } from "../core/node.ts"
 import type { SuspenseBoundary } from "../core/reactive.ts"
 import type { RenderFrame } from "./frame.ts"
 import type { Renderer } from "./renderer.ts"
+import type { Point } from "./surface.ts"
 import type { Terminal } from "./terminal.ts"
 
 import { throttle } from "@zaly/shared/throttle"
@@ -216,6 +217,18 @@ export class Stream extends Surface<StreamEvents> {
    */
   get rows(): readonly string[] {
     return this.#snapshot.visible
+  }
+
+  fromScreen(point: Point): Point | undefined {
+    const { top, visible, scrollTop } = this.#snapshot
+    if (point.row < top || point.row >= top + visible.length) return
+    return { col: point.col, row: scrollTop + point.row - top }
+  }
+
+  toScreen(point: Point): Point | undefined {
+    const { top, scrollTop } = this.#snapshot
+    const offset = point.row - scrollTop
+    return { col: point.col, row: top + offset }
   }
 
   get #historyLength(): number {
