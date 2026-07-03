@@ -15,7 +15,7 @@ import { codeToAnsi } from "@zaly/tui"
 import { text } from "@zaly/tui/widgets/text"
 import { defineCommand, renderUsage } from "citty"
 
-const actionRe = () => /^\s*:([a-zA-Z_:-]+)(?:\s+(.*))?$/
+const actionRe = () => /^(:\s*)([a-zA-Z_:-]+)(?:\s+(.*))?$/
 
 export class ActionsComposer implements ComposerPlugin {
   name = "actions"
@@ -27,11 +27,11 @@ export class ActionsComposer implements ComposerPlugin {
     ctx.stop()
 
     const s = ctx.style
-    const cmd = actionMatch[1]
-    const args = actionMatch[2] || ""
+    const cmd = actionMatch[2]
+    const args = actionMatch[3] || ""
     value = await codeToAnsi(`${cmd} ${args}`, "bash", { theme: s.theme.shiki })
     value = s.primary(cmd) + sliceAnsi(value, cmd.length)
-    return `${s.divider(":")}${value}`
+    return `${s.divider(actionMatch[1])}${value}`
   }
 
   validate(value: string, ctx: ComposerCtx): true | string {
@@ -39,8 +39,8 @@ export class ActionsComposer implements ComposerPlugin {
     if (!actionMatch) return true
     ctx.stop()
 
-    const action = ctx.app.actions.find({ cmd: actionMatch[1] })
-    if (!action) return `Unknown action: \`${actionMatch[1]}\`.`
+    const action = ctx.app.actions.find({ cmd: actionMatch[2] })
+    if (!action) return `Unknown action: \`${actionMatch[2]}\`.`
     return true
   }
 
@@ -49,8 +49,8 @@ export class ActionsComposer implements ComposerPlugin {
     if (!actionMatch) return
     ctx.stop()
 
-    const name = actionMatch[1]
-    const args = actionMatch[2] || ""
+    const name = actionMatch[2]
+    const args = actionMatch[3] || ""
     const action = ctx.app.actions.find({ cmd: name })
     if (!action) {
       ctx.app.notify(`Unknown action: \`${name}\`.`, { level: "error" })
@@ -69,7 +69,7 @@ export class ActionsComposer implements ComposerPlugin {
       }
 
       if (err !== undefined || actionCtx.args?.help) {
-        const usage = argsUsage(`/${name}`, def)
+        const usage = argsUsage(`:${name}`, def)
         ctx.app.ctx[err === undefined ? "success" : "error"](
           ...(err === undefined ? [] : [err]),
           text(async ({ style }) => (await this.format(usage, { ...ctx, style })) ?? usage),
