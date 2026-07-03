@@ -56,8 +56,8 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
     void this.emit("change", { prev, selection: value })
   }
 
-  get text(): string {
-    return this.#text
+  get text(): string | undefined {
+    return this.#selection ? this.#text : undefined
   }
 
   set text(value: string) {

@@ -110,6 +110,15 @@ export function appActions({ app }: { app: App }) {
           .finally(() => app.ctx.info("Compaction complete.\n"))
       },
     },
+    "app.copy": {
+      desc: "Copy (yank) the current selection or composer input to the clipboard.",
+      fn: async () => {
+        const sel = app.renderer.selection.text ?? app.composer.value
+        if (!sel) return app.notify("Nothing selected to copy.", { level: "warn" })
+        await app.yank(sel)
+      },
+      keys: ["ctrl-y"],
+    },
     "app.help": {
       cmd: "help",
       desc: "Show or hide the keyboard shortcut help overlay.",

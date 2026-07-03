@@ -129,6 +129,17 @@ export class App {
     setTimeout(() => process.exit(code), 100)
   }
 
+  async yank(text: string) {
+    const { clipboard } = await import("@zaly/tui/clipboard")
+    const ok = await this.ctx.logger.try(() => clipboard.write(text))
+    if (ok)
+      this.#notifier.notify(`Copied ${text.length} characters to clipboard`, {
+        level: "info",
+        timeout: 2000,
+        title: "Clipboard",
+      })
+  }
+
   /** Phase A — synchronous UI. No agent, no session. */
   async #initRenderer(): Promise<void> {
     const [{ box }, { createComposer }] = await Promise.all([
@@ -156,14 +167,7 @@ export class App {
     this.#renderer.selection.on("selection", async ({ text }) => {
       if (!this.$.ui.copyOnSelect) return
       if (text.trim() === "") return
-      const { clipboard } = await import("@zaly/tui/clipboard")
-      const ok = await this.ctx.logger.try(() => clipboard.write(text))
-      if (ok)
-        this.#notifier.notify(`Copied ${text.length} characters to clipboard`, {
-          level: "info",
-          timeout: 2000,
-          title: "Clipboard",
-        })
+      await this.yank(text)
     })
 
     this.#renderer.stream.on("scroll", ({ offset, total, below }) => {
