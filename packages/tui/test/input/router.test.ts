@@ -13,6 +13,20 @@ function makeKey(name: string, mods: Partial<KeyEvent> = {}): KeyEvent {
   return { alt: false, ctrl: false, meta: false, name, shift: false, ...mods }
 }
 
+function mouse(x: number, y: number, kind: "down" | "up" = "down") {
+  return {
+    alt: false,
+    button: "left" as const,
+    ctrl: false,
+    kind,
+    meta: false,
+    shift: false,
+    type: "mouse" as const,
+    x,
+    y,
+  }
+}
+
 function setup() {
   const router = new InputRouter()
   const actions = new Actions()
@@ -245,6 +259,37 @@ describe("InputRouter — keymap → action dispatch", () => {
     const consumed = router.dispatch({ event: makeKey("enter"), type: "key" })
     expect(consumed).toBe(true)
     expect(seen).toEqual(["menu"])
+  })
+})
+
+describe("InputRouter — mouse clicks", () => {
+  test("adds increasing click counts to repeated mouse downs", () => {
+    const router = new InputRouter()
+    const clicks: (number | undefined)[] = []
+    router.on("mouse", ({ event }) => {
+      if (event.kind === "down") clicks.push(event.click)
+    })
+
+    router.dispatch(mouse(3, 4))
+    router.dispatch(mouse(3, 4, "up"))
+    router.dispatch(mouse(3, 4))
+    router.dispatch(mouse(3, 4, "up"))
+    router.dispatch(mouse(3, 4))
+
+    expect(clicks).toEqual([1, 2, 3])
+  })
+
+  test("resets click count when the point changes", () => {
+    const router = new InputRouter()
+    const clicks: (number | undefined)[] = []
+    router.on("mouse", ({ event }) => {
+      if (event.kind === "down") clicks.push(event.click)
+    })
+
+    router.dispatch(mouse(3, 4))
+    router.dispatch(mouse(5, 4))
+
+    expect(clicks).toEqual([1, 1])
   })
 })
 

@@ -12,6 +12,16 @@ export type LineSlice = {
   to?: number
 }
 
+function sliceLine(line: string, from: number | undefined, to: number | undefined, width: number): LineSlice | undefined {
+  const start = from ? Math.max(0, from - 1) : 0
+  const end = to ? Math.max(start, to - 1) : width
+  if (end <= start) return
+  const lineWidth = stringWidth(line)
+  if (start >= lineWidth) return
+  const clampedEnd = Math.min(end, lineWidth)
+  return { from: start + 1, line, to: clampedEnd + 1 }
+}
+
 export class Frame {
   #base: (string | undefined)[] = []
   #current: (string | undefined)[] = []
@@ -27,6 +37,10 @@ export class Frame {
     const rows = this.terminal.rows
     if (this.#current.length !== rows || this.#base.length !== rows) this.reset(rows)
     return new RenderFrame(this.terminal, this.#current, this.#base)
+  }
+
+  slice(row: number, from: number | undefined, to: number | undefined, width = this.terminal.cols): LineSlice | undefined {
+    return sliceLine(this.#current[row - 1] ?? "", from, to, width)
   }
 }
 
@@ -67,14 +81,7 @@ export class RenderFrame {
 
   slice(row: number, from: number | undefined, to: number | undefined, width = this.terminal.cols): LineSlice | undefined {
     if (row < 1 || row > this.#next.length) return
-    const start = from ? Math.max(0, from - 1) : 0
-    const end = to ? Math.max(start, to - 1) : width
-    if (end <= start) return
-    const line = this.get(row)
-    const lineWidth = stringWidth(line)
-    if (start >= lineWidth) return
-    const clampedEnd = Math.min(end, lineWidth)
-    return { from: start + 1, line, to: clampedEnd + 1 }
+    return sliceLine(this.get(row), from, to, width)
   }
 
   highlight(row: number, from: number | undefined, to: number | undefined, ctx: RenderCtx): LineSlice | undefined {

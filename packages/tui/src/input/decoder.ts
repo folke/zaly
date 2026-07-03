@@ -22,7 +22,7 @@ export type MouseEvent = {
   shift: boolean
 } & (
   | { kind: "scroll"; deltaY: number }
-  | { kind: "down" | "drag" | "up"; button: MouseButton }
+  | { kind: "down" | "drag" | "up"; button: MouseButton; click?: 1 | 2 | 3 }
 )
 
 export type InputEvent =

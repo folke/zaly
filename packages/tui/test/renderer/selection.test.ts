@@ -12,6 +12,7 @@ import { MockReader, MockWriter } from "./mock.ts"
 const base = { alt: false, ctrl: false, meta: false, shift: false, type: "mouse" as const }
 
 type TestRendererOpts = {
+  frameSlice?: (row: number) => { from: number; line: string; to?: number } | undefined
   overlay?: boolean
   stream?: boolean
   streamBounds?: { top: number; bottom: number }
@@ -26,6 +27,9 @@ function testRenderer(opts: TestRendererOpts = {}): Renderer & { $emit: ReturnTy
   return {
     $emit: emit,
     emit,
+    frame: {
+      slice: vi.fn((row: number) => opts.frameSlice?.(row)),
+    },
     overlay: {
       contains: vi.fn(() => opts.overlay ?? false),
       invalidate: vi.fn(),
@@ -90,6 +94,70 @@ describe("SelectionLayer", () => {
     expect(s.mouse({ ...base, button: "right", kind: "down", x: 1, y: 1 })).toBe(false)
     expect(s.mouse({ ...base, deltaY: 1, kind: "scroll", x: 1, y: 1 })).toBe(false)
     expect(s.selection).toBeUndefined()
+  })
+
+  test("double click selects a word-like token at the point", () => {
+    const s = layer({ frameSlice: () => ({ from: 1, line: "run packages/tui-test @scope/pkg", to: 33 }) })
+
+    s.mouse({ ...base, button: "left", click: 2, kind: "down", x: 8, y: 1 })
+
+    expect(s.selection).toEqual({
+      dragging: false,
+      from: { col: 5, row: 1 },
+      surface: "screen",
+      to: { col: 22, row: 1 },
+    })
+  })
+
+  test("double click selects whitespace around the point", () => {
+    const s = layer({ frameSlice: () => ({ from: 1, line: "alpha   beta", to: 13 }) })
+
+    s.mouse({ ...base, button: "left", click: 2, kind: "down", x: 7, y: 1 })
+
+    expect(s.selection).toEqual({
+      dragging: false,
+      from: { col: 6, row: 1 },
+      surface: "screen",
+      to: { col: 9, row: 1 },
+    })
+  })
+
+  test("double click selects one punctuation character", () => {
+    const s = layer({ frameSlice: () => ({ from: 1, line: "a=b", to: 4 }) })
+
+    s.mouse({ ...base, button: "left", click: 2, kind: "down", x: 2, y: 1 })
+
+    expect(s.selection).toMatchObject({ from: { col: 2, row: 1 }, to: { col: 3, row: 1 } })
+  })
+
+  test("triple click selects the trimmed line", () => {
+    const s = layer({ frameSlice: () => ({ from: 1, line: "  cd packages/tui  ", to: 19 }) })
+
+    s.mouse({ ...base, button: "left", click: 3, kind: "down", x: 5, y: 1 })
+
+    expect(s.selection).toEqual({
+      dragging: false,
+      from: { col: 3, row: 1 },
+      surface: "screen",
+      to: { col: 18, row: 1 },
+    })
+  })
+
+  test("double click in stream uses visible line boundaries with stream row coordinates", () => {
+    const s = layer({
+      frameSlice: () => ({ from: 1, line: "  cd packages/tui  ", to: 19 }),
+      stream: true,
+      streamFromScreen: (point) => ({ col: point.col, row: point.row + 100 }),
+    })
+
+    s.mouse({ ...base, button: "left", click: 2, kind: "down", x: 8, y: 1 })
+
+    expect(s.selection).toEqual({
+      dragging: false,
+      from: { col: 6, row: 101 },
+      surface: "stream",
+      to: { col: 18, row: 101 },
+    })
   })
 
   test("paints single-line screen selections", () => {

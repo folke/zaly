@@ -83,6 +83,14 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
 
     const point = this.#hit(event)
     if (event.kind === "down") {
+      if (event.click === 2) {
+        this.select(point.screen, "word")
+        return true
+      }
+      if (event.click === 3) {
+        this.select(point.screen, "line")
+        return true
+      }
       this.selection = point.stream
         ? { dragging: true, from: point.stream, surface: "stream", to: point.stream }
         : { dragging: true, from: point.screen, surface: "screen", to: point.screen }
@@ -105,6 +113,21 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
   clear(): void {
     if (!this.#selection) return
     this.selection = undefined
+  }
+
+  select(screen: Point, what: "line" | "word"): void {
+    const point = this.#hitPoint(screen)
+    const line = this.$r.frame.slice(screen.row, 1, undefined)
+    if (!line) return
+    const slice = what === "line" ? lineRange(line.line) : wordRange(line.line, screen.col)
+    if (!slice) return
+    const row = point.stream?.row ?? screen.row
+    this.selection = {
+      dragging: false,
+      from: { col: slice.from, row },
+      surface: point.stream ? "stream" : "screen",
+      to: { col: slice.to, row },
+    }
   }
 
   renderStream(frame: RenderFrame, ctx: RenderCtx): void {
@@ -131,7 +154,10 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
   }
 
   #hit(event: MouseEvent): HitPoint {
-    const screen = { col: event.x, row: event.y }
+    return this.#hitPoint({ col: event.x, row: event.y })
+  }
+
+  #hitPoint(screen: Point): HitPoint {
     if (this.$r.overlay.contains(screen)) return { screen }
     if (this.$r.ui.contains(screen)) return { screen }
     const stream = this.$r.stream.contains(screen) ? this.$r.stream.fromScreen(screen) : undefined
@@ -170,6 +196,37 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
     }
     return ret
   }
+}
+
+type Range = { from: number; to: number }
+
+const WORD = /^[\w\-/\\@]$/
+
+function lineRange(line: string): Range | undefined {
+  const text = stripAnsi(line)
+  const start = text.search(/\S/)
+  if (start === -1) return
+  let end = text.length
+  while (end > start && /\s/.test(text[end - 1]!)) end--
+  return { from: start + 1, to: end + 1 }
+}
+
+function wordRange(line: string, col: number): Range | undefined {
+  const text = stripAnsi(line)
+  const index = col - 1
+  if (index < 0 || index >= text.length) return
+  const match = charClass(text[index]!)
+  let start = index
+  while (start > 0 && charClass(text[start - 1]!) === match) start--
+  let end = index + 1
+  while (end < text.length && charClass(text[end]!) === match) end++
+  return { from: start + 1, to: end + 1 }
+}
+
+function charClass(char: string): "space" | "word" | "punct" {
+  if (/\s/.test(char)) return "space"
+  if (WORD.test(char)) return "word"
+  return "punct"
 }
 
 function samePoint(a: Point, b: Point): boolean {

@@ -75,6 +75,7 @@ export class InputRouter extends Emitter<InputRouterEvents> {
    *  dispatched through the catalog. */
   #actions: Actions | undefined
   #logger: Logger
+  #mouseClick: { button: string; count: 1 | 2 | 3; time: number; x: number; y: number } | undefined
   #terminalFocus = true
 
   constructor(logger?: Logger) {
@@ -154,13 +155,28 @@ export class InputRouter extends Emitter<InputRouterEvents> {
     if (ev.type === "key") return this.#dispatchKey(ev.event)
     if (ev.type === "paste") return this.#dispatchPaste(ev.text)
     if (ev.type === "mouse") {
-      void this.emit("mouse", { event: ev })
+      void this.emit("mouse", { event: this.#routeMouse(ev) })
       return false
     } else {
       this.#terminalFocus = ev.gained
       void this.emit("terminal-focus", { gained: ev.gained })
     }
     return false
+  }
+
+  #routeMouse(event: MouseEvent): MouseEvent {
+    if (event.kind !== "down") return event
+    const now = Date.now()
+    const prev = this.#mouseClick
+    const same =
+      prev !== undefined &&
+      prev.button === event.button &&
+      prev.x === event.x &&
+      prev.y === event.y &&
+      now - prev.time <= 500
+    const count = same ? (((prev.count % 3) + 1) as 1 | 2 | 3) : 1
+    this.#mouseClick = { button: event.button, count, time: now, x: event.x, y: event.y }
+    return { ...event, click: count }
   }
 
   #dispatchKey(event: KeyEvent): boolean {
