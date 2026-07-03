@@ -11,6 +11,11 @@ export const OSC_RE = /\x1b\][\s\S]*?(?:\x1b\\|\x07)/g
 export const CSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g
 export const APC_RE = /\x1b_[\s\S]*?\x1b\\/g
 export const RESET = "\x1b[0m"
+const KITTY_PLACEHOLDER_CLUSTER = /\u{10eeee}\p{Mark}\p{Mark}/gu
+const KITTY_PLACEHOLDER = "\u{10eeee}"
+const KITTY_SENTINEL_START = 0xe0_00
+const KITTY_SENTINEL_RE = /[\ue000-\uf8ff]/g
+const isBun = !!process.versions.bun
 
 // ---- APC-aware text primitives ----------------------------------------
 //
@@ -34,6 +39,9 @@ function extractApc(s: string): { apc: string; rest: string } {
 /** Terminal display width in cells. APC escapes are excluded before
  *  measuring. */
 export function stringWidth(s: string): number {
+  // Bun's stringWidth doesn't handle all KGP diacritics as width:0,
+  // so we mask them out with a single placeholder before measuring.
+  if (isBun) s = s.replaceAll(KITTY_PLACEHOLDER_CLUSTER, KITTY_PLACEHOLDER)
   return _stringWidth(extractApc(s).rest)
 }
 
@@ -49,6 +57,7 @@ export function stringWidth(s: string): number {
  *  inside a TUI that wants to render colors but mustn't let the source
  *  control TUI cursor / clipboard / screen state. */
 export function stripAnsi(s: string, opts: { keepStyles?: boolean } = {}): string {
+  s = s.replaceAll(KITTY_PLACEHOLDER_CLUSTER, " ")
   s = s.replace(APC_RE, "").replace(OSC_RE, "")
   return opts.keepStyles
     ? s.replace(CSI_RE, (match) => (match.endsWith("m") ? match : ""))
@@ -59,7 +68,19 @@ export function stripAnsi(s: string, opts: { keepStyles?: boolean } = {}): strin
  *  prepended to the slice output so they stay attached to the row. */
 export function sliceAnsi(s: string, start: number, end?: number): string {
   const { apc, rest } = extractApc(s)
-  return apc + _sliceAnsi(rest, start, end)
+  if (!isBun) return apc + _sliceAnsi(rest, start, end)
+
+  // Bun's sliceAnsi doesn't handle all KGP diacritics as width:0, so we
+  // mask them out with a single placeholder before slicing. The slice
+  // is then re-expanded to the original clusters after slicing.
+  const clusters = new Map<string, string>()
+  const masked = rest.replace(KITTY_PLACEHOLDER_CLUSTER, (cluster) => {
+    const sentinel = String.fromCodePoint(KITTY_SENTINEL_START + clusters.size)
+    clusters.set(sentinel, cluster)
+    return sentinel
+  })
+  const ret = _sliceAnsi(masked, start, end)
+  return apc + ret.replaceAll(KITTY_SENTINEL_RE, (sentinel) => clusters.get(sentinel) ?? sentinel)
 }
 
 /** Word- or char-wrap to `width` cells while preserving SGR state and
