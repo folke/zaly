@@ -190,12 +190,7 @@ export class Renderer extends Emitter<RenderEvents> {
     // Surfaces render into the shared frame; the renderer owns scheduling,
     // lifecycle events, and paint order.
     this.overlay = new OverlaySurface(this)
-    this.selection = new SelectionLayer({
-      invalidate: () => {
-        this.overlay.invalidate()
-        this.#schedule()
-      },
-    })
+    this.selection = new SelectionLayer(this)
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
 
     this.input = new InputRouter(this.logger.child({ name: "input" }))

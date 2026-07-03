@@ -28,8 +28,8 @@ export class Notifier {
 
   constructor(ui: OverlaySurface) {
     this.#ui = ui
-    ui.on("render-node", ({ node, ...state }) => {
-      const notif = this.#active.get(node)
+    ui.on("render-node", (state) => {
+      const notif = this.#active.get(state.node)
       if (!notif) return
       notif.state = state
       setImmediate(() => this.#check())

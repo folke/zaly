@@ -79,8 +79,9 @@ describe("renderer mouse routing", () => {
     r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "drag", meta: false, shift: false, type: "mouse", x: 5, y: 6 })
 
     expect(r.selection.selection).toMatchObject({
-      anchor: { col: 2, row: 3, surface: "screen" },
-      focus: { col: 5, row: 6, surface: "screen" },
+      from: { col: 2, row: 3 },
+      surface: "screen",
+      to: { col: 5, row: 6 },
     })
     expect(scroll).toHaveBeenCalledTimes(1)
   })

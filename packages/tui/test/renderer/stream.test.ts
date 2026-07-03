@@ -35,6 +35,32 @@ async function drain() {
   for (let i = 0; i < 18; i++) await Promise.resolve()
 }
 
+describe("Stream selection coordinates", () => {
+  test("maps visible short stream rows between screen and stream coordinates", async () => {
+    const { stream } = mount(20, 5)
+    stream.append(() => text("a\nb\nc"))
+    await stream.render()
+
+    expect(stream.fromScreen({ col: 2, row: 3 })).toEqual({ col: 2, row: 1 })
+    expect(stream.fromScreen({ col: 2, row: 5 })).toEqual({ col: 2, row: 3 })
+    expect(stream.fromScreen({ col: 2, row: 2 })).toBeUndefined()
+    expect(stream.toScreen({ col: 4, row: 2 })).toEqual({ col: 4, row: 4 })
+    expect(stream.toScreen({ col: 4, row: 4 })).toEqual({ col: 4, row: 6 })
+  })
+
+  test("maps overflowed stream rows to document rows", async () => {
+    const { stream } = mount(20, 5)
+    stream.append(() => text("a\nb\nc\nd\ne\nf"))
+    await stream.render()
+
+    expect(stream.fromScreen({ col: 1, row: 1 })).toEqual({ col: 1, row: 2 })
+    expect(stream.fromScreen({ col: 1, row: 5 })).toEqual({ col: 1, row: 6 })
+    expect(stream.toScreen({ col: 1, row: 1 })).toEqual({ col: 1, row: 0 })
+    expect(stream.toScreen({ col: 1, row: 2 })).toEqual({ col: 1, row: 1 })
+    expect(stream.toScreen({ col: 1, row: 6 })).toEqual({ col: 1, row: 5 })
+  })
+})
+
 describe("Stream.flush — first render", () => {
   test("writes rows at scrollBottom inside a synchronized-output block", async () => {
     const { stdout, stream } = mount(20, 10)

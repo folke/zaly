@@ -1,3 +1,6 @@
+import type { Renderer } from "../../src/renderer/renderer.ts"
+import type { Point } from "../../src/renderer/surface.ts"
+
 import { describe, expect, test, vi } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Frame } from "../../src/renderer/frame.ts"
@@ -7,6 +10,40 @@ import { defaultTheme } from "../../src/themes/registry.ts"
 import { MockReader, MockWriter } from "./mock.ts"
 
 const base = { alt: false, ctrl: false, meta: false, shift: false, type: "mouse" as const }
+
+type TestRendererOpts = {
+  overlay?: boolean
+  stream?: boolean
+  streamBounds?: { top: number; bottom: number }
+  streamFromScreen?: (point: Point) => Point | undefined
+  streamToScreen?: (point: Point) => Point
+  ui?: boolean
+}
+
+function testRenderer(opts: TestRendererOpts = {}): Renderer & { $emit: ReturnType<typeof vi.fn> } {
+  const emit = vi.fn()
+  return {
+    $emit: emit,
+    emit,
+    overlay: {
+      contains: vi.fn(() => opts.overlay ?? false),
+      invalidate: vi.fn(),
+    },
+    stream: {
+      bounds: opts.streamBounds ?? { bottom: 5, top: 1 },
+      contains: vi.fn(() => opts.stream ?? false),
+      fromScreen: vi.fn(opts.streamFromScreen ?? ((point) => point)),
+      toScreen: vi.fn(opts.streamToScreen ?? ((point) => point)),
+    },
+    ui: {
+      contains: vi.fn(() => opts.ui ?? false),
+    },
+  } as unknown as Renderer & { $emit: typeof emit }
+}
+
+function layer(opts?: TestRendererOpts) {
+  return new SelectionLayer(testRenderer(opts))
+}
 
 function testFrame() {
   const terminal = new Terminal({
@@ -22,58 +59,59 @@ function testFrame() {
 
 describe("SelectionLayer", () => {
   test("starts, updates, and finalizes a left-button drag selection", () => {
-    const layer = new SelectionLayer({ invalidate: vi.fn() })
+    const s = layer()
 
-    expect(layer.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })).toBe(true)
-    expect(layer.selection).toEqual({
-      anchor: { col: 3, row: 4, surface: "screen" },
+    expect(s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })).toBe(true)
+    expect(s.selection).toEqual({
       dragging: true,
-      focus: { col: 3, row: 4, surface: "screen" },
+      from: { col: 3, row: 4 },
+      surface: "screen",
+      to: { col: 3, row: 4 },
     })
 
-    expect(layer.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 6 })).toBe(true)
-    expect(layer.selection?.focus).toEqual({ col: 8, row: 6, surface: "screen" })
+    expect(s.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 6 })).toBe(true)
+    expect(s.selection?.to).toEqual({ col: 8, row: 6 })
 
-    expect(layer.mouse({ ...base, button: "left", kind: "up", x: 8, y: 6 })).toBe(true)
-    expect(layer.selection).toMatchObject({ dragging: false, focus: { col: 8, row: 6 } })
+    expect(s.mouse({ ...base, button: "left", kind: "up", x: 8, y: 6 })).toBe(true)
+    expect(s.selection).toMatchObject({ dragging: false, to: { col: 8, row: 6 } })
   })
 
   test("clears click selections without a meaningful drag", () => {
-    const layer = new SelectionLayer({ invalidate: vi.fn() })
-    layer.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })
-    layer.mouse({ ...base, button: "left", kind: "up", x: 3, y: 4 })
-    expect(layer.selection).toBeUndefined()
+    const s = layer()
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })
+    s.mouse({ ...base, button: "left", kind: "up", x: 3, y: 4 })
+    expect(s.selection).toBeUndefined()
   })
 
   test("ignores non-left mouse buttons and scroll events", () => {
-    const layer = new SelectionLayer({ invalidate: vi.fn() })
-    expect(layer.mouse({ ...base, button: "right", kind: "down", x: 1, y: 1 })).toBe(false)
-    expect(layer.mouse({ ...base, deltaY: 1, kind: "scroll", x: 1, y: 1 })).toBe(false)
-    expect(layer.selection).toBeUndefined()
+    const s = layer()
+    expect(s.mouse({ ...base, button: "right", kind: "down", x: 1, y: 1 })).toBe(false)
+    expect(s.mouse({ ...base, deltaY: 1, kind: "scroll", x: 1, y: 1 })).toBe(false)
+    expect(s.selection).toBeUndefined()
   })
 
   test("paints single-line screen selections", () => {
-    const layer = new SelectionLayer({ invalidate: vi.fn() })
+    const s = layer()
     const { ctx, frame } = testFrame()
     frame.set(3, "hello world")
-    layer.mouse({ ...base, button: "left", kind: "down", x: 3, y: 3 })
-    layer.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 3 })
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 3 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 3 })
 
-    layer.render(frame, ctx)
+    s.render(frame, ctx)
 
     expect(frame.get(3)).toBe("he\x1b[7mllo w\x1b[0morld")
   })
 
   test("paints multi-line screen selections", () => {
-    const layer = new SelectionLayer({ invalidate: vi.fn() })
+    const s = layer()
     const { ctx, frame } = testFrame()
     frame.set(2, "alpha")
     frame.set(3, "bravo")
     frame.set(4, "charlie")
-    layer.mouse({ ...base, button: "left", kind: "down", x: 3, y: 2 })
-    layer.mouse({ ...base, button: "left", kind: "drag", x: 4, y: 4 })
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 2 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 4, y: 4 })
 
-    layer.render(frame, ctx)
+    s.render(frame, ctx)
 
     expect(frame.get(2)).toBe("al\x1b[7mpha\x1b[0m")
     expect(frame.get(3)).toBe("\x1b[7mbravo\x1b[0m")
@@ -81,14 +119,106 @@ describe("SelectionLayer", () => {
   })
 
   test("clear removes selection and invalidates once", () => {
-    const invalidate = vi.fn()
-    const layer = new SelectionLayer({ invalidate })
-    layer.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })
-    invalidate.mockClear()
+    const renderer = testRenderer()
+    const s = new SelectionLayer(renderer)
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })
+    renderer.$emit.mockClear()
 
-    layer.clear()
+    s.clear()
 
-    expect(layer.selection).toBeUndefined()
-    expect(invalidate).toHaveBeenCalledTimes(1)
+    expect(s.selection).toBeUndefined()
+    expect(renderer.$emit).toHaveBeenCalledWith("dirty")
+  })
+
+  test("uses stream anchoring only when both endpoints are in stream", () => {
+    const overlay = layer({ overlay: true, stream: true, ui: true })
+    overlay.mouse({ ...base, button: "left", kind: "down", x: 2, y: 3 })
+    expect(overlay.selection).toMatchObject({ from: { col: 2, row: 3 }, surface: "screen" })
+
+    const ui = layer({ stream: true, ui: true })
+    ui.mouse({ ...base, button: "left", kind: "down", x: 2, y: 3 })
+    expect(ui.selection).toMatchObject({ from: { col: 2, row: 3 }, surface: "screen" })
+
+    const stream = layer({
+      stream: true,
+      streamFromScreen: (point) =>
+        point.row <= 5 ? { col: point.col, row: point.row + 100 } : undefined,
+    })
+    stream.mouse({ ...base, button: "left", kind: "down", x: 2, y: 3 })
+    expect(stream.selection).toMatchObject({ from: { col: 2, row: 103 }, surface: "stream" })
+
+    stream.mouse({ ...base, button: "left", kind: "drag", x: 2, y: 4 })
+    expect(stream.selection).toMatchObject({ surface: "stream", to: { col: 2, row: 104 } })
+
+    stream.mouse({ ...base, button: "left", kind: "drag", x: 2, y: 9 })
+    expect(stream.selection).toMatchObject({ surface: "screen", to: { col: 2, row: 9 } })
+  })
+
+  test("renders stream selections through current screen coordinates", () => {
+    const s = layer({
+      stream: true,
+      streamFromScreen: (point) => ({ col: point.col, row: point.row + 100 }),
+      streamToScreen: (point) => ({ col: point.col, row: point.row - 100 }),
+    })
+    const { ctx, frame } = testFrame()
+    frame.set(3, "hello world")
+
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 3 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 3 })
+    s.render(frame, ctx)
+
+    expect(frame.get(3)).toBe("he\x1b[7mllo w\x1b[0morld")
+  })
+
+  test("clips stream selections to stream bounds", () => {
+    const s = layer({
+      stream: true,
+      streamBounds: { bottom: 4, top: 2 },
+      streamFromScreen: (point) => ({ col: point.col, row: point.row + 100 }),
+      streamToScreen: (point) => ({ col: point.col, row: point.row - 100 }),
+    })
+    const { ctx, frame } = testFrame()
+    frame.set(1, "above")
+    frame.set(2, "alpha")
+    frame.set(3, "bravo")
+    frame.set(4, "charlie")
+    frame.set(5, "below")
+
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 4, y: 5 })
+    s.render(frame, ctx)
+
+    expect(frame.get(1)).toBe("above")
+    expect(frame.get(2)).toBe("\x1b[7malpha\x1b[0m")
+    expect(frame.get(3)).toBe("\x1b[7mbravo\x1b[0m")
+    expect(frame.get(4)).toBe("\x1b[7mcharlie\x1b[0m")
+    expect(frame.get(5)).toBe("below")
+  })
+
+  test("screen-started selection into stream remains screen anchored", () => {
+    const s = layer({
+      stream: true,
+      streamFromScreen: (point) => (point.row >= 3 ? { col: point.col, row: point.row + 100 } : undefined),
+    })
+
+    s.mouse({ ...base, button: "left", kind: "down", x: 2, y: 1 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 2, y: 3 })
+
+    expect(s.selection).toMatchObject({ surface: "screen", to: { col: 2, row: 3 } })
+  })
+
+  test("mouse up emits a changed finalized selection", () => {
+    const s = layer()
+    const changes: unknown[] = []
+    s.on("change", (event) => changes.push(event))
+
+    s.mouse({ ...base, button: "left", kind: "down", x: 3, y: 4 })
+    s.mouse({ ...base, button: "left", kind: "drag", x: 8, y: 6 })
+    s.mouse({ ...base, button: "left", kind: "up", x: 8, y: 6 })
+
+    expect(changes.at(-1)).toMatchObject({
+      prev: { dragging: true },
+      selection: { dragging: false },
+    })
   })
 })
