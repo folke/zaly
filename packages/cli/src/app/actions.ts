@@ -111,7 +111,9 @@ export function appActions({ app }: { app: App }) {
       },
     },
     "app.copy": {
-      desc: "Copy (yank) the current selection or composer input to the clipboard.",
+      desc: app.renderer.terminal.mouse
+        ? "Copy (yank) the current selection or composer input to the clipboard."
+        : "Copy (yank) the composer input to the clipboard.",
       fn: async () => {
         const sel = app.renderer.selection.text ?? app.composer.value
         if (!sel) return app.notify("Nothing selected to copy.", { level: "warn" })
