@@ -39,6 +39,10 @@
       "bun": "./src/input/clipboard.ts",
       "default": "./dist/clipboard.mjs"
     },
+    "./image": {
+      "bun": "./src/image/index.ts",
+      "default": "./dist/image.mjs"
+    },
     "./markdown": {
       "bun": "./src/markdown/index.ts",
       "default": "./dist/markdown.mjs"
@@ -176,6 +180,7 @@
       ".": "./dist/index.mjs",
       "./ansi": "./dist/ansi.mjs",
       "./clipboard": "./dist/clipboard.mjs",
+      "./image": "./dist/image.mjs",
       "./markdown": "./dist/markdown.mjs",
       "./services/logger": "./dist/services/logger.mjs",
       "./services/notifier": "./dist/services/notifier.mjs",

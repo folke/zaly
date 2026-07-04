@@ -1,43 +1,35 @@
+import type { RenderCtx } from "../../src/core/ctx.ts"
+import type { ImageState } from "../../src/widgets/image.ts"
+
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
-import { image, resetImageTransmitCache } from "../../src/widgets/image.ts"
+import { createRender, RenderContext } from "../../src/core/render.ts"
+import { memo, provideContext } from "../../src/core/reactive.ts"
+import { InputRouter } from "../../src/input/router.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
+import { fileDetect } from "@zaly/shared/detect"
+import { imageInfo } from "@zaly/shared/image"
+import { Kitty, resetKittyGraphics } from "../../src/image/kitty.ts"
+import { defaultTheme } from "../../src/themes/registry.ts"
+import { image } from "../../src/widgets/image.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
-// Fixture dir + a tiny PNG generated via sharp at setup. Keeping this in a
-// temp dir avoids committing a binary to the repo.
 let dir: string
 let pngPath: string
 let jpgPath: string
 
-// Env keys our capability detection reads — snapshot at setup so we can
-// restore exactly after tests mutate them.
-const ENV_KEYS = [
-  "GHOSTTY_RESOURCES_DIR",
-  "ITERM_SESSION_ID",
-  "KITTY_WINDOW_ID",
-  "SSH_CLIENT",
-  "SSH_CONNECTION",
-  "SSH_TTY",
-  "TERM",
-  "TERM_PROGRAM",
-  "TMUX",
-  "WEZTERM_PANE",
-] as const
+const ENV_KEYS = ["SSH_CLIENT", "SSH_CONNECTION", "SSH_TTY"] as const
 const savedEnv: Record<string, string | undefined> = {}
 
 beforeAll(async () => {
-  // Vitest stdout isn't a TTY, so without this stub the detection in
-  // `imageCapabilities()` would skip every code path we care about here.
-  Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true })
   for (const k of ENV_KEYS) savedEnv[k] = process.env[k]
   dir = mkdtempSync(join(tmpdir(), "zaly-image-"))
   pngPath = join(dir, "tiny.png")
   jpgPath = join(dir, "tiny.jpg")
-  // 4×2 solid red — sharp from raw RGB bytes.
   const raw = Buffer.alloc(4 * 2 * 3)
   for (let i = 0; i < raw.length; i += 3) {
     raw[i] = 0xff
@@ -60,151 +52,158 @@ afterAll(() => {
   }
 })
 
+afterEach(() => {
+  resetKittyGraphics()
+  for (const k of ENV_KEYS) {
+    if (savedEnv[k] === undefined) delete process.env[k]
+    else process.env[k] = savedEnv[k]
+  }
+})
+
+type RenderResult = { bytes: string; rows: string[]; writes: string[] }
+
+function kgpQueries(
+  opts: { inline?: boolean; supported?: boolean; terminal?: string } = {}
+): { queries: TerminalQueries; writes: string[] } {
+  const router = new InputRouter()
+  const writes: string[] = []
+  const terminal = {
+    write: (seq: string) => {
+      writes.push(seq)
+      if (seq.includes("[>q")) {
+        router.dispatch({
+          kind: "dcs",
+          payload: `>|${opts.terminal ?? (opts.inline === false ? "WezTerm" : "Ghostty")} 1.0`,
+          sequence: `\x1bP>|${opts.terminal ?? (opts.inline === false ? "WezTerm" : "Ghostty")} 1.0\x1b\\`,
+          type: "term-response",
+        })
+      } else if (seq.includes("\x1b_G")) {
+        if (opts.supported === false) return
+        router.dispatch({ kind: "apc", payload: "Gi=4294967290;EINVAL: expected", sequence: "\x1b_Gi=4294967290;EINVAL: expected\x1b\\", type: "term-response" })
+      }
+    },
+  }
+  return { queries: new TerminalQueries(router, terminal), writes }
+}
+
+async function renderImage(
+  src: string,
+  opts?: Omit<ImageState, "src">,
+  ctxOpts: Partial<RenderCtx> = {},
+  queryOpts: { inline?: boolean; supported?: boolean; terminal?: string } = {}
+): Promise<RenderResult> {
+  const { queries, writes } = kgpQueries(queryOpts)
+  let bytes = ""
+  const ctx = createCtx({ transmit: (seq) => (bytes += seq), width: 40, ...ctxOpts })
+  const rows = await createRender(() => {
+    provideContext(RenderContext, {
+      images: memo(() => true),
+      queries,
+      style: memo(() => ctx.style),
+      theme: memo(() => defaultTheme),
+    })
+    const node = image(src, opts)
+    const mount = mockMountCtx()
+    node.mount({ ...mount, input: { ...mount.input, queries } })
+    return node
+  }, ctx)
+  return { bytes, rows, writes }
+}
+
 function extractId(esc: string, key: string): string | undefined {
   return esc.match(new RegExp(`${key}=(\\d+)`))?.[1]
 }
 
-afterEach(() => {
-  resetImageTransmitCache()
-  resetCapabilitiesCache()
-})
+describe("image() — fallback", () => {
+  test("renders alt when images are disabled", async () => {
+    const { queries } = kgpQueries()
+    const ctx = createCtx({ width: 40 })
+    const rows = await createRender(() => {
+      provideContext(RenderContext, {
+        images: memo(() => false),
+        queries,
+        style: memo(() => ctx.style),
+        theme: memo(() => defaultTheme),
+      })
+      const node = image(pngPath, { alt: "Diagram" })
+      const mount = mockMountCtx()
+      node.mount({ ...mount, input: { ...mount.input, queries } })
+      return node
+    }, ctx)
+    expect(rows).toEqual(["Diagram"])
+  })
 
-function forceCaps(protocol: "kitty" | "iterm2" | undefined) {
-  // Clear all detection-relevant env so previous tests don't leak in.
-  for (const k of ENV_KEYS) delete process.env[k]
-  resetCapabilitiesCache()
-  if (protocol === "kitty") process.env.KITTY_WINDOW_ID = "1"
-  else if (protocol === "iterm2") process.env.ITERM_SESSION_ID = "w0t0p0:1"
-  else process.env.TERM = "xterm-256color"
-}
-
-/** Create a render ctx whose `transmit` channel buffers bytes into the
- *  returned `bytes` ref. The image widget routes side-channel transmit
- *  bytes through `ctx.transmit` instead of inlining them in the row
- *  output, so tests assert against this buffer. */
-function withTransmit(width: number): {
-  ctx: ReturnType<typeof createCtx>
-  bytes: { value: string }
-} {
-  const bytes = { value: "" }
-  const ctx = createCtx({ transmit: (s) => (bytes.value += s), width })
-  return { bytes, ctx }
-}
-
-describe("image() — fallback when placeholders unsupported", () => {
-  test("renders [alt] when alt is set", async () => {
-    forceCaps(undefined)
-    const node = image(pngPath, { alt: "Diagram" })
-    const rows = await node.render(createCtx({ width: 40 }))
+  test("falls back to alt text when KGP probing fails", async () => {
+    const { rows } = await renderImage(pngPath, { alt: "Diagram" }, {}, { supported: false, terminal: "UnknownTerm" })
     expect(rows).toEqual(["Diagram"])
   })
 
   test("falls back to [Image: src] when alt omitted", async () => {
-    forceCaps(undefined)
-    const node = image(pngPath)
-    const rows = await node.render(createCtx({ width: 40 }))
+    const { rows } = await renderImage(pngPath, undefined, {}, { supported: false, terminal: "UnknownTerm" })
     expect(rows).toEqual([`[Image: ${pngPath}]`])
   })
 })
 
 describe("image() — KGP rendering", () => {
-  test("first render: row[0] carries the placement (a=p), transmit goes to ctx.transmit", async () => {
-    forceCaps("kitty")
-    const { bytes, ctx } = withTransmit(40)
-    const rows = await image(pngPath, { height: 2, width: 4 }).render(ctx)
+  test("first render: row[0] carries placement, transmit goes to ctx.transmit", async () => {
+    const { bytes, rows } = await renderImage(pngPath, { height: 2, width: 4 })
     expect(rows).toHaveLength(2)
-    // Row 0: placement only, trailing `cols` spaces. Transmit lives on
-    // the side-channel, NOT in the row output.
-    expect(rows[0]).toContain("\x1b_Ga=p,")
-    expect(rows[0]).not.toContain("\x1b_Ga=t,")
-    expect(rows[0].endsWith("    ")).toBe(true)
-    expect(rows[1]).toBe("    ")
-    // Transmit emitted via `ctx.transmit` instead.
-    expect(bytes.value).toContain("\x1b_Ga=t,f=100,t=f,")
+    expect(rows[0]).toContain("\x1b_GU=1,")
+    expect(rows[0]).toContain("a=p")
+    expect(rows[0]).not.toContain("a=t")
+    expect(rows[0]).toContain("\u{10eeee}")
+    expect(bytes).toContain("\x1b_Ga=t,f=100,i=")
   })
 
   test("transmit payload is base64 of the absolute PNG path", async () => {
-    forceCaps("kitty")
-    const { bytes, ctx } = withTransmit(40)
-    await image(pngPath, { height: 2, width: 4 }).render(ctx)
-    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
-    const end = bytes.value.indexOf("\x1b\\")
-    expect(Buffer.from(bytes.value.slice(start, end), "base64").toString()).toBe(pngPath)
+    const { bytes } = await renderImage(pngPath, { height: 2, width: 4 })
+    const start = bytes.indexOf(";", bytes.indexOf("\x1b_Ga=t,")) + 1
+    const end = bytes.indexOf("\x1b\\")
+    expect(Buffer.from(bytes.slice(start, end), "base64").toString()).toBe(pngPath)
   })
 
   test("JPEG src is converted once to a temp PNG and transmitted by path", async () => {
-    forceCaps("kitty")
-    const { bytes, ctx } = withTransmit(40)
-    await image(jpgPath, { height: 2, width: 4 }).render(ctx)
-    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
-    const end = bytes.value.indexOf("\x1b\\")
-    const path = Buffer.from(bytes.value.slice(start, end), "base64").toString()
+    const { bytes } = await renderImage(jpgPath, { height: 2, width: 4 })
+    const start = bytes.indexOf(";", bytes.indexOf("\x1b_Ga=t,")) + 1
+    const end = bytes.indexOf("\x1b\\")
+    const path = Buffer.from(bytes.slice(start, end), "base64").toString()
     expect(path).toContain("zaly-image-")
     expect(path.endsWith(".png")).toBe(true)
   })
 
-  test("second render for same src omits the transmit — only the placement is emitted", async () => {
-    forceCaps("kitty")
-    await image(pngPath, { height: 2, width: 4 }).render(withTransmit(40).ctx)
-    const [row] = await image(pngPath, { height: 2, width: 4 }).render(withTransmit(40).ctx)
-    expect(row).not.toContain("\x1b_Ga=t,")
-    expect(row).toContain("\x1b_Ga=p,")
+  test("second render for same src omits the transmit", async () => {
+    await renderImage(pngPath, { height: 2, width: 4 })
+    const { bytes, rows } = await renderImage(pngPath, { height: 2, width: 4 })
+    expect(bytes).toBe("")
+    expect(rows[0]).toContain("a=p")
   })
 
-  test("re-rendering the same node re-uses (image id, placement id) — a move, not a create", async () => {
-    // Spec: two placements with the same (i, p) — the second replaces
-    // the first, flicker-free. That's our re-render story.
-    forceCaps("kitty")
-    const node = image(pngPath, { height: 2, width: 4 })
-    const r1 = await node.render(withTransmit(40).ctx)
-    const r2 = await node.render(withTransmit(40).ctx)
-    expect(extractId(r1[0], "i")).toBe(extractId(r2[0], "i"))
-    expect(extractId(r1[0], "p")).toBe(extractId(r2[0], "p"))
+  test("direct placement mode exposes placement ids for cleanup", async () => {
+    resetKittyGraphics()
+    const { rows } = await renderImage(pngPath, { height: 2, width: 4 }, {}, { inline: false })
+    expect(rows[0]).toContain("a=p")
+    expect(extractId(rows[0], "p")).toBeDefined()
   })
 
-  test("SSH session: transmit falls back to bytes-in-band (t=d), no t=f path", async () => {
-    // Under SSH the terminal can't read the client's filesystem, so we
-    // have to chunk the PNG payload inline instead of passing a path.
-    forceCaps("kitty")
-    process.env.SSH_CONNECTION = "192.168.0.1 54321 192.168.0.2 22"
-    const { bytes, ctx } = withTransmit(40)
-    await image(pngPath, { height: 2, width: 4 }).render(ctx)
-    // Header is `a=t,f=100,i=<id>,q=2` (no `t=f`). The PNG header bytes
-    // (0x89 0x50 0x4E 0x47) survive the base64 round-trip.
-    expect(bytes.value).toContain("\x1b_Ga=t,f=100,i=")
-    expect(bytes.value).not.toContain(",t=f,")
-    const start = bytes.value.indexOf(";", bytes.value.indexOf("\x1b_Ga=t,")) + 1
-    const end = bytes.value.indexOf("\x1b\\")
-    const payload = Buffer.from(bytes.value.slice(start, end), "base64")
-    expect(payload[0]).toBe(0x89)
-    expect(payload[1]).toBe(0x50)
-  })
-
-  test("iTerm2 path: single OSC 1337 escape inline, raw source bytes in base64", async () => {
-    forceCaps("iterm2")
-    const rows = await image(jpgPath, { height: 2, width: 4 }).render(createCtx({ width: 40 }))
-    expect(rows).toHaveLength(2)
-    expect(rows[0].startsWith("\x1b]1337;File=")).toBe(true)
-    // JPEG header (0xFF 0xD8) must survive the base64 round-trip — proves
-    // we're shipping raw source bytes, no sharp conversion.
-    const colon = rows[0].indexOf(":")
-    const bel = rows[0].indexOf("\x07")
-    const bytes = Buffer.from(rows[0].slice(colon + 1, bel), "base64")
-    expect(bytes[0]).toBe(0xff)
-    expect(bytes[1]).toBe(0xd8)
+  test("remote Kitty transmits bytes in-band (t=d), no t=f path", async () => {
+    resetKittyGraphics()
+    const detected = await fileDetect(pngPath)
+    if (detected?.type !== "image") throw new Error("Expected image detection")
+    const info = await imageInfo(detected)
+    const kitty = new Kitty({ ok: true, remote: true, terminal: { name: "kitty" } })
+    const t = await kitty.transmitOnce(info)
+    expect(t?.transmit).toContain("\x1b_Ga=t,f=100,i=")
+    expect(t?.transmit).toContain(",t=d")
+    expect(t?.transmit).not.toContain(",t=f,")
   })
 
   test("no dims: cols default to ctx.width, rows from source aspect", async () => {
-    forceCaps("kitty")
-    // tiny.png is 4×2 → aspect 0.5. With cellAspect=2, a 16-wide ctx gives
-    // rows = round(16 * 0.5 / 2) = 4.
-    const rows = await image(pngPath).render(withTransmit(16).ctx)
+    const { rows } = await renderImage(pngPath, undefined, { width: 16 })
     expect(rows).toHaveLength(4)
   })
 
   test("width only: height computed from source aspect ratio", async () => {
-    forceCaps("kitty")
-    const rows = await image(pngPath, { cellAspect: 2, width: 8 }).render(withTransmit(40).ctx)
-    expect(rows).toHaveLength(2) // round(8 * 0.5 / 2) = 2
+    const { rows } = await renderImage(pngPath, { cellAspect: 2, width: 8 })
+    expect(rows).toHaveLength(2)
   })
 })

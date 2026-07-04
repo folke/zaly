@@ -413,20 +413,20 @@ function mount(state = {}) {
   router.setActions(actions)
   actions.register(defaultActions, { default: true })
   const n = input(state)
-  n.mount(
-    mockMountCtx("ui", {
-      actions,
-      input: {
-        get terminalFocus() {
-          return router.terminalFocus
-        },
-        events: router,
-        bind: (binding) => actions.bind(binding),
-        blur: (node) => router.blur(node),
-        focus: (node) => router.focus(node),
+  const mountCtx = mockMountCtx("ui", { actions })
+  n.mount({
+    ...mountCtx,
+    input: {
+      ...mountCtx.input,
+      get terminalFocus() {
+        return router.terminalFocus
       },
-    })
-  )
+      events: router,
+      bind: (binding) => actions.bind(binding),
+      blur: (node) => router.blur(node),
+      focus: (node) => router.focus(node),
+    },
+  })
   router.focus(n)
   return { n, router }
 }

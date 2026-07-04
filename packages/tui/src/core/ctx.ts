@@ -1,6 +1,7 @@
 import type { Emitter } from "@zaly/shared"
 import type { Logger } from "@zaly/shared/logger"
 import type { Actions } from "../input/actions.ts"
+import type { TerminalQueries } from "../input/queries.ts"
 import type { InputRouterEvents } from "../input/router.ts"
 import type { SurfaceType } from "../renderer/renderer.ts"
 import type { StyleBuilder } from "../style/builder.ts"
@@ -68,6 +69,7 @@ export interface MountCtx {
     readonly focus: (node: Node) => void
     /** Clear focus. */
     readonly blur: (node: Node) => void
+    readonly queries: TerminalQueries
   }
 
   /** Action registry — widgets and plugins can `register` catalog

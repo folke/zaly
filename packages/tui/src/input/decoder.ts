@@ -25,10 +25,15 @@ export type MouseEvent = {
   | { kind: "down" | "drag" | "up"; button: MouseButton; click?: 1 | 2 | 3 }
 )
 
+export type TerminalResponseEvent =
+  | { type: "term-response"; kind: "csi"; sequence: string; params: string; final: string }
+  | { type: "term-response"; kind: "osc" | "dcs" | "apc"; sequence: string; payload: string }
+
 export type InputEvent =
   | { type: "key"; event: KeyEvent }
   | { type: "paste"; text: string }
   | { type: "focus"; gained: boolean }
+  | TerminalResponseEvent
   | MouseEvent
 
 export class Decoder {
@@ -106,6 +111,9 @@ function parseEsc(buf: string, out: InputEvent[], onPasteStart: () => void): num
   const second = buf[1]
   if (second === "[") return parseCsi(buf, out, onPasteStart)
   if (second === "O") return parseSs3(buf, out)
+  if (second === "]") return parseStringControl(buf, out, "osc")
+  if (second === "P") return parseStringControl(buf, out, "dcs")
+  if (second === "_") return parseStringControl(buf, out, "apc")
 
   // Anything else after ESC is alt + <that key>.
   return 1 + decodeChar(buf.slice(1), out, { alt: true })
@@ -134,12 +142,37 @@ function parseCsi(buf: string, out: InputEvent[], onPasteStart: () => void): num
         out.push({ gained: false, type: "focus" })
         return consumed
       }
+      if (isTerminalCsiResponse(params, final)) {
+        out.push({ final, kind: "csi", params, sequence: buf.slice(0, consumed), type: "term-response" })
+        return consumed
+      }
       handleCsi(params, final, out)
       return consumed
     }
     i++
   }
   return 0 // incomplete
+}
+
+function parseStringControl(
+  buf: string,
+  out: InputEvent[],
+  kind: "osc" | "dcs" | "apc"
+): number {
+  const payloadStart = 2
+  const st = buf.indexOf("\x1b\\", payloadStart)
+  const bel = kind === "osc" ? buf.indexOf("\x07", payloadStart) : -1
+  const useBel = bel !== -1 && (st === -1 || bel < st)
+  const end = useBel ? bel : st
+  if (end === -1) return 0
+  const consumed = end + (useBel ? 1 : 2)
+  out.push({
+    kind,
+    payload: buf.slice(payloadStart, end),
+    sequence: buf.slice(0, consumed),
+    type: "term-response",
+  })
+  return consumed
 }
 
 function parseSs3(buf: string, out: InputEvent[]): number {
@@ -183,6 +216,10 @@ const TILDE_NAMES: Partial<Record<string, string>> = {
 }
 
 const SS3_NAMES: Partial<Record<string, string>> = { P: "f1", Q: "f2", R: "f3", S: "f4" }
+
+function isTerminalCsiResponse(params: string, final: string): boolean {
+  return final === "c" && (params.startsWith("?") || params.startsWith(">"))
+}
 
 function handleCsi(params: string, final: string, out: InputEvent[]): void {
   if ((final === "M" || final === "m") && params.startsWith("<")) {

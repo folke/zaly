@@ -33,20 +33,20 @@ function setup() {
   actions.setTargetResolver(() => router.focused)
   router.setActions(actions)
   const mount = <T extends Node>(node: T) => {
-    node.mount(
-      mockMountCtx("ui", {
-        actions,
-        input: {
-          get terminalFocus() {
-            return router.terminalFocus
-          },
-          events: router,
-          bind: (binding) => actions.bind(binding),
-          blur: (n) => router.blur(n),
-          focus: (n) => router.focus(n),
+    const ctx = mockMountCtx("ui", { actions })
+    node.mount({
+      ...ctx,
+      input: {
+        ...ctx.input,
+        get terminalFocus() {
+          return router.terminalFocus
         },
-      })
-    )
+        events: router,
+        bind: (binding) => actions.bind(binding),
+        blur: (n) => router.blur(n),
+        focus: (n) => router.focus(n),
+      },
+    })
     return node
   }
   return { actions, mount, router }
@@ -259,6 +259,26 @@ describe("InputRouter — keymap → action dispatch", () => {
     const consumed = router.dispatch({ event: makeKey("enter"), type: "key" })
     expect(consumed).toBe(true)
     expect(seen).toEqual(["menu"])
+  })
+})
+
+describe("InputRouter — terminal responses", () => {
+  test("emits terminal responses without treating them as focus", () => {
+    const router = new InputRouter()
+    const seen: string[] = []
+    router.on("term-response", ({ event }) => seen.push(event.sequence))
+
+    const consumed = router.dispatch({
+      final: "c",
+      kind: "csi",
+      params: "?1;2",
+      sequence: "\x1b[?1;2c",
+      type: "term-response",
+    })
+
+    expect(consumed).toBe(false)
+    expect(seen).toEqual(["\x1b[?1;2c"])
+    expect(router.terminalFocus).toBe(true)
   })
 })
 

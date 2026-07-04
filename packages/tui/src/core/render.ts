@@ -1,3 +1,4 @@
+import type { TerminalQueries } from "../input/queries.ts"
 import type { StyleBuilder } from "../style/builder.ts"
 import type { Theme } from "../themes/types.ts"
 import type { RenderCtx } from "./ctx.ts"
@@ -27,6 +28,7 @@ export type RenderContextValue = {
   style: Accessor<StyleBuilder>
   /** Whether to render images (when supported) */
   images: Accessor<boolean>
+  queries: TerminalQueries
 }
 export const RenderContext = createContext<RenderContextValue>()
 

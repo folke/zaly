@@ -4,6 +4,7 @@ import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal
 
 import { Logger } from "@zaly/shared/logger"
 import { Actions } from "../../src/input/actions.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
 import { InputRouter } from "../../src/input/router.ts"
 
 /**
@@ -33,6 +34,7 @@ export function mockMountCtx(
       events: router,
       bind: (binding) => actions.bind(binding),
       blur: (n) => router.blur(n),
+      queries: new TerminalQueries(router, { write: () => {} }),
       focus: (node) => router.focus(node),
     },
     overlay: {

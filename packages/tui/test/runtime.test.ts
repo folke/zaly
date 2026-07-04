@@ -1,5 +1,12 @@
 import { sliceAnsi, stringWidth, wrapAnsi } from "@zaly/shared/ansi"
 import { describe, expect, test } from "vitest"
+import { DIACRITICS, PLACEHOLDER } from "../src/image/kitty.ts"
+
+function kittyPlaceholderRow(cols: number): string {
+  const parts: string[] = []
+  for (let col = 0; col < cols; col++) parts.push(PLACEHOLDER, DIACRITICS[0], DIACRITICS[col])
+  return parts.join("")
+}
 
 describe("stringWidth", () => {
   test("ascii width equals length", () => {
@@ -25,6 +32,14 @@ describe("stringWidth", () => {
     const apc = "\x1b_Ga=T,U=1,i=1,f=100;iVBORw0KGgo=\x1b\\"
     expect(stringWidth(apc)).toBe(0)
     expect(stringWidth(`${apc}hello`)).toBe(5)
+  })
+
+  test("kitty unicode placeholder diacritic clusters count as one cell each", () => {
+    const row = kittyPlaceholderRow(80)
+    expect(stringWidth(row)).toBe(80)
+
+    const firstPreviouslyWideCluster = `${PLACEHOLDER}${DIACRITICS[0]}${DIACRITICS[30]}`
+    expect(stringWidth(firstPreviouslyWideCluster)).toBe(1)
   })
 })
 
@@ -82,5 +97,14 @@ describe("sliceAnsi", () => {
     const sliced = sliceAnsi(`${apc}hello world`, 0, 5)
     expect(sliced).toContain(apc)
     expect(sliced).toContain("hello")
+  })
+
+  test("kitty unicode placeholder diacritic clusters slice as atomic cells", () => {
+    const row = kittyPlaceholderRow(80)
+    const sliced = sliceAnsi(row, 30, 31)
+    expect(stringWidth(sliced)).toBe(1)
+    expect(sliced).toContain(PLACEHOLDER)
+    expect(sliced).toContain(DIACRITICS[0])
+    expect(sliced).toContain(DIACRITICS[30])
   })
 })

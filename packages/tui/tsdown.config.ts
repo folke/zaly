@@ -16,6 +16,7 @@ export default defineConfig({
     "widgets/*": "src/widgets/*.ts",
     "widgets/completions/*": "src/widgets/completions/*.ts",
     ansi: "src/style/ansi.ts",
+    image: "src/image/index.ts",
     clipboard: "src/input/clipboard.ts",
     index: "src/index.ts",
     markdown: "src/markdown/index.ts",

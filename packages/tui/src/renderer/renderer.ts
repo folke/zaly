@@ -26,6 +26,7 @@ import { RenderContext } from "../core/render.ts"
 import { Actions } from "../input/actions.ts"
 import { Decoder } from "../input/decoder.ts"
 import { defaultActions } from "../input/defaults.ts"
+import { TerminalQueries } from "../input/queries.ts"
 import { InputRouter } from "../input/router.ts"
 import { TuiReporter } from "../services/logger.ts"
 import { styleBuilder as buildStyle } from "../style/builder.ts"
@@ -136,6 +137,7 @@ export class Renderer extends Emitter<RenderEvents> {
    *  invalidates every node cache in the tree (resize, theme swap). */
   #ctxVersion = 0
   #ctx: RenderCtx | undefined
+  queries: TerminalQueries
 
   /** Runtime action registry (catalog + dispatcher). Populated with
    *  `defaultActions` + `globalActions` at construction; apps extend
@@ -170,19 +172,6 @@ export class Renderer extends Emitter<RenderEvents> {
 
     if (opts.theme) this.#theme.set(opts.theme)
 
-    // Root Owner: an entry point for `useContext` walks. Every widget
-    // body added via `ui.add(fn)` / `stream.append(fn)` / `overlay.add(fn)`
-    // runs under this Owner, so `useContext(RenderContext)` resolves
-    // to the values provided here.
-    this.#rootOwner = createRoot(() => {
-      provideContext(RenderContext, {
-        images: memo(() => unwrap(opts.images) ?? true),
-        style: memo(() => buildStyle(this.#theme.get())),
-        theme: this.#theme.get,
-      })
-      return useActiveOwner() as Owner
-    })
-
     this.ui = new UI(this)
     this.stream = new Stream(this, {
       fixedFooterHeight: opts.fixedFooterHeight,
@@ -194,7 +183,22 @@ export class Renderer extends Emitter<RenderEvents> {
     this.logger = opts.logger ?? new Logger({ name: "renderer" })
 
     this.input = new InputRouter(this.logger.child({ name: "input" }))
+    this.queries = new TerminalQueries(this.input, this.terminal)
     this.actions = new Actions(this.logger.child({ name: "actions" }))
+
+    // Root Owner: an entry point for `useContext` walks. Every widget
+    // body added via `ui.add(fn)` / `stream.append(fn)` / `overlay.add(fn)`
+    // runs under this Owner, so `useContext(RenderContext)` resolves
+    // to the values provided here.
+    this.#rootOwner = createRoot(() => {
+      provideContext(RenderContext, {
+        images: memo(() => unwrap(opts.images) ?? true),
+        queries: this.queries,
+        style: memo(() => buildStyle(this.#theme.get())),
+        theme: this.#theme.get,
+      })
+      return useActiveOwner() as Owner
+    })
 
     const reporter = new TuiReporter(opts.reporter)
     reporter.attach({ append: (node) => this.stream.append(node) })
@@ -443,6 +447,7 @@ export class Renderer extends Emitter<RenderEvents> {
         blur: (node) => this.input.blur(node),
         events: this.input,
         focus: (node) => this.input.focus(node),
+        queries: this.queries,
         get terminalFocus(): boolean {
           return input.terminalFocus
         },

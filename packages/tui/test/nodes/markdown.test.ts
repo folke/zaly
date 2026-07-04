@@ -3,17 +3,52 @@ import { RESET } from "@zaly/shared/ansi"
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { renderMarkdown } from "#md"
 import { createCtx } from "../../src/core/ctx.ts"
-import { resetCapabilitiesCache } from "../../src/image/capabilities.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
+import { InputRouter } from "../../src/input/router.ts"
+import { resetKittyGraphics } from "../../src/image/kitty.ts"
 import { createNode } from "../../src/index.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { markdown } from "../../src/widgets/markdown.ts"
+import { mockMountCtx } from "../renderer/mock.ts"
 
 // No-op `transmit` so kitty image transmits don't leak to stdout during
 // tests. Tests that need to assert on transmit bytes pass their own.
 const ctx = (width = 80) => createCtx({ theme: defaultTheme, transmit: () => {}, width })
+
+function kgpQueries(opts: { inline?: boolean } = {}): TerminalQueries {
+  const router = new InputRouter()
+  return new TerminalQueries(router, {
+    write: (seq) => {
+      if (seq.includes("[>q")) {
+        router.dispatch({
+          kind: "dcs",
+          payload: `>|${opts.inline === false ? "WezTerm" : "Ghostty"} 1.0`,
+          sequence: `\x1bP>|${opts.inline === false ? "WezTerm" : "Ghostty"} 1.0\x1b\\`,
+          type: "term-response",
+        })
+      } else if (seq.includes("\x1b_G")) {
+        router.dispatch({
+          kind: "apc",
+          payload: "Gi=4294967290;EINVAL: expected",
+          sequence: "\x1b_Gi=4294967290;EINVAL: expected\x1b\\",
+          type: "term-response",
+        })
+      }
+    },
+  })
+}
+
+function mountMarkdown<T extends ReturnType<typeof markdown>>(
+  node: T,
+  opts: { inline?: boolean } = {}
+): T {
+  const mount = mockMountCtx()
+  node.mount({ ...mount, input: { ...mount.input, queries: kgpQueries(opts) } })
+  return node
+}
 
 function render(md: string, width = 80): string {
   return renderMarkdown(md, createCallbacks(ctx(width)))
@@ -443,7 +478,7 @@ describe("markdown — images", () => {
       savedImgEnv[k] = process.env[k]
       delete process.env[k]
     }
-    resetCapabilitiesCache()
+    resetKittyGraphics()
   })
   afterAll(() => {
     Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: savedIsTTY })
@@ -451,7 +486,7 @@ describe("markdown — images", () => {
       if (savedImgEnv[k] === undefined) delete process.env[k]
       else process.env[k] = savedImgEnv[k]
     }
-    resetCapabilitiesCache()
+    resetKittyGraphics()
   })
 
   test("image callback emits an `<img id=N>` marker per occurrence", () => {
@@ -535,14 +570,10 @@ describe("markdown — Image instance cache", () => {
   })
 
   test("re-rendering the same markdown reuses the Image node (stable placement id)", async () => {
-    // oxlint-disable-next-line no-shadow
-    const { resetCapabilitiesCache } = await import("../../src/image/capabilities.ts")
-    const { resetTransmitCache } = await import("../../src/image/kitty.ts")
-    resetCapabilitiesCache()
-    resetTransmitCache()
+    resetKittyGraphics()
 
     // Force a fresh Markdown instance with the kitty env in place.
-    const m = markdown(`![pic](${pngPath})`, { width: 40 })
+    const m = mountMarkdown(markdown(`![pic](${pngPath})`, { width: 40 }), { inline: false })
     const firstRows = await m.render(ctx(40))
     const firstP = extractPlacementId(firstRows.join("\n"))
     expect(firstP).toBeDefined()
@@ -558,11 +589,7 @@ describe("markdown — Image instance cache", () => {
   })
 
   test("transmit is emitted at most once across re-renders of the same src", async () => {
-    // oxlint-disable-next-line no-shadow
-    const { resetCapabilitiesCache } = await import("../../src/image/capabilities.ts")
-    const { resetTransmitCache } = await import("../../src/image/kitty.ts")
-    resetCapabilitiesCache()
-    resetTransmitCache()
+    resetKittyGraphics()
 
     // Image transmit bytes flow through `ctx.transmit`, not the row
     // output. Capture them via a stub channel and assert dedupe across
@@ -573,7 +600,7 @@ describe("markdown — Image instance cache", () => {
     const transmit = (s: string): void => void transmitted.push(s)
     const base = { ...ctx(40), transmit }
 
-    const m = markdown(`![pic](${pngPath})`, { width: 40 })
+    const m = mountMarkdown(markdown(`![pic](${pngPath})`, { width: 40 }))
     await m.render({ ...base, version: 1 })
     const aTransmits = transmitted.join("").match(/\x1b_Ga=t,/g)?.length ?? 0
     transmitted.length = 0

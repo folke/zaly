@@ -7,15 +7,7 @@ import { imageInfo } from "@zaly/shared/image"
 import { Node } from "../core/node.ts"
 import { unwrap, useContext } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
-import { imageCapabilities } from "../image/capabilities.ts"
-import { encode as encodeIterm2 } from "../image/iterm.ts"
-import {
-  allocatePlacementId,
-  deletePlacement,
-  placement,
-  resetTransmitCache,
-  transmitOnce,
-} from "../image/kitty.ts"
+import { loadKittyGraphics } from "../image/kitty.ts"
 
 export interface ImageState {
   /**
@@ -42,10 +34,6 @@ export interface ImageState {
 }
 
 export class Image extends Node<ImageState> {
-  // Stable placement id per node instance. KGP re-renders emit the same
-  // (image id, placement id) pair — the spec guarantees this replaces
-  // the prior placement without flicker.
-  readonly #placementId = allocatePlacementId()
   #delete?: () => void
   #enabled?: Accessor<boolean>
 
@@ -67,44 +55,39 @@ export class Image extends Node<ImageState> {
   protected async _render(ctx: RenderCtx): Promise<string[]> {
     if (unwrap(this.#enabled) === false) return this.fallback
 
-    const protocol = imageCapabilities().protocol
-    if (protocol === undefined) return this.fallback
+    const queries = this.ctx?.input.queries
+    const kitty = queries ? await loadKittyGraphics(queries) : undefined
+    if (!kitty?.supported) return this.fallback
 
     const detected = await fileDetect(this.state.src)
     if (detected?.type !== "image") return this.fallback
     const img = await imageInfo(detected)
 
     const { cols, rows } = dims(this.state, img, Math.min(ctx.width, 80))
-    const blank = " ".repeat(cols)
 
-    // Row 0 carries the protocol escape(s) at the target cursor position.
-    // The escapes are APC (KGP) / OSC (iTerm2) — zero display width via
-    // our runtime stringWidth shim — so layout sees only the trailing
-    // `cols` spaces. Rows 1..r-1 are pure spaces that the image overlays.
-    let lead: string
-    if (protocol === "kitty") {
-      const t = await transmitOnce(img)
-      if (!t) return this.fallback
-      this.#delete = () => deletePlacement(t.imageId, this.#placementId)
-      // Route the transmit bytes through the side-channel queue (mount
-      // ctx → terminal). Cached rows then hold pure placement ANSI,
-      // which is safe to reuse across repaints. If we're rendering
-      // before mount (rare — tests, headless previews), fall back to
-      // inlining the transmit into the lead so the picture still
-      // shows correctly the first time.
-      if (t.transmit) ctx.transmit(t.transmit)
-      lead = placement(t.imageId, this.#placementId, { cols, rows })
-    } else {
-      lead = encodeIterm2(Buffer.from(img.data).toString("base64"), {
-        height: `${rows}`,
-        preserveAspectRatio: true,
-        width: `${cols}`,
-      })
+    const t = await kitty.transmitOnce(img)
+    if (!t) return this.fallback
+    const p = kitty.placement(t.imageId, { cols, rows })
+    if (!p) return this.fallback
+    this.#delete = () =>
+      p.placementId ? kitty.deletePlacement(t.imageId, p.placementId) : undefined
+    // Route the transmit bytes through the side-channel queue (mount
+    // ctx → terminal). Cached rows then hold pure placement ANSI,
+    // which is safe to reuse across repaints. If we're rendering
+    // before mount (rare — tests, headless previews), fall back to
+    // inlining the transmit into the lead so the picture still
+    // shows correctly the first time.
+    if (t.transmit) {
+      ctx.transmit(t.transmit)
+      if (p.inline) ctx.transmit(p.seq)
     }
 
-    const out: string[] = [lead + blank]
-    for (let r = 1; r < rows; r++) out.push(blank)
-    return out
+    if (p.inline) return p.data
+
+    const ret = [...p.data]
+    if (!ret.length) return this.fallback
+    ret[0] = p.seq + ret[0]
+    return ret
   }
 }
 
@@ -131,11 +114,4 @@ function dims(
     cols = Math.max(1, Math.round((rows * cellAspect) / aspect))
   }
   return { cols: cols ?? available, rows: rows ?? 1 }
-}
-
-/** Drop the KGP transmit cache. Mostly for tests.
- *
- *  @internal */
-export function resetImageTransmitCache(): void {
-  resetTransmitCache()
 }

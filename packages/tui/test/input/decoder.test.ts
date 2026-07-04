@@ -213,6 +213,68 @@ describe("Decoder — mouse", () => {
   })
 })
 
+describe("Decoder — terminal responses", () => {
+  test("decodes DA CSI responses", () => {
+    expect(new Decoder().feed("\x1b[?1;2c\x1b[>1;4000;0c")).toEqual([
+      { final: "c", kind: "csi", params: "?1;2", sequence: "\x1b[?1;2c", type: "term-response" },
+      {
+        final: "c",
+        kind: "csi",
+        params: ">1;4000;0",
+        sequence: "\x1b[>1;4000;0c",
+        type: "term-response",
+      },
+    ])
+  })
+
+  test("decodes OSC responses terminated by BEL or ST", () => {
+    expect(new Decoder().feed("\x1b]4;1;rgb:ffff/0000/0000\x07\x1b]10;rgb:1111/2222/3333\x1b\\")).toEqual([
+      {
+        kind: "osc",
+        payload: "4;1;rgb:ffff/0000/0000",
+        sequence: "\x1b]4;1;rgb:ffff/0000/0000\x07",
+        type: "term-response",
+      },
+      {
+        kind: "osc",
+        payload: "10;rgb:1111/2222/3333",
+        sequence: "\x1b]10;rgb:1111/2222/3333\x1b\\",
+        type: "term-response",
+      },
+    ])
+  })
+
+  test("decodes DCS and APC responses", () => {
+    expect(new Decoder().feed("\x1bP>|Ghostty 1.2\x1b\\\x1b_Gi=1;OK\x1b\\")).toEqual([
+      {
+        kind: "dcs",
+        payload: ">|Ghostty 1.2",
+        sequence: "\x1bP>|Ghostty 1.2\x1b\\",
+        type: "term-response",
+      },
+      {
+        kind: "apc",
+        payload: "Gi=1;OK",
+        sequence: "\x1b_Gi=1;OK\x1b\\",
+        type: "term-response",
+      },
+    ])
+  })
+
+  test("holds split APC responses until the terminator arrives", () => {
+    const d = new Decoder()
+    expect(d.feed("\x1b_Gi=1")).toEqual([])
+    expect(d.feed(";OK\x1b\\")).toEqual([
+      {
+        kind: "apc",
+        payload: "Gi=1;OK",
+        sequence: "\x1b_Gi=1;OK\x1b\\",
+        type: "term-response",
+      },
+    ])
+  })
+})
+
 describe("Decoder — paste + focus", () => {
   test("bracketed paste emits a single PasteEvent", () => {
     const d = new Decoder()
