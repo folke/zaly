@@ -38,23 +38,24 @@ export type EditToolMeta = FileMeta & {
 export const editTool = defineTool({
   name: "edit",
   desc:
-    "Apply one or more exact-text replacements to a file. All matches are " +
+    "Apply an exact-text replacement to a file, with optional extra replacements.. All matches are " +
     "resolved against the original content (not sequentially), each `oldText` " +
     "must be unique in the file, and edits must not overlap. " +
     "Atomic: all-or-nothing.",
   // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
     path: Type.String({ description: "Path to the file. Absolute or cwd-relative." }),
-    edits: Type.Array(
-      // oxlint-disable-next-line sort-keys -- semantic order: oldText then newText
-      Type.Object({
-        oldText: Type.String({ description: "Exact text to find. Must occur once in the file." }),
-        newText: Type.String({ description: "Replacement text." }),
-      }),
-      {
-        description: "One or more edits to apply atomically.",
-        minItems: 1,
-      }
+    oldText: Type.String({ description: "Exact text to find. Must occur once in the file." }),
+    newText: Type.String({ description: "Replacement text." }),
+    edits: Type.Optional(
+      Type.Array(
+        // oxlint-disable-next-line sort-keys -- semantic order: oldText then newText
+        Type.Object({
+          oldText: Type.String({ description: "Old text" }),
+          newText: Type.String({ description: "New text" }),
+        }),
+        { description: "Extra edits to apply atomically.", minItems: 1 }
+      )
     ),
   }),
 
@@ -70,6 +71,8 @@ export const editTool = defineTool({
   ): Promise<{ ok: true; path: string; bytes: number; lines: number; edits: number }> {
     const path = normPath(ctx.cwd, args.path)
 
+    const edits = [{ newText: args.newText, oldText: args.oldText }, ...(args.edits ?? [])]
+
     // Edit always requires freshness — the operation is content-aware,
     // so the model must have seen the current bytes.
     assertFresh(path, ctx)
@@ -82,14 +85,14 @@ export const editTool = defineTool({
       })
     })
 
-    const updated = applyEdits(original, args.edits, path)
+    const updated = applyEdits(original, edits, path)
     await writeFile(path, updated, "utf8")
     const fstat = await stat(path)
     ctx.meta = { content: updated, kind: "edit", mtime: fstat.mtimeMs, original, path }
 
     const bytes = Buffer.byteLength(updated, "utf8")
     const lines = countLines(updated)
-    return { bytes, edits: args.edits.length, lines, ok: true, path }
+    return { bytes, edits: edits.length, lines, ok: true, path }
   },
 })
 
