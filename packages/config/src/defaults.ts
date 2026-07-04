@@ -27,7 +27,7 @@ export const defaultSettings = {
   masking: {
     delta: 0.25,
     enabled: true,
-    keepTurns: 20,
+    keepTurns: 40,
     minTokens: 50,
     target: 0.5,
   },
