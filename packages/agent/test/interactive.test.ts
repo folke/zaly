@@ -138,6 +138,29 @@ describe("Agent — pause / abort", () => {
     expect(agent.status).toBe("paused")
     expect(agent.lastStop?.error?.name).toBe("AbortError")
   })
+
+  test("useTool after abort does not inherit the stale aborted run signal", async () => {
+    const m = pendingModel()
+    const signalTool = defineTool({
+      call: (_params, ctx) => (ctx.signal?.aborted ? "aborted" : "fresh"),
+      name: "signal",
+      params: Type.Object({}),
+    })
+    const agent = await loadAgent({
+      messages: [{ content: "go", role: "user" }],
+      model: m.model,
+      tools: [signalTool],
+    })
+    const run = agent.run()
+
+    while (m.pending === 0) await tick()
+    agent.stop()
+    m.release([{ error: new DOMException("aborted", "AbortError"), type: "error" }])
+    expect(await run).toBe("aborted")
+
+    const { result } = await agent.useTool("signal", {}, "manual signal check")
+    expect(result.content).toBe("fresh")
+  })
 })
 
 describe("Agent — compaction", () => {

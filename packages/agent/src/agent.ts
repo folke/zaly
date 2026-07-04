@@ -440,6 +440,7 @@ export class Agent extends Emitter<AgentEvents> {
         )
       })
       .finally(() => {
+        this.#abortController = undefined
         this.#running = undefined
       })
     return this.#running
