@@ -32,6 +32,7 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
   #selection: Selection | undefined
   #text = ""
   #dirty = false
+  #emitted?: Selection
   $r: Renderer
 
   constructor(renderer: Renderer) {
@@ -48,6 +49,7 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
     if (isDeepStrictEqual(prev, value)) return
     this.#selection = value
     this.#dirty = true
+    this.#emitted = undefined
     if (!value) {
       this.#text = ""
       this.#dirty = false
@@ -64,10 +66,11 @@ export class SelectionLayer extends Emitter<SelectionEvents> {
     if (this.#text === value && !this.#dirty) return
     this.#text = value
     const selection = this.#selection
-    if (!selection || selection.dragging) return
+    if (!selection || selection.dragging || this.#emitted === selection) return
     this.#dirty = false
     setImmediate(() => {
       if (selection !== this.#selection || value !== this.#text) return
+      this.#emitted = selection
       void this.emit("selection", { selection, text: value })
     })
   }
