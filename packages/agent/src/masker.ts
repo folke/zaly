@@ -171,7 +171,7 @@ export class Masker {
   #update(messages: readonly Message[], opts: Required<MaskOpts>): void {
     this.#masked.clear()
     this.#stats.clear()
-    this.#threshold ??= this.#opts.target + this.#opts.delta
+    this.#threshold = this.#opts.target + this.#opts.delta
     const usage = tokenStats(messages, { prompt: opts.prompt, tools: opts.tools })
     // `pressure.ratio` is based on the current projected/masked request,
     // not the raw session. Raw history may exceed model context; masking
