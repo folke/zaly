@@ -145,14 +145,14 @@ describe("image() — fallback", () => {
 })
 
 describe("image() — KGP rendering", () => {
-  test("first render: row[0] carries placement, transmit goes to ctx.transmit", async () => {
+  test("first inline render transmits setup out-of-band and returns placeholder rows", async () => {
     const { bytes, rows } = await renderImage(pngPath, { height: 2, width: 4 })
     expect(rows).toHaveLength(2)
-    expect(rows[0]).toContain("\x1b_GU=1,")
-    expect(rows[0]).toContain("a=p")
-    expect(rows[0]).not.toContain("a=t")
+    expect(rows[0]).not.toContain("\x1b_G")
     expect(rows[0]).toContain("\u{10eeee}")
     expect(bytes).toContain("\x1b_Ga=t,f=100,i=")
+    expect(bytes).toContain("\x1b_GU=1,")
+    expect(bytes).toContain("a=p")
   })
 
   test("transmit payload is base64 of the absolute PNG path", async () => {
@@ -171,11 +171,12 @@ describe("image() — KGP rendering", () => {
     expect(path.endsWith(".png")).toBe(true)
   })
 
-  test("second render for same src omits the transmit", async () => {
+  test("second inline render omits transmit and placement setup", async () => {
     await renderImage(pngPath, { height: 2, width: 4 })
     const { bytes, rows } = await renderImage(pngPath, { height: 2, width: 4 })
     expect(bytes).toBe("")
-    expect(rows[0]).toContain("a=p")
+    expect(rows[0]).not.toContain("\x1b_G")
+    expect(rows[0]).toContain("\u{10eeee}")
   })
 
   test("direct placement mode exposes placement ids for cleanup", async () => {
