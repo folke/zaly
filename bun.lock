@@ -46,7 +46,7 @@
     },
     "packages/ai": {
       "name": "@zaly/ai",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@zaly/shared": "workspace:*",
       },
@@ -60,7 +60,7 @@
     },
     "packages/cli": {
       "name": "@zaly/cli",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "bin": {
         "zaly": "./bin/zaly.ts",
       },
@@ -162,7 +162,7 @@
     },
     "packages/tui": {
       "name": "@zaly/tui",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@zaly/shared": "workspace:*",
         "diff": "^9.0.0",
