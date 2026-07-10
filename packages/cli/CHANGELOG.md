@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/folke/zaly/compare/cli-v0.0.3...cli-v0.0.4) (2026-07-10)
+
+
+### 🩹 Fixes
+
+* **cli:** strip weird GPT 5.6 empty reasoning markers ([fcf6f0e](https://github.com/folke/zaly/commit/fcf6f0ed5500e5f3db3c21a6a59f54a9be3dda9b))
+
 ## [0.0.3](https://github.com/folke/zaly/compare/cli-v0.0.2...cli-v0.0.3) (2026-07-10)
 
 

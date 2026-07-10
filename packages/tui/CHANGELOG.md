@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.5](https://github.com/folke/zaly/compare/tui-v0.0.4...tui-v0.0.5) (2026-07-10)
+
+
+### 📦 Build
+
+* fix issues with import paths ([22d1332](https://github.com/folke/zaly/commit/22d1332deb897f0fceb9642be425090c71b75d05))
+* more build fixes ([efd92da](https://github.com/folke/zaly/commit/efd92da2197b631943da45c2ae463474c56d6b05))
+
 ## [0.0.4](https://github.com/folke/zaly/compare/tui-v0.0.3...tui-v0.0.4) (2026-07-10)
 
 
