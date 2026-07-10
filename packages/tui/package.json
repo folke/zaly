@@ -240,17 +240,17 @@
   "dependencies": {
     "@zaly/shared": "workspace:*",
     "diff": "^9.0.0",
-    "marked": "^18.0.5",
+    "marked": "^18.0.6",
     "pathe": "^2.0.3",
-    "shiki": "^4.3.0"
+    "shiki": "^4.3.1"
   },
   "devDependencies": {
     "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
     "mitata": "^1.0.34",
     "slice-ansi": "^9.0.0",
-    "string-width": "^8.2.1",
-    "typia": "^12.1.1",
+    "string-width": "^8.2.2",
+    "typia": "^13.0.2",
     "wrap-ansi": "^10.0.0"
   },
   "optionalDependencies": {
