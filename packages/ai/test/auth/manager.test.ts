@@ -61,8 +61,15 @@ function model(overrides: Partial<ModelSpec> = {}, p = provider()): ModelSpec {
 
 describe("resolveApiKey", () => {
   test("normalizes string, object, function, and empty keys", async () => {
-    await expect(resolveApiKey("key", "provider")).resolves.toEqual({ key: "key", source: "provider" })
-    const objectKey: ProviderOptions["apiKey"] = { headers: { A: "B" }, key: "key", source: "model" }
+    await expect(resolveApiKey("key", "provider")).resolves.toEqual({
+      key: "key",
+      source: "provider",
+    })
+    const objectKey: ProviderOptions["apiKey"] = {
+      headers: { A: "B" },
+      key: "key",
+      source: "model",
+    }
     await expect(resolveApiKey(objectKey, "model")).resolves.toEqual({
       headers: { A: "B" },
       key: "key",
@@ -89,7 +96,9 @@ describe("AuthManager store", () => {
     const auth = await AuthManager.load(path)
     await auth.set("mock", { key: "stored", type: "api-key" })
     expect(auth.get("mock")).toEqual({ key: "stored", type: "api-key" })
-    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({ mock: { key: "stored", type: "api-key" } })
+    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({
+      mock: { key: "stored", type: "api-key" },
+    })
 
     await auth.delete("mock")
     expect(auth.get("mock")).toBeUndefined()
@@ -98,9 +107,7 @@ describe("AuthManager store", () => {
 
   test("set/delete/login require a JSON store", async () => {
     const auth = AuthManager.basic()
-    await expect(auth.set("mock", { key: "x", type: "api-key" })).rejects.toThrow(
-      "JSON store"
-    )
+    await expect(auth.set("mock", { key: "x", type: "api-key" })).rejects.toThrow("JSON store")
     await expect(auth.delete("mock")).rejects.toThrow("JSON store")
     await expect(auth.login(provider())).rejects.toThrow("JSON store")
   })
@@ -179,7 +186,10 @@ describe("AuthManager resolution", () => {
   test("model apiKey object preserves headers", async () => {
     const auth = AuthManager.basic()
     const p = provider()
-    const m = model({ apiKey: { headers: { "X-Test": "1" }, key: "model-key", source: "model" } }, p)
+    const m = model(
+      { apiKey: { headers: { "X-Test": "1" }, key: "model-key", source: "model" } },
+      p
+    )
     await expect(auth.getAuth(m)).resolves.toEqual({
       headers: { "X-Test": "1" },
       key: "model-key",
@@ -252,7 +262,9 @@ describe("AuthManager login", () => {
     const ac = new AbortController()
     ac.abort()
 
-    await expect(login.login({ prompt: async () => "new", signal: ac.signal })).resolves.toBeUndefined()
+    await expect(
+      login.login({ prompt: async () => "new", signal: ac.signal })
+    ).resolves.toBeUndefined()
     expect(auth.get("mock")).toEqual({ key: "old", type: "api-key" })
     await expect(login.login({ prompt: async () => undefined })).resolves.toBeUndefined()
     expect(auth.get("mock")).toEqual({ key: "old", type: "api-key" })

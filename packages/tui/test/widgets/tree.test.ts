@@ -39,7 +39,13 @@ describe("tree", () => {
   test("includes the root when root is true", async () => {
     const t = tree({ root: true, tree: sample() })
 
-    expect(unwrap(t.items).map((i) => i.text)).toEqual(["root", "src", "index.ts", "util.ts", "README.md"])
+    expect(unwrap(t.items).map((i) => i.text)).toEqual([
+      "root",
+      "src",
+      "index.ts",
+      "util.ts",
+      "README.md",
+    ])
 
     const rendered = await t.render(ctx)
     const rows = rendered.map(stripAnsi)

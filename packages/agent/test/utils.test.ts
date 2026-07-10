@@ -122,14 +122,28 @@ describe("TokenUsage", () => {
     expect(usage.cost).toEqual({ input: 0, output: 0 })
     expect(usage.contextSize).toBe(0)
 
-    usage.add({ cacheRead: 3, cacheWrite: 4, cost: { input: 1, output: 2 }, input: 10, output: 20, reasoning: 5 })
+    usage.add({
+      cacheRead: 3,
+      cacheWrite: 4,
+      cost: { input: 1, output: 2 },
+      input: 10,
+      output: 20,
+      reasoning: 5,
+    })
     expect(usage.input).toBe(10)
     expect(usage.output).toBe(20)
     expect(usage.cacheRead).toBe(3)
     expect(usage.cacheWrite).toBe(4)
     expect(usage.reasoning).toBe(5)
     expect(usage.contextSize).toBe(37)
-    expect(usage.total).toEqual({ cacheRead: 3, cacheWrite: 4, cost: { input: 1, output: 2 }, input: 10, output: 20, reasoning: 5 })
+    expect(usage.total).toEqual({
+      cacheRead: 3,
+      cacheWrite: 4,
+      cost: { input: 1, output: 2 },
+      input: 10,
+      output: 20,
+      reasoning: 5,
+    })
   })
 
   test("seeds totals from assistant message usage and ignores other messages", () => {

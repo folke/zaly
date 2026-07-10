@@ -142,9 +142,7 @@ describe("stripAnsiBg", () => {
   })
 
   test("removes truecolor background SGR codes while preserving foreground", () => {
-    expect(stripAnsiBg("\x1b[31;48;2;1;2;3mtext\x1b[39;49m")).toBe(
-      "\x1b[31mtext\x1b[39m"
-    )
+    expect(stripAnsiBg("\x1b[31;48;2;1;2;3mtext\x1b[39;49m")).toBe("\x1b[31mtext\x1b[39m")
   })
 
   test("preserves attrs, foreground colors, and full resets", () => {

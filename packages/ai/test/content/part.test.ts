@@ -5,8 +5,14 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, describe, expect, test } from "vitest"
+import {
+  inlineFile,
+  toAttachment,
+  toErrorPart,
+  toImagePart,
+  toPdfPart,
+} from "../../src/content/part.ts"
 import { AiError } from "../../src/error.ts"
-import { inlineFile, toAttachment, toErrorPart, toImagePart, toPdfPart } from "../../src/content/part.ts"
 
 let dirs: string[] = []
 afterEach(() => {

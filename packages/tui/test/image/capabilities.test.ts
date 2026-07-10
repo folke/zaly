@@ -1,15 +1,18 @@
 import type { TerminalResponseEvent } from "../../src/input/decoder.ts"
 
 import { afterEach, describe, expect, test } from "vitest"
-import { InputRouter } from "../../src/input/router.ts"
-import { TerminalQueries } from "../../src/input/queries.ts"
 import { loadKittyGraphics, resetKittyGraphics } from "../../src/image/kitty.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
+import { InputRouter } from "../../src/input/router.ts"
 
 function apc(sequence: string): TerminalResponseEvent {
   return { kind: "apc", payload: sequence.slice(2, -2), sequence, type: "term-response" }
 }
 
-function queries(opts: { kgp?: boolean; terminal?: string } = {}): { queries: TerminalQueries; writes: string[] } {
+function queries(opts: { kgp?: boolean; terminal?: string } = {}): {
+  queries: TerminalQueries
+  writes: string[]
+} {
   const router = new InputRouter()
   const writes: string[] = []
   const terminal = opts.terminal ?? "Ghostty 1.0"

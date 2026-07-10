@@ -23,7 +23,10 @@ function tmp() {
 }
 
 class FakePlugin extends Plugin<"dir"> {
-  constructor(source: PluginRef<"dir">, public state = { installed: false, updates: false }) {
+  constructor(
+    source: PluginRef<"dir">,
+    public state = { installed: false, updates: false }
+  ) {
     super(source, { git: ["git"], npm: ["npm"] })
   }
 
@@ -59,7 +62,9 @@ describe("pluginUri and pluginRef", () => {
       type: "dir",
       uri: "./local",
     })
-    expect(pluginRef("git:https://github.com/a/b", { cwd: "/repo", data, scope: "user" })).toMatchObject({
+    expect(
+      pluginRef("git:https://github.com/a/b", { cwd: "/repo", data, scope: "user" })
+    ).toMatchObject({
       dir: expect.stringContaining(join(data, "packs/git")),
       repo: "git:https://github.com/a/b",
       scope: "user",
@@ -109,12 +114,22 @@ describe("PluginManager, Plugin, and PluginStore", () => {
 
   test("install rejects unsupported plugin types", async () => {
     const manager = new PluginManager([])
-    const plugin = new FakePlugin({ dir: "/pack", path: "/pack", scope: "user", store: "/store", type: "dir", uri: "/pack" })
+    const plugin = new FakePlugin({
+      dir: "/pack",
+      path: "/pack",
+      scope: "user",
+      store: "/store",
+      type: "dir",
+      uri: "/pack",
+    })
     await expect(manager.install([plugin])).rejects.toThrow("Unsupported pack type")
   })
 
   test("reports info and narrows by source type", async () => {
-    const plugin = new FakePlugin({ dir: "/pack", path: "/pack", scope: "user", store: "/store", type: "dir", uri: "/pack" }, { installed: true, updates: true })
+    const plugin = new FakePlugin(
+      { dir: "/pack", path: "/pack", scope: "user", store: "/store", type: "dir", uri: "/pack" },
+      { installed: true, updates: true }
+    )
 
     expect(plugin.is("dir")).toBe(true)
     expect(plugin.is("git" as never)).toBe(false)
@@ -122,8 +137,18 @@ describe("PluginManager, Plugin, and PluginStore", () => {
   })
 
   test("store installs and updates plugins in parallel", async () => {
-    const a = new FakePlugin({ dir: "/a", path: "/a", scope: "user", store: "/store", type: "dir", uri: "/a" })
-    const b = new FakePlugin({ dir: "/b", path: "/b", scope: "user", store: "/store", type: "dir", uri: "/b" }, { installed: false, updates: true })
+    const a = new FakePlugin({
+      dir: "/a",
+      path: "/a",
+      scope: "user",
+      store: "/store",
+      type: "dir",
+      uri: "/a",
+    })
+    const b = new FakePlugin(
+      { dir: "/b", path: "/b", scope: "user", store: "/store", type: "dir", uri: "/b" },
+      { installed: false, updates: true }
+    )
     const store = new PluginStore("/store", { git: ["git"], npm: ["npm"] })
 
     await store.install([a, b])

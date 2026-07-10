@@ -1,12 +1,16 @@
+import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Frame } from "../../src/renderer/frame.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
-import { describe, expect, test } from "vitest"
 import { MockReader, MockWriter } from "./mock.ts"
 
 function testFrame() {
-  const terminal = new Terminal({ hookSignals: false, stdin: new MockReader(), stdout: new MockWriter(20, 5) })
+  const terminal = new Terminal({
+    hookSignals: false,
+    stdin: new MockReader(),
+    stdout: new MockWriter(20, 5),
+  })
   return {
     ctx: createCtx({ theme: { ...defaultTheme, selection: { inverse: true } }, width: 20 }),
     frame: new Frame(terminal).begin(),

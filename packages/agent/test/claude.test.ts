@@ -44,7 +44,12 @@ describe("loadClaudeSession", () => {
             { id: "tool-1", input: { file_path: "a.ts" }, name: "Read", type: "tool_use" },
           ],
           role: "assistant",
-          usage: { cache_creation_input_tokens: 3, cache_read_input_tokens: 2, input_tokens: 10, output_tokens: 4 },
+          usage: {
+            cache_creation_input_tokens: 3,
+            cache_read_input_tokens: 2,
+            input_tokens: 10,
+            output_tokens: 4,
+          },
         },
         parentUuid: "attachment",
         timestamp: "2026-01-01T00:02:00.000Z",
@@ -68,7 +73,13 @@ describe("loadClaudeSession", () => {
         parentUuid: "assistant-read",
         timestamp: "2026-01-01T00:03:00.000Z",
         toolUseResult: {
-          file: { content: "file contents", filePath: "a.ts", numLines: 3, startLine: 1, totalLines: 3 },
+          file: {
+            content: "file contents",
+            filePath: "a.ts",
+            numLines: 3,
+            startLine: 1,
+            totalLines: 3,
+          },
           type: "text",
         },
         type: "user",
@@ -98,7 +109,10 @@ describe("loadClaudeSession", () => {
       ["tool-result", "tool"],
       ["done", "assistant"],
     ])
-    expect(messages[0]).toMatchObject({ content: "summary", ts: Date.parse("2026-01-01T00:01:00.000Z") })
+    expect(messages[0]).toMatchObject({
+      content: "summary",
+      ts: Date.parse("2026-01-01T00:01:00.000Z"),
+    })
     expect(messages[1]).toMatchObject({
       meta: { usage: { cacheRead: 2, cacheWrite: 3, input: 10, output: 4 } },
     })
@@ -124,22 +138,34 @@ describe("loadClaudeSession", () => {
   test("walk all imports sidechain-free records and de-duplicates repeated tool ids", async () => {
     const path = fixture([
       {
-        message: { content: [{ id: "dup", input: { command: "echo" }, name: "Bash", type: "tool_use" }], role: "assistant" },
+        message: {
+          content: [{ id: "dup", input: { command: "echo" }, name: "Bash", type: "tool_use" }],
+          role: "assistant",
+        },
         type: "assistant",
         uuid: "a1",
       },
       {
-        message: { content: [{ content: "one", tool_use_id: "dup", type: "tool_result" }], role: "user" },
+        message: {
+          content: [{ content: "one", tool_use_id: "dup", type: "tool_result" }],
+          role: "user",
+        },
         type: "user",
         uuid: "t1",
       },
       {
-        message: { content: [{ id: "dup", input: { command: "echo" }, name: "Bash", type: "tool_use" }], role: "assistant" },
+        message: {
+          content: [{ id: "dup", input: { command: "echo" }, name: "Bash", type: "tool_use" }],
+          role: "assistant",
+        },
         type: "assistant",
         uuid: "a2",
       },
       {
-        message: { content: [{ content: "two", is_error: true, tool_use_id: "dup", type: "tool_result" }], role: "user" },
+        message: {
+          content: [{ content: "two", is_error: true, tool_use_id: "dup", type: "tool_result" }],
+          role: "user",
+        },
         type: "user",
         uuid: "t2",
       },

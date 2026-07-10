@@ -53,8 +53,18 @@ describe("settingsReviver", () => {
     }
 
     expect(settingsReviverIssues(settings)).toEqual([
-      { msg: "env var `$MISSING_TOKEN` is not set", path: "settings.plugins[0]", type: "env", value: missing },
-      { msg: `env var \`${missingBraced}\` is not set`, path: "settings.ui.theme", type: "env", value: missingBraced },
+      {
+        msg: "env var `$MISSING_TOKEN` is not set",
+        path: "settings.plugins[0]",
+        type: "env",
+        value: missing,
+      },
+      {
+        msg: `env var \`${missingBraced}\` is not set`,
+        path: "settings.ui.theme",
+        type: "env",
+        value: missingBraced,
+      },
     ])
   })
 })

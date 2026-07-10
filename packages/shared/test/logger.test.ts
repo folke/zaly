@@ -223,9 +223,11 @@ describe("Logger", () => {
     const logger = new Logger({ name: "root" })
     logger.attach("test", (entry) => calls.push(entry))
     expect(logger.try(() => 42)).toBe(42)
-    expect(logger.try(() => {
-      throw new Error("boom")
-    }, "child")).toBeUndefined()
+    expect(
+      logger.try(() => {
+        throw new Error("boom")
+      }, "child")
+    ).toBeUndefined()
     expect(calls[0]).toMatchObject({ level: "error", meta: { name: "root:child" } })
   })
 
@@ -233,21 +235,27 @@ describe("Logger", () => {
     const calls: unknown[] = []
     const logger = new Logger({ name: "root" })
     logger.attach("test", (entry) => calls.push(entry))
-    await expect(logger.try(async () => {
-      throw new Error("async boom")
-    })).resolves.toBeUndefined()
+    await expect(
+      logger.try(async () => {
+        throw new Error("async boom")
+      })
+    ).resolves.toBeUndefined()
     expect(calls[0]).toMatchObject({ level: "error" })
   })
 
   test("track rethrows sync and async failures", async () => {
     const logger = new Logger({ name: "root" })
     logger.attach("test", () => {})
-    expect(() => logger.track(() => {
-      throw new Error("sync")
-    })).toThrow("sync")
-    await expect(logger.track(async () => {
-      throw new Error("async")
-    })).rejects.toThrow("async")
+    expect(() =>
+      logger.track(() => {
+        throw new Error("sync")
+      })
+    ).toThrow("sync")
+    await expect(
+      logger.track(async () => {
+        throw new Error("async")
+      })
+    ).rejects.toThrow("async")
   })
 })
 

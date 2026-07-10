@@ -12,7 +12,12 @@ export type LineSlice = {
   to?: number
 }
 
-function sliceLine(line: string, from: number | undefined, to: number | undefined, width: number): LineSlice | undefined {
+function sliceLine(
+  line: string,
+  from: number | undefined,
+  to: number | undefined,
+  width: number
+): LineSlice | undefined {
   const start = from ? Math.max(0, from - 1) : 0
   const end = to ? Math.max(start, to - 1) : width
   if (end <= start) return
@@ -39,7 +44,12 @@ export class Frame {
     return new RenderFrame(this.terminal, this.#current, this.#base)
   }
 
-  slice(row: number, from: number | undefined, to: number | undefined, width = this.terminal.cols): LineSlice | undefined {
+  slice(
+    row: number,
+    from: number | undefined,
+    to: number | undefined,
+    width = this.terminal.cols
+  ): LineSlice | undefined {
     return sliceLine(this.#current[row - 1] ?? "", from, to, width)
   }
 }
@@ -79,12 +89,22 @@ export class RenderFrame {
     this.set(row, `${prefix}${pad}${content}${sliceAnsi(base, start + width)}`)
   }
 
-  slice(row: number, from: number | undefined, to: number | undefined, width = this.terminal.cols): LineSlice | undefined {
+  slice(
+    row: number,
+    from: number | undefined,
+    to: number | undefined,
+    width = this.terminal.cols
+  ): LineSlice | undefined {
     if (row < 1 || row > this.#next.length) return
     return sliceLine(this.get(row), from, to, width)
   }
 
-  highlight(row: number, from: number | undefined, to: number | undefined, ctx: RenderCtx): LineSlice | undefined {
+  highlight(
+    row: number,
+    from: number | undefined,
+    to: number | undefined,
+    ctx: RenderCtx
+  ): LineSlice | undefined {
     const ret = this.slice(row, from, to, ctx.width)
     if (!ret) return
     const start = ret.from - 1

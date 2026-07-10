@@ -71,12 +71,42 @@ describe("renderer mouse routing", () => {
     const r = await renderer()
     const scroll = vi.spyOn(r.stream, "scroll").mockResolvedValue(undefined)
 
-    r.input.dispatch({ alt: false, ctrl: false, deltaY: 1, kind: "scroll", meta: false, shift: false, type: "mouse", x: 1, y: 1 })
+    r.input.dispatch({
+      alt: false,
+      ctrl: false,
+      deltaY: 1,
+      kind: "scroll",
+      meta: false,
+      shift: false,
+      type: "mouse",
+      x: 1,
+      y: 1,
+    })
     expect(scroll).toHaveBeenCalledWith(1)
     expect(r.selection.selection).toBeUndefined()
 
-    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "down", meta: false, shift: false, type: "mouse", x: 2, y: 3 })
-    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "drag", meta: false, shift: false, type: "mouse", x: 5, y: 6 })
+    r.input.dispatch({
+      alt: false,
+      button: "left",
+      ctrl: false,
+      kind: "down",
+      meta: false,
+      shift: false,
+      type: "mouse",
+      x: 2,
+      y: 3,
+    })
+    r.input.dispatch({
+      alt: false,
+      button: "left",
+      ctrl: false,
+      kind: "drag",
+      meta: false,
+      shift: false,
+      type: "mouse",
+      x: 5,
+      y: 6,
+    })
 
     expect(r.selection.selection).toMatchObject({
       from: { col: 2, row: 3 },
@@ -88,11 +118,34 @@ describe("renderer mouse routing", () => {
 
   test("esc clears active selection", async () => {
     const r = await renderer()
-    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "down", meta: false, shift: false, type: "mouse", x: 2, y: 3 })
-    r.input.dispatch({ alt: false, button: "left", ctrl: false, kind: "drag", meta: false, shift: false, type: "mouse", x: 5, y: 6 })
+    r.input.dispatch({
+      alt: false,
+      button: "left",
+      ctrl: false,
+      kind: "down",
+      meta: false,
+      shift: false,
+      type: "mouse",
+      x: 2,
+      y: 3,
+    })
+    r.input.dispatch({
+      alt: false,
+      button: "left",
+      ctrl: false,
+      kind: "drag",
+      meta: false,
+      shift: false,
+      type: "mouse",
+      x: 5,
+      y: 6,
+    })
     expect(r.selection.selection).toBeDefined()
 
-    r.input.dispatch({ event: { alt: false, ctrl: false, meta: false, name: "esc", shift: false }, type: "key" })
+    r.input.dispatch({
+      event: { alt: false, ctrl: false, meta: false, name: "esc", shift: false },
+      type: "key",
+    })
 
     expect(r.selection.selection).toBeUndefined()
   })

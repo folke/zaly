@@ -1,14 +1,14 @@
 import type { TerminalResponseEvent } from "../../src/input/decoder.ts"
 
 import { describe, expect, test } from "vitest"
-import { InputRouter } from "../../src/input/router.ts"
-import { TerminalQueries } from "../../src/input/queries.ts"
 import {
   allocateImageId,
   allocatePlacementId,
   Kitty,
   resetKittyGraphics,
 } from "../../src/image/kitty.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
+import { InputRouter } from "../../src/input/router.ts"
 
 function response(sequence: string): TerminalResponseEvent {
   return { kind: "apc", payload: sequence.slice(2, -2), sequence, type: "term-response" }
@@ -65,11 +65,15 @@ describe("Kitty", () => {
 
   test("probe only requires a KGP response", async () => {
     const kitty = new Kitty({ ok: false, error: "", terminal: { name: "kitty" } })
-    const tq = queries((_, router) => router.dispatch(response("\x1b_Gi=4294967290;EINVAL: expected\x1b\\")))
-    await expect(tq.query({
-      match: (ev) => ev.kind === "apc" ? kitty.parse(ev.sequence) : undefined,
-      request: kitty.probe(),
-    })).resolves.toMatchObject({ ok: false })
+    const tq = queries((_, router) =>
+      router.dispatch(response("\x1b_Gi=4294967290;EINVAL: expected\x1b\\"))
+    )
+    await expect(
+      tq.query({
+        match: (ev) => (ev.kind === "apc" ? kitty.parse(ev.sequence) : undefined),
+        request: kitty.probe(),
+      })
+    ).resolves.toMatchObject({ ok: false })
   })
 
   test("placement emits unicode placeholder rows for inline terminals", () => {

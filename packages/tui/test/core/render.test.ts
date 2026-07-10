@@ -3,7 +3,6 @@ import type { RenderCtx } from "../../src/core/ctx.ts"
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Node } from "../../src/core/node.ts"
-import { createRender } from "../../src/core/render.ts"
 import {
   createAsync,
   createRoot,
@@ -12,6 +11,7 @@ import {
   provideContext,
   SuspenseContext,
 } from "../../src/core/reactive.ts"
+import { createRender } from "../../src/core/render.ts"
 import { defaultTheme as theme } from "../../src/themes/registry.ts"
 
 const ctx: RenderCtx = createCtx({ theme, width: 20 })

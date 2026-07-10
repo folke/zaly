@@ -1,19 +1,19 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
 import type { ImageState } from "../../src/widgets/image.ts"
 
+import { fileDetect } from "@zaly/shared/detect"
+import { imageInfo } from "@zaly/shared/image"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import sharp from "sharp"
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { createRender, RenderContext } from "../../src/core/render.ts"
 import { memo, provideContext } from "../../src/core/reactive.ts"
-import { InputRouter } from "../../src/input/router.ts"
-import { TerminalQueries } from "../../src/input/queries.ts"
-import { fileDetect } from "@zaly/shared/detect"
-import { imageInfo } from "@zaly/shared/image"
+import { createRender, RenderContext } from "../../src/core/render.ts"
 import { Kitty, resetKittyGraphics } from "../../src/image/kitty.ts"
+import { TerminalQueries } from "../../src/input/queries.ts"
+import { InputRouter } from "../../src/input/router.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { image } from "../../src/widgets/image.ts"
 import { mockMountCtx } from "../renderer/mock.ts"
@@ -62,9 +62,10 @@ afterEach(() => {
 
 type RenderResult = { bytes: string; rows: string[]; writes: string[] }
 
-function kgpQueries(
-  opts: { inline?: boolean; supported?: boolean; terminal?: string } = {}
-): { queries: TerminalQueries; writes: string[] } {
+function kgpQueries(opts: { inline?: boolean; supported?: boolean; terminal?: string } = {}): {
+  queries: TerminalQueries
+  writes: string[]
+} {
   const router = new InputRouter()
   const writes: string[] = []
   const terminal = {
@@ -79,7 +80,12 @@ function kgpQueries(
         })
       } else if (seq.includes("\x1b_G")) {
         if (opts.supported === false) return
-        router.dispatch({ kind: "apc", payload: "Gi=4294967290;EINVAL: expected", sequence: "\x1b_Gi=4294967290;EINVAL: expected\x1b\\", type: "term-response" })
+        router.dispatch({
+          kind: "apc",
+          payload: "Gi=4294967290;EINVAL: expected",
+          sequence: "\x1b_Gi=4294967290;EINVAL: expected\x1b\\",
+          type: "term-response",
+        })
       }
     },
   }
@@ -134,12 +140,22 @@ describe("image() — fallback", () => {
   })
 
   test("falls back to alt text when KGP probing fails", async () => {
-    const { rows } = await renderImage(pngPath, { alt: "Diagram" }, {}, { supported: false, terminal: "UnknownTerm" })
+    const { rows } = await renderImage(
+      pngPath,
+      { alt: "Diagram" },
+      {},
+      { supported: false, terminal: "UnknownTerm" }
+    )
     expect(rows).toEqual(["Diagram"])
   })
 
   test("falls back to [Image: src] when alt omitted", async () => {
-    const { rows } = await renderImage(pngPath, undefined, {}, { supported: false, terminal: "UnknownTerm" })
+    const { rows } = await renderImage(
+      pngPath,
+      undefined,
+      {},
+      { supported: false, terminal: "UnknownTerm" }
+    )
     expect(rows).toEqual([`[Image: ${pngPath}]`])
   })
 })

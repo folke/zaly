@@ -21,9 +21,7 @@ describe("ANSI primitives", () => {
   })
 
   test("stripAnsi keepStyles preserves SGR but drops other controls", () => {
-    expect(stripAnsi("\x1b[31mred\x1b[2K\x1b[0m", { keepStyles: true })).toBe(
-      "\x1b[31mred\x1b[0m"
-    )
+    expect(stripAnsi("\x1b[31mred\x1b[2K\x1b[0m", { keepStyles: true })).toBe("\x1b[31mred\x1b[0m")
   })
 
   test("sliceAnsi preserves APC payloads while slicing visible cells", () => {

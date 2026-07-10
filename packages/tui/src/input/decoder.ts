@@ -143,7 +143,13 @@ function parseCsi(buf: string, out: InputEvent[], onPasteStart: () => void): num
         return consumed
       }
       if (isTerminalCsiResponse(params, final)) {
-        out.push({ final, kind: "csi", params, sequence: buf.slice(0, consumed), type: "term-response" })
+        out.push({
+          final,
+          kind: "csi",
+          params,
+          sequence: buf.slice(0, consumed),
+          type: "term-response",
+        })
         return consumed
       }
       handleCsi(params, final, out)
@@ -154,11 +160,7 @@ function parseCsi(buf: string, out: InputEvent[], onPasteStart: () => void): num
   return 0 // incomplete
 }
 
-function parseStringControl(
-  buf: string,
-  out: InputEvent[],
-  kind: "osc" | "dcs" | "apc"
-): number {
+function parseStringControl(buf: string, out: InputEvent[], kind: "osc" | "dcs" | "apc"): number {
   const payloadStart = 2
   const st = buf.indexOf("\x1b\\", payloadStart)
   const bel = kind === "osc" ? buf.indexOf("\x07", payloadStart) : -1

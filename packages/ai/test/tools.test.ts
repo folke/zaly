@@ -295,7 +295,7 @@ describe("tool message helpers", () => {
       content: [
         { type: "text", text: "calling" },
         { type: "tool-call", id: "a", name: "read", params: { path: "a.txt" } },
-        { type: "tool-call", id: "b", name: "write", params: "{\"path\":\"b.txt\"}" },
+        { type: "tool-call", id: "b", name: "write", params: '{"path":"b.txt"}' },
       ],
     },
     {
@@ -360,7 +360,11 @@ describe("streamable tools", () => {
       params: Type.Object({}),
       call: (_params, ctx) => {
         ;(ctx.meta as Record<string, unknown>).seen = true
-        return makeStreamable({ content: [{ type: "text", text: "done" }], isError: false, running: false })
+        return makeStreamable({
+          content: [{ type: "text", text: "done" }],
+          isError: false,
+          running: false,
+        })
       },
     })
 

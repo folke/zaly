@@ -228,7 +228,9 @@ describe("Decoder — terminal responses", () => {
   })
 
   test("decodes OSC responses terminated by BEL or ST", () => {
-    expect(new Decoder().feed("\x1b]4;1;rgb:ffff/0000/0000\x07\x1b]10;rgb:1111/2222/3333\x1b\\")).toEqual([
+    expect(
+      new Decoder().feed("\x1b]4;1;rgb:ffff/0000/0000\x07\x1b]10;rgb:1111/2222/3333\x1b\\")
+    ).toEqual([
       {
         kind: "osc",
         payload: "4;1;rgb:ffff/0000/0000",

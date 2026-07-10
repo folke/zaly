@@ -97,13 +97,17 @@ describe("filterModel", async () => {
 
 describe("builtinOverrides", () => {
   test("openai-codex returns no cloned models without an openai provider", async () => {
-    const models = builtinOverrides["openai-codex"]?.models as (catalog: ModelCatalog) => Promise<ModelInfo[]>
+    const models = builtinOverrides["openai-codex"]?.models as (
+      catalog: ModelCatalog
+    ) => Promise<ModelInfo[]>
     const catalog = { provider: () => undefined } as unknown as ModelCatalog
     await expect(models(catalog)).resolves.toEqual([])
   })
 
   test("openai-codex clones codex and selected GPT models with capped context", async () => {
-    const models = builtinOverrides["openai-codex"]?.models as (catalog: ModelCatalog) => Promise<ModelInfo[]>
+    const models = builtinOverrides["openai-codex"]?.models as (
+      catalog: ModelCatalog
+    ) => Promise<ModelInfo[]>
     const openai = customProvider({ id: "openai/gpt-5.5", contextSize: 500_000 })
     const openaiModels = openai.models as ModelInfo[]
     openaiModels.push(customModel({ id: "gpt-4", contextSize: 128_000 }))

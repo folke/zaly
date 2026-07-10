@@ -82,7 +82,9 @@ describe("safeStringify", () => {
     expect(safeStringify({ a: 1 })).toBe('{"a":1}')
   })
   test("applies replacer after bigint coercion", () => {
-    expect(safeStringify({ keep: true, n: 10n }, (key, value) => (key === "keep" ? undefined : value))).toBe('{"n":"10"}')
+    expect(
+      safeStringify({ keep: true, n: 10n }, (key, value) => (key === "keep" ? undefined : value))
+    ).toBe('{"n":"10"}')
   })
   test("bigint coerced to string", () => {
     expect(safeStringify({ n: 10n })).toBe('{"n":"10"}')
@@ -269,15 +271,19 @@ describe("prettyPath", () => {
 
 describe("error helpers", () => {
   test("wrapError via withError annotates sync failures", () => {
-    expect(() => withError(() => {
-      throw new Error("boom")
-    }, "while testing")).toThrow("while testing: boom")
+    expect(() =>
+      withError(() => {
+        throw new Error("boom")
+      }, "while testing")
+    ).toThrow("while testing: boom")
   })
 
   test("withError annotates async failures", async () => {
-    await expect(withError(async () => {
-      throw new Error("async boom")
-    }, "while async")).rejects.toThrow("while async: async boom")
+    await expect(
+      withError(async () => {
+        throw new Error("async boom")
+      }, "while async")
+    ).rejects.toThrow("while async: async boom")
   })
 })
 

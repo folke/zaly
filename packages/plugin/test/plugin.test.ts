@@ -1,9 +1,9 @@
 import type { PluginHost } from "../src/types.ts"
 
+import { Emitter } from "@zaly/shared"
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Emitter } from "@zaly/shared"
 import { Type } from "typebox"
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { getPluginLoader } from "../src/loader.ts"
@@ -252,7 +252,9 @@ describe("PluginApi", () => {
     expect(api.prompts.active).toEqual(["base"])
     api.prompts.active = ["custom"]
     expect(pluginHost.prompts.active).toEqual(["custom"])
-    await expect(api.prompts.render(["custom"])).resolves.toEqual([{ name: "base", text: "rendered" }])
+    await expect(api.prompts.render(["custom"])).resolves.toEqual([
+      { name: "base", text: "rendered" },
+    ])
     expect(api.prompts.list()).toEqual([{ name: "base", text: "prompt" }])
     api.prompts.register({ name: "p", text: "prompt" })
 
@@ -300,7 +302,11 @@ describe("PluginApi", () => {
     const once = vi.fn()
     const session = vi.fn((event) => event.abort("nope"))
 
-    api.events.onAny(any).on("agent:status", status).once("agent:start", once).on("session", session)
+    api.events
+      .onAny(any)
+      .on("agent:status", status)
+      .once("agent:start", once)
+      .on("session", session)
     await (agent as any).emit("status", { status: { phase: "busy" } })
     await (agent as any).emit("start")
     await (agent as any).emit("start")
@@ -314,7 +320,11 @@ describe("PluginApi", () => {
 
     await (ctx as any).emitSerial("session", { session: {} })
     expect(session).toHaveBeenCalledWith(
-      expect.objectContaining({ abort: expect.any(Function), signal: expect.any(AbortSignal), type: "session" }),
+      expect.objectContaining({
+        abort: expect.any(Function),
+        signal: expect.any(AbortSignal),
+        type: "session",
+      }),
       api
     )
 

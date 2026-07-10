@@ -44,18 +44,29 @@ describe("tokenStats", () => {
     expect(stats.count).toBe(4)
     expect(stats.tokens).toBeGreaterThan(1500)
     expect(stats.children?.get("user")?.children?.get("image")?.tokens).toBe(1500)
-    expect(stats.children?.get("assistant")?.children?.get("tool-call")?.children?.get("read")).toMatchObject({
+    expect(
+      stats.children?.get("assistant")?.children?.get("tool-call")?.children?.get("read")
+    ).toMatchObject({
       count: 1,
       key: "read",
     })
-    expect(stats.children?.get("tool")?.children?.get("tool-result")?.children?.get("read")?.children?.get("error"))
-      .toMatchObject({ count: 1 })
-    expect(stats.children?.get("system-prompt")?.children?.get("tool-schema")?.children?.get("read"))
-      .toMatchObject({ count: 1 })
+    expect(
+      stats.children
+        ?.get("tool")
+        ?.children?.get("tool-result")
+        ?.children?.get("read")
+        ?.children?.get("error")
+    ).toMatchObject({ count: 1 })
+    expect(
+      stats.children?.get("system-prompt")?.children?.get("tool-schema")?.children?.get("read")
+    ).toMatchObject({ count: 1 })
   })
 
   test("formatTokenStats sorts top-level children by token count and includes totals", () => {
-    const stats = tokenStats([user([text("small")]), user([{ mime: "application/pdf", source: { data: "x", type: "base64" }, type: "pdf" }])])
+    const stats = tokenStats([
+      user([text("small")]),
+      user([{ mime: "application/pdf", source: { data: "x", type: "base64" }, type: "pdf" }]),
+    ])
     const formatted = formatTokenStats(stats)
 
     expect(formatted).toContain("TOTAL")
@@ -89,8 +100,12 @@ describe("ContextScoring", () => {
     ]
 
     const groups = scoring.score(messages)
-    const oldUser = groups.find((g) => g.parts[0].part.type === "text" && g.parts[0].part.text === "old user text")
-    const newerUser = groups.find((g) => g.parts[0].part.type === "text" && g.parts[0].part.text === "newer user text")
+    const oldUser = groups.find(
+      (g) => g.parts[0].part.type === "text" && g.parts[0].part.text === "old user text"
+    )
+    const newerUser = groups.find(
+      (g) => g.parts[0].part.type === "text" && g.parts[0].part.text === "newer user text"
+    )
 
     expect(oldUser?.parts[0].turn).toBe(2)
     expect(newerUser?.parts[0].turn).toBe(1)
@@ -108,8 +123,12 @@ describe("ContextScoring", () => {
 
     const groups = scoring.score(messages).filter((group) => group.key === "bash:echo old")
     expect(groups).toHaveLength(2)
-    expect(groups[0].parts.some((part) => part.part.type === "tool-call" && part.part.id === "new")).toBe(true)
-    expect(groups[1].parts.some((part) => part.part.type === "tool-call" && part.part.id === "old")).toBe(true)
+    expect(
+      groups[0].parts.some((part) => part.part.type === "tool-call" && part.part.id === "new")
+    ).toBe(true)
+    expect(
+      groups[1].parts.some((part) => part.part.type === "tool-call" && part.part.id === "old")
+    ).toBe(true)
     expect(groups[0].parts[0].score).toBeGreaterThan(groups[1].parts[0].score)
   })
 
@@ -141,11 +160,12 @@ describe("ContextScoring", () => {
 
     const groups = scoring.score(messages).filter((group) => group.key === "file:a.txt")
     expect(groups).toHaveLength(2)
-    expect(groups.map((group) => group.parts.some((part) => part.part.type === "tool-result"))).toEqual([
-      true,
-      true,
-    ])
-    const readResult = groups.flatMap((group) => group.parts).find((part) => part.part.type === "tool-result" && part.part.id === "read-1")
+    expect(
+      groups.map((group) => group.parts.some((part) => part.part.type === "tool-result"))
+    ).toEqual([true, true])
+    const readResult = groups
+      .flatMap((group) => group.parts)
+      .find((part) => part.part.type === "tool-result" && part.part.id === "read-1")
     expect(readResult?.part).toMatchObject({ isError: true })
   })
 

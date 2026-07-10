@@ -9,7 +9,10 @@ const user = (id: string, content: Message<"user">["content"]): Message<"user"> 
   id,
   role: "user",
 })
-const assistant = (id: string, content: Message<"assistant">["content"] = "ok"): Message<"assistant"> => ({
+const assistant = (
+  id: string,
+  content: Message<"assistant">["content"] = "ok"
+): Message<"assistant"> => ({
   content,
   id,
   role: "assistant",
@@ -76,15 +79,16 @@ describe("Masker", () => {
     const agent = fakeAgent()
     const masker = new Masker(agent, { keepTurns: 0, minTokens: 1, target: 0.1 })
     const messages: Message[] = [
-      user("u1", [
-        { mime: "image/png", source: { data: "abc", type: "base64" }, type: "image" },
-      ]),
+      user("u1", [{ mime: "image/png", source: { data: "abc", type: "base64" }, type: "image" }]),
       assistant("a1"),
     ]
 
     const projected = await masker.mask(messages, { force: true, limit: 1000, ratio: 1 })
 
-    expect(agent.session.addMaskCheckpoint).toHaveBeenCalledWith({ messageId: "a1", threshold: 0.35 })
+    expect(agent.session.addMaskCheckpoint).toHaveBeenCalledWith({
+      messageId: "a1",
+      threshold: 0.35,
+    })
     expect(masker.masked).toBe(1)
     expect(masker.isMasked("u1")).toBe(true)
     expect(masker.isMasked("u1", 0)).toBe(true)
@@ -115,7 +119,9 @@ describe("Masker", () => {
     const agent = fakeAgent()
     const masker = new Masker(agent, { keepTurns: 0, minTokens: 50, target: 0.1 })
     const messages: Message[] = [
-      assistant("a1", [{ id: "call", name: "bash", params: { command: "true" }, type: "tool-call" }]),
+      assistant("a1", [
+        { id: "call", name: "bash", params: { command: "true" }, type: "tool-call" },
+      ]),
       tool("t1", [{ content: "ok", id: "call", name: "bash", type: "tool-result" }]),
       assistant("a2"),
     ]
@@ -151,7 +157,8 @@ describe("Masker", () => {
   test("throws when a masking pass has no latest message id", async () => {
     const agent = fakeAgent()
     const masker = new Masker(agent, { keepTurns: 0, minTokens: 1 })
-    await expect(masker.mask([user("u1", "old"), { content: "latest", role: "assistant" }], { force: true }))
-      .rejects.toThrow("Message in masker without ID")
+    await expect(
+      masker.mask([user("u1", "old"), { content: "latest", role: "assistant" }], { force: true })
+    ).rejects.toThrow("Message in masker without ID")
   })
 })

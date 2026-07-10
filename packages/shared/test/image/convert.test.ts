@@ -4,7 +4,9 @@ import { describe, expect, test } from "vitest"
 import { imageCompress, imageConvert, isWritable } from "../../src/image/convert.ts"
 
 const svg = (id: string) =>
-  Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>${id}</text></svg>`)
+  Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>${id}</text></svg>`
+  )
 
 const fakeImage = (format: ImageInfo["format"], data = Buffer.from([1, 2, 3])): ImageInfo => ({
   data,
@@ -21,7 +23,9 @@ describe("isWritable", () => {
     expect(isWritable(fakeImage("jpeg"))).toBe(true)
     expect(isWritable(fakeImage("webp"))).toBe(true)
     expect(isWritable(fakeImage("gif"))).toBe(false)
-    expect(isWritable({ data: Buffer.from("text"), format: "plain", type: "text" } as any)).toBe(false)
+    expect(isWritable({ data: Buffer.from("text"), format: "plain", type: "text" } as any)).toBe(
+      false
+    )
   })
 })
 

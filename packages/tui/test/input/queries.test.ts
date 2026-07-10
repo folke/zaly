@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
-import { InputRouter } from "../../src/input/router.ts"
 import { TerminalQueries } from "../../src/input/queries.ts"
+import { InputRouter } from "../../src/input/router.ts"
 
 type Write = { writes: string[]; write: (seq: string) => void }
 
