@@ -111,13 +111,13 @@ describe("builtinOverrides", () => {
     const openai = customProvider({ id: "openai/gpt-5.5", contextSize: 500_000 })
     const openaiModels = openai.models as ModelInfo[]
     openaiModels.push(customModel({ id: "gpt-4", contextSize: 128_000 }))
-    openaiModels.push(customModel({ id: "codex-mini", contextSize: 300_000 }))
+    openaiModels.push(customModel({ id: "gpt-5.4-mini", contextSize: 300_000 }))
     const catalog = {
       provider: (id: string) => (id === "openai" ? openai : undefined),
     } as unknown as ModelCatalog
 
     const cloned = await models(catalog)
-    expect(cloned.map((m) => m.id)).toEqual(["gpt-5.5", "codex-mini"])
+    expect(cloned.map((m) => m.id)).toEqual(["gpt-5.5", "gpt-5.4-mini"])
     expect(cloned.map((m) => m.contextSize)).toEqual([270_000, 270_000])
   })
 })
