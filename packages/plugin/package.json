@@ -48,7 +48,9 @@
     "@zaly/tui": "workspace:*"
   },
   "devDependencies": {
-    "jiti": "^2.7.0",
+    "jiti": "^2.7.0"
+  },
+  "peerDependencies": {
     "typebox": "^1.3.6"
   },
   "engines": {
@@ -56,7 +58,6 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "jiti": "2.7.0",
-    "typebox": "1.3.2"
+    "jiti": "2.7.0"
   }
 }

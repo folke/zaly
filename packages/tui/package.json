@@ -261,6 +261,6 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "typia": "12.1.1"
+    "typia": "13.0.2"
   }
 }

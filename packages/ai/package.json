@@ -59,6 +59,6 @@
     "node": ">=24"
   },
   "inlinedDependencies": {
-    "jsonrepair": "3.14.1"
+    "jsonrepair": "3.15.0"
   }
 }

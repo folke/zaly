@@ -1,36 +1,9 @@
 {
   "name": "zaly",
   "version": "0.0.3",
-  "private": true,
-  "description": "Hackable terminal coding agent.",
-  "homepage": "https://zaly.dev",
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
-  },
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/folke/zaly"
-  },
-  "workspaces": [
-    "packages/*",
-    "plugins"
-  ],
-  "type": "module",
-  "scripts": {
-    "api": "z api",
-    "api:check": "z api --check",
-    "build": "z build",
-    "fmt": "z fmt",
-    "knip": "knip",
-    "lint": "z lint",
-    "models": "bun run --cwd 'packages/ai' models",
-    "out": "bun outdated; bun outdated --filter '*'",
-    "pkg": "bun --workspaces install",
-    "publish": "z publish",
-    "test": "z test --bun",
-    "test:live": "LIVE=1 bun test live",
-    "up": "bun z update"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
@@ -48,18 +21,43 @@
     "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "^4.12.0",
     "typedoc-vitepress-theme": "^1.1.3",
+    "typescript": "6.0.3",
     "vitepress": "^1.6.4",
     "vitepress-plugin-group-icons": "^1.7.5",
     "vitest": "^4.1.10"
   },
-  "peerDependencies": {
-    "typescript": "^7.0.2"
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
   },
+  "description": "Hackable terminal coding agent.",
   "engines": {
     "bun": ">=1.2",
     "node": ">=24"
   },
+  "homepage": "https://zaly.dev",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "api": "z api",
+    "api:check": "z api --check",
+    "build": "z build",
+    "fmt": "z fmt",
+    "knip": "knip",
+    "lint": "z lint",
+    "models": "bun run --cwd 'packages/ai' models",
+    "out": "bun outdated; bun outdated --filter '*'",
+    "pkg": "bun --workspaces install",
+    "publish": "z publish",
+    "test": "z test --bun",
+    "test:live": "LIVE=1 bun test live",
+    "up": "bun z update"
+  },
   "trustedDependencies": [
     "sharp"
+  ],
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "plugins"
   ]
 }
