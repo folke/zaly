@@ -12,9 +12,9 @@ export default defineConfig({
       zaly: "./bin/zaly.ts",
     },
   },
+  plugins: [replacePlugin({ __VERSION__: JSON.stringify(pkg.version) })],
   outputOptions: {
     plugins: [
-      replacePlugin({ __VERSION__: JSON.stringify(pkg.version) }),
       {
         name: "fix-shebang",
         renderChunk(code, chunk) {
