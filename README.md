@@ -1,6 +1,6 @@
 # zaly
 
-A terminal-native AI coding agent for developers.
+Hackable terminal coding agent.
 
 > [!WARNING]
 > zaly is alpha software. It is already useful and fairly polished, but APIs,

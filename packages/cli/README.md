@@ -2,7 +2,7 @@
 
 The `zaly` terminal app.
 
-zaly is a terminal-native AI coding agent with a polished TUI, provider/model
+zaly is a hackable terminal coding agent with a polished TUI, provider/model
 configuration, sessions, permissions, tools, custom commands, skills, plugins,
 selection/copy support, and terminal graphics.
 

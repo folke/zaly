@@ -2,7 +2,7 @@
   "name": "zaly",
   "version": "0.0.3",
   "private": true,
-  "description": "A terminal-native AI coding agent for developers.",
+  "description": "Hackable terminal coding agent.",
   "homepage": "https://zaly.dev",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"
