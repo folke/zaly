@@ -51,10 +51,18 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
     models: async (catalog: ModelCatalog) => {
       const openai = catalog.provider("openai")
       if (!openai) return []
-      const want = new Set(["gpt-5.1", "gpt-5.2", "gpt-5.4", "gpt-5.4-mini", "gpt-5.5"])
+      const want = new Set([
+        "gpt-5.3-codex-spark",
+        "gpt-5.4-mini",
+        "gpt-5.4",
+        "gpt-5.5",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+      ])
       return (
         (openai.models ?? [])
-          .filter((m) => want.has(m.id) || m.id.includes("codex"))
+          .filter((m) => want.has(m.id))
           // oxlint-disable-next-line oxc/no-map-spread
           .map((m) => ({
             ...m,
