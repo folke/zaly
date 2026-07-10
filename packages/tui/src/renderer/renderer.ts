@@ -120,6 +120,9 @@ export class Renderer extends Emitter<RenderEvents> {
 
   readonly #decoder = new Decoder()
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
+  readonly #onUnhandledRejection = (reason: unknown): void => {
+    this.logger.child("unhandledRejection").error("Unhandled Rejection:", reason)
+  }
 
   #theme = signal<Theme | undefined>(undefined)
 
@@ -214,6 +217,9 @@ export class Renderer extends Emitter<RenderEvents> {
       if (event.kind === "scroll") void this.stream.scroll(event.deltaY)
       else this.selection.mouse(event)
     })
+    this.input.on("term-response", ({ event }) =>
+      this.terminal.handleKeyboardProtocolResponse(event)
+    )
     this.input.on("key", ({ event }) => {
       if (event.name === "esc") this.selection.clear()
     })
@@ -363,9 +369,7 @@ export class Renderer extends Emitter<RenderEvents> {
     // setInterval(() => {
     //   console.log(this.stats.get())
     // }, 5000)
-    process.on("unhandledRejection", (reason) =>
-      this.logger.child("unhandledRejection").error("Unhandled Rejection:", reason)
-    )
+    process.on("unhandledRejection", this.#onUnhandledRejection)
   }
 
   stop(): void {
@@ -377,6 +381,7 @@ export class Renderer extends Emitter<RenderEvents> {
     this.#running = false
     this.#stdin.off("data", this.#onData)
     this.#stdin.pause?.()
+    process.off("unhandledRejection", this.#onUnhandledRejection)
     if (this.#escTimer !== undefined) {
       clearTimeout(this.#escTimer)
       this.#escTimer = undefined

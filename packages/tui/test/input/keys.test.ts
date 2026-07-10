@@ -74,6 +74,17 @@ describe("keyMatches", () => {
   test("rejects unrecognised modifier-looking prefixes", () => {
     expect(() => keyMatches(k("foo-bar"), "foo-bar")).toThrow(/unknown modifier/)
   })
+
+  test("matches the Kitty base-layout key on alternate layouts", () => {
+    // Cyrillic `с` on a ctrl press reports the layout char as `name` and the
+    // physical (Latin) key as `base` — a `ctrl-c` binding should still fire.
+    const ev = k("с", { base: "c", ctrl: true })
+    expect(keyMatches(ev, "ctrl-c")).toBe(true)
+    // The literal layout char still matches its own name.
+    expect(keyMatches(k("с", { base: "c" }), "с")).toBe(true)
+    // Base only matches when the modifiers line up.
+    expect(keyMatches(k("с", { base: "c" }), "ctrl-c")).toBe(false)
+  })
 })
 
 describe("canonical", () => {
