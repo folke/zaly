@@ -1,6 +1,6 @@
 {
   "name": "@zaly/ai",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Provider/model abstraction, auth, streaming, tools, content, and validation for zaly.",
   "keywords": [
     "ai",

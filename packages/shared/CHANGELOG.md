@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/folke/zaly/compare/shared-v0.0.3...shared-v0.0.4) (2026-07-10)
+
+
+### 📦 Build
+
+* Node 22.11 compat ([e69afd8](https://github.com/folke/zaly/commit/e69afd83a4719117ebd5e7a2a104d7503f53a18b))
+
 ## [0.0.3](https://github.com/folke/zaly/compare/shared-v0.0.2...shared-v0.0.3) (2026-07-10)
 
 
