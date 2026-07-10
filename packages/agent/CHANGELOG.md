@@ -1,5 +1,85 @@
 # Changelog
 
+## [0.0.3](https://github.com/folke/zaly/compare/agent-v0.0.2...agent-v0.0.3) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **agent/commands:** better command templates with bash execution ([af87101](https://github.com/folke/zaly/commit/af871016b9240eed4097452c39e63efd2572d3c2))
+* **agent/commands:** finished commands implementation ([6ce9bbf](https://github.com/folke/zaly/commit/6ce9bbfa35d25ba06773275e15654e36e5ea136e))
+* **agent/edit:** added top-level old|new text ([48dd358](https://github.com/folke/zaly/commit/48dd358f50ed5da40ba78f911b54c40e1337c107))
+* **agent/grep:** allow grep context up to 10. ([5422fa7](https://github.com/folke/zaly/commit/5422fa77c7c6f8ebca5013b41f60f1675d2afd33))
+* **agent/masker:** masker rewrite ([bce991d](https://github.com/folke/zaly/commit/bce991da020800d007a942ba2570a26454843694))
+* **agent/masking:** add mask checkpoints to session so that session resume start with roughly the same masking state ([fa4a6c2](https://github.com/folke/zaly/commit/fa4a6c24b14ee7cd0c0ab9f54071fe34536c791a))
+* **agent/session:** version migration ([7037121](https://github.com/folke/zaly/commit/703712178d39da0259008c18f4f594e68e8d6c00))
+* **agent/tasks:** emit task-results as soon as they finish ([6264453](https://github.com/folke/zaly/commit/62644530614128835c463991106c76ed65f8483d))
+* **agent/tokens:** allow prompt to be a string[] for token estimation ([e6d4059](https://github.com/folke/zaly/commit/e6d405975fb78ad8c2bbd916b74e14459b98c678))
+* **agent/tokens:** better token estimation ([86a273d](https://github.com/folke/zaly/commit/86a273d78e97367c4f656b0a7ac823bee2f4dc5b))
+* **agent:** context tokens estimation ([0992796](https://github.com/folke/zaly/commit/099279628a8baf68774dc76aa748f33ddaebafa9))
+* **ai/masking:** made masking configurable ([bd9d51d](https://github.com/folke/zaly/commit/bd9d51d900a0aac98b2397e3e258a51b574f5db1))
+* **ai:** big rework of oauth/authentication/model catalog ([a4b8cbc](https://github.com/folke/zaly/commit/a4b8cbc35158237e3a3e32ad0c583bb2d6b4b2e1))
+* **cli/context:** added `/context` action to show a detailed breakdown of token usage ([c08706b](https://github.com/folke/zaly/commit/c08706b5180755b00f99a76c7b6a1373e3c022c7))
+* **cli/skills:** added skill renderer ([d9698ba](https://github.com/folke/zaly/commit/d9698ba9ad738a784ef89fbaf3a722aea80cc365))
+* **config:** bump keepTurns for masker from 20 -&gt; 40 ([a71ddba](https://github.com/folke/zaly/commit/a71ddba63f67c7e9fceb698d45b7fd3bfd61b61b))
+* **config:** make bash/git/npm paths configurable ([bd552f3](https://github.com/folke/zaly/commit/bd552f3335c06feb06b7a2be0f3c630fdcba1018))
+* **config:** MOAR config options ([0ba1911](https://github.com/folke/zaly/commit/0ba191157d9cae9a0b0600c165cb19cd50effca1))
+* **config:** propagate compaction settings ([9c78f0a](https://github.com/folke/zaly/commit/9c78f0a6fb732c944beb6344aee79a00d3dc0b79))
+* **shared/process:** proper support for executing bash commands with bash path resolving ([1e6c002](https://github.com/folke/zaly/commit/1e6c002f0948df470ee03a9336f995256bcbc5c1))
+* **shared/template:** custom formatters, compiled expressions, white space control, env(), $(), json() ([c47ac62](https://github.com/folke/zaly/commit/c47ac6216dabb1428581f7cc6ec8d4ebc7ee547a))
+
+
+### 🩹 Fixes
+
+* **agent/bash:** tag dynamic paths containing shell expansion or globs ([3776e7b](https://github.com/folke/zaly/commit/3776e7b8782a6fcf9fc48fa3a33be5ab3f5c68c1))
+* **agent/compaction:** use agent turns instead of user turns for frecency ([51374d5](https://github.com/folke/zaly/commit/51374d55af58477aeee61c6e007247c79d4008e3))
+* **agent/ctx:** don't update session settings when it's not started yet ([76e0793](https://github.com/folke/zaly/commit/76e0793ac88f060db24637c36ce1f71a61bdbc48))
+* **agent/ctx:** use model registry and correct auth manager for loading session models ([48df4d8](https://github.com/folke/zaly/commit/48df4d8fb0af2d064840b7295b460f08afcd58c7))
+* **agent/masker:** always reset threshold, since expired messsages could free up more space ([3b90603](https://github.com/folke/zaly/commit/3b90603cdfa5beb7f1ae3696ab7a113f6dae4879))
+* **agent/masking:** include prompt/tools in token estimation for masker ([a498fef](https://github.com/folke/zaly/commit/a498fef6e36ccd576420118a299276a97a4ca745))
+* **agent/masking:** measure in assistant turns ([a0031f0](https://github.com/folke/zaly/commit/a0031f0421c2da2469ed09663b32ac5db621c02a))
+* **agent/notify:** fix time based agent notifs ([e2d7bd4](https://github.com/folke/zaly/commit/e2d7bd498804481f17527332ad8767290d2f18ff))
+* **agent/session:** always set modelId when not set ([b415291](https://github.com/folke/zaly/commit/b41529197c84cdf9502e383cd5adc2f41ccaf53e))
+* **agent/signal:** always clear abort controller at the end of a #loop() ([900efbc](https://github.com/folke/zaly/commit/900efbc010f23a480b07b7b383b687e3941701d3))
+
+
+### 🔥 Performance
+
+* **ai:** improve type-checking/linting/lsp performance ([0e07b45](https://github.com/folke/zaly/commit/0e07b4575ecd813041de761d2f3ea9fa8da0760a))
+* **ai:** more type inference optims ([e106de5](https://github.com/folke/zaly/commit/e106de57782e009abda42eec105be9cd4eed1ea8))
+
+
+### 💅 Refactors
+
+* **agent:** AgentState =&gt; AgentContext ([4d804bc](https://github.com/folke/zaly/commit/4d804bced8f30ab80cc826ecfc4c843dc730b2a5))
+* **ai:** more model refactoring ([108c223](https://github.com/folke/zaly/commit/108c2233f9c53ca9703ef006127d123a674c14be))
+* cleanup ([2cb908e](https://github.com/folke/zaly/commit/2cb908e54e730f2ee4bf6dd5dc410423d64f8815))
+
+
+### 🎨 Styles
+
+* **agent/permissions:** skip invalid relative files for ignore patterns ([2c6505f](https://github.com/folke/zaly/commit/2c6505f7de8514a97d1a9275ef0fb91264b68a3d))
+* **agent:** ToolContext type for wakeup tool ([2067257](https://github.com/folke/zaly/commit/20672577bbaecb3eeaeec07bcedcf4ebce444fc4))
+* oxfmt ([52369c7](https://github.com/folke/zaly/commit/52369c7d22a000c16fb4953a9c4744c55b34652d))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+
+
+### ✅ Tests
+
+* **agent:** fixed uuidv7 test ([5c3d9e5](https://github.com/folke/zaly/commit/5c3d9e564b6b22be8767aa480e3279397a35ed85))
+* **agent:** more agent tests ([fbc528c](https://github.com/folke/zaly/commit/fbc528cb7e2c612ec818919a422185d2fd73924b))
+* **plugin:** added plugin tests ([d469e30](https://github.com/folke/zaly/commit/d469e3029feba1fbed2b6eb86fb79bc4f219a2ef))
+* remove console.log ([c88fa6b](https://github.com/folke/zaly/commit/c88fa6b2e0e9fffb96c1a714fa2b4f8c795f981b))
+
+
+### 📦 Build
+
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
 ## [0.0.2](https://github.com/folke/zaly/compare/agent-v0.0.1...agent-v0.0.2) (2026-06-17)
 
 

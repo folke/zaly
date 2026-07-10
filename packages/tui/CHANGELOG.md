@@ -1,5 +1,127 @@
 # Changelog
 
+## [0.0.4](https://github.com/folke/zaly/compare/tui-v0.0.3...tui-v0.0.4) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **agent/commands:** finished commands implementation ([6ce9bbf](https://github.com/folke/zaly/commit/6ce9bbfa35d25ba06773275e15654e36e5ea136e))
+* **cli/composer:** action trigger is now `:` instead of `/` ([a045e76](https://github.com/folke/zaly/commit/a045e760820664bb5d180be4a7cd3857e560ea79))
+* **cli/login:** copy url to clipboard if url could not be opened in the browser ([74b2fea](https://github.com/folke/zaly/commit/74b2fea34cf40861e15763df7f849906148c56d8))
+* **cli:** added `ctrl-y` as default keymap to copy/yank selection or input ([abe36bc](https://github.com/folke/zaly/commit/abe36bcaba81a68636042409760e191a584bc46c))
+* **cli:** live propagate listHeight to autocomplete/picker ([34c38fa](https://github.com/folke/zaly/commit/34c38fa76b3c34c83ff1fba23d0bb7be4a9304da))
+* **config:** MOAR config options ([0ba1911](https://github.com/folke/zaly/commit/0ba191157d9cae9a0b0600c165cb19cd50effca1))
+* **config:** ui.listHeight and ui.treeHeight ([673b265](https://github.com/folke/zaly/commit/673b26515286041a5015e8104f9763a6b2dc99df))
+* **dev:** initial publishing ([30b54fa](https://github.com/folke/zaly/commit/30b54fab50a94e9c4ee62d01f8f96a23ce04f87d))
+* **tui/actions:** added action priority ([0adb147](https://github.com/folke/zaly/commit/0adb147d893df6eba9c1887b1b20518957a1fdae))
+* **tui/actions:** propagate correct Node type in node actions ([f8a50e2](https://github.com/folke/zaly/commit/f8a50e2bf21393f38834b27ca10b288c4b027ef7))
+* **tui/ansi:** util method to strip ansi bg colors ([34f1cc3](https://github.com/folke/zaly/commit/34f1cc3f4b4cb7504996f421eb5f1abc62a17b10))
+* **tui/image:** added unicode support for KGP and better detecion with probing for unknown terminals ([6652a00](https://github.com/folke/zaly/commit/6652a00b9e16aa2ae31bdfea29a08bcd6f8c6644))
+* **tui/images:** allow disabling image rendering ([3fb7282](https://github.com/folke/zaly/commit/3fb7282e75ea7fb9a56d768cb749bd795ef0e7ea))
+* **tui/input:** added proper focus stack ([18ee5d1](https://github.com/folke/zaly/commit/18ee5d1479cca3022a3afab033a2f86d55eaea8c))
+* **tui/input:** input placeholder is now reactive ([0b7ee36](https://github.com/folke/zaly/commit/0b7ee369ab5e859fe4289950361cc4aab1f40c1f))
+* **tui/logger:** if all msg parts are strings, combine in one, so that we don't need `inspect()` ([1a75b65](https://github.com/folke/zaly/commit/1a75b65653d141f2e66da55621998a666a573df3))
+* **tui/markdown:** added support for Github flavored markdown alerts/admonitions ([faf2228](https://github.com/folke/zaly/commit/faf22280eb5a04e5e599bd8b966ca09cb5e5bcc5))
+* **tui/notifier:** added opts.keep, to keep a notif open ([1d029e5](https://github.com/folke/zaly/commit/1d029e5f950eab8919b665160476f641cd954ae2))
+* **tui/overlay:** added overlay.close action ([73364c3](https://github.com/folke/zaly/commit/73364c3a2731586777a3cdd09b6bb81d2026d0a7))
+* **tui/overlay:** horizontalAnchor and fractional positioning relative to the reference (screen/ui/stream) ([3da3598](https://github.com/folke/zaly/commit/3da35980db11d675ac0a2151c4edb015ea8f5ff7))
+* **tui/overlay:** overlay close event ([8cbf2ea](https://github.com/folke/zaly/commit/8cbf2ea45e4712de65fdc15d816e2208e4545be3))
+* **tui/picker:** add custom picker actions ([793399e](https://github.com/folke/zaly/commit/793399e610577b699e783fe8531e7f8b4818bb51))
+* **tui/picker:** add onOpen to allow attaching events to Select ([feeeffe](https://github.com/folke/zaly/commit/feeeffec7bc7120509b1dd79817b2236b385fbb9))
+* **tui/picker:** added multi-select and which-key support ([0f55419](https://github.com/folke/zaly/commit/0f554196380291b26a0881bed6e9af63d1bf773c))
+* **tui/picker:** compacter which-key style rendering ([4586bf3](https://github.com/folke/zaly/commit/4586bf3b3c9f3d65bf89f97c7a155f2c12c5ee4e))
+* **tui/picker:** keep a stack of active pickers ([7a8e3b6](https://github.com/folke/zaly/commit/7a8e3b6668e25334adf26601e2f35259cf338e6f))
+* **tui/picker:** opts.clearInput ([055bdc6](https://github.com/folke/zaly/commit/055bdc676708772579f83742345163933a973024))
+* **tui/picker:** picker suspend/resume ([167f0ae](https://github.com/folke/zaly/commit/167f0ae4f505e0406c7f714f7567387cbdf0a339))
+* **tui/prompt:** generic prompt service that integrates with the composer ([189e125](https://github.com/folke/zaly/commit/189e125388bedae2d549c8c0d8b2a503e9039b00))
+* **tui/reactive:** createRef now has an optional onSet ([ae92b41](https://github.com/folke/zaly/commit/ae92b41325f0974290dfb8f1799027928572e656))
+* **tui/search:** show more indicator when more results are availble than filtered ([7de5286](https://github.com/folke/zaly/commit/7de5286ec5d9124df504a48b6f2db731dc726b32))
+* **tui/selection:** added selection+text event ([6d3b943](https://github.com/folke/zaly/commit/6d3b9431e77455e4a0daeb59714cea6e4a082820))
+* **tui/selection:** added word/line selection on double/triple click ([189ef21](https://github.com/folke/zaly/commit/189ef2114b48f06a7a8112dc042c2b5a09bced98))
+* **tui/selection:** selection anchoring to `"screen" | "stream"` ([6e25540](https://github.com/folke/zaly/commit/6e255407055aab4d66d4d1dc435e22f26754ae68))
+* **tui/selection:** selection mouse handling and rendering ([82ab417](https://github.com/folke/zaly/commit/82ab41799b48d0065aa7fb0373c1d9c9f5786f84))
+* **tui/select:** select changed event ([592841a](https://github.com/folke/zaly/commit/592841a4df2077423a12faaa7bfb2e1c62662c03))
+* **tui/surface:** keep track of render/node state screen/surface location ([d2d705d](https://github.com/folke/zaly/commit/d2d705d12bbdba728ee2472324eb908d27eaef9f))
+* **tui/table:** markdown tables now use proper layout ([0fe6145](https://github.com/folke/zaly/commit/0fe6145d1cdcf3af9a30b71f8f8c2e913f0a1ace))
+* **tui/text:** capitalize() ([a51c821](https://github.com/folke/zaly/commit/a51c8215c490164f3ad275a10ae640d5948fecfb))
+* **tui/themes:** added id/name to Theme ([88d46a7](https://github.com/folke/zaly/commit/88d46a74bc9c58274d67908fb2d0dcd3e07dac1d))
+* **tui/themes:** added more themes ([b3a8a95](https://github.com/folke/zaly/commit/b3a8a95ff3c87e4b0d7d2264f3ba9970fcfdaaa0))
+* **tui/themes:** enabled ansi again ([a492b80](https://github.com/folke/zaly/commit/a492b80ec49b67be4b65a1a49b3436cc7979930f))
+* **tui/themes:** polish themes ([968ff9f](https://github.com/folke/zaly/commit/968ff9f9c2d13eb54fc518dfe3e074f4dbe893ff))
+* **tui/tree:** made tree items reactive ([1034da2](https://github.com/folke/zaly/commit/1034da2ee4af9411a905dacfcf1198a794f73fad))
+
+
+### 🩹 Fixes
+
+* **cli:** action trigger is now `/` again instead of `:` ([dad224f](https://github.com/folke/zaly/commit/dad224fde07b617c9fe31a6d9aca91bce69c8d58))
+* **tui/actions:** fixed hidden filter ([30a4362](https://github.com/folke/zaly/commit/30a4362ed515754f3d296a12c12d3ad75d86b9c1))
+* **tui/autocomplete:** make sure auto completions are properly added to input history ([bfc64a1](https://github.com/folke/zaly/commit/bfc64a15ee9ecea52647923ac32e05bec301ed85))
+* **tui/composer:** allow whitespace aftr `:`, but not before ([70c6a09](https://github.com/folke/zaly/commit/70c6a09ab57d6bce8c6f0a06774e34654cb15640))
+* **tui/inspect:** string keys for objects ([10d67ab](https://github.com/folke/zaly/commit/10d67abf417e47c1ba1dec69003b3643f4218b6a))
+* **tui/log:** don't render empty log content ([c6e0d7f](https://github.com/folke/zaly/commit/c6e0d7f25aa708ac19f3ce264332227d372e6678))
+* **tui/logger:** process errors before converting to log ([bc70cab](https://github.com/folke/zaly/commit/bc70cab32778e96d620921a9b7f857264cbefb1a))
+* **tui/markdown:** pre-wrap markdown code blocks ([26afff3](https://github.com/folke/zaly/commit/26afff3c7340696377211a559e566b237204ec00))
+* **tui/notifier:** check notif queue after render ([308aed0](https://github.com/folke/zaly/commit/308aed0a36a1f56e6a830065bd55e40414fd30d8))
+* **tui/overlay:** remove from overlay when Overlay is unmounted ([491d63f](https://github.com/folke/zaly/commit/491d63faf4c00ca4fcae02051ce0d432c424f18b))
+* **tui/picker:** clearInput/restoreInput, both default to true ([995e9fc](https://github.com/folke/zaly/commit/995e9fc7ab1ef1e33735d75fe80d4f397ef9ca6d))
+* **tui/picker:** propagate correct ctx.width to child renderers ([15fea42](https://github.com/folke/zaly/commit/15fea429ad29853474750ee7887c4a0d0425b339))
+* **tui/picker:** when filtering in the picker, always go to best result ([83aa968](https://github.com/folke/zaly/commit/83aa968264ba852c187f6517cfb03b0d4959b03a))
+* **tui/reactive:** createProgressive now allows the first update ([a57cb52](https://github.com/folke/zaly/commit/a57cb521acea48ff2a0ef393c830e5054f2885b4))
+* **tui/renderer:** better handling of unhandled rejections and render errors ([47fc9be](https://github.com/folke/zaly/commit/47fc9be8485cfe49556de09bd13cfac2c35d07d1))
+* **tui/renderer:** invalidate all surfaces when theme changes ([81a1f52](https://github.com/folke/zaly/commit/81a1f52a90176807dcd0debd4b76f55198a0fd62))
+* **tui/router:** try actions before key events ([a52bd0b](https://github.com/folke/zaly/commit/a52bd0b95c9fd4554d56e85275b7beda7460369f))
+* **tui/router:** try global actions last ([6e76aff](https://github.com/folke/zaly/commit/6e76aff226386454c0cb8926fc807967ed069146))
+* **tui/selection:** only trigger finalized selection once ([bea049e](https://github.com/folke/zaly/commit/bea049e2014bc48d2b929a2d71d7a97a65a96f7f))
+* **tui/select:** replace newlines in rendered rows ([8cc9fb5](https://github.com/folke/zaly/commit/8cc9fb5406254eadb393c2ebe88f28d36523a581))
+* **tui/select:** trigger changed event when active remains the same, but item changed ([1bb9c42](https://github.com/folke/zaly/commit/1bb9c42ed1ef89ff796df9c904111929e6aca791))
+* **tui/stream:** rellocate kitty images when virtual scrolling or with alt-screen ([2574af8](https://github.com/folke/zaly/commit/2574af83da7108caf601330222aa2c14a795feee))
+* **tui/terminal:** fixed weird handling or ghostty's progress error state ([0c51cdf](https://github.com/folke/zaly/commit/0c51cdf127b1a2ac882c73b31a7930d272a4cc3e))
+* **tui/text:** correct minContent for text() with wrap:none ([2c3ec5b](https://github.com/folke/zaly/commit/2c3ec5b88719da96916641261fe6d334a399c8ba))
+* **tui/themes:** fix theme validation ([cf11644](https://github.com/folke/zaly/commit/cf11644f5b62f6233181154f895a3d7982e642cf))
+* **tui/tokyonight:** remove bold from selection style ([dc7d4ce](https://github.com/folke/zaly/commit/dc7d4ce7c8c5bb8f5aa96dcd5ec2d1e32ad7945f))
+* **tui/tree:** don't render root tree icons when opts.root != true ([4bfde3f](https://github.com/folke/zaly/commit/4bfde3f634794b70664031929f08089c21b6ecb4))
+* **tui/tree:** tree rendering was broken ([f613ebf](https://github.com/folke/zaly/commit/f613ebf42242e15ad079933b6861db17416d3d2c))
+* **tui/tree:** wrap in widget() ([5b70fbe](https://github.com/folke/zaly/commit/5b70fbe950ccaffeb226fa561301adf3b693b4b1))
+
+
+### 🔥 Performance
+
+* **tui/stream:** no need to commit rows to scrollback in alt screen mode ([6cf2b38](https://github.com/folke/zaly/commit/6cf2b38bec7a3afb3ea0017bd353fb7cc54e8aa9))
+* **tui/themes:** load json themes directly. don't bundle ([3149c88](https://github.com/folke/zaly/commit/3149c881b0d1b3b3016ddbcfa326d5eb3412d387))
+
+
+### 🎨 Styles
+
+* oxfmt ([52369c7](https://github.com/folke/zaly/commit/52369c7d22a000c16fb4953a9c4744c55b34652d))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+* **tui/theme:** update themes ([76ad126](https://github.com/folke/zaly/commit/76ad126033535868d1c29b7779af02483d0459fb))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+
+
+### ✅ Tests
+
+* fix action trigger tests ([53a3187](https://github.com/folke/zaly/commit/53a318777e1b7dd06f8a2d608c73f670e441dd6a))
+* fixed tests ([427e21f](https://github.com/folke/zaly/commit/427e21f755f1cb581ea31dcd56ec9dbf619a8ee1))
+* **shared:** more tests ([cc53a54](https://github.com/folke/zaly/commit/cc53a543e424f8d30d158aea5955fc3dc408602d))
+* **tui/image:** fixed kgp tests ([8a23323](https://github.com/folke/zaly/commit/8a2332399a03e9447eecff191f73c5971f863165))
+* **tui:** more tui tests ([69c3d53](https://github.com/folke/zaly/commit/69c3d531a5e6ee29c4b35c1824a798c669b1c8ef))
+
+
+### 📦 Build
+
+* fix build ([995e599](https://github.com/folke/zaly/commit/995e599eb4a46f3a55ece54dd0ea1f8e256f29cd))
+* **tui:** WIP Neovim Zaly theme conversion ([a2c632c](https://github.com/folke/zaly/commit/a2c632c33311bd5d851349ec0da57b8db740dbb0))
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
+
+### 🤖 CI
+
+* fix build ([f322d6a](https://github.com/folke/zaly/commit/f322d6ad3b0662ef7163f4c817e524f74d3d45e5))
+
 ## [0.0.3](https://github.com/folke/zaly/compare/tui-v0.0.2...tui-v0.0.3) (2026-06-17)
 
 

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.0.3](https://github.com/folke/zaly/compare/plugin-v0.0.2...plugin-v0.0.3) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **ai:** big rework of oauth/authentication/model catalog ([a4b8cbc](https://github.com/folke/zaly/commit/a4b8cbc35158237e3a3e32ad0c583bb2d6b4b2e1))
+* **cli/context:** added `/context` action to show a detailed breakdown of token usage ([c08706b](https://github.com/folke/zaly/commit/c08706b5180755b00f99a76c7b6a1373e3c022c7))
+* **tui/prompt:** generic prompt service that integrates with the composer ([189e125](https://github.com/folke/zaly/commit/189e125388bedae2d549c8c0d8b2a503e9039b00))
+
+
+### 🔥 Performance
+
+* **ai:** more type inference optims ([e106de5](https://github.com/folke/zaly/commit/e106de57782e009abda42eec105be9cd4eed1ea8))
+
+
+### 💅 Refactors
+
+* **ai:** more model refactoring ([108c223](https://github.com/folke/zaly/commit/108c2233f9c53ca9703ef006127d123a674c14be))
+* **config:** ConfigManager ([149a353](https://github.com/folke/zaly/commit/149a353de12a5e973172e5fead9120de7bec0bc7))
+
+
+### 🎨 Styles
+
+* oxfmt ([52369c7](https://github.com/folke/zaly/commit/52369c7d22a000c16fb4953a9c4744c55b34652d))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+
+
+### ✅ Tests
+
+* **plugin:** added plugin tests ([d469e30](https://github.com/folke/zaly/commit/d469e3029feba1fbed2b6eb86fb79bc4f219a2ef))
+
+
+### 📦 Build
+
+* fix build ([995e599](https://github.com/folke/zaly/commit/995e599eb4a46f3a55ece54dd0ea1f8e256f29cd))
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
 ## [0.0.2](https://github.com/folke/zaly/compare/plugin-v0.0.1...plugin-v0.0.2) (2026-06-17)
 
 
