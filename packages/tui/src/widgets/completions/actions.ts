@@ -35,7 +35,7 @@ export interface ActionsSourceOptions {
  * ```
  */
 export function actionsSource(opts: ActionsSourceOptions): CompletionSource<ActionCompletionItem> {
-  const trigger = opts.trigger ?? /^:\s*/
+  const trigger = opts.trigger ?? /^\//
   const filter = opts.filter ?? ((_id, info): boolean => !info.hidden && !!info.cmd)
 
   return {

@@ -15,7 +15,7 @@ import { codeToAnsi } from "@zaly/tui"
 import { text } from "@zaly/tui/widgets/text"
 import { defineCommand, renderUsage } from "citty"
 
-const actionRe = () => /^(:\s*)([a-zA-Z_:-]+)(?:\s+(.*))?$/
+const actionRe = () => /^(\/)([a-zA-Z_:-]+)(?:\s+(.*))?$/
 
 export class ActionsComposer implements ComposerPlugin {
   name = "actions"
