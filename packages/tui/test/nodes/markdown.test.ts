@@ -544,11 +544,11 @@ describe("markdown — Image instance cache", () => {
   beforeAll(async () => {
     const { mkdtempSync } = await import("node:fs")
     const { tmpdir } = await import("node:os")
-    const { join } = await import("node:path")
+    const path = await import("node:path")
     // oxlint-disable-next-line unicorn/no-await-expression-member
     const sharp = (await import("sharp")).default
-    tmpDir = mkdtempSync(join(tmpdir(), "zaly-md-image-"))
-    pngPath = join(tmpDir, "t.png")
+    tmpDir = mkdtempSync(path.join(tmpdir(), "zaly-md-image-"))
+    pngPath = path.join(tmpDir, "t.png")
     const raw = Buffer.alloc(4 * 2 * 3, 0xff)
     await sharp(raw, { raw: { channels: 3, height: 2, width: 4 } })
       .png()

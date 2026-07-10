@@ -59,7 +59,7 @@
   },
   "engines": {
     "bun": ">=1.2",
-    "node": ">=24"
+    "node": ">=22.11"
   },
   "inlinedDependencies": {
     "jsonrepair": "3.15.0"

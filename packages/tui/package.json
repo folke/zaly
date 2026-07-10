@@ -267,7 +267,7 @@
   },
   "engines": {
     "bun": ">=1.2",
-    "node": ">=24"
+    "node": ">=22.11"
   },
   "inlinedDependencies": {
     "typia": "13.0.2"

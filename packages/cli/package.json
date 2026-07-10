@@ -74,7 +74,7 @@
   },
   "engines": {
     "bun": ">=1.2",
-    "node": ">=24"
+    "node": ">=22.11"
   },
   "inlinedDependencies": {
     "citty": "0.2.2",
