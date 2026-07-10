@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.0.3](https://github.com/folke/zaly/compare/shared-v0.0.2...shared-v0.0.3) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **ai/models:** model/provider overrides rework + hook up with config ([9ea2ae4](https://github.com/folke/zaly/commit/9ea2ae4069925bc3b22586f2dabf1ae3d1c6c831))
+* **ai:** big rework of oauth/authentication/model catalog ([a4b8cbc](https://github.com/folke/zaly/commit/a4b8cbc35158237e3a3e32ad0c583bb2d6b4b2e1))
+* **cli:** added `/session` with session info ([8189809](https://github.com/folke/zaly/commit/81898097cd2e729f78dfe3cb1c06143c0d67e7fc))
+* **cli:** more lenient error handling in config files ([47cea3c](https://github.com/folke/zaly/commit/47cea3c2317eab04ea608cb822b9ab2d7b277816))
+* **shared/args:** added support for positional args ([f700065](https://github.com/folke/zaly/commit/f700065284d98e8c6eb8750cfdee1a88e55164aa))
+* **shared/args:** added support for required options ([a84c7a3](https://github.com/folke/zaly/commit/a84c7a3504fffc52e2a756d8648457f8f16bbdb0))
+* **shared/glob:** added globber runtime ([ab4a3bf](https://github.com/folke/zaly/commit/ab4a3bf390abfeae9a749ff04acf8b8a998587cf))
+* **shared/json:** added JsonFile to easily manage json files (config/state/etc) ([00649a8](https://github.com/folke/zaly/commit/00649a8eced29074182124a1957ae0d12db97085))
+* **shared/paths:** env paths for projects ([ed1cd71](https://github.com/folke/zaly/commit/ed1cd718d2ddccdb4b39c802313973f0858b1b23))
+* **shared/process:** proper support for executing bash commands with bash path resolving ([1e6c002](https://github.com/folke/zaly/commit/1e6c002f0948df470ee03a9336f995256bcbc5c1))
+* **shared/process:** spawnCmd ([648783f](https://github.com/folke/zaly/commit/648783fc61026e33f9d93ea0c96365fb266cfa76))
+* **shared/prop:** added propSet/propGet to set/get object values based on a key path ([4bc09b4](https://github.com/folke/zaly/commit/4bc09b4a180173e519561bd01671ed61a0db7eb5))
+* **shared/template:** added opts.helpers ([91eb019](https://github.com/folke/zaly/commit/91eb0190ccf4814a382a205a0cf9bbb0496a142a))
+* **shared/template:** custom formatters, compiled expressions, white space control, env(), $(), json() ([c47ac62](https://github.com/folke/zaly/commit/c47ac6216dabb1428581f7cc6ec8d4ebc7ee547a))
+* **shared/types:** moved DeepPartial/Simplify to shared/types ([7e9317c](https://github.com/folke/zaly/commit/7e9317cd8021f40ade0f508f9b7b1263e37b574e))
+* **shared/utils:** MaybeGetter and toValue ([b991ec3](https://github.com/folke/zaly/commit/b991ec3aa2ab2fc86c97cc8ab1c8577e97e8f855))
+* **shared:** added `template.ts` for template interpolation with js expressions ([5765fee](https://github.com/folke/zaly/commit/5765feed68aaf9be158a8f9aed33bc7f13221fb5))
+* **tui/process:** allow disabling stdout/stderr (fix for wl-copy) ([0109f2b](https://github.com/folke/zaly/commit/0109f2bd9deeb1a8da9c37afa9dc66b899854ade))
+* **tui/prompt:** generic prompt service that integrates with the composer ([189e125](https://github.com/folke/zaly/commit/189e125388bedae2d549c8c0d8b2a503e9039b00))
+
+
+### 🩹 Fixes
+
+* **shared/ansi:** handle KGP diacritic clusters for Bun in sliceAnsi and stringWidth + replace by space in stripAnsi ([74bf8a3](https://github.com/folke/zaly/commit/74bf8a3df7136dcfb3afe390a759461d5d465b8e))
+* **shared/images:** sharp types ([68387b0](https://github.com/folke/zaly/commit/68387b0a5eb82dbcc7d12914e6c008a54436538b))
+* **shared/types:** dont expand strings in Simplify ([ece712f](https://github.com/folke/zaly/commit/ece712fd2c436a2546407858f60209cc5d15eacb))
+* **shared/utils:** fixed clamp() with optional max ([06b2d79](https://github.com/folke/zaly/commit/06b2d79eecbbd34e1099594dc3da702806837750))
+
+
+### 🎨 Styles
+
+* oxfmt ([52369c7](https://github.com/folke/zaly/commit/52369c7d22a000c16fb4953a9c4744c55b34652d))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+* **shared/glob:** doc strings for glob options ([b76bfa0](https://github.com/folke/zaly/commit/b76bfa0684aa42f56c2529654986dbf4932be8bb))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+
+
+### ✅ Tests
+
+* fix spawnCmd tests ([a497173](https://github.com/folke/zaly/commit/a49717389fc4ca58b2225d759405a148b482cf00))
+* **shared:** more tests ([cc53a54](https://github.com/folke/zaly/commit/cc53a543e424f8d30d158aea5955fc3dc408602d))
+* **shared:** more tests for shared ([2005574](https://github.com/folke/zaly/commit/200557469e3a1de1034776430c6433ae0d2f5709))
+* **tui:** more tui tests ([69c3d53](https://github.com/folke/zaly/commit/69c3d531a5e6ee29c4b35c1824a798c669b1c8ef))
+
+
+### 📦 Build
+
+* fix build ([995e599](https://github.com/folke/zaly/commit/995e599eb4a46f3a55ece54dd0ea1f8e256f29cd))
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
 ## [0.0.2](https://github.com/folke/zaly/compare/shared-v0.0.1...shared-v0.0.2) (2026-06-17)
 
 

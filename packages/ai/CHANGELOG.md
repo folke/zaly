@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.0.3](https://github.com/folke/zaly/compare/ai-v0.0.2...ai-v0.0.3) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **ai/auth:** cleanup ApiKey resolving ([244b4d2](https://github.com/folke/zaly/commit/244b4d22cbb98af389e153d325e02097b703740e))
+* **ai/auth:** oauth rework ([153dfcc](https://github.com/folke/zaly/commit/153dfcc071e7a881e2cb7ca00632c3757652f35c))
+* **ai/models:** added new GPT 5.6 Codex Models ([6cb3b50](https://github.com/folke/zaly/commit/6cb3b504bcebf7d4c19aee566fd92361f44a9e33))
+* **ai/models:** model/provider overrides rework + hook up with config ([9ea2ae4](https://github.com/folke/zaly/commit/9ea2ae4069925bc3b22586f2dabf1ae3d1c6c831))
+* **ai/types:** AnyPart and SafeParamsOf ([d29dd47](https://github.com/folke/zaly/commit/d29dd47ad20fab8dfd2d52d0ac0577b0d4cec9e2))
+* **ai:** allow overrides override all ModelProvider fields ([ea84cdb](https://github.com/folke/zaly/commit/ea84cdb83c216bf020c6b9d9684ffb8dee24599f))
+* **ai:** big rework of oauth/authentication/model catalog ([a4b8cbc](https://github.com/folke/zaly/commit/a4b8cbc35158237e3a3e32ad0c583bb2d6b4b2e1))
+* **ai:** build ModelCatalog on load, not on build ([1670a0d](https://github.com/folke/zaly/commit/1670a0dd0b5c14864bb1c723d8dc68642c65cb84))
+* **cli/login:** copy url to clipboard if url could not be opened in the browser ([74b2fea](https://github.com/folke/zaly/commit/74b2fea34cf40861e15763df7f849906148c56d8))
+* **cli/login:** custom render for provider picker ([d9d3474](https://github.com/folke/zaly/commit/d9d3474e192d7fe41e987a744aafa61bc9539973))
+* **dev:** initial publishing ([30b54fa](https://github.com/folke/zaly/commit/30b54fab50a94e9c4ee62d01f8f96a23ce04f87d))
+
+
+### 🩹 Fixes
+
+* **agent/notify:** fix time based agent notifs ([e2d7bd4](https://github.com/folke/zaly/commit/e2d7bd498804481f17527332ad8767290d2f18ff))
+* **ai/anthropic:** fixed anthropic model version detection ([3cda232](https://github.com/folke/zaly/commit/3cda232d657947d1bc9b94c9bfefa4e2b8b8e26e))
+* **ai/auth:** 5 step resolution for api key ([2adbf1c](https://github.com/folke/zaly/commit/2adbf1c004af84664ba69a0c7cd1183079630cdd))
+* **ai/error:** some error props are not enumerable, so spreading fails. pick them manually ([0995823](https://github.com/folke/zaly/commit/0995823e23921bf43c437346238971bf19d8e74c))
+* **ai/model:** pass correct model context to loadModel ([ef7f55c](https://github.com/folke/zaly/commit/ef7f55c0a04de4f7bc3a295506570f38509eada1))
+* **ai/models:** fixed model downloads ([4db576c](https://github.com/folke/zaly/commit/4db576c3beabbaf9b854030127985927027de4eb))
+
+
+### 🔥 Performance
+
+* **ai:** don't let tsgo/tsdown see/bundle models.json ([fd1e634](https://github.com/folke/zaly/commit/fd1e63485a149d758da411717d78201afd82aa30))
+* **ai:** improve type-checking/linting/lsp performance ([0e07b45](https://github.com/folke/zaly/commit/0e07b4575ecd813041de761d2f3ea9fa8da0760a))
+* **ai:** more type inference optims ([e106de5](https://github.com/folke/zaly/commit/e106de57782e009abda42eec105be9cd4eed1ea8))
+
+
+### 💅 Refactors
+
+* **ai:** ModelSpec.providerInfo =&gt; ModelSpec.provider ([51f2ce1](https://github.com/folke/zaly/commit/51f2ce1399394351b8561733be2e6f960cfdf1b3))
+* **ai:** more model refactoring ([108c223](https://github.com/folke/zaly/commit/108c2233f9c53ca9703ef006127d123a674c14be))
+
+
+### 🎨 Styles
+
+* oxfmt ([52369c7](https://github.com/folke/zaly/commit/52369c7d22a000c16fb4953a9c4744c55b34652d))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+
+
+### ✅ Tests
+
+* addded models loading bench ([9e2050f](https://github.com/folke/zaly/commit/9e2050fba80bdff6a4d5de79bd8ee9bee21aec23))
+* **ai:** ai tests ([f29943d](https://github.com/folke/zaly/commit/f29943dad93b932872be7c210e3f7f2063d03f41))
+* fix model override tests ([d40746e](https://github.com/folke/zaly/commit/d40746eb5f3b87a50dc9bfe9997e37a72cf75a41))
+
+
+### 📦 Build
+
+* **ai:** don't put snapshot.json in git ([6a4aeca](https://github.com/folke/zaly/commit/6a4aeca6fb78d2292d76c11d3962fadf02e6d9b8))
+* fix build ([995e599](https://github.com/folke/zaly/commit/995e599eb4a46f3a55ece54dd0ea1f8e256f29cd))
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
+
+### 🤖 CI
+
+* fix build ([f322d6a](https://github.com/folke/zaly/commit/f322d6ad3b0662ef7163f4c817e524f74d3d45e5))
+* updated github actions ([937473b](https://github.com/folke/zaly/commit/937473b9d5e60609856eb29181be82eb1550b44a))
+
 ## [0.0.2](https://github.com/folke/zaly/compare/ai-v0.0.1...ai-v0.0.2) (2026-06-17)
 
 

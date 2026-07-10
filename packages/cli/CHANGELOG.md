@@ -1,5 +1,125 @@
 # Changelog
 
+## [0.0.3](https://github.com/folke/zaly/compare/cli-v0.0.2...cli-v0.0.3) (2026-07-10)
+
+
+### 🚀 Enhancements
+
+* **agent/commands:** better command templates with bash execution ([af87101](https://github.com/folke/zaly/commit/af871016b9240eed4097452c39e63efd2572d3c2))
+* **agent/commands:** finished commands implementation ([6ce9bbf](https://github.com/folke/zaly/commit/6ce9bbfa35d25ba06773275e15654e36e5ea136e))
+* **agent/masking:** add mask checkpoints to session so that session resume start with roughly the same masking state ([fa4a6c2](https://github.com/folke/zaly/commit/fa4a6c24b14ee7cd0c0ab9f54071fe34536c791a))
+* **ai/masking:** made masking configurable ([bd9d51d](https://github.com/folke/zaly/commit/bd9d51d900a0aac98b2397e3e258a51b574f5db1))
+* **ai/models:** model/provider overrides rework + hook up with config ([9ea2ae4](https://github.com/folke/zaly/commit/9ea2ae4069925bc3b22586f2dabf1ae3d1c6c831))
+* **ai:** big rework of oauth/authentication/model catalog ([a4b8cbc](https://github.com/folke/zaly/commit/a4b8cbc35158237e3a3e32ad0c583bb2d6b4b2e1))
+* **cli:** --version ([4609787](https://github.com/folke/zaly/commit/4609787a5c444416960d8920bb028ab5b4bc8b48))
+* **cli/app:** logs during startup are now sticky, so they don't get hidden by replay ([c4540f8](https://github.com/folke/zaly/commit/c4540f8042b05f42843cfe035ca1ba4bb185fc22))
+* **cli/composer:** action trigger is now `:` instead of `/` ([a045e76](https://github.com/folke/zaly/commit/a045e760820664bb5d180be4a7cd3857e560ea79))
+* **cli/config:** configure terminal mode: `"scrollback" | "fullscreen"` ([11234ae](https://github.com/folke/zaly/commit/11234ae035d56b41cfde63412ba26238c33af07d))
+* **cli/context:** added `/context` action to show a detailed breakdown of token usage ([c08706b](https://github.com/folke/zaly/commit/c08706b5180755b00f99a76c7b6a1373e3c022c7))
+* **cli/help:** help for actions / keys ([fa1f653](https://github.com/folke/zaly/commit/fa1f6537d79fa72b91af29bb79fc0cdd29e3b286))
+* **cli/login:** copy url to clipboard if url could not be opened in the browser ([74b2fea](https://github.com/folke/zaly/commit/74b2fea34cf40861e15763df7f849906148c56d8))
+* **cli/login:** custom render for provider picker ([d9d3474](https://github.com/folke/zaly/commit/d9d3474e192d7fe41e987a744aafa61bc9539973))
+* **cli/login:** manage and login to providers ([8cfe784](https://github.com/folke/zaly/commit/8cfe784ce6e7e24a2138bd3503f88b1a73d29278))
+* **cli/model:** add env vars to model desc ([ad4c845](https://github.com/folke/zaly/commit/ad4c84524e11a34b070137efd9665408bd8c2cee))
+* **cli/model:** toggle all/authenticated models ([c29e28f](https://github.com/folke/zaly/commit/c29e28f57dd164e3c436f8d4c636254319522140))
+* **cli/plugins:** proper plugin management: /plugins /install /update ([f5f79fd](https://github.com/folke/zaly/commit/f5f79fd08bbc3a6f2689ad96392ca3310ff5ba90))
+* **cli/resources:** added /resources --project|--user ([64795bd](https://github.com/folke/zaly/commit/64795bddc35b2a68c9839b004fba861753ed3400))
+* **cli/resources:** pass `plugin` to resource manager ([cdb35e3](https://github.com/folke/zaly/commit/cdb35e3e31c9463723641541231ed754c1e22cb0))
+* **cli/session:** session token usage breakdown in table ([895541f](https://github.com/folke/zaly/commit/895541f2b290ae0d17b763f34fe27e62c1d65228))
+* **cli/skills:** added skill renderer ([d9698ba](https://github.com/folke/zaly/commit/d9698ba9ad738a784ef89fbaf3a722aea80cc365))
+* **cli/stream:** configure which tools to show as collapsed ([524e33a](https://github.com/folke/zaly/commit/524e33a854d6c1750f892750201d865640f44387))
+* **cli/theme:** live theme preview and use custom theme resources ([8291f96](https://github.com/folke/zaly/commit/8291f9683f144ad73cd1ccf74a5556b41027323e))
+* **cli/tree:** tree filter settings ([862ff1d](https://github.com/folke/zaly/commit/862ff1d3256a05878d8eab9ef6a2b97fe00b8a09))
+* **cli/ui:** allow disabling reasoning in the ui ([7ccf951](https://github.com/folke/zaly/commit/7ccf95101509770ae2135dfd64a24afb50ef05a7))
+* **cli/user:** user message meta markdown?:boolean ([0130773](https://github.com/folke/zaly/commit/013077341ce014feb2c3f553336b9bf79f4cc4b0))
+* **cli:** added --mode to configure terminal mode ([7b73647](https://github.com/folke/zaly/commit/7b73647d0e4427d2ec1e2ce3fae37e9cc05b2281))
+* **cli:** added /config ([47076e2](https://github.com/folke/zaly/commit/47076e25411fe39862b32a9d1ce74d9838b3cf50))
+* **cli:** added `--debug` which sets Logger level to debug instead of info ([cbb574a](https://github.com/folke/zaly/commit/cbb574a12e3cd21df0169d24006b7b55202f0f11))
+* **cli:** added `/session` with session info ([8189809](https://github.com/folke/zaly/commit/81898097cd2e729f78dfe3cb1c06143c0d67e7fc))
+* **cli:** added `ctrl-y` as default keymap to copy/yank selection or input ([abe36bc](https://github.com/folke/zaly/commit/abe36bcaba81a68636042409760e191a584bc46c))
+* **cli:** added copy on select ([86f0942](https://github.com/folke/zaly/commit/86f0942497e8666a392a77fca7806838bb53251b))
+* **cli:** AppState.loading + App.do() ([9b4733b](https://github.com/folke/zaly/commit/9b4733bb37c927f82ef8674008d59ed38058ecb6))
+* **cli:** enabled stack traces in debug mode `--debug` ([29ea8ad](https://github.com/folke/zaly/commit/29ea8ad39eac9b1d21f55bfff7b1314813814f93))
+* **cli:** keep track of lastModel in state.json ([fa4a300](https://github.com/folke/zaly/commit/fa4a300a8e6d9cce3ee1330d7393d96a14ce18f8))
+* **cli:** live propagate listHeight to autocomplete/picker ([34c38fa](https://github.com/folke/zaly/commit/34c38fa76b3c34c83ff1fba23d0bb7be4a9304da))
+* **cli:** manage resources (enabled/disable) ([8e1f09f](https://github.com/folke/zaly/commit/8e1f09f67bc0d94ca6073d036c1b6fe7d94fdf53))
+* **cli:** more lenient error handling in config files ([47cea3c](https://github.com/folke/zaly/commit/47cea3c2317eab04ea608cb822b9ab2d7b277816))
+* **config:** add state:JsonFile to ConfigManager ([190e789](https://github.com/folke/zaly/commit/190e78965ae64f8f8e5cf3eb55a782bd529185ce))
+* **config:** added `ui.copyOnSelect` config option ([f886a11](https://github.com/folke/zaly/commit/f886a114c5c252414eb0a3968c1d20b0b72717fc))
+* **config:** allow configuring a skill/command action prefix ([e9502db](https://github.com/folke/zaly/commit/e9502dbec293050cbae2bfed149e8edc65d2bba7))
+* **config:** made session tree sections configurable ([e17e40e](https://github.com/folke/zaly/commit/e17e40e5a6c23287232b8343fcca123dbfb7442e))
+* **config:** make bash/git/npm paths configurable ([bd552f3](https://github.com/folke/zaly/commit/bd552f3335c06feb06b7a2be0f3c630fdcba1018))
+* **config:** MOAR config options ([0ba1911](https://github.com/folke/zaly/commit/0ba191157d9cae9a0b0600c165cb19cd50effca1))
+* **config:** packages support (npm & git) ([2fbe300](https://github.com/folke/zaly/commit/2fbe30074676f7bebd8541379fbda2e95de0dc88))
+* **config:** pass resource excludes from flags ([696fdb3](https://github.com/folke/zaly/commit/696fdb3148f1e350cf59213116e1230e0f8b6bb3))
+* **config:** propagate compaction settings ([9c78f0a](https://github.com/folke/zaly/commit/9c78f0a6fb732c944beb6344aee79a00d3dc0b79))
+* **config:** resource management ([6b5b561](https://github.com/folke/zaly/commit/6b5b561237fa14b4c94e02ab465fff83b7d7c5b2))
+* **config:** ui.listHeight and ui.treeHeight ([673b265](https://github.com/folke/zaly/commit/673b26515286041a5015e8104f9763a6b2dc99df))
+* **dev:** initial publishing ([30b54fa](https://github.com/folke/zaly/commit/30b54fab50a94e9c4ee62d01f8f96a23ce04f87d))
+* **plugins:** debug plugins now prints tool schemas and prompts ([ca4398b](https://github.com/folke/zaly/commit/ca4398b79a93006567e1c043008131b1d9eb0dfa))
+* **shared/args:** added support for positional args ([f700065](https://github.com/folke/zaly/commit/f700065284d98e8c6eb8750cfdee1a88e55164aa))
+* **shared/json:** added JsonFile to easily manage json files (config/state/etc) ([00649a8](https://github.com/folke/zaly/commit/00649a8eced29074182124a1957ae0d12db97085))
+* **tui/images:** allow disabling image rendering ([3fb7282](https://github.com/folke/zaly/commit/3fb7282e75ea7fb9a56d768cb749bd795ef0e7ea))
+* **tui/picker:** opts.clearInput ([055bdc6](https://github.com/folke/zaly/commit/055bdc676708772579f83742345163933a973024))
+* **tui/prompt:** generic prompt service that integrates with the composer ([189e125](https://github.com/folke/zaly/commit/189e125388bedae2d549c8c0d8b2a503e9039b00))
+* **tui/reactive:** createRef now has an optional onSet ([ae92b41](https://github.com/folke/zaly/commit/ae92b41325f0974290dfb8f1799027928572e656))
+
+
+### 🩹 Fixes
+
+* **agent/bash:** tag dynamic paths containing shell expansion or globs ([3776e7b](https://github.com/folke/zaly/commit/3776e7b8782a6fcf9fc48fa3a33be5ab3f5c68c1))
+* **agent/ctx:** don't update session settings when it's not started yet ([76e0793](https://github.com/folke/zaly/commit/76e0793ac88f060db24637c36ce1f71a61bdbc48))
+* **agent/ctx:** use model registry and correct auth manager for loading session models ([48df4d8](https://github.com/folke/zaly/commit/48df4d8fb0af2d064840b7295b460f08afcd58c7))
+* **agent/masking:** include prompt/tools in token estimation for masker ([a498fef](https://github.com/folke/zaly/commit/a498fef6e36ccd576420118a299276a97a4ca745))
+* **app:** logger entries need left-padding:1 ([18276b6](https://github.com/folke/zaly/commit/18276b65934a457cbd727cfe0fc6bbde06b15b87))
+* **cli/app:** reset config on reload ([bd35aec](https://github.com/folke/zaly/commit/bd35aecc430694bae892ed09bf7491bbaea03927))
+* **cli/composer:** always update/refresh input history ([cfcf630](https://github.com/folke/zaly/commit/cfcf63023ba1488637f788022f5316044b386541))
+* **cli/login:** max width 80% ([72d70ee](https://github.com/folke/zaly/commit/72d70eef683c9987ae6431a6d920689788caee32))
+* **cli/themes:** only apply theme when set ([03974ce](https://github.com/folke/zaly/commit/03974ceaf6882a43e6f15d04d68699cb83906058))
+* **cli/tools:** implemented ToolRenderer.call ([df4eef2](https://github.com/folke/zaly/commit/df4eef2fd087e7853dfe5bde0fb19bac70a7a96e))
+* **cli/tools:** move params to separate widget to prevent cycle ([eda53fb](https://github.com/folke/zaly/commit/eda53fbe191c7844f366119720954a7114bcf1d9))
+* **cli/ui:** propagate listHeight to autocomplete ([4a9e1c1](https://github.com/folke/zaly/commit/4a9e1c15de8aa7c91dbcf16c60dbadc0cce5c56b))
+* **cli:** action trigger is now `/` again instead of `:` ([dad224f](https://github.com/folke/zaly/commit/dad224fde07b617c9fe31a6d9aca91bce69c8d58))
+* **tui/composer:** allow whitespace aftr `:`, but not before ([70c6a09](https://github.com/folke/zaly/commit/70c6a09ab57d6bce8c6f0a06774e34654cb15640))
+* **tui/log:** don't render empty log content ([c6e0d7f](https://github.com/folke/zaly/commit/c6e0d7f25aa708ac19f3ce264332227d372e6678))
+
+
+### 💅 Refactors
+
+* **ai:** ModelSpec.providerInfo =&gt; ModelSpec.provider ([51f2ce1](https://github.com/folke/zaly/commit/51f2ce1399394351b8561733be2e6f960cfdf1b3))
+* **ai:** more model refactoring ([108c223](https://github.com/folke/zaly/commit/108c2233f9c53ca9703ef006127d123a674c14be))
+* cleanup ([2cb908e](https://github.com/folke/zaly/commit/2cb908e54e730f2ee4bf6dd5dc410423d64f8815))
+* **cli/resources:** use multi select (with custom render) ([eb350ce](https://github.com/folke/zaly/commit/eb350ce1b33ccd6ea67b07f8d7efe5c339fc6562))
+* **cli:** make config a getter instead of async loaded ([38d697b](https://github.com/folke/zaly/commit/38d697b1e89267a4d031b894078f0be276259b6e))
+* **cli:** move theme/model actions to separate file ([e8a1cd7](https://github.com/folke/zaly/commit/e8a1cd710b0924ab3b5d81d6beef21222fc0d843))
+* **config:** added ResolvedSettings inferred from default settings ([fd8660d](https://github.com/folke/zaly/commit/fd8660def74a22c83907f9faae34e8207540476a))
+* **config:** ConfigManager ([149a353](https://github.com/folke/zaly/commit/149a353de12a5e973172e5fead9120de7bec0bc7))
+
+
+### 🎨 Styles
+
+* **cli/actions:** better desc for `app.copy` depending on terminal.mouse ([ebbebee](https://github.com/folke/zaly/commit/ebbebeef8ff3ef1de21769eaad9a8fa10bfb5cf9))
+* **cli/actions:** rename some action fns ([aae37ad](https://github.com/folke/zaly/commit/aae37adde752ff08d756027e4b07b1dc835d11e3))
+* **cli:** remove env vars from model list ([dfc34e5](https://github.com/folke/zaly/commit/dfc34e5aeac85f8a2b670742fd157d29f9946fb0))
+* oxfmt ([be0afec](https://github.com/folke/zaly/commit/be0afecf4459405fdef168c3f72d322c74fe5c48))
+
+
+### 📖 Documentation
+
+* basic docs before publishing v0 ([c9c4fc3](https://github.com/folke/zaly/commit/c9c4fc34e1bddae7432abec7fcc7bf1336b27999))
+* tagline ([89fdaa5](https://github.com/folke/zaly/commit/89fdaa54fe8269b136cc1df548dfa339c61f45c2))
+
+
+### 📦 Build
+
+* update package.json files and add homepage/bugs/repository.directory ([81576dd](https://github.com/folke/zaly/commit/81576ddca3fbf8bdc4044f4a1f1b29445b524e4d))
+
+
+### 🤖 CI
+
+* enable linting ([1c64a8a](https://github.com/folke/zaly/commit/1c64a8a4f2699cb2992522e1a634a8154129feb4))
+* fix build ([f322d6a](https://github.com/folke/zaly/commit/f322d6ad3b0662ef7163f4c817e524f74d3d45e5))
+
 ## [0.0.2](https://github.com/folke/zaly/compare/cli-v0.0.1...cli-v0.0.2) (2026-06-17)
 
 
