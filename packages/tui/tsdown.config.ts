@@ -23,11 +23,12 @@ export default defineConfig({
     style: "src/style/index.ts",
     text: "src/layout/text.ts",
     themes: "src/themes/registry.ts",
+    "shiki/server": "src/shiki/server.ts",
   },
   exports: {
     // `ansi`/`md` are entries only so tsdown emits them as separate
     // chunks (for `publishConfig.imports` to point at). They're not
     // part of the public surface.
-    exclude: ["md.*"],
+    exclude: ["md.*", "shiki/server"],
   },
 })

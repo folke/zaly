@@ -33,6 +33,10 @@
     "#md": {
       "bun": "./src/runtime/md.bun.ts",
       "default": "./dist/md.node.mjs"
+    },
+    "#shiki-worker": {
+      "bun": "./src/shiki/server.ts",
+      "default": "./dist/shiki/server.mjs"
     }
   },
   "exports": {
@@ -176,6 +180,10 @@
   },
   "publishConfig": {
     "imports": {
+      "#shiki-worker": {
+        "default": "./dist/shiki/server.mjs"
+      },
+      "#assets/*": "./assets/*",
       "#ansi": {
         "bun": "./dist/ansi.bun.mjs",
         "default": "./dist/ansi.node.mjs"

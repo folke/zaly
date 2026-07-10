@@ -32,9 +32,10 @@ export type WorkerInstance<In = unknown, Out = unknown> = {
   terminate(): void
 }
 
-export async function createWorker<In = unknown, Out = unknown>(
-  scriptURL: string | URL
-): Promise<WorkerInstance<In, Out>> {
+export async function createWorker<In = unknown, Out = unknown>(): Promise<
+  WorkerInstance<In, Out>
+> {
+  const scriptURL = new URL(import.meta.resolve("#shiki-worker"))
   if (typeof globalThis.Worker === "function") {
     const w = new Worker(scriptURL, { type: "module" })
     // oxlint-disable-next-line typescript/no-unnecessary-condition
@@ -44,6 +45,9 @@ export async function createWorker<In = unknown, Out = unknown>(
         if (event === "error")
           w.addEventListener(event, (e) => void handler(e.error ?? new Error(e.message)))
         else w.addEventListener(event, (e) => void handler(e.data))
+        // Registering a listener can re-reference the worker.
+        // oxlint-disable-next-line typescript/no-unnecessary-condition
+        w.unref?.()
       },
       postMessage: (message) => w.postMessage(message),
       terminate: () => w.terminate(),
@@ -53,7 +57,11 @@ export async function createWorker<In = unknown, Out = unknown>(
   const worker = new NodeWorker(scriptURL)
   worker.unref()
   return {
-    on: (event, handler) => worker.on(event, (e) => void handler(e)),
+    on: (event, handler) => {
+      worker.on(event, (e) => void handler(e))
+      // Registering a listener re-references the worker's MessagePort.
+      worker.unref()
+    },
     postMessage: (message) => worker.postMessage(message),
     terminate: () => void worker.terminate(),
   }

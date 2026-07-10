@@ -76,9 +76,7 @@ export class ShikiWorkerClient {
     if (this.#worker) return this.#worker
     this.#workerPromise ??= (async () => {
       const { createWorker } = await import("./worker.ts")
-      const worker = await createWorker<ShikiWorkerRequest, ShikiResult>(
-        new URL("server.ts", import.meta.url)
-      )
+      const worker = await createWorker<ShikiWorkerRequest, ShikiResult>()
       worker.on("message", (event) => {
         this.#running.delete(event.id)
         this.#results.push(event)
