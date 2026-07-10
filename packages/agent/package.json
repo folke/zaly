@@ -1,6 +1,14 @@
 {
   "name": "@zaly/agent",
   "version": "0.0.2",
+  "description": "Agent runtime, sessions, tools, permissions, compaction, and tasks for zaly.",
+  "keywords": [
+    "agent",
+    "ai",
+    "runtime",
+    "sessions",
+    "tools"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/agent#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

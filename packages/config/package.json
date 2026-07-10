@@ -1,6 +1,14 @@
 {
   "name": "@zaly/config",
   "version": "0.0.2",
+  "description": "Configuration, resource, pack, and plugin metadata system for zaly.",
+  "keywords": [
+    "config",
+    "plugins",
+    "resources",
+    "settings",
+    "zaly"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/config#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

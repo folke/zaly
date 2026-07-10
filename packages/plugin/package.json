@@ -1,6 +1,13 @@
 {
   "name": "@zaly/plugin",
   "version": "0.0.2",
+  "description": "Plugin-facing API and loader helpers for zaly.",
+  "keywords": [
+    "api",
+    "extensions",
+    "plugins",
+    "zaly"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/plugin#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

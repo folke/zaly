@@ -1,6 +1,15 @@
 {
   "name": "@zaly/cli",
   "version": "0.0.2",
+  "description": "Terminal-native AI coding agent for developers.",
+  "keywords": [
+    "agent",
+    "ai",
+    "cli",
+    "coding-agent",
+    "terminal",
+    "tui"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/cli#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

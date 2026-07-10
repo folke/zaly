@@ -1,65 +1,59 @@
 # @zaly/tui
 
-Direct-mode terminal UI toolkit for building agent interfaces.
+Terminal UI framework used by zaly.
 
-Renders whole rows straight to stdout — no virtual buffer, no per-cell diff. The terminal's own scrollback keeps history; a sticky footer holds the composer; overlays float on top. ANSI, markdown, syntax-highlighted code, diffs, and inline images all come in the box.
+`@zaly/tui` is a direct-mode terminal renderer with stream, UI, and overlay
+surfaces; reactive widgets; markdown/code/diff rendering; mouse selection;
+clipboard helpers; themes; and terminal graphics support.
 
-> [!TIP]
-> Full docs, live previews, and the complete API reference: **[tui.zaly.dev](https://tui.zaly.dev)**.
+> [!WARNING]
+> Alpha package. Public APIs are not frozen.
 
 ## Install
 
 ```sh
-bun add @zaly/tui    # also works with npm / pnpm / yarn
+bun add @zaly/tui
 ```
 
-## Hello world
-
-```ts
-import { box, createRenderer, input, markdown, text } from "@zaly/tui"
-
-const r = createRenderer()
-
-r.ui.add(
-  box(
-    { padding: [0, 1] },
-    text(({ style }) => style.dim("enter to send · ctrl-c to quit")),
-    input({ placeholder: "say something…" })
-      .focus()
-      .on("submit", (value, self) => {
-        r.stream.append(markdown(`**you:** ${value}`))
-        self.setState({ cursor: 0, value: "" })
-      })
-  )
-)
-
-r.start()
-```
+Most users should install [`@zaly/cli`](../cli) instead.
 
 ## Highlights
 
-- **Three surfaces** — stream (scroll region), UI (pinned footer via DECSTBM), overlay (absolute-positioned floats).
-- **Widgets** — text, box, markdown, code (shiki), diff, image (Kitty + iTerm2), input, menu, progress, spinner, overlay, autocomplete, log.
-- **Autocomplete sources** — slash commands (via action registry), file paths, GitHub issues / PRs via `gh`. Plug your own.
-- **Logger** — `renderer.log("...")` / `log.error(...)` with `util.format`, markdown bodies, optional `console.*` interception.
-- **Signals + fine-grained reactivity** — mutate `node.state.x = y` or a signal, only the affected node re-renders.
-- **Themes** — `tokyonight-*`, `catppuccin-*`, `dracula`, `nord`, `github-*`, `gruvbox-dark-medium`, `one-dark-pro`, `rose-pine`. Shiki-integrated.
-- **Bun + Node** — runtime split via import map; one API.
+- **Renderer surfaces** — scrollable stream, pinned UI/footer, and overlay layer.
+- **Widgets** — text, box, markdown, code, diff, image, input, select/tree,
+  picker, progress, spinner, log, and autocomplete building blocks.
+- **Selection** — mouse selection in fullscreen mode, copy-friendly text
+  extraction, word/line selection, and app-level selection events.
+- **Terminal graphics** — Kitty Graphics Protocol support with capability
+  detection, unicode placeholders where supported, direct placement fallback,
+  and tmux passthrough handling.
+- **Themes** — ANSI/style builder, theme registry, and syntax highlighting
+  integration.
+- **Runtime split** — works in Bun and Node through package exports/import maps.
 
-## Demos
+## Minimal example
 
-```sh
-bun demo/agent.ts          # full agent harness
-bun demo/autocomplete.ts   # actions + files + github completion
-bun demo/stream.ts         # streaming markdown
-bun demo/logger.ts         # every log level + console interception
+```ts
+import { createRenderer, input, markdown } from "@zaly/tui"
+
+const renderer = await createRenderer()
+
+renderer.stream.append(markdown("# hello from zaly/tui"))
+renderer.ui.add(
+  input({ placeholder: "say something…" }).on("submit", (value, self) => {
+    renderer.stream.append(markdown(`**you:** ${value}`))
+    self.setState({ cursor: 0, value: "" })
+  })
+)
+
+renderer.start()
 ```
 
-## Status
+## Notes
 
-> [!WARNING]
-> Pre-1.0. The public API is stabilizing but not frozen — some shapes will still move as `@zaly/tui` is driven by what the rest of the Zaly stack needs.
+This package is built for zaly first. It is usable on its own, but API names and
+widget behavior may change while the app evolves.
 
 ## License
 
-[MIT](./LICENSE) © Folke Lemaitre
+MIT © Folke Lemaitre

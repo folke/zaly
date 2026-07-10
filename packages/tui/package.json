@@ -1,6 +1,14 @@
 {
   "name": "@zaly/tui",
   "version": "0.0.3",
+  "description": "Terminal UI framework used by zaly.",
+  "keywords": [
+    "ansi",
+    "cli",
+    "terminal",
+    "tui",
+    "widgets"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/tui#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

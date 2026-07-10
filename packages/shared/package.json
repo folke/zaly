@@ -1,6 +1,14 @@
 {
   "name": "@zaly/shared",
   "version": "0.0.2",
+  "description": "Shared utilities used across zaly packages.",
+  "keywords": [
+    "ansi",
+    "process",
+    "templates",
+    "utilities",
+    "zaly"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/shared#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"

@@ -1,6 +1,14 @@
 {
   "name": "@zaly/ai",
   "version": "0.0.2",
+  "description": "Provider/model abstraction, auth, streaming, tools, content, and validation for zaly.",
+  "keywords": [
+    "ai",
+    "llm",
+    "models",
+    "providers",
+    "tools"
+  ],
   "homepage": "https://github.com/folke/zaly/tree/main/packages/ai#readme",
   "bugs": {
     "url": "https://github.com/folke/zaly/issues"
