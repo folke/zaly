@@ -25,6 +25,7 @@
   ],
   "type": "module",
   "imports": {
+    "#assets/*": "./assets/*",
     "#ansi": {
       "bun": "./src/runtime/ansi.bun.ts",
       "default": "./dist/ansi.node.mjs"

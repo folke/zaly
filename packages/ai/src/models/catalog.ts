@@ -177,10 +177,8 @@ export class ModelCatalog {
 
   static async load(cat?: string | Catalog): Promise<ModelCatalog> {
     if (cat && typeof cat !== "string") return new ModelCatalog(cat).#load()
-    const url = cat
-      ? pathToFileURL(normPath(cat))
-      : new URL("../../assets/models.json", import.meta.url)
-    const m = await import(url.href, { with: { type: "json" } })
+    const url = cat ? pathToFileURL(normPath(cat)).href : "#assets/models.json"
+    const m = await import(url, { with: { type: "json" } })
     return new ModelCatalog(m.default as unknown as Catalog).#load()
   }
 

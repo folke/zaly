@@ -4,10 +4,10 @@
 import type { ThemeLoader } from "./registry.ts"
 import type { Theme } from "./types.ts"
 
-function importTheme(path: string): Promise<Partial<Theme>> {
-  const url = new URL(`../../assets/themes/${path}.json`, import.meta.url).href
-  return import(url, { with: { type: "json" } }).then((m) => m.default as Partial<Theme>)
-}
+const importTheme = (path: string): Promise<Partial<Theme>> =>
+  import(`#assets/themes/${path}.json`, { with: { type: "json" } }).then(
+    (m) => m.default as Partial<Theme>
+  )
 
 /**
  * Async loader map for every built-in theme. Each entry returns the
