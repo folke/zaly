@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.5](https://github.com/folke/zaly/compare/cli-v0.0.4...cli-v0.0.5) (2026-07-10)
+
+
+### 🩹 Fixes
+
+* **cli:** make code compat with node 22 ([a054381](https://github.com/folke/zaly/commit/a0543819d4ab593410effab4010ee01cd227f634))
+
+
+### 📦 Build
+
+* **cli:** fix `--version` ([73388ab](https://github.com/folke/zaly/commit/73388ab78fafe71b0bd026e37b7b8d694aed3638))
+* Node 22.11 compat ([e69afd8](https://github.com/folke/zaly/commit/e69afd83a4719117ebd5e7a2a104d7503f53a18b))
+
 ## [0.0.4](https://github.com/folke/zaly/compare/cli-v0.0.3...cli-v0.0.4) (2026-07-10)
 
 
