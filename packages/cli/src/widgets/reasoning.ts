@@ -1,5 +1,6 @@
 import type { Accessor, Reactive } from "@zaly/tui"
 
+import { memo, unwrap } from "@zaly/tui"
 import { markdown } from "@zaly/tui/widgets/markdown"
 import { widget } from "@zaly/tui/widgets/widget"
 import { bubble } from "./bubble.ts"
@@ -17,14 +18,18 @@ import { bubble } from "./bubble.ts"
  * delta-driven write re-renders only this bubble (not the whole stream).
  */
 
+export function stripReasoningMarkers(text: string): string {
+  return text.replaceAll("<!-- -->", "").trim()
+}
+
 export const reasoningMessage = widget(
   (props: { content: Reactive<string>; pending?: Accessor<boolean> }) =>
     bubble(
       {
         pending: props.pending,
-        style: { dim: true, italic: true, style: "quiet" },
+        style: "quiet",
         type: "reasoning",
       },
-      markdown(props.content)
+      markdown(memo(() => stripReasoningMarkers(unwrap(props.content))))
     )
 )
