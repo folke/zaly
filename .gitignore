@@ -10,6 +10,8 @@ dist
 *.tgz
 build
 
+oxlint.config.d.*
+
 # api-extractor staging (the .api.md report under etc/ is committed)
 temp
 tsdoc-metadata.json
