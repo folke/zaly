@@ -55,23 +55,24 @@ export async function updatePlugins(app: App, opts: { plugins?: Plugin[] } = {})
     app.notify("All plugins are up to date.", { level: "success" })
     return false
   }
-  using _ = app.withLoading()
-  let updating = true
-  app.notify(`Updating plugins:\n${pluginList(updates)}`, {
-    keep: () => updating,
-  })
-  const ok = await app.ctx.logger.try(async () => {
-    await packs.update(updates)
-    app.notify(`Updated:\n${pluginList(updates)}`, { level: "success" })
+  return app.withLoading(async () => {
+    let updating = true
+    app.notify(`Updating plugins:\n${pluginList(updates)}`, {
+      keep: () => updating,
+    })
+    const ok = await app.ctx.logger.try(async () => {
+      await packs.update(updates)
+      app.notify(`Updated:\n${pluginList(updates)}`, { level: "success" })
+      return true
+    }, "packs")
+    if (!ok) app.notify("Failed to update plugins.", { level: "error", timeout: 10_000 })
+    updating = false
+
+    // Reload, so that updates are loaded and any new resources are available
+    await app.reload()
+
     return true
-  }, "packs")
-  if (!ok) app.notify("Failed to update plugins.", { level: "error", timeout: 10_000 })
-  updating = false
-
-  // Reload, so that updates are loaded and any new resources are available
-  await app.reload()
-
-  return true
+  })
 }
 
 export async function installMissing(app: App): Promise<boolean> {
@@ -101,20 +102,20 @@ export async function installPlugins(
     uris.push(uri)
   }
 
-  using _ = app.withLoading()
+  return app.withLoading(async () => {
+    const scope = opts.scope ?? "user"
 
-  const scope = opts.scope ?? "user"
+    const ret = await app.ctx.config[scope]?.update((config) => {
+      const plugins = new Set(config?.plugins)
+      for (const uri of uris) plugins.add(uri)
+      return { ...config, plugins: [...plugins] }
+    })
+    if (!ret) return false
 
-  const ret = await app.ctx.config[scope]?.update((config) => {
-    const plugins = new Set(config?.plugins)
-    for (const uri of uris) plugins.add(uri)
-    return { ...config, plugins: [...plugins] }
+    // Reload will install missing plugins and load them
+    await app.reload()
+    return true
   })
-  if (!ret) return false
-
-  // Reload will install missing plugins and load them
-  await app.reload()
-  return true
 }
 
 export async function removePlugin(app: App, plugin: Plugin): Promise<boolean> {
