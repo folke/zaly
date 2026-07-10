@@ -76,11 +76,11 @@ describe("actionsSource", () => {
     expect(fn).toHaveBeenCalled()
   })
 
-  test("default trigger matches a leading colon", () => {
+  test("default trigger matches a leading /", () => {
     const actions = new Actions()
     const src = actionsSource({ actions })
-    expect(src.triggers[0].test(":x")).toBe(true)
-    expect(src.triggers[0].test(":  x")).toBe(true)
-    expect(src.triggers[0].test("hello :x")).toBe(false)
+    expect(src.triggers[0].test("/x")).toBe(true)
+    expect(src.triggers[0].test("/  x")).toBe(true)
+    expect(src.triggers[0].test("hello /x")).toBe(false)
   })
 })
