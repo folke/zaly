@@ -21,9 +21,8 @@ export async function browserLogin(opts: OAuthBrowserLogin): Promise<OAuthToken 
   await opts.notify?.({
     details: `Open [this URL](${u}) in your browser and complete login,
 or paste the authorization code / redirect URL here.
-\`\`\`
-${u}
-\`\`\``,
+
+[${u}](${u})`,
     title: `**${opts.name}** Login (browser)`,
   })
 
