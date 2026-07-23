@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/folke/zaly/compare/cli-v0.0.5...cli-v0.0.6) (2026-07-10)
+
+
+### 📖 Documentation
+
+* better main docs ([c71f7fd](https://github.com/folke/zaly/commit/c71f7fd25e25e6daa4c10b325f5b58ba8510c2af))
+
 ## [0.0.5](https://github.com/folke/zaly/compare/cli-v0.0.4...cli-v0.0.5) (2026-07-10)
 
 
