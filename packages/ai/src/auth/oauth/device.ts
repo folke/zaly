@@ -14,9 +14,8 @@ export async function deviceCodeLogin(opts: OAuthDeviceLogin): Promise<OAuthToke
     void opts.browse?.(device.verificationUrl)
     await opts.notify?.({
       details: `Open [this URL](${device.verificationUrl}) in your browser, and enter code \`${device.userCode}\` to authorize ${opts.name}.
-\`\`\`
-${device.verificationUrl}
-\`\`\``,
+
+[${device.verificationUrl}](${device.verificationUrl})`,
       title: `**${opts.name}** Login (headless)`,
     })
   }
