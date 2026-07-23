@@ -1,7 +1,7 @@
 import type { Node } from "../core/node.ts"
 import type { Actions } from "./actions.ts"
 import type { InputEvent, MouseEvent, TerminalResponseEvent } from "./decoder.ts"
-import type { KeyEvent, KeyPattern } from "./keys.ts"
+import type { KeyEvent, KeyEventType, KeyPattern } from "./keys.ts"
 
 import { Emitter } from "@zaly/shared"
 import { Logger } from "@zaly/shared/logger"
@@ -24,6 +24,8 @@ export type KeymapEntry = string | KeyHandler
  */
 export interface RoutedKey {
   name: string
+  base?: string
+  eventType?: KeyEventType
   text?: string
   ctrl: boolean
   alt: boolean
@@ -226,6 +228,8 @@ function makeRoutedKey(ev: KeyEvent): RoutedKey {
     },
     stopped: false,
   }
+  if (ev.base !== undefined) r.base = ev.base
+  if (ev.eventType !== undefined) r.eventType = ev.eventType
   if (ev.text !== undefined) r.text = ev.text
   return r
 }

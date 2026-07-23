@@ -3,6 +3,7 @@ import type { SurfaceType } from "../../src/renderer/index.ts"
 import type { TerminalReader, TerminalWriter } from "../../src/renderer/terminal.ts"
 
 import { Logger } from "@zaly/shared/logger"
+import { afterEach } from "vitest"
 import { Actions } from "../../src/input/actions.ts"
 import { TerminalQueries } from "../../src/input/queries.ts"
 import { InputRouter } from "../../src/input/router.ts"
@@ -83,4 +84,23 @@ export class MockReader implements TerminalReader {
   readonly isTTY = false
   on(): void {}
   off(): void {}
+}
+
+/**
+ * Register an `afterEach` that stops every tracked stoppable and clears the
+ * set. Call once at a test file's top level, then pass anything with a
+ * `stop()` (a `Terminal`, a `Renderer`, …) through the returned `track` fn so
+ * started terminals don't leak their progress interval / resize listeners
+ * across tests. Returns the value for inline use.
+ */
+export function autoStop(): <T extends { stop: () => void }>(v: T) => T {
+  const items = new Set<{ stop: () => void }>()
+  afterEach(() => {
+    for (const item of items) item.stop()
+    items.clear()
+  })
+  return (v) => {
+    items.add(v)
+    return v
+  }
 }

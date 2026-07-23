@@ -1,13 +1,16 @@
 import { describe, expect, test } from "vitest"
 import { Renderer } from "../../src/renderer/renderer.ts"
 import { text } from "../../src/widgets/text.ts"
-import { MockReader, MockWriter } from "./mock.ts"
+import { autoStop, MockReader, MockWriter } from "./mock.ts"
+
+const track = autoStop()
 
 function mount(cols = 20, rows = 10) {
   const stdout = new MockWriter(cols, rows)
   const renderer = new Renderer({ hookSignals: false, stdin: new MockReader(), stdout })
   const { terminal, ui } = renderer
   terminal.start()
+  track(terminal)
   stdout.clear()
   return { stdout, terminal, ui }
 }
