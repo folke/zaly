@@ -562,15 +562,12 @@ function isWhitespace(ch: string | undefined): boolean {
 }
 
 function posToLineCol(value: string, cursor: number): { line: number; col: number } {
-  let line = 0
-  let col = 0
-  for (let i = 0; i < cursor; i++) {
-    if (value[i] === "\n") {
-      line++
-      col = 0
-    } else col++
+  const prefix = value.slice(0, cursor)
+  const lineStart = prefix.lastIndexOf("\n") + 1
+  return {
+    line: prefix.split("\n").length - 1,
+    col: stringWidth(prefix.slice(lineStart)),
   }
-  return { col, line }
 }
 
 function lineColToPos(value: string, line: number, col: number): number {
@@ -578,7 +575,16 @@ function lineColToPos(value: string, line: number, col: number): number {
   const clampLine = Math.max(0, Math.min(line, lines.length - 1))
   let abs = 0
   for (let i = 0; i < clampLine; i++) abs += lines[i].length + 1
-  return abs + Math.min(col, lines[clampLine].length)
+
+  let cells = 0
+  let offset = 0
+  for (const ch of lines[clampLine]) {
+    const width = stringWidth(ch)
+    if (cells + width > col) break
+    cells += width
+    offset += ch.length
+  }
+  return abs + offset
 }
 
 function lineEndPos(value: string, cursor: number): number {
