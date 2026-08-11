@@ -1,7 +1,7 @@
 {
   "packages/agent": "0.0.4",
   "packages/ai": "0.0.5",
-  "packages/cli": "0.0.5",
+  "packages/cli": "0.0.6",
   "packages/config": "0.0.4",
   "packages/plugin": "0.0.4",
   "packages/shared": "0.0.4",
