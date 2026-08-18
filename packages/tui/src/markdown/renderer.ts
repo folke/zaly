@@ -15,6 +15,7 @@ export type MarkdownCtx = RenderCtx & {
 export class MarkdownRenderer {
   #render?: RenderMarkdown
   #images = new Map<string, Image>()
+  #linkPrefix = crypto.randomUUID()
   #parent?: Node
   #opts: MarkdownOptions
 
@@ -32,7 +33,7 @@ export class MarkdownRenderer {
       import("./image.ts"),
     ])
 
-    const callbacks = createCallbacks(ctx)
+    const callbacks = createCallbacks(ctx, this.#linkPrefix)
 
     // Image handling: the callback emits `<img id=N>` markers during
     // rendering; a post-processing resolver then renders the referenced
