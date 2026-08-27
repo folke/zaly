@@ -1,4 +1,4 @@
-import { RESET } from "@zaly/shared/ansi"
+import { RESET, stripAnsi as stripControl } from "@zaly/shared/ansi"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { renderMarkdown } from "#md"
@@ -99,9 +99,26 @@ describe("markdown — inline callbacks", () => {
   test("link wraps in mdLink + OSC 8 hyperlink", async () => {
     const open = expectedOpen("mdLink")
     const out = render("[click](https://example.com)")
-    expect(out).toContain("\x1b]8;;https://example.com\x1b\\")
+    expect(out).toMatch(/\x1b\]8;id=[^;]+-1;https:\/\/example\.com\x1b\\/)
     expect(out).toContain(`${open}click${RESET}`)
     expect(out).toContain("\x1b]8;;\x1b\\")
+  })
+
+  test("long bare URL stays clickable across soft wraps", async () => {
+    // Callbacks alone don't wrap; the markdown widget's layout does.
+    const { createRender } = await import("../../src/core/render.ts")
+    const url =
+      "https://example.com/docs?first=abcdefghijklmnopqrstuvwxyz&second=0123456789abcdefghijklmnopqrstuvwxyz&third=abcdefghijklmnop"
+    const rows = await createRender(() => markdown(`See ${url} for details.`), ctx(40))
+    const linkRows = rows.filter((r) => r.includes("\x1b]8;"))
+    expect(linkRows.length).toBeGreaterThan(1)
+    const ids = linkRows.map(
+      (row) => /\x1b\]8;id=([^;]+);/.exec(row)?.[1]
+    )
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(1)
+    expect(linkRows.every((r) => r.includes(`;${url}\x1b\\`))).toBe(true)
+    expect(rows.map((r) => stripControl(r)).join("")).toBe(`See ${url} for details.`)
   })
 
   test("nested strong inside heading keeps heading style after inner reset", async () => {

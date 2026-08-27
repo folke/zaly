@@ -74,9 +74,10 @@ const colorCache = new Map<string, string | typeof notFound>()
  *
  * @internal
  */
-export function hyperlink(url: string, text: string): string {
+export function hyperlink(url: string, text: string, id?: string): string {
   if (url === "") return text
-  return `${OSC8}${url}${ST}${text}${OSC8}${ST}`
+  const open = id ? `\x1b]8;id=${id};` : OSC8
+  return `${open}${url}${ST}${text}${OSC8}${ST}`
 }
 
 export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {

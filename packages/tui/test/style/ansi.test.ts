@@ -170,6 +170,12 @@ describe("hyperlink (OSC 8)", () => {
   test("empty URL: returns text unchanged (no-op)", () => {
     expect(hyperlink("", "text")).toBe("text")
   })
+
+  test("includes an optional hyperlink id", () => {
+    expect(hyperlink("https://example.com", "click", "link-1")).toBe(
+      "\x1b]8;id=link-1;https://example.com\x1b\\click\x1b]8;;\x1b\\"
+    )
+  })
 })
 
 describe("hasAnsi", () => {
