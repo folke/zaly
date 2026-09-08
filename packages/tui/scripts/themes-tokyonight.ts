@@ -1,6 +1,6 @@
 import { isCI } from "@zaly/shared/env"
 import { spawnSync } from "node:child_process"
-import { cpSync, readdirSync } from "node:fs"
+import { cpSync, existsSync, readdirSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
@@ -12,6 +12,11 @@ if (isCI) {
 // Path to the tokyonight.nvim checkout that hosts the zaly extra template.
 // Override with $TOKYONIGHT_DIR to point elsewhere (CI, a sibling checkout, …).
 const tokyonightDir = process.env.TOKYONIGHT_DIR ?? join(homedir(), "projects/tokyonight.nvim")
+
+if (!existsSync(tokyonightDir)) {
+  console.warn(`Skipping tokyonight build: ${tokyonightDir} does not exist`)
+  process.exit(1)
+}
 
 console.log(`Building tokyonight extras in ${tokyonightDir} …`)
 const build = spawnSync("./scripts/build", ["zaly"], {
