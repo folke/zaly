@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/folke/zaly/compare/agent-v0.0.4...agent-v0.0.5) (2026-09-08)
+
+
+### 📦 Build
+
+* **typia:** fix typia codegen for Typescript 7 ([cc5b150](https://github.com/folke/zaly/commit/cc5b150b90aee0009cd3d7c545362f5744255fb1))
+
 ## [0.0.4](https://github.com/folke/zaly/compare/agent-v0.0.3...agent-v0.0.4) (2026-07-10)
 
 
