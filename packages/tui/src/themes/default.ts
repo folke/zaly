@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-deprecated
 import type { Theme } from "./types.ts"
 
 /**

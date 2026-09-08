@@ -119,7 +119,7 @@ export class PluginManager {
     }
     return Promise.all(
       [...ret.entries()].map(
-        async ([_, ps]) => [await this.#store(ps[0]), ps] as [PluginStore, Plugin[]]
+        async ([, ps]) => [await this.#store(ps[0]), ps] as [PluginStore, Plugin[]]
       )
     )
   }

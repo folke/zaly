@@ -212,6 +212,7 @@ export class AuthManager {
 
   /** Serialize a promise by ID, so that concurrent calls with the same ID will share the same promise. */
   async #serialize<T>(id: string, fn: () => Promise<T>): Promise<T> {
+    // oxlint-disable-next-line no-multi-assign
     const prom = (this.#serialized[id] ??= fn().finally(() => {
       delete this.#serialized[id]
     }))

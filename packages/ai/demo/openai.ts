@@ -18,7 +18,7 @@ import { loadCatalog, loadModel } from "@zaly/ai"
 const id = process.env.MODEL ?? "openrouter/minimax/minimax-m2.7"
 const catalog = await loadCatalog()
 
-console.log(await catalog.list({ auth: true }).then((m) => Object.keys(m).sort()))
+console.log(await catalog.list({ auth: true }).then((m) => Object.keys(m).toSorted()))
 
 const model = await loadModel(id)
 

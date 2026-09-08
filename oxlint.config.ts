@@ -113,6 +113,7 @@ export default defineConfig({
     "no-unnecessary-type-assertion": "off", // way too many false positives
     "no-unused-vars": "warn",
     "no-warning-comments": ["warn", { location: "start", terms: ["todo", "fixme", "bug"] }],
+    "one-var": "off",
     "oxc/no-barrel-file": "off",
     "prefer-destructuring": "off", // 3
     "prefer-named-capture-group": "off",

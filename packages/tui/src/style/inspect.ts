@@ -118,7 +118,7 @@ export function inspect(value: unknown, opts: InspectOpts = {}): string {
         if (!isPlainObject) break
         const entries = Object.entries(v)
           .filter(
-            ([_, val]) => !((val === undefined && !opts.undefined) || (val === null && !opts.null))
+            ([, val]) => !((val === undefined && !opts.undefined) || (val === null && !opts.null))
           )
           .map(([key, val]) => `${inspectField(key, s)}: ${$inspect(val, depth + 1)}`)
         if (indent) {

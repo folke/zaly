@@ -1,3 +1,4 @@
+// oxlint-disable no-multi-assign
 import type { RenderCtx } from "../core/ctx.ts"
 import type { MdCallbacks } from "./types.ts"
 

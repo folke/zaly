@@ -99,7 +99,7 @@ function toolStats<T extends ToolStat = ToolStat>(
 ): T[] {
   const limit = opts.limit ?? 50
   const sorter = sorters[opts.sort ?? "score"]
-  const sorted = [...map.entries()].toSorted(sorter).map(([_, stat]) => stat)
+  const sorted = [...map.entries()].toSorted(sorter).map(([, stat]) => stat)
   return sorted
     .filter((stat) => stat.count >= (opts.minCount ?? 1))
     .filter((stat) => stat.score >= (opts.minScore ?? 0))

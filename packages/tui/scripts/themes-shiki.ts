@@ -92,7 +92,7 @@ function parse(theme: ThemeRegistrationResolved) {
       bg: parseColor(bg, s.settings.background),
     }
     for (const scope of scopes) {
-      rules.set(scope, Object.fromEntries(Object.entries(style).filter(([_, v]) => v)) as Style)
+      rules.set(scope, Object.fromEntries(Object.entries(style).filter(([, v]) => v)) as Style)
     }
   }
   // Scope-rule lookup: walks `a.b.c` → `a.b` → `a` until a settings

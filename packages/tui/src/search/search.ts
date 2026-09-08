@@ -78,6 +78,7 @@ export class Searcher<T extends SearchItem = SearchItem> {
     opts: { progress?: (results: ScoredItem<T>[]) => MaybePromise } = {}
   ): Promise<ScoredItem<T>[]> {
     this.#ac?.abort(aborted)
+    // oxlint-disable-next-line no-multi-assign
     const ac = (this.#ac = new AbortController())
 
     const m = this.#matcher

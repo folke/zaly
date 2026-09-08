@@ -46,6 +46,7 @@ function renderItem(item: ConfigItem, ctx: OptionRenderCtx<ConfigItem>): [string
   const v = item.value
   const isDefault = is(v, item.default)
   const label = s.add({
+    // oxlint-disable-next-line typescript/no-deprecated
     bold: !isDefault,
     dim: isDefault && !ctx.active,
   })(item.name)

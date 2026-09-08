@@ -48,8 +48,8 @@ export default defineConfig({
   },
   entry: {},
   dts: {
+    generator: "tsgo",
     sourcemap: true,
-    tsgo: true,
   },
   exports: {
     devExports: "bun",
