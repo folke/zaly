@@ -83,19 +83,56 @@ export function sliceAnsi(s: string, start: number, end?: number): string {
   return apc + ret.replaceAll(KITTY_SENTINEL_RE, (sentinel) => clusters.get(sentinel) ?? sentinel)
 }
 
+const OSC8_RE = /\x1b\]8;[^;]*;([^\x07\x1b]*)(\x07|\x1b\\)/g
+const OSC8_MARKER = "\x1b]8;"
+const OSC8_SENTINEL_RE = /\x1b\[\?2026;(\d+)z/g
+
 /** Word- or char-wrap to `width` cells while preserving SGR state and
  *  APC escapes. Wraps line-by-line so APCs (zero-width, positional —
  *  e.g. kitty image placements) stay on their source line. A single
  *  global extract+prepend would collapse every APC onto row 0 of the
  *  output, and downstream `splitAnsi` would then re-prepend those to
- *  every row; the image placement would fire on every painted row. */
+ *  every row; the image placement would fire on every painted row.
+ *
+ *  OSC 8 escapes are replaced with zero-width CSI sentinels while wrapping,
+ *  then restored and reopened on every output row. Neither Bun.wrapAnsi nor
+ *  wrap-ansi handles OSC 8 correctly on its own. */
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string {
   const char = opts?.mode === "char"
+  const wrapOpts = { hard: true, trim: false, wordWrap: !char } as const
   return s
     .split("\n")
     .map((line) => {
       const { apc, rest } = extractApc(line)
-      return apc + _wrapAnsi(rest, width, { hard: true, trim: false, wordWrap: !char })
+      if (!rest.includes(OSC8_MARKER)) return apc + _wrapAnsi(rest, width, wrapOpts)
+
+      const links: { close: string; open: boolean; sequence: string }[] = []
+      const protectedLine = rest.replace(OSC8_RE, (sequence, href: string, terminator: string) => {
+        const index = links.push({
+          close: `\x1b]8;;${terminator}`,
+          open: href !== "",
+          sequence,
+        }) - 1
+        return `\x1b[?2026;${index}z`
+      })
+      const wrapped = _wrapAnsi(protectedLine, width, wrapOpts)
+      let active: (typeof links)[number] | undefined
+      return (
+        apc +
+        wrapped
+          .split("\n")
+          .map((row) => {
+            let out = active?.sequence ?? ""
+            out += row.replace(OSC8_SENTINEL_RE, (_sentinel, rawIndex: string) => {
+              const link = links[Number(rawIndex)]
+              active = link.open ? link : undefined
+              return link.sequence
+            })
+            if (active) out += active.close
+            return out
+          })
+          .join("\n")
+      )
     })
     .join("\n")
 }
