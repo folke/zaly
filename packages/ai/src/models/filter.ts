@@ -25,7 +25,7 @@ export type ModelFilter = {
 
 export async function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean> {
   const auth = opts?.auth === true ? AuthManager.basic() : opts?.auth
-  if (auth?.needAuth(m.provider) && !(await auth.getAuth(m))) return false
+  if (auth?.needAuth(m.provider) && !(await auth.getAuth(m, { verify: false }))) return false
   if (opts?.reasoning !== undefined && m.reasoning !== opts.reasoning) return false
   if (opts?.modality !== undefined && !matchesModality(m, opts.modality)) return false
   if (opts?.contextSize !== undefined && m.contextSize < opts.contextSize) return false

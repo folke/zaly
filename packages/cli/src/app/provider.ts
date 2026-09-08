@@ -30,7 +30,7 @@ export async function listProviders(app: App): Promise<void> {
 
   const authStatus = async (p: ModelProvider): Promise<AuthStatus | undefined> => {
     if (!p.oauth && !p.env?.length && !p.apiKey) return { source: "no-auth" }
-    const a = await auth.getAuth(p)
+    const a = await auth.getAuth(p, { verify: false })
     return a ? { details: a.details, source: a.source } : undefined
   }
 

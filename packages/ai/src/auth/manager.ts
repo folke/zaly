@@ -93,7 +93,10 @@ export class AuthManager {
     return !!(provider.oauth ?? provider.apiKey ?? provider.env?.length)
   }
 
-  async getAuth(it: ModelSpec | ModelProvider): Promise<ApiKey | undefined> {
+  async getAuth(
+    it: ModelSpec | ModelProvider,
+    opts: { verify?: boolean } = {}
+  ): Promise<ApiKey | undefined> {
     const provider = isProvider(it) ? it : it.provider
     const model = isProvider(it) ? undefined : it
 
@@ -113,7 +116,9 @@ export class AuthManager {
 
     // 3. oauth from the store
     if (secret?.type === "oauth") {
-      const ret = await this.#serialize(provider.id, () => this.#fromOauth(secret, provider))
+      const ret = await this.#serialize(provider.id, () =>
+        this.#fromOauth(secret, provider, { refresh: opts.verify })
+      )
       if (ret) return ret
     }
 
@@ -214,10 +219,14 @@ export class AuthManager {
   }
 
   /** Attempt to refresh an OAuth token if it is expired, and return the ApiKey. */
-  async #fromOauth(secret: OAuthSecret, provider: ModelProvider): Promise<ApiKey | undefined> {
+  async #fromOauth(
+    secret: OAuthSecret,
+    provider: ModelProvider,
+    opts: { refresh?: boolean } = {}
+  ): Promise<ApiKey | undefined> {
     const token = secret.token
     const expired = token.expires - Date.now() < REFRESH_LEEWAY_MS
-    if (!expired || !token.refresh)
+    if (!expired || !token.refresh || opts.refresh === false)
       return { headers: secret.headers, key: secret.key, source: "oauth" }
     const oauth = await this.#oauthOpts(provider)
     if (!oauth) return
