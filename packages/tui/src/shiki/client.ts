@@ -1,7 +1,14 @@
-import type { ShikiJob, ShikiOpts, ShikiRequest, ShikiResult, ShikiWorkerRequest } from "./types.ts"
+import type {
+  ShikiJob,
+  ShikiOpts,
+  ShikiRequest,
+  ShikiResult,
+  ShikiWorkerMessage,
+  ShikiWorkerRequest,
+} from "./types.ts"
 import type { WorkerInstance } from "./worker.ts"
 
-import { hash } from "@zaly/shared"
+import { hash, toError } from "@zaly/shared"
 import { hasColors } from "@zaly/shared/env"
 import { isShikiLang } from "../schemas/gen/shiki.ts"
 
@@ -12,6 +19,7 @@ function isJob(s: ShikiJob | ShikiResult): s is ShikiJob {
 const MAX_CACHE_SIZE = 100
 // Max jobs posted to the worker. Worker still processes serially.
 const MAX_RUNNING = 2
+const REQUEST_TIMEOUT = 30_000
 
 export class ShikiWorkerClient {
   #id = 0
@@ -19,10 +27,16 @@ export class ShikiWorkerClient {
   #queue = new Map<number, ShikiJob>()
   #running = new Map<number, ShikiJob>()
   #results: ShikiResult[] = []
-  #worker?: WorkerInstance<ShikiWorkerRequest, ShikiResult>
-  #workerPromise?: Promise<WorkerInstance<ShikiWorkerRequest, ShikiResult>>
-  // oxlint-disable-next-line no-unused-private-class-members
+  #timeouts = new Map<number, ReturnType<typeof setTimeout>>()
+  #worker?: WorkerInstance<ShikiWorkerRequest, ShikiWorkerMessage>
+  #workerPromise?: Promise<WorkerInstance<ShikiWorkerRequest, ShikiWorkerMessage>>
+  #timeout: number
   #updateScheduled: Promise<void> | undefined = undefined
+  #updatePending = false
+
+  constructor(opts: { timeout?: number } = {}) {
+    this.#timeout = opts.timeout ?? REQUEST_TIMEOUT
+  }
 
   key(req: ShikiRequest): string {
     return req.key ?? hash(`${req.lang}:${req.code}:${req.theme ?? "default"}`)
@@ -68,32 +82,74 @@ export class ShikiWorkerClient {
     this.#running.set(job.id, job)
     const worker = await this.#createWorker()
     const { signal: _s, promise: _prom, resolve: _res, reject: _rej, ...msg } = job
+    const timeout = setTimeout(
+      () =>
+        this.#fail(
+          new Error(`Shiki worker timed out after ${this.#timeout}ms (${job.lang}, ${job.key})`)
+        ),
+      this.#timeout
+    )
+    timeout.unref()
+    this.#timeouts.set(job.id, timeout)
     // oxlint-disable-next-line unicorn/require-post-message-target-origin
     worker.postMessage(msg)
   }
 
-  async #createWorker(): Promise<WorkerInstance<ShikiWorkerRequest, ShikiResult>> {
+  async #createWorker(): Promise<WorkerInstance<ShikiWorkerRequest, ShikiWorkerMessage>> {
     if (this.#worker) return this.#worker
     this.#workerPromise ??= (async () => {
       const { createWorker } = await import("./worker.ts")
-      const worker = await createWorker<ShikiWorkerRequest, ShikiResult>()
+      const worker = await createWorker<ShikiWorkerRequest, ShikiWorkerMessage>()
+      const ready = Promise.withResolvers<void>()
+      let started = false
+      const timeout = setTimeout(
+        () => ready.reject(new Error(`Shiki worker did not start within ${this.#timeout}ms`)),
+        this.#timeout
+      )
+      timeout.unref()
       worker.on("message", (event) => {
+        if (event.type === "ready") {
+          started = true
+          ready.resolve()
+          return
+        }
+        this.#clearTimeout(event.id)
         this.#running.delete(event.id)
         this.#results.push(event)
         this.update()
       })
       worker.on("error", (error) => {
-        this.#rejectAll(error)
+        if (started) this.#fail(error)
+        else ready.reject(error)
       })
-      return worker
+      try {
+        await ready.promise
+        return worker
+      } catch (error) {
+        worker.terminate()
+        throw error
+      } finally {
+        clearTimeout(timeout)
+      }
     })()
     return (this.#worker = await this.#workerPromise)
   }
 
   update() {
-    this.#updateScheduled ??= this.#update().finally(() => {
-      this.#updateScheduled = undefined
-    })
+    this.#updatePending = true
+    if (this.#updateScheduled) return
+    this.#updateScheduled = (async () => {
+      while (this.#updatePending) {
+        this.#updatePending = false
+        // oxlint-disable-next-line no-await-in-loop
+        await this.#update()
+      }
+    })()
+      .catch((error) => this.#fail(error))
+      .finally(() => {
+        this.#updateScheduled = undefined
+        if (this.#updatePending) this.update()
+      })
   }
 
   async #update() {
@@ -102,8 +158,12 @@ export class ShikiWorkerClient {
       const result = this.#results.shift()!
       const job = this.#queue.get(result.id)
       if (job) {
-        if (result.error) job.reject(new Error(result.error))
-        else job.resolve(result)
+        if (result.error) {
+          const error = new Error(result.error)
+          // oxlint-disable-next-line no-console
+          console.error("Shiki highlighting failed:", error)
+          job.reject(error)
+        } else job.resolve(result)
 
         // oxlint-disable-next-line no-await-in-loop
         await new Promise((resolve) => setImmediate(resolve)) // yield to event loop between batches
@@ -129,14 +189,31 @@ export class ShikiWorkerClient {
     await Promise.all(todo.map((j) => this.#request(j)))
   }
 
+  #clearTimeout(id: number): void {
+    const timeout = this.#timeouts.get(id)
+    if (timeout) clearTimeout(timeout)
+    this.#timeouts.delete(id)
+  }
+
+  #fail(error: unknown): void {
+    error = toError(error)
+    // oxlint-disable-next-line no-console
+    console.error("Shiki worker failed:", error)
+    this.#rejectAll(error)
+  }
+
   #rejectAll(error: unknown): void {
     for (const { reject } of this.#queue.values()) reject(error)
     this.#cache.clear()
     this.#queue.clear()
     this.#running.clear()
     this.#results = []
+    for (const timeout of this.#timeouts.values()) clearTimeout(timeout)
+    this.#timeouts.clear()
+    this.#updatePending = false
     this.#worker?.terminate()
     this.#worker = undefined
+    this.#workerPromise = undefined
   }
 }
 

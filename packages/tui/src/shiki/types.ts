@@ -29,6 +29,8 @@ export type ShikiResult = {
   aborted?: boolean
 }
 
+export type ShikiWorkerMessage = { type: "ready" } | (ShikiResult & { type: "result" })
+
 export type ShikiOpts = {
   theme?: ShikiTheme
   signal?: AbortSignal

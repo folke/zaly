@@ -27,7 +27,7 @@ async function run(): Promise<void> {
     // We do LIFO on purpose so that the visible code blocks are rendered first (last stream nodes)
     const req = queue.pop()!
     // oxlint-disable-next-line unicorn/require-post-message-target-origin
-    workerHost.postMessage(await highlight(req))
+    workerHost.postMessage({ ...(await highlight(req)), type: "result" })
     await Promise.resolve() // yield to event loop between requests
   }
 }
@@ -40,3 +40,5 @@ async function handle(job: ShikiWorkerRequest): Promise<void> {
 }
 
 workerHost.onMessage((message: ShikiWorkerRequest) => handle(message))
+// oxlint-disable-next-line unicorn/require-post-message-target-origin
+workerHost.postMessage({ type: "ready" })
