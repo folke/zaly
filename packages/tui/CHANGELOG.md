@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.7](https://github.com/folke/zaly/compare/tui-v0.0.6...tui-v0.0.7) (2026-09-08)
+
+
+### 🩹 Fixes
+
+* **tui:** make shiki worker requests reliable ([6927696](https://github.com/folke/zaly/commit/692769654d56c6cecf920ed041058ce185b8d4df))
+
+
+### 📦 Build
+
+* fix linting ([c19579a](https://github.com/folke/zaly/commit/c19579a02a436ca90673b9b66c01c9c5e9892888))
+* **typia:** fix typia codegen for Typescript 7 ([cc5b150](https://github.com/folke/zaly/commit/cc5b150b90aee0009cd3d7c545362f5744255fb1))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/tui-v0.0.5...tui-v0.0.6) (2026-07-10)
 
 

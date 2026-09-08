@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.6](https://github.com/folke/zaly/compare/ai-v0.0.5...ai-v0.0.6) (2026-09-08)
+
+
+### 🩹 Fixes
+
+* **ai/auth:** don't verify oauth tokens when listing providers/models ([8d11124](https://github.com/folke/zaly/commit/8d11124fde73bec2b34d8804947bed78fe7e9cbd))
+* **ai/catalog:** check overrides for npmToApi on initial load ([98f88b7](https://github.com/folke/zaly/commit/98f88b7f66650c3bbe97094affa697fe5bec098f))
+* **ai/overrides:** added GPT-6-astra to openai-codex ([9f48e17](https://github.com/folke/zaly/commit/9f48e1795203a88479e95d69e67f51185002b9f9))
+
 ## [0.0.5](https://github.com/folke/zaly/compare/ai-v0.0.4...ai-v0.0.5) (2026-07-10)
 
 
