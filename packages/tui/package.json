@@ -249,9 +249,9 @@
   "dependencies": {
     "@zaly/shared": "workspace:*",
     "diff": "^9.0.0",
-    "marked": "^18.0.6",
+    "marked": "^18.0.12",
     "pathe": "^2.0.3",
-    "shiki": "^4.3.1"
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
     "@typia/transform": "^12.1.1",
@@ -259,11 +259,11 @@
     "mitata": "^1.0.34",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.2",
-    "typia": "^13.0.2",
-    "wrap-ansi": "^10.0.0"
+    "typia": "^14.0.5",
+    "wrap-ansi": "^10.0.1"
   },
   "optionalDependencies": {
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.4"
   },
   "engines": {
     "bun": ">=1.2",

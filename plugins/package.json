@@ -10,6 +10,6 @@
     "@zaly/tui": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "^1.4.2"
   }
 }
