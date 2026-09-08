@@ -26,16 +26,22 @@ async function run(cmd: string[], cwd: string): Promise<{ code: number; stdout: 
 async function exec(cmd: string[], cwd: string): Promise<void> {
   const proc = Bun.spawn(cmd, { cwd, stdio: ["inherit", "inherit", "inherit"] })
   const code = await proc.exited
-  if (code !== 0) process.exit(code)
+  if (code !== 0) throw new Error(`${cmd[0]} failed with exit code ${code} in ${cwd}`)
 }
 
 async function pack(pkg: Pkg): Promise<{ dir: string; tarball: string }> {
   const dir = mkdtempSync(join(tmpdir(), "zaly-publish-"))
-  await exec(["bunx", "--yes", "pnpm@latest", "pack", "--pack-destination", dir], pkg.dir)
-  const tarballs = readdirSync(dir).filter((file) => file.endsWith(".tgz"))
-  if (tarballs.length !== 1)
-    throw new Error(`Expected one tarball for ${pkg.json.name}, got ${tarballs.length}`)
-  return { dir, tarball: join(dir, tarballs.join("")) }
+  try {
+    // pnpm's native launcher installation requires lifecycle scripts that bunx skips.
+    await exec(["npx", "--yes", "pnpm@latest", "pack", "--pack-destination", dir], pkg.dir)
+    const tarballs = readdirSync(dir).filter((file) => file.endsWith(".tgz"))
+    if (tarballs.length !== 1)
+      throw new Error(`Expected one tarball for ${pkg.json.name}, got ${tarballs.length}`)
+    return { dir, tarball: join(dir, tarballs.join("")) }
+  } catch (error) {
+    rmSync(dir, { force: true, recursive: true })
+    throw error
+  }
 }
 
 async function isPublished(pkg: Pkg): Promise<boolean> {
