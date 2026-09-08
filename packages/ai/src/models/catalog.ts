@@ -283,7 +283,7 @@ export function resolveModels(
 
 function toProviderInfo(p?: CatalogProvider): ModelProvider<true> | undefined {
   if (!p) return
-  const api = npmToApi[p.npm]
+  const api = builtinOverrides[p.id]?.api ?? npmToApi[p.npm]
   if (!api) return
   const models: ModelInfo[] = []
   for (const m of Object.values(p.models)) {
