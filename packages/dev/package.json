@@ -24,9 +24,9 @@
     "ts-morph": "^28.0.0"
   },
   "devDependencies": {
-    "@typia/transform": "^12.1.1",
     "pkg-types": "^2.3.3",
     "std-env": "^4.2.0",
+    "ttsc": "^0.29.0",
     "typia": "^14.0.5"
   }
 }

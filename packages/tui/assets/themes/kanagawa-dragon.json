@@ -57,6 +57,9 @@
   "syntaxField": {
     "fg": "#C5C9C5"
   },
+  "syntaxSpecial": {
+    "fg": "#8992A7"
+  },
   "syntaxDelimiter": {
     "fg": "#9E9B93"
   },

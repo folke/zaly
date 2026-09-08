@@ -71,8 +71,8 @@
     "node": ">=22.11"
   },
   "inlinedDependencies": {
-    "ignore": "7.0.5",
+    "ignore": "7.0.8",
     "jsonpath-plus": "10.4.0",
-    "shell-quote": "1.9.0"
+    "shell-quote": "1.10.0"
   }
 }

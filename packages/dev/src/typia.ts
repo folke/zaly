@@ -2,7 +2,7 @@
 import type { IJsonSchemaUnit } from "typia"
 
 import { globSync, mkdirSync, statSync, writeFileSync } from "node:fs"
-import { basename, join } from "pathe"
+import { basename, dirname, join, relative } from "pathe"
 
 export function hasSchemas(root: string) {
   const schemas = join(root, "src/schemas/tpl/")
@@ -16,12 +16,36 @@ export function hasSchemas(root: string) {
 export async function compile(root: string) {
   // Step 1: Generate typia validation code from templates
   console.log("Generating typia validators and schemas...")
-  const { TypiaGenerator } = await import("@typia/transform")
-  await TypiaGenerator.build({
-    input: join(root, "src/schemas/tpl"),
-    output: join(root, "src/schemas/gen"),
-    project: join(root, "tsconfig.json"),
+  const { TtscCompiler } = await import("ttsc")
+  const result = new TtscCompiler({ cwd: root, tsconfig: "tsconfig.json" }).transform()
+  if (result.type === "exception") throw result.error
+  if (result.type === "failure") {
+    throw new Error(
+      result.diagnostics
+        .map(
+          (d) =>
+            `${d.file ?? root}:${d.line ?? 1}:${d.character ?? 1} TS${d.code}: ${d.messageText}`
+        )
+        .join("\n")
+    )
+  }
+
+  const input = join(root, "src/schemas/tpl")
+  const output = join(root, "src/schemas/gen")
+  const files = globSync(join(input, "**/*.ts")).map((file) => {
+    const key = relative(root, file)
+    const code = result.typescript[key]
+    if (!code) throw new Error(`Missing transformed output for ${key}`)
+    return {
+      // Native source transforms retain the now-unused template import.
+      code: code.replace(/^import typia from ["']typia["'];?\r?\n/m, ""),
+      path: join(output, relative(input, file)),
+    }
   })
+  for (const file of files) {
+    mkdirSync(dirname(file.path), { recursive: true })
+    writeFileSync(file.path, file.code)
+  }
   console.log("✔  Typia validators generated")
 }
 

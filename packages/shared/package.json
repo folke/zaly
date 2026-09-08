@@ -183,21 +183,18 @@
     "node": ">=22.11"
   },
   "inlinedDependencies": {
-    "ansi-regex": "6.2.2",
+    "ansi-regex": "6.3.0",
     "ansi-styles": "6.2.3",
-    "get-east-asian-width": "1.5.0",
-    "ignore": "7.0.5",
+    "get-east-asian-width": "1.6.0",
+    "ignore": "7.0.8",
     "image-meta": "0.2.2",
     "is-fullwidth-code-point": "5.1.0",
-    "js-yaml": "5.2.1",
-    "picomatch": "4.0.5",
-    "shell-quote": "1.9.0",
+    "js-yaml": "5.4.1",
+    "picomatch": "4.0.7",
+    "shell-quote": "1.10.0",
     "slice-ansi": "9.0.0",
-    "string-width": [
-      "8.2.0",
-      "8.2.2"
-    ],
+    "string-width": "8.2.2",
     "strip-ansi": "7.2.0",
-    "wrap-ansi": "10.0.0"
+    "wrap-ansi": "10.0.1"
   }
 }

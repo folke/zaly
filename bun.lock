@@ -113,9 +113,9 @@
         "ts-morph": "^28.0.0",
       },
       "devDependencies": {
-        "@typia/transform": "^12.1.1",
         "pkg-types": "^2.3.3",
         "std-env": "^4.2.0",
+        "ttsc": "^0.29.0",
         "typia": "^14.0.5",
       },
     },
@@ -171,7 +171,6 @@
         "shiki": "^4.4.3",
       },
       "devDependencies": {
-        "@typia/transform": "^12.1.1",
         "ghostty-web": "^0.4.0",
         "mitata": "^1.0.34",
         "slice-ansi": "^9.0.0",
@@ -685,6 +684,20 @@
 
     "@ts-morph/common": ["@ts-morph/common@0.29.0", "", { "dependencies": { "minimatch": "^10.0.1", "path-browserify": "^1.0.1", "tinyglobby": "^0.2.14" } }, "sha512-35oUmphHbJvQ/+UTwFNme/t2p3FoKiGJ5auTjjpNTop2dyREspirjMy82PLSC1pnDJ8ah1GU98hwpVt64YXQsg=="],
 
+    "@ttsc/darwin-arm64": ["@ttsc/darwin-arm64@0.29.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-tYGdoLXklqQIaNRFOnS8PWnaVXk18AOqJwHGAj2ZxyOkBb3rF8Hixg8M6FZZ8SPFNcYohKhfYcSOjMHdMw+siA=="],
+
+    "@ttsc/darwin-x64": ["@ttsc/darwin-x64@0.29.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-yYDGFiylDP5WAzCwISikXHZhHV6D8Y9n8bYhrie0U5ED8/M6feUuAwFyp01EQzraOzPQpcE1BWi8RpnlEuPSwg=="],
+
+    "@ttsc/linux-arm": ["@ttsc/linux-arm@0.29.0", "", { "os": "linux", "cpu": "arm" }, "sha512-5of87QxJVrLgVidk21j688bATThre6VlcviE7MgLfTnn6hlU8aInFkKZo6NqDwrGfJqve13zqFlwixTXRSMmaw=="],
+
+    "@ttsc/linux-arm64": ["@ttsc/linux-arm64@0.29.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-voz+FbicOUiQYIronXkrQTA4ffcTN/s+RisGqBOmrtPM8LMoShvxdBCrh4SHu++xrjjp66uy3Uq/sE9O0U9ajw=="],
+
+    "@ttsc/linux-x64": ["@ttsc/linux-x64@0.29.0", "", { "os": "linux", "cpu": "x64" }, "sha512-OJy/rW6VRZNODq+9u3ywdy1qLEhPJws01MCgjyPyyPchY1ryO6m1yTxKF589Wr5Y1qXtrwLZFYzhysCQNMxUmQ=="],
+
+    "@ttsc/win32-arm64": ["@ttsc/win32-arm64@0.29.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-9CAENX11ckdukFCmQpJsxxh8TDeDO355DS9kKTRW8LcVPrs3Zy6JMAdyIY4Dpw8hdpp7Ql3amp007jymS8ZPtA=="],
+
+    "@ttsc/win32-x64": ["@ttsc/win32-x64@0.29.0", "", { "os": "win32", "cpu": "x64" }, "sha512-8fJY1D2kJF5kIMaR4rqlOcX+LRD/LikxZjRr8n98Aw+WbtilNY/SAamcoaqdcImIZ7qab9pHOt8gBW+Sl2s6Zg=="],
+
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg=="],
 
     "@types/argparse": ["@types/argparse@1.0.38", "", {}, "sha512-ebDJ9b0e702Yr7pWgB0jzm+CX4Srzz8RcXtLJDJB+BSccqMa36uyH/zUsSYao5+BD1ytv3k3rPYCq4mAE1hsXA=="],
@@ -781,11 +794,7 @@
 
     "@typescript/typescript-win32-x64": ["@typescript/typescript-win32-x64@7.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g=="],
 
-    "@typia/core": ["@typia/core@12.1.1", "", { "dependencies": { "@typia/interface": "^12.1.1", "@typia/utils": "^12.1.1" } }, "sha512-SfyugTNTCJa75pVwSXwfx6SwvS5YcNOCBg8VjxqykhSgCyoAXkZtc2PsWEkeeaB8EPut1JRBCrzlWtsXo1EZ8Q=="],
-
     "@typia/interface": ["@typia/interface@14.0.5", "", {}, "sha512-4tmWtCTgi869d2w+QxM5jisLef6nZ61DJcthdr7RUNhz+nM7oedq+7/j1vFyYVw0Amg3nZ0yNQMCTyXLyHKYUA=="],
-
-    "@typia/transform": ["@typia/transform@12.1.1", "", { "dependencies": { "@typia/core": "^12.1.1", "@typia/interface": "^12.1.1", "@typia/utils": "^12.1.1" } }, "sha512-RbWB9L/aqcBTbPrJBOYpIg8IyQh6eGliElAFww40F7QlgsXIlk13twjTV3EEWXvgvOTl5eOSDWUKYgL7iAgoOw=="],
 
     "@typia/utils": ["@typia/utils@14.0.5", "", { "dependencies": { "@typia/interface": "^14.0.5" } }, "sha512-6vLiVx4J7G4IzGxE2ysDJ5XIIKQsh1/w4c6uCVC+btme+uFAA4u/AsD31Gh4JSq4Fsg+AaFX5Z8Fbv12U54kFQ=="],
 
@@ -1271,6 +1280,8 @@
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
+    "ttsc": ["ttsc@0.29.0", "", { "optionalDependencies": { "@ttsc/darwin-arm64": "0.29.0", "@ttsc/darwin-x64": "0.29.0", "@ttsc/linux-arm": "0.29.0", "@ttsc/linux-arm64": "0.29.0", "@ttsc/linux-x64": "0.29.0", "@ttsc/win32-arm64": "0.29.0", "@ttsc/win32-x64": "0.29.0" }, "bin": { "ttsc": "lib/launcher/ttsc.js", "ttsx": "lib/launcher/ttsx.js", "ttscserver": "lib/launcher/ttscserver.js" } }, "sha512-51yGOGdocdR5CmlQVs/ZTEwftzWSU16t9mcrSDXNoKGffKYE+bRraDTQY960VEBovNZ84mDzJeBDUjIsq6egLQ=="],
+
     "typebox": ["typebox@1.3.29", "", {}, "sha512-TeCZPwJRvfv8hI9oEnQy1Rg7x9Ns1y9OeR94LSaND+lQTmhikE5DsZQNM3I5/tGnEEmeQf5XTLJgJBzXJNDUNA=="],
 
     "typedoc": ["typedoc@0.28.20", "", { "dependencies": { "@gerrit0/mini-shiki": "^3.23.0", "lunr": "^2.3.9", "markdown-it": "^14.3.0", "minimatch": "^10.2.5", "yaml": "^2.9.0" }, "peerDependencies": { "typescript": "5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x || 5.9.x || 6.0.x" }, "bin": { "typedoc": "bin/typedoc" } }, "sha512-uSKqkh8Cr48vllnEy+jdaAgOeR6Y+QCBW7usgUsKj7gJEfR7stw9U/fE49LBnj2tPRKPY0c0EBJSWe9Appmplg=="],
@@ -1378,14 +1389,6 @@
     "@shikijs/primitive/@shikijs/types": ["@shikijs/types@4.4.3", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.5" } }, "sha512-UEJxmRR++MAGR6hugn0vgVS2W/6lWAts84FFSrnlH9sP0LNol7E5+NQ792pH8liWUhyMyjhTgSUH3k7iD7tc5g=="],
 
     "@shikijs/themes/@shikijs/types": ["@shikijs/types@4.4.3", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.5" } }, "sha512-UEJxmRR++MAGR6hugn0vgVS2W/6lWAts84FFSrnlH9sP0LNol7E5+NQ792pH8liWUhyMyjhTgSUH3k7iD7tc5g=="],
-
-    "@typia/core/@typia/interface": ["@typia/interface@12.2.0", "", {}, "sha512-7GKMzWxjDdHV1eMjwx9ZEVWcUDAYr58ErjgKS5j16QXDD7rLdgfm4wvWoSWuiQVP5q0cho6C55LFWmyVqEeYlA=="],
-
-    "@typia/core/@typia/utils": ["@typia/utils@12.2.0", "", { "dependencies": { "@typia/interface": "^12.2.0" } }, "sha512-6tJnBuGOvYuOyMtB4I+Ems4T2OVs4N9C5jB63wadFQo4ZPXSCYyh/qdc91Nowd34N41ZfpbK5CDISzPFkAqPWA=="],
-
-    "@typia/transform/@typia/interface": ["@typia/interface@12.2.0", "", {}, "sha512-7GKMzWxjDdHV1eMjwx9ZEVWcUDAYr58ErjgKS5j16QXDD7rLdgfm4wvWoSWuiQVP5q0cho6C55LFWmyVqEeYlA=="],
-
-    "@typia/transform/@typia/utils": ["@typia/utils@12.2.0", "", { "dependencies": { "@typia/interface": "^12.2.0" } }, "sha512-6tJnBuGOvYuOyMtB4I+Ems4T2OVs4N9C5jB63wadFQo4ZPXSCYyh/qdc91Nowd34N41ZfpbK5CDISzPFkAqPWA=="],
 
     "@vue/compiler-core/entities": ["entities@7.0.1", "", {}, "sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA=="],
 

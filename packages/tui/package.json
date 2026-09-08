@@ -254,7 +254,6 @@
     "shiki": "^4.4.3"
   },
   "devDependencies": {
-    "@typia/transform": "^12.1.1",
     "ghostty-web": "^0.4.0",
     "mitata": "^1.0.34",
     "slice-ansi": "^9.0.0",
@@ -270,6 +269,6 @@
     "node": ">=22.11"
   },
   "inlinedDependencies": {
-    "typia": "13.0.2"
+    "typia": "14.0.5"
   }
 }

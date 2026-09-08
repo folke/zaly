@@ -1,8 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "properties": {},
-  "required": [],
   "additionalProperties": {
     "type": "object",
     "properties": {
@@ -47,9 +45,9 @@
       "source": {
         "type": "string",
         "enum": [
-          "models.dev",
           "builtin",
           "custom",
+          "models.dev",
           "models.json"
         ]
       },
@@ -57,14 +55,12 @@
         "type": "boolean"
       }
     },
-    "required": []
+    "required": [],
+    "additionalProperties": false
   },
   "definitions": {
     "Recordstringstring": {
       "type": "object",
-      "properties": {},
-      "required": [],
-      "description": "Construct a type with a set of properties K of type T",
       "additionalProperties": {
         "type": "string"
       }
@@ -75,9 +71,9 @@
         "maxTokensField": {
           "type": "string",
           "enum": [
-            "max_tokens",
             "max_completion_tokens",
             "max_output_tokens",
+            "max_tokens",
             "none"
           ],
           "description": "Which wire field carries the max-output-tokens cap, per adapter\nfamily.\n\nChat Completions:\n  - `\"max_tokens\"`            — legacy, most third-parties\n  - `\"max_completion_tokens\"` — newer OpenAI + reasoning models\n\nResponses:\n  - `\"max_output_tokens\"`     — public Responses API default\n\nAll families:\n  - `\"none\"` — suppress entirely. Codex backend rejects any\n    max-tokens field with `Unsupported parameter`."
@@ -85,12 +81,12 @@
         "thinkingFormat": {
           "type": "string",
           "enum": [
+            "deepseek",
             "openai",
             "openrouter",
-            "deepseek",
-            "zai",
             "qwen",
-            "qwen-chat-template"
+            "qwen-chat-template",
+            "zai"
           ],
           "description": "How the provider expects reasoning / thinking requests shaped.\n- `\"openai\"`              → `reasoning_effort: \"minimal|low|medium|high\"`\n- `\"openrouter\"`          → `reasoning: { effort }`\n- `\"deepseek\"`            → `thinking: { type: \"enabled\" }` + `reasoning_effort`\n- `\"zai\"` / `\"qwen\"`      → top-level `enable_thinking: boolean`\n- `\"qwen-chat-template\"`  → `chat_template_kwargs.enable_thinking`"
         },
@@ -99,13 +95,13 @@
           "items": {
             "type": "string",
             "enum": [
-              "off",
-              "minimal",
-              "low",
-              "medium",
               "high",
-              "xhigh",
-              "max"
+              "low",
+              "max",
+              "medium",
+              "minimal",
+              "off",
+              "xhigh"
             ]
           },
           "description": "Which effort levels this model actually accepts. Adapter clamps\nunsupported values to the nearest supported one — `\"xhigh\"` on\npre-GPT-5.4 → `\"high\"`, `\"minimal\"` on o1/o3 → `\"low\"`. Unset\nmeans any level is accepted."
@@ -149,10 +145,10 @@
         "responsesReasoningSummary": {
           "type": "string",
           "enum": [
-            "off",
             "auto",
             "concise",
-            "detailed"
+            "detailed",
+            "off"
           ],
           "description": "Reasoning summary verbosity for the Responses API. Default\n`\"auto\"`. `\"off\"` disables the summary stream."
         },
@@ -168,6 +164,7 @@
         }
       },
       "required": [],
+      "additionalProperties": false,
       "description": "Provider-specific wire quirks that \"OpenAI compatibility\" doesn't\nactually cover. Each field names an axis of variation with a\ntyped union of known shapes; adapters read these and dispatch.\n\nPopulated by `getModel` from `assets/quirks.json` — provider-level\ndefaults overlaid with per-model overrides. Users can further\noverride per-model via `addModels` or per-call via the request's\n`quirks` field.\n\nAdd new axes here as they surface; start minimal."
     },
     "ModelInfo": {
@@ -229,7 +226,7 @@
           "description": "Model weights are publicly released. Informational."
         },
         "cost": {
-          "$ref": "#/definitions/Costcontext_over_200kCostundefined",
+          "$ref": "#/definitions/Cost__type",
           "description": "Pricing per million tokens. `context_over_200k` is the higher\ntier some providers bill for prompts over 200K tokens."
         },
         "tool_call": {
@@ -240,20 +237,21 @@
       "required": [
         "id"
       ],
+      "additionalProperties": false,
       "description": "Metadata for one model. One-to-one with the models.dev `Model`\nschema. Loaded lazily per-provider via `getModel(id)` or eagerly\nvia `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type):\nwhen `reasoning === false`, `cost.reasoning` is absent."
     },
     "Modality": {
       "type": "string",
       "enum": [
-        "text",
         "audio",
         "image",
-        "video",
-        "pdf"
+        "pdf",
+        "text",
+        "video"
       ],
       "description": "Input/output modality."
     },
-    "Costcontext_over_200kCostundefined": {
+    "Cost__type": {
       "type": "object",
       "properties": {
         "input": {
@@ -284,7 +282,8 @@
       "required": [
         "input",
         "output"
-      ]
+      ],
+      "additionalProperties": false
     },
     "Cost": {
       "type": "object",
@@ -315,6 +314,7 @@
         "input",
         "output"
       ],
+      "additionalProperties": false,
       "description": "Per-tier cost. Values are USD per **million tokens** (models.dev\nconvention). Optional fields are only present when the provider\npublishes distinct pricing for that axis."
     }
   }
