@@ -1,9 +1,36 @@
 {
   "name": "zaly",
   "version": "0.0.3",
+  "private": true,
+  "description": "Hackable terminal coding agent.",
+  "homepage": "https://zaly.dev",
+  "bugs": {
+    "url": "https://github.com/folke/zaly/issues"
+  },
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/folke/zaly"
+  },
+  "workspaces": [
+    "packages/*",
+    "plugins"
+  ],
+  "type": "module",
+  "scripts": {
+    "api": "z api",
+    "api:check": "z api --check",
+    "build": "z build",
+    "fmt": "z fmt",
+    "knip": "knip",
+    "lint": "z lint",
+    "models": "bun run --cwd 'packages/ai' models",
+    "out": "bun outdated; bun outdated --filter '*'",
+    "pkg": "bun --workspaces install",
+    "publish": "z publish",
+    "test": "z test --bun",
+    "test:live": "LIVE=1 bun test live",
+    "up": "bun z update"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
@@ -26,38 +53,14 @@
     "vitepress-plugin-group-icons": "^1.7.6",
     "vitest": "^5.0.0"
   },
-  "bugs": {
-    "url": "https://github.com/folke/zaly/issues"
+  "overrides": {
+    "@types/markdown-it": "14.1.2"
   },
-  "description": "Hackable terminal coding agent.",
   "engines": {
     "bun": ">=1.2",
     "node": ">=22.11"
   },
-  "homepage": "https://zaly.dev",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "api": "z api",
-    "api:check": "z api --check",
-    "build": "z build",
-    "fmt": "z fmt",
-    "knip": "knip",
-    "lint": "z lint",
-    "models": "bun run --cwd 'packages/ai' models",
-    "out": "bun outdated; bun outdated --filter '*'",
-    "pkg": "bun --workspaces install",
-    "publish": "z publish",
-    "test": "z test --bun",
-    "test:live": "LIVE=1 bun test live",
-    "up": "bun z update"
-  },
   "trustedDependencies": [
     "sharp"
-  ],
-  "type": "module",
-  "workspaces": [
-    "packages/*",
-    "plugins"
   ]
 }
