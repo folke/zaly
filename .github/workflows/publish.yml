@@ -57,6 +57,13 @@ jobs:
             echo "::error::bun.lock is out of date. Run 'bun install --lockfile-only' and commit bun.lock."
             exit 1
           fi
+      - name: Cache ttsc plugin binaries
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/ttsc/plugins
+          key: ${{ runner.os }}-${{ runner.arch }}-ttsc-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-ttsc-
       - run: bun z build
       - name: Publish packages
         env:

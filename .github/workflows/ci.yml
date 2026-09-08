@@ -20,6 +20,13 @@ jobs:
       - run: bun --workspaces install --frozen-lockfile
       - run: bun install --frozen-lockfile --lockfile-only
       - run: bun z lint
+      - name: Cache ttsc plugin binaries
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/ttsc/plugins
+          key: ${{ runner.os }}-${{ runner.arch }}-ttsc-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-ttsc-
       - run: bun z build
       - run: bun z test --bun
       - name: Check generated artifacts
