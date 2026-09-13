@@ -309,13 +309,19 @@ export class Input extends Node<InputState, InputEvents> {
     }
 
     const id = this.#staged.length + 1
+    // Marker shape: [prefix #id meta suffix]
+    //   prefix — attachment kind ("Pasted text", "Image", …)
+    //   meta   — size/name details (" +6 lines", " notes.txt")
+    //   suffix — interaction hint (" — Paste again to expand")
     let prefix = att.type[0].toUpperCase() + att.type.slice(1)
+    let meta = ""
     let suffix = ""
     if (att.type === "paste") {
       prefix = "Pasted text"
-      suffix = ` +${countLines(att.text)} lines`
-    } else if (!["image", "pdf"].includes(att.type)) suffix = ` ${basename(att.path)}`
-    const marker = `[${prefix} #${id}${suffix}]`
+      meta = ` +${countLines(att.text)} lines`
+      suffix = " — Paste again to expand"
+    } else if (!["image", "pdf"].includes(att.type)) meta = ` ${basename(att.path)}`
+    const marker = `[${prefix} #${id}${meta}${suffix}]`
     this.#staged.push({ ...att, id, marker })
     this.insert(marker)
 
@@ -323,6 +329,24 @@ export class Input extends Node<InputState, InputEvents> {
   }
 
   paste(text: string): void {
+    // Re-pasting content that is still staged as a collapsed marker expands
+    // that marker in place. Prefer the most recently staged match.
+    const value = this.state.value ?? ""
+    for (let i = this.#staged.length - 1; i >= 0; i--) {
+      const att = this.#staged[i]!
+      if (att.type !== "paste" || att.text !== text) continue
+      if (!value.includes(att.marker)) continue
+      const at = value.indexOf(att.marker)
+      this.#historyEdit()
+      this.#preferredCol = undefined
+      this.#staged.splice(i, 1)
+      this.state.set({
+        cursor: at + att.text.length,
+        value: value.slice(0, at) + att.text + value.slice(at + att.marker.length),
+      })
+      return
+    }
+
     if (
       countLines(text) > (this.state.pasteMaxLines ?? PASTE_MAX_LINES) ||
       stringWidth(text) > (this.state.pasteMaxChars ?? PASTE_MAX_CHARS)
