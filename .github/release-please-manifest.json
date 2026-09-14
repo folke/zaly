@@ -5,5 +5,5 @@
   "packages/config": "0.0.5",
   "packages/plugin": "0.0.4",
   "packages/shared": "0.0.5",
-  "packages/tui": "0.0.7"
+  "packages/tui": "0.0.8"
 }

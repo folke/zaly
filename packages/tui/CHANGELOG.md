@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/folke/zaly/compare/tui-v0.0.7...tui-v0.0.8) (2026-09-08)
+
+
+### 📦 Build
+
+* only sync/build tokyonight themes when the repo exists locally. Closes [#18](https://github.com/folke/zaly/issues/18) ([a97385a](https://github.com/folke/zaly/commit/a97385a6368fedfe847b8c2b1760e03885050122))
+
 ## [0.0.7](https://github.com/folke/zaly/compare/tui-v0.0.6...tui-v0.0.7) (2026-09-08)
 
 
