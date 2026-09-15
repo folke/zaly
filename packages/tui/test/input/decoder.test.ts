@@ -104,6 +104,62 @@ describe("Decoder — CSI sequences", () => {
   test("F5 via ESC [ 15 ~", () => {
     expect(keys(new Decoder(), "\x1b[15~")).toEqual([{ mods: "", name: "f5" }])
   })
+
+  test("shift+enter via CSI-u", () => {
+    expect(keys(new Decoder(), "\x1b[13;2u")).toEqual([{ mods: "s", name: "enter" }])
+  })
+
+  test("ctrl+c via CSI-u", () => {
+    expect(keys(new Decoder(), "\x1b[99;5u")).toEqual([{ mods: "c", name: "c" }])
+  })
+
+  test("xterm modifyOtherKeys encodes shift+enter", () => {
+    expect(keys(new Decoder(), "\x1b[27;2;13~")).toEqual([{ mods: "s", name: "enter" }])
+  })
+
+  test("Kitty arrows preserve event type", () => {
+    expect(new Decoder().feed("\x1b[1;1:3C")).toEqual([
+      {
+        event: {
+          alt: false,
+          ctrl: false,
+          eventType: "release",
+          meta: false,
+          name: "right",
+          shift: false,
+        },
+        type: "key",
+      },
+    ])
+  })
+
+  test("Kitty CSI-u preserves alternate keys and event type", () => {
+    expect(new Decoder().feed("\x1b[99:67:99;6:2u")).toEqual([
+      {
+        event: {
+          alt: false,
+          base: "c",
+          ctrl: true,
+          eventType: "repeat",
+          meta: false,
+          name: "c",
+          shift: true,
+        },
+        type: "key",
+      },
+    ])
+  })
+
+  test("named Kitty functional key (numpad enter)", () => {
+    // 57414 = KP_ENTER — mapped in CSI_U_NAMES.
+    expect(keys(new Decoder(), "\x1b[57414u")).toEqual([{ mods: "", name: "enter" }])
+  })
+
+  test("drops unmodeled Kitty functional keys instead of emitting PUA glyphs", () => {
+    // 57404 (KP_5) sits in the private-use area with no name mapping; it must
+    // not surface as a printable char with garbage text.
+    expect(new Decoder().feed("\x1b[57404u")).toEqual([])
+  })
 })
 
 describe("Decoder — SS3 function keys", () => {
@@ -224,6 +280,14 @@ describe("Decoder — terminal responses", () => {
         sequence: "\x1b[>1;4000;0c",
         type: "term-response",
       },
+    ])
+  })
+
+  test("holds a split Kitty keyboard protocol response", () => {
+    const d = new Decoder()
+    expect(d.feed("\x1b[?7")).toEqual([])
+    expect(d.feed("u")).toEqual([
+      { final: "u", kind: "csi", params: "?7", sequence: "\x1b[?7u", type: "term-response" },
     ])
   })
 
