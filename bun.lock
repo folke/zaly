@@ -28,7 +28,7 @@
     },
     "packages/agent": {
       "name": "@zaly/agent",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@zaly/ai": "workspace:*",
         "@zaly/shared": "workspace:*",
@@ -46,7 +46,7 @@
     },
     "packages/ai": {
       "name": "@zaly/ai",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "dependencies": {
         "@zaly/shared": "workspace:*",
       },
@@ -60,7 +60,7 @@
     },
     "packages/cli": {
       "name": "@zaly/cli",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "bin": {
         "zaly": "./bin/zaly.ts",
       },
@@ -83,7 +83,7 @@
     },
     "packages/config": {
       "name": "@zaly/config",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
@@ -137,7 +137,7 @@
     },
     "packages/shared": {
       "name": "@zaly/shared",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "pathe": "^2.0.3",
         "proper-lockfile": "^4.1.2",
@@ -162,11 +162,11 @@
     },
     "packages/tui": {
       "name": "@zaly/tui",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "dependencies": {
         "@zaly/shared": "workspace:*",
         "diff": "^9.0.0",
-        "marked": "^18.0.12",
+        "marked": "^18.0.13",
         "pathe": "^2.0.3",
         "shiki": "^4.4.3",
       },
@@ -1109,7 +1109,7 @@
 
     "markdown-it": ["markdown-it@14.3.1", "", { "dependencies": { "argparse": "^2.0.1", "entities": "^4.5.0", "linkify-it": "^5.0.2", "mdurl": "^2.0.0", "punycode.js": "^2.3.1", "uc.micro": "^2.1.0" }, "bin": { "markdown-it": "bin/markdown-it.mjs" } }, "sha512-4Ej49aYTDFIQ+uBkfX8GBvJGccoARxxPep+7aWTs55ozbjQJpW9M26Fe53vnGgvLeVzva/amzjQQaQu9w0vMhA=="],
 
-    "marked": ["marked@18.0.12", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-LEm4ga2YeI2T3GVHj9b0BaDPPk93LLTHMFeMyQbNIzPxc8vCI0y/scy0ZA6z6lXKyT9j9Nhl/OC6ZYKYGuFScA=="],
+    "marked": ["marked@18.0.13", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-xTxVzZsBFwunP6HDmtBkabUQEYArnP7/rMDGmPj9SlrKlQ4i8MdYVow+nJL0eOqwpUqhzBoTBRADGN6uYwPyOw=="],
 
     "mdast-util-to-hast": ["mdast-util-to-hast@13.2.1", "", { "dependencies": { "@types/hast": "^3.0.0", "@types/mdast": "^4.0.0", "@ungap/structured-clone": "^1.0.0", "devlop": "^1.0.0", "micromark-util-sanitize-uri": "^2.0.0", "trim-lines": "^3.0.0", "unist-util-position": "^5.0.0", "unist-util-visit": "^5.0.0", "vfile": "^6.0.0" } }, "sha512-cctsq2wp5vTsLIcaymblUriiTcZd0CwWtCbLvrOzYCDZoWyMNV8sZ7krj09FSnsiJi3WVsHLM4k6Dq/yaPyCXA=="],
 
