@@ -39,7 +39,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "5.0.0",
     "@zaly/dev": "workspace:*",
-    "knip": "^6.34.0",
+    "knip": "^6.35.1",
     "oxfmt": "^0.67.0",
     "oxlint": "^1.82.0",
     "oxlint-tsgolint": "^7.0.2001",
