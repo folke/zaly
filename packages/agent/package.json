@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@types/shell-quote": "^1.7.5",
-    "ignore": "^7.0.8",
+    "ignore": "^7.0.9",
     "jsonpath-plus": "^10.4.0",
     "shell-quote": "^1.10.0"
   },
