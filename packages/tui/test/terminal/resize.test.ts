@@ -68,6 +68,28 @@ describe("Renderer — resize", () => {
     h.dispose()
   })
 
+  test("focused async-formatted input immediately paints a trailing double-width character", async () => {
+    const h = await makeHarness({ cols: 30, rows: 6 })
+    const field = input({ format: () => new Promise<string>(() => {}) })
+    h.renderer.ui.root.add(field)
+    h.renderer.input.focus(field)
+    h.renderer.input.dispatch({
+      event: {
+        alt: false,
+        ctrl: false,
+        meta: false,
+        name: "안",
+        shift: false,
+        text: "안",
+      },
+      type: "key",
+    })
+    await h.flush()
+
+    expect(h.viewport()[5]).toContain("안")
+    h.dispose()
+  })
+
   test("resize clears previously-painted rows above the new scroll region", async () => {
     // Shrink the viewport so rows that used to hold content fall
     // outside the new geometry. After resize, the new viewport must
