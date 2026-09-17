@@ -7,7 +7,10 @@
  * escape sequences through the helpers exposed below.
  */
 
+import type { TerminalResponseEvent } from "../input/decoder.ts"
+
 import { inspect } from "node:util"
+import { isDeviceAttributesResponse, isKittyFlagsResponse } from "../input/decoder.ts"
 
 export interface TerminalWriter {
   readonly columns: number
@@ -73,6 +76,9 @@ export class Terminal {
   #progress: ProgressState = { type: "inactive" }
   #progressInterval: ReturnType<typeof setInterval> | undefined
   #prevRawMode: boolean | undefined
+  #kittyKeyboard = false
+  #kittyKeyboardPushed = false
+  #modifyOtherKeys = false
   #resizeListeners = new Set<ResizeListener>()
   #signalCleanup: (() => void) | undefined
   #onResize = (): void => {
@@ -131,6 +137,14 @@ export class Terminal {
     )
   }
 
+  get kittyKeyboard(): boolean {
+    return this.#kittyKeyboard
+  }
+
+  get modifyOtherKeys(): boolean {
+    return this.#modifyOtherKeys
+  }
+
   // ---------- lifecycle ----------
 
   /**
@@ -152,6 +166,15 @@ export class Terminal {
     // terminal tell us when our window gains/loses focus so we can
     // update cursor visibility, pause animations, etc.
     this.write(`${CSI}?25l${CSI}?7l${CSI}?2004h${CSI}?1004h`)
+    // Enhanced keyboard reporting. Push Kitty flags, query them, then request
+    // *secondary* Device Attributes as a fence: every terminal answers it, so
+    // if no Kitty flags reply (`CSI ? u`) arrives before it, Kitty keyboard is
+    // unsupported and we fall back to xterm modifyOtherKeys. Secondary DA
+    // (not primary `CSI c`) keeps us off the primary-DA channel that the
+    // image-detection queries fence on, so the two can't consume each other's
+    // replies.
+    this.#kittyKeyboardPushed = true
+    this.write(`${CSI}>7u${CSI}?u${CSI}>c`)
     if (this.#mouse) this.write(`${CSI}?1002h${CSI}?1006h${CSI}?1007h`)
     this.#writeProgress()
     // Scroll region set to [1, scrollBottom]. Terminals default to the
@@ -199,6 +222,46 @@ export class Terminal {
     }
   }
 
+  handleKeyboardProtocolResponse(event: TerminalResponseEvent): boolean {
+    // Ignore responses that arrive after teardown — writing enable/disable
+    // sequences to an already-restored terminal would leak modes into the
+    // user's shell.
+    if (!this.#started || event.kind !== "csi") return false
+
+    if (isKittyFlagsResponse(event.params, event.final)) {
+      const flags = Number.parseInt(event.params.slice(1), 10)
+      if (flags > 0) {
+        this.#kittyKeyboard = true
+        this.#disableModifyOtherKeys()
+      } else {
+        this.#enableModifyOtherKeys()
+      }
+      return true
+    }
+
+    // Only the secondary-DA reply (`CSI > … c`) is our fence. Primary-DA
+    // replies (`CSI ? … c`) belong to the image-detection queries — leave
+    // them for that subsystem instead of consuming them here.
+    if (isDeviceAttributesResponse(event.params, event.final) && event.params.startsWith(">")) {
+      if (!this.#kittyKeyboard) this.#enableModifyOtherKeys()
+      return true
+    }
+
+    return false
+  }
+
+  #enableModifyOtherKeys(): void {
+    if (this.#modifyOtherKeys) return
+    this.write(`${CSI}>4;2m`)
+    this.#modifyOtherKeys = true
+  }
+
+  #disableModifyOtherKeys(): void {
+    if (!this.#modifyOtherKeys) return
+    this.write(`${CSI}>4;0m`)
+    this.#modifyOtherKeys = false
+  }
+
   deleteImages(opts: { data?: boolean } = {}): void {
     if (!this.#started) return
     // Remove all Kitty images. KGP doesn't support selective deletion, so
@@ -222,6 +285,10 @@ export class Terminal {
       // Wipe the visible viewport — covers both leftover footer rows
       // and any half-painted stream rows from an in-flight render that
       // was killed mid-paint (crash path). Scrollback is unaffected.
+      if (this.#kittyKeyboardPushed) this.write(`${CSI}<u`)
+      this.#kittyKeyboardPushed = false
+      this.#kittyKeyboard = false
+      this.#disableModifyOtherKeys()
       this.write(
         `${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`
       )

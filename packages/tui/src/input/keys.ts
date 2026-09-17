@@ -24,9 +24,15 @@
  *   - `meta-`  (a.k.a. super / cmd)
  */
 
+export type KeyEventType = "press" | "repeat" | "release"
+
 export interface KeyEvent {
   /** Canonical key name — raw character or one of the named constants above. */
   name: string
+  /** Base-layout key reported by the Kitty keyboard protocol, when available. */
+  base?: string
+  /** Key state reported by the Kitty keyboard protocol. */
+  eventType?: KeyEventType
   /**
    * The literal text the keystroke would insert, when that makes sense.
    * For printable chars this is the char itself; for Enter, Tab, etc. it's
@@ -183,7 +189,24 @@ export function keyMatches(ev: KeyEvent, pattern: string | readonly string[]): b
     return false
   }
   const p = parsePattern(pattern as string)
-  const e = normalizeKey(ev)
+  if (parsedMatches(normalizeKey(ev), p)) return true
+  // Fall back to the Kitty base-layout key so bindings written for the
+  // standard (Latin) layout still fire on alternate layouts — e.g. a
+  // Cyrillic `с` reports `base: "c"`, matching a `ctrl-c` binding.
+  if (ev.base !== undefined && ev.base !== ev.name) {
+    const base = normalizeKey({
+      alt: ev.alt,
+      ctrl: ev.ctrl,
+      meta: ev.meta,
+      name: ev.base,
+      shift: ev.shift,
+    })
+    if (parsedMatches(base, p)) return true
+  }
+  return false
+}
+
+function parsedMatches(e: ParsedPattern, p: ParsedPattern): boolean {
   return (
     e.name === p.name &&
     e.ctrl === p.ctrl &&
