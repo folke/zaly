@@ -166,7 +166,7 @@
     "@types/picomatch": "^4.0.3",
     "@types/proper-lockfile": "^4.1.4",
     "@types/shell-quote": "^1.7.5",
-    "ignore": "^7.0.8",
+    "ignore": "^7.0.9",
     "image-meta": "^0.2.2",
     "js-yaml": "^5.4.1",
     "picomatch": "^4.0.7",
