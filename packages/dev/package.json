@@ -26,7 +26,7 @@
   "devDependencies": {
     "pkg-types": "^2.3.3",
     "std-env": "^4.2.0",
-    "ttsc": "^0.29.0",
+    "ttsc": "^0.30.1",
     "typia": "^14.0.5"
   }
 }
