@@ -258,7 +258,7 @@
     "mitata": "^1.0.34",
     "slice-ansi": "^9.0.0",
     "string-width": "^8.2.2",
-    "typia": "^14.0.5",
+    "typia": "^14.0.6",
     "wrap-ansi": "^10.0.1"
   },
   "optionalDependencies": {
