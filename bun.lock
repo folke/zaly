@@ -28,7 +28,7 @@
     },
     "packages/agent": {
       "name": "@zaly/agent",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@zaly/ai": "workspace:*",
         "@zaly/shared": "workspace:*",
@@ -36,7 +36,7 @@
       },
       "devDependencies": {
         "@types/shell-quote": "^1.7.5",
-        "ignore": "^7.0.8",
+        "ignore": "^7.0.9",
         "jsonpath-plus": "^10.4.0",
         "shell-quote": "^1.10.0",
       },
@@ -46,7 +46,7 @@
     },
     "packages/ai": {
       "name": "@zaly/ai",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "dependencies": {
         "@zaly/shared": "workspace:*",
       },
@@ -60,7 +60,7 @@
     },
     "packages/cli": {
       "name": "@zaly/cli",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "bin": {
         "zaly": "./bin/zaly.ts",
       },
@@ -83,7 +83,7 @@
     },
     "packages/config": {
       "name": "@zaly/config",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
@@ -137,7 +137,7 @@
     },
     "packages/shared": {
       "name": "@zaly/shared",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "pathe": "^2.0.3",
         "proper-lockfile": "^4.1.2",
@@ -147,7 +147,7 @@
         "@types/picomatch": "^4.0.3",
         "@types/proper-lockfile": "^4.1.4",
         "@types/shell-quote": "^1.7.5",
-        "ignore": "^7.0.8",
+        "ignore": "^7.0.9",
         "image-meta": "^0.2.2",
         "js-yaml": "^5.4.1",
         "picomatch": "^4.0.7",
@@ -162,7 +162,7 @@
     },
     "packages/tui": {
       "name": "@zaly/tui",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "dependencies": {
         "@zaly/shared": "workspace:*",
         "diff": "^9.0.0",
@@ -1037,7 +1037,7 @@
 
     "html-void-elements": ["html-void-elements@3.0.0", "", {}, "sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg=="],
 
-    "ignore": ["ignore@7.0.8", "", {}, "sha512-YYNsSlXBjMk92SKnkwvB5LOVSa6OznlFUGcsvrFgNJbJCd0M1XKeFVRc8ZByeCqz32FivYNHJVooLmdqrmvp/Q=="],
+    "ignore": ["ignore@7.0.9", "", {}, "sha512-brTTsvFRt5C1gGHtPst/281UjPD5t9fBqbgoMPlVWy11ZLTPfu7HxK4ZYqO9H7o/yC9rSTCI85EaQ4OoY12qYw=="],
 
     "image-meta": ["image-meta@0.2.2", "", {}, "sha512-3MOLanc3sb3LNGWQl1RlQlNWURE5g32aUphrDyFeCsxBTk08iE3VNe4CwsUZ0Qs1X+EfX0+r29Sxdpza4B+yRA=="],
 
