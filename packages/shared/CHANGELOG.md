@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/folke/zaly/compare/shared-v0.0.5...shared-v0.0.6) (2026-10-07)
+
+
+### 🩹 Fixes
+
+* **shared:** fix race cond in spawn ([9bb2127](https://github.com/folke/zaly/commit/9bb2127d78195f03f0bd065dfb1cab476f2ed448))
+
 ## [0.0.5](https://github.com/folke/zaly/compare/shared-v0.0.4...shared-v0.0.5) (2026-09-08)
 
 
