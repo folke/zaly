@@ -185,6 +185,13 @@ export class Spawn<O = Buffer, E = Buffer> {
       this.#finalize({ code: code ?? -1, signal: signal ?? undefined })
     })
 
+    this.child.stdin?.on("error", (error: NodeJS.ErrnoException) => {
+      // A child may exit or close stdin before consuming all input.
+      if (error.code === "EPIPE") return
+      this.#spawnError ??= error
+      this.abort()
+    })
+
     if (opts.stdin !== undefined && this.child.stdin) {
       this.child.stdin.end(opts.stdin)
     }

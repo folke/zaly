@@ -203,6 +203,43 @@ describe("spawnText", () => {
   })
 })
 
+describe("stdin errors", () => {
+  test.each([0, 2])(
+    "preserves exit code %i when the child exits without reading stdin",
+    async (code) => {
+      const proc = new Spawn("sh", ["-c", `exit ${code}`], {
+        stdin: "x".repeat(4 * 1024 * 1024),
+      })
+      const result = await proc.result
+      expect(result.code).toBe(code)
+    }
+  )
+
+  test("handles EPIPE on an open stdin stream", async () => {
+    const proc = new Spawn("cat", [], { keepStdinOpen: true })
+    try {
+      proc.child.stdin!.emit("error", Object.assign(new Error("broken pipe"), { code: "EPIPE" }))
+      proc.child.stdin!.end()
+      const result = await proc.result
+      expect(result.code).toBe(0)
+    } finally {
+      proc.abort()
+    }
+  })
+
+  test("rejects other stdin errors through result", async () => {
+    const proc = new Spawn("sh", ["-c", "exit 0"], { keepStdinOpen: true })
+    const error = Object.assign(new Error("stdin failure"), { code: "EIO" })
+    try {
+      const result = proc.result
+      proc.child.stdin!.emit("error", error)
+      await expect(result).rejects.toBe(error)
+    } finally {
+      proc.abort()
+    }
+  })
+})
+
 describe("spawnWithInput", () => {
   test("true on exit 0 with stdin piped", async () => {
     expect(await spawnWithInput("cat", [], "x")).toBe(true)
