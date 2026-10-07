@@ -105,6 +105,7 @@ export default defineConfig({
     "no-control-regex": "off", // 2
     "no-duplicate-imports": ["warn", { allowSeparateTypeImports: true }], // 16
     "no-implicit-coercion": "off", // 4
+    "no-generated-empty-object-type": "off",
     "no-labels": "off", // 4
     "no-magic-numbers": "off", // 278
     "no-restricted-imports": ["error", restrictedImports({ allowIndex: false })],
@@ -154,6 +155,12 @@ export default defineConfig({
         "eslint/no-console": "off",
         "eslint/sort-keys": "off",
         "no-restricted-imports": "off",
+      },
+    },
+    {
+      files: ["test/**/*.ts"],
+      rules: {
+        "unicorn/consistent-function-scoping": "off",
       },
     },
     {

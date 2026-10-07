@@ -126,7 +126,7 @@ export class Context extends BaseLogger {
         for (const [key, value] of entries) {
           if (value === undefined || process.env[key] !== undefined) continue
           ret[path].push(key)
-          process.env[key] ??= value
+          process.env[key] = value
         }
       }
       return ret

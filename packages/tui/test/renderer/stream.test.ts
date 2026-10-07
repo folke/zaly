@@ -1,4 +1,3 @@
-// oxlint-disable unicorn/consistent-function-scoping
 import { describe, expect, test } from "vitest"
 import { createAsync, memo } from "../../src/core/reactive.ts"
 import { Renderer } from "../../src/renderer/renderer.ts"

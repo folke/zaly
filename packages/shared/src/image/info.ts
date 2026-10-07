@@ -1,6 +1,8 @@
 import type { DetectedImage } from "../detect/file.ts"
 import type { ImageFormat } from "../detect/image.ts"
 
+import { toError } from "../utils.ts"
+
 /** Source-image metadata used for layout + format dispatch. Extends
  *  the `DetectedImage` shape (already-classified file + format) with
  *  pixel dimensions read by `image-meta`. */
@@ -17,10 +19,12 @@ export async function imageInfo<T extends ImageFormat>(
   img: DetectedImage<T>
 ): Promise<ImageInfo<T>> {
   const { imageMeta } = await import("image-meta")
-  const meta = imageMeta(img.data)
-  if (meta.width === undefined || meta.height === undefined) {
+  try {
+    const meta = imageMeta(img.data)
+    return { ...img, height: meta.height, width: meta.width }
+  } catch (error) {
     const from = img.path ?? img.url ?? "unknown source"
-    throw new Error(`Could not read image dimensions: ${from}`)
+    const err = toError(error)
+    throw new Error(`Could not read image dimensions: ${from}:\n${err}`, { cause: error })
   }
-  return { ...img, height: meta.height, width: meta.width }
 }

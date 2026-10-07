@@ -1,4 +1,3 @@
-// oxlint-disable unicorn/consistent-function-scoping
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Node } from "../../src/core/node.ts"

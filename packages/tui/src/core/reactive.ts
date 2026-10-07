@@ -537,6 +537,7 @@ export function effect(fn: () => void | (() => void)): () => void {
     const old = cleanups
     cleanups = []
     for (const c of old) c()
+    // oxlint-disable-next-line unicorn/consistent-function-scoping
     const tracked = (): void | (() => void) => withTracking(ctx, fn)
     const cleanup = owner !== undefined ? withOwner(owner, tracked) : tracked()
     if (typeof cleanup === "function") cleanups.push(cleanup)

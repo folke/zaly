@@ -261,7 +261,6 @@ describe("createStore", () => {
   test("function-typed fields don't get invoked as updaters", () => {
     type Ctx = { fn: () => string }
     const s = createStore<Ctx>({ fn: () => "first" })
-    // oxlint-disable-next-line unicorn/consistent-function-scoping
     const replacement = (): string => "second"
     s.set({ fn: replacement })
     expect(s.fn).toBe(replacement)
