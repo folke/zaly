@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/folke/zaly/compare/ai-v0.0.6...ai-v0.0.7) (2026-10-07)
+
+
+### 🚀 Enhancements
+
+* **ai:** add gpt-6-x models ([57e7521](https://github.com/folke/zaly/commit/57e7521260e2ec5f5e12aacb1024821548af2cac))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/ai-v0.0.5...ai-v0.0.6) (2026-09-08)
 
 
