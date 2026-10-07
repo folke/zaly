@@ -249,26 +249,26 @@
   "dependencies": {
     "@zaly/shared": "workspace:*",
     "diff": "^9.0.0",
-    "marked": "^18.0.12",
+    "marked": "^18.1.0",
     "pathe": "^2.0.3",
-    "shiki": "^4.4.3"
+    "shiki": "^4.5.0"
   },
   "devDependencies": {
     "ghostty-web": "^0.4.0",
     "mitata": "^1.0.34",
-    "slice-ansi": "^9.0.0",
-    "string-width": "^8.2.2",
-    "typia": "^14.0.5",
-    "wrap-ansi": "^10.0.1"
+    "slice-ansi": "^9.0.1",
+    "string-width": "^8.3.0",
+    "typia": "^15.1.0",
+    "wrap-ansi": "^10.0.2"
   },
   "optionalDependencies": {
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   },
   "engines": {
     "bun": ">=1.2",
     "node": ">=22.11"
   },
   "inlinedDependencies": {
-    "typia": "14.0.5"
+    "typia": "15.1.0"
   }
 }

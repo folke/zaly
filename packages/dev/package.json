@@ -16,7 +16,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@microsoft/api-extractor": "^7.59.0",
+    "@microsoft/api-extractor": "^7.59.4",
     "@zaly/tui": "workspace:*",
     "citty": "^0.2.2",
     "mitata": "^1.0.34",
@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "pkg-types": "^2.3.3",
-    "std-env": "^4.2.0",
-    "ttsc": "^0.29.0",
-    "typia": "^14.0.5"
+    "std-env": "^4.3.0",
+    "ttsc": "^0.30.4",
+    "typia": "^15.1.0"
   }
 }

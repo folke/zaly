@@ -104,7 +104,7 @@ describe("builtinOverrides", () => {
     await expect(models(catalog)).resolves.toEqual([])
   })
 
-  test("openai-codex clones codex and selected GPT models with capped context", async () => {
+  test("openai-codex clones only allowlisted models with capped context", async () => {
     const models = builtinOverrides["openai-codex"]?.models as (
       catalog: ModelCatalog
     ) => Promise<ModelInfo[]>
@@ -112,12 +112,13 @@ describe("builtinOverrides", () => {
     const openaiModels = openai.models as ModelInfo[]
     openaiModels.push(customModel({ id: "gpt-4", contextSize: 128_000 }))
     openaiModels.push(customModel({ id: "gpt-5.4-mini", contextSize: 300_000 }))
+    openaiModels.push(customModel({ id: "gpt-6.1-sol", contextSize: 500_000 }))
     const catalog = {
       provider: (id: string) => (id === "openai" ? openai : undefined),
     } as unknown as ModelCatalog
 
     const cloned = await models(catalog)
-    expect(cloned.map((m) => m.id)).toEqual(["gpt-5.5", "gpt-5.4-mini"])
+    expect(cloned.map((m) => m.id)).toEqual(["gpt-5.5", "gpt-6.1-sol"])
     expect(cloned.map((m) => m.contextSize)).toEqual([270_000, 270_000])
   })
 })

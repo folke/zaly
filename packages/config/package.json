@@ -59,7 +59,7 @@
     "@types/semver": "^7.8.0",
     "defu": "^6.1.7",
     "semver": "^7.8.5",
-    "typia": "^14.0.5"
+    "typia": "^15.1.0"
   },
   "engines": {
     "bun": ">=1.2",
@@ -68,6 +68,6 @@
   "inlinedDependencies": {
     "defu": "6.1.7",
     "semver": "7.8.5",
-    "typia": "14.0.5"
+    "typia": "15.1.0"
   }
 }

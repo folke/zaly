@@ -59,20 +59,20 @@
   },
   "devDependencies": {
     "@types/shell-quote": "^1.7.5",
-    "ignore": "^7.0.8",
-    "jsonpath-plus": "^10.4.0",
-    "shell-quote": "^1.10.0"
+    "ignore": "^7.0.12",
+    "jsonpath-plus": "^11.2.0",
+    "shell-quote": "^1.12.0"
   },
   "peerDependencies": {
-    "typebox": "^1.3.29"
+    "typebox": "^1.3.36"
   },
   "engines": {
     "bun": ">=1.2",
     "node": ">=22.11"
   },
   "inlinedDependencies": {
-    "ignore": "7.0.8",
-    "jsonpath-plus": "10.4.0",
-    "shell-quote": "1.10.0"
+    "ignore": "7.0.12",
+    "jsonpath-plus": "11.2.0",
+    "shell-quote": "1.12.0"
   }
 }
