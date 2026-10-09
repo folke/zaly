@@ -1,4 +1,4 @@
-import type { KeyEvent } from "./keys.ts"
+import type { KeyEvent, KeyEventType } from "./keys.ts"
 
 /**
  * Decoder — bytes (as a string, after the caller UTF-8 decodes them) in,
@@ -219,8 +219,18 @@ const TILDE_NAMES: Partial<Record<string, string>> = {
 
 const SS3_NAMES: Partial<Record<string, string>> = { P: "f1", Q: "f2", R: "f3", S: "f4" }
 
+/** A CSI primary/secondary Device Attributes reply (`CSI ? … c` / `CSI > … c`). */
+export function isDeviceAttributesResponse(params: string, final: string): boolean {
+  return final === "c" && /^[?>]\d+(?:;\d+)*$/.test(params)
+}
+
+/** A Kitty keyboard-protocol flags reply (`CSI ? <flags> u`). */
+export function isKittyFlagsResponse(params: string, final: string): boolean {
+  return final === "u" && /^\?\d+$/.test(params)
+}
+
 function isTerminalCsiResponse(params: string, final: string): boolean {
-  return final === "c" && (params.startsWith("?") || params.startsWith(">"))
+  return isDeviceAttributesResponse(params, final) || isKittyFlagsResponse(params, final)
 }
 
 function handleCsi(params: string, final: string, out: InputEvent[]): void {
@@ -233,22 +243,121 @@ function handleCsi(params: string, final: string, out: InputEvent[]): void {
 
   const arrow = ARROW_NAMES[final]
   if (arrow !== undefined) {
-    // Form is either `A` (no params) or `1;<mod>A` (modified).
-    const mod = parts.length === 2 ? Number.parseInt(parts[1], 10) : 1
-    out.push(key({ name: arrow, ...modBits(mod) }))
+    // Form is either `A` (no params) or `1;<mod>:<event>A`.
+    const { eventType, mod } = csiModifiers(parts[1])
+    out.push(key({ name: arrow, ...modBits(mod), ...(eventType ? { eventType } : {}) }))
     return
   }
 
   if (final === "~") {
+    if (parts[0] === "27" && parts.length === 3) {
+      pushCsiKey(Number.parseInt(parts[2] ?? "", 10), Number.parseInt(parts[1] ?? "", 10), out)
+      return
+    }
+
     const code = parts[0] ?? ""
     const name = TILDE_NAMES[code]
     if (name === undefined) return
-    const mod = parts.length === 2 ? Number.parseInt(parts[1], 10) : 1
-    out.push(key({ name, ...modBits(mod) }))
+    const { eventType, mod } = csiModifiers(parts[1])
+    out.push(key({ name, ...modBits(mod), ...(eventType ? { eventType } : {}) }))
+    return
+  }
+
+  if (final === "u") {
+    handleCsiU(params, out)
     return
   }
 
   // Unrecognized CSI — drop. (Cursor-position responses, etc.)
+}
+
+function csiModifiers(part: string | undefined): { eventType?: KeyEventType; mod: number } {
+  if (part === undefined) return { mod: 1 }
+  const [rawMod, rawEventType] = part.split(":", 2)
+  const mod = Number.parseInt(rawMod, 10)
+  const eventType = eventTypeFromDigit(rawEventType)
+  return eventType ? { eventType, mod } : { mod }
+}
+
+/** Kitty event-type sub-parameter: 1 = press (the default, usually omitted),
+ *  2 = repeat, 3 = release. */
+function eventTypeFromDigit(digit: string | undefined): KeyEventType | undefined {
+  if (digit === "1") return "press"
+  if (digit === "2") return "repeat"
+  if (digit === "3") return "release"
+  return undefined
+}
+
+function handleCsiU(params: string, out: InputEvent[]): void {
+  const match = params.match(/^(\d+)(?::(\d*))?(?::(\d+))?(?:;(\d+))?(?::([123]))?$/)
+  if (!match) return
+
+  const code = Number.parseInt(match[1], 10)
+  const mod = match[4] ? Number.parseInt(match[4], 10) : 1
+  const shifted = match[2] ? Number.parseInt(match[2], 10) : undefined
+  const base = match[3] ? Number.parseInt(match[3], 10) : undefined
+  pushCsiKey(code, mod, out, { base, eventType: eventTypeFromDigit(match[5]), shifted })
+}
+
+function pushCsiKey(
+  code: number,
+  mod: number,
+  out: InputEvent[],
+  opts: { base?: number; eventType?: KeyEventType; shifted?: number } = {}
+): void {
+  const name = CSI_U_NAMES[code] ?? nameFromCodePoint(code)
+  if (name === undefined) return
+
+  const mods = modBits(mod)
+  const event: Partial<KeyEvent> & { name: string } = { name, ...mods }
+  const base = opts.base !== undefined ? codePointToString(opts.base) : undefined
+  if (base !== undefined) event.base = base
+  if (opts.eventType !== undefined) event.eventType = opts.eventType
+  if (opts.eventType !== "release" && !mods.alt && !mods.ctrl && !mods.meta && name.length === 1) {
+    const shifted = opts.shifted !== undefined ? codePointToString(opts.shifted) : undefined
+    event.text = shifted ?? name
+  }
+  out.push(key(event))
+}
+
+// Unicode private-use area (U+E000..U+F8FF). The Kitty keyboard protocol
+// encodes functional keys (keypad, media, extra modifiers) as code points in
+// this block; the ones we model live in CSI_U_NAMES. Any other PUA code is a
+// key we don't name — it must be dropped, never rendered as a printable char.
+const PUA_START = 57_344
+const PUA_END = 63_743
+
+/** Convert a Unicode code point to a string, or `undefined` if it isn't a
+ *  usable printable scalar value (control char, surrogate, or out of range). */
+function codePointToString(cp: number): string | undefined {
+  if (!Number.isSafeInteger(cp) || cp < 32 || cp > 1_114_111) return undefined
+  if (cp >= 55_296 && cp <= 57_343) return undefined // lone surrogate (U+D800..U+DFFF)
+  return String.fromCodePoint(cp)
+}
+
+/** Like {@link codePointToString}, but also drops unnamed Kitty functional
+ *  keys so they never surface as private-use-area glyphs. */
+function nameFromCodePoint(code: number): string | undefined {
+  if (code >= PUA_START && code <= PUA_END) return undefined
+  return codePointToString(code)
+}
+
+const CSI_U_NAMES: Partial<Record<number, string>> = {
+  127: "backspace",
+  13: "enter",
+  27: "esc",
+  57_414: "enter",
+  57_417: "left",
+  57_418: "right",
+  57_419: "up",
+  57_420: "down",
+  57_421: "pageup",
+  57_422: "pagedown",
+  57_423: "home",
+  57_424: "end",
+  57_425: "insert",
+  57_426: "delete",
+  9: "tab",
 }
 
 function handleMouse(params: string, final: string, out: InputEvent[]): void {
@@ -371,6 +480,8 @@ function key(partial: Partial<KeyEvent> & { name: string }): InputEvent {
       meta: partial.meta ?? false,
       name: partial.name,
       shift: partial.shift ?? false,
+      ...(partial.base !== undefined ? { base: partial.base } : {}),
+      ...(partial.eventType !== undefined ? { eventType: partial.eventType } : {}),
       ...(partial.text !== undefined ? { text: partial.text } : {}),
     },
     type: "key",
