@@ -34,6 +34,25 @@ describe("ANSI primitives", () => {
     )
   })
 
+  test("wrapAnsi preserves OSC 8 hyperlinks across wrapped rows", () => {
+    const url =
+      "https://example.com/docs?first=abcdefghijklmnopqrstuvwxyz&second=0123456789abcdefghijklmnopqrstuvwxyz&third=abcdefghijklmnop"
+    const linked = `\x1b]8;;${url}\x1b\\${url}\x1b]8;;\x1b\\`
+    const rows = wrapAnsi(`See ${linked} for details.`, 40).split("\n")
+    expect(rows.length).toBeGreaterThan(1)
+    expect(rows.every((row) => stringWidth(row) <= 40)).toBe(true)
+    expect(rows.filter((row) => row.includes(url)).length).toBeGreaterThan(1)
+    expect(rows.map((row) => stripAnsi(row)).join("")).toBe(`See ${url} for details.`)
+  })
+
+  test("wrapAnsi preserves a hyperlink's BEL terminator", () => {
+    const url = "https://example.com/abcdefghijklmnopqrstuvwxyz"
+    const linked = `\x1b]8;;${url}\x07${url}\x1b]8;;\x07`
+    const rows = wrapAnsi(linked, 12).split("\n")
+    expect(rows.every((row) => row.includes(`\x1b]8;;${url}\x07`))).toBe(true)
+    expect(rows.every((row) => row.endsWith("\x1b]8;;\x07"))).toBe(true)
+  })
+
   test("hasAnsi detects SGR escapes only", () => {
     expect(hasAnsi("\x1b[31mred")).toBe(true)
     expect(hasAnsi("\x1b[2Kclear")).toBe(false)

@@ -19,7 +19,10 @@ export function renderMarkdown(input: string, callbacks: MdCallbacks, opts?: MdO
           ...callbacks,
           code: (text, meta) => callbacks.code!(text, decodeCodeMeta(meta)),
         }
-  return Bun.markdown.render(encoded, wrapped, opts)
+  return Bun.markdown.render(encoded, wrapped, {
+    ...opts,
+    autolinks: opts?.autolinks ?? true,
+  })
 }
 
 function decodeCodeMeta(meta: MdCodeBlockMeta | undefined): MdCodeBlockMeta | undefined {
