@@ -45,6 +45,12 @@ function cursorCtx(width = 40) {
   return ret
 }
 
+function markedCursorCtx(width = 40) {
+  const ret = ctx(width)
+  ;(ret.style as { inverse: (s: string) => string }).inverse = (s: string) => `<${s}>`
+  return ret
+}
+
 describe("Input — initial state", () => {
   test("defaults to empty value and cursor=0", () => {
     const n = input()
@@ -123,6 +129,12 @@ describe("Input.actions — cursor motion", () => {
     expect(n.state.cursor).toBe(2)
   })
 
+  test("cursorUp preserves the visual column across a double-width character", () => {
+    const n = input({ cursor: 5, value: "가x\nabc" })
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(1)
+  })
+
   test("cursorUp clamps to end of prev line when col exceeds it", () => {
     const n = input({ cursor: 9, value: "ab\nlonger" })
     n.actions["input.cursorUp"]()
@@ -139,6 +151,12 @@ describe("Input.actions — cursor motion", () => {
     const n = input({ cursor: 1, value: "abcd\nefgh" })
     n.actions["input.cursorDown"]()
     expect(n.state.cursor).toBe(6)
+  })
+
+  test("cursorDown preserves the visual column across a double-width character", () => {
+    const n = input({ cursor: 2, value: "abc\n가x" })
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(5)
   })
 
   test("cursorDown on the last line is a no-op", () => {
@@ -506,6 +524,16 @@ describe("Input — render", () => {
     void n.emit("focus")
     const rows = await n.render(cursorCtx(40))
     expect(rows).toEqual(["asdasdaddd", "sdss", "█", "sss kkkdddd"])
+  })
+
+  test("renders the cursor after a double-width character", async () => {
+    const n = input({ cursor: 1, value: "가a" })
+    n.mount(mockMountCtx("ui"))
+    void n.emit("focus")
+
+    const rows = await n.render(markedCursorCtx(20))
+
+    expect(rows).toEqual(["가<a>"])
   })
 
   test("cursorLeft from the end of a multiline input visibly moves onto the last char", async () => {
