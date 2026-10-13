@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.6](https://github.com/folke/zaly/compare/agent-v0.0.5...agent-v0.0.6) (2026-10-13)
+
+
+### 🩹 Fixes
+
+* **agent:** --yolo should never show a permission dialog ([b7403a4](https://github.com/folke/zaly/commit/b7403a4fcec597c763efdfbc094655d4ce975040))
+* **ai:** preserve responses cache affinity ([79d6bed](https://github.com/folke/zaly/commit/79d6beddb9e9b0549911ef8386e82d575e0743bf))
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.5](https://github.com/folke/zaly/compare/agent-v0.0.4...agent-v0.0.5) (2026-09-08)
 
 

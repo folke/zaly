@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/folke/zaly/compare/plugin-v0.0.4...plugin-v0.0.5) (2026-10-13)
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.4](https://github.com/folke/zaly/compare/plugin-v0.0.3...plugin-v0.0.4) (2026-07-10)
 
 

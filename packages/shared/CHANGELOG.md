@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.0.6](https://github.com/folke/zaly/compare/shared-v0.0.5...shared-v0.0.6) (2026-10-13)
+
+
+### 🩹 Fixes
+
+* **cli:** using @ for files in composer should include hidden files ([3050194](https://github.com/folke/zaly/commit/3050194e8cd17b51c26142cef083ad91576ab2fb))
+* **shared:** fix race cond in spawn ([9bb2127](https://github.com/folke/zaly/commit/9bb2127d78195f03f0bd065dfb1cab476f2ed448))
+
+
+### 📦 Build
+
+* **shared:** resolve ansi/glob in shared to their mjs equivalents ([b376299](https://github.com/folke/zaly/commit/b376299c8cf50f03b32bc4517ee36f64e4d80059))
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.5](https://github.com/folke/zaly/compare/shared-v0.0.4...shared-v0.0.5) (2026-09-08)
 
 

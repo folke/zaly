@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.7](https://github.com/folke/zaly/compare/ai-v0.0.6...ai-v0.0.7) (2026-10-13)
+
+
+### 🚀 Enhancements
+
+* **ai:** add gpt-6-x models ([57e7521](https://github.com/folke/zaly/commit/57e7521260e2ec5f5e12aacb1024821548af2cac))
+
+
+### 🩹 Fixes
+
+* **ai:** added support for images and PDF to OpenAI Reponses ([9a8f18d](https://github.com/folke/zaly/commit/9a8f18d0505d8e59ee84cd6e0964a44a533bfdad))
+* **ai:** preserve responses cache affinity ([79d6bed](https://github.com/folke/zaly/commit/79d6beddb9e9b0549911ef8386e82d575e0743bf))
+* **ai:** pretty-print models.dev json ([7461390](https://github.com/folke/zaly/commit/746139059c9079bc292845e213741ea645787e95))
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/ai-v0.0.5...ai-v0.0.6) (2026-09-08)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.8](https://github.com/folke/zaly/compare/tui-v0.0.7...tui-v0.0.8) (2026-10-13)
+
+
+### ✅ Tests
+
+* **tui:** files completion now includes dotfiles by default ([654370d](https://github.com/folke/zaly/commit/654370d0b168e179bf6567aa7a976451b4d8057b))
+
+
+### 📦 Build
+
+* only sync/build tokyonight themes when the repo exists locally. Closes [#18](https://github.com/folke/zaly/issues/18) ([a97385a](https://github.com/folke/zaly/commit/a97385a6368fedfe847b8c2b1760e03885050122))
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.7](https://github.com/folke/zaly/compare/tui-v0.0.6...tui-v0.0.7) (2026-09-08)
 
 

@@ -1,9 +1,9 @@
 {
-  "packages/agent": "0.0.5",
-  "packages/ai": "0.0.6",
-  "packages/cli": "0.0.6",
-  "packages/config": "0.0.5",
-  "packages/plugin": "0.0.4",
-  "packages/shared": "0.0.5",
-  "packages/tui": "0.0.7"
+  "packages/agent": "0.0.6",
+  "packages/ai": "0.0.7",
+  "packages/cli": "0.0.7",
+  "packages/config": "0.0.6",
+  "packages/plugin": "0.0.5",
+  "packages/shared": "0.0.6",
+  "packages/tui": "0.0.8"
 }

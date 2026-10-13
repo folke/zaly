@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/folke/zaly/compare/cli-v0.0.6...cli-v0.0.7) (2026-10-13)
+
+
+### 🤖 CI
+
+* bump min node to 22.18.0 ([a5d988d](https://github.com/folke/zaly/commit/a5d988df1afe4096ed4ab68f9ef1d4416e59529c))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/cli-v0.0.5...cli-v0.0.6) (2026-09-08)
 
 
