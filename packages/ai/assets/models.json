@@ -296236,7 +296236,7 @@
         }
       },
       "MiniMax/MiniMax-M2.7": {
-        "id": "MiniMax/MiniMax-M.7",
+        "id": "MiniMax/MiniMax-M2.7",
         "name": "MiniMax-M2.7",
         "description": "MiniMax model for chat, coding, office work, and agentic tasks",
         "family": "minimax",
