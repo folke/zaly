@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.0.10](https://github.com/folke/zaly/compare/v0.0.9...v0.0.10) (2026-10-14)
+
+
+### 📖 Documentation
+
+* added all changes before v0.0.10 ([4bc9843](https://github.com/folke/zaly/commit/4bc9843b4ee60a1304ba2267a90a47f8b7986e17))
+* archive package changelogs ([3c7e330](https://github.com/folke/zaly/commit/3c7e33075c873df0986c747ee8ffa1e52e9d63d3))
+* remove superpowers docs ([6c8fe9b](https://github.com/folke/zaly/commit/6c8fe9b91adee7d9aa13695eff40a53bca20c3f4))
+
+
+### 🤖 CI
+
+* **ai:** model updates now use `fix` commit ([51878fc](https://github.com/folke/zaly/commit/51878fcb51d84e371f01b52e76e92000d22b33e7))
+* **ai:** update models every hour ([8c83676](https://github.com/folke/zaly/commit/8c83676aea633afafb7d979e673c2fd549f0fc09))
+* consolidate releases into one root changelog ([1439aa2](https://github.com/folke/zaly/commit/1439aa2777793f022b220770b873220d3224d2e0))
+
+## Changelog
+
 ## All changes before v0.0.10 [compare changes](https://github.com/folke/zaly/compare/874f7aeec8741bc2af9e331ca0fe9108c6a49d0b...6c8fe9b91adee7d9aa13695eff40a53bca20c3f4)
 
 ### 🚀 Enhancements
