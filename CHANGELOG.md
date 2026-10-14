@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.11](https://github.com/folke/zaly/compare/v0.0.10...v0.0.11) (2026-10-14)
+
+
+### 🩹 Fixes
+
+* **cli:** fix bun shebang in postinstall script ([49c4fe6](https://github.com/folke/zaly/commit/49c4fe656868e143dd97fd8270e28e644c416c9d))
+
+
+### 📖 Documentation
+
+* cleanup ([6445e67](https://github.com/folke/zaly/commit/6445e677517050cf75a23423d98f99c10e4f9e9d))
+
 ## [0.0.10](https://github.com/folke/zaly/compare/v0.0.9...v0.0.10) (2026-10-14)
 
 ### 📖 Documentation
