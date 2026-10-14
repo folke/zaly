@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.0.9](https://github.com/folke/zaly/compare/agent-v0.0.6...agent-v0.0.9) (2026-10-14)
+
+
+### 🚀 Enhancements
+
+* **agent:** don't prefix file reads with line numbers ([560fbc3](https://github.com/folke/zaly/commit/560fbc3532fe598c6c65c42bfd781504190ea57d))
+* **agent:** get rid of freshness checks for edit/write tools ([abff49c](https://github.com/folke/zaly/commit/abff49c4f36763c1812410b885f8f863ae5a8246))
+* **agent:** simplify the find tool ([650e46e](https://github.com/folke/zaly/commit/650e46e10e2a311a0300a71ce99f86b4249e78f8))
+* **agent:** simplify the grep tool ([4fe0ab8](https://github.com/folke/zaly/commit/4fe0ab87232a286cbcf19092ab08da8976320e27))
+
+
+### 🩹 Fixes
+
+* **agent:** remove top-level oldText/newText for the edit tool ([842d394](https://github.com/folke/zaly/commit/842d3947c532cba20005259b3a8f6c137bb74855))
+* **shared:** include ignore files in glob search results ([a7ddc0b](https://github.com/folke/zaly/commit/a7ddc0be8da4723f0b1e292a0561ab29c6e02db7))
+
+
+### 💅 Refactors
+
+* **agent:** move file meta utils to separate file ([9740d69](https://github.com/folke/zaly/commit/9740d697448e4b36f2f4345d9634966487526bab))
+
+
+### 📦 Build
+
+* fix build deps ([f889075](https://github.com/folke/zaly/commit/f8890755b5ea7ebf51038341df8b016faf266820))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/agent-v0.0.5...agent-v0.0.6) (2026-10-13)
 
 

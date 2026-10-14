@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.9](https://github.com/folke/zaly/compare/shared-v0.0.6...shared-v0.0.9) (2026-10-14)
+
+
+### 🩹 Fixes
+
+* **shared:** include ignore files in glob search results ([a7ddc0b](https://github.com/folke/zaly/commit/a7ddc0be8da4723f0b1e292a0561ab29c6e02db7))
+
 ## [0.0.6](https://github.com/folke/zaly/compare/shared-v0.0.5...shared-v0.0.6) (2026-10-13)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.9](https://github.com/folke/zaly/compare/cli-v0.0.7...cli-v0.0.9) (2026-10-14)
+
+
+### 🚀 Enhancements
+
+* **agent:** don't prefix file reads with line numbers ([560fbc3](https://github.com/folke/zaly/commit/560fbc3532fe598c6c65c42bfd781504190ea57d))
+* **agent:** get rid of freshness checks for edit/write tools ([abff49c](https://github.com/folke/zaly/commit/abff49c4f36763c1812410b885f8f863ae5a8246))
+
 ## [0.0.7](https://github.com/folke/zaly/compare/cli-v0.0.6...cli-v0.0.7) (2026-10-13)
 
 

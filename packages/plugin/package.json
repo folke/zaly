@@ -1,6 +1,6 @@
 {
   "name": "@zaly/plugin",
-  "version": "0.0.5",
+  "version": "0.0.9",
   "description": "Plugin-facing API and loader helpers for zaly.",
   "keywords": [
     "api",

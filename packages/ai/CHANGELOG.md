@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.9](https://github.com/folke/zaly/compare/ai-v0.0.7...ai-v0.0.9) (2026-10-14)
+
+
+### 🚀 Enhancements
+
+* **ai:** generate report when updating models.json ([1244a6b](https://github.com/folke/zaly/commit/1244a6b438547b3e75a261b7119d1dfa49320994))
+* **models:** update models.dev catalog ([#41](https://github.com/folke/zaly/issues/41)) ([7a5724c](https://github.com/folke/zaly/commit/7a5724c9aaf3b34ca21a61fb476daafeada6ba6a))
+* **models:** update models.dev catalog ([#43](https://github.com/folke/zaly/issues/43)) ([e86ae10](https://github.com/folke/zaly/commit/e86ae100edd356f11326f0b951dd6c8dad45dc92))
+
+
+### 🤖 CI
+
+* **ai:** better models report ([040a546](https://github.com/folke/zaly/commit/040a546a9ac0699606017d4f780540954f3d3737))
+
 ## [0.0.7](https://github.com/folke/zaly/compare/ai-v0.0.6...ai-v0.0.7) (2026-10-13)
 
 

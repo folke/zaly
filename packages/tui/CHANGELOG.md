@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.9](https://github.com/folke/zaly/compare/tui-v0.0.8...tui-v0.0.9) (2026-10-14)
+
+
+### 🏡 Chores
+
+* **tui:** Synchronize zaly versions
+
 ## [0.0.8](https://github.com/folke/zaly/compare/tui-v0.0.7...tui-v0.0.8) (2026-10-13)
 
 
