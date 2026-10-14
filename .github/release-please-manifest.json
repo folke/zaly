@@ -1,10 +1,10 @@
 {
-  ".": "0.0.9",
-  "packages/agent": "0.0.9",
-  "packages/ai": "0.0.9",
-  "packages/cli": "0.0.9",
-  "packages/config": "0.0.9",
-  "packages/plugin": "0.0.9",
-  "packages/shared": "0.0.9",
-  "packages/tui": "0.0.9"
+  ".": "0.0.10",
+  "packages/agent": "0.0.10",
+  "packages/ai": "0.0.10",
+  "packages/cli": "0.0.10",
+  "packages/config": "0.0.10",
+  "packages/plugin": "0.0.10",
+  "packages/shared": "0.0.10",
+  "packages/tui": "0.0.10"
 }

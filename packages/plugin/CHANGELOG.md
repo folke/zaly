@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/folke/zaly/compare/zaly-v0.0.9...plugin-v0.0.10) (2026-10-14)
+
+
+### 🏡 Chores
+
+* **plugin:** Synchronize zaly versions
+
 ## [0.0.9](https://github.com/folke/zaly/compare/plugin-v0.0.5...plugin-v0.0.9) (2026-10-14)
 
 
