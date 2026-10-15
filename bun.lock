@@ -29,7 +29,7 @@
     },
     "packages/agent": {
       "name": "@zaly/agent",
-      "version": "0.0.11",
+      "version": "0.1.0",
       "dependencies": {
         "@zaly/ai": "workspace:*",
         "@zaly/shared": "workspace:*",
@@ -61,7 +61,7 @@
     },
     "packages/cli": {
       "name": "@zaly/cli",
-      "version": "0.0.11",
+      "version": "0.1.0",
       "bin": {
         "zaly": "./bin/zaly.ts",
       },
@@ -84,7 +84,7 @@
     },
     "packages/config": {
       "name": "@zaly/config",
-      "version": "0.0.11",
+      "version": "0.1.0",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
@@ -123,7 +123,7 @@
     },
     "packages/plugin": {
       "name": "@zaly/plugin",
-      "version": "0.0.11",
+      "version": "0.1.0",
       "dependencies": {
         "@zaly/agent": "workspace:*",
         "@zaly/ai": "workspace:*",
