@@ -46,5 +46,5 @@ Project guidance for AI agents working in this repository.
 - Root `docs/` is reserved for the user-facing website. Package-specific contributor/embedding guides belong in `packages/<name>/docs/` where needed.
 - Keep READMEs concise and link to deeper guides. Contributor entry point: [CONTRIBUTING.md](./CONTRIBUTING.md).
 - Use conventional commits such as `fix(tui): ...` or `feat(agent): ...`.
-- One root release/changelog and bare `v<version>` tags; release-please updates all seven public package versions. Don't bump versions individually.
+- Changesets links the seven public packages; only affected packages/dependents release. Don't bump versions manually. Add a changeset for user-facing/API changes, also naming `@zaly/cli` for product-facing notes. Package changelogs/tags/releases are separate; private packages are excluded.
 - Release, packing, publication, and recovery: [packages/dev/docs/releases.md](./packages/dev/docs/releases.md).

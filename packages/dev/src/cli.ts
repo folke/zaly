@@ -8,7 +8,7 @@ import { defineCommand, runCommand, runMain, showUsage } from "citty"
 import { existsSync } from "node:fs"
 import { join } from "pathe"
 import { isAgent } from "std-env"
-import { allPkgs, findPkg, resolvePkgs, workspace } from "./utils.ts"
+import { findPkg, resolvePkgs, workspace } from "./utils.ts"
 
 const passthrough = new Set(["test", "lint", "fmt"])
 
@@ -126,61 +126,6 @@ const main = defineCommand({
       },
       run: async ({ rawArgs }) => {
         await exec(["oxfmt", ...rawArgs])
-      },
-    }),
-    pack: defineCommand({
-      meta: { name: "pack", description: "Pack public packages and write a release manifest" },
-      args: {
-        out: { type: "string", required: true, description: "Artifact directory" },
-      },
-      run: async ({ args }) => {
-        const { packRelease } = await import("./pack.ts")
-        await packRelease(await allPkgs(), {
-          dir: args.out,
-          root: workspace,
-        })
-      },
-    }),
-    publish: defineCommand({
-      meta: {
-        name: "publish",
-        description: "Publish public packages to npm, skipping versions that already exist",
-      },
-      args: {
-        artifacts: { type: "string", description: "Publish prebuilt artifacts without repacking" },
-        "dry-run": {
-          type: "boolean",
-          description: "Run npm publish --dry-run",
-          default: false,
-        },
-        otp: {
-          type: "string",
-          description: "Forward an npm one-time password",
-        },
-        provenance: {
-          type: "boolean",
-          description: "Publish with npm provenance (defaults to true on GitHub Actions)",
-          default: process.env.GITHUB_ACTIONS === "true",
-        },
-        tag: {
-          type: "string",
-          description: "Publish with a specific npm dist-tag",
-        },
-      },
-      run: async ({ args }) => {
-        const { publish, publishArtifacts } = await import("./publish.ts")
-        const opts = {
-          root: workspace,
-          dryRun: args["dry-run"],
-          otp: args.otp,
-          provenance: args.provenance,
-          tag: args.tag,
-        }
-        if (args.artifacts) {
-          await publishArtifacts(args.artifacts, opts)
-        } else {
-          await publish(await resolvePkgs(), opts)
-        }
       },
     }),
     bench: defineCommand({

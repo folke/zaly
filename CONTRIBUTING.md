@@ -21,7 +21,10 @@ commands to that package. Root lint also requires `actionlint` on your PATH.
 Keep changes focused and add tests for behavior changes. Import test APIs from
 `vitest`, not `bun:test`, so tests work in both runtimes. Commit generated changes
 when a build updates them. Use conventional commit messages such as `fix(tui): ...`
-or `feat(agent): ...` for release notes.
+or `feat(agent): ...`. Add a changeset with `bun changeset` for user-facing or public
+API changes; also select `@zaly/cli` when the note belongs in product release notes.
+Changesets can accompany PRs or direct commits to `main`; no note is usually needed
+for tests, internal refactors, or contributor docs.
 
 ## Documentation
 
@@ -30,4 +33,4 @@ contributor and embedding guides live in `packages/<name>/docs/` where needed.
 
 For versioning, CI publication, and recovery, see the
 [release guide](./packages/dev/docs/releases.md). Versions and changelogs are managed
-through release-please; don't bump package versions individually.
+through Changesets; don't bump package versions individually.

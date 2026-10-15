@@ -6,6 +6,8 @@ zaly is an AI coding agent with a polished terminal UI, persistent sessions,
 flexible model support, explicit permissions, and a resource system built to be
 extended.
 
+[Release notes](./packages/cli/CHANGELOG.md)
+
 > [!WARNING]
 > zaly is alpha software. It is already useful and fairly polished, but APIs,
 > configuration, session formats, and behavior may change before 1.0. Expect

@@ -1,4 +1,7 @@
-# Changelog
+# Historical changelog
+
+Releases through 0.0.11 are recorded here. New product release notes live in the
+[CLI changelog](./packages/cli/CHANGELOG.md); libraries maintain their own changelogs.
 
 ## [0.0.11](https://github.com/folke/zaly/compare/v0.0.10...v0.0.11) (2026-10-14)
 

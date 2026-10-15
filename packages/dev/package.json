@@ -24,6 +24,7 @@
     "ts-morph": "^28.0.0"
   },
   "devDependencies": {
+    "@changesets/get-release-plan": "5.0.2",
     "pkg-types": "^2.3.3",
     "std-env": "^4.3.0",
     "ttsc": "^0.32.1",

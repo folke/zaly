@@ -3,7 +3,7 @@
 Internal development tooling for the zaly monorepo.
 
 `@zaly/dev` provides the `z` command used by package scripts for build, test,
-lint, format, API extraction, and publishing tasks.
+lint, format, and API extraction. Changesets handles versioning, packing, and publishing.
 
 > [!NOTE]
 > This package is private/internal and is not intended for end users.

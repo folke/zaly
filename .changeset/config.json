@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [
+    [
+      "@zaly/agent",
+      "@zaly/ai",
+      "@zaly/cli",
+      "@zaly/config",
+      "@zaly/plugin",
+      "@zaly/shared",
+      "@zaly/tui"
+    ]
+  ],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [],
+  "privatePackages": { "version": false, "tag": false },
+  "format": false
+}

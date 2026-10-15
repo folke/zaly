@@ -28,12 +28,28 @@ jobs:
       - run: bun --workspaces install --frozen-lockfile
       - name: Update catalog and write review report
         run: bun run models --report "$RUNNER_TEMP/models-report.md"
+      - name: Write catalog changeset when the snapshot changed
+        shell: bash
+        run: |
+          if ! git diff --quiet -- packages/ai/assets/models.json; then
+            mkdir -p .changeset
+            cat > .changeset/models-catalog.md <<'EOF'
+          ---
+          "@zaly/ai": patch
+          "@zaly/cli": patch
+          ---
+
+          Updated the model catalog with current model availability, limits, and pricing.
+          EOF
+          fi
       - uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ github.token }}
           branch: automation/models-catalog
           delete-branch: true
-          add-paths: packages/ai/assets/models.json
+          add-paths: |
+            packages/ai/assets/models.json
+            .changeset/models-catalog.md
           commit-message: "fix(models): update models.dev catalog"
           title: "fix(models): update models.dev catalog"
           body-path: ${{ runner.temp }}/models-report.md
