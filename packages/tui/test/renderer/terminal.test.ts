@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest"
 import { Terminal } from "../../src/renderer/terminal.ts"
-import { MockReader, MockWriter } from "./mock.ts"
+import { autoStop, MockReader, MockWriter } from "./mock.ts"
+
+const track = autoStop()
 
 function makeTerminal(cols = 80, rows = 24, reserveBottom = 0) {
   const stdout = new MockWriter(cols, rows)
   const stdin = new MockReader()
-  const terminal = new Terminal({ hookSignals: false, reserveBottom, stdin, stdout })
+  const terminal = track(new Terminal({ hookSignals: false, reserveBottom, stdin, stdout }))
   return { stdout, terminal }
 }
 
@@ -31,13 +33,112 @@ describe("Terminal.start / stop", () => {
     // Hide cursor + DECAWM off.
     expect(stdout.all).toContain("\x1b[?25l")
     expect(stdout.all).toContain("\x1b[?7l")
+    expect(stdout.all).toContain("\x1b[>7u\x1b[?u\x1b[>c")
     // DECSTBM bounds: [1, 17].
     expect(stdout.all).toContain("\x1b[1;17r")
     terminal.stop()
     // On stop: DECSTBM reset, DECAWM + cursor back on.
     expect(stdout.all).toContain("\x1b[r")
+    expect(stdout.all).toContain("\x1b[<u")
     expect(stdout.all).toContain("\x1b[?7h")
     expect(stdout.all).toContain("\x1b[?25h")
+  })
+
+  test("enables Kitty keyboard reporting after a positive response", () => {
+    const { stdout, terminal } = makeTerminal()
+    terminal.start()
+    expect(
+      terminal.handleKeyboardProtocolResponse({
+        final: "u",
+        kind: "csi",
+        params: "?7",
+        sequence: "\x1b[?7u",
+        type: "term-response",
+      })
+    ).toBe(true)
+    expect(terminal.kittyKeyboard).toBe(true)
+    expect(terminal.modifyOtherKeys).toBe(false)
+    terminal.stop()
+    expect(stdout.all).toContain("\x1b[<u")
+  })
+
+  test("falls back to xterm modifyOtherKeys when Kitty is unavailable", () => {
+    const { stdout, terminal } = makeTerminal()
+    terminal.start()
+    expect(
+      terminal.handleKeyboardProtocolResponse({
+        final: "c",
+        kind: "csi",
+        params: ">41;348;0",
+        sequence: "\x1b[>41;348;0c",
+        type: "term-response",
+      })
+    ).toBe(true)
+    expect(terminal.kittyKeyboard).toBe(false)
+    expect(terminal.modifyOtherKeys).toBe(true)
+    expect(stdout.all).toContain("\x1b[>4;2m")
+    terminal.stop()
+    expect(stdout.all).toContain("\x1b[>4;0m")
+  })
+
+  test("leaves primary Device Attributes replies for the image-detection queries", () => {
+    // Primary DA (`CSI ? … c`) is the image-detection fence; the keyboard
+    // handler must not consume it or enable a fallback from it.
+    const { terminal } = makeTerminal()
+    terminal.start()
+    expect(
+      terminal.handleKeyboardProtocolResponse({
+        final: "c",
+        kind: "csi",
+        params: "?62;4;52",
+        sequence: "\x1b[?62;4;52c",
+        type: "term-response",
+      })
+    ).toBe(false)
+    expect(terminal.modifyOtherKeys).toBe(false)
+    terminal.stop()
+  })
+
+  test("switches from the fallback when a delayed Kitty response arrives", () => {
+    const { stdout, terminal } = makeTerminal()
+    terminal.start()
+    terminal.handleKeyboardProtocolResponse({
+      final: "c",
+      kind: "csi",
+      params: ">41;348;0",
+      sequence: "\x1b[>41;348;0c",
+      type: "term-response",
+    })
+    expect(terminal.modifyOtherKeys).toBe(true)
+
+    terminal.handleKeyboardProtocolResponse({
+      final: "u",
+      kind: "csi",
+      params: "?7",
+      sequence: "\x1b[?7u",
+      type: "term-response",
+    })
+    expect(terminal.kittyKeyboard).toBe(true)
+    expect(terminal.modifyOtherKeys).toBe(false)
+    expect(stdout.all).toContain("\x1b[>4;0m")
+    terminal.stop()
+  })
+
+  test("ignores malformed keyboard protocol responses", () => {
+    const { terminal } = makeTerminal()
+    terminal.start()
+    expect(
+      terminal.handleKeyboardProtocolResponse({
+        final: "u",
+        kind: "csi",
+        params: "?7;1",
+        sequence: "\x1b[?7;1u",
+        type: "term-response",
+      })
+    ).toBe(false)
+    expect(terminal.kittyKeyboard).toBe(false)
+    expect(terminal.modifyOtherKeys).toBe(false)
+    terminal.stop()
   })
 
   test("no DECSTBM emitted when reserveBottom is 0", () => {

@@ -262,7 +262,13 @@ export class Actions extends Emitter<ActionEvents> {
   }
 
   dispatchKey(routed: RoutedKey, opts: { node?: boolean; global?: boolean } = {}): boolean {
-    const actions = (this.#keymap.get(canonical(routed.pattern)) ?? [])
+    if (routed.eventType === "release") return true
+
+    const patterns = [routed.pattern]
+    if (routed.base !== undefined) patterns.push(canonical({ ...routed, name: routed.base }))
+    const actions = [
+      ...new Set(patterns.flatMap((pattern) => this.#keymap.get(canonical(pattern)) ?? [])),
+    ]
       .map((id) => this.get(id))
       .filter((a) => filterAction(a))
       .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))

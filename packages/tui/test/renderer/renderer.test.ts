@@ -15,6 +15,17 @@ async function renderer() {
   })
 }
 
+describe("renderer lifecycle", () => {
+  test("removes its unhandled rejection listener when stopped", async () => {
+    const r = await renderer()
+    const before = process.listenerCount("unhandledRejection")
+    r.start()
+    expect(process.listenerCount("unhandledRejection")).toBe(before + 1)
+    r.stop()
+    expect(process.listenerCount("unhandledRejection")).toBe(before)
+  })
+})
+
 describe("renderer.getNode — lookup by id", () => {
   test("finds a node tagged with id anywhere in the UI tree", async () => {
     const r = await renderer()

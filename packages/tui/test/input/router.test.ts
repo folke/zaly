@@ -213,6 +213,22 @@ describe("InputRouter — keymap → action dispatch", () => {
     expect(fired).toBe(1)
   })
 
+  test("Kitty base-layout keys match actions", () => {
+    const { actions, router } = setup()
+    let fired = 0
+    actions.register({ "global.quit": { fn: () => fired++, keys: ["ctrl-c"] } })
+    router.dispatch({ event: makeKey("с", { base: "c", ctrl: true }), type: "key" })
+    expect(fired).toBe(1)
+  })
+
+  test("ignores Kitty key releases", () => {
+    const { actions, router } = setup()
+    let fired = 0
+    actions.register({ "input.cursorRight": { fn: () => fired++, keys: ["right"] } })
+    router.dispatch({ event: makeKey("right", { eventType: "release" }), type: "key" })
+    expect(fired).toBe(0)
+  })
+
   test("dispatch walks the focus chain for node.actions[id]", () => {
     const { actions, mount, router } = setup()
     const parent = mount(box({}))
