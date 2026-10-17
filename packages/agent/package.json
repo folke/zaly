@@ -1,6 +1,6 @@
 {
   "name": "@zaly/agent",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Agent runtime, sessions, tools, permissions, compaction, and tasks for zaly.",
   "keywords": [
     "agent",

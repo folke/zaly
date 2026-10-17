@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.0.12](https://github.com/folke/zaly/compare/v0.0.11...v0.0.12) (2026-10-17)
+
+
+### 🚀 Enhancements
+
+* **cli:** show resolved file paths and read ranges in tool previews ([d0e21bb](https://github.com/folke/zaly/commit/d0e21bbb39fe664a6dff1da80c651e854e6ce34c))
+* **docs:** add custom homepage, branding, and Geist typography ([05dcebb](https://github.com/folke/zaly/commit/05dcebb9ab7943502da7de6d2eefbef01b01b92a))
+* **docs:** add high-resolution quickstart demo to homepage hero ([a61d5ad](https://github.com/folke/zaly/commit/a61d5ada811d933bcbd6518fc1496d15cf89f876))
+* **docs:** sync generated reference regions through a rolling PR ([5e3d4d7](https://github.com/folke/zaly/commit/5e3d4d74d579b429d1e80e2a6b67bc603b3acf58))
+* **docs:** use asciinema for the homepage demo ([8eacf11](https://github.com/folke/zaly/commit/8eacf1129ca615ae4e2e57ab91abf234074835a4))
+
+
+### 🩹 Fixes
+
+* **agent:** match file paths when checking read freshness ([6c443ef](https://github.com/folke/zaly/commit/6c443ef631d5c57d4e5873fd05416e4ef5bd9305))
+* **agent:** process append submissions after pending injections ([d8f61e7](https://github.com/folke/zaly/commit/d8f61e76452b32296cc23e7495359d6b21c6f4ec))
+* **cli:** pass ctx.style to tool preview inspect so that the correct theme is used ([d585343](https://github.com/folke/zaly/commit/d58534332bf8cbe7f96fa50a8dc8a8513dd5ab2f))
+* **cli:** preserve tool results across replay boundaries ([0eb8010](https://github.com/folke/zaly/commit/0eb80100bff7b264aa933291cd1c9d4436090fa9))
+* **tui:** better theme colors ([63bd902](https://github.com/folke/zaly/commit/63bd902780154b468a66100dcad0b543a1210a8d))
+
+
+### 📖 Documentation
+
+* add initial VitePress site and Pages deployment ([eab6532](https://github.com/folke/zaly/commit/eab65325b57c51493fa2b080e4a719bb31053706))
+* fix install code bottom margin ([46a9f38](https://github.com/folke/zaly/commit/46a9f3867b6d13dae3630a250cb0fc4a54b2ec65))
+
+
+### 🤖 CI
+
+* **dev:** use pnpm pack -r for packaging ([d558388](https://github.com/folke/zaly/commit/d5583888382773361cdc64b00288f47575e4fc32))
+* use GitHub App tokens for automated pull requests ([320be06](https://github.com/folke/zaly/commit/320be06a2a4303d0754d16f427003b47784a727a))
+
 ## [0.0.11](https://github.com/folke/zaly/compare/v0.0.10...v0.0.11) (2026-10-14)
 
 
