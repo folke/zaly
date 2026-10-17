@@ -393,12 +393,84 @@ describe("Input — printable-char fallback", () => {
   })
 })
 
+/** Six lines — above the default `pasteMaxLines` threshold of 5. */
+const LARGE_PASTE = "a\nb\nc\nd\ne\nf"
+const LARGE_PASTE_2 = "x\ny\nz\nw\nv\nu"
+
 describe("Input — paste", () => {
   test("paste inserts the whole payload at the cursor", () => {
     const n = input({ cursor: 1, value: "ac" })
     void n.emit("paste", { paste: paste("BB") })
     expect(n.state.value).toBe("aBBc")
     expect(n.state.cursor).toBe(3)
+  })
+
+  test("large paste creates a marker with a paste-again hint", () => {
+    const n = input()
+    n.paste(LARGE_PASTE)
+    expect(n.state.value).toMatch(/^\[Pasted text #1 \+6 lines — Paste again to expand\]$/)
+  })
+
+  test("pasting the same large text again expands the marker", () => {
+    const n = input()
+    n.paste(LARGE_PASTE)
+    n.paste(LARGE_PASTE)
+    expect(n.state.value).toBe(LARGE_PASTE)
+    expect(n.state.cursor).toBe(LARGE_PASTE.length)
+  })
+
+  test("expansion preserves surrounding text and places the cursor after the expanded content", () => {
+    const n = input({ cursor: 3, value: "foo|bar" })
+    n.paste(LARGE_PASTE)
+    const marker = n.state.value ?? ""
+    expect(marker.startsWith("foo")).toBe(true)
+    expect(marker.endsWith("|bar")).toBe(true)
+    // Move cursor away so expansion must recompute position from the marker.
+    n.state.cursor = 0
+    n.paste(LARGE_PASTE)
+    expect(n.state.value).toBe(`foo${LARGE_PASTE}|bar`)
+    expect(n.state.cursor).toBe(`foo${LARGE_PASTE}`.length)
+  })
+
+  test("after expansion, consume returns the text once without duplication", () => {
+    const n = input()
+    n.paste(LARGE_PASTE)
+    n.paste(LARGE_PASTE)
+    const result = n.consume()
+    expect(result.value).toBe(LARGE_PASTE)
+    expect(result.attachments).toEqual([])
+  })
+
+  test("a second large paste with different text creates a separate marker", () => {
+    const n = input()
+    n.paste(LARGE_PASTE)
+    const first = n.state.value ?? ""
+    n.paste(LARGE_PASTE_2)
+    const value = n.state.value ?? ""
+    expect(value).toContain(first)
+    expect(value).toMatch(/\[Pasted text #2 \+6 lines — Paste again to expand\]/)
+    expect(value).not.toContain(LARGE_PASTE)
+    expect(value).not.toContain(LARGE_PASTE_2)
+  })
+
+  test("small pastes insert directly, including repeated small pastes", () => {
+    const n = input()
+    n.paste("hi")
+    n.paste("hi")
+    expect(n.state.value).toBe("hihi")
+    expect(n.state.cursor).toBe(4)
+  })
+
+  test("a marker removed by the user cannot be expanded by a later paste", () => {
+    const n = input()
+    n.paste(LARGE_PASTE)
+    const value = n.state.value ?? ""
+    n.state.cursor = value.length
+    n.actions["input.deleteCharBack"]()
+    expect(n.state.value).toBe("")
+    n.paste(LARGE_PASTE)
+    // Marker is gone, so this is a fresh large paste — still collapsed.
+    expect(n.state.value).toMatch(/^\[Pasted text #2 \+6 lines — Paste again to expand\]$/)
   })
 })
 
