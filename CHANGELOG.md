@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.0.12](https://github.com/folke/zaly/compare/v0.0.11...v0.0.12) (2026-10-18)
+
+
+### 🚀 Enhancements
+
+* **cli:** show resolved file paths and read ranges in tool previews ([d0e21bb](https://github.com/folke/zaly/commit/d0e21bbb39fe664a6dff1da80c651e854e6ce34c))
+* **config:** add `ui.transparent` config option ([bdb92bf](https://github.com/folke/zaly/commit/bdb92bf5bbc877e762fad6f864a129ce9f84df45))
+* **docs:** add custom homepage, branding, and Geist typography ([05dcebb](https://github.com/folke/zaly/commit/05dcebb9ab7943502da7de6d2eefbef01b01b92a))
+* **docs:** add high-resolution quickstart demo to homepage hero ([a61d5ad](https://github.com/folke/zaly/commit/a61d5ada811d933bcbd6518fc1496d15cf89f876))
+* **docs:** sync generated reference regions through a rolling PR ([5e3d4d7](https://github.com/folke/zaly/commit/5e3d4d74d579b429d1e80e2a6b67bc603b3acf58))
+* **docs:** use asciinema for the homepage demo ([8eacf11](https://github.com/folke/zaly/commit/8eacf1129ca615ae4e2e57ab91abf234074835a4))
+* **tui:** added default fg/bg rendering ([a084167](https://github.com/folke/zaly/commit/a08416798ea266507157decda6ea7eed9accf665))
+* **tui:** better builtin themes ([c5b1a6a](https://github.com/folke/zaly/commit/c5b1a6a89536d9394f60f7c0b41ab4c250616848))
+
+
+### 🩹 Fixes
+
+* **agent:** match file paths when checking read freshness ([6c443ef](https://github.com/folke/zaly/commit/6c443ef631d5c57d4e5873fd05416e4ef5bd9305))
+* **agent:** process append submissions after pending injections ([d8f61e7](https://github.com/folke/zaly/commit/d8f61e76452b32296cc23e7495359d6b21c6f4ec))
+* **ai:** send provider-specific session headers ([77366a5](https://github.com/folke/zaly/commit/77366a5e8dfeb363fdbd12c36cb890cc3fc9d5d6))
+* **cli:** pass ctx.style to tool preview inspect so that the correct theme is used ([d585343](https://github.com/folke/zaly/commit/d58534332bf8cbe7f96fa50a8dc8a8513dd5ab2f))
+* **cli:** preserve tool results across replay boundaries ([0eb8010](https://github.com/folke/zaly/commit/0eb80100bff7b264aa933291cd1c9d4436090fa9))
+* **models:** update models.dev catalog ([#44](https://github.com/folke/zaly/issues/44)) ([2a1c51c](https://github.com/folke/zaly/commit/2a1c51ca6942b3c67631e9c7a84b0039154e4625))
+* **shared:** support mixed filename and path globs in find ([d75719a](https://github.com/folke/zaly/commit/d75719a57ce1434cd8a7aeef305e99ed81b981f3))
+* **tui:** align input cursor with Unicode display widths ([#21](https://github.com/folke/zaly/issues/21)) ([12ff24e](https://github.com/folke/zaly/commit/12ff24ebd5ea333032fe3e8fe56caf47c337362b))
+* **tui:** better theme colors ([63bd902](https://github.com/folke/zaly/commit/63bd902780154b468a66100dcad0b543a1210a8d))
+* **tui:** prevent ansi color names from leaking into widget styles/colors ([44d14c9](https://github.com/folke/zaly/commit/44d14c9b34c8c4f4cb55766d644e48a666acd4e5))
+
+
+### 📖 Documentation
+
+* add initial VitePress site and Pages deployment ([eab6532](https://github.com/folke/zaly/commit/eab65325b57c51493fa2b080e4a719bb31053706))
+* fix install code bottom margin ([46a9f38](https://github.com/folke/zaly/commit/46a9f3867b6d13dae3630a250cb0fc4a54b2ec65))
+* regen demo ([11d0541](https://github.com/folke/zaly/commit/11d05415fb8583d7c594acccb81aee93021eaef3))
+
+
+### 🤖 CI
+
+* **dev:** use pnpm pack -r for packaging ([d558388](https://github.com/folke/zaly/commit/d5583888382773361cdc64b00288f47575e4fc32))
+* use GitHub App tokens for automated pull requests ([320be06](https://github.com/folke/zaly/commit/320be06a2a4303d0754d16f427003b47784a727a))
+
 ## [0.0.11](https://github.com/folke/zaly/compare/v0.0.10...v0.0.11) (2026-10-14)
 
 
