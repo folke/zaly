@@ -91,6 +91,14 @@ What messages to show in the session tree. Defaults to assistant, reasoning, and
 
 **Default:** `["assistant","reasoning","tools"]`
 
+## `ui.transparent`
+
+**Type:** `boolean`
+
+Make the background transparent. Defaults to false.
+
+**Default:** `false`
+
 ## `ui.treeHeight`
 
 **Type:** `number`
