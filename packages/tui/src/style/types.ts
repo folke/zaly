@@ -29,7 +29,10 @@ export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inheri
  *  (any case; runtime validates). Alpha is native to the hex form, so
  *  there is no separate `/<alpha>` suffix for hex. */
 export type HexColor = `#${string}`
-export type ThemeKey = Exclude<keyof Theme, "shiki" | "$schema" | "id">
+export type ThemeKey = Exclude<
+  keyof Theme<false, unknown>,
+  "shiki" | "$schema" | "id" | "name" | "mode"
+>
 
 /**
  * A color value. Accepted forms:
@@ -43,12 +46,12 @@ export type ThemeKey = Exclude<keyof Theme, "shiki" | "$schema" | "id">
  *    (extracting the channel when needed), then `variant(base, step)`
  *    shifts it along the OKLCH tonal scale.
  */
-export type Color<Ansi extends boolean = true> =
+export type Color<Ansi extends boolean = true, I = true> =
   | HexColor
   | (Ansi extends true ? AnsiColorName : never)
   | (Ansi extends true ? BrightAnsiColorName : never)
   | ThemeKey
-  | "inherit"
+  | (I extends true ? "inherit" : never)
   | `${HexColor | ThemeKey}-${ColorLightness}`
   | `${HexColor | ThemeKey}+${ColorLightness}`
 

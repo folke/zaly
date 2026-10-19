@@ -1,50 +1,56 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "ayu-dark",
   "name": "Ayu Dark",
   "shiki": "ayu-dark",
-  "fg": "#bfbdb6",
   "bg": "#0d1017",
+  "fg": "#bfbdb6",
   "primary": "#e6b450",
   "accent": "#e6b450",
   "success": "#70bf56",
   "info": "#93e2c8",
   "warn": "#e6b450",
   "error": "#d95757",
-  "muted": "#686868",
-  "border": "#1b1f29",
   "selection": {
     "bg": "#172e51"
   },
   "diffAdd": {
-    "bg": "#19251f",
-    "fg": "#70bf56"
+    "bg": "#19251f"
   },
   "diffDel": {
-    "bg": "#291b23",
-    "fg": "#f26d78"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#5a6673"
-  },
-  "syntaxNumber": {
-    "fg": "#d2a6ff"
-  },
-  "syntaxString": {
-    "fg": "#aad94c"
+    "bg": "#291b23"
   },
   "syntaxBoolean": {
     "fg": "#d2a6ff"
   },
-  "syntaxFunction": {
-    "fg": "#ffb454"
+  "syntaxBracket": {
+    "fg": "#bfbdb6"
+  },
+  "syntaxConstant": {
+    "fg": "#bfbdb6"
+  },
+  "syntaxDelimiter": {
+    "fg": "#8a8987"
   },
   "syntaxField": {
     "fg": "#bfbdb6"
   },
+  "syntaxFunction": {
+    "fg": "#ffb454"
+  },
+  "syntaxNumber": {
+    "fg": "#d2a6ff"
+  },
   "syntaxSpecial": {
     "fg": "#ff8f40"
+  },
+  "syntaxString": {
+    "fg": "#aad94c"
+  },
+  "border": "#1b1f29",
+  "comment": {
+    "fg": "#5a6673",
+    "italic": true
   },
   "mdHeading": {
     "bold": true,
@@ -79,15 +85,18 @@
     "fg": "#f07178"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#f07178"
+    "fg": "#f07178",
+    "italic": true
   },
   "mdLink": {
     "fg": "#39bae6"
   },
   "mdQuote": {
-    "italic": true,
-    "fg": "#95e6cb"
+    "fg": "#95e6cb",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#ffb454"
   },
   "mdHr": {
     "bold": true,

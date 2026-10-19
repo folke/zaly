@@ -1,58 +1,55 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "vitesse-light",
   "name": "Vitesse Light",
   "shiki": "vitesse-light",
-  "fg": "#393a34",
   "bg": "#ffffff",
+  "fg": "#393a34",
   "primary": "#1c6b48",
   "accent": "#1c6b48",
   "success": "#1e754f",
   "info": "#2993a3",
   "warn": "#a65e2b",
   "error": "#ab5959",
-  "muted": "#aaaaaa",
-  "border": "#f0f0f0",
   "selection": {
     "bg": "#eaeaea"
   },
   "diffAdd": {
-    "bg": "#d4e3dd",
-    "fg": "#22863a"
+    "bg": "#d4e3dd"
   },
   "diffDel": {
-    "bg": "#ead5d5",
-    "fg": "#b31d28"
-  },
-  "comment": {
-    "fg": "#a0ada0"
-  },
-  "syntaxNumber": {
-    "fg": "#2f798a"
-  },
-  "syntaxString": {
-    "fg": "#b56959"
+    "bg": "#ead5d5"
   },
   "syntaxBoolean": {
     "fg": "#1e754f"
   },
-  "syntaxFunction": {
-    "fg": "#59873a"
-  },
-  "syntaxField": {
-    "fg": "#b07d48"
+  "syntaxBracket": {
+    "fg": "#999999"
   },
   "syntaxConstant": {
-    "fg": "#a65e2b"
-  },
-  "syntaxSpecial": {
-    "fg": "#1e754f"
+    "fg": "#b07d48"
   },
   "syntaxDelimiter": {
     "fg": "#999999"
   },
-  "syntaxBracket": {
-    "fg": "#999999"
+  "syntaxField": {
+    "fg": "#b07d48"
+  },
+  "syntaxFunction": {
+    "fg": "#59873a"
+  },
+  "syntaxNumber": {
+    "fg": "#2f798a"
+  },
+  "syntaxSpecial": {
+    "fg": "#1e754f"
+  },
+  "syntaxString": {
+    "fg": "#b56959"
+  },
+  "border": "#f0f0f0",
+  "comment": {
+    "fg": "#a0ada0"
   },
   "mdHeading": {
     "bold": true,
@@ -87,14 +84,17 @@
     "fg": "#393a34"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#393a34"
+    "fg": "#393a34",
+    "italic": true
   },
   "mdLink": {
     "fg": "#b56959"
   },
   "mdQuote": {
     "fg": "#2e808f"
+  },
+  "mdListBullet": {
+    "fg": "#a65e2b"
   },
   "mdHr": {
     "bold": true,

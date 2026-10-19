@@ -1,58 +1,55 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "vitesse-dark",
   "name": "Vitesse Dark",
   "shiki": "vitesse-dark",
-  "fg": "#dbd7caee",
   "bg": "#121212",
+  "fg": "#cecabe",
   "primary": "#4d9375",
   "accent": "#4d9375",
   "success": "#4d9375",
   "info": "#5eaab5",
   "warn": "#d4976c",
   "error": "#cb7676",
-  "muted": "#777777",
-  "border": "#191919",
   "selection": {
     "bg": "#272727"
   },
   "diffAdd": {
-    "bg": "#253a31",
-    "fg": "#85e89d"
+    "bg": "#253a31"
   },
   "diffDel": {
-    "bg": "#422828",
-    "fg": "#fdaeb7"
-  },
-  "comment": {
-    "fg": "#687668"
-  },
-  "syntaxNumber": {
-    "fg": "#4C9A91"
-  },
-  "syntaxString": {
-    "fg": "#c98a7d"
+    "bg": "#422828"
   },
   "syntaxBoolean": {
     "fg": "#4d9375"
   },
-  "syntaxFunction": {
-    "fg": "#80a665"
-  },
-  "syntaxField": {
-    "fg": "#bd976a"
+  "syntaxBracket": {
+    "fg": "#666666"
   },
   "syntaxConstant": {
-    "fg": "#c99076"
-  },
-  "syntaxSpecial": {
-    "fg": "#4d9375"
+    "fg": "#bd976a"
   },
   "syntaxDelimiter": {
     "fg": "#666666"
   },
-  "syntaxBracket": {
-    "fg": "#666666"
+  "syntaxField": {
+    "fg": "#bd976a"
+  },
+  "syntaxFunction": {
+    "fg": "#80a665"
+  },
+  "syntaxNumber": {
+    "fg": "#4c9a91"
+  },
+  "syntaxSpecial": {
+    "fg": "#4d9375"
+  },
+  "syntaxString": {
+    "fg": "#c98a7d"
+  },
+  "border": "#191919",
+  "comment": {
+    "fg": "#687668"
   },
   "mdHeading": {
     "bold": true,
@@ -87,14 +84,17 @@
     "fg": "#cecabe"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#cecabe"
+    "fg": "#cecabe",
+    "italic": true
   },
   "mdLink": {
     "fg": "#c98a7d"
   },
   "mdQuote": {
     "fg": "#5d99a9"
+  },
+  "mdListBullet": {
+    "fg": "#d4976c"
   },
   "mdHr": {
     "bold": true,

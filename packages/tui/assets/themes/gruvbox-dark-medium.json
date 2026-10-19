@@ -1,64 +1,64 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "gruvbox-dark-medium",
   "name": "Gruvbox Dark Medium",
   "shiki": "gruvbox-dark-medium",
-  "fg": "#ebdbb2",
   "bg": "#282828",
+  "fg": "#ebdbb2",
   "primary": "#83a598",
   "accent": "#458588",
   "success": "#98971a",
   "info": "#689d6a",
   "warn": "#d79921",
   "error": "#cc241d",
-  "muted": "#928374",
-  "border": "#3c3836",
   "selection": {
     "bg": "#384539"
   },
   "diffAdd": {
-    "bg": "#434428",
-    "fg": "#b8bb26"
+    "bg": "#434428"
   },
   "diffDel": {
-    "bg": "#502e2a",
-    "fg": "#d65d0e"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#928374"
-  },
-  "syntaxNumber": {
-    "fg": "#d3869b"
-  },
-  "syntaxString": {
-    "fg": "#b8bb26"
+    "bg": "#502e2a"
   },
   "syntaxBoolean": {
     "fg": "#d3869b"
   },
-  "syntaxFunction": {
-    "fg": "#fabd2f"
+  "syntaxBracket": {
+    "fg": "#a89984"
+  },
+  "syntaxConstant": {
+    "fg": "#83a598"
+  },
+  "syntaxDelimiter": {
+    "fg": "#a89984"
   },
   "syntaxField": {
     "fg": "#83a598"
   },
-  "syntaxConstant": {
+  "syntaxFunction": {
+    "fg": "#fabd2f"
+  },
+  "syntaxNumber": {
     "fg": "#d3869b"
   },
   "syntaxSpecial": {
     "fg": "#fb4934"
   },
-  "syntaxDelimiter": {
-    "fg": "#a89984"
+  "syntaxString": {
+    "fg": "#b8bb26"
+  },
+  "border": "#3c3836",
+  "comment": {
+    "fg": "#928374",
+    "italic": true
   },
   "mdHeading": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#fb4934"
   },
   "mdHeading1": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#fb4934"
   },
   "mdHeading2": {
     "bold": true,
@@ -66,28 +66,33 @@
   },
   "mdHeading3": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#fabd2f"
   },
   "mdHeading4": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#b8bb26"
   },
   "mdHeading5": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#83a598"
   },
   "mdHeading6": {
     "bold": true,
-    "fg": "#fe8019"
+    "fg": "#d3869b"
   },
   "mdBold": {
     "bold": true,
     "fg": "#fe8019"
   },
   "mdItalic": {
+    "fg": "#ebdbb2",
     "italic": true
   },
   "mdLink": {
-    "fg": "#d3869b"
+    "fg": "#928374",
+    "underline": true
+  },
+  "mdListBullet": {
+    "fg": "#a89984"
   }
 }

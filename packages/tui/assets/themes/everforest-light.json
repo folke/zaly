@@ -1,56 +1,56 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "everforest-light",
   "name": "Everforest Light",
   "shiki": "everforest-light",
-  "fg": "#5c6a72",
   "bg": "#fdf6e3",
+  "fg": "#5c6a72",
   "primary": "#8da101",
   "accent": "#a9b639",
   "success": "#8da101",
   "info": "#35a77c",
   "warn": "#e4b649",
   "error": "#f1706f",
-  "muted": "#5c6a72",
-  "border": "#fdf6e3",
   "selection": {
     "bg": "#efe9d5"
   },
   "diffAdd": {
-    "bg": "#e2ecd5",
-    "fg": "#8da101"
+    "bg": "#e2ecd5"
   },
   "diffDel": {
-    "bg": "#fbddcd",
-    "fg": "#f85552"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#939f91"
-  },
-  "syntaxNumber": {
-    "fg": "#df69ba"
-  },
-  "syntaxString": {
-    "fg": "#dfa000"
+    "bg": "#fbddcd"
   },
   "syntaxBoolean": {
     "fg": "#df69ba"
   },
-  "syntaxFunction": {
-    "fg": "#8da101"
-  },
-  "syntaxField": {
+  "syntaxBracket": {
     "fg": "#5c6a72"
   },
-  "syntaxSpecial": {
-    "fg": "#f85552"
+  "syntaxConstant": {
+    "fg": "#5c6a72"
   },
   "syntaxDelimiter": {
     "fg": "#5c6a72"
   },
-  "syntaxBracket": {
+  "syntaxField": {
     "fg": "#5c6a72"
+  },
+  "syntaxFunction": {
+    "fg": "#8da101"
+  },
+  "syntaxNumber": {
+    "fg": "#df69ba"
+  },
+  "syntaxSpecial": {
+    "fg": "#f85552"
+  },
+  "syntaxString": {
+    "fg": "#dfa000"
+  },
+  "border": "#fdf6e3",
+  "comment": {
+    "fg": "#939f91",
+    "italic": true
   },
   "mdHeading": {
     "bold": true,
@@ -81,13 +81,18 @@
     "fg": "#df69ba"
   },
   "mdBold": {
-    "bold": true
+    "bold": true,
+    "fg": "#5c6a72"
   },
   "mdItalic": {
+    "fg": "#5c6a72",
     "italic": true
   },
   "mdLink": {
     "fg": "#df69ba"
+  },
+  "mdListBullet": {
+    "fg": "#f85552"
   },
   "mdHr": {
     "bold": true,

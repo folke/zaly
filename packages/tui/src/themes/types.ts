@@ -1,13 +1,5 @@
 import type { ShikiTheme } from "../shiki/types.ts"
-import type { Color, Style } from "../style/types.ts"
-
-/**
- * A theme slot value. Color shortcuts expand to `{ fg: <color> }` at resolve
- * time; Style objects are used as-is and may carry attrs (`bold`, `underline`,
- * etc.) and a `bg`. Use Color for simple fg-only slots; escalate to Style when
- * the part needs more than just a foreground color.
- */
-export type ThemeValue = Color | Style
+import type { AnyStyle, Color } from "../style/types.ts"
 
 /**
  * A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers
@@ -25,7 +17,7 @@ export type ThemeValue = Color | Style
  * **Surface tiers**: `ui` → `subtle` → `overlay` (bottom → top).
  * `highlight` is orthogonal — a tinted accent surface, not a tier.
  */
-export type Theme = {
+export type Theme<Ansi extends boolean = true, T = AnyStyle<Ansi>> = {
   id: string
   mode: "dark" | "light"
   name?: string
@@ -37,118 +29,118 @@ export type Theme = {
 
   // ── base colors ──────────────────────────────────────────────────────
 
-  fg: Color
-  bg: Color
+  fg: Color<Ansi, Ansi>
+  bg: Color<Ansi, Ansi>
   /** Brand / primary accent. */
-  primary: Color
+  primary: Color<Ansi>
   /** Secondary accent — distinct hue from `primary`. */
-  accent: Color
+  accent: Color<Ansi>
 
   // ── text ─────────────────────────────────────────────────────────────
 
   /** Secondary text — first tier of the quietness ladder
    *  (`muted` → `quiet` → `comment`). Slightly faded but readable;
    *  good for timestamps, captions, less-prominent labels. */
-  muted: ThemeValue
+  muted: T
   /** De-emphasized but still readable. Reasoning / thinking text,
    *  secondary annotations, hints. */
-  quiet: ThemeValue
+  quiet: T
   /** Editor-comment tier — soft, often tinted. Used for code
    *  annotations, line-number labels, italic quotes. */
-  comment: ThemeValue
+  comment: T
   /** Section / panel titles. Typically `bold` + a fg color. */
-  title: ThemeValue
+  title: T
   /** Structural separators — borders, dividers, gutter lines. */
-  delim: ThemeValue
+  delim: T
 
   // ── surface & structure ──────────────────────────────────────────────
 
   /** Default UI surface. Bottom of the stack. */
-  ui: ThemeValue
+  ui: T
   /** Popup / modal surface. One tier above `ui`. */
-  overlay: ThemeValue
+  overlay: T
   /** Tinted region for emphasized content within the stream — user
    *  bubble bg, focused row, callout. Distinct from `code`, which is
    *  reserved for code-block bg. */
-  highlight: ThemeValue
+  highlight: T
 
   // ── ui primitives ────────────────────────────────────────────────────
 
   /** Separators between messages or sections. */
-  divider: ThemeValue
+  divider: T
   /** Highlighted text in inputs, lists, autocomplete. */
-  selection: ThemeValue
+  selection: T
   /** Line-number column, diff markers. */
-  gutter: ThemeValue
+  gutter: T
   /** Main input-prompt styling. */
-  prompt: ThemeValue
+  prompt: T
   /** Structural border around panels, boxes, tables. */
-  border: ThemeValue
+  border: T
   /** Title text inside a bordered region (slightly stronger than
    *  `border`). */
-  borderTitle: ThemeValue
+  borderTitle: T
 
   // ── code ─────────────────────────────────────────────────────────────
 
   /** Code-block surface (bg + optional fg). Default for `mdCodeBlock`. */
-  code: ThemeValue
+  code: T
   /** Title above a code block (e.g. file path). */
-  codeTitle: ThemeValue
+  codeTitle: T
 
   // ── log levels ───────────────────────────────────────────────────────
 
-  success: Color
-  info: Color
-  warn: Color
-  error: Color
+  success: Color<Ansi>
+  info: Color<Ansi>
+  warn: Color<Ansi>
+  error: Color<Ansi>
 
   // ── syntax ───────────────────────────────────────────────────────────
-  syntaxBoolean: ThemeValue
-  syntaxBracket: ThemeValue
-  syntaxConstant: ThemeValue
-  syntaxDelimiter: ThemeValue
-  syntaxField: ThemeValue
-  syntaxFunction: ThemeValue
-  syntaxNumber: ThemeValue
-  syntaxSpecial: ThemeValue
-  syntaxString: ThemeValue
+  syntaxBoolean: T
+  syntaxBracket: T
+  syntaxConstant: T
+  syntaxDelimiter: T
+  syntaxField: T
+  syntaxFunction: T
+  syntaxNumber: T
+  syntaxSpecial: T
+  syntaxString: T
 
   // ── markdown ─────────────────────────────────────────────────────────
 
-  mdBold: ThemeValue
-  mdCode: ThemeValue
-  mdCodeBlock: ThemeValue
-  mdCodeBlockTitle: ThemeValue
-  mdHeading1: ThemeValue
-  mdHeading2: ThemeValue
-  mdHeading3: ThemeValue
-  mdHeading4: ThemeValue
-  mdHeading5: ThemeValue
-  mdHeading6: ThemeValue
-  mdHeading: ThemeValue
-  mdHr: ThemeValue
-  mdItalic: ThemeValue
-  mdLink: ThemeValue
-  mdListBullet: ThemeValue
-  mdListChecked: ThemeValue
-  mdListUnchecked: ThemeValue
-  mdQuote: ThemeValue
-  mdStrikethrough: ThemeValue
-  mdTable: ThemeValue
-  mdTableHeader: ThemeValue
+  mdBold: T
+  mdCode: T
+  mdCodeBlock: T
+  mdCodeBlockTitle: T
+  mdHeading1: T
+  mdHeading2: T
+  mdHeading3: T
+  mdHeading4: T
+  mdHeading5: T
+  mdHeading6: T
+  mdHeading: T
+  mdHr: T
+  mdItalic: T
+  mdLink: T
+  mdListBullet: T
+  mdListChecked: T
+  mdListUnchecked: T
+  mdQuote: T
+  mdStrikethrough: T
+  mdTable: T
+  mdTableHeader: T
 
   // ── menu ─────────────────────────────────────────────────────────────
 
-  optionName: ThemeValue
-  optionDesc: ThemeValue
+  optionName: T
+  optionDesc: T
   /** Currently-highlighted entry. */
-  optionActive: ThemeValue
+  optionActive: T
 
   // ── diff ─────────────────────────────────────────────────────────────
-  diffAdd: ThemeValue
-  diffDel: ThemeValue
-  diffContext: ThemeValue
-  diffAddNum: ThemeValue
-  diffDelNum: ThemeValue
-  diffContextNum: ThemeValue
+  diffAdd: T
+  diffDel: T
+  diffContext: T
+  diffAddNum: T
+  diffDelNum: T
+  diffContextNum: T
 }

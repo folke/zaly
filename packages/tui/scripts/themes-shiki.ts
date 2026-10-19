@@ -1,31 +1,17 @@
-/**
- * Build `assets/themes/<id>.json` files from Shiki's bundled theme
- * data. Uses `shiki`'s `bundledThemes` map directly — each entry is a
- * lazy-import that returns the TextMate-style theme JSON.
- *
- * Invocation:
- *   bun scripts/build-shiki-themes.ts
- *
- * Output shape is a subset of the full `Theme` interface — we emit the
- * slots where Shiki data gives us confidence, and everything else
- * inherits from `defaults` in `src/style/theme.ts` (which themselves
- * reference slots by name, so inheritance is automatic).
- */
-
+/** Generate built-in themes: `bun scripts/themes-shiki.ts` from packages/tui. */
 import type { ThemeRegistrationResolved } from "shiki"
-import type { Color, HexColor, Style } from "../src/index.ts"
 import type { ShikiTheme } from "../src/shiki/types.ts"
-import type { Theme } from "../src/themes/types.ts"
+import type { CustomTheme } from "../src/themes/default.ts"
 
+import { toError } from "@zaly/shared"
 import { writeFileSync } from "node:fs"
-import { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { resolve } from "node:path"
 import { bundledThemes, normalizeTheme } from "shiki"
-import { parseHex, toHex } from "../src/style/color.ts"
+import { validateTheme } from "../src/schemas/gen/theme.config.ts"
+import { blend } from "../src/style/color.ts"
+import { createThemeResolver } from "./themes-textmate.ts"
 
-/** Which Shiki themes we want to ship as first-class TUI themes.
- *  Order here defines the write order; no functional meaning. */
-const THEMES = [
+export const THEMES = [
   "ayu-dark",
   "catppuccin-frappe",
   "catppuccin-latte",
@@ -58,201 +44,170 @@ const THEMES = [
   "vitesse-light",
 ] as const satisfies readonly ShikiTheme[]
 
-const here = dirname(fileURLToPath(import.meta.url))
-const outDir = resolve(here, "../assets/themes")
+const outDir = resolve(import.meta.dirname, "../assets/themes")
 
-function parseColor(bg: HexColor, hex?: string): HexColor | undefined {
-  if (hex === undefined) return
-  // blend hex alpha against the theme bg, since that's what these slots are meant for and
-  if (hex.length < 9) return hex as HexColor
-  const rgb = parseHex(bg)
-  const base = hex.slice(0, 7) as HexColor
-  const fg = parseHex(base)
-  const alpha = Number.parseInt(hex.slice(7, 9), 16) / 255
-  const blended = rgb.map((c, i) => Math.round(c * (1 - alpha) + fg[i] * alpha))
-  return toHex(blended[0], blended[1], blended[2])
-}
-
-function parse(theme: ThemeRegistrationResolved) {
-  const rules = new Map<string, Style>()
-  const bg = theme.bg as HexColor
-  const settings = theme.settings
-  for (const s of settings) {
-    // oxlint-disable-next-line typescript/no-unnecessary-condition
-    if (!s.settings) continue
-    const scopes = (typeof s.scope === "string" ? s.scope.split(",") : (s.scope ?? [])).map((sc) =>
-      sc.trim()
-    )
-    const style: Style = {
-      bold: s.settings.fontStyle?.includes("bold"),
-      italic: s.settings.fontStyle?.includes("italic"),
-      underline: s.settings.fontStyle?.includes("underline"),
-      strikethrough: s.settings.fontStyle?.includes("strikethrough"),
-      fg: parseColor(bg, s.settings.foreground),
-      bg: parseColor(bg, s.settings.background),
-    }
-    for (const scope of scopes) {
-      rules.set(scope, Object.fromEntries(Object.entries(style).filter(([, v]) => v)) as Style)
-    }
-  }
-  // Scope-rule lookup: walks `a.b.c` → `a.b` → `a` until a settings
-  // entry matches. First key that resolves wins.
-  const style = (...keys: string[]) => {
-    for (const k of keys) {
-      const parts = k.split(".")
-      for (let i = parts.length; i > 0; i--) {
-        const scope = parts.slice(0, i).join(".")
-        if (rules.has(scope)) return rules.get(scope)
-      }
-    }
-  }
-  // VSCode color-slot lookup: walks `theme.colors` for any of the
-  // given keys (`terminal.ansiBlue`, `editorLink.activeForeground`,
-  // …). Alpha-blends against the theme bg. First defined value wins.
-  const colors = theme.colors ?? {}
-  const color = (...keys: string[]): HexColor | undefined => {
-    for (const k of keys) {
-      const v = colors[k]
-      if (v) return parseColor(bg, v)
-    }
+export function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): CustomTheme {
+  const t = createThemeResolver(theme)
+  // Representative TypeScript scopes give language-specific rules their proper
+  // context. Uncolored categories intentionally resolve to the theme foreground.
+  const syntax = {
+    syntaxBoolean: t.resolve("source.ts meta.var.expr.ts constant.language.boolean.true.ts"),
+    syntaxBracket: t.resolve(
+      "source.ts meta.function.ts meta.parameters.ts punctuation.definition.parameters.begin.ts"
+    ),
+    syntaxConstant: t.resolve(
+      "source.ts meta.var.expr.ts meta.var-single-variable.expr.ts meta.definition.variable.ts variable.other.constant.ts"
+    ),
+    syntaxDelimiter: t.resolve("source.ts punctuation.terminator.statement.ts"),
+    syntaxField: t.resolve("source.ts variable.other.property.ts"),
+    syntaxFunction: t.resolve(
+      "source.ts meta.function.ts meta.definition.function.ts entity.name.function.ts"
+    ),
+    syntaxNumber: t.resolve(
+      "source.ts meta.var.expr.ts meta.objectliteral.ts meta.object.member.ts constant.numeric.decimal.ts"
+    ),
+    syntaxSpecial: t.resolve("source.ts meta.function.ts meta.block.ts keyword.control.flow.ts"),
+    syntaxString: t.resolve("source.ts meta.function.ts meta.block.ts string.quoted.double.ts"),
   }
 
-  return {
-    scopes: [...rules.keys()].toSorted(),
-    style,
-    color,
-    fg: (...keys: string[]) => keys.map((k) => style(k)?.fg).find((v) => v !== undefined),
-    bg: (...keys: string[]) => keys.map((k) => style(k)?.bg).find((v) => v !== undefined),
-  }
-}
+  // Text
+  const primary =
+    t.color("textLink.foreground", "terminal.ansiBlue") ??
+    t.tokenColor("markup.underline.link", "string.other.link") ??
+    syntax.syntaxFunction.fg
+  const accent =
+    t.color("textLink.activeForeground", "terminal.ansiMagenta") ?? syntax.syntaxSpecial.fg
 
-const extend = (s: Style | undefined, e: Style) => (s ? { ...s, ...e } : undefined)
+  // Log levels
+  const success =
+    t.color(
+      "terminal.ansiGreen",
+      "gitDecoration.addedResourceForeground",
+      "editorGutter.addedBackground"
+    ) ??
+    t.tokenColor("markup.inserted.diff", "markup.inserted") ??
+    syntax.syntaxString.fg
+  const info = t.color("terminal.ansiCyan", "terminal.ansiBlue", "editorInfo.foreground") ?? primary
+  const warn = t.color("editorWarning.foreground", "terminal.ansiYellow") ?? syntax.syntaxNumber.fg
+  const error =
+    t.color(
+      "editorError.foreground",
+      "terminal.ansiRed",
+      "gitDecoration.deletedResourceForeground",
+      "editorGutter.deletedBackground"
+    ) ??
+    t.tokenColor("markup.deleted.diff", "markup.deleted", "invalid.illegal") ??
+    accent
 
-/** Convert a shiki theme's `colors` map + `settings` rules into our
- *  `Theme` shape. Two helpers in play:
- *    - `t.color(...vsKeys)`: VSCode UI color names (`terminal.ansiBlue`,
- *      `panel.border`, `diffEditor.insertedTextBackground`, …) → look up
- *      `theme.colors[key]`, alpha-blend against the theme bg.
- *    - `t.style(...scopes)`: TextMate scope names (`comment`,
- *      `heading.1.markdown`, `markup.bold`, …) → walk the `settings`
- *      rules to find a Style (with `fg` / `bg` / `bold` / `italic`).
- *
- *  Slots only get emitted when the theme actually defines them.
- *  Anything missing falls back to `defaults` in `themes/default.ts`. */
-function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): Partial<Theme> {
-  const t = parse(theme)
-  const fg = theme.fg as HexColor
-  const bg = theme.bg as HexColor
+  const selectionBg = t.color("editor.selectionBackground", "list.activeSelectionBackground")
 
-  const out: Partial<Theme> & { $schema: string } = {
-    $schema: "file:./../schemas/theme.schema.json",
+  const out: CustomTheme = {
+    $schema:
+      "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
     id,
     name: theme.displayName ?? id,
-    /** Matching shiki theme name — used by the markdown/code renderers
-     *  so syntax highlighting aligns with the TUI palette. */
     shiki: id,
-
-    // ── base palette (VSCode color slots) ──────────────────────────────
-    fg,
-    bg,
-    primary: t.color("textLink.foreground", "terminal.ansiBlue"),
-    accent: t.color("textLink.activeForeground", "terminal.ansiMagenta"),
-    success: t.color("terminal.ansiGreen", "gitDecoration.addedResourceForeground"),
-    info: t.color("terminal.ansiCyan", "terminal.ansiBlue"),
-    warn: t.color("editorWarning.foreground", "terminal.ansiYellow"),
-    error: t.color("editorError.foreground", "terminal.ansiRed"),
-    muted: t.color("terminal.ansiBrightBlack", "editorWhitespace.foreground"),
-    border: t.color("panel.border", "editorGroup.border", "terminal.ansiBrightBlack"),
-
-    // ── code / surfaces (VSCode color slots) ───────────────────────────
-    // code: optBg(t.color("textCodeBlock.background", "editor.background")),
-    // overlay: optBg(t.color("editorWidget.background", "menu.background")),
-    // highlight: optBg(t.color("editor.selectionBackground", "list.activeSelectionBackground")),
-    //optionActive: optBg(t.color("list.activeSelectionBackground", "editor.selectionBackground")),
-    selection: optBg(t.color("editor.selectionBackground")),
-
-    // ── diff (mix VSCode bg + TextMate fg) ─────────────────────────────
-    // diffContext: t.color("textCodeBlock.background", "editor.background"),
-    diffAdd: combine(
-      t.color("diffEditor.insertedTextBackground", "diffEditor.insertedLineBackground"),
-      t.fg("markup.inserted.diff")
-    ),
-    diffDel: combine(
-      t.color("diffEditor.removedTextBackground", "diffEditor.removedLineBackground"),
-      t.fg("markup.deleted.diff")
-    ),
-
-    // ── code annotations (scope rules) ─────────────────────────────────
-    comment: t.style("comment"),
-
-    // ── syntax (scope rules) ───────────────────────────────────────────
-    syntaxNumber: t.style("constant.numeric"),
-    syntaxString: t.style("string"),
-    syntaxBoolean: t.style("constant.language.boolean"),
-    syntaxFunction: t.style("entity.name.function"),
-    syntaxField: t.style("variable.other.member"),
-    syntaxConstant: t.style("constant"),
-    syntaxSpecial: t.style("keyword", "storage"),
-    syntaxDelimiter: t.style("punctuation"),
-    syntaxBracket: t.style("meta.brace"),
-
-    // ── markdown (scope rules) ─────────────────────────────────────────
-    mdHeading: extend(t.style("heading.1.markdown", "markup.heading"), { bold: true }),
-    mdHeading1: extend(t.style("heading.1.markdown", "markup.heading.heading-1"), { bold: true }),
-    mdHeading2: extend(t.style("heading.2.markdown", "markup.heading.heading-2"), { bold: true }),
-    mdHeading3: extend(t.style("heading.3.markdown", "markup.heading.heading-3"), { bold: true }),
-    mdHeading4: extend(t.style("heading.4.markdown", "markup.heading.heading-4"), { bold: true }),
-    mdHeading5: extend(t.style("heading.5.markdown", "markup.heading.heading-5"), { bold: true }),
-    mdHeading6: extend(t.style("heading.6.markdown", "markup.heading.heading-6"), { bold: true }),
-    mdBold: t.style("markup.bold"),
-    mdItalic: t.style("markup.italic"),
-    mdStrikethrough: t.style("markup.strikethrough"),
-    mdLink: t.style("markup.link", "markup.underline.link", "string.other.link.title.markdown"),
-    mdQuote: t.style("markup.quote"),
-    mdListBullet: t.style("markup.list.bullet"),
-    //mdCode: t.style("markup.inline.raw.string.markdown", "markup.raw"),
-    mdHr: t.style("meta.separator.markdown"),
+    bg: t.bg,
+    fg: t.fg,
+    primary,
+    accent,
+    success,
+    info,
+    warn,
+    error,
+    selection: {
+      bg: selectionBg,
+    },
+    diffAdd: {
+      bg:
+        t.color(
+          "diffEditor.insertedLineBackground",
+          "diffEditor.insertedTextBackground",
+          "inlineChatDiff.inserted"
+        ) ?? blend(success, t.bg, 0.15),
+    },
+    diffDel: {
+      bg:
+        t.color(
+          "diffEditor.removedLineBackground",
+          "diffEditor.removedTextBackground",
+          "inlineChatDiff.removed",
+          "editorGutter.deletedBackground"
+        ) ?? blend(error, t.bg, 0.15),
+    },
+    ...syntax,
   }
 
-  // Drop undefined keys — the JSON schema won't accept them and we
-  // want missing slots to fall back to the built-in defaults.
-  for (const [k, v] of Object.entries(out) as [string, unknown][]) {
-    if (v === undefined) Reflect.deleteProperty(out, k)
+  const border = t.color("panel.border", "editorGroup.border", "terminal.ansiBrightBlack")
+  if (border) out.border = border
+  const comment = t.style("comment")
+  if (comment) out.comment = comment
+
+  const heading = (level: number) =>
+    t.resolve(
+      `text.html.markdown markup.heading.markdown heading.${level}.markdown entity.name.section.markdown`
+    )
+  const optional = {
+    mdHeading: { ...heading(1), bold: true },
+    mdHeading1: { ...heading(1), bold: true },
+    mdHeading2: { ...heading(2), bold: true },
+    mdHeading3: { ...heading(3), bold: true },
+    mdHeading4: { ...heading(4), bold: true },
+    mdHeading5: { ...heading(5), bold: true },
+    mdHeading6: { ...heading(6), bold: true },
+    mdBold: t.style("text.html.markdown meta.paragraph.markdown markup.bold.markdown"),
+    mdItalic: t.style("text.html.markdown meta.paragraph.markdown markup.italic.markdown"),
+    mdStrikethrough: t.style(
+      "text.html.markdown meta.paragraph.markdown markup.strikethrough.markdown"
+    ),
+    mdLink: t.style(
+      "text.html.markdown meta.paragraph.markdown meta.link.inline.markdown string.other.link.title.markdown"
+    ),
+    mdQuote: t.style("text.html.markdown markup.quote.markdown"),
+    mdListBullet: t.style(
+      "text.html.markdown markup.list.unnumbered.markdown punctuation.definition.list.begin.markdown",
+      "markup.list.bullet"
+    ),
+    mdHr: t.style("text.html.markdown meta.separator.markdown"),
+  } satisfies Partial<CustomTheme>
+  for (const [key, value] of Object.entries(optional)) {
+    if (value !== undefined) Object.assign(out, { [key]: value })
   }
-  return out
+  // Font resets matter while resolving rules, not in the flattened theme slots.
+  for (const value of Object.values(out)) {
+    if (typeof value !== "object") continue
+    for (const attr of ["bold", "dim", "italic", "strikethrough", "underline"] as const) {
+      if (value[attr] === false) delete value[attr]
+    }
+  }
+  for (const [key, value] of Object.entries(out as Record<string, unknown>)) {
+    if (typeof value !== "object") continue
+    const fields = Object.values(value ?? {}).filter((v) => v !== undefined)
+    if (fields.length === 0) delete out[key as keyof typeof out]
+  }
+  try {
+    return validateTheme(out)
+    // oxlint-disable-next-line unicorn/catch-error-name
+  } catch (err) {
+    console.error(`Error validating theme ${id}:`, toError(err).message)
+    throw err
+  }
 }
 
-/** Wrap a `bg` color in a Style only when defined; lets `out.foo =
- *  optBg(...)` produce undefined for missing slots so the cleanup pass
- *  drops them. */
-function optBg(bg: HexColor | undefined): Style | undefined {
-  return bg ? { bg } : undefined
+async function main() {
+  // Validate every theme before writing, so one bad mapping cannot leave a
+  // partially regenerated set behind.
+  const themes = await Promise.all(
+    THEMES.map(async (id) => {
+      const mod = await bundledThemes[id]()
+      const theme = normalizeTheme(mod.default)
+      return { id, theme: toTui(id, theme) }
+    })
+  )
+  for (const { id, theme } of themes) {
+    writeFileSync(resolve(outDir, `${id}.json`), `${JSON.stringify(theme, undefined, 2)}\n`)
+    console.log(`✔ ${id}.json`)
+  }
 }
 
-/** Build a Style with whatever of `bg` / `fg` are defined; undefined
- *  when neither is. */
-function combine(bg: Color | undefined, fg: Color | undefined): Style | undefined {
-  if (!bg && !fg) return undefined
-  const s: Style = {}
-  if (bg) s.bg = bg
-  if (fg) s.fg = fg
-  return s
-}
-
-async function build(id: ShikiTheme): Promise<void> {
-  const loader = bundledThemes[id]
-  const mod = await loader()
-  const theme = mod.default
-  const tui = toTui(id, normalizeTheme(theme))
-  // for (const k of Object.keys(defaults)) {
-  //   if (!(k in tui)) console.error(`⚠  ${id}: missing slot "${k}" — will fall back to defaults`)
-  // }
-  const path = resolve(outDir, `${id}.json`)
-  // oxlint-disable-next-line no-null -- JSON.stringify's replacer arg
-  writeFileSync(path, `${JSON.stringify(tui, null, 2)}\n`)
-  console.log(`✔  ${id}.json`)
-}
-
-// Build in parallel — bundledThemes loaders are independent. Keeps
-// the script snappy even as the theme list grows.
-await Promise.all(THEMES.map((id) => build(id)))
+if (import.meta.main) await main()

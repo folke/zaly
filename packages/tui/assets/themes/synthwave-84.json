@@ -1,17 +1,16 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "synthwave-84",
   "name": "Synthwave '84",
   "shiki": "synthwave-84",
-  "fg": "#bbbbbb",
   "bg": "#262335",
+  "fg": "#bbbbbb",
   "primary": "#f97e72",
   "accent": "#ff7edb",
   "success": "#72f1b8",
   "info": "#03edf9",
   "warn": "#63c89e",
   "error": "#fe4450",
-  "border": "#495495",
   "selection": {
     "bg": "#413f4e"
   },
@@ -21,61 +20,79 @@
   "diffDel": {
     "bg": "#532a3b"
   },
-  "comment": {
-    "italic": true,
-    "fg": "#848bbd"
-  },
-  "syntaxNumber": {
-    "fg": "#f97e72"
-  },
   "syntaxBoolean": {
     "fg": "#f97e72"
   },
-  "syntaxFunction": {
-    "fg": "#36f9f6"
+  "syntaxBracket": {
+    "fg": "#bbbbbb"
+  },
+  "syntaxConstant": {
+    "fg": "#ff7edb"
+  },
+  "syntaxDelimiter": {
+    "fg": "#bbbbbb"
   },
   "syntaxField": {
     "fg": "#ff7edb"
   },
-  "syntaxConstant": {
+  "syntaxFunction": {
+    "fg": "#36f9f6"
+  },
+  "syntaxNumber": {
     "fg": "#f97e72"
   },
   "syntaxSpecial": {
     "fg": "#fede5d"
   },
+  "syntaxString": {
+    "fg": "#ff8b39"
+  },
+  "border": "#495495",
+  "comment": {
+    "fg": "#848bbd",
+    "italic": true
+  },
   "mdHeading": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading1": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading2": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading3": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading4": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading5": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
   },
   "mdHeading6": {
-    "fg": "#ff7edb",
-    "bold": true
+    "bold": true,
+    "fg": "#ff7edb"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#2ee2fa"
+  },
+  "mdItalic": {
+    "fg": "#2ee2fa",
+    "italic": true
   },
   "mdLink": {
-    "fg": "#D50"
+    "fg": "#fede5d"
   },
   "mdQuote": {
-    "italic": true,
-    "fg": "#999598"
+    "fg": "#72f1b8",
+    "italic": true
   }
 }

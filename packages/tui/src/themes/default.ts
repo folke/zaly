@@ -1,3 +1,4 @@
+import type { Simplify } from "@zaly/shared"
 import type { Theme } from "./types.ts"
 
 /**
@@ -9,15 +10,9 @@ import type { Theme } from "./types.ts"
  * Theme bundled as the default palette for `createCtx()` etc.
  */
 // oxlint-disable-next-line sort-keys
-export const defaults: Omit<Theme, "id"> = {
+export const defaults = {
   mode: "dark",
-
-  // base colors
-  primary: "blue",
-  accent: "brightMagenta",
-
-  bg: "inherit",
-  fg: "inherit",
+  shiki: "github-dark",
 
   // text
   muted: { dim: true },
@@ -33,7 +28,6 @@ export const defaults: Omit<Theme, "id"> = {
 
   // ui primitives
   divider: "bg-5",
-  selection: { bg: "brightBlue", fg: "black" },
   gutter: "divider",
   prompt: "inherit",
   border: "divider",
@@ -43,20 +37,7 @@ export const defaults: Omit<Theme, "id"> = {
   code: { bg: "bg+5" },
   codeTitle: "title",
 
-  // log levels
-  success: "green",
-  info: "cyan",
-  warn: "yellow",
-  error: "red",
-
   // syntax
-  syntaxNumber: "brightBlue",
-  syntaxString: "green",
-  syntaxBoolean: "yellow",
-  syntaxFunction: "blue",
-  syntaxField: "white",
-  syntaxConstant: "magenta",
-  syntaxSpecial: "red",
   syntaxDelimiter: "delim",
   syntaxBracket: "delim",
 
@@ -89,20 +70,26 @@ export const defaults: Omit<Theme, "id"> = {
   optionName: "primary",
 
   // diff
-  diffAdd: { bg: "success-50", fg: "success" },
-  diffDel: { bg: "error-50", fg: "error" },
+  // diffAdd: { bg: "success-50", fg: "success" },
+  // diffDel: { bg: "error-50", fg: "error" },
   diffContext: { bg: "code" },
   diffAddNum: { bg: "diffAdd+10" },
   diffDelNum: { bg: "diffDel+10" },
   diffContextNum: { bg: "diffContext+10" },
-}
+} as const satisfies Partial<Theme<false>>
 
-export const defaultsDark: Omit<Theme, "id"> = defaults
+export type CustomTheme = Simplify<
+  Partial<Pick<Theme<false>, keyof typeof defaults>> &
+    Omit<Theme<false>, keyof typeof defaults> & { $schema?: string }
+>
+
+export const defaultsDark = defaults
 
 // oxlint-disable-next-line sort-keys
-export const defaultsLight: Omit<Theme, "id"> = {
+export const defaultsLight = {
   ...defaults,
   mode: "light",
+  shiki: "github-light",
   ui: { bg: "bg-3" },
   highlight: { bg: "bg-3" },
   divider: "fg-5",
@@ -110,18 +97,4 @@ export const defaultsLight: Omit<Theme, "id"> = {
   diffAddNum: { bg: "diffAdd-10" },
   diffDelNum: { bg: "diffDel-10" },
   diffContextNum: { bg: "diffContext-10" },
-}
-
-// oxlint-disable-next-line sort-keys
-export const ansi: Theme = {
-  id: "ansi",
-  name: "ANSI",
-  ...defaults,
-  divider: "brightBlue",
-  border: "brightBlue",
-  highlight: { bg: "brightBlack" },
-  ui: { bg: "brightBlack" },
-  selection: { inverse: true },
-  diffAdd: { fg: "success" },
-  diffDel: { fg: "error" },
-}
+} as const

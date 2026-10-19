@@ -152,5 +152,6 @@
     "bg": "#1f2335",
     "fg": "#c0caf5"
   },
-  "warn": "#e0af68"
+  "warn": "#e0af68",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json"
 }

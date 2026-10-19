@@ -1,93 +1,104 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "solarized-dark",
   "name": "Solarized Dark",
   "shiki": "solarized-dark",
+  "bg": "#002b36",
   "fg": "#839496",
-  "bg": "#002B36",
   "primary": "#268bd2",
   "accent": "#d33682",
   "success": "#859900",
   "info": "#2aa198",
   "warn": "#b58900",
   "error": "#dc322f",
-  "muted": "#002b36",
-  "border": "#2b2b4a",
   "selection": {
     "bg": "#274642"
   },
   "diffAdd": {
-    "fg": "#859900"
+    "bg": "#143c2e"
   },
   "diffDel": {
-    "fg": "#DC322F"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#586E75"
-  },
-  "syntaxNumber": {
-    "fg": "#D33682"
-  },
-  "syntaxString": {
-    "fg": "#2AA198"
+    "bg": "#212c35"
   },
   "syntaxBoolean": {
-    "fg": "#B58900"
+    "fg": "#b58900"
   },
-  "syntaxFunction": {
-    "fg": "#268BD2"
+  "syntaxBracket": {
+    "fg": "#839496"
+  },
+  "syntaxConstant": {
+    "fg": "#268bd2"
+  },
+  "syntaxDelimiter": {
+    "fg": "#839496"
   },
   "syntaxField": {
-    "fg": "#268BD2"
+    "fg": "#268bd2"
+  },
+  "syntaxFunction": {
+    "fg": "#268bd2"
+  },
+  "syntaxNumber": {
+    "fg": "#d33682"
   },
   "syntaxSpecial": {
     "fg": "#859900"
   },
+  "syntaxString": {
+    "fg": "#2aa198"
+  },
+  "border": "#2b2b4a",
+  "comment": {
+    "fg": "#586e75",
+    "italic": true
+  },
   "mdHeading": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading1": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading2": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading3": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading4": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading5": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdHeading6": {
     "bold": true,
-    "fg": "#268BD2"
+    "fg": "#268bd2"
   },
   "mdBold": {
-    "bold": true
+    "bold": true,
+    "fg": "#d33682"
   },
   "mdItalic": {
+    "fg": "#d33682",
     "italic": true
   },
   "mdStrikethrough": {
+    "fg": "#839496",
     "strikethrough": true
   },
   "mdLink": {
-    "fg": "#2AA198"
+    "fg": "#2aa198"
   },
   "mdQuote": {
     "fg": "#859900"
   },
   "mdListBullet": {
-    "fg": "#B58900"
+    "fg": "#b58900"
   }
 }

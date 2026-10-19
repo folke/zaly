@@ -1,91 +1,97 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "catppuccin-macchiato",
   "name": "Catppuccin Macchiato",
   "shiki": "catppuccin-macchiato",
-  "fg": "#cad3f5",
   "bg": "#24273a",
+  "fg": "#cad3f5",
   "primary": "#8aadf4",
   "accent": "#91d7e3",
   "success": "#a6da95",
   "info": "#8bd5ca",
   "warn": "#f5a97f",
   "error": "#ed8796",
-  "muted": "#5b6078",
-  "border": "#5b6078",
   "selection": {
     "bg": "#404459"
   },
   "diffAdd": {
-    "bg": "#3e4b4c",
-    "fg": "#a6da95"
+    "bg": "#374248"
   },
   "diffDel": {
-    "bg": "#4c3a4c",
-    "fg": "#ed8796"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#939ab7"
-  },
-  "syntaxNumber": {
-    "fg": "#f5a97f"
-  },
-  "syntaxString": {
-    "fg": "#a6da95"
+    "bg": "#423548"
   },
   "syntaxBoolean": {
     "fg": "#f5a97f"
   },
-  "syntaxFunction": {
-    "italic": true,
-    "fg": "#8aadf4"
+  "syntaxBracket": {
+    "fg": "#939ab7"
   },
-  "syntaxSpecial": {
-    "fg": "#c6a0f6"
+  "syntaxConstant": {
+    "fg": "#cad3f5"
   },
   "syntaxDelimiter": {
     "fg": "#939ab7"
   },
+  "syntaxField": {
+    "fg": "#cad3f5"
+  },
+  "syntaxFunction": {
+    "fg": "#8aadf4",
+    "italic": true
+  },
+  "syntaxNumber": {
+    "fg": "#f5a97f"
+  },
+  "syntaxSpecial": {
+    "fg": "#c6a0f6"
+  },
+  "syntaxString": {
+    "fg": "#a6da95"
+  },
+  "border": "#5b6078",
+  "comment": {
+    "fg": "#939ab7",
+    "italic": true
+  },
   "mdHeading": {
-    "fg": "#ed8796",
-    "bold": true
+    "bold": true,
+    "fg": "#ed8796"
   },
   "mdHeading1": {
-    "fg": "#ed8796",
-    "bold": true
+    "bold": true,
+    "fg": "#ed8796"
   },
   "mdHeading2": {
-    "fg": "#f5a97f",
-    "bold": true
+    "bold": true,
+    "fg": "#f5a97f"
   },
   "mdHeading3": {
-    "fg": "#eed49f",
-    "bold": true
+    "bold": true,
+    "fg": "#eed49f"
   },
   "mdHeading4": {
-    "fg": "#a6da95",
-    "bold": true
+    "bold": true,
+    "fg": "#a6da95"
   },
   "mdHeading5": {
-    "fg": "#7dc4e4",
-    "bold": true
+    "bold": true,
+    "fg": "#7dc4e4"
   },
   "mdHeading6": {
-    "fg": "#b7bdf8",
-    "bold": true
+    "bold": true,
+    "fg": "#b7bdf8"
   },
   "mdBold": {
     "bold": true,
     "fg": "#ed8796"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#ed8796"
+    "fg": "#ed8796",
+    "italic": true
   },
   "mdStrikethrough": {
-    "strikethrough": true,
-    "fg": "#a5adcb"
+    "fg": "#a5adcb",
+    "strikethrough": true
   },
   "mdLink": {
     "fg": "#b7bdf8"

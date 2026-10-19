@@ -1,90 +1,101 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "one-light",
   "name": "One Light",
   "shiki": "one-light",
-  "fg": "#383A42",
-  "bg": "#FAFAFA",
-  "muted": "#d3d4d5",
-  "border": "#DBDBDC",
+  "bg": "#fafafa",
+  "fg": "#383a42",
+  "primary": "#e45649",
+  "accent": "#a626a4",
+  "success": "#50a14f",
+  "info": "#e45649",
+  "warn": "#986801",
+  "error": "#e45649",
   "selection": {
-    "bg": "#E5E5E6"
+    "bg": "#e5e5e6"
   },
   "diffAdd": {
-    "bg": "#c8e2e7",
-    "fg": "#50A14F"
+    "bg": "#c8e2e7"
   },
   "diffDel": {
-    "fg": "#E45649"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#A0A1A7"
-  },
-  "syntaxNumber": {
-    "fg": "#986801"
-  },
-  "syntaxString": {
-    "fg": "#50A14F"
+    "bg": "#f7e1df"
   },
   "syntaxBoolean": {
     "fg": "#986801"
   },
-  "syntaxFunction": {
-    "fg": "#4078F2"
-  },
-  "syntaxField": {
-    "fg": "#E45649"
+  "syntaxBracket": {
+    "fg": "#383a42"
   },
   "syntaxConstant": {
     "fg": "#986801"
   },
+  "syntaxDelimiter": {
+    "fg": "#383a42"
+  },
+  "syntaxField": {
+    "fg": "#e45649"
+  },
+  "syntaxFunction": {
+    "fg": "#4078f2"
+  },
+  "syntaxNumber": {
+    "fg": "#986801"
+  },
   "syntaxSpecial": {
-    "fg": "#A626A4"
+    "fg": "#a626a4"
+  },
+  "syntaxString": {
+    "fg": "#50a14f"
+  },
+  "border": "#dbdbdc",
+  "comment": {
+    "fg": "#a0a1a7",
+    "italic": true
   },
   "mdHeading": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading1": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading2": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading3": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading4": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading5": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdHeading6": {
-    "fg": "#E45649",
-    "bold": true
+    "bold": true,
+    "fg": "#e45649"
   },
   "mdBold": {
     "bold": true,
     "fg": "#986801"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#A626A4"
+    "fg": "#a626a4",
+    "italic": true
   },
   "mdLink": {
-    "fg": "#0184BC"
+    "fg": "#4078f2"
   },
   "mdQuote": {
-    "fg": "#986801"
+    "fg": "#a0a1a7",
+    "italic": true
   },
   "mdHr": {
-    "fg": "#383A42"
+    "fg": "#383a42"
   }
 }

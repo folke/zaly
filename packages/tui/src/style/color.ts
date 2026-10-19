@@ -28,3 +28,12 @@ export function parseHex(hex: HexColor): RGB {
 export function isHexColor(s: string): s is HexColor {
   return /^#[0-9a-fA-F]{3,8}$/.test(s)
 }
+
+export function blend(c: HexColor, bg: HexColor, alpha: number): HexColor {
+  const [r1, g1, b1] = parseHex(c)
+  const [r2, g2, b2] = parseHex(bg)
+  const r = r1 * alpha + r2 * (1 - alpha)
+  const g = g1 * alpha + g2 * (1 - alpha)
+  const b = b1 * alpha + b2 * (1 - alpha)
+  return toHex(r, g, b)
+}

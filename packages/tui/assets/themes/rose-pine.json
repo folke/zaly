@@ -1,82 +1,99 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "rose-pine",
   "name": "Rosé Pine",
   "shiki": "rose-pine",
-  "fg": "#e0def4",
   "bg": "#191724",
+  "fg": "#e0def4",
   "primary": "#c4a7e7",
   "accent": "#b399d4",
   "success": "#31748f",
   "info": "#ebbcba",
   "warn": "#f6c177",
   "error": "#eb6f92",
-  "muted": "#908caa",
-  "border": "#0000",
   "selection": {
     "bg": "#2a2838"
   },
   "diffAdd": {
-    "bg": "#2d323f",
-    "fg": "#9ccfd8"
+    "bg": "#2d323f"
   },
   "diffDel": {
-    "bg": "#382434",
-    "fg": "#eb6f92"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#6e6a86"
-  },
-  "syntaxNumber": {
-    "fg": "#ebbcba"
-  },
-  "syntaxString": {
-    "fg": "#f6c177"
+    "bg": "#382434"
   },
   "syntaxBoolean": {
     "fg": "#ebbcba"
   },
-  "syntaxFunction": {
-    "fg": "#ebbcba"
-  },
-  "syntaxField": {
-    "fg": "#e0def4"
+  "syntaxBracket": {
+    "fg": "#908caa"
   },
   "syntaxConstant": {
-    "fg": "#31748f"
-  },
-  "syntaxSpecial": {
-    "fg": "#31748f"
+    "fg": "#e0def4",
+    "italic": true
   },
   "syntaxDelimiter": {
     "fg": "#908caa"
   },
-  "syntaxBracket": {
-    "fg": "#e0def4"
+  "syntaxField": {
+    "fg": "#e0def4",
+    "italic": true
+  },
+  "syntaxFunction": {
+    "fg": "#ebbcba"
+  },
+  "syntaxNumber": {
+    "fg": "#ebbcba"
+  },
+  "syntaxSpecial": {
+    "fg": "#31748f"
+  },
+  "syntaxString": {
+    "fg": "#f6c177"
+  },
+  "border": "#191724",
+  "comment": {
+    "fg": "#6e6a86",
+    "italic": true
   },
   "mdHeading": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading1": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading2": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading3": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading4": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading5": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
   },
   "mdHeading6": {
-    "bold": true
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#e0def4"
+  },
+  "mdItalic": {
+    "fg": "#e0def4",
+    "italic": true
   },
   "mdLink": {
     "fg": "#f6c177"
+  },
+  "mdListBullet": {
+    "fg": "#908caa"
   }
 }

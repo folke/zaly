@@ -1,94 +1,104 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "monokai",
   "name": "Monokai",
   "shiki": "monokai",
-  "fg": "#F8F8F2",
   "bg": "#272822",
-  "primary": "#6A7EC8",
-  "accent": "#8C6BC8",
-  "success": "#86B42B",
-  "info": "#56ADBC",
-  "warn": "#B3B42B",
-  "error": "#C4265E",
-  "muted": "#666666",
-  "border": "#414339",
+  "fg": "#f8f8f2",
+  "primary": "#6a7ec8",
+  "accent": "#8c6bc8",
+  "success": "#86b42b",
+  "info": "#56adbc",
+  "warn": "#b3b42b",
+  "error": "#c4265e",
   "selection": {
     "bg": "#575a5a"
   },
   "diffAdd": {
-    "bg": "#39471c",
-    "fg": "#A6E22E"
+    "bg": "#39471c"
   },
   "diffDel": {
-    "bg": "#552834",
-    "fg": "#F92672"
+    "bg": "#552834"
   },
+  "syntaxBoolean": {
+    "fg": "#ae81ff"
+  },
+  "syntaxBracket": {
+    "fg": "#f8f8f2"
+  },
+  "syntaxConstant": {
+    "fg": "#f8f8f2"
+  },
+  "syntaxDelimiter": {
+    "fg": "#f8f8f2"
+  },
+  "syntaxField": {
+    "fg": "#f8f8f2"
+  },
+  "syntaxFunction": {
+    "fg": "#a6e22e"
+  },
+  "syntaxNumber": {
+    "fg": "#ae81ff"
+  },
+  "syntaxSpecial": {
+    "fg": "#f92672"
+  },
+  "syntaxString": {
+    "fg": "#e6db74"
+  },
+  "border": "#414339",
   "comment": {
     "fg": "#88846f"
   },
-  "syntaxNumber": {
-    "fg": "#AE81FF"
-  },
-  "syntaxString": {
-    "fg": "#E6DB74"
-  },
-  "syntaxBoolean": {
-    "fg": "#AE81FF"
-  },
-  "syntaxFunction": {
-    "fg": "#A6E22E"
-  },
-  "syntaxField": {
-    "fg": "#F8F8F2"
-  },
-  "syntaxSpecial": {
-    "fg": "#F92672"
-  },
   "mdHeading": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading1": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading2": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading3": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading4": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading5": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdHeading6": {
-    "fg": "#A6E22E",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e22e"
   },
   "mdBold": {
-    "fg": "#66D9EF"
+    "bold": true,
+    "fg": "#66d9ef"
   },
   "mdItalic": {
-    "fg": "#66D9EF"
+    "fg": "#66d9ef",
+    "italic": true
   },
   "mdStrikethrough": {
+    "fg": "#f8f8f2",
     "strikethrough": true
   },
   "mdLink": {
-    "fg": "#AE81FF"
+    "fg": "#ae81ff"
   },
   "mdQuote": {
-    "fg": "#F92672"
+    "fg": "#75715e",
+    "italic": true
   },
   "mdListBullet": {
-    "fg": "#E6DB74"
+    "fg": "#a6e22e"
   }
 }

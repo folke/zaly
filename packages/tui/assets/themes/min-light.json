@@ -1,43 +1,94 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "min-light",
   "name": "Min Light",
   "shiki": "min-light",
-  "fg": "#24292eff",
   "bg": "#ffffff",
-  "primary": "#000",
-  "accent": "#000",
+  "fg": "#24292e",
+  "primary": "#000000",
+  "accent": "#000000",
   "success": "#77cc00",
   "info": "#4dbf99",
   "warn": "#f29718",
-  "error": "#D32F2F",
-  "muted": "#a1a1a1",
-  "border": "#f4f4f4",
+  "error": "#d32f2f",
+  "selection": {
+    "bg": "#eeeeee"
+  },
   "diffAdd": {
     "bg": "#eaf8e4"
   },
   "diffDel": {
     "bg": "#f7dee5"
   },
-  "comment": {
-    "fg": "#c2c3c5"
-  },
-  "syntaxNumber": {
-    "fg": "#1976D2"
-  },
-  "syntaxString": {
-    "fg": "#2b5581"
-  },
   "syntaxBoolean": {
-    "fg": "#1976D2"
+    "fg": "#1976d2"
+  },
+  "syntaxBracket": {
+    "fg": "#24292e"
+  },
+  "syntaxConstant": {
+    "fg": "#1976d2"
+  },
+  "syntaxDelimiter": {
+    "fg": "#24292e"
+  },
+  "syntaxField": {
+    "fg": "#24292e"
   },
   "syntaxFunction": {
     "fg": "#6f42c1"
   },
+  "syntaxNumber": {
+    "fg": "#1976d2"
+  },
   "syntaxSpecial": {
-    "fg": "#D32F2F"
+    "fg": "#d32f2f"
+  },
+  "syntaxString": {
+    "fg": "#22863a"
+  },
+  "border": "#f4f4f4",
+  "comment": {
+    "fg": "#c2c3c5"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#6f42c1"
+  },
+  "mdItalic": {
+    "fg": "#24292e",
+    "italic": true
   },
   "mdLink": {
-    "fg": "#22863a"
+    "fg": "#d32f2f",
+    "underline": true
   }
 }

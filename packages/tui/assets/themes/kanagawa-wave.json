@@ -1,99 +1,105 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "kanagawa-wave",
   "name": "Kanagawa Wave",
   "shiki": "kanagawa-wave",
-  "fg": "#DCD7BA",
-  "bg": "#1F1F28",
-  "primary": "#6A9589",
-  "accent": "#957FB8",
-  "success": "#76946A",
-  "info": "#6A9589",
-  "warn": "#FF9E3B",
-  "error": "#E82424",
-  "muted": "#727169",
-  "border": "#16161D",
+  "bg": "#1f1f28",
+  "fg": "#dcd7ba",
+  "primary": "#6a9589",
+  "accent": "#957fb8",
+  "success": "#76946a",
+  "info": "#6a9589",
+  "warn": "#ff9e3b",
+  "error": "#e82424",
   "selection": {
     "bg": "#223249"
   },
   "diffAdd": {
-    "bg": "#252928",
-    "fg": "#76946A"
+    "bg": "#252928"
   },
   "diffDel": {
-    "fg": "#C34043"
+    "bg": "#c34043"
   },
+  "syntaxBoolean": {
+    "fg": "#ffa066"
+  },
+  "syntaxBracket": {
+    "fg": "#9cabca"
+  },
+  "syntaxConstant": {
+    "fg": "#dcd7ba"
+  },
+  "syntaxDelimiter": {
+    "fg": "#9cabca"
+  },
+  "syntaxField": {
+    "fg": "#e6c384"
+  },
+  "syntaxFunction": {
+    "fg": "#7e9cd8"
+  },
+  "syntaxNumber": {
+    "fg": "#d27e99"
+  },
+  "syntaxSpecial": {
+    "bold": true,
+    "fg": "#957fb8"
+  },
+  "syntaxString": {
+    "fg": "#98bb6c"
+  },
+  "border": "#16161d",
   "comment": {
     "fg": "#727169"
   },
-  "syntaxNumber": {
-    "fg": "#D27E99"
-  },
-  "syntaxString": {
-    "fg": "#98BB6C"
-  },
-  "syntaxBoolean": {
-    "fg": "#FFA066"
-  },
-  "syntaxFunction": {
-    "fg": "#7E9CD8"
-  },
-  "syntaxField": {
-    "fg": "#DCD7BA"
-  },
-  "syntaxSpecial": {
-    "fg": "#957FB8"
-  },
-  "syntaxDelimiter": {
-    "fg": "#9CABCA"
-  },
-  "syntaxBracket": {
-    "fg": "#9CABCA"
-  },
   "mdHeading": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading1": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading2": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading3": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading4": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading5": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdHeading6": {
-    "fg": "#98BB6C",
-    "bold": true
+    "bold": true,
+    "fg": "#7e9cd8"
   },
   "mdBold": {
-    "bold": true
+    "bold": true,
+    "fg": "#dcd7ba"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#E46876"
+    "fg": "#e46876",
+    "italic": true
   },
   "mdLink": {
-    "underline": true,
-    "fg": "#7FB4CA"
+    "fg": "#ffa066"
   },
   "mdQuote": {
+    "fg": "#dcd7ba",
     "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#9cabca"
   },
   "mdHr": {
     "bold": true,
-    "fg": "#9CABCA"
+    "fg": "#9cabca"
   }
 }

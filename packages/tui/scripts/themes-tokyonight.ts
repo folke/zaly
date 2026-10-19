@@ -1,8 +1,9 @@
 import { isCI } from "@zaly/shared/env"
 import { spawnSync } from "node:child_process"
-import { cpSync, existsSync, readdirSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { validateTheme } from "../src/schemas/gen/theme.config.ts"
 
 if (isCI) {
   console.log("Skipping tokyonight build on CI …")
@@ -33,7 +34,10 @@ const dst = "assets/themes"
 let copied = 0
 for (const f of readdirSync(src)) {
   if (f.startsWith("tokyonight-") && f.endsWith(".json")) {
-    cpSync(join(src, f), join(dst, f))
+    const theme = JSON.parse(readFileSync(join(src, f), "utf8"))
+    theme.$schema =
+      "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json"
+    writeFileSync(join(dst, f), `${JSON.stringify(validateTheme(theme), undefined, 2)}\n`)
     console.log(`✔  ${f}`)
     copied++
   }

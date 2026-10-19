@@ -1,85 +1,99 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "nord",
   "name": "Nord",
   "shiki": "nord",
-  "fg": "#d8dee9ff",
-  "bg": "#2e3440ff",
+  "bg": "#2e3440",
+  "fg": "#d8dee9",
   "primary": "#88c0d0",
   "accent": "#88c0d0",
   "success": "#a3be8c",
   "info": "#88c0d0",
   "warn": "#ebcb8b",
   "error": "#bf616a",
-  "muted": "#4c566a",
-  "border": "#3b4252",
   "selection": {
     "bg": "#3f4758"
   },
   "diffAdd": {
-    "bg": "#3f4a5a",
-    "fg": "#A3BE8C"
+    "bg": "#3f4a5a"
   },
   "diffDel": {
-    "bg": "#5a424d",
-    "fg": "#BF616A"
-  },
-  "comment": {
-    "fg": "#616E88"
-  },
-  "syntaxNumber": {
-    "fg": "#B48EAD"
-  },
-  "syntaxString": {
-    "fg": "#A3BE8C"
+    "bg": "#5a424d"
   },
   "syntaxBoolean": {
-    "fg": "#81A1C1"
+    "fg": "#81a1c1"
   },
-  "syntaxFunction": {
-    "fg": "#88C0D0"
+  "syntaxBracket": {
+    "fg": "#eceff4"
   },
-  "syntaxField": {
-    "fg": "#D8DEE9"
-  },
-  "syntaxSpecial": {
-    "fg": "#81A1C1"
+  "syntaxConstant": {
+    "fg": "#d8dee9"
   },
   "syntaxDelimiter": {
-    "fg": "#ECEFF4"
+    "fg": "#81a1c1"
+  },
+  "syntaxField": {
+    "fg": "#d8dee9"
+  },
+  "syntaxFunction": {
+    "fg": "#88c0d0"
+  },
+  "syntaxNumber": {
+    "fg": "#b48ead"
+  },
+  "syntaxSpecial": {
+    "fg": "#81a1c1"
+  },
+  "syntaxString": {
+    "fg": "#a3be8c"
+  },
+  "border": "#3b4252",
+  "comment": {
+    "fg": "#616e88"
   },
   "mdHeading": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading1": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading2": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading3": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading4": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading5": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdHeading6": {
-    "fg": "#88C0D0",
-    "bold": true
+    "bold": true,
+    "fg": "#88c0d0"
   },
   "mdBold": {
-    "bold": true
+    "bold": true,
+    "fg": "#d8dee9"
+  },
+  "mdItalic": {
+    "fg": "#d8dee9",
+    "italic": true
   },
   "mdLink": {
-    "fg": "#A3BE8C"
+    "fg": "#88c0d0"
+  },
+  "mdQuote": {
+    "fg": "#616e88"
+  },
+  "mdListBullet": {
+    "fg": "#eceff4"
   }
 }

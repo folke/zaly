@@ -1,88 +1,96 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "vesper",
   "name": "Vesper",
   "shiki": "vesper",
-  "fg": "#FFF",
   "bg": "#101010",
-  "primary": "#FFC799",
-  "accent": "#FFCFA8",
-  "warn": "#FFC799",
-  "error": "#FF8080",
+  "fg": "#ffffff",
+  "primary": "#ffc799",
+  "accent": "#ffcfa8",
+  "success": "#99ffe4",
+  "info": "#ffc799",
+  "warn": "#ffc799",
+  "error": "#ff8080",
   "selection": {
     "bg": "#333333"
   },
   "diffAdd": {
-    "bg": "#1b2421",
-    "fg": "#99FFE4"
+    "bg": "#1b2421"
   },
   "diffDel": {
-    "bg": "#241919",
-    "fg": "#FF8080"
+    "bg": "#241919"
+  },
+  "syntaxBoolean": {
+    "fg": "#ffc799"
+  },
+  "syntaxBracket": {
+    "fg": "#ffffff"
+  },
+  "syntaxConstant": {
+    "fg": "#ffffff"
+  },
+  "syntaxDelimiter": {
+    "fg": "#ffffff"
+  },
+  "syntaxField": {
+    "fg": "#ffffff"
+  },
+  "syntaxFunction": {
+    "fg": "#ffc799"
+  },
+  "syntaxNumber": {
+    "fg": "#ffc799"
+  },
+  "syntaxSpecial": {
+    "fg": "#a0a0a0"
+  },
+  "syntaxString": {
+    "fg": "#99ffe4"
   },
   "comment": {
     "fg": "#575757"
   },
-  "syntaxNumber": {
-    "fg": "#FFC799"
-  },
-  "syntaxString": {
-    "fg": "#99FFE4"
-  },
-  "syntaxBoolean": {
-    "fg": "#FFC799"
-  },
-  "syntaxFunction": {
-    "fg": "#FFC799"
-  },
-  "syntaxField": {
-    "fg": "#FFF"
-  },
-  "syntaxSpecial": {
-    "fg": "#A0A0A0"
-  },
   "mdHeading": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading1": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading2": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading3": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading4": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading5": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdHeading6": {
-    "fg": "#FFC799",
-    "bold": true
+    "bold": true,
+    "fg": "#ffc799"
   },
   "mdBold": {
     "bold": true,
-    "fg": "#FFF"
+    "fg": "#ffffff"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#FFF"
+    "fg": "#ffffff",
+    "italic": true
   },
   "mdLink": {
-    "underline": true,
-    "fg": "#FFC799"
+    "fg": "#ffffff"
   },
   "mdHr": {
     "bold": true,
-    "fg": "#65737E"
+    "fg": "#65737e"
   }
 }

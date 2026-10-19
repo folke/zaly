@@ -1,101 +1,106 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "poimandres",
   "name": "Poimandres",
   "shiki": "poimandres",
-  "fg": "#a6accd",
   "bg": "#1b1e28",
-  "primary": "#ADD7FF",
-  "accent": "#ADD7FF",
-  "success": "#5DE4c7",
+  "fg": "#a6accd",
+  "primary": "#add7ff",
+  "accent": "#add7ff",
+  "success": "#5de4c7",
   "info": "#89ddff",
   "warn": "#fffac2",
   "error": "#d0679d",
-  "muted": "#a6accd",
-  "border": "#161820",
   "selection": {
     "bg": "#272c3c"
   },
   "diffAdd": {
-    "bg": "#1f242f",
-    "fg": "#ADD7FF"
+    "bg": "#1f242f"
   },
   "diffDel": {
-    "bg": "#322737",
-    "fg": "#506477"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#5a5f79"
-  },
-  "syntaxNumber": {
-    "fg": "#5DE4c7"
-  },
-  "syntaxString": {
-    "fg": "#5DE4c7"
+    "bg": "#322737"
   },
   "syntaxBoolean": {
-    "fg": "#5DE4c7"
-  },
-  "syntaxFunction": {
-    "fg": "#ADD7FF"
-  },
-  "syntaxField": {
-    "fg": "#e4f0fb"
-  },
-  "syntaxSpecial": {
-    "fg": "#a6accd"
-  },
-  "syntaxDelimiter": {
-    "fg": "#a6accd"
+    "fg": "#5de4c7"
   },
   "syntaxBracket": {
     "fg": "#a6accd"
   },
+  "syntaxConstant": {
+    "fg": "#e4f0fb"
+  },
+  "syntaxDelimiter": {
+    "fg": "#a6accd"
+  },
+  "syntaxField": {
+    "fg": "#e4f0fb"
+  },
+  "syntaxFunction": {
+    "fg": "#add7ff"
+  },
+  "syntaxNumber": {
+    "fg": "#5de4c7"
+  },
+  "syntaxSpecial": {
+    "fg": "#4db3a0"
+  },
+  "syntaxString": {
+    "fg": "#5de4c7"
+  },
+  "border": "#161820",
+  "comment": {
+    "fg": "#5a5f79",
+    "italic": true
+  },
   "mdHeading": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading1": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading2": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading3": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading4": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading5": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdHeading6": {
-    "fg": "#5DE4c7",
-    "bold": true
+    "bold": true,
+    "fg": "#e4f0fb"
   },
   "mdBold": {
     "bold": true,
-    "fg": "#7390AA"
+    "fg": "#7390aa"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#7390AA"
-  },
-  "mdLink": {
-    "underline": true,
-    "fg": "#7390AA"
-  },
-  "mdQuote": {
+    "fg": "#7390aa",
     "italic": true
   },
+  "mdLink": {
+    "fg": "#add7ff",
+    "underline": true
+  },
+  "mdQuote": {
+    "fg": "#e4f0fb",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#add7ff"
+  },
   "mdHr": {
+    "bold": true,
     "fg": "#767c9d"
   }
 }

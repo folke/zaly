@@ -8,18 +8,25 @@ import type {
   Style,
   ThemeKey,
 } from "../../style/types.ts"
+import type { CustomTheme } from "../../themes/default.ts"
 import type { Theme } from "../../themes/types.ts"
 
 import typia from "typia"
 
 type UserStyle = Omit<Style, "fg" | "bg" | "style"> & { fg?: string; bg?: string }
 
+// Preserve required slots without expanding the full color/style unions in the validator.
+type RequiredThemeFields = {
+  [K in keyof CustomTheme as {} extends Pick<CustomTheme, K> ? never : K]-?: string | UserStyle
+}
+
 type UserTheme = {
   $schema?: string
   shiki?: ShikiTheme
   id: string
   name?: string
-} & Record<string, string | UserStyle>
+} & RequiredThemeFields &
+  Record<string, string | UserStyle>
 
 type ColorKeys<T> = {
   [K in keyof T]-?: [T[K]] extends [Color] ? K : never
@@ -39,19 +46,19 @@ function toColor(value: unknown) {
   return toBaseColor(color)
 }
 
-const validator = typia.createAssertEquals<Partial<UserTheme>>()
+const validator = typia.createAssertEquals<UserTheme>()
 
 const skipSlots = new Set(["$schema", "shiki", "id", "name"])
 
-export function validateTheme(input: unknown): Partial<UserTheme> {
+export function validateTheme(input: unknown): CustomTheme {
   const out = validator(input)
   for (const [slot, value] of Object.entries(out)) {
-    if (skipSlots.has(slot) || value === undefined) continue
+    if (skipSlots.has(slot)) continue
     if (typeof value === "string" && toColor(value)) continue
     if (isColorKey(slot)) toColor(value)
     const style = toStyle(value)
     if (style.fg !== undefined) toColor(style.fg)
     if (style.bg !== undefined) toColor(style.bg)
   }
-  return out as unknown as Partial<Theme> & { $schema?: string }
+  return out as CustomTheme
 }

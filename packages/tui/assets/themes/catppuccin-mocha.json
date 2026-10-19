@@ -1,91 +1,97 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "catppuccin-mocha",
   "name": "Catppuccin Mocha",
   "shiki": "catppuccin-mocha",
-  "fg": "#cdd6f4",
   "bg": "#1e1e2e",
+  "fg": "#cdd6f4",
   "primary": "#89b4fa",
   "accent": "#89dceb",
   "success": "#a6e3a1",
   "info": "#94e2d5",
   "warn": "#fab387",
   "error": "#f38ba8",
-  "muted": "#585b70",
-  "border": "#585b70",
   "selection": {
     "bg": "#3b3d4f"
   },
   "diffAdd": {
-    "bg": "#394545",
-    "fg": "#a6e3a1"
+    "bg": "#323b3f"
   },
   "diffDel": {
-    "bg": "#493446",
-    "fg": "#f38ba8"
-  },
-  "comment": {
-    "italic": true,
-    "fg": "#9399b2"
-  },
-  "syntaxNumber": {
-    "fg": "#fab387"
-  },
-  "syntaxString": {
-    "fg": "#a6e3a1"
+    "bg": "#3e2e40"
   },
   "syntaxBoolean": {
     "fg": "#fab387"
   },
-  "syntaxFunction": {
-    "italic": true,
-    "fg": "#89b4fa"
+  "syntaxBracket": {
+    "fg": "#9399b2"
   },
-  "syntaxSpecial": {
-    "fg": "#cba6f7"
+  "syntaxConstant": {
+    "fg": "#cdd6f4"
   },
   "syntaxDelimiter": {
     "fg": "#9399b2"
   },
+  "syntaxField": {
+    "fg": "#cdd6f4"
+  },
+  "syntaxFunction": {
+    "fg": "#89b4fa",
+    "italic": true
+  },
+  "syntaxNumber": {
+    "fg": "#fab387"
+  },
+  "syntaxSpecial": {
+    "fg": "#cba6f7"
+  },
+  "syntaxString": {
+    "fg": "#a6e3a1"
+  },
+  "border": "#585b70",
+  "comment": {
+    "fg": "#9399b2",
+    "italic": true
+  },
   "mdHeading": {
-    "fg": "#f38ba8",
-    "bold": true
+    "bold": true,
+    "fg": "#f38ba8"
   },
   "mdHeading1": {
-    "fg": "#f38ba8",
-    "bold": true
+    "bold": true,
+    "fg": "#f38ba8"
   },
   "mdHeading2": {
-    "fg": "#fab387",
-    "bold": true
+    "bold": true,
+    "fg": "#fab387"
   },
   "mdHeading3": {
-    "fg": "#f9e2af",
-    "bold": true
+    "bold": true,
+    "fg": "#f9e2af"
   },
   "mdHeading4": {
-    "fg": "#a6e3a1",
-    "bold": true
+    "bold": true,
+    "fg": "#a6e3a1"
   },
   "mdHeading5": {
-    "fg": "#74c7ec",
-    "bold": true
+    "bold": true,
+    "fg": "#74c7ec"
   },
   "mdHeading6": {
-    "fg": "#b4befe",
-    "bold": true
+    "bold": true,
+    "fg": "#b4befe"
   },
   "mdBold": {
     "bold": true,
     "fg": "#f38ba8"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#f38ba8"
+    "fg": "#f38ba8",
+    "italic": true
   },
   "mdStrikethrough": {
-    "strikethrough": true,
-    "fg": "#a6adc8"
+    "fg": "#a6adc8",
+    "strikethrough": true
   },
   "mdLink": {
     "fg": "#b4befe"

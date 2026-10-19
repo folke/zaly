@@ -253,6 +253,7 @@
     "shiki": "^4.5.0"
   },
   "devDependencies": {
+    "@shikijs/vscode-textmate": "10.0.2",
     "ghostty-web": "^0.4.0",
     "mitata": "^1.0.34",
     "slice-ansi": "^9.0.1",

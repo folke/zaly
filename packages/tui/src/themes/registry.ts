@@ -1,3 +1,4 @@
+import type { CustomTheme } from "./default.ts"
 import type { Theme } from "./types.ts"
 
 import { withError } from "@zaly/shared"
@@ -8,13 +9,13 @@ import moonJson from "../../assets/themes/tokyonight-moon.json" with { type: "js
 import { isHexColor } from "../style/color.ts"
 import { isDark } from "../style/oklch.ts"
 import { builtin } from "./builtin.ts"
-import { ansi, defaultsDark, defaultsLight } from "./default.ts"
+import { defaultsDark, defaultsLight } from "./default.ts"
 
 /** Built-in theme names plus the synthetic `"ansi"` palette (no JSON
  *  — falls back to `defaults` only). */
 export type BuiltinTheme = keyof typeof builtin | "ansi"
 export type AnyTheme = BuiltinTheme | (string & {})
-export type ThemeLoader = () => Promise<Partial<Theme>>
+export type ThemeLoader = () => Promise<CustomTheme>
 
 const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
 
@@ -24,9 +25,6 @@ const DEFAULT_THEME: BuiltinTheme = "tokyonight-moon"
  * callers `await` explicitly.
  */
 export const themeRegistry = createRegistry<ThemeLoader>("theme").from(builtin)
-// NOTE: remove the ansi theme for now, since it looks kinda broken and not really possible
-// to fix properly
-themeRegistry.register("ansi", async () => ({ ...ansi }))
 
 /**
  * Load a theme by name or path.
@@ -54,18 +52,12 @@ export async function loadTheme(o?: string | { name?: string; path?: string }): 
  * so we don't pay typia's ~3MB of generated assertions at startup;
  * user-supplied JSON goes through `loadThemeFile` which validates.
  */
-function resolveTheme(theme: unknown, id: string): Theme {
-  const { $schema: _, ...rest } = theme as Partial<Theme> & { $schema?: unknown }
-
+function resolveTheme(theme: CustomTheme, id: string): Theme {
+  const { $schema: _, ...rest } = theme
   let mode: "dark" | "light" | undefined = rest.mode
   if (!mode && rest.bg && isHexColor(rest.bg)) mode = isDark(rest.bg) ? "dark" : "light"
   mode ??= "dark"
-  return {
-    ...(mode === "dark" ? defaultsDark : defaultsLight),
-    id,
-    name: id,
-    ...rest,
-  }
+  return { ...(mode === "dark" ? defaultsDark : defaultsLight), name: id, ...rest }
 }
 
 /**
@@ -85,4 +77,4 @@ async function loadThemeFile(path: string): Promise<Theme> {
 }
 
 /** TokyoNight Moon — the default. Sourced from `assets/themes/tokyonight-moon.json`. */
-export const defaultTheme = resolveTheme(moonJson, "tokyonight-moon")
+export const defaultTheme = resolveTheme(moonJson as CustomTheme, "tokyonight-moon")

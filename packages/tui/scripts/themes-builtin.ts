@@ -24,10 +24,10 @@ function genBuiltin(names: readonly string[]): string {
   const entries = names.map((n) => `  "${n}": () => importTheme("${n}"),`).join("\n")
 
   return `${header}import type { ThemeLoader } from "./registry.ts"
-import type { Theme } from "./types.ts"
+import type { CustomTheme } from "./default.ts"
 
-const importTheme = (path: string): Promise<Partial<Theme>> =>
-  import(\`#assets/themes/\${path}.json\`, { with: { type: "json" } }).then((m) => m.default as Partial<Theme>)
+const importTheme = (path: string): Promise<CustomTheme> =>
+  import(\`#assets/themes/\${path}.json\`, { with: { type: "json" } }).then((m) => m.default as CustomTheme)
 
 /**
  * Async loader map for every built-in theme. Each entry returns the

@@ -1,52 +1,55 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "github-dark",
   "name": "GitHub Dark",
   "shiki": "github-dark",
-  "fg": "#e1e4e8",
   "bg": "#24292e",
+  "fg": "#e1e4e8",
   "primary": "#79b8ff",
   "accent": "#c8e1ff",
   "success": "#34d058",
   "info": "#39c5cf",
   "warn": "#ffea7f",
   "error": "#f97583",
-  "muted": "#959da5",
-  "border": "#1b1f23",
   "selection": {
     "bg": "#284566"
   },
   "diffAdd": {
-    "bg": "#254132",
-    "fg": "#85e89d"
+    "bg": "#254132"
   },
   "diffDel": {
-    "bg": "#462c33",
-    "fg": "#fdaeb7"
-  },
-  "comment": {
-    "fg": "#6a737d"
-  },
-  "syntaxNumber": {
-    "fg": "#79b8ff"
-  },
-  "syntaxString": {
-    "fg": "#9ecbff"
+    "bg": "#462c33"
   },
   "syntaxBoolean": {
     "fg": "#79b8ff"
   },
-  "syntaxFunction": {
-    "fg": "#b392f0"
-  },
-  "syntaxField": {
+  "syntaxBracket": {
     "fg": "#e1e4e8"
   },
   "syntaxConstant": {
     "fg": "#79b8ff"
   },
+  "syntaxDelimiter": {
+    "fg": "#e1e4e8"
+  },
+  "syntaxField": {
+    "fg": "#e1e4e8"
+  },
+  "syntaxFunction": {
+    "fg": "#b392f0"
+  },
+  "syntaxNumber": {
+    "fg": "#79b8ff"
+  },
   "syntaxSpecial": {
     "fg": "#f97583"
+  },
+  "syntaxString": {
+    "fg": "#9ecbff"
+  },
+  "border": "#1b1f23",
+  "comment": {
+    "fg": "#6a737d"
   },
   "mdHeading": {
     "bold": true,
@@ -81,17 +84,22 @@
     "fg": "#e1e4e8"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#e1e4e8"
+    "fg": "#e1e4e8",
+    "italic": true
   },
   "mdStrikethrough": {
+    "fg": "#e1e4e8",
     "strikethrough": true
   },
   "mdLink": {
+    "fg": "#dbedff",
     "underline": true
   },
   "mdQuote": {
     "fg": "#85e89d"
+  },
+  "mdListBullet": {
+    "fg": "#ffab70"
   },
   "mdHr": {
     "bold": true,

@@ -1,52 +1,55 @@
 {
-  "$schema": "file:./../schemas/theme.schema.json",
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
   "id": "dracula-soft",
   "name": "Dracula Theme Soft",
   "shiki": "dracula-soft",
+  "bg": "#282a36",
   "fg": "#f6f6f4",
-  "bg": "#282A36",
   "primary": "#bf9eee",
   "accent": "#f286c4",
   "success": "#62e884",
   "info": "#97e1f1",
   "warn": "#97e1f1",
   "error": "#ee6666",
-  "muted": "#7b7f8b",
-  "border": "#bf9eee",
   "selection": {
-    "bg": "#44475A"
+    "bg": "#44475a"
   },
   "diffAdd": {
-    "bg": "#2d443f",
-    "fg": "#62e884"
+    "bg": "#2d443f"
   },
   "diffDel": {
-    "bg": "#6b3740",
-    "fg": "#ee6666"
-  },
-  "comment": {
-    "fg": "#7b7f8b"
-  },
-  "syntaxNumber": {
-    "fg": "#bf9eee"
-  },
-  "syntaxString": {
-    "fg": "#e7ee98"
+    "bg": "#6b3740"
   },
   "syntaxBoolean": {
     "fg": "#bf9eee"
   },
-  "syntaxFunction": {
-    "fg": "#62e884"
+  "syntaxBracket": {
+    "fg": "#f6f6f4"
+  },
+  "syntaxConstant": {
+    "fg": "#f6f6f4"
+  },
+  "syntaxDelimiter": {
+    "fg": "#f6f6f4"
   },
   "syntaxField": {
     "fg": "#f6f6f4"
   },
-  "syntaxConstant": {
+  "syntaxFunction": {
+    "fg": "#62e884"
+  },
+  "syntaxNumber": {
     "fg": "#bf9eee"
   },
   "syntaxSpecial": {
     "fg": "#f286c4"
+  },
+  "syntaxString": {
+    "fg": "#e7ee98"
+  },
+  "border": "#bf9eee",
+  "comment": {
+    "fg": "#7b7f8b"
   },
   "mdHeading": {
     "bold": true,
@@ -78,18 +81,18 @@
   },
   "mdBold": {
     "bold": true,
-    "fg": "#FFB86C"
+    "fg": "#ffb86c"
   },
   "mdItalic": {
-    "italic": true,
-    "fg": "#e7ee98"
+    "fg": "#e7ee98",
+    "italic": true
   },
   "mdLink": {
-    "fg": "#97e1f1"
+    "fg": "#f286c4"
   },
   "mdQuote": {
-    "italic": true,
-    "fg": "#e7ee98"
+    "fg": "#e7ee98",
+    "italic": true
   },
   "mdHr": {
     "fg": "#7b7f8b"
