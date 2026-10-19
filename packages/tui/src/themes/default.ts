@@ -17,7 +17,7 @@ export type CustomTheme = Simplify<
 // oxlint-disable-next-line sort-keys
 export const defaultsDark = {
   mode: "dark",
-  shiki: "github-dark",
+  shiki: "auto",
 
   // text
   muted: { dim: true },
@@ -33,7 +33,7 @@ export const defaultsDark = {
 
   // ui primitives
   divider: "bg-5",
-  gutter: "divider",
+  gutter: "quiet",
   prompt: "inherit",
   border: "divider",
   borderTitle: "title",
@@ -85,7 +85,7 @@ export const defaultsDark = {
 export const defaultsLight = {
   ...defaultsDark,
   mode: "light",
-  shiki: "github-light",
+  shiki: "auto",
   ui: { bg: "bg-3" },
   highlight: { bg: "bg-3" },
   divider: "fg-5",
@@ -97,9 +97,6 @@ export const defaultsLight = {
 
 // oxlint-disable-next-line sort-keys
 export const defaultsSystem = {
-  id: "system",
-  name: "System",
-
   // base colors
   primary: "blue",
   accent: "brightMagenta",

@@ -7,6 +7,7 @@ import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
 import { formatLines } from "../layout/text.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
+import { shikiTheme } from "../shiki/theme.ts"
 import { box } from "./box.ts"
 import { show } from "./show.ts"
 import { text } from "./text.ts"
@@ -72,7 +73,9 @@ export const code = widget((props: State<CodeState>) => {
     async () => {
       const source = plain()
       if (!lang || !syntax) return source
-      return await codeToAnsi(source, lang, { theme: context?.style().theme.shiki })
+      return await codeToAnsi(source, lang, {
+        theme: context ? shikiTheme(context.style().theme) : undefined,
+      })
     },
     { initialValue: plain() }
   )

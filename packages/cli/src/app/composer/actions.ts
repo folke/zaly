@@ -11,7 +11,7 @@ import type {
 import { toError } from "@zaly/shared"
 import { sliceAnsi } from "@zaly/shared/ansi"
 import { argsUsage } from "@zaly/shared/args"
-import { codeToAnsi } from "@zaly/tui"
+import { codeToAnsi, shikiTheme } from "@zaly/tui"
 import { text } from "@zaly/tui/widgets/text"
 import { defineCommand, renderUsage } from "citty"
 
@@ -29,7 +29,7 @@ export class ActionsComposer implements ComposerPlugin {
     const s = ctx.style
     const cmd = actionMatch[2]
     const args = actionMatch[3] || ""
-    value = await codeToAnsi(`${cmd} ${args}`, "bash", { theme: s.theme.shiki })
+    value = await codeToAnsi(`${cmd} ${args}`, "bash", { theme: shikiTheme(s.theme) })
     value = s.primary(cmd) + sliceAnsi(value, cmd.length)
     return `${s.delim(actionMatch[1])}${value}`
   }

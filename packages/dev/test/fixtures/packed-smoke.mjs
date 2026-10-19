@@ -16,10 +16,14 @@ assert.equal(theme.id, "dracula")
 // An active app handle lets the intentionally unreferenced worker finish its request.
 const keepAlive = setInterval(() => {}, 1000)
 try {
-  const { codeToAnsi } = await import("@zaly/tui")
+  const { codeToAnsi, shikiTheme } = await import("@zaly/tui")
   const code = "const answer = 42"
   const highlighted = await codeToAnsi(code, "typescript")
   assert(highlighted.includes("\u001b["), "Shiki worker did not highlight the code")
+  const system = await loadTheme("system")
+  const generated = await codeToAnsi('"hello"', "typescript", { theme: shikiTheme(system) })
+  assert(generated.includes("\u001b[32m"), "Generated theme lost its terminal ANSI colors")
+  assert(!generated.includes("38;2;"), "Generated ANSI theme invented RGB colors")
 } finally {
   clearInterval(keepAlive)
 }

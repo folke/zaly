@@ -228,6 +228,30 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       },
     }),
     option({
+      desc: "Syntax highlighting theme; auto follows the UI theme or generates from its syntax colors",
+      name: "Shiki Theme",
+      prop: ["ui", "shiki"],
+      async toggle() {
+        const { shikiThemes } = await import("@zaly/tui")
+        const themes = await shikiThemes()
+        const choices = [
+          {
+            desc: "Follow the UI theme or generate from its syntax colors",
+            id: "auto" as const,
+            text: "auto",
+          },
+          ...themes.map(({ id, name }) => ({ desc: name, id, text: id })),
+        ]
+        const selected = await app.pick({
+          active: choices.findIndex((item) => item.id === this.value),
+          items: choices,
+          maxHeight: app.$.ui.listHeight,
+          title: "Shiki Theme",
+        })
+        if (selected) this.value = selected.id
+      },
+    }),
+    option({
       desc: "Fullscreen mode enables mouse support and a fixed footer, but looses native scrollback and search. (requires restart)",
       name: "Terminal mode",
       notify: () => "Restart `zaly` for the new terminal mode to take effect.",

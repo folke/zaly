@@ -16,13 +16,7 @@ import { shiftLightness } from "./oklch.ts"
  * @internal
  */
 export function openStyle(style: Style, theme?: Theme): string {
-  const resolver = ThemeResolver.from(theme)
-  const ansiStyle: AnsiStyle = {
-    ...style,
-    bg: style.bg !== undefined ? resolver.getColor(style.bg, "bg") : undefined,
-    fg: style.fg !== undefined ? resolver.getColor(style.fg, "fg") : undefined,
-  }
-  return openAnsi(ansiStyle)
+  return openAnsi(resolveAnsiStyle(style, theme))
 }
 
 /**
@@ -40,6 +34,17 @@ export function openStyle(style: Style, theme?: Theme): string {
  */
 export function resolveStyle(ref: string | Style | undefined, theme?: Theme): Style {
   return ThemeResolver.from(theme).getStyle(ref)
+}
+
+/** Resolve semantic style references and colors without emitting terminal escapes. */
+export function resolveAnsiStyle(ref: string | Style | undefined, theme?: Theme): AnsiStyle {
+  const resolver = ThemeResolver.from(theme)
+  const { style: _, ...style } = resolver.getStyle(ref)
+  return {
+    ...style,
+    bg: style.bg !== undefined ? resolver.getColor(style.bg, "bg") : undefined,
+    fg: style.fg !== undefined ? resolver.getColor(style.fg, "fg") : undefined,
+  }
 }
 
 function parseColor(c: string): { base: string; lightness?: number } {

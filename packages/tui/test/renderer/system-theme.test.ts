@@ -68,7 +68,7 @@ describe("renderer system theme lifecycle", () => {
         id: "system",
         bg: "#ffffff",
         mode: "light",
-        shiki: "github-light",
+        shiki: "auto",
       })
     } finally {
       r.stop()
@@ -76,7 +76,7 @@ describe("renderer system theme lifecycle", () => {
     expect(terminal.stdout.all).toContain("\x1b[?2031l")
   })
 
-  test("leaves a named theme alone and starts/stops tracking on selection changes", async () => {
+  test("starts tracking lazily without overriding named themes", async () => {
     const terminal = io()
     const r = await createRenderer({ ...terminal, hookSignals: false, theme: defaultTheme })
     r.start()
@@ -89,7 +89,90 @@ describe("renderer system theme lifecycle", () => {
       terminal.stdin.emit("data", "\x1b[?997;2n")
       await flush()
       expect(r.theme).toBe(defaultTheme)
-      expect(terminal.stdout.all).toContain("\x1b[?2031l")
+      expect(terminal.stdout.all).not.toContain("\x1b[?2031l")
+    } finally {
+      r.stop()
+    }
+    expect(terminal.stdout.all).toContain("\x1b[?2031l")
+  })
+
+  test("reapplying the system fallback preserves detected colors without querying again", async () => {
+    const terminal = io()
+    const r = await createRenderer({
+      ...terminal,
+      hookSignals: false,
+      theme: await loadTheme("system"),
+    })
+    const palette = vi.spyOn(r.queries, "palette")
+    r.start()
+    try {
+      await flush()
+      const detected = r.theme
+      const queries = palette.mock.calls.length
+      r.theme = await loadTheme("system")
+      expect(r.theme).toBe(detected)
+      expect(r.theme.bg).toBe("#181818")
+      await flush()
+      expect(r.theme).toBe(detected)
+      expect(palette).toHaveBeenCalledTimes(queries)
+    } finally {
+      r.stop()
+    }
+  })
+
+  test("theme previews reuse the detected system theme immediately", async () => {
+    const terminal = io()
+    const r = await createRenderer({
+      ...terminal,
+      hookSignals: false,
+      theme: await loadTheme("system"),
+    })
+    const palette = vi.spyOn(r.queries, "palette")
+    r.start()
+    try {
+      await flush()
+      const detected = r.theme
+      const queries = palette.mock.calls.length
+      const fallback = await loadTheme("system")
+      for (let i = 0; i < 3; i++) {
+        r.theme = defaultTheme
+        r.theme = fallback
+        expect(r.theme).toBe(detected)
+      }
+      await flush()
+      expect(palette).toHaveBeenCalledTimes(queries)
+      expect(terminal.stdout.log.filter((sequence) => sequence === "\x1b[?2031h")).toHaveLength(1)
+      expect(terminal.stdout.all).not.toContain("\x1b[?2031l")
+    } finally {
+      r.stop()
+    }
+  })
+
+  test("terminal changes refresh the cached palette while another theme is selected", async () => {
+    const terminal = io()
+    const r = await createRenderer({
+      ...terminal,
+      hookSignals: false,
+      theme: await loadTheme("system"),
+    })
+    const palette = vi.spyOn(r.queries, "palette")
+    r.start()
+    try {
+      await flush()
+      r.theme = defaultTheme
+      terminal.setColors({
+        ansi: Array.from({ length: 16 }, () => "#333333"),
+        bg: "#ffffff",
+        fg: "#111111",
+      })
+      terminal.stdin.emit("data", "\x1b[?997;2n")
+      await flush()
+      expect(r.theme).toBe(defaultTheme)
+      const queries = palette.mock.calls.length
+      r.theme = await loadTheme("system")
+      expect(r.theme).toMatchObject({ bg: "#ffffff", fg: "#111111", mode: "light" })
+      await flush()
+      expect(palette).toHaveBeenCalledTimes(queries)
     } finally {
       r.stop()
     }
@@ -117,6 +200,34 @@ describe("renderer system theme lifecycle", () => {
       r.stop()
     }
   })
+
+  test.each(["github-dark", "github-light"] as const)(
+    "preserves %s highlighting across palette updates and theme switches",
+    async (shiki) => {
+      const terminal = io()
+      const r = await createRenderer({
+        ...terminal,
+        hookSignals: false,
+        shiki,
+        theme: await loadTheme("system"),
+      })
+      r.start()
+      try {
+        await flush()
+        expect(r.theme.shiki).toBe(shiki)
+        terminal.setColors({ ansi: [], bg: "#ffffff", fg: "#111111" })
+        vi.spyOn(r.queries, "palette").mockResolvedValue({ ansi: [], bg: "#ffffff", fg: "#111111" })
+        terminal.stdin.emit("data", "\x1b[?997;2n")
+        await flush()
+        expect(r.theme.mode).toBe("light")
+        expect(r.theme.shiki).toBe(shiki)
+        r.theme = defaultTheme
+        expect(r.theme.shiki).toBe(shiki)
+      } finally {
+        r.stop()
+      }
+    }
+  )
 
   test("does not query non-interactive output", async () => {
     const terminal = io()

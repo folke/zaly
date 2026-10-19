@@ -1,4 +1,4 @@
-import type { ShikiTheme } from "../shiki/types.ts"
+import type { ShikiSelection } from "../shiki/types.ts"
 import type { AnyStyle, Color } from "../style/types.ts"
 
 /**
@@ -21,11 +21,9 @@ export type Theme<Ansi extends boolean = true, T = AnyStyle<Ansi>> = {
   id: string
   mode: "dark" | "light"
   name?: string
-  /** Optional name of a matching Shiki syntax-highlighting theme. Code
-   *  blocks and fenced markdown snippets look this up so highlighting
-   *  aligns with the TUI palette. Leave unset for themes without a
-   *  Shiki counterpart. */
-  shiki?: ShikiTheme
+  /** Matching bundled Shiki theme. Unset or "auto" generates highlighting
+   *  from the syntax slots. */
+  shiki?: ShikiSelection
 
   // ── base colors ──────────────────────────────────────────────────────
 

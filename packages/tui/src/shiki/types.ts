@@ -1,13 +1,21 @@
 import type { BundledLanguage, BundledTheme } from "shiki/types"
+import type { AnsiStyle } from "../style/types.ts"
 
 export type ShikiTheme = BundledTheme
 export type ShikiLanguage = BundledLanguage
+export type ShikiSelection = "auto" | ShikiTheme
+export type GeneratedShikiTheme = {
+  name: string
+  mode: "dark" | "light"
+  styles: AnsiStyle[]
+}
+export type ShikiThemeInput = ShikiTheme | GeneratedShikiTheme
 
 export type ShikiRequest = {
   key?: string
   code: string
   lang: string
-  theme?: ShikiTheme
+  theme?: ShikiThemeInput
   signal?: AbortSignal
 }
 
@@ -32,6 +40,6 @@ export type ShikiResult = {
 export type ShikiWorkerMessage = { type: "ready" } | (ShikiResult & { type: "result" })
 
 export type ShikiOpts = {
-  theme?: ShikiTheme
+  theme?: ShikiThemeInput
   signal?: AbortSignal
 }

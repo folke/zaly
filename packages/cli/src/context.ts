@@ -199,7 +199,9 @@ export class Context extends BaseLogger {
     const paths = await this.config.resources.themes()
     const path = paths.find((p) => p.endsWith(`${name}.json`))
     name ??= this.config.$.ui.theme
-    return await loadTheme(path ?? name)
+    const theme = await loadTheme(path ?? name)
+    const shiki = this.config.$.ui.shiki
+    return shiki === "auto" ? theme : { ...theme, shiki }
   }
 
   async stop(): Promise<void> {

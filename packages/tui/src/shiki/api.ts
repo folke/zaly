@@ -1,11 +1,12 @@
 import type { AnsiStyle, HexColor } from "../style/types.ts"
-import type { ShikiLanguage, ShikiTheme } from "./types.ts"
+import type { ShikiLanguage, ShikiTheme, ShikiThemeInput } from "./types.ts"
 
 import { createHighlighterCore } from "shiki/core"
 import { createOnigurumaEngine } from "shiki/engine/oniguruma"
 import { bundledLanguages as bundled } from "shiki/langs"
 import { isShikiLang, isShikiTheme } from "../schemas/gen/shiki.ts"
 import { openAnsi, RESET } from "../style/ansi.ts"
+import { syntaxScopes } from "./theme.ts"
 
 export type AnsiHighlighter = (code: string, lang?: string) => string
 
@@ -31,7 +32,20 @@ const enum FontStyle {
 const highlighter = await createHighlighterCore({
   engine: await createOnigurumaEngine(import("shiki/wasm")),
   langs: [],
-  themes: [],
+  // Marker colors carry semantic style indices, never actual terminal colors.
+  themes: [
+    {
+      name: "zaly-syntax",
+      settings: [
+        { settings: { background: "#000000", foreground: "#000001" } },
+        ...syntaxScopes.map(([, scope], i) => ({
+          scope: [...scope],
+          settings: { foreground: `#${(i + 2).toString(16).padStart(6, "0")}` },
+        })),
+      ],
+      type: "dark",
+    },
+  ],
   warnings: false,
 })
 
@@ -41,9 +55,8 @@ class Shiki {
   #themes = { loaded: new Set<T>(), wanted: new Set<T>() }
 
   status(langs: string | string[], themes?: string | string[]): ShikiStatus {
-    themes ??= []
+    themes ??= [THEME]
     themes = Array.isArray(themes) ? themes : [themes]
-    themes = themes.length > 0 ? themes : [THEME]
     langs = Array.isArray(langs) ? langs : [langs]
     langs = langs.filter(isShikiLang).filter((l) => !this.#langs.loaded.has(l))
     themes = themes.filter(isShikiTheme).filter((t) => !this.#themes.loaded.has(t))
@@ -83,23 +96,28 @@ class Shiki {
     await this.#loading
   }
 
-  async highlight(code: string, lang: string, theme = THEME) {
-    await this.load(lang, theme)
+  async highlight(code: string, lang: string, theme: ShikiThemeInput = THEME) {
+    const generated = typeof theme === "object" ? theme : undefined
+    const name = typeof theme === "string" ? theme : "zaly-syntax"
+    await this.load(lang, generated ? [] : [name])
 
-    if (!this.#themes.loaded.has(theme)) throw new Error(`Theme ${theme} not loaded`)
+    if (!generated && !this.#themes.loaded.has(name as T))
+      throw new Error(`Theme ${name} not loaded`)
     if (!this.#langs.loaded.has(lang as L)) return code
 
-    const t = highlighter.getTheme(theme)
+    const t = highlighter.getTheme(name)
     let output = ""
-    const lines = highlighter.codeToTokensBase(code, { lang: lang as L, theme: theme as T })
+    const lines = highlighter.codeToTokensBase(code, { lang: lang as L, theme: name })
 
     for (const line of lines) {
       for (const token of line) {
         const text = token.content
-        const style: AnsiStyle = {
-          bg: token.bgColor as HexColor | undefined,
-          fg: (token.color ?? t.fg) as HexColor | undefined,
-        }
+        const style: AnsiStyle = generated
+          ? { ...generated.styles[Number.parseInt((token.color ?? t.fg).slice(1), 16) - 1] }
+          : {
+              bg: token.bgColor as HexColor | undefined,
+              fg: (token.color ?? t.fg) as HexColor | undefined,
+            }
         if (token.fontStyle) {
           if (token.fontStyle & FontStyle.Bold) style.bold = true
           if (token.fontStyle & FontStyle.Italic) style.italic = true

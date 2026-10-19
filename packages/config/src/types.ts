@@ -1,7 +1,7 @@
 import type { AnyTool, PermissionPresetName } from "@zaly/agent"
 import type { ReasoningEffort } from "@zaly/ai"
 import type { DeepPartial, Simplify } from "@zaly/shared"
-import type { KeyPatterns } from "@zaly/tui"
+import type { KeyPatterns, ShikiSelection } from "@zaly/tui"
 
 export type ResourceFilter = {
   /** Whether the plugin is enabled. Defaults to true. */
@@ -35,6 +35,8 @@ export type ResolvedConfig = {
     reasoning: boolean
     /** Theme name or path to custom theme file */
     theme: string
+    /** Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it. */
+    shiki: ShikiSelection
     /** What messages to show in the session tree. Defaults to assistant, reasoning, and tools. */
     sessionTree: ("assistant" | "reasoning" | "tools" | "system")[]
     /** Make the background transparent. Defaults to false. */

@@ -1,7 +1,7 @@
 import type { BashTool } from "@zaly/agent"
 import type { ComposerFormatCtx, ComposerPlugin, ComposerSubmitCtx } from "../composer.ts"
 
-import { codeToAnsi } from "@zaly/tui"
+import { codeToAnsi, shikiTheme } from "@zaly/tui"
 
 const bashCmdRe = () => /^(\s*!\s*)(.*)$/
 
@@ -16,7 +16,7 @@ export class BashComposer implements ComposerPlugin {
     const s = ctx.style
     const prefix = bashMatch[1]
     const command = bashMatch[2]
-    value = await codeToAnsi(command, "bash", { theme: s.theme.shiki })
+    value = await codeToAnsi(command, "bash", { theme: shikiTheme(s.theme) })
     return `${s.divider(prefix)}${value}`
   }
 

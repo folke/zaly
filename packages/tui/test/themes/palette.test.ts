@@ -36,6 +36,8 @@ describe("terminal palette themes", () => {
     const before = JSON.stringify(defaultsDark)
     const theme = themeFromPalette(palette)
     const current = { ...theme, id: "palette" }
+    expect(theme).not.toHaveProperty("id")
+    expect(theme).not.toHaveProperty("name")
     expect(theme.primary).toBe("blue")
     expect(openStyle({ fg: "primary" }, current)).toBe(openStyle({ fg: ansi[4] }))
     expect(openStyle({ fg: "accent" }, current)).toBe(openStyle({ fg: ansi[13] }))
@@ -83,8 +85,15 @@ describe("terminal palette themes", () => {
     })
   })
 
+  test.each(["dark", "light"] as const)("theme files accept explicit %s mode", (mode) => {
+    const theme = { ...themeFromPalette(palette), id: "test", mode }
+    expect(validateTheme(theme).mode).toBe(mode)
+  })
+
   test("theme files reject invalid explicit modes", () => {
-    expect(() => validateTheme({ id: "invalid", mode: "sepia" })).toThrow()
+    expect(() =>
+      validateTheme({ ...themeFromPalette(palette), id: "invalid", mode: "sepia" })
+    ).toThrow()
   })
 
   test("requires exactly sixteen colors", () => {

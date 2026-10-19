@@ -162,6 +162,7 @@ export class App {
           return n
         },
       },
+      shiki: this.$.ui.shiki,
       theme: await this.#ctx.theme(),
       transparent: this.$.ui.transparent,
     })

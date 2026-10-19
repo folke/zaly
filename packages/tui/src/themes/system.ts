@@ -60,8 +60,7 @@ export function themeFromPalette(palette: TerminalPalette): Omit<Theme, "id"> {
     gray: palette.ansi[8],
     grey: palette.ansi[8],
   })
-  if (palette.selectionBg)
-    theme.selection = { bg: palette.selectionBg, fg: palette.selectionFg ?? palette.fg }
+  if (palette.selectionBg) theme.selection = { bg: palette.selectionBg, fg: palette.selectionFg }
   return theme
 }
 
@@ -76,7 +75,7 @@ export function systemTheme(
     id: "system",
     mode,
     name: "System",
-    shiki: mode === "dark" ? "github-dark" : "github-light",
+    shiki: "auto",
   } as const
   if (
     snapshot?.bg &&

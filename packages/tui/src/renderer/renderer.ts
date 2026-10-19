@@ -3,6 +3,7 @@ import type { Node } from "../core/node.ts"
 import type { Owner, Reactive } from "../core/reactive.ts"
 import type { ActionDef } from "../input/actions.ts"
 import type { TuiReporterOpts } from "../services/logger.ts"
+import type { ShikiSelection } from "../shiki/types.ts"
 import type { Style } from "../style/types.ts"
 import type { Theme } from "../themes/types.ts"
 import type { RenderFrame } from "./frame.ts"
@@ -49,6 +50,8 @@ export interface RendererOptions {
   stdout?: TerminalWriter
   images?: Reactive<boolean>
   theme?: Theme
+  /** Syntax highlighting selection, independent of the UI theme. */
+  shiki?: ShikiSelection
   transparent?: Reactive<boolean>
   /** Base colors for painted rows and cleared cells, resolved against the theme. */
   defaultStyle?: Pick<Style, "fg" | "bg">
@@ -131,6 +134,8 @@ export class Renderer extends Emitter<RenderEvents> {
   readonly #stdin: TerminalReader & { setEncoding?: (enc: string) => void }
 
   #theme = signal<Theme | undefined>(undefined)
+  readonly #shiki: ShikiSelection
+  #systemTheme: Theme | undefined
   readonly #transparent = signal<Reactive<boolean>>(false)
 
   /** Root Owner — every surface's function-shape `add` / `append` runs
@@ -185,7 +190,9 @@ export class Renderer extends Emitter<RenderEvents> {
     })
     this.frame = new Frame(this.terminal)
 
-    if (opts.theme) this.#theme.set(opts.theme)
+    this.#shiki = opts.shiki ?? "auto"
+    if (opts.theme || this.#shiki !== "auto")
+      this.#theme.set(this.#withShiki(opts.theme ?? defaultTheme))
     this.#transparent.set(() => opts.transparent ?? false)
 
     this.ui = new UI(this)
@@ -361,7 +368,7 @@ export class Renderer extends Emitter<RenderEvents> {
    *  Nodes that compare cache against `ctx.version` need the version
    *  bump that already happens elsewhere on theme-driven invalidation. */
   set theme(theme: Theme) {
-    this.#theme.set(theme)
+    this.#theme.set(this.#withShiki(theme.id === "system" ? (this.#systemTheme ?? theme) : theme))
     this.#syncSystemTheme()
     this.#ctxVersion++
     this.stream.invalidate()
@@ -375,18 +382,25 @@ export class Renderer extends Emitter<RenderEvents> {
     return this.#theme.get() ?? defaultTheme
   }
 
+  #withShiki(theme: Theme): Theme {
+    return this.#shiki === "auto" ? theme : { ...theme, shiki: this.#shiki }
+  }
+
   #syncSystemTheme() {
-    if (!this.#running || !this.#canQueryColors || peek(this.#theme.get)?.id !== "system") {
+    if (!this.#running || !this.#canQueryColors) {
       this.#colorsWatcher?.stop()
       this.#colorsWatcher = undefined
       return
     }
+    // Once requested, keep the palette current even while previewing another theme.
+    if (peek(this.#theme.get)?.id !== "system") return
     this.#colorsWatcher ??= new ColorsWatcher(
       this.queries,
       this.input,
       (sequence) => this.terminal.write(sequence),
       (snapshot, mode) => {
-        this.theme = systemTheme(snapshot, mode)
+        this.#systemTheme = systemTheme(snapshot, mode)
+        if (peek(this.#theme.get)?.id === "system") this.theme = this.#systemTheme
       }
     )
   }

@@ -12,6 +12,7 @@ import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
 import { calcLayout } from "../layout/text.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
+import { shikiTheme } from "../shiki/theme.ts"
 
 export interface DiffState {
   /** Pre-state file content. Plain string or reactive accessor —
@@ -74,7 +75,7 @@ export class Diff extends Node<DiffState> {
         const lang = this.#lang()
         const input = this.input
         if (!lang) return input
-        const theme = context?.style().theme.shiki
+        const theme = context ? shikiTheme(context.style().theme) : undefined
         const [original, modified] = await Promise.all([
           codeToAnsi(input.original, lang, { theme }),
           codeToAnsi(input.modified, lang, { theme }),

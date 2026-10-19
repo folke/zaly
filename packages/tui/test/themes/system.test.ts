@@ -32,7 +32,7 @@ describe("automatic system theme", () => {
       bg: "#ffffff",
     })
     expect(theme.mode).toBe("light")
-    expect(theme.shiki).toBe("github-light")
+    expect(theme.shiki).toBe("auto")
     expect(theme.ui).toEqual({ bg: "bg-3" })
     expect(openStyle({ fg: "primary" }, theme)).toBe(openStyle({ fg: "blue" }))
   })

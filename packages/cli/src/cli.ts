@@ -66,11 +66,8 @@ export class Cli {
       commands: await config.resources.commands(),
       skills: await config.resources.skills(),
     }
-    const [{ settingsReviverIssues }, { codeToAnsi }, { prettyPath }] = await Promise.all([
-      import("@zaly/config"),
-      import("@zaly/tui"),
-      import("@zaly/shared"),
-    ])
+    const [{ settingsReviverIssues }, { codeToAnsi, shikiTheme }, { prettyPath }] =
+      await Promise.all([import("@zaly/config"), import("@zaly/tui"), import("@zaly/shared")])
     const issues = settingsReviverIssues(settings)
     for (const issue of issues) {
       console.warn(`- **${issue.path}**: ${issue.msg}`)
@@ -79,7 +76,7 @@ export class Cli {
     const penv = Object.fromEntries(Object.entries(env).map(([p, v]) => [prettyPath(p), v]))
     const json = JSON.stringify({ config: settings, env: penv, resources }, undefined, 2)
     const theme = await this.ctx.theme()
-    const str = await codeToAnsi(json, "json", { theme: theme.shiki })
+    const str = await codeToAnsi(json, "json", { theme: shikiTheme(theme) })
     this.ctx.log(str.trim())
   }
 

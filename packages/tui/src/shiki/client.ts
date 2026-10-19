@@ -39,7 +39,7 @@ export class ShikiWorkerClient {
   }
 
   key(req: ShikiRequest): string {
-    return req.key ?? hash(`${req.lang}:${req.code}:${req.theme ?? "default"}`)
+    return req.key ?? hash(JSON.stringify([req.lang, req.code, req.theme ?? "default"]))
   }
 
   toJob(req: ShikiRequest): ShikiJob | ShikiResult {

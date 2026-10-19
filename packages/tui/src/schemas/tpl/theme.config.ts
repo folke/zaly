@@ -1,5 +1,5 @@
 // oxlint-disable import/no-named-as-default-member
-import type { ShikiTheme } from "../../shiki/types.ts"
+import type { ShikiSelection } from "../../shiki/types.ts"
 import type {
   AnsiColorName,
   BrightAnsiColorName,
@@ -22,9 +22,10 @@ type RequiredThemeFields = {
 
 type UserTheme = {
   $schema?: string
-  shiki?: ShikiTheme
+  shiki?: ShikiSelection
   id: string
   name?: string
+  mode?: Theme["mode"]
 } & RequiredThemeFields &
   Record<string, string | UserStyle>
 
@@ -48,7 +49,7 @@ function toColor(value: unknown) {
 
 const validator = typia.createAssertEquals<UserTheme>()
 
-const skipSlots = new Set(["$schema", "shiki", "id", "name"])
+const skipSlots = new Set(["$schema", "shiki", "id", "name", "mode"])
 
 export function validateTheme(input: unknown): CustomTheme {
   const out = validator(input)

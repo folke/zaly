@@ -24,6 +24,7 @@ export const ThemeSchema = {
                         "enum": [
                             "andromeeda",
                             "aurora-x",
+                            "auto",
                             "ayu-dark",
                             "ayu-light",
                             "ayu-mirage",
@@ -88,7 +89,7 @@ export const ThemeSchema = {
                             "vitesse-dark",
                             "vitesse-light"
                         ],
-                        description: "Optional name of a matching Shiki syntax-highlighting theme. Code\nblocks and fenced markdown snippets look this up so highlighting\naligns with the TUI palette. Leave unset for themes without a\nShiki counterpart."
+                        description: "Matching bundled Shiki theme. Unset or \"auto\" generates highlighting\nfrom the syntax slots."
                     },
                     fg: {
                         $ref: "#/components/schemas/Colortruetrue"

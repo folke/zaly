@@ -14,6 +14,7 @@ export const defaultSettings = {
     mode: "fullscreen",
     reasoning: true,
     sessionTree: ["assistant", "reasoning", "tools"],
+    shiki: "auto",
     theme: "tokyonight-moon",
     transparent: false,
     treeHeight: 20,

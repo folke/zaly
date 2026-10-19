@@ -115,7 +115,6 @@
   "selection": {
     "bg": "#b7c1e3"
   },
-  "shiki": "github-light",
   "success": "#118c74",
   "syntaxBoolean": {
     "fg": "#188092"

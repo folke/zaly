@@ -4,7 +4,7 @@ import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 import type { MarkdownRenderer } from "../markdown/renderer.ts"
 import type { MdOptions } from "../markdown/types.ts"
-import type { ShikiTheme } from "../shiki/types.ts"
+import type { ShikiThemeInput } from "../shiki/types.ts"
 import type { AnyStyle } from "../style/types.ts"
 import type { Image } from "./image.ts"
 import type { TextContent } from "./text.ts"
@@ -16,6 +16,7 @@ import { RenderContext } from "../core/render.ts"
 import { calcLayout, expandTabs, formatText } from "../layout/text.ts"
 import { shikiWorker } from "../shiki/client.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
+import { shikiTheme } from "../shiki/theme.ts"
 import { textContent } from "./text.ts"
 
 export interface MarkdownState {
@@ -40,7 +41,7 @@ type ShikiCode = {
   key: string
   code: string
   lang: string
-  theme?: ShikiTheme
+  theme?: ShikiThemeInput
   inflight?: Promise<string>
   ac?: AbortController
   result?: string
@@ -97,7 +98,7 @@ export class Markdown extends Node<MarkdownState> {
   /** Find a highlighted result for a prefix of `code` in the cache. This
    * handles streaming updates where the full code block isn't available yet
    * and prevents flashing un-highlighted text on each update. */
-  #streamingHighlight(code: string, lang: string, theme?: ShikiTheme) {
+  #streamingHighlight(code: string, lang: string, theme?: ShikiThemeInput) {
     let ret: ShikiCode | undefined
     for (const c of this.#code.values()) {
       if (!c.result || c.lang !== lang || c.theme !== theme) continue
@@ -107,7 +108,7 @@ export class Markdown extends Node<MarkdownState> {
     return ret?.result ? ret.result + code.slice(ret.code.length) : code
   }
 
-  #highlight(code: string, lang?: string, theme?: ShikiTheme): string {
+  #highlight(code: string, lang?: string, theme?: ShikiThemeInput): string {
     if (!lang) return code
     const key = shikiWorker.key({ code, lang, theme })
     const ret = this.#code.get(key)
@@ -132,7 +133,7 @@ export class Markdown extends Node<MarkdownState> {
 
       formatted = await this.#renderer.render(source, {
         ...ctx,
-        highlight: (code, lang) => this.#highlight(code, lang, ctx.style.theme.shiki),
+        highlight: (code, lang) => this.#highlight(code, lang, shikiTheme(ctx.style.theme)),
         images: unwrap(this.#images) ?? true,
       })
 

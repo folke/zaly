@@ -44,6 +44,17 @@ be overridden with XDG and `ZALY_*` variables; see [paths](../reference/paths.md
 Set `model` to a provider/model ID selected from `/model` when you want an explicit
 default. Otherwise startup can reuse the resumed session's model or saved selection.
 
+## Syntax highlighting
+
+`ui.shiki` selects syntax highlighting independently of the UI theme:
+
+- `"auto"` (default): use the active theme's Shiki counterpart, or generate highlighting
+  from its syntax slots when none is specified. The system theme uses generated highlighting.
+- A bundled Shiki theme name, such as `"github-dark"` or `"tokyo-night"`: use that theme
+  regardless of the UI theme.
+
+Generated highlighting preserves terminal ANSI colors when RGB palette detection is unavailable.
+
 ## Verify the result
 
 ```sh
