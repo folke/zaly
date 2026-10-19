@@ -25,7 +25,7 @@ type UserTheme = {
   shiki?: ShikiSelection
   id: string
   name?: string
-  mode?: Theme["mode"]
+  appearance?: Theme["appearance"]
 } & RequiredThemeFields &
   Record<string, string | UserStyle>
 
@@ -49,7 +49,7 @@ function toColor(value: unknown) {
 
 const validator = typia.createAssertEquals<UserTheme>()
 
-const skipSlots = new Set(["$schema", "shiki", "id", "name", "mode"])
+const skipSlots = new Set(["$schema", "shiki", "id", "name", "appearance"])
 
 export function validateTheme(input: unknown): CustomTheme {
   const out = validator(input)

@@ -31,7 +31,7 @@ describe("automatic system theme", () => {
       ansi: [...snapshot.ansi.slice(0, 15), undefined],
       bg: "#ffffff",
     })
-    expect(theme.mode).toBe("light")
+    expect(theme.appearance).toBe("light")
     expect(theme.shiki).toBe("auto")
     expect(theme.ui).toEqual({ bg: "bg-3" })
     expect(openStyle({ fg: "primary" }, theme)).toBe(openStyle({ fg: "blue" }))
@@ -39,7 +39,7 @@ describe("automatic system theme", () => {
 
   test("background alone is sufficient for surfaces", () => {
     const theme = systemTheme({ ansi: [], bg: "#eeeeee" })
-    expect(theme).toMatchObject({ bg: "#eeeeee", fg: "inherit", mode: "light" })
+    expect(theme).toMatchObject({ bg: "#eeeeee", fg: "inherit", appearance: "light" })
   })
 
   test("without a background uses ANSI, not fabricated RGB colors", () => {
@@ -47,13 +47,13 @@ describe("automatic system theme", () => {
     expect(theme).toMatchObject({
       bg: "inherit",
       fg: "inherit",
-      mode: "light",
+      appearance: "light",
       selection: { inverse: true },
     })
     expect(theme.ui).toEqual({})
   })
 
   test("classifies the actual background over a conflicting appearance report", () => {
-    expect(systemTheme(snapshot, "light").mode).toBe("dark")
+    expect(systemTheme(snapshot, "light").appearance).toBe("dark")
   })
 })

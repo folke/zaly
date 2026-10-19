@@ -52,8 +52,8 @@ export function shikiTheme(theme: Theme, selection: ShikiSelection = "auto"): Sh
     resolveAnsiStyle({ fg: "fg" }, theme),
     ...syntaxScopes.map(([slot]) => resolveAnsiStyle(slot, theme)),
   ]
-  const mode = theme.mode
-  generated = { mode, name: `zaly-${hash(JSON.stringify([mode, styles]))}`, styles }
+  const appearance = theme.appearance
+  generated = { appearance, name: `zaly-${hash(JSON.stringify([appearance, styles]))}`, styles }
   cache.set(theme, generated)
   return generated
 }

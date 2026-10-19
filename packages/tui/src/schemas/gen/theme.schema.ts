@@ -9,12 +9,13 @@ export const ThemeSchema = {
                     id: {
                         type: "string"
                     },
-                    mode: {
+                    appearance: {
                         type: "string",
                         "enum": [
                             "dark",
                             "light"
-                        ]
+                        ],
+                        description: "Dark/light appearance, inferred from bg when omitted in a theme file."
                     },
                     name: {
                         type: "string"
@@ -302,7 +303,7 @@ export const ThemeSchema = {
                 },
                 required: [
                     "id",
-                    "mode",
+                    "appearance",
                     "fg",
                     "bg",
                     "primary",

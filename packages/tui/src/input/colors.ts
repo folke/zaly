@@ -4,7 +4,7 @@ import type { InputRouter } from "./router.ts"
 /** One renderer run: coalesce updates, discard stale snapshots, and own cleanup. */
 export class ColorsWatcher {
   readonly #ac = new AbortController()
-  #mode: "dark" | "light" | undefined
+  #appearance: "dark" | "light" | undefined
   #revision = 0
   #pending = false
   #running = false
@@ -14,16 +14,19 @@ export class ColorsWatcher {
     readonly queries: TerminalQueries,
     readonly input: InputRouter,
     readonly write: (sequence: string) => void,
-    readonly update: (snapshot: TerminalPaletteSnapshot, mode: "dark" | "light" | undefined) => void
+    readonly update: (
+      snapshot: TerminalPaletteSnapshot,
+      appearance: "dark" | "light" | undefined
+    ) => void
   ) {
     input.on(
       "term-response",
       ({ event }) => {
         if (event.kind !== "csi" || event.final !== "n" || !/^\?997(?:;[012])?$/.test(event.params))
           return
-        if (event.params === "?997") this.#queryMode()
-        if (event.params === "?997;1") this.#mode = "dark"
-        if (event.params === "?997;2") this.#mode = "light"
+        if (event.params === "?997") this.#queryAppearance()
+        if (event.params === "?997;1") this.#appearance = "dark"
+        if (event.params === "?997;2") this.#appearance = "light"
         this.refresh()
       },
       { signal: this.#ac.signal }
@@ -32,17 +35,17 @@ export class ColorsWatcher {
       "terminal-focus",
       ({ gained }) => {
         if (!gained) return
-        this.#queryMode()
+        this.#queryAppearance()
         this.refresh()
       },
       { signal: this.#ac.signal }
     )
     write("\x1b[?2031h")
-    this.#queryMode()
+    this.#queryAppearance()
     this.refresh()
   }
 
-  #queryMode() {
+  #queryAppearance() {
     void this.queries.colorScheme({ signal: this.#ac.signal })
   }
 
@@ -62,10 +65,10 @@ export class ColorsWatcher {
         // oxlint-disable-next-line no-await-in-loop -- OSC replies are untagged; snapshots must not overlap.
         const snapshot = await this.queries.palette({ signal: this.#ac.signal })
         if (revision !== this.#revision) continue
-        const key = JSON.stringify([snapshot, this.#mode])
+        const key = JSON.stringify([snapshot, this.#appearance])
         if (key === this.#previous) continue
         this.#previous = key
-        this.update(snapshot, this.#mode)
+        this.update(snapshot, this.#appearance)
       }
     } finally {
       this.#running = false

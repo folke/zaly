@@ -11,7 +11,7 @@ export interface TerminalPalette {
   ansi: readonly HexColor[]
   bg: HexColor
   fg: HexColor
-  mode?: Theme["mode"]
+  appearance?: Theme["appearance"]
   selectionBg?: HexColor
   selectionFg?: HexColor
 }
@@ -39,17 +39,17 @@ const ANSI_NAMES = [
 export function themeFromPalette(palette: TerminalPalette): Omit<Theme, "id"> {
   if (palette.ansi.length !== 16)
     throw new Error("A terminal palette requires exactly 16 ANSI colors")
-  const mode = palette.mode ?? (isDark(palette.bg) ? "dark" : "light")
+  const appearance = palette.appearance ?? (isDark(palette.bg) ? "dark" : "light")
   const colors = Object.fromEntries(ANSI_NAMES.map((name, i) => [name, palette.ansi[i]]))
   const theme: Omit<Theme, "id"> = {
-    ...(mode === "dark" ? defaultsDark : defaultsLight),
+    ...(appearance === "dark" ? defaultsDark : defaultsLight),
     ...defaultsSystem,
     ...colors,
+    appearance,
     bg: palette.bg,
     diffAdd: { bg: blend(palette.ansi[2], palette.bg, 0.2), fg: "success" },
     diffDel: { bg: blend(palette.ansi[1], palette.bg, 0.2), fg: "error" },
     fg: palette.fg,
-    mode,
     muted: blend(palette.fg, palette.bg, 0.5),
     selection: { bg: blend(palette.ansi[12], palette.bg, 0.3) },
     syntaxField: "fg",
@@ -67,13 +67,13 @@ export function themeFromPalette(palette: TerminalPalette): Omit<Theme, "id"> {
 /** Choose the richest coherent strategy supported by this terminal snapshot. */
 export function systemTheme(
   snapshot?: TerminalPaletteSnapshot,
-  reportedMode: Theme["mode"] = "dark"
+  reportedAppearance: Theme["appearance"] = "dark"
 ): Theme {
-  let mode = reportedMode
-  if (snapshot?.bg) mode = isDark(snapshot.bg) ? "dark" : "light"
+  let appearance = reportedAppearance
+  if (snapshot?.bg) appearance = isDark(snapshot.bg) ? "dark" : "light"
   const identity = {
+    appearance,
     id: "system",
-    mode,
     name: "System",
     shiki: "auto",
   } as const
@@ -87,16 +87,16 @@ export function systemTheme(
       ...themeFromPalette({
         ...snapshot,
         ansi: snapshot.ansi as HexColor[],
+        appearance,
         bg: snapshot.bg,
         fg: snapshot.fg,
-        mode,
       }),
       ...identity,
     }
   }
   if (snapshot?.bg) {
     return {
-      ...(mode === "dark" ? defaultsDark : defaultsLight),
+      ...(appearance === "dark" ? defaultsDark : defaultsLight),
       ...defaultsSystem,
       ...identity,
       bg: snapshot.bg,

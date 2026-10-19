@@ -57,10 +57,10 @@ export async function loadTheme(o?: string | { name?: string; path?: string }): 
  */
 function resolveTheme(theme: (CustomTheme | Theme) & { $schema?: string }, id: string): Theme {
   const { $schema: _, ...rest } = theme
-  let mode: "dark" | "light" | undefined = rest.mode
-  if (!mode && rest.bg && isHexColor(rest.bg)) mode = isDark(rest.bg) ? "dark" : "light"
-  mode ??= "dark"
-  return { ...(mode === "dark" ? defaultsDark : defaultsLight), name: id, ...rest }
+  let appearance: "dark" | "light" | undefined = rest.appearance
+  if (!appearance && rest.bg && isHexColor(rest.bg)) appearance = isDark(rest.bg) ? "dark" : "light"
+  appearance ??= "dark"
+  return { ...(appearance === "dark" ? defaultsDark : defaultsLight), name: id, ...rest }
 }
 
 /**

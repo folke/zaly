@@ -132,8 +132,10 @@ describe("built-in themes — load & validate", () => {
 })
 
 // Validate overrides against a complete theme, so failures test the value rather
-// than an unrelated missing required slot. Mode is inferred from the background.
-const custom = Object.fromEntries(Object.entries(defaultTheme).filter(([key]) => key !== "mode"))
+// than an unrelated missing required slot. Appearance is inferred from the background.
+const custom = Object.fromEntries(
+  Object.entries(defaultTheme).filter(([key]) => key !== "appearance")
+)
 const validateOverrides = (overrides: Record<string, unknown>) =>
   validateTheme({ ...custom, ...overrides })
 

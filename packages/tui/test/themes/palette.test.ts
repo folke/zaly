@@ -49,12 +49,12 @@ describe("terminal palette themes", () => {
   })
 
   test.each([
-    { bg: "#181818", fg: "#dddddd", mode: "dark" },
-    { bg: "#fafafa", fg: "#222222", mode: "light" },
-  ] as const)("derives $mode surfaces and diff backgrounds", ({ bg, fg, mode }) => {
+    { bg: "#181818", fg: "#dddddd", appearance: "dark" },
+    { bg: "#fafafa", fg: "#222222", appearance: "light" },
+  ] as const)("derives $appearance surfaces and diff backgrounds", ({ bg, fg, appearance }) => {
     const theme = themeFromPalette({ ansi, bg, fg })
-    expect(theme.mode).toBe(mode)
-    expect(theme.ui).toEqual((mode === "dark" ? defaultsDark : defaultsLight).ui)
+    expect(theme.appearance).toBe(appearance)
+    expect(theme.ui).toEqual((appearance === "dark" ? defaultsDark : defaultsLight).ui)
     expect(theme.selection).toEqual({ bg: blend(ansi[12], bg, 0.3) })
     const bgL = hexToOklch(bg).L
     const mutedL = hexToOklch(theme.muted as HexColor).L
@@ -66,33 +66,36 @@ describe("terminal palette themes", () => {
     ] as const) {
       expect((diff as Style).bg).toBe(blend(accent, bg, 0.2))
       const l = hexToOklch((diff as Style).bg as HexColor).L
-      expect(mode === "dark" ? l > bgL : l < bgL).toBe(true)
+      expect(appearance === "dark" ? l > bgL : l < bgL).toBe(true)
     }
   })
 
-  test("honors explicit mode and source selection colors", () => {
+  test("honors explicit appearance and source selection colors", () => {
     const theme = themeFromPalette({
       ...palette,
-      mode: "light",
+      appearance: "light",
       selectionBg: "#112233",
       selectionFg: "#abcdef",
     })
-    expect(theme.mode).toBe("light")
+    expect(theme.appearance).toBe("light")
     expect(theme.selection).toEqual({ bg: "#112233", fg: "#abcdef" })
     expect(themeFromPalette({ ...palette, selectionBg: "#112233" }).selection).toEqual({
       bg: "#112233",
-      fg: palette.fg,
+      fg: undefined,
     })
   })
 
-  test.each(["dark", "light"] as const)("theme files accept explicit %s mode", (mode) => {
-    const theme = { ...themeFromPalette(palette), id: "test", mode }
-    expect(validateTheme(theme).mode).toBe(mode)
-  })
+  test.each(["dark", "light"] as const)(
+    "theme files accept explicit %s appearance",
+    (appearance) => {
+      const theme = { ...themeFromPalette(palette), id: "test", appearance }
+      expect(validateTheme(theme).appearance).toBe(appearance)
+    }
+  )
 
-  test("theme files reject invalid explicit modes", () => {
+  test("theme files reject invalid appearance values", () => {
     expect(() =>
-      validateTheme({ ...themeFromPalette(palette), id: "invalid", mode: "sepia" })
+      validateTheme({ ...themeFromPalette(palette), id: "invalid", appearance: "sepia" })
     ).toThrow()
   })
 
@@ -127,11 +130,11 @@ describe("iTerm2 scheme adapter", () => {
     const actual = paletteFromScheme(source, "Light")
     expect(actual.bg).toBe("#ffffff")
     expect(actual.ansi).toEqual(ansi)
-    expect(themeFromPalette(actual).mode).toBe("light")
+    expect(themeFromPalette(actual).appearance).toBe("light")
   })
 
   test("honors explicit source classification", () => {
-    expect(paletteFromScheme({ ...scheme(), Dark_Theme: false }).mode).toBe("light")
+    expect(paletteFromScheme({ ...scheme(), Dark_Theme: false }).appearance).toBe("light")
   })
 
   test("rejects missing or malformed required colors", () => {

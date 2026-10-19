@@ -31,7 +31,7 @@ export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inheri
 export type HexColor = `#${string}`
 export type ThemeKey = Exclude<
   keyof Theme<false, unknown>,
-  "shiki" | "$schema" | "id" | "name" | "mode"
+  "shiki" | "$schema" | "id" | "name" | "appearance"
 >
 
 /**

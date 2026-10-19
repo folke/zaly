@@ -24,13 +24,13 @@ function setup() {
   const watcher = new ColorsWatcher(queries, input, write, update)
   return { input, palette, update, watcher, writes }
 }
-function appearance(input: InputRouter, mode: number) {
+function appearance(input: InputRouter, report: number) {
   input.dispatch({
     type: "term-response",
     kind: "csi",
     final: "n",
-    params: `?997;${mode}`,
-    sequence: `\x1b[?997;${mode}n`,
+    params: `?997;${report}`,
+    sequence: `\x1b[?997;${report}n`,
   })
 }
 
@@ -51,7 +51,7 @@ describe("terminal colors updates", () => {
     expect(writes.filter((s) => s === "\x1b[?2031l")).toHaveLength(1)
   })
 
-  test("refreshes on same-mode notifications as well as light/dark changes", async () => {
+  test("refreshes on same-appearance notifications as well as light/dark changes", async () => {
     const { input, palette, update, watcher } = setup()
     try {
       await flush()
@@ -83,7 +83,7 @@ describe("terminal colors updates", () => {
     }
   })
 
-  test("queries the current mode after a bare palette-change notification", async () => {
+  test("queries the current appearance after a bare palette-change notification", async () => {
     const { input, writes, watcher } = setup()
     try {
       await flush()

@@ -19,7 +19,8 @@ import type { AnyStyle, Color } from "../style/types.ts"
  */
 export type Theme<Ansi extends boolean = true, T = AnyStyle<Ansi>> = {
   id: string
-  mode: "dark" | "light"
+  /** Dark/light appearance, inferred from bg when omitted in a theme file. */
+  appearance: "dark" | "light"
   name?: string
   /** Matching bundled Shiki theme. Unset or "auto" generates highlighting
    *  from the syntax slots. */

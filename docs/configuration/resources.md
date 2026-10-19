@@ -47,6 +47,11 @@ Run `/theme` for the interactive picker or `zaly --list-themes` to list bundled
 themes. At startup, `--theme` accepts a bundled name or theme-file path; the
 persistent setting is `ui.theme`.
 
+Theme JSON can set `"appearance": "dark"` or `"appearance": "light"` to select the
+corresponding default styles. When omitted, appearance is inferred from `bg`;
+if no concrete background is available, the fallback is dark. The system theme
+uses the detected terminal background or reported terminal appearance.
+
 Other appearance controls include `ui.mode`, `ui.reasoning`, `ui.images`, and
 `ui.collapsedTools`. Start with the defaults and adjust individual settings rather
 than copying a full configuration snapshot. Inline graphics require a supported

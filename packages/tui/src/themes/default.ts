@@ -16,7 +16,7 @@ export type CustomTheme = Simplify<
  */
 // oxlint-disable-next-line sort-keys
 export const defaultsDark = {
-  mode: "dark",
+  appearance: "dark",
   shiki: "auto",
 
   // text
@@ -84,7 +84,7 @@ export const defaultsDark = {
 // oxlint-disable-next-line sort-keys
 export const defaultsLight = {
   ...defaultsDark,
-  mode: "light",
+  appearance: "light",
   shiki: "auto",
   ui: { bg: "bg-3" },
   highlight: { bg: "bg-3" },

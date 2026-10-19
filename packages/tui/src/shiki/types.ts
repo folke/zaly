@@ -6,7 +6,7 @@ export type ShikiLanguage = BundledLanguage
 export type ShikiSelection = "auto" | ShikiTheme
 export type GeneratedShikiTheme = {
   name: string
-  mode: "dark" | "light"
+  appearance: "dark" | "light"
   styles: AnsiStyle[]
 }
 export type ShikiThemeInput = ShikiTheme | GeneratedShikiTheme

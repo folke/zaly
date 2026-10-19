@@ -398,8 +398,8 @@ export class Renderer extends Emitter<RenderEvents> {
       this.queries,
       this.input,
       (sequence) => this.terminal.write(sequence),
-      (snapshot, mode) => {
-        this.#systemTheme = systemTheme(snapshot, mode)
+      (snapshot, appearance) => {
+        this.#systemTheme = systemTheme(snapshot, appearance)
         if (peek(this.#theme.get)?.id === "system") this.theme = this.#systemTheme
       }
     )

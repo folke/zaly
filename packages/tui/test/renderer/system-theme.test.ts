@@ -67,7 +67,7 @@ describe("renderer system theme lifecycle", () => {
       expect(r.theme).toMatchObject({
         id: "system",
         bg: "#ffffff",
-        mode: "light",
+        appearance: "light",
         shiki: "auto",
       })
     } finally {
@@ -170,7 +170,7 @@ describe("renderer system theme lifecycle", () => {
       expect(r.theme).toBe(defaultTheme)
       const queries = palette.mock.calls.length
       r.theme = await loadTheme("system")
-      expect(r.theme).toMatchObject({ bg: "#ffffff", fg: "#111111", mode: "light" })
+      expect(r.theme).toMatchObject({ bg: "#ffffff", fg: "#111111", appearance: "light" })
       await flush()
       expect(palette).toHaveBeenCalledTimes(queries)
     } finally {
@@ -195,7 +195,7 @@ describe("renderer system theme lifecycle", () => {
     try {
       await flush()
       expect(palette).toHaveBeenCalled()
-      expect(r.theme).toMatchObject({ bg: "#ffffff", mode: "light" })
+      expect(r.theme).toMatchObject({ bg: "#ffffff", appearance: "light" })
     } finally {
       r.stop()
     }
@@ -219,7 +219,7 @@ describe("renderer system theme lifecycle", () => {
         vi.spyOn(r.queries, "palette").mockResolvedValue({ ansi: [], bg: "#ffffff", fg: "#111111" })
         terminal.stdin.emit("data", "\x1b[?997;2n")
         await flush()
-        expect(r.theme.mode).toBe("light")
+        expect(r.theme.appearance).toBe("light")
         expect(r.theme.shiki).toBe(shiki)
         r.theme = defaultTheme
         expect(r.theme.shiki).toBe(shiki)
