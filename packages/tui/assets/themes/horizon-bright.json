@@ -1,100 +1,101 @@
 {
   "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
-  "id": "dracula-soft",
-  "name": "Dracula Theme Soft",
-  "shiki": "dracula-soft",
-  "bg": "#282a36",
-  "fg": "#f6f6f4",
-  "primary": "#bf9eee",
-  "accent": "#f286c4",
-  "success": "#62e884",
-  "info": "#97e1f1",
-  "warn": "#97e1f1",
-  "error": "#ee6666",
+  "id": "horizon-bright",
+  "name": "Horizon Bright",
+  "shiki": "horizon-bright",
+  "bg": "#fdf0ed",
+  "fg": "#333333",
+  "primary": "#e84a72",
+  "accent": "#e73665",
+  "success": "#29d398",
+  "info": "#59e1e3",
+  "warn": "#60c9a0",
+  "error": "#f43e5c",
   "selection": {
-    "bg": "#44475a"
+    "bg": "#fbddd5"
   },
   "diffAdd": {
-    "bg": "#2d443f"
+    "bg": "#e4eee3"
   },
   "diffDel": {
-    "bg": "#6b3740"
+    "bg": "#fcdede"
   },
   "syntaxBoolean": {
-    "fg": "#bf9eee"
+    "fg": "#dc3318"
   },
   "syntaxBracket": {
-    "fg": "#f6f6f4"
+    "fg": "#333333"
   },
   "syntaxConstant": {
-    "fg": "#f6f6f4"
+    "fg": "#da103f"
   },
   "syntaxDelimiter": {
-    "fg": "#f6f6f4"
+    "fg": "#333333"
   },
   "syntaxField": {
-    "fg": "#f6f6f4"
+    "fg": "#da103f"
   },
   "syntaxFunction": {
-    "fg": "#62e884"
+    "fg": "#1d8991"
   },
   "syntaxNumber": {
-    "fg": "#bf9eee"
+    "fg": "#dc3318"
   },
   "syntaxSpecial": {
-    "fg": "#f286c4"
+    "fg": "#8a31b9"
   },
   "syntaxString": {
-    "fg": "#e7ee98"
+    "fg": "#f6661e"
   },
-  "border": "#bf9eee",
+  "border": "#e6dad8",
   "comment": {
-    "fg": "#7b7f8b"
+    "fg": "#989190",
+    "italic": true
   },
   "mdHeading": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading1": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading2": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading3": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading4": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading5": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdHeading6": {
     "bold": true,
-    "fg": "#bf9eee"
+    "fg": "#da103f"
   },
   "mdBold": {
     "bold": true,
-    "fg": "#ffb86c"
+    "fg": "#8a31b9"
   },
   "mdItalic": {
-    "fg": "#e7ee98",
+    "fg": "#1d8991",
     "italic": true
   },
   "mdLink": {
-    "fg": "#f286c4"
+    "fg": "#dc3318"
   },
   "mdQuote": {
-    "fg": "#e7ee98",
+    "fg": "#f88f5c",
     "italic": true
   },
-  "mdHr": {
-    "fg": "#7b7f8b"
+  "mdListBullet": {
+    "fg": "#dc3318"
   }
 }

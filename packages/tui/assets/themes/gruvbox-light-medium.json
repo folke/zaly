@@ -1,0 +1,98 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "gruvbox-light-medium",
+  "name": "Gruvbox Light Medium",
+  "shiki": "gruvbox-light-medium",
+  "bg": "#fbf1c7",
+  "fg": "#3c3836",
+  "primary": "#076678",
+  "accent": "#458588",
+  "success": "#98971a",
+  "info": "#689d6a",
+  "warn": "#d79921",
+  "error": "#cc241d",
+  "selection": {
+    "bg": "#d6dcb0"
+  },
+  "diffAdd": {
+    "bg": "#e3d9a4"
+  },
+  "diffDel": {
+    "bg": "#e9c4a3"
+  },
+  "syntaxBoolean": {
+    "fg": "#8f3f71"
+  },
+  "syntaxBracket": {
+    "fg": "#7c6f64"
+  },
+  "syntaxConstant": {
+    "fg": "#076678"
+  },
+  "syntaxDelimiter": {
+    "fg": "#7c6f64"
+  },
+  "syntaxField": {
+    "fg": "#076678"
+  },
+  "syntaxFunction": {
+    "fg": "#b57614"
+  },
+  "syntaxNumber": {
+    "fg": "#8f3f71"
+  },
+  "syntaxSpecial": {
+    "fg": "#9d0006"
+  },
+  "syntaxString": {
+    "fg": "#79740e"
+  },
+  "border": "#ebdbb2",
+  "comment": {
+    "fg": "#928374",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#9d0006"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#9d0006"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#af3a03"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#b57614"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#79740e"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#076678"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#8f3f71"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#af3a03"
+  },
+  "mdItalic": {
+    "fg": "#3c3836",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#928374",
+    "underline": true
+  },
+  "mdListBullet": {
+    "fg": "#7c6f64"
+  }
+}

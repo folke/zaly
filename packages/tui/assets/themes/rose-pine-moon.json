@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "rose-pine-moon",
+  "name": "Rosé Pine Moon",
+  "shiki": "rose-pine-moon",
+  "bg": "#232136",
+  "fg": "#e0def4",
+  "primary": "#c4a7e7",
+  "accent": "#b49ad6",
+  "success": "#3e8fb0",
+  "info": "#ea9a97",
+  "warn": "#f6c177",
+  "error": "#eb6f92",
+  "selection": {
+    "bg": "#312f45"
+  },
+  "diffAdd": {
+    "bg": "#353b4e"
+  },
+  "diffDel": {
+    "bg": "#412d44"
+  },
+  "syntaxBoolean": {
+    "fg": "#ea9a97"
+  },
+  "syntaxBracket": {
+    "fg": "#908caa"
+  },
+  "syntaxConstant": {
+    "fg": "#e0def4",
+    "italic": true
+  },
+  "syntaxDelimiter": {
+    "fg": "#908caa"
+  },
+  "syntaxField": {
+    "fg": "#e0def4",
+    "italic": true
+  },
+  "syntaxFunction": {
+    "fg": "#ea9a97"
+  },
+  "syntaxNumber": {
+    "fg": "#ea9a97"
+  },
+  "syntaxSpecial": {
+    "fg": "#3e8fb0"
+  },
+  "syntaxString": {
+    "fg": "#f6c177"
+  },
+  "border": "#232136",
+  "comment": {
+    "fg": "#6e6a86",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#9ccfd8"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#e0def4"
+  },
+  "mdItalic": {
+    "fg": "#e0def4",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#f6c177"
+  },
+  "mdListBullet": {
+    "fg": "#908caa"
+  }
+}

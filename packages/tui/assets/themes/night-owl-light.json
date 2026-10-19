@@ -1,0 +1,105 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "night-owl-light",
+  "name": "Night Owl Light",
+  "shiki": "night-owl-light",
+  "bg": "#fbfbfb",
+  "fg": "#403f53",
+  "primary": "#288ed7",
+  "accent": "#d6438a",
+  "success": "#08916a",
+  "info": "#2aa298",
+  "warn": "#daaa01",
+  "error": "#e64d49",
+  "selection": {
+    "bg": "#e0e0e0"
+  },
+  "diffAdd": {
+    "bg": "#d7ebe5"
+  },
+  "diffDel": {
+    "bg": "#f76e6e"
+  },
+  "syntaxBoolean": {
+    "fg": "#bc5454",
+    "italic": true
+  },
+  "syntaxBracket": {
+    "fg": "#111111"
+  },
+  "syntaxConstant": {
+    "fg": "#4876d6",
+    "italic": true
+  },
+  "syntaxDelimiter": {
+    "fg": "#403f53"
+  },
+  "syntaxField": {
+    "fg": "#0c969b"
+  },
+  "syntaxFunction": {
+    "fg": "#4876d6",
+    "italic": true
+  },
+  "syntaxNumber": {
+    "fg": "#aa0982"
+  },
+  "syntaxSpecial": {
+    "fg": "#994cc3",
+    "italic": true
+  },
+  "syntaxString": {
+    "fg": "#c96765"
+  },
+  "border": "#d9d9d9",
+  "comment": {
+    "fg": "#989fb1",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#4876d6"
+  },
+  "mdItalic": {
+    "fg": "#994cc3",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#403f53"
+  },
+  "mdQuote": {
+    "fg": "#697098",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#111111"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "gruvbox-dark-hard",
+  "name": "Gruvbox Dark Hard",
+  "shiki": "gruvbox-dark-hard",
+  "bg": "#1d2021",
+  "fg": "#ebdbb2",
+  "primary": "#83a598",
+  "accent": "#458588",
+  "success": "#98971a",
+  "info": "#689d6a",
+  "warn": "#d79921",
+  "error": "#cc241d",
+  "selection": {
+    "bg": "#303f33"
+  },
+  "diffAdd": {
+    "bg": "#3a3d22"
+  },
+  "diffDel": {
+    "bg": "#472825"
+  },
+  "syntaxBoolean": {
+    "fg": "#d3869b"
+  },
+  "syntaxBracket": {
+    "fg": "#a89984"
+  },
+  "syntaxConstant": {
+    "fg": "#83a598"
+  },
+  "syntaxDelimiter": {
+    "fg": "#a89984"
+  },
+  "syntaxField": {
+    "fg": "#83a598"
+  },
+  "syntaxFunction": {
+    "fg": "#fabd2f"
+  },
+  "syntaxNumber": {
+    "fg": "#d3869b"
+  },
+  "syntaxSpecial": {
+    "fg": "#fb4934"
+  },
+  "syntaxString": {
+    "fg": "#b8bb26"
+  },
+  "border": "#3c3836",
+  "comment": {
+    "fg": "#928374",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#fb4934"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#fb4934"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#fe8019"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#fabd2f"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#b8bb26"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#83a598"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#d3869b"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#fe8019"
+  },
+  "mdItalic": {
+    "fg": "#ebdbb2",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#928374",
+    "underline": true
+  },
+  "mdListBullet": {
+    "fg": "#a89984"
+  }
+}

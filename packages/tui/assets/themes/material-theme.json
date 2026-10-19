@@ -1,0 +1,102 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "material-theme",
+  "name": "Material Theme",
+  "shiki": "material-theme",
+  "bg": "#263238",
+  "fg": "#eeffff",
+  "primary": "#80cbc4",
+  "accent": "#eeffff",
+  "success": "#c3e88d",
+  "info": "#89ddff",
+  "warn": "#85754e",
+  "error": "#7f4e54",
+  "selection": {
+    "bg": "#31454a"
+  },
+  "diffAdd": {
+    "bg": "#324751"
+  },
+  "diffDel": {
+    "bg": "#413f47"
+  },
+  "syntaxBoolean": {
+    "fg": "#ff9cac"
+  },
+  "syntaxBracket": {
+    "fg": "#89ddff"
+  },
+  "syntaxConstant": {
+    "fg": "#eeffff"
+  },
+  "syntaxDelimiter": {
+    "fg": "#89ddff"
+  },
+  "syntaxField": {
+    "fg": "#eeffff"
+  },
+  "syntaxFunction": {
+    "fg": "#82aaff"
+  },
+  "syntaxNumber": {
+    "fg": "#f78c6c"
+  },
+  "syntaxSpecial": {
+    "fg": "#89ddff",
+    "italic": true
+  },
+  "syntaxString": {
+    "fg": "#c3e88d"
+  },
+  "border": "#263238",
+  "comment": {
+    "fg": "#546e7a",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#ffcb6b"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#f07178"
+  },
+  "mdItalic": {
+    "fg": "#f07178",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#c3e88d"
+  },
+  "mdQuote": {
+    "fg": "#89ddff",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#89ddff"
+  }
+}

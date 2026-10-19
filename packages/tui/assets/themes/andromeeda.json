@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "andromeeda",
+  "name": "Andromeeda",
+  "shiki": "andromeeda",
+  "bg": "#23262e",
+  "fg": "#d5ced9",
+  "primary": "#7cb7ff",
+  "accent": "#ff00aa",
+  "success": "#96e072",
+  "info": "#00e8c6",
+  "warn": "#ff9f2e",
+  "error": "#fc644d",
+  "selection": {
+    "bg": "#3d4352"
+  },
+  "diffAdd": {
+    "bg": "#24392a"
+  },
+  "diffDel": {
+    "bg": "#3d2530"
+  },
+  "syntaxBoolean": {
+    "fg": "#ee5d43"
+  },
+  "syntaxBracket": {
+    "fg": "#d5ced9"
+  },
+  "syntaxConstant": {
+    "fg": "#00e8c6"
+  },
+  "syntaxDelimiter": {
+    "fg": "#d5ced9"
+  },
+  "syntaxField": {
+    "fg": "#00e8c6"
+  },
+  "syntaxFunction": {
+    "fg": "#ffe66d"
+  },
+  "syntaxNumber": {
+    "fg": "#f39c12"
+  },
+  "syntaxSpecial": {
+    "fg": "#c74ded"
+  },
+  "syntaxString": {
+    "fg": "#96e072"
+  },
+  "border": "#1b1d23",
+  "comment": {
+    "fg": "#87888f"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#ff00aa"
+  },
+  "mdBold": {
+    "fg": "#f39c12"
+  },
+  "mdItalic": {
+    "fg": "#c74ded"
+  },
+  "mdLink": {
+    "fg": "#ee5d43"
+  },
+  "mdQuote": {
+    "fg": "#87888f"
+  },
+  "mdListBullet": {
+    "fg": "#ffe66d"
+  }
+}

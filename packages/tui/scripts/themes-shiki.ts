@@ -12,34 +12,50 @@ import { blend } from "../src/style/color.ts"
 import { createThemeResolver } from "./themes-textmate.ts"
 
 export const THEMES = [
+  "andromeeda",
   "ayu-dark",
+  "ayu-light",
+  "ayu-mirage",
   "catppuccin-frappe",
   "catppuccin-latte",
   "catppuccin-macchiato",
   "catppuccin-mocha",
+  "dark-plus",
   "dracula",
-  "dracula-soft",
   "everforest-dark",
   "everforest-light",
-  "github-dark",
-  "github-light",
+  "github-dark-default",
+  "github-dark-dimmed",
+  "github-light-default",
+  "gruvbox-dark-hard",
   "gruvbox-dark-medium",
+  "gruvbox-light-medium",
+  "horizon",
+  "horizon-bright",
   "kanagawa-dragon",
+  "kanagawa-lotus",
   "kanagawa-wave",
+  "light-plus",
+  "material-theme",
+  "material-theme-lighter",
   "material-theme-palenight",
   "min-dark",
   "min-light",
   "monokai",
   "night-owl",
+  "night-owl-light",
   "nord",
   "one-dark-pro",
   "one-light",
   "poimandres",
   "rose-pine",
+  "rose-pine-dawn",
+  "rose-pine-moon",
   "solarized-dark",
   "solarized-light",
   "synthwave-84",
   "vesper",
+  "vitesse-black",
   "vitesse-dark",
   "vitesse-light",
 ] as const satisfies readonly ShikiTheme[]
@@ -99,7 +115,13 @@ export function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): CustomT
     t.tokenColor("markup.deleted.diff", "markup.deleted", "invalid.illegal") ??
     accent
 
-  const selectionBg = t.color("editor.selectionBackground", "list.activeSelectionBackground")
+  const selectionBg = t.color(
+    "editor.selectionBackground",
+    "list.activeSelectionBackground",
+    "terminal.selectionBackground",
+    "editor.inactiveSelectionBackground",
+    "terminal.inactiveSelectionBackground"
+  )
 
   const out: CustomTheme = {
     $schema:
@@ -115,9 +137,7 @@ export function toTui(id: ShikiTheme, theme: ThemeRegistrationResolved): CustomT
     info,
     warn,
     error,
-    selection: {
-      bg: selectionBg,
-    },
+    selection: selectionBg ? { bg: selectionBg } : { inverse: true },
     diffAdd: {
       bg:
         t.color(

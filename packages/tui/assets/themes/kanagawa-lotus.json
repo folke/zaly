@@ -1,0 +1,105 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "kanagawa-lotus",
+  "name": "Kanagawa Lotus",
+  "shiki": "kanagawa-lotus",
+  "bg": "#f2ecbc",
+  "fg": "#545464",
+  "primary": "#5e857a",
+  "accent": "#b35b79",
+  "success": "#6f894e",
+  "info": "#597b75",
+  "warn": "#e98a00",
+  "error": "#e82424",
+  "selection": {
+    "bg": "#c7d7e0"
+  },
+  "diffAdd": {
+    "bg": "#d4deb5"
+  },
+  "diffDel": {
+    "bg": "#d7474b"
+  },
+  "syntaxBoolean": {
+    "fg": "#cc6d00"
+  },
+  "syntaxBracket": {
+    "fg": "#4e8ca2"
+  },
+  "syntaxConstant": {
+    "fg": "#545464"
+  },
+  "syntaxDelimiter": {
+    "fg": "#4e8ca2"
+  },
+  "syntaxField": {
+    "fg": "#77713f"
+  },
+  "syntaxFunction": {
+    "fg": "#4d699b"
+  },
+  "syntaxNumber": {
+    "fg": "#b35b79"
+  },
+  "syntaxSpecial": {
+    "bold": true,
+    "fg": "#624c83"
+  },
+  "syntaxString": {
+    "fg": "#6f894e"
+  },
+  "border": "#d5cea3",
+  "comment": {
+    "fg": "#716e61"
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#4d699b"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#545464"
+  },
+  "mdItalic": {
+    "fg": "#c84053",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#cc6d00"
+  },
+  "mdQuote": {
+    "fg": "#545464",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#4e8ca2"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#4e8ca2"
+  }
+}

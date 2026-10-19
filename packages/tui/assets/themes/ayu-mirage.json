@@ -1,108 +1,106 @@
 {
   "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
-  "id": "github-dark",
-  "name": "GitHub Dark",
-  "shiki": "github-dark",
-  "bg": "#24292e",
-  "fg": "#e1e4e8",
-  "primary": "#79b8ff",
-  "accent": "#c8e1ff",
-  "success": "#34d058",
-  "info": "#39c5cf",
-  "warn": "#ffea7f",
-  "error": "#f97583",
+  "id": "ayu-mirage",
+  "name": "Ayu Mirage",
+  "shiki": "ayu-mirage",
+  "bg": "#1f2430",
+  "fg": "#cccac2",
+  "primary": "#ffcc66",
+  "accent": "#ffcc66",
+  "success": "#87d96c",
+  "info": "#93e2c8",
+  "warn": "#ffcc66",
+  "error": "#ff6666",
   "selection": {
-    "bg": "#284566"
+    "bg": "#274364"
   },
   "diffAdd": {
-    "bg": "#254132"
+    "bg": "#2c3a37"
   },
   "diffDel": {
-    "bg": "#462c33"
+    "bg": "#392e3a"
   },
   "syntaxBoolean": {
-    "fg": "#79b8ff"
+    "fg": "#dfbfff"
   },
   "syntaxBracket": {
-    "fg": "#e1e4e8"
+    "fg": "#cccac2"
   },
   "syntaxConstant": {
-    "fg": "#79b8ff"
+    "fg": "#cccac2"
   },
   "syntaxDelimiter": {
-    "fg": "#e1e4e8"
+    "fg": "#989996"
   },
   "syntaxField": {
-    "fg": "#e1e4e8"
+    "fg": "#cccac2"
   },
   "syntaxFunction": {
-    "fg": "#b392f0"
+    "fg": "#ffcd66"
   },
   "syntaxNumber": {
-    "fg": "#79b8ff"
+    "fg": "#dfbfff"
   },
   "syntaxSpecial": {
-    "fg": "#f97583"
+    "fg": "#ffa659"
   },
   "syntaxString": {
-    "fg": "#9ecbff"
+    "fg": "#d5ff80"
   },
-  "border": "#1b1f23",
+  "border": "#171b24",
   "comment": {
-    "fg": "#6a737d"
+    "fg": "#6e7c8f",
+    "italic": true
   },
   "mdHeading": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading1": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading2": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading3": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading4": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading5": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdHeading6": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#d5ff80"
   },
   "mdBold": {
     "bold": true,
-    "fg": "#e1e4e8"
+    "fg": "#f28779"
   },
   "mdItalic": {
-    "fg": "#e1e4e8",
+    "fg": "#f28779",
     "italic": true
   },
-  "mdStrikethrough": {
-    "fg": "#e1e4e8",
-    "strikethrough": true
-  },
   "mdLink": {
-    "fg": "#dbedff",
-    "underline": true
+    "fg": "#5ccfe6"
   },
   "mdQuote": {
-    "fg": "#85e89d"
+    "fg": "#95e6cb",
+    "italic": true
   },
   "mdListBullet": {
-    "fg": "#ffab70"
+    "fg": "#ffcd66"
   },
   "mdHr": {
     "bold": true,
-    "fg": "#79b8ff"
+    "fg": "#6e7c8f",
+    "bg": "#292e39"
   }
 }

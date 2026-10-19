@@ -9,9 +9,11 @@ const { loadCatalog } = await import("@zaly/ai")
 const catalog = await loadCatalog()
 assert(Object.keys(catalog.$).length > 0, "Catalog asset is empty")
 
-const { loadTheme } = await import("@zaly/tui/themes")
-const theme = await loadTheme("dracula")
-assert.equal(theme.id, "dracula")
+const { loadTheme, themeRegistry } = await import("@zaly/tui/themes")
+for (const id of themeRegistry.keys()) {
+  const theme = await loadTheme(id)
+  assert.equal(theme.id, id, `Packed theme failed to load: ${id}`)
+}
 
 // An active app handle lets the intentionally unreferenced worker finish its request.
 const keepAlive = setInterval(() => {}, 1000)

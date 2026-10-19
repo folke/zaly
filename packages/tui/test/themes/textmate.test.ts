@@ -90,6 +90,35 @@ describe("TextMate theme resolution", () => {
   })
 })
 
+describe("Shiki selection fallbacks", () => {
+  test.each(["editor.inactiveSelectionBackground", "terminal.inactiveSelectionBackground"])(
+    "uses %s when an active selection color is absent",
+    (key) => {
+      const theme = normalizeTheme({
+        name: "test",
+        type: "dark",
+        colors: {
+          "editor.background": "#111111",
+          "editor.foreground": "#eeeeee",
+          [key]: "#334455",
+        },
+        tokenColors: [],
+      })
+      expect(toTui("dark-plus", theme).selection).toEqual({ bg: "#334455" })
+    }
+  )
+
+  test("uses inverse selection when no selection colors are provided", () => {
+    const theme = normalizeTheme({
+      name: "test",
+      type: "dark",
+      colors: { "editor.background": "#111111", "editor.foreground": "#eeeeee" },
+      tokenColors: [],
+    })
+    expect(toTui("dark-plus", theme).selection).toEqual({ inverse: true })
+  })
+})
+
 let highlighter: Highlighter
 beforeAll(async () => {
   highlighter = await createHighlighter({ themes: [...THEMES], langs: ["typescript", "markdown"] })

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "ayu-light",
+  "name": "Ayu Light",
+  "shiki": "ayu-light",
+  "bg": "#f8f9fa",
+  "fg": "#5c6166",
+  "primary": "#f29718",
+  "accent": "#f29718",
+  "success": "#6cbf43",
+  "info": "#4abc96",
+  "warn": "#f29718",
+  "error": "#e65050",
+  "selection": {
+    "bg": "#d3e1f5"
+  },
+  "diffAdd": {
+    "bg": "#e7f2e4"
+  },
+  "diffDel": {
+    "bg": "#f9e9ec"
+  },
+  "syntaxBoolean": {
+    "fg": "#a37acc"
+  },
+  "syntaxBracket": {
+    "fg": "#5c6166"
+  },
+  "syntaxConstant": {
+    "fg": "#5c6166"
+  },
+  "syntaxDelimiter": {
+    "fg": "#8a8e92"
+  },
+  "syntaxField": {
+    "fg": "#5c6166"
+  },
+  "syntaxFunction": {
+    "fg": "#eba400"
+  },
+  "syntaxNumber": {
+    "fg": "#a37acc"
+  },
+  "syntaxSpecial": {
+    "fg": "#fa8532"
+  },
+  "syntaxString": {
+    "fg": "#86b300"
+  },
+  "border": "#e7eaed",
+  "comment": {
+    "fg": "#adaeb1",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#86b300"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#f07171"
+  },
+  "mdItalic": {
+    "fg": "#f07171",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#55b4d4"
+  },
+  "mdQuote": {
+    "fg": "#4cbf99",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#eba400"
+  },
+  "mdHr": {
+    "bold": true,
+    "fg": "#adaeb1",
+    "bg": "#eff0f1"
+  }
+}

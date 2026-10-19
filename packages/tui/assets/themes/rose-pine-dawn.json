@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "rose-pine-dawn",
+  "name": "Rosé Pine Dawn",
+  "shiki": "rose-pine-dawn",
+  "bg": "#faf4ed",
+  "fg": "#575279",
+  "primary": "#907aa9",
+  "accent": "#9a86b0",
+  "success": "#286983",
+  "info": "#d7827e",
+  "warn": "#ea9d34",
+  "error": "#b4637a",
+  "selection": {
+    "bg": "#efe9e5"
+  },
+  "diffAdd": {
+    "bg": "#e2e6e1"
+  },
+  "diffDel": {
+    "bg": "#f0dedc"
+  },
+  "syntaxBoolean": {
+    "fg": "#d7827e"
+  },
+  "syntaxBracket": {
+    "fg": "#797593"
+  },
+  "syntaxConstant": {
+    "fg": "#575279",
+    "italic": true
+  },
+  "syntaxDelimiter": {
+    "fg": "#797593"
+  },
+  "syntaxField": {
+    "fg": "#575279",
+    "italic": true
+  },
+  "syntaxFunction": {
+    "fg": "#d7827e"
+  },
+  "syntaxNumber": {
+    "fg": "#d7827e"
+  },
+  "syntaxSpecial": {
+    "fg": "#286983"
+  },
+  "syntaxString": {
+    "fg": "#ea9d34"
+  },
+  "border": "#faf4ed",
+  "comment": {
+    "fg": "#9893a5",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#56949f"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#575279"
+  },
+  "mdItalic": {
+    "fg": "#575279",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#ea9d34"
+  },
+  "mdListBullet": {
+    "fg": "#797593"
+  }
+}

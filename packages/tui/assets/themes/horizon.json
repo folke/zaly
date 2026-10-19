@@ -1,0 +1,101 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "horizon",
+  "name": "Horizon",
+  "shiki": "horizon",
+  "bg": "#1c1e26",
+  "fg": "#bbbbbb",
+  "primary": "#e95378",
+  "accent": "#e9436d",
+  "success": "#29d398",
+  "info": "#59e1e3",
+  "warn": "#24a075",
+  "error": "#f43e5c",
+  "selection": {
+    "bg": "#292b37"
+  },
+  "diffAdd": {
+    "bg": "#1a3432"
+  },
+  "diffDel": {
+    "bg": "#32212c"
+  },
+  "syntaxBoolean": {
+    "fg": "#db887a"
+  },
+  "syntaxBracket": {
+    "fg": "#bbbbbb"
+  },
+  "syntaxConstant": {
+    "fg": "#d55170"
+  },
+  "syntaxDelimiter": {
+    "fg": "#bbbbbb"
+  },
+  "syntaxField": {
+    "fg": "#d55170"
+  },
+  "syntaxFunction": {
+    "fg": "#24a2ad"
+  },
+  "syntaxNumber": {
+    "fg": "#db887a"
+  },
+  "syntaxSpecial": {
+    "fg": "#a96ec9"
+  },
+  "syntaxString": {
+    "fg": "#e4a88a"
+  },
+  "border": "#1a1c23",
+  "comment": {
+    "fg": "#4c4d53",
+    "italic": true
+  },
+  "mdHeading": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading1": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading2": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading3": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading4": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading5": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdHeading6": {
+    "bold": true,
+    "fg": "#d55170"
+  },
+  "mdBold": {
+    "bold": true,
+    "fg": "#a96ec9"
+  },
+  "mdItalic": {
+    "fg": "#24a2ad",
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "#db887a"
+  },
+  "mdQuote": {
+    "fg": "#b88974",
+    "italic": true
+  },
+  "mdListBullet": {
+    "fg": "#db887a"
+  }
+}
