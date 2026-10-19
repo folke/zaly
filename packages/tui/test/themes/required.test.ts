@@ -2,7 +2,7 @@ import type { CustomTheme } from "../../src/themes/default.ts"
 
 import { expect, test } from "vitest"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
-import { defaults } from "../../src/themes/default.ts"
+import { defaultsDark } from "../../src/themes/default.ts"
 
 const theme = {
   id: "required-slots",
@@ -15,6 +15,8 @@ const theme = {
   info: "#55aaaa",
   warn: "#aaaa55",
   error: "#aa5555",
+  diffAdd: { fg: "success" },
+  diffDel: { fg: "error" },
   syntaxBoolean: "primary",
   syntaxBracket: "fg",
   syntaxConstant: "accent",
@@ -26,7 +28,7 @@ const theme = {
   syntaxString: "success",
 } satisfies CustomTheme
 
-const required = Object.keys(theme).filter((key) => !(key in defaults))
+const required = Object.keys(theme).filter((key) => !(key in defaultsDark))
 
 test("accepts a theme providing only the required slots", () => {
   expect(validateTheme(theme)).toEqual(theme)

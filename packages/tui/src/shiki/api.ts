@@ -91,7 +91,7 @@ class Shiki {
 
     const t = highlighter.getTheme(theme)
     let output = ""
-    const lines = highlighter.codeToTokensBase(code, { lang: lang as L })
+    const lines = highlighter.codeToTokensBase(code, { lang: lang as L, theme: theme as T })
 
     for (const line of lines) {
       for (const token of line) {

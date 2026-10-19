@@ -1,6 +1,11 @@
 import type { Simplify } from "@zaly/shared"
 import type { Theme } from "./types.ts"
 
+export type CustomTheme = Simplify<
+  Partial<Pick<Theme<false>, keyof typeof defaultsDark>> &
+    Omit<Theme<false>, keyof typeof defaultsDark> & { $schema?: string }
+>
+
 /**
  * Slot-level fallbacks. Every Theme value is shallow-merged on top of
  * this record by `resolveTheme`, so partial JSON themes only need to
@@ -10,7 +15,7 @@ import type { Theme } from "./types.ts"
  * Theme bundled as the default palette for `createCtx()` etc.
  */
 // oxlint-disable-next-line sort-keys
-export const defaults = {
+export const defaultsDark = {
   mode: "dark",
   shiki: "github-dark",
 
@@ -22,9 +27,9 @@ export const defaults = {
   delim: "muted",
 
   // surface & structure
-  ui: { bg: "bg+5" },
+  ui: { bg: "bg+3" },
   overlay: { bg: "ui" },
-  highlight: { bg: "bg+5" },
+  highlight: { bg: "ui" },
 
   // ui primitives
   divider: "bg-5",
@@ -34,7 +39,7 @@ export const defaults = {
   borderTitle: "title",
 
   // code
-  code: { bg: "bg+5" },
+  code: { bg: "bg+3" },
   codeTitle: "title",
 
   // syntax
@@ -70,24 +75,15 @@ export const defaults = {
   optionName: "primary",
 
   // diff
-  // diffAdd: { bg: "success-50", fg: "success" },
-  // diffDel: { bg: "error-50", fg: "error" },
   diffContext: { bg: "code" },
   diffAddNum: { bg: "diffAdd+10" },
   diffDelNum: { bg: "diffDel+10" },
   diffContextNum: { bg: "diffContext+10" },
-} as const satisfies Partial<Theme<false>>
-
-export type CustomTheme = Simplify<
-  Partial<Pick<Theme<false>, keyof typeof defaults>> &
-    Omit<Theme<false>, keyof typeof defaults> & { $schema?: string }
->
-
-export const defaultsDark = defaults
+} satisfies Partial<Theme<false>>
 
 // oxlint-disable-next-line sort-keys
 export const defaultsLight = {
-  ...defaults,
+  ...defaultsDark,
   mode: "light",
   shiki: "github-light",
   ui: { bg: "bg-3" },
@@ -97,4 +93,44 @@ export const defaultsLight = {
   diffAddNum: { bg: "diffAdd-10" },
   diffDelNum: { bg: "diffDel-10" },
   diffContextNum: { bg: "diffContext-10" },
-} as const
+} satisfies Partial<Theme<false>>
+
+// oxlint-disable-next-line sort-keys
+export const defaultsSystem = {
+  id: "system",
+  name: "System",
+
+  // base colors
+  primary: "blue",
+  accent: "brightMagenta",
+
+  bg: "inherit",
+  fg: "inherit",
+
+  selection: { inverse: true },
+  // log levels
+  success: "green",
+  info: "cyan",
+  warn: "yellow",
+  error: "red",
+
+  // syntax
+  syntaxNumber: "brightBlue",
+  syntaxString: "green",
+  syntaxBoolean: "yellow",
+  syntaxFunction: "blue",
+  syntaxField: "white",
+  syntaxConstant: "magenta",
+  syntaxSpecial: "red",
+} satisfies Partial<Theme>
+
+// oxlint-disable-next-line sort-keys
+export const defaultsAnsi = {
+  divider: "brightBlue",
+  border: "brightBlue",
+  highlight: { bg: "brightBlack" },
+  ui: {},
+  code: {},
+  diffAdd: { fg: "success" },
+  diffDel: { fg: "error" },
+} satisfies Partial<Theme>

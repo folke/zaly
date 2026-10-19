@@ -26,6 +26,7 @@ import {
 } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
 import { Actions } from "../input/actions.ts"
+import { ColorsWatcher } from "../input/colors.ts"
 import { Decoder } from "../input/decoder.ts"
 import { defaultActions } from "../input/defaults.ts"
 import { TerminalQueries } from "../input/queries.ts"
@@ -35,6 +36,7 @@ import { RESET } from "../style/ansi.ts"
 import { styleBuilder as buildStyle } from "../style/builder.ts"
 import { openStyle } from "../style/style.ts"
 import { defaultTheme } from "../themes/registry.ts"
+import { systemTheme } from "../themes/system.ts"
 import { Frame } from "./frame.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { SelectionLayer } from "./selection.ts"
@@ -137,6 +139,8 @@ export class Renderer extends Emitter<RenderEvents> {
    *  scopes) are visible to every widget body in the tree. */
   readonly #rootOwner: Owner
   #running = false
+  #colorsWatcher: ColorsWatcher | undefined
+  readonly #canQueryColors: boolean
   #escTimer: ReturnType<typeof setTimeout> | undefined
   #rendering?: Promise<void>
   #dirty = false
@@ -169,6 +173,9 @@ export class Renderer extends Emitter<RenderEvents> {
 
   constructor(opts: RendererOptions = {}) {
     super()
+    this.#canQueryColors = !!(
+      (opts.stdout ?? process.stdout).isTTY && (opts.stdin ?? process.stdin).isTTY
+    )
     this.terminal = new Terminal({
       altScreen: opts.altScreen,
       hookSignals: opts.hookSignals,
@@ -355,6 +362,7 @@ export class Renderer extends Emitter<RenderEvents> {
    *  bump that already happens elsewhere on theme-driven invalidation. */
   set theme(theme: Theme) {
     this.#theme.set(theme)
+    this.#syncSystemTheme()
     this.#ctxVersion++
     this.stream.invalidate()
     this.ui.invalidate()
@@ -367,6 +375,22 @@ export class Renderer extends Emitter<RenderEvents> {
     return this.#theme.get() ?? defaultTheme
   }
 
+  #syncSystemTheme() {
+    if (!this.#running || !this.#canQueryColors || peek(this.#theme.get)?.id !== "system") {
+      this.#colorsWatcher?.stop()
+      this.#colorsWatcher = undefined
+      return
+    }
+    this.#colorsWatcher ??= new ColorsWatcher(
+      this.queries,
+      this.input,
+      (sequence) => this.terminal.write(sequence),
+      (snapshot, mode) => {
+        this.theme = systemTheme(snapshot, mode)
+      }
+    )
+  }
+
   /** Inherit the terminal background instead of painting the base background. */
   set transparent(transparent: boolean) {
     this.#transparent.set(transparent)
@@ -374,7 +398,7 @@ export class Renderer extends Emitter<RenderEvents> {
 
   /** Current transparency setting. (tracked) */
   get transparent(): boolean {
-    return unwrap(this.#transparent.get())
+    return unwrap(this.#transparent.get()) || this.theme.id === "system"
   }
 
   start(): void {
@@ -384,6 +408,7 @@ export class Renderer extends Emitter<RenderEvents> {
     this.#stdin.setEncoding?.("utf8")
     this.#stdin.on("data", this.#onData)
     this.#stdin.resume?.()
+    this.#syncSystemTheme()
     // Mount every surface's tracked tree. Build one MountCtx per
     // surface; each shares the same underlying services (router,
     // overlay, tree walk), only the `surface` tag differs.
@@ -407,6 +432,7 @@ export class Renderer extends Emitter<RenderEvents> {
     // chance to run before their last render.
     void this.emit("stop")
     this.#running = false
+    this.#syncSystemTheme()
     this.#stdin.off("data", this.#onData)
     this.#stdin.pause?.()
     if (this.#escTimer !== undefined) {

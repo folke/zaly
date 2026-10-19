@@ -38,6 +38,7 @@ describe("Terminal.start / stop", () => {
     expect(stdout.all).toContain("\x1b[r")
     expect(stdout.all).toContain("\x1b[?7h")
     expect(stdout.all).toContain("\x1b[?25h")
+    expect(stdout.all).toContain("\x1b[?2031l")
   })
 
   test("no DECSTBM emitted when reserveBottom is 0", () => {

@@ -6,8 +6,8 @@ import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
 import { resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme, loadTheme, themeRegistry } from "../../src/themes/registry.ts"
 
-// ansi is no longer a static export; load it for the comparison tests below.
-const ansi = await loadTheme("ansi")
+// Without a terminal, the system theme starts with the plain ANSI strategy.
+const system = await loadTheme("system")
 
 describe("theme part slots — moon", () => {
   test("border slot defined", () => {
@@ -24,13 +24,13 @@ describe("theme part slots — moon", () => {
   })
 })
 
-describe("theme part slots — ansi", () => {
+describe("theme part slots — system", () => {
   test("border slot defined", () => {
-    expect(ansi.border).toBeDefined()
+    expect(system.border).toBeDefined()
   })
 
   test("borderTitle slot defined", () => {
-    expect(ansi.borderTitle).toBeDefined()
+    expect(system.borderTitle).toBeDefined()
   })
 })
 
@@ -73,7 +73,7 @@ describe("theme markdown slots — moon", () => {
   })
 })
 
-describe("theme markdown slots — ansi", () => {
+describe("theme markdown slots — system", () => {
   test("all md* slots defined", () => {
     const slots = [
       "mdHeading1",
@@ -84,7 +84,7 @@ describe("theme markdown slots — ansi", () => {
       "mdLink",
       "mdHr",
     ] as const
-    for (const k of slots) expect(ansi[k]).toBeDefined()
+    for (const k of slots) expect(system[k]).toBeDefined()
   })
 })
 
@@ -131,90 +131,101 @@ describe("built-in themes — load & validate", () => {
   }
 })
 
+// Validate overrides against a complete theme, so failures test the value rather
+// than an unrelated missing required slot. Mode is inferred from the background.
+const custom = Object.fromEntries(Object.entries(defaultTheme).filter(([key]) => key !== "mode"))
+const validateOverrides = (overrides: Record<string, unknown>) =>
+  validateTheme({ ...custom, ...overrides })
+
 describe("validateTheme — positive cases", () => {
-  test("empty object is accepted (every slot is optional in JSON)", () => {
-    expect(() => validateTheme({})).not.toThrow()
+  test("accepts overrides when the required palette is present", () => {
+    expect(() => validateOverrides({})).not.toThrow()
   })
 
-  test("partial theme (only some slots) is accepted", () => {
-    expect(() => validateTheme({ primary: "#ff00ff" })).not.toThrow()
+  test("rejects themes without required palette fields", () => {
+    expect(() => validateTheme({})).toThrow()
+    expect(() => validateTheme({ primary: "#ff00ff" })).toThrow()
   })
 
   test("ANSI names and bright variants accepted", () => {
-    expect(() => validateTheme({ primary: "red", accent: "brightCyan" })).not.toThrow()
+    expect(() => validateOverrides({ primary: "red", accent: "brightCyan" })).not.toThrow()
   })
 
   test("inherit accepted", () => {
-    expect(() => validateTheme({ fg: "inherit" })).not.toThrow()
+    expect(() => validateOverrides({ fg: "inherit" })).not.toThrow()
   })
 
   test("hex forms (#rgb / #rrggbb / #rrggbbaa) accepted", () => {
-    expect(() => validateTheme({ fg: "#fff", bg: "#112233", primary: "#11223344" })).not.toThrow()
+    expect(() =>
+      validateOverrides({ fg: "#fff", bg: "#112233", primary: "#11223344" })
+    ).not.toThrow()
   })
 
   test("slot ref accepted as a Color", () => {
-    expect(() => validateTheme({ accent: "primary" })).not.toThrow()
+    expect(() => validateOverrides({ accent: "primary" })).not.toThrow()
   })
 
   test("lightness modifier accepted on hex and slot", () => {
     // `<base>+N` lightens, `<base>-N` darkens (OKLCH percentage points).
-    expect(() => validateTheme({ accent: "primary+10", primary: "#ff0000-25" })).not.toThrow()
+    expect(() => validateOverrides({ accent: "primary+10", primary: "#ff0000-25" })).not.toThrow()
   })
 
   test("Style slot accepts fg/bg + attrs", () => {
     expect(() =>
-      validateTheme({ title: { bold: true, fg: "primary", bg: "muted-10" } })
+      validateOverrides({ title: { bold: true, fg: "primary", bg: "muted-10" } })
     ).not.toThrow()
   })
 
   test("unknown plugin slots are accepted (extensibility)", () => {
     expect(() =>
-      validateTheme({ pluginThing: "primary", pluginStyle: { italic: true, fg: "red" } })
+      validateOverrides({ pluginThing: "primary", pluginStyle: { italic: true, fg: "red" } })
     ).not.toThrow()
   })
 
   test("shiki slot carries a theme-name string, not a Color", () => {
-    expect(() => validateTheme({ shiki: "catppuccin-mocha" })).not.toThrow()
+    expect(() => validateOverrides({ shiki: "catppuccin-mocha" })).not.toThrow()
   })
 
   test("$schema passes through unchecked", () => {
-    expect(() => validateTheme({ $schema: "./schema.json" })).not.toThrow()
+    expect(() => validateOverrides({ $schema: "./schema.json" })).not.toThrow()
   })
 })
 
 describe("validateTheme — negative cases", () => {
   test("wrong type at a slot throws", () => {
-    expect(() => validateTheme({ primary: 42 as never })).toThrow(/primary/)
+    expect(() => validateOverrides({ primary: 42 as never })).toThrow(/primary/)
   })
 
   test("invalid Color string at a slot throws", () => {
-    expect(() => validateTheme({ primary: "not-a-color" as never })).toThrow(/primary/)
+    expect(() => validateOverrides({ primary: "not-a-color" as never })).toThrow(/primary/)
   })
 
   test("color-only slot rejects a Style object", () => {
     // `primary` is one of the Color-typed slots (ColorKeys<Theme>); a
     // Style shape here should trip the isColorKey narrowing.
-    expect(() => validateTheme({ primary: { bold: true, fg: "red" } as never })).toThrow()
+    expect(() => validateOverrides({ primary: { bold: true, fg: "red" } as never })).toThrow()
   })
 
   test("malformed lightness modifier rejected", () => {
     // The lightness suffix must be `+/-<number>`; anything else (extra
     // sign, non-numeric, missing digits) trips the Color narrowing.
-    expect(() => validateTheme({ primary: "primary++10" as never })).toThrow()
-    expect(() => validateTheme({ primary: "primary+abc" as never })).toThrow()
-    expect(() => validateTheme({ primary: "primary+" as never })).toThrow()
+    expect(() => validateOverrides({ primary: "primary++10" as never })).toThrow()
+    expect(() => validateOverrides({ primary: "primary+abc" as never })).toThrow()
+    expect(() => validateOverrides({ primary: "primary+" as never })).toThrow()
   })
 
   test("invalid fg inside a Style rejected", () => {
-    expect(() => validateTheme({ title: { bold: true, fg: "not-a-color" } as never })).toThrow()
+    expect(() => validateOverrides({ title: { bold: true, fg: "not-a-color" } as never })).toThrow()
   })
 
   test("invalid bg inside a Style rejected", () => {
-    expect(() => validateTheme({ title: { fg: "primary", bg: "not-a-color" } as never })).toThrow()
+    expect(() =>
+      validateOverrides({ title: { fg: "primary", bg: "not-a-color" } as never })
+    ).toThrow()
   })
 
   test("non-string $schema rejected", () => {
-    expect(() => validateTheme({ $schema: 42 as never })).toThrow()
+    expect(() => validateOverrides({ $schema: 42 as never })).toThrow()
   })
 })
 
@@ -231,9 +242,9 @@ describe("loadTheme", () => {
     expect(t.primary).toBe(defaultTheme.primary)
   })
 
-  test("loads ansi", async () => {
-    const t = await loadTheme("ansi")
-    expect(t.primary).toBe(ansi.primary)
+  test("loads system", async () => {
+    const t = await loadTheme("system")
+    expect(t.primary).toBe(system.primary)
   })
 
   test("unknown theme name throws with the search paths listed", async () => {

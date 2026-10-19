@@ -216,14 +216,14 @@ export class Terminal {
       this.deleteImages()
       this.setProgress()
 
-      // Clear scroll region (if set), disable paste/focus reporting,
+      // Clear scroll region (if set), disable paste/focus/color-scheme reporting,
       // auto-wrap back on, cursor back on.
       if (this.#reserveBottom > 0) this.clearScrollRegion()
       // Wipe the visible viewport — covers both leftover footer rows
       // and any half-painted stream rows from an in-flight render that
       // was killed mid-paint (crash path). Scrollback is unaffected.
       this.write(
-        `${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?7h${CSI}?25h`
+        `${CSI}?1007l${CSI}?1006l${CSI}?1002l${CSI}?1000l${CSI}?1004l${CSI}?2004l${CSI}?2031l${CSI}?7h${CSI}?25h`
       )
       if (this.#altScreen) this.write(`${CSI}?1049l`)
     } finally {

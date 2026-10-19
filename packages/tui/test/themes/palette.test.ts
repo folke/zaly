@@ -1,13 +1,15 @@
 import type { Scheme, SchemeColor } from "../../scripts/themes-iterm2.ts"
 import type { HexColor, Style } from "../../src/style/types.ts"
-import type { TerminalPalette } from "../../src/themes/palette.ts"
+import type { TerminalPalette } from "../../src/themes/system.ts"
 
 import { describe, expect, test } from "vitest"
 import { paletteFromScheme } from "../../scripts/themes-iterm2.ts"
 import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { blend } from "../../src/style/color.ts"
 import { hexToOklch } from "../../src/style/oklch.ts"
-import { defaultsDark } from "../../src/themes/default.ts"
-import { themeFromPalette } from "../../src/themes/palette.ts"
+import { openStyle } from "../../src/style/style.ts"
+import { defaultsDark, defaultsLight } from "../../src/themes/default.ts"
+import { themeFromPalette } from "../../src/themes/system.ts"
 
 const ansi: HexColor[] = [
   "#111111",
@@ -33,11 +35,13 @@ describe("terminal palette themes", () => {
   test("maps ANSI slots to fixed palette colors without mutating defaults", () => {
     const before = JSON.stringify(defaultsDark)
     const theme = themeFromPalette(palette)
-    expect(theme.primary).toBe(ansi[4])
-    expect(theme.accent).toBe(ansi[13])
-    expect(theme.syntaxString).toBe(ansi[2])
-    expect(theme.success).toBe(ansi[2])
-    expect(theme.selection).toEqual({ bg: ansi[12], fg: ansi[0] })
+    const current = { ...theme, id: "palette" }
+    expect(theme.primary).toBe("blue")
+    expect(openStyle({ fg: "primary" }, current)).toBe(openStyle({ fg: ansi[4] }))
+    expect(openStyle({ fg: "accent" }, current)).toBe(openStyle({ fg: ansi[13] }))
+    expect(openStyle({ fg: "syntaxString" }, current)).toBe(openStyle({ fg: ansi[2] }))
+    expect(openStyle({ fg: "gray" }, current)).toBe(openStyle({ fg: ansi[8] }))
+    expect(openStyle({ fg: "brightGrey" }, current)).toBe(openStyle({ fg: ansi[8] }))
     expect(theme.syntaxField).toBe("fg")
     expect(JSON.stringify(defaultsDark)).toBe(before)
   })
@@ -48,16 +52,19 @@ describe("terminal palette themes", () => {
   ] as const)("derives $mode surfaces and diff backgrounds", ({ bg, fg, mode }) => {
     const theme = themeFromPalette({ ansi, bg, fg })
     expect(theme.mode).toBe(mode)
-    expect(validateTheme({ ...theme, id: "palette" })).toEqual({ ...theme, id: "palette" })
-    expect(theme.ui).toEqual({ bg: mode === "dark" ? "bg+5" : "bg-3" })
+    expect(theme.ui).toEqual((mode === "dark" ? defaultsDark : defaultsLight).ui)
+    expect(theme.selection).toEqual({ bg: blend(ansi[12], bg, 0.3) })
     const bgL = hexToOklch(bg).L
     const mutedL = hexToOklch(theme.muted as HexColor).L
     expect(mutedL).toBeGreaterThan(Math.min(bgL, hexToOklch(fg).L))
     expect(mutedL).toBeLessThan(Math.max(bgL, hexToOklch(fg).L))
-    for (const diff of [theme.diffAdd, theme.diffDel]) {
+    for (const [diff, accent] of [
+      [theme.diffAdd, ansi[2]],
+      [theme.diffDel, ansi[1]],
+    ] as const) {
+      expect((diff as Style).bg).toBe(blend(accent, bg, 0.2))
       const l = hexToOklch((diff as Style).bg as HexColor).L
       expect(mode === "dark" ? l > bgL : l < bgL).toBe(true)
-      expect(Math.abs(l - bgL)).toBeLessThan(0.05)
     }
   })
 

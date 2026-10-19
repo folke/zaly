@@ -220,7 +220,10 @@ const TILDE_NAMES: Partial<Record<string, string>> = {
 const SS3_NAMES: Partial<Record<string, string>> = { P: "f1", Q: "f2", R: "f3", S: "f4" }
 
 function isTerminalCsiResponse(params: string, final: string): boolean {
-  return final === "c" && (params.startsWith("?") || params.startsWith(">"))
+  return (
+    (final === "c" && (params.startsWith("?") || params.startsWith(">"))) ||
+    (final === "n" && /^\?997(?:;[012])?$/.test(params))
+  )
 }
 
 function handleCsi(params: string, final: string, out: InputEvent[]): void {
