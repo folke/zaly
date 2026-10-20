@@ -3,7 +3,7 @@ import type { ModelsJson } from "@zaly/ai";
 export const ModelsSchema = {
     components: {
         schemas: {
-            "ModelsJson-o1": {
+            ModelsJson: {
                 type: "object",
                 additionalProperties: {
                     type: "object",
@@ -328,15 +328,63 @@ export const ModelsSchema = {
         }
     },
     schema: {
-        type: "array",
-        minItems: 1,
-        maxItems: 1,
-        items: {
-            oneOf: [
-                {
-                    $ref: "#/components/schemas/ModelsJson-o1"
+        type: "object",
+        additionalProperties: {
+            type: "object",
+            properties: {
+                name: {
+                    type: "string",
+                    description: "Provider name *"
+                },
+                api: {
+                    type: "string",
+                    description: "Adapter family to use for this provider."
+                },
+                apiKey: {
+                    type: "string"
+                },
+                baseUrl: {
+                    type: "string",
+                    description: "Base URL for API requests *"
+                },
+                doc: {
+                    type: "string",
+                    description: "Docs link for this provider's model list."
+                },
+                env: {
+                    type: "array",
+                    items: {
+                        type: "string"
+                    },
+                    description: "Env-var names consulted for credentials, in priority order.\nThe first element is the conventional one (`OPENAI_API_KEY`\netc.); downstream entries are fallbacks."
+                },
+                headers: {
+                    $ref: "#/components/schemas/Recordstringstring"
+                },
+                quirks: {
+                    $ref: "#/components/schemas/Quirks"
+                },
+                models: {
+                    type: "array",
+                    items: {
+                        $ref: "#/components/schemas/ModelInfo"
+                    }
+                },
+                source: {
+                    type: "string",
+                    "enum": [
+                        "builtin",
+                        "custom",
+                        "models.dev",
+                        "models.json"
+                    ]
+                },
+                replaceModels: {
+                    type: "boolean"
                 }
-            ]
+            },
+            required: [],
+            additionalProperties: false
         }
     },
     version: "3.0"

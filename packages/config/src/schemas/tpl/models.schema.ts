@@ -4,4 +4,4 @@ import type { ModelsJson } from "@zaly/ai"
 
 import typia from "typia"
 
-export const ModelsSchema = typia.json.schema<[ModelsJson], "3.0">()
+export const ModelsSchema = typia.json.schema<ModelsJson, "3.0">()

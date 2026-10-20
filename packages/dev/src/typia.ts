@@ -60,7 +60,7 @@ export async function generateJsonSchemas(root: string) {
     const name = basename(file, ".schema.ts")
     const outPath = join(root, "assets", "schemas", `${name}.schema.json`)
     const openApiSchema = Object.values(mod).find((v) => typeof v === "object" && v !== null) as
-      | IJsonSchemaUnit
+      | IJsonSchemaUnit<"3.0">
       | undefined
     if (openApiSchema) {
       const jsonSchema = toJsonSchema(openApiSchema)
@@ -107,20 +107,15 @@ function convertRefs(obj: any): any {
 
 // Step 2: Convert OpenAPI 3.0 schemas from gen/*.schema.ts into standard
 // JSON Schema draft-07 files under assets/schemas/.
-function toJsonSchema(openApiSchema: IJsonSchemaUnit): any {
-  const components = openApiSchema.components.schemas ?? {}
-  const rootName = Object.keys(components)[0]
-  if (!rootName) return
-
-  const root = components[rootName]
+export function toJsonSchema(openApiSchema: IJsonSchemaUnit<"3.0">): any {
   const definitions: any = {}
-  for (const [name, schema] of Object.entries(components)) {
-    if (name !== rootName) definitions[name] = convertRefs(schema)
+  for (const [name, schema] of Object.entries(openApiSchema.components.schemas ?? {})) {
+    definitions[name] = convertRefs(schema)
   }
 
   return {
     $schema: "http://json-schema.org/draft-07/schema#",
-    ...convertRefs(root),
+    ...convertRefs(openApiSchema.schema),
     ...(Object.keys(definitions).length > 0 ? { definitions } : {}),
   }
 }

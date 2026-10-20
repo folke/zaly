@@ -53,7 +53,7 @@ export function schemaType(schema: Schema): string {
 
 export function settingsReference(): string {
   const definitions = ConfigSchema.components.schemas as Record<string, Schema>
-  const root = definitions["TypiaConfig-o1"]
+  const root = ConfigSchema.schema as Schema
   const deref = (schema: Schema) =>
     schema.$ref ? (definitions[schema.$ref.split("/").at(-1)!] ?? schema) : schema
   const lines: string[] = []
