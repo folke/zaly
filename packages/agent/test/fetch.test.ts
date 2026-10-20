@@ -1,6 +1,6 @@
 import type { Attachment, MetaPart, TextPart } from "@zaly/ai"
 
-import { zalyUserAgent } from "@zaly/ai"
+import { runTool, zalyUserAgent } from "@zaly/ai"
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs"
 import { createServer } from "node:http"
 import { tmpdir } from "node:os"
@@ -105,6 +105,21 @@ async function call(path: string, overrides: Record<string, unknown> = {}) {
   const text = parts.find((part): part is TextPart => part.type === "text")
   return { meta, parts, text }
 }
+
+test("fetch publishes structured metadata through the tool runner", async () => {
+  const result = await runTool(fetchTool, { url: `${origin}/redirect` }, {})
+  expect(result.isError).toBe(false)
+  expect(result.meta).toMatchObject({
+    kind: "fetch",
+    type: "text",
+    format: "markdown",
+    title: "Test page",
+    status: 200,
+    url: `${origin}/docs/page`,
+  })
+  const image = await runTool(fetchTool, { url: `${origin}/image` }, {})
+  expect(image.meta).toMatchObject({ kind: "fetch", type: "image", status: 200 })
+})
 
 test("HTML defaults to readable Markdown and resolves against the final response URL", async () => {
   const { meta, text } = await call("/redirect")

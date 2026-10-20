@@ -1,4 +1,4 @@
-import type { Attachment, MetaPart, TextPart } from "@zaly/ai"
+import type { Attachment, MetaPart, TextPart, ToolContext } from "@zaly/ai"
 
 import { defineTool, toAttachment, zalyUserAgent } from "@zaly/ai"
 import { randomHash } from "@zaly/shared"
@@ -7,6 +7,22 @@ import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { Type } from "typebox"
 import { truncate } from "../utils/truncate.ts"
+
+export type FetchTool = typeof fetchTool
+export type FetchToolMeta = {
+  kind: "fetch"
+  url: string
+  type: "text" | Attachment["type"]
+  format?: string
+  title?: string
+  status: number
+  statusText: string
+  ok: boolean
+  contentType?: string
+  durationMs: number
+  warning?: string
+  truncated?: { fullOutputPath: string; totalBytes: number; totalLines: number }
+}
 
 /**
  * Fetch APIs or static pages. HTML becomes readable Markdown; raw mode
@@ -81,7 +97,7 @@ export const fetchTool = defineTool({
       })
     ),
   }),
-  async call(args, ctx): Promise<(Attachment | MetaPart | TextPart)[]> {
+  async call(args, ctx: ToolContext<FetchToolMeta>): Promise<(Attachment | MetaPart | TextPart)[]> {
     if (args.format === "raw" && args.jsonpath !== undefined)
       throw new Error("jsonpath cannot be combined with format: raw")
     const t0 = Date.now()
@@ -102,14 +118,17 @@ export const fetchTool = defineTool({
     const contentType = res.headers.get("content-type") ?? ""
     const bytes = new Uint8Array(await res.arrayBuffer())
 
-    const meta: Record<string, unknown> = {
+    const meta: FetchToolMeta = {
       contentType: contentType || undefined,
       durationMs: Date.now() - t0,
+      kind: "fetch",
       ok: res.ok,
       status: res.status,
       statusText: res.statusText,
+      type: "text",
       url: res.url || url.href,
     }
+    ctx.meta = meta
 
     // Magic-byte detection on the response bytes — catches mislabeled
     // content (HTML served at /file.pdf, images served as
@@ -126,7 +145,11 @@ export const fetchTool = defineTool({
     })
     if (file) {
       const att = await toAttachment(file)
-      if (att) return [{ data: meta, tag: "fetch", type: "meta" }, att]
+      if (att) {
+        meta.type = att.type
+        meta.durationMs = Date.now() - t0
+        return [{ data: meta, tag: "fetch", type: "meta" }, att]
+      }
     }
 
     const text = new TextDecoder().decode(bytes)
@@ -170,6 +193,7 @@ export const fetchTool = defineTool({
     // used as-is.
     const bodyText = typeof body === "string" ? body : JSON.stringify(body, undefined, 2)
 
+    meta.format = outputFormat ?? (file?.type === "text" ? file.format : "plain")
     const summary = truncate(bodyText, { maxLines: args.limit, strategy: "head+tail" })
     if (summary.truncated) {
       let extension = "txt"

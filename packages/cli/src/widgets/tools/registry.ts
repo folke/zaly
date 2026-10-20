@@ -5,6 +5,7 @@ import { createRegistry } from "@zaly/shared/registry"
 import { bashRenderer } from "./bash.ts"
 import { defaultRenderer } from "./default.ts"
 import { editRenderer } from "./edit.ts"
+import { fetchRenderer } from "./fetch.ts"
 import { readRenderer } from "./read.ts"
 import { skillRenderer } from "./skill.ts"
 import { writeRenderer } from "./write.ts"
@@ -46,6 +47,7 @@ export type ToolResultLoader = () => ToolRenderer
 const builtin = {
   bash: () => bashRenderer as ToolRenderer,
   edit: () => editRenderer as ToolRenderer,
+  fetch: () => fetchRenderer as ToolRenderer,
   find: () => bashRenderer as ToolRenderer,
   grep: () => bashRenderer as ToolRenderer,
   read: () => readRenderer as ToolRenderer,

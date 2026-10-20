@@ -1,15 +1,42 @@
-/// <reference lib="dom" />
+// oxlint-disable-next-line typescript/triple-slash-reference -- Native schema programs must include this ambient declaration across workspace boundaries.
+/// <reference path="./turndown.d.ts" />
 
 import { gfm } from "@joplin/turndown-plugin-gfm"
 import { Readability } from "@mozilla/readability"
 import { DOMParser } from "linkedom"
 import TurndownService from "turndown"
 
+// Keep the parser's DOM surface local: lib.dom globals conflict with runtime Worker types.
+type HtmlRoot = {
+  querySelector: (selector: string) => HtmlElement | null
+  querySelectorAll: (selector: string) => HtmlElement[]
+}
+type HtmlElement = HtmlRoot & {
+  className: string
+  innerHTML: string
+  nodeName: string
+  tagName: string
+  textContent: string
+  parentElement: HtmlElement | null
+  getAttribute: (name: string) => string | null
+  setAttribute: (name: string, value: string) => void
+  removeAttribute: (name: string) => void
+  remove: () => void
+  prepend: (node: HtmlElement) => void
+}
+type HtmlDocument = HtmlRoot & {
+  title: string
+  head: HtmlElement
+  body: HtmlElement
+  createElement: (name: string) => HtmlElement
+  cloneNode: (deep: boolean) => HtmlDocument
+}
+
 /** Convert static HTML only: no scripts, resources, or browser layout are executed. */
 export function htmlToMarkdown(html: string, url: string) {
   const parser = new DOMParser()
   const parse = (source: string) =>
-    parser.parseFromString(source, "text/html") as unknown as Document
+    parser.parseFromString(source, "text/html") as unknown as HtmlDocument
   let doc = parse(html)
   if (!doc.querySelector("html")) doc = parse(`<html><head></head><body>${html}</body></html>`)
 
@@ -53,15 +80,18 @@ export function htmlToMarkdown(html: string, url: string) {
   // Prefer authored content boundaries for reference pages; article heuristics can drop code/tables.
   const main = doc.querySelector("main, [role='main']")
   const articles = (main ?? doc).querySelectorAll("article")
-  let root: Element | undefined = (articles.length === 1 ? articles[0] : main) ?? undefined
+  let root: HtmlElement | undefined = (articles.length === 1 ? articles[0] : main) ?? undefined
   let extracted: string | undefined
   if (!root?.textContent.trim() && !root?.querySelector("img")) {
     root = undefined
     doc.querySelectorAll("aside").forEach((node) => node.remove())
     try {
-      const article = new Readability(doc.cloneNode(true) as Document, {
-        keepClasses: true,
-      }).parse()
+      const article = new Readability(
+        doc.cloneNode(true) as ConstructorParameters<typeof Readability>[0],
+        {
+          keepClasses: true,
+        }
+      ).parse()
       extracted = article?.content ?? undefined
     } catch {
       /* Malformed pages still have a cleaned-body fallback. */
@@ -74,8 +104,8 @@ export function htmlToMarkdown(html: string, url: string) {
     headingStyle: "atx",
   }).use(gfm)
   converter.addRule("fencedCode", {
-    filter: (node) => node.nodeName === "PRE",
-    replacement: (_content, node) => {
+    filter: (node: HtmlElement) => node.nodeName === "PRE",
+    replacement: (_content: string, node: HtmlElement) => {
       const code = node.querySelector("code")
       const text = (code ?? node).textContent
       const classes = `${node.className} ${code?.className ?? ""} ${node.parentElement?.className ?? ""}`

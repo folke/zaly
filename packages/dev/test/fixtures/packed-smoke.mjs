@@ -45,8 +45,11 @@ const webpage = `<html><head><title>Packed fetch</title></head><body><main><h1>D
 const fetchArgs = await fetchTool.validator.validateParams({
   url: `data:text/html,${encodeURIComponent(webpage)}`,
 })
-const fetched = await fetchTool.call(fetchArgs, {})
-const markdown = fetched.find((part) => part.type === "text")
+const { runTool } = await import("@zaly/ai")
+const fetched = await runTool(fetchTool, fetchArgs, {})
+assert.equal(fetched.meta.kind, "fetch", "Packed fetch lost sidecar metadata")
+assert.equal(fetched.meta.format, "markdown")
+const markdown = fetched.content.find((part) => part.type === "text")
 assert.equal(markdown.format, "markdown")
 assert(markdown.text.includes("# Documentation"), "Packed fetch lost Markdown headings")
 assert(markdown.text.includes("[Guide](https://example.com/guide)"), "Packed fetch lost hyperlinks")
