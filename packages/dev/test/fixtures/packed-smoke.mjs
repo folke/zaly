@@ -39,6 +39,19 @@ assert.equal(config.$.ui.shiki, "auto")
 assert.equal(config.models.$.local.models[0].id, "test", "Packed model validation failed")
 assert.equal(config.state.$.lastModel, "local/test", "Packed state validation failed")
 
+const { toolRegistry } = await import("@zaly/agent")
+const fetchTool = await toolRegistry.load("fetch")
+const webpage = `<html><head><title>Packed fetch</title></head><body><main><h1>Documentation</h1><a href="https://example.com/guide">Guide</a><table><tr><th>A</th></tr><tr><td>B</td></tr></table></main></body></html>`
+const fetchArgs = await fetchTool.validator.validateParams({
+  url: `data:text/html,${encodeURIComponent(webpage)}`,
+})
+const fetched = await fetchTool.call(fetchArgs, {})
+const markdown = fetched.find((part) => part.type === "text")
+assert.equal(markdown.format, "markdown")
+assert(markdown.text.includes("# Documentation"), "Packed fetch lost Markdown headings")
+assert(markdown.text.includes("[Guide](https://example.com/guide)"), "Packed fetch lost hyperlinks")
+assert(/\| A\s*\|/.test(markdown.text), "Packed fetch lost table conversion")
+
 // An active app handle lets the intentionally unreferenced worker finish its request.
 const keepAlive = setInterval(() => {}, 1000)
 try {

@@ -1,20 +1,17 @@
 import type { Attachment, MetaPart, TextPart } from "@zaly/ai"
 
-import { defineTool, toAttachment } from "@zaly/ai"
+import { defineTool, toAttachment, zalyUserAgent } from "@zaly/ai"
+import { randomHash } from "@zaly/shared"
+import { mkdir, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "pathe"
 import { Type } from "typebox"
-
-const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps runaway HTML pages
+import { truncate } from "../utils/truncate.ts"
 
 /**
- * Fetch a URL and return the response — JSON when the server speaks JSON,
- * raw text otherwise. Optional `jsonpath` filters the parsed JSON to a
- * subset, which keeps tokens down on chatty APIs.
- *
- * Scope: API endpoints. For HTML pages (browsing, content extraction),
- * the optional `@zaly/browser` package provides browser-backed tools that
- * return a structured a11y tree — much better than raw HTML through this
- * tool. Pointing this at an HTML URL works but the response is a string
- * blob the model has to slog through.
+ * Fetch APIs or static pages. HTML becomes readable Markdown; raw mode
+ * preserves the response text. Conversion never runs page scripts.
+ * Truncated text is saved in full alongside the session, like bash output.
  *
  * Permissions: routes through the `fetch` scope when the agent wires up
  * tool-side permission checks. Until then, callers should restrict via
@@ -23,8 +20,9 @@ const DEFAULT_MAX_BODY_BYTES = 256 * 1024 // 256 KB — generous for APIs, caps 
 // oxlint-disable-next-line sort-keys
 export const fetchTool = defineTool({
   desc:
-    `Fetch a URL and return the response. JSON responses are parsed; use \`jsonpath\` (e.g. \`$.items[*].name\`) to extract a subset and minimise tokens.` +
-    `Image & PDF are returned as attachments. Best for APIs — for web pages, use the browser tool.`,
+    `Fetch a URL and return the response. JSON responses are parsed; use \`jsonpath\` (e.g. \`$.items[*].name\`) to extract a subset and minimise tokens. ` +
+    `HTML pages are converted to readable Markdown without executing JavaScript; use a browser for interactive pages. ` +
+    `Images & PDFs are returned as attachments. Truncated text is saved in full; read \`truncated.fullOutputPath\` to inspect it.`,
   name: "fetch",
   parallel: true,
 
@@ -60,6 +58,21 @@ export const fetchTool = defineTool({
           "set `headers: { 'Content-Type': 'application/json' }`.",
       })
     ),
+    format: Type.Optional(
+      Type.Union([Type.Literal("auto"), Type.Literal("markdown"), Type.Literal("raw")], {
+        default: "auto",
+        description:
+          "auto converts HTML to Markdown and parses JSON. markdown also treats unrecognized text as HTML. raw returns original text without conversion or JSON parsing. Attachments are unchanged.",
+      })
+    ),
+    limit: Type.Optional(
+      Type.Integer({
+        default: 2000,
+        description:
+          "Maximum lines to keep inline, split between head and tail. Full output is saved when truncated.",
+        minimum: 1,
+      })
+    ),
     jsonpath: Type.Optional(
       Type.String({
         description:
@@ -68,17 +81,22 @@ export const fetchTool = defineTool({
       })
     ),
   }),
-  async call(args): Promise<(Attachment | MetaPart | TextPart)[]> {
+  async call(args, ctx): Promise<(Attachment | MetaPart | TextPart)[]> {
+    if (args.format === "raw" && args.jsonpath !== undefined)
+      throw new Error("jsonpath cannot be combined with format: raw")
     const t0 = Date.now()
     const url = new URL(args.url)
     if (args.query) {
       for (const [k, v] of Object.entries(args.query)) url.searchParams.set(k, v)
     }
 
+    const headers = new Headers(args.headers)
+    if (!headers.has("user-agent")) headers.set("User-Agent", zalyUserAgent)
     const res = await fetch(url, {
       body: args.body,
-      headers: args.headers,
+      headers,
       method: args.method,
+      signal: ctx.signal,
     })
 
     const contentType = res.headers.get("content-type") ?? ""
@@ -90,6 +108,7 @@ export const fetchTool = defineTool({
       ok: res.ok,
       status: res.status,
       statusText: res.statusText,
+      url: res.url || url.href,
     }
 
     // Magic-byte detection on the response bytes — catches mislabeled
@@ -103,7 +122,7 @@ export const fetchTool = defineTool({
     const file = await fileDetect({
       data: bytes,
       mime: contentType || undefined,
-      url: url.toString(),
+      url: res.url || url.href,
     })
     if (file) {
       const att = await toAttachment(file)
@@ -117,15 +136,28 @@ export const fetchTool = defineTool({
     const isJson = file?.type === "text" && file.format === "json"
 
     let body: unknown = text
-    if (isJson) {
+    let outputFormat: string | undefined
+    if (isJson && args.format !== "raw") {
       try {
         body = JSON.parse(text)
+        outputFormat = "json"
       } catch {
         // Server lied about content-type; keep as text.
       }
     }
+    if (args.format !== "raw" && !isJson && file?.type === "text") {
+      if (file.format === "html" || (args.format === "markdown" && file.format !== "markdown")) {
+        const { htmlToMarkdown } = await import("../utils/html.ts")
+        const page = htmlToMarkdown(text, res.url || url.href)
+        body = page.markdown
+        outputFormat = "markdown"
+        if (page.title) meta.title = page.title
+        if (page.warning) meta.warning = page.warning
+      } else if (file.format === "markdown") outputFormat = "markdown"
+    }
 
-    if (args.jsonpath !== undefined && body !== text) {
+    if (args.jsonpath !== undefined) {
+      if (outputFormat !== "json") throw new Error("jsonpath requires a valid JSON response")
       // Lazy-import — `jsonpath-plus` is only paid for when actually used,
       // and it bundles to a few hundred KB which we'd rather not load on
       // every fetch that doesn't filter.
@@ -138,27 +170,24 @@ export const fetchTool = defineTool({
     // used as-is.
     const bodyText = typeof body === "string" ? body : JSON.stringify(body, undefined, 2)
 
-    // Cap the body before it reaches the model. Total bytes received is
-    // surfaced via the meta so the model can decide whether to refetch
-    // with `jsonpath` or use a different tool (browser for HTML, etc.).
-    const totalBytes = Buffer.byteLength(bodyText, "utf8")
-    const truncated = totalBytes > DEFAULT_MAX_BODY_BYTES
-    const displayed = truncated ? bodyText.slice(0, DEFAULT_MAX_BODY_BYTES) : bodyText
-
-    if (truncated) {
+    const summary = truncate(bodyText, { maxLines: args.limit, strategy: "head+tail" })
+    if (summary.truncated) {
+      let extension = "txt"
+      if (outputFormat === "markdown") extension = "md"
+      else if (outputFormat === "json") extension = "json"
+      const dir = ctx.sessionDir ?? join(tmpdir(), "zaly-fetch")
+      const fullOutputPath = join(dir, `fetch-${randomHash()}.${extension}`)
+      await mkdir(dir, { recursive: true })
+      await writeFile(fullOutputPath, bodyText, "utf8")
       meta.truncated = {
-        bytes: totalBytes,
-        hint:
-          args.jsonpath === undefined
-            ? "body exceeded limit; pass `jsonpath` to filter, or use the browser tool for HTML."
-            : "filtered body still exceeded limit; tighten the JSONPath expression.",
-        limit: DEFAULT_MAX_BODY_BYTES,
+        fullOutputPath,
+        totalBytes: summary.origBytes,
+        totalLines: summary.origLines,
       }
     }
-
+    meta.durationMs = Date.now() - t0
     const parts: (MetaPart | TextPart)[] = [{ data: meta, tag: "fetch", type: "meta" }]
-    if (displayed !== "")
-      parts.push({ format: isJson ? "json" : undefined, text: displayed, type: "text" })
+    if (summary.text !== "") parts.push({ format: outputFormat, text: summary.text, type: "text" })
     return parts
   },
 })

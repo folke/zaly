@@ -150,7 +150,7 @@ Apply one or more exact-text replacements to a file. All matches are resolved ag
 
 ## fetch
 
-Fetch a URL and return the response. JSON responses are parsed; use `jsonpath` (e.g. `$.items[*].name`) to extract a subset and minimise tokens.Image & PDF are returned as attachments. Best for APIs — for web pages, use the browser tool.
+Fetch a URL and return the response. JSON responses are parsed; use `jsonpath` (e.g. `$.items[*].name`) to extract a subset and minimise tokens. HTML pages are converted to readable Markdown without executing JavaScript; use a browser for interactive pages. Images & PDFs are returned as attachments. Truncated text is saved in full; read `truncated.fullOutputPath` to inspect it.
 
 ### Parameters
 
@@ -212,6 +212,30 @@ Fetch a URL and return the response. JSON responses are parsed; use `jsonpath` (
     "body": {
       "type": "string",
       "description": "Request body as a string. For JSON, stringify it yourself and set `headers: { 'Content-Type': 'application/json' }`."
+    },
+    "format": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "auto"
+        },
+        {
+          "type": "string",
+          "const": "markdown"
+        },
+        {
+          "type": "string",
+          "const": "raw"
+        }
+      ],
+      "default": "auto",
+      "description": "auto converts HTML to Markdown and parses JSON. markdown also treats unrecognized text as HTML. raw returns original text without conversion or JSON parsing. Attachments are unchanged."
+    },
+    "limit": {
+      "type": "integer",
+      "default": 2000,
+      "description": "Maximum lines to keep inline, split between head and tail. Full output is saved when truncated.",
+      "minimum": 1
     },
     "jsonpath": {
       "type": "string",
