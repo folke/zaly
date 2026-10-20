@@ -1,3 +1,4 @@
+import type { Simplify } from "@zaly/shared"
 import type { Theme } from "../themes/types.ts"
 
 export type RGB = [r: number, g: number, b: number]
@@ -70,10 +71,12 @@ export interface AnsiStyle {
  *  Pure styling — no layout or lifecycle fields. Widget state interfaces
  *  extend `StyleState` to pick up the `visible` base-state bits alongside
  *  these style fields. */
-export type Style<Ansi extends boolean = true> = Omit<AnsiStyle, "fg" | "bg"> & {
-  fg?: Color<Ansi>
-  bg?: Color<Ansi>
-  style?: AnyStyle<Ansi>
-}
+export type Style<Ansi extends boolean = true> = Simplify<
+  Omit<AnsiStyle, "fg" | "bg"> & {
+    fg?: Color<Ansi>
+    bg?: Color<Ansi>
+    style?: AnyStyle<Ansi>
+  }
+>
 
 export type AnyStyle<Ansi extends boolean = false> = Style<Ansi> | Color<Ansi>

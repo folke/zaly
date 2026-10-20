@@ -60,15 +60,15 @@ __export(exports_validator, {
 module.exports = __toCommonJS(exports_validator);
 var validate = validate21;
 var validator_default = validate21;
-var schema6 = { type: "object", required: ["id", "fg", "bg", "primary", "accent", "selection", "success", "info", "warn", "error", "syntaxBoolean", "syntaxConstant", "syntaxField", "syntaxFunction", "syntaxNumber", "syntaxSpecial", "syntaxString", "diffAdd", "diffDel"], properties: { $schema: { type: "string" }, appearance: { type: "string", description: "Dark/light appearance. Inferred from the background when omitted.", enum: ["dark", "light"] }, id: { type: "string" }, name: { type: "string" }, shiki: { type: "string", enum: ["auto", "andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"] }, fg: { $ref: "#/$defs/Color" }, bg: { $ref: "#/$defs/Color" }, primary: { $ref: "#/$defs/Color" }, accent: { $ref: "#/$defs/Color" }, muted: { $ref: "#/$defs/Value" }, quiet: { $ref: "#/$defs/Value" }, comment: { $ref: "#/$defs/Value" }, title: { $ref: "#/$defs/Value" }, delim: { $ref: "#/$defs/Value" }, ui: { $ref: "#/$defs/Value" }, overlay: { $ref: "#/$defs/Value" }, highlight: { $ref: "#/$defs/Value" }, divider: { $ref: "#/$defs/Value" }, selection: { $ref: "#/$defs/Value" }, gutter: { $ref: "#/$defs/Value" }, prompt: { $ref: "#/$defs/Value" }, border: { $ref: "#/$defs/Value" }, borderTitle: { $ref: "#/$defs/Value" }, code: { $ref: "#/$defs/Value" }, codeTitle: { $ref: "#/$defs/Value" }, success: { $ref: "#/$defs/Color" }, info: { $ref: "#/$defs/Color" }, warn: { $ref: "#/$defs/Color" }, error: { $ref: "#/$defs/Color" }, syntaxBoolean: { $ref: "#/$defs/Value" }, syntaxBracket: { $ref: "#/$defs/Value" }, syntaxConstant: { $ref: "#/$defs/Value" }, syntaxDelimiter: { $ref: "#/$defs/Value" }, syntaxField: { $ref: "#/$defs/Value" }, syntaxFunction: { $ref: "#/$defs/Value" }, syntaxNumber: { $ref: "#/$defs/Value" }, syntaxSpecial: { $ref: "#/$defs/Value" }, syntaxString: { $ref: "#/$defs/Value" }, mdBold: { $ref: "#/$defs/Value" }, mdCode: { $ref: "#/$defs/Value" }, mdCodeBlock: { $ref: "#/$defs/Value" }, mdCodeBlockTitle: { $ref: "#/$defs/Value" }, mdHeading1: { $ref: "#/$defs/Value" }, mdHeading2: { $ref: "#/$defs/Value" }, mdHeading3: { $ref: "#/$defs/Value" }, mdHeading4: { $ref: "#/$defs/Value" }, mdHeading5: { $ref: "#/$defs/Value" }, mdHeading6: { $ref: "#/$defs/Value" }, mdHeading: { $ref: "#/$defs/Value" }, mdHr: { $ref: "#/$defs/Value" }, mdItalic: { $ref: "#/$defs/Value" }, mdLink: { $ref: "#/$defs/Value" }, mdListBullet: { $ref: "#/$defs/Value" }, mdListChecked: { $ref: "#/$defs/Value" }, mdListUnchecked: { $ref: "#/$defs/Value" }, mdQuote: { $ref: "#/$defs/Value" }, mdStrikethrough: { $ref: "#/$defs/Value" }, mdTable: { $ref: "#/$defs/Value" }, mdTableHeader: { $ref: "#/$defs/Value" }, optionName: { $ref: "#/$defs/Value" }, optionDesc: { $ref: "#/$defs/Value" }, optionActive: { $ref: "#/$defs/Value" }, diffAdd: { $ref: "#/$defs/Value" }, diffDel: { $ref: "#/$defs/Value" }, diffContext: { $ref: "#/$defs/Value" }, diffAddNum: { $ref: "#/$defs/Value" }, diffDelNum: { $ref: "#/$defs/Value" }, diffContextNum: { $ref: "#/$defs/Value" } }, $defs: { Color: { type: "string", description: "Hex color, theme slot, or inherit. Hex colors and theme slots may have an integer +/- lightness adjustment.", pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|fg|bg|primary|accent|muted|quiet|comment|title|delim|ui|overlay|highlight|divider|selection|gutter|prompt|border|borderTitle|code|codeTitle|success|info|warn|error|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHeading|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|optionName|optionDesc|optionActive|diffAdd|diffDel|diffContext|diffAddNum|diffDelNum|diffContextNum)(?:[+-][0-9]+)?|inherit)$" }, Style: { type: "object", properties: { bg: { $ref: "#/$defs/Color" }, bold: { type: "boolean" }, dim: { type: "boolean" }, fg: { $ref: "#/$defs/Color" }, inverse: { type: "boolean" }, italic: { type: "boolean" }, strikethrough: { type: "boolean" }, underline: { type: "boolean" } }, additionalProperties: false }, Value: { anyOf: [{ $ref: "#/$defs/Color" }, { $ref: "#/$defs/Style" }] } }, $schema: "http://json-schema.org/draft-07/schema#", additionalProperties: { $ref: "#/$defs/Value" } };
+var schema6 = { $schema: "http://json-schema.org/draft-07/schema#", additionalProperties: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, definitions: { "Color<false,false>": { description: "Hex color or theme slot. Hex colors and theme slots may have an integer +/- lightness adjustment.", pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$", type: "string" }, "Color<false>": { description: "Hex color or theme slot, or inherit. Hex colors and theme slots may have an integer +/- lightness adjustment.", pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$", type: "string" }, ShikiSelection: { anyOf: [{ const: "auto", type: "string" }, { $ref: "#/definitions/ShikiTheme" }] }, ShikiTheme: { enum: ["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"], type: "string" }, "ThemeStyle<false>": { additionalProperties: false, description: "Simplify a type by flattening its properties.", properties: { bg: { $ref: "#/definitions/Color%3Cfalse%3E" }, bold: { type: "boolean" }, dim: { type: "boolean" }, fg: { $ref: "#/definitions/Color%3Cfalse%3E" }, inverse: { type: "boolean" }, italic: { type: "boolean" }, strikethrough: { type: "boolean" }, underline: { type: "boolean" } }, type: "object" }, "ThemeValue<false>": { anyOf: [{ $ref: "#/definitions/ThemeStyle%3Cfalse%3E" }, { $ref: "#/definitions/Color%3Cfalse%3E" }] } }, properties: { $schema: { type: "string" }, accent: { $ref: "#/definitions/Color%3Cfalse%3E", description: "Secondary accent — distinct hue from `primary`." }, appearance: { description: "Dark/light appearance, inferred from bg when omitted in a theme file.", enum: ["dark", "light"], type: "string" }, bg: { $ref: "#/definitions/Color%3Cfalse%2Cfalse%3E" }, border: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Structural border around panels, boxes, tables." }, borderTitle: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Title text inside a bordered region (slightly stronger than `border`)." }, code: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Code-block surface (bg + optional fg). Default for `mdCodeBlock`." }, codeTitle: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Title above a code block (e.g. file path)." }, comment: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Editor-comment tier — soft, often tinted. Used for code annotations, line-number labels, italic quotes." }, delim: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Structural separators — borders, dividers, gutter lines." }, diffAdd: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, diffAddNum: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, diffContext: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, diffContextNum: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, diffDel: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, diffDelNum: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, divider: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Separators between messages or sections." }, error: { $ref: "#/definitions/Color%3Cfalse%3E" }, fg: { $ref: "#/definitions/Color%3Cfalse%2Cfalse%3E" }, gutter: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Line-number column, diff markers." }, highlight: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Tinted region for emphasized content within the stream — user bubble bg, focused row, callout. Distinct from `code`, which is reserved for code-block bg." }, id: { type: "string" }, info: { $ref: "#/definitions/Color%3Cfalse%3E" }, mdBold: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdCode: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdCodeBlock: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdCodeBlockTitle: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading1: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading2: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading3: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading4: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading5: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHeading6: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdHr: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdItalic: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdLink: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdListBullet: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdListChecked: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdListUnchecked: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdQuote: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdStrikethrough: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdTable: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, mdTableHeader: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, muted: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Secondary text — first tier of the quietness ladder (`muted` → `quiet` → `comment`). Slightly faded but readable; good for timestamps, captions, less-prominent labels." }, name: { type: "string" }, optionActive: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Currently-highlighted entry." }, optionDesc: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, optionName: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, overlay: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Popup / modal surface. One tier above `ui`." }, primary: { $ref: "#/definitions/Color%3Cfalse%3E", description: "Brand / primary accent." }, prompt: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Main input-prompt styling." }, quiet: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "De-emphasized but still readable. Reasoning / thinking text, secondary annotations, hints." }, selection: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Highlighted text in inputs, lists, autocomplete." }, shiki: { $ref: "#/definitions/ShikiSelection", description: 'Matching bundled Shiki theme. Unset or "auto" generates highlighting from the syntax slots.' }, success: { $ref: "#/definitions/Color%3Cfalse%3E" }, syntaxBoolean: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxBracket: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxConstant: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxDelimiter: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxField: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxFunction: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxNumber: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxSpecial: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, syntaxString: { $ref: "#/definitions/ThemeValue%3Cfalse%3E" }, title: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Section / panel titles. Typically `bold` + a fg color." }, ui: { $ref: "#/definitions/ThemeValue%3Cfalse%3E", description: "Default UI surface. Bottom of the stack." }, warn: { $ref: "#/definitions/Color%3Cfalse%3E" } }, required: ["accent", "bg", "diffAdd", "diffDel", "error", "fg", "id", "info", "primary", "selection", "success", "syntaxBoolean", "syntaxConstant", "syntaxField", "syntaxFunction", "syntaxNumber", "syntaxSpecial", "syntaxString", "warn"], type: "object" };
 var func2 = Object.prototype.hasOwnProperty;
-var pattern0 = new RegExp("^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|fg|bg|primary|accent|muted|quiet|comment|title|delim|ui|overlay|highlight|divider|selection|gutter|prompt|border|borderTitle|code|codeTitle|success|info|warn|error|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHeading|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|optionName|optionDesc|optionActive|diffAdd|diffDel|diffContext|diffAddNum|diffDelNum|diffContextNum)(?:[+-][0-9]+)?|inherit)$", "u");
-function validate23(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var pattern0 = new RegExp("^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$", "u");
+function validate24(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (typeof data === "string") {
     if (!pattern0.test(data)) {
-      const err0 = { instancePath, schemaPath: "#/pattern", keyword: "pattern", params: { pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|fg|bg|primary|accent|muted|quiet|comment|title|delim|ui|overlay|highlight|divider|selection|gutter|prompt|border|borderTitle|code|codeTitle|success|info|warn|error|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHeading|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|optionName|optionDesc|optionActive|diffAdd|diffDel|diffContext|diffAddNum|diffDelNum|diffContextNum)(?:[+-][0-9]+)?|inherit)$" }, message: 'must match pattern "' + "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|fg|bg|primary|accent|muted|quiet|comment|title|delim|ui|overlay|highlight|divider|selection|gutter|prompt|border|borderTitle|code|codeTitle|success|info|warn|error|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHeading|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|optionName|optionDesc|optionActive|diffAdd|diffDel|diffContext|diffAddNum|diffDelNum|diffContextNum)(?:[+-][0-9]+)?|inherit)$" + '"' };
+      const err0 = { instancePath, schemaPath: "#/pattern", keyword: "pattern", params: { pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$" }, message: 'must match pattern "' + "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$" + '"' };
       if (vErrors === null) {
         vErrors = [err0];
       } else {
@@ -85,10 +85,10 @@ function validate23(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  validate23.errors = vErrors;
+  validate24.errors = vErrors;
   return errors === 0;
 }
-function validate25(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+function validate23(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (data && typeof data == "object" && !Array.isArray(data)) {
@@ -104,8 +104,8 @@ function validate25(data, { instancePath = "", parentData, parentDataProperty, r
       }
     }
     if (data.bg !== undefined) {
-      if (!validate23(data.bg, { instancePath: instancePath + "/bg", parentData: data, parentDataProperty: "bg", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+      if (!validate24(data.bg, { instancePath: instancePath + "/bg", parentData: data, parentDataProperty: "bg", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
         errors = vErrors.length;
       }
     }
@@ -132,8 +132,8 @@ function validate25(data, { instancePath = "", parentData, parentDataProperty, r
       }
     }
     if (data.fg !== undefined) {
-      if (!validate23(data.fg, { instancePath: instancePath + "/fg", parentData: data, parentDataProperty: "fg", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+      if (!validate24(data.fg, { instancePath: instancePath + "/fg", parentData: data, parentDataProperty: "fg", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
         errors = vErrors.length;
       }
     }
@@ -190,7 +190,7 @@ function validate25(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  validate25.errors = vErrors;
+  validate23.errors = vErrors;
   return errors === 0;
 }
 function validate22(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
@@ -207,8 +207,8 @@ function validate22(data, { instancePath = "", parentData, parentDataProperty, r
   valid0 = valid0 || _valid0;
   if (!valid0) {
     const _errs2 = errors;
-    if (!validate25(data, { instancePath, parentData, parentDataProperty, rootData })) {
-      vErrors = vErrors === null ? validate25.errors : vErrors.concat(validate25.errors);
+    if (!validate24(data, { instancePath, parentData, parentDataProperty, rootData })) {
+      vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
       errors = vErrors.length;
     }
     var _valid0 = _errs2 === errors;
@@ -235,12 +235,13 @@ function validate22(data, { instancePath = "", parentData, parentDataProperty, r
   validate22.errors = vErrors;
   return errors === 0;
 }
-function validate21(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var pattern1 = new RegExp("^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$", "u");
+function validate31(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
-  if (data && typeof data == "object" && !Array.isArray(data)) {
-    if (data.id === undefined) {
-      const err0 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "id" }, message: "must have required property '" + "id" + "'" };
+  if (typeof data === "string") {
+    if (!pattern1.test(data)) {
+      const err0 = { instancePath, schemaPath: "#/pattern", keyword: "pattern", params: { pattern: "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$" }, message: 'must match pattern "' + "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$" + '"' };
       if (vErrors === null) {
         vErrors = [err0];
       } else {
@@ -248,8 +249,114 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.fg === undefined) {
-      const err1 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "fg" }, message: "must have required property '" + "fg" + "'" };
+  } else {
+    const err1 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate31.errors = vErrors;
+  return errors === 0;
+}
+var schema12 = { enum: ["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"], type: "string" };
+function validate82(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "andromeeda" || data === "aurora-x" || data === "ayu-dark" || data === "ayu-light" || data === "ayu-mirage" || data === "catppuccin-frappe" || data === "catppuccin-latte" || data === "catppuccin-macchiato" || data === "catppuccin-mocha" || data === "dark-plus" || data === "dracula" || data === "dracula-soft" || data === "everforest-dark" || data === "everforest-light" || data === "github-dark" || data === "github-dark-default" || data === "github-dark-dimmed" || data === "github-dark-high-contrast" || data === "github-light" || data === "github-light-default" || data === "github-light-high-contrast" || data === "gruvbox-dark-hard" || data === "gruvbox-dark-medium" || data === "gruvbox-dark-soft" || data === "gruvbox-light-hard" || data === "gruvbox-light-medium" || data === "gruvbox-light-soft" || data === "horizon" || data === "horizon-bright" || data === "houston" || data === "kanagawa-dragon" || data === "kanagawa-lotus" || data === "kanagawa-wave" || data === "laserwave" || data === "light-plus" || data === "material-theme" || data === "material-theme-darker" || data === "material-theme-lighter" || data === "material-theme-ocean" || data === "material-theme-palenight" || data === "min-dark" || data === "min-light" || data === "monokai" || data === "night-owl" || data === "night-owl-light" || data === "nord" || data === "one-dark-pro" || data === "one-light" || data === "plastic" || data === "poimandres" || data === "red" || data === "rose-pine" || data === "rose-pine-dawn" || data === "rose-pine-moon" || data === "slack-dark" || data === "slack-ochin" || data === "snazzy-light" || data === "solarized-dark" || data === "solarized-light" || data === "synthwave-84" || data === "tokyo-night" || data === "vesper" || data === "vitesse-black" || data === "vitesse-dark" || data === "vitesse-light")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema12.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate82.errors = vErrors;
+  return errors === 0;
+}
+function validate81(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  const _errs0 = errors;
+  let valid0 = false;
+  const _errs1 = errors;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/anyOf/0/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (data !== "auto") {
+    const err1 = { instancePath, schemaPath: "#/anyOf/0/const", keyword: "const", params: { allowedValue: "auto" }, message: "must be equal to constant" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  var _valid0 = _errs1 === errors;
+  valid0 = valid0 || _valid0;
+  if (!valid0) {
+    const _errs3 = errors;
+    if (!validate82(data, { instancePath, parentData, parentDataProperty, rootData })) {
+      vErrors = vErrors === null ? validate82.errors : vErrors.concat(validate82.errors);
+      errors = vErrors.length;
+    }
+    var _valid0 = _errs3 === errors;
+    valid0 = valid0 || _valid0;
+  }
+  if (!valid0) {
+    const err2 = { instancePath, schemaPath: "#/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+    if (vErrors === null) {
+      vErrors = [err2];
+    } else {
+      vErrors.push(err2);
+    }
+    errors++;
+  } else {
+    errors = _errs0;
+    if (vErrors !== null) {
+      if (_errs0) {
+        vErrors.length = _errs0;
+      } else {
+        vErrors = null;
+      }
+    }
+  }
+  validate81.errors = vErrors;
+  return errors === 0;
+}
+function validate21(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (data && typeof data == "object" && !Array.isArray(data)) {
+    if (data.accent === undefined) {
+      const err0 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "accent" }, message: "must have required property '" + "accent" + "'" };
+      if (vErrors === null) {
+        vErrors = [err0];
+      } else {
+        vErrors.push(err0);
+      }
+      errors++;
+    }
+    if (data.bg === undefined) {
+      const err1 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "bg" }, message: "must have required property '" + "bg" + "'" };
       if (vErrors === null) {
         vErrors = [err1];
       } else {
@@ -257,8 +364,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.bg === undefined) {
-      const err2 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "bg" }, message: "must have required property '" + "bg" + "'" };
+    if (data.diffAdd === undefined) {
+      const err2 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "diffAdd" }, message: "must have required property '" + "diffAdd" + "'" };
       if (vErrors === null) {
         vErrors = [err2];
       } else {
@@ -266,8 +373,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.primary === undefined) {
-      const err3 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "primary" }, message: "must have required property '" + "primary" + "'" };
+    if (data.diffDel === undefined) {
+      const err3 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "diffDel" }, message: "must have required property '" + "diffDel" + "'" };
       if (vErrors === null) {
         vErrors = [err3];
       } else {
@@ -275,8 +382,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.accent === undefined) {
-      const err4 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "accent" }, message: "must have required property '" + "accent" + "'" };
+    if (data.error === undefined) {
+      const err4 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "error" }, message: "must have required property '" + "error" + "'" };
       if (vErrors === null) {
         vErrors = [err4];
       } else {
@@ -284,8 +391,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.selection === undefined) {
-      const err5 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "selection" }, message: "must have required property '" + "selection" + "'" };
+    if (data.fg === undefined) {
+      const err5 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "fg" }, message: "must have required property '" + "fg" + "'" };
       if (vErrors === null) {
         vErrors = [err5];
       } else {
@@ -293,8 +400,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.success === undefined) {
-      const err6 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "success" }, message: "must have required property '" + "success" + "'" };
+    if (data.id === undefined) {
+      const err6 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "id" }, message: "must have required property '" + "id" + "'" };
       if (vErrors === null) {
         vErrors = [err6];
       } else {
@@ -311,8 +418,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.warn === undefined) {
-      const err8 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "warn" }, message: "must have required property '" + "warn" + "'" };
+    if (data.primary === undefined) {
+      const err8 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "primary" }, message: "must have required property '" + "primary" + "'" };
       if (vErrors === null) {
         vErrors = [err8];
       } else {
@@ -320,8 +427,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.error === undefined) {
-      const err9 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "error" }, message: "must have required property '" + "error" + "'" };
+    if (data.selection === undefined) {
+      const err9 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "selection" }, message: "must have required property '" + "selection" + "'" };
       if (vErrors === null) {
         vErrors = [err9];
       } else {
@@ -329,8 +436,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxBoolean === undefined) {
-      const err10 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxBoolean" }, message: "must have required property '" + "syntaxBoolean" + "'" };
+    if (data.success === undefined) {
+      const err10 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "success" }, message: "must have required property '" + "success" + "'" };
       if (vErrors === null) {
         vErrors = [err10];
       } else {
@@ -338,8 +445,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxConstant === undefined) {
-      const err11 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxConstant" }, message: "must have required property '" + "syntaxConstant" + "'" };
+    if (data.syntaxBoolean === undefined) {
+      const err11 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxBoolean" }, message: "must have required property '" + "syntaxBoolean" + "'" };
       if (vErrors === null) {
         vErrors = [err11];
       } else {
@@ -347,8 +454,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxField === undefined) {
-      const err12 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxField" }, message: "must have required property '" + "syntaxField" + "'" };
+    if (data.syntaxConstant === undefined) {
+      const err12 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxConstant" }, message: "must have required property '" + "syntaxConstant" + "'" };
       if (vErrors === null) {
         vErrors = [err12];
       } else {
@@ -356,8 +463,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxFunction === undefined) {
-      const err13 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxFunction" }, message: "must have required property '" + "syntaxFunction" + "'" };
+    if (data.syntaxField === undefined) {
+      const err13 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxField" }, message: "must have required property '" + "syntaxField" + "'" };
       if (vErrors === null) {
         vErrors = [err13];
       } else {
@@ -365,8 +472,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxNumber === undefined) {
-      const err14 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxNumber" }, message: "must have required property '" + "syntaxNumber" + "'" };
+    if (data.syntaxFunction === undefined) {
+      const err14 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxFunction" }, message: "must have required property '" + "syntaxFunction" + "'" };
       if (vErrors === null) {
         vErrors = [err14];
       } else {
@@ -374,8 +481,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxSpecial === undefined) {
-      const err15 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxSpecial" }, message: "must have required property '" + "syntaxSpecial" + "'" };
+    if (data.syntaxNumber === undefined) {
+      const err15 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxNumber" }, message: "must have required property '" + "syntaxNumber" + "'" };
       if (vErrors === null) {
         vErrors = [err15];
       } else {
@@ -383,8 +490,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.syntaxString === undefined) {
-      const err16 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxString" }, message: "must have required property '" + "syntaxString" + "'" };
+    if (data.syntaxSpecial === undefined) {
+      const err16 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxSpecial" }, message: "must have required property '" + "syntaxSpecial" + "'" };
       if (vErrors === null) {
         vErrors = [err16];
       } else {
@@ -392,8 +499,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.diffAdd === undefined) {
-      const err17 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "diffAdd" }, message: "must have required property '" + "diffAdd" + "'" };
+    if (data.syntaxString === undefined) {
+      const err17 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "syntaxString" }, message: "must have required property '" + "syntaxString" + "'" };
       if (vErrors === null) {
         vErrors = [err17];
       } else {
@@ -401,8 +508,8 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
       }
       errors++;
     }
-    if (data.diffDel === undefined) {
-      const err18 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "diffDel" }, message: "must have required property '" + "diffDel" + "'" };
+    if (data.warn === undefined) {
+      const err18 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "warn" }, message: "must have required property '" + "warn" + "'" };
       if (vErrors === null) {
         vErrors = [err18];
       } else {
@@ -429,9 +536,15 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
+    if (data.accent !== undefined) {
+      if (!validate24(data.accent, { instancePath: instancePath + "/accent", parentData: data, parentDataProperty: "accent", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
+        errors = vErrors.length;
+      }
+    }
     if (data.appearance !== undefined) {
-      let data2 = data.appearance;
-      if (typeof data2 !== "string") {
+      let data3 = data.appearance;
+      if (typeof data3 !== "string") {
         const err20 = { instancePath: instancePath + "/appearance", schemaPath: "#/properties/appearance/type", keyword: "type", params: { type: "string" }, message: "must be string" };
         if (vErrors === null) {
           vErrors = [err20];
@@ -440,7 +553,7 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         }
         errors++;
       }
-      if (!(data2 === "dark" || data2 === "light")) {
+      if (!(data3 === "dark" || data3 === "light")) {
         const err21 = { instancePath: instancePath + "/appearance", schemaPath: "#/properties/appearance/enum", keyword: "enum", params: { allowedValues: schema6.properties.appearance.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err21];
@@ -450,142 +563,9 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
-    if (data.id !== undefined) {
-      if (typeof data.id !== "string") {
-        const err22 = { instancePath: instancePath + "/id", schemaPath: "#/properties/id/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err22];
-        } else {
-          vErrors.push(err22);
-        }
-        errors++;
-      }
-    }
-    if (data.name !== undefined) {
-      if (typeof data.name !== "string") {
-        const err23 = { instancePath: instancePath + "/name", schemaPath: "#/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err23];
-        } else {
-          vErrors.push(err23);
-        }
-        errors++;
-      }
-    }
-    if (data.shiki !== undefined) {
-      let data5 = data.shiki;
-      if (typeof data5 !== "string") {
-        const err24 = { instancePath: instancePath + "/shiki", schemaPath: "#/properties/shiki/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err24];
-        } else {
-          vErrors.push(err24);
-        }
-        errors++;
-      }
-      if (!(data5 === "auto" || data5 === "andromeeda" || data5 === "aurora-x" || data5 === "ayu-dark" || data5 === "ayu-light" || data5 === "ayu-mirage" || data5 === "catppuccin-frappe" || data5 === "catppuccin-latte" || data5 === "catppuccin-macchiato" || data5 === "catppuccin-mocha" || data5 === "dark-plus" || data5 === "dracula" || data5 === "dracula-soft" || data5 === "everforest-dark" || data5 === "everforest-light" || data5 === "github-dark" || data5 === "github-dark-default" || data5 === "github-dark-dimmed" || data5 === "github-dark-high-contrast" || data5 === "github-light" || data5 === "github-light-default" || data5 === "github-light-high-contrast" || data5 === "gruvbox-dark-hard" || data5 === "gruvbox-dark-medium" || data5 === "gruvbox-dark-soft" || data5 === "gruvbox-light-hard" || data5 === "gruvbox-light-medium" || data5 === "gruvbox-light-soft" || data5 === "horizon" || data5 === "horizon-bright" || data5 === "houston" || data5 === "kanagawa-dragon" || data5 === "kanagawa-lotus" || data5 === "kanagawa-wave" || data5 === "laserwave" || data5 === "light-plus" || data5 === "material-theme" || data5 === "material-theme-darker" || data5 === "material-theme-lighter" || data5 === "material-theme-ocean" || data5 === "material-theme-palenight" || data5 === "min-dark" || data5 === "min-light" || data5 === "monokai" || data5 === "night-owl" || data5 === "night-owl-light" || data5 === "nord" || data5 === "one-dark-pro" || data5 === "one-light" || data5 === "plastic" || data5 === "poimandres" || data5 === "red" || data5 === "rose-pine" || data5 === "rose-pine-dawn" || data5 === "rose-pine-moon" || data5 === "slack-dark" || data5 === "slack-ochin" || data5 === "snazzy-light" || data5 === "solarized-dark" || data5 === "solarized-light" || data5 === "synthwave-84" || data5 === "tokyo-night" || data5 === "vesper" || data5 === "vitesse-black" || data5 === "vitesse-dark" || data5 === "vitesse-light")) {
-        const err25 = { instancePath: instancePath + "/shiki", schemaPath: "#/properties/shiki/enum", keyword: "enum", params: { allowedValues: schema6.properties.shiki.enum }, message: "must be equal to one of the allowed values" };
-        if (vErrors === null) {
-          vErrors = [err25];
-        } else {
-          vErrors.push(err25);
-        }
-        errors++;
-      }
-    }
-    if (data.fg !== undefined) {
-      if (!validate23(data.fg, { instancePath: instancePath + "/fg", parentData: data, parentDataProperty: "fg", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
-        errors = vErrors.length;
-      }
-    }
     if (data.bg !== undefined) {
-      if (!validate23(data.bg, { instancePath: instancePath + "/bg", parentData: data, parentDataProperty: "bg", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.primary !== undefined) {
-      if (!validate23(data.primary, { instancePath: instancePath + "/primary", parentData: data, parentDataProperty: "primary", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.accent !== undefined) {
-      if (!validate23(data.accent, { instancePath: instancePath + "/accent", parentData: data, parentDataProperty: "accent", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.muted !== undefined) {
-      if (!validate22(data.muted, { instancePath: instancePath + "/muted", parentData: data, parentDataProperty: "muted", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.quiet !== undefined) {
-      if (!validate22(data.quiet, { instancePath: instancePath + "/quiet", parentData: data, parentDataProperty: "quiet", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.comment !== undefined) {
-      if (!validate22(data.comment, { instancePath: instancePath + "/comment", parentData: data, parentDataProperty: "comment", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.title !== undefined) {
-      if (!validate22(data.title, { instancePath: instancePath + "/title", parentData: data, parentDataProperty: "title", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.delim !== undefined) {
-      if (!validate22(data.delim, { instancePath: instancePath + "/delim", parentData: data, parentDataProperty: "delim", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.ui !== undefined) {
-      if (!validate22(data.ui, { instancePath: instancePath + "/ui", parentData: data, parentDataProperty: "ui", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.overlay !== undefined) {
-      if (!validate22(data.overlay, { instancePath: instancePath + "/overlay", parentData: data, parentDataProperty: "overlay", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.highlight !== undefined) {
-      if (!validate22(data.highlight, { instancePath: instancePath + "/highlight", parentData: data, parentDataProperty: "highlight", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.divider !== undefined) {
-      if (!validate22(data.divider, { instancePath: instancePath + "/divider", parentData: data, parentDataProperty: "divider", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.selection !== undefined) {
-      if (!validate22(data.selection, { instancePath: instancePath + "/selection", parentData: data, parentDataProperty: "selection", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.gutter !== undefined) {
-      if (!validate22(data.gutter, { instancePath: instancePath + "/gutter", parentData: data, parentDataProperty: "gutter", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.prompt !== undefined) {
-      if (!validate22(data.prompt, { instancePath: instancePath + "/prompt", parentData: data, parentDataProperty: "prompt", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+      if (!validate31(data.bg, { instancePath: instancePath + "/bg", parentData: data, parentDataProperty: "bg", rootData })) {
+        vErrors = vErrors === null ? validate31.errors : vErrors.concat(validate31.errors);
         errors = vErrors.length;
       }
     }
@@ -613,81 +593,98 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         errors = vErrors.length;
       }
     }
-    if (data.success !== undefined) {
-      if (!validate23(data.success, { instancePath: instancePath + "/success", parentData: data, parentDataProperty: "success", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+    if (data.comment !== undefined) {
+      if (!validate22(data.comment, { instancePath: instancePath + "/comment", parentData: data, parentDataProperty: "comment", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.info !== undefined) {
-      if (!validate23(data.info, { instancePath: instancePath + "/info", parentData: data, parentDataProperty: "info", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+    if (data.delim !== undefined) {
+      if (!validate22(data.delim, { instancePath: instancePath + "/delim", parentData: data, parentDataProperty: "delim", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.warn !== undefined) {
-      if (!validate23(data.warn, { instancePath: instancePath + "/warn", parentData: data, parentDataProperty: "warn", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+    if (data.diffAdd !== undefined) {
+      if (!validate22(data.diffAdd, { instancePath: instancePath + "/diffAdd", parentData: data, parentDataProperty: "diffAdd", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.diffAddNum !== undefined) {
+      if (!validate22(data.diffAddNum, { instancePath: instancePath + "/diffAddNum", parentData: data, parentDataProperty: "diffAddNum", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.diffContext !== undefined) {
+      if (!validate22(data.diffContext, { instancePath: instancePath + "/diffContext", parentData: data, parentDataProperty: "diffContext", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.diffContextNum !== undefined) {
+      if (!validate22(data.diffContextNum, { instancePath: instancePath + "/diffContextNum", parentData: data, parentDataProperty: "diffContextNum", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.diffDel !== undefined) {
+      if (!validate22(data.diffDel, { instancePath: instancePath + "/diffDel", parentData: data, parentDataProperty: "diffDel", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.diffDelNum !== undefined) {
+      if (!validate22(data.diffDelNum, { instancePath: instancePath + "/diffDelNum", parentData: data, parentDataProperty: "diffDelNum", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.divider !== undefined) {
+      if (!validate22(data.divider, { instancePath: instancePath + "/divider", parentData: data, parentDataProperty: "divider", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
     if (data.error !== undefined) {
-      if (!validate23(data.error, { instancePath: instancePath + "/error", parentData: data, parentDataProperty: "error", rootData })) {
-        vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+      if (!validate24(data.error, { instancePath: instancePath + "/error", parentData: data, parentDataProperty: "error", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
         errors = vErrors.length;
       }
     }
-    if (data.syntaxBoolean !== undefined) {
-      if (!validate22(data.syntaxBoolean, { instancePath: instancePath + "/syntaxBoolean", parentData: data, parentDataProperty: "syntaxBoolean", rootData })) {
+    if (data.fg !== undefined) {
+      if (!validate31(data.fg, { instancePath: instancePath + "/fg", parentData: data, parentDataProperty: "fg", rootData })) {
+        vErrors = vErrors === null ? validate31.errors : vErrors.concat(validate31.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.gutter !== undefined) {
+      if (!validate22(data.gutter, { instancePath: instancePath + "/gutter", parentData: data, parentDataProperty: "gutter", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.syntaxBracket !== undefined) {
-      if (!validate22(data.syntaxBracket, { instancePath: instancePath + "/syntaxBracket", parentData: data, parentDataProperty: "syntaxBracket", rootData })) {
+    if (data.highlight !== undefined) {
+      if (!validate22(data.highlight, { instancePath: instancePath + "/highlight", parentData: data, parentDataProperty: "highlight", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.syntaxConstant !== undefined) {
-      if (!validate22(data.syntaxConstant, { instancePath: instancePath + "/syntaxConstant", parentData: data, parentDataProperty: "syntaxConstant", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
+    if (data.id !== undefined) {
+      if (typeof data.id !== "string") {
+        const err22 = { instancePath: instancePath + "/id", schemaPath: "#/properties/id/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err22];
+        } else {
+          vErrors.push(err22);
+        }
+        errors++;
       }
     }
-    if (data.syntaxDelimiter !== undefined) {
-      if (!validate22(data.syntaxDelimiter, { instancePath: instancePath + "/syntaxDelimiter", parentData: data, parentDataProperty: "syntaxDelimiter", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.syntaxField !== undefined) {
-      if (!validate22(data.syntaxField, { instancePath: instancePath + "/syntaxField", parentData: data, parentDataProperty: "syntaxField", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.syntaxFunction !== undefined) {
-      if (!validate22(data.syntaxFunction, { instancePath: instancePath + "/syntaxFunction", parentData: data, parentDataProperty: "syntaxFunction", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.syntaxNumber !== undefined) {
-      if (!validate22(data.syntaxNumber, { instancePath: instancePath + "/syntaxNumber", parentData: data, parentDataProperty: "syntaxNumber", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.syntaxSpecial !== undefined) {
-      if (!validate22(data.syntaxSpecial, { instancePath: instancePath + "/syntaxSpecial", parentData: data, parentDataProperty: "syntaxSpecial", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.syntaxString !== undefined) {
-      if (!validate22(data.syntaxString, { instancePath: instancePath + "/syntaxString", parentData: data, parentDataProperty: "syntaxString", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+    if (data.info !== undefined) {
+      if (!validate24(data.info, { instancePath: instancePath + "/info", parentData: data, parentDataProperty: "info", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
         errors = vErrors.length;
       }
     }
@@ -711,6 +708,12 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
     }
     if (data.mdCodeBlockTitle !== undefined) {
       if (!validate22(data.mdCodeBlockTitle, { instancePath: instancePath + "/mdCodeBlockTitle", parentData: data, parentDataProperty: "mdCodeBlockTitle", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.mdHeading !== undefined) {
+      if (!validate22(data.mdHeading, { instancePath: instancePath + "/mdHeading", parentData: data, parentDataProperty: "mdHeading", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
@@ -747,12 +750,6 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
     }
     if (data.mdHeading6 !== undefined) {
       if (!validate22(data.mdHeading6, { instancePath: instancePath + "/mdHeading6", parentData: data, parentDataProperty: "mdHeading6", rootData })) {
-        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.mdHeading !== undefined) {
-      if (!validate22(data.mdHeading, { instancePath: instancePath + "/mdHeading", parentData: data, parentDataProperty: "mdHeading", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
@@ -817,8 +814,25 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         errors = vErrors.length;
       }
     }
-    if (data.optionName !== undefined) {
-      if (!validate22(data.optionName, { instancePath: instancePath + "/optionName", parentData: data, parentDataProperty: "optionName", rootData })) {
+    if (data.muted !== undefined) {
+      if (!validate22(data.muted, { instancePath: instancePath + "/muted", parentData: data, parentDataProperty: "muted", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.name !== undefined) {
+      if (typeof data.name !== "string") {
+        const err23 = { instancePath: instancePath + "/name", schemaPath: "#/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err23];
+        } else {
+          vErrors.push(err23);
+        }
+        errors++;
+      }
+    }
+    if (data.optionActive !== undefined) {
+      if (!validate22(data.optionActive, { instancePath: instancePath + "/optionActive", parentData: data, parentDataProperty: "optionActive", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
@@ -829,54 +843,132 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
         errors = vErrors.length;
       }
     }
-    if (data.optionActive !== undefined) {
-      if (!validate22(data.optionActive, { instancePath: instancePath + "/optionActive", parentData: data, parentDataProperty: "optionActive", rootData })) {
+    if (data.optionName !== undefined) {
+      if (!validate22(data.optionName, { instancePath: instancePath + "/optionName", parentData: data, parentDataProperty: "optionName", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffAdd !== undefined) {
-      if (!validate22(data.diffAdd, { instancePath: instancePath + "/diffAdd", parentData: data, parentDataProperty: "diffAdd", rootData })) {
+    if (data.overlay !== undefined) {
+      if (!validate22(data.overlay, { instancePath: instancePath + "/overlay", parentData: data, parentDataProperty: "overlay", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffDel !== undefined) {
-      if (!validate22(data.diffDel, { instancePath: instancePath + "/diffDel", parentData: data, parentDataProperty: "diffDel", rootData })) {
+    if (data.primary !== undefined) {
+      if (!validate24(data.primary, { instancePath: instancePath + "/primary", parentData: data, parentDataProperty: "primary", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.prompt !== undefined) {
+      if (!validate22(data.prompt, { instancePath: instancePath + "/prompt", parentData: data, parentDataProperty: "prompt", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffContext !== undefined) {
-      if (!validate22(data.diffContext, { instancePath: instancePath + "/diffContext", parentData: data, parentDataProperty: "diffContext", rootData })) {
+    if (data.quiet !== undefined) {
+      if (!validate22(data.quiet, { instancePath: instancePath + "/quiet", parentData: data, parentDataProperty: "quiet", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffAddNum !== undefined) {
-      if (!validate22(data.diffAddNum, { instancePath: instancePath + "/diffAddNum", parentData: data, parentDataProperty: "diffAddNum", rootData })) {
+    if (data.selection !== undefined) {
+      if (!validate22(data.selection, { instancePath: instancePath + "/selection", parentData: data, parentDataProperty: "selection", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffDelNum !== undefined) {
-      if (!validate22(data.diffDelNum, { instancePath: instancePath + "/diffDelNum", parentData: data, parentDataProperty: "diffDelNum", rootData })) {
+    if (data.shiki !== undefined) {
+      if (!validate81(data.shiki, { instancePath: instancePath + "/shiki", parentData: data, parentDataProperty: "shiki", rootData })) {
+        vErrors = vErrors === null ? validate81.errors : vErrors.concat(validate81.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.success !== undefined) {
+      if (!validate24(data.success, { instancePath: instancePath + "/success", parentData: data, parentDataProperty: "success", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxBoolean !== undefined) {
+      if (!validate22(data.syntaxBoolean, { instancePath: instancePath + "/syntaxBoolean", parentData: data, parentDataProperty: "syntaxBoolean", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
         errors = vErrors.length;
       }
     }
-    if (data.diffContextNum !== undefined) {
-      if (!validate22(data.diffContextNum, { instancePath: instancePath + "/diffContextNum", parentData: data, parentDataProperty: "diffContextNum", rootData })) {
+    if (data.syntaxBracket !== undefined) {
+      if (!validate22(data.syntaxBracket, { instancePath: instancePath + "/syntaxBracket", parentData: data, parentDataProperty: "syntaxBracket", rootData })) {
         vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxConstant !== undefined) {
+      if (!validate22(data.syntaxConstant, { instancePath: instancePath + "/syntaxConstant", parentData: data, parentDataProperty: "syntaxConstant", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxDelimiter !== undefined) {
+      if (!validate22(data.syntaxDelimiter, { instancePath: instancePath + "/syntaxDelimiter", parentData: data, parentDataProperty: "syntaxDelimiter", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxField !== undefined) {
+      if (!validate22(data.syntaxField, { instancePath: instancePath + "/syntaxField", parentData: data, parentDataProperty: "syntaxField", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxFunction !== undefined) {
+      if (!validate22(data.syntaxFunction, { instancePath: instancePath + "/syntaxFunction", parentData: data, parentDataProperty: "syntaxFunction", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxNumber !== undefined) {
+      if (!validate22(data.syntaxNumber, { instancePath: instancePath + "/syntaxNumber", parentData: data, parentDataProperty: "syntaxNumber", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxSpecial !== undefined) {
+      if (!validate22(data.syntaxSpecial, { instancePath: instancePath + "/syntaxSpecial", parentData: data, parentDataProperty: "syntaxSpecial", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.syntaxString !== undefined) {
+      if (!validate22(data.syntaxString, { instancePath: instancePath + "/syntaxString", parentData: data, parentDataProperty: "syntaxString", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.title !== undefined) {
+      if (!validate22(data.title, { instancePath: instancePath + "/title", parentData: data, parentDataProperty: "title", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.ui !== undefined) {
+      if (!validate22(data.ui, { instancePath: instancePath + "/ui", parentData: data, parentDataProperty: "ui", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.warn !== undefined) {
+      if (!validate24(data.warn, { instancePath: instancePath + "/warn", parentData: data, parentDataProperty: "warn", rootData })) {
+        vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
         errors = vErrors.length;
       }
     }
   } else {
-    const err26 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    const err24 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
     if (vErrors === null) {
-      vErrors = [err26];
+      vErrors = [err24];
     } else {
-      vErrors.push(err26);
+      vErrors.push(err24);
     }
     errors++;
   }

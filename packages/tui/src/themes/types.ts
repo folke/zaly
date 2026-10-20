@@ -1,5 +1,14 @@
+import type { Simplify } from "@zaly/shared"
 import type { ShikiSelection } from "../shiki/types.ts"
-import type { AnyStyle, Color } from "../style/types.ts"
+import type { AnsiStyle, Color } from "../style/types.ts"
+
+export type ThemeStyle<Ansi extends boolean = true> = Simplify<
+  Omit<AnsiStyle, "fg" | "bg"> & {
+    fg?: Color<Ansi>
+    bg?: Color<Ansi>
+  }
+>
+export type ThemeValue<Ansi extends boolean = true> = ThemeStyle<Ansi> | Color<Ansi>
 
 /**
  * A theme is a flat record mapping semantic slots to `ThemeValue`s. Callers
@@ -17,7 +26,7 @@ import type { AnyStyle, Color } from "../style/types.ts"
  * **Surface tiers**: `ui` → `subtle` → `overlay` (bottom → top).
  * `highlight` is orthogonal — a tinted accent surface, not a tier.
  */
-export type Theme<Ansi extends boolean = true, T = AnyStyle<Ansi>> = {
+export type Theme<Ansi extends boolean = true, T = ThemeValue<Ansi>> = {
   id: string
   /** Dark/light appearance, inferred from bg when omitted in a theme file. */
   appearance: "dark" | "light"

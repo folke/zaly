@@ -17,6 +17,14 @@ test("schema types describe enums, arrays, alternatives, and references", () => 
   expect(schemaType({ anyOf: [{ type: "string" }, { type: "boolean" }] })).toBe("string | boolean")
   expect(schemaType({ $ref: "#/components/schemas/ResourceFilter" })).toBe("ResourceFilter")
   expect(schemaType({})).toBe("unknown")
+  expect(
+    schemaType(
+      { anyOf: [{ const: "auto" }, { $ref: "#/definitions/Theme" }] },
+      {
+        Theme: { enum: ["dark", "light"] },
+      }
+    )
+  ).toBe('"auto" | "dark" | "light"')
 })
 
 test("settings include nested defaults, resolved resource filters, and permission rules", () => {
@@ -27,6 +35,8 @@ test("settings include nested defaults, resolved resource filters, and permissio
   expect(page).toContain("### readonly")
   expect(page).toContain("bash(sudo:*)")
   expect(page).toContain("runtime-dependent")
+  expect(page).toContain('"catppuccin-mocha"')
+  expect(page).not.toContain("structure-")
 })
 
 test("reference generation reads live CLI, action, keybinding, and tool definitions deterministically", async () => {

@@ -89,7 +89,7 @@ Theme JSON colors accept:
 - Hex literals: `"#82aaff"`, including native alpha forms such as `"#82aaff80"`.
 - Slot refs: `"primary"`, `"error"`, …
 - Lightness adjustments on hex colors or slot refs: `"primary+5"`, `"bg-3"`.
-- `"inherit"` to leave the parent color unchanged.
+- `"inherit"` to leave the parent color unchanged, except for the theme's base `fg` and `bg`.
 
 ANSI names such as `red` and `brightBlue` are supported by runtime styles and the
 system theme's terminal fallback, but are not accepted in theme JSON.
@@ -115,7 +115,7 @@ Themes live as JSON so they're portable — users can drop a file into a config 
 1. Copy a bundled JSON (`assets/themes/*.json`) as a starting point.
 2. Edit slot values. The standalone validator checks custom JSON at load time and reports invalid fields without modifying the input.
 3. Load via `loadTheme("my-theme", { dirs: ["./themes"] })` (dir search) or `loadTheme({ path: "/path/to/my-theme.json" })` (direct path).
-4. Edit `src/schemas/tpl/theme.ts` for schema changes and run `bun z build`. This generates `assets/schemas/theme.schema.json` and `src/schemas/gen/theme.ts`; the typed runtime wrapper lives in `src/schemas/theme.ts`.
+4. The schema is generated from `CustomTheme` in `src/themes/default.ts` and its referenced types. Color constraints and plugin-slot rules are enriched by `packages/dev/src/schemas-theme.ts`. Run `bun z build` to regenerate `assets/schemas/theme.schema.json` and `src/schemas/gen/theme.ts`; the typed runtime wrapper lives in `src/schemas/theme.ts`.
 
 > [!TIP]
 > Contributing a new theme upstream? Drop the JSON into `assets/themes/`, run `bun scripts/gen-themes.ts` to regenerate the bundled loader map (`src/themes/*.ts` + `src/themes/index.ts`), and it becomes a first-class built-in with its own subpath export and `ThemeName` entry.

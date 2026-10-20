@@ -16,11 +16,17 @@ test("config accepts partial settings and normalizes keymaps without mutating th
   expect(validateConfig({})).toEqual({ keymap: {} })
 })
 
+test("config preserves nested partials and plugin-defined tool names", () => {
+  const input = { ui: { collapsedTools: ["plugin-tool"] }, skills: {}, resources: { plugin: {} } }
+  expect(validateConfig(input)).toEqual({ ...input, keymap: {} })
+})
+
 test("config accepts exactly auto and the current bundled Shiki themes", async () => {
   const themes = await shikiThemes()
-  expect(configSchema.properties.ui.properties.shiki.enum).toEqual(
-    ["auto", ...themes.map(({ id }) => id)].toSorted()
+  expect(configSchema.definitions.ShikiTheme.enum.toSorted()).toEqual(
+    themes.map(({ id }) => id).toSorted()
   )
+  expect(validateConfig({ ui: { shiki: "auto" } }).ui?.shiki).toBe("auto")
   for (const { id } of themes) {
     expect(validateConfig({ ui: { shiki: id } }).ui?.shiki).toBe(id)
   }
@@ -29,6 +35,7 @@ test("config accepts exactly auto and the current bundled Shiki themes", async (
 test.each([
   { unknown: true },
   { ui: { unknown: true } },
+  { ui: { shiki: "not-a-theme" } },
   { keymap: { action: [42] } },
   { permissions: { preset: "invalid" } },
   { resources: { plugin: { include: [false] } } },
@@ -66,6 +73,8 @@ test.each([
   { local: { quirks: { maxTokensField: "invalid" } } },
   { local: { oauth: {} } },
   { local: { apiKey: () => "token" } },
+  { local: { models: () => [] } },
+  { local: { headers: { Authorization: 42 } } },
 ])("models reject malformed overrides and runtime-only options: %j", (input) => {
   expect(() => validateModels(input)).toThrow(/Invalid models/)
 })

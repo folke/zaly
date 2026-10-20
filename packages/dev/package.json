@@ -26,6 +26,7 @@
   "devDependencies": {
     "ajv": "^8.20.0",
     "pkg-types": "^2.3.3",
-    "std-env": "^4.3.0"
+    "std-env": "^4.3.0",
+    "ts-json-schema-generator": "3.0.0-native.6"
   }
 }

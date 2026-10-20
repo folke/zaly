@@ -1,48 +1,32 @@
 {
-  "type": "object",
-  "required": [
-    "id",
-    "fg",
-    "bg",
-    "primary",
-    "accent",
-    "selection",
-    "success",
-    "info",
-    "warn",
-    "error",
-    "syntaxBoolean",
-    "syntaxConstant",
-    "syntaxField",
-    "syntaxFunction",
-    "syntaxNumber",
-    "syntaxSpecial",
-    "syntaxString",
-    "diffAdd",
-    "diffDel"
-  ],
-  "properties": {
-    "$schema": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": {
+    "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+  },
+  "definitions": {
+    "Color<false,false>": {
+      "description": "Hex color or theme slot. Hex colors and theme slots may have an integer +/- lightness adjustment.",
+      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$",
       "type": "string"
     },
-    "appearance": {
-      "type": "string",
-      "description": "Dark/light appearance. Inferred from the background when omitted.",
-      "enum": [
-        "dark",
-        "light"
+    "Color<false>": {
+      "description": "Hex color or theme slot, or inherit. Hex colors and theme slots may have an integer +/- lightness adjustment.",
+      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$",
+      "type": "string"
+    },
+    "ShikiSelection": {
+      "anyOf": [
+        {
+          "const": "auto",
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/ShikiTheme"
+        }
       ]
     },
-    "id": {
-      "type": "string"
-    },
-    "name": {
-      "type": "string"
-    },
-    "shiki": {
-      "type": "string",
+    "ShikiTheme": {
       "enum": [
-        "auto",
         "andromeeda",
         "aurora-x",
         "ayu-dark",
@@ -108,209 +92,15 @@
         "vitesse-black",
         "vitesse-dark",
         "vitesse-light"
-      ]
-    },
-    "fg": {
-      "$ref": "#/$defs/Color"
-    },
-    "bg": {
-      "$ref": "#/$defs/Color"
-    },
-    "primary": {
-      "$ref": "#/$defs/Color"
-    },
-    "accent": {
-      "$ref": "#/$defs/Color"
-    },
-    "muted": {
-      "$ref": "#/$defs/Value"
-    },
-    "quiet": {
-      "$ref": "#/$defs/Value"
-    },
-    "comment": {
-      "$ref": "#/$defs/Value"
-    },
-    "title": {
-      "$ref": "#/$defs/Value"
-    },
-    "delim": {
-      "$ref": "#/$defs/Value"
-    },
-    "ui": {
-      "$ref": "#/$defs/Value"
-    },
-    "overlay": {
-      "$ref": "#/$defs/Value"
-    },
-    "highlight": {
-      "$ref": "#/$defs/Value"
-    },
-    "divider": {
-      "$ref": "#/$defs/Value"
-    },
-    "selection": {
-      "$ref": "#/$defs/Value"
-    },
-    "gutter": {
-      "$ref": "#/$defs/Value"
-    },
-    "prompt": {
-      "$ref": "#/$defs/Value"
-    },
-    "border": {
-      "$ref": "#/$defs/Value"
-    },
-    "borderTitle": {
-      "$ref": "#/$defs/Value"
-    },
-    "code": {
-      "$ref": "#/$defs/Value"
-    },
-    "codeTitle": {
-      "$ref": "#/$defs/Value"
-    },
-    "success": {
-      "$ref": "#/$defs/Color"
-    },
-    "info": {
-      "$ref": "#/$defs/Color"
-    },
-    "warn": {
-      "$ref": "#/$defs/Color"
-    },
-    "error": {
-      "$ref": "#/$defs/Color"
-    },
-    "syntaxBoolean": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxBracket": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxConstant": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxDelimiter": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxField": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxFunction": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxNumber": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxSpecial": {
-      "$ref": "#/$defs/Value"
-    },
-    "syntaxString": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdBold": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdCode": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdCodeBlock": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdCodeBlockTitle": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading1": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading2": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading3": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading4": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading5": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading6": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHeading": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdHr": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdItalic": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdLink": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdListBullet": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdListChecked": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdListUnchecked": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdQuote": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdStrikethrough": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdTable": {
-      "$ref": "#/$defs/Value"
-    },
-    "mdTableHeader": {
-      "$ref": "#/$defs/Value"
-    },
-    "optionName": {
-      "$ref": "#/$defs/Value"
-    },
-    "optionDesc": {
-      "$ref": "#/$defs/Value"
-    },
-    "optionActive": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffAdd": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffDel": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffContext": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffAddNum": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffDelNum": {
-      "$ref": "#/$defs/Value"
-    },
-    "diffContextNum": {
-      "$ref": "#/$defs/Value"
-    }
-  },
-  "$defs": {
-    "Color": {
-      "type": "string",
-      "description": "Hex color, theme slot, or inherit. Hex colors and theme slots may have an integer +/- lightness adjustment.",
-      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|fg|bg|primary|accent|muted|quiet|comment|title|delim|ui|overlay|highlight|divider|selection|gutter|prompt|border|borderTitle|code|codeTitle|success|info|warn|error|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHeading|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|optionName|optionDesc|optionActive|diffAdd|diffDel|diffContext|diffAddNum|diffDelNum|diffContextNum)(?:[+-][0-9]+)?|inherit)$"
-    },
-    "Style": {
-      "type": "object",
+      ],
+      "type": "string"
+    },
+    "ThemeStyle<false>": {
+      "additionalProperties": false,
+      "description": "Simplify a type by flattening its properties.",
       "properties": {
         "bg": {
-          "$ref": "#/$defs/Color"
+          "$ref": "#/definitions/Color%3Cfalse%3E"
         },
         "bold": {
           "type": "boolean"
@@ -319,7 +109,7 @@
           "type": "boolean"
         },
         "fg": {
-          "$ref": "#/$defs/Color"
+          "$ref": "#/definitions/Color%3Cfalse%3E"
         },
         "inverse": {
           "type": "boolean"
@@ -334,21 +124,270 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": false
+      "type": "object"
     },
-    "Value": {
+    "ThemeValue<false>": {
       "anyOf": [
         {
-          "$ref": "#/$defs/Color"
+          "$ref": "#/definitions/ThemeStyle%3Cfalse%3E"
         },
         {
-          "$ref": "#/$defs/Style"
+          "$ref": "#/definitions/Color%3Cfalse%3E"
         }
       ]
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": {
-    "$ref": "#/$defs/Value"
-  }
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "accent": {
+      "$ref": "#/definitions/Color%3Cfalse%3E",
+      "description": "Secondary accent — distinct hue from `primary`."
+    },
+    "appearance": {
+      "description": "Dark/light appearance, inferred from bg when omitted in a theme file.",
+      "enum": [
+        "dark",
+        "light"
+      ],
+      "type": "string"
+    },
+    "bg": {
+      "$ref": "#/definitions/Color%3Cfalse%2Cfalse%3E"
+    },
+    "border": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Structural border around panels, boxes, tables."
+    },
+    "borderTitle": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Title text inside a bordered region (slightly stronger than `border`)."
+    },
+    "code": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Code-block surface (bg + optional fg). Default for `mdCodeBlock`."
+    },
+    "codeTitle": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Title above a code block (e.g. file path)."
+    },
+    "comment": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Editor-comment tier — soft, often tinted. Used for code annotations, line-number labels, italic quotes."
+    },
+    "delim": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Structural separators — borders, dividers, gutter lines."
+    },
+    "diffAdd": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "diffAddNum": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "diffContext": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "diffContextNum": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "diffDel": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "diffDelNum": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "divider": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Separators between messages or sections."
+    },
+    "error": {
+      "$ref": "#/definitions/Color%3Cfalse%3E"
+    },
+    "fg": {
+      "$ref": "#/definitions/Color%3Cfalse%2Cfalse%3E"
+    },
+    "gutter": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Line-number column, diff markers."
+    },
+    "highlight": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Tinted region for emphasized content within the stream — user bubble bg, focused row, callout. Distinct from `code`, which is reserved for code-block bg."
+    },
+    "id": {
+      "type": "string"
+    },
+    "info": {
+      "$ref": "#/definitions/Color%3Cfalse%3E"
+    },
+    "mdBold": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdCode": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdCodeBlock": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdCodeBlockTitle": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading1": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading2": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading3": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading4": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading5": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHeading6": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdHr": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdItalic": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdLink": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdListBullet": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdListChecked": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdListUnchecked": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdQuote": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdStrikethrough": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdTable": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdTableHeader": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "muted": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Secondary text — first tier of the quietness ladder (`muted` → `quiet` → `comment`). Slightly faded but readable; good for timestamps, captions, less-prominent labels."
+    },
+    "name": {
+      "type": "string"
+    },
+    "optionActive": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Currently-highlighted entry."
+    },
+    "optionDesc": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "optionName": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "overlay": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Popup / modal surface. One tier above `ui`."
+    },
+    "primary": {
+      "$ref": "#/definitions/Color%3Cfalse%3E",
+      "description": "Brand / primary accent."
+    },
+    "prompt": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Main input-prompt styling."
+    },
+    "quiet": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "De-emphasized but still readable. Reasoning / thinking text, secondary annotations, hints."
+    },
+    "selection": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Highlighted text in inputs, lists, autocomplete."
+    },
+    "shiki": {
+      "$ref": "#/definitions/ShikiSelection",
+      "description": "Matching bundled Shiki theme. Unset or \"auto\" generates highlighting from the syntax slots."
+    },
+    "success": {
+      "$ref": "#/definitions/Color%3Cfalse%3E"
+    },
+    "syntaxBoolean": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxBracket": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxConstant": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxDelimiter": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxField": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxFunction": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxNumber": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxSpecial": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "syntaxString": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "title": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Section / panel titles. Typically `bold` + a fg color."
+    },
+    "ui": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E",
+      "description": "Default UI surface. Bottom of the stack."
+    },
+    "warn": {
+      "$ref": "#/definitions/Color%3Cfalse%3E"
+    }
+  },
+  "required": [
+    "accent",
+    "bg",
+    "diffAdd",
+    "diffDel",
+    "error",
+    "fg",
+    "id",
+    "info",
+    "primary",
+    "selection",
+    "success",
+    "syntaxBoolean",
+    "syntaxConstant",
+    "syntaxField",
+    "syntaxFunction",
+    "syntaxNumber",
+    "syntaxSpecial",
+    "syntaxString",
+    "warn"
+  ],
+  "type": "object"
 }

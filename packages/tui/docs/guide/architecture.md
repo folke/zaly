@@ -80,7 +80,7 @@ src/
   logger/       Logger class, level definitions, inspect
   markdown/     renderMarkdown callbacks + pipeline (types, code, image, table)
   image/        Kitty / iTerm2 protocol + capability probe
-  schemas/      TypeBox definitions, standalone Ajv validators, typed APIs
+  schemas/      schema sources, standalone Ajv validators, typed APIs
   runtime/      Bun / Node runtime shims (#ansi, #md import maps)
 ```
 

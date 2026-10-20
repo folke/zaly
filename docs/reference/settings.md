@@ -13,8 +13,6 @@ Defaults for `system.npm` depend on the runtime: Bun under Bun, npm under Node. 
 
 **Type:** `object`
 
-Template commands.
-
 ## `commands.actionPrefix`
 
 **Type:** `string`
@@ -61,7 +59,7 @@ Existing messages up to this many tokens will be preserved in the context
 
 ## `compaction.reasoning`
 
-**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
+**Type:** `"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"`
 
 Reasoning effort for the compaction summary
 
@@ -96,10 +94,10 @@ Values:
       "type": "string"
     },
     {
-      "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "type": "array"
     }
   ]
 }
@@ -113,8 +111,7 @@ Values:
 
 **Type:** `number`
 
-How far above the target ratio to trigger a new masking pass.
-Defaults to 0.25 (25%).
+How far above the target ratio to trigger a new masking pass. Defaults to 0.25 (25%).
 
 **Default:** `0.25`
 
@@ -130,8 +127,7 @@ Whether to enable masking. Defaults to true.
 
 **Type:** `number`
 
-How many turns to keep in the tail of the conversation, regardless
-of score. Defaults to 20.
+How many turns to keep in the tail of the conversation, regardless of score. Defaults to 20.
 
 **Default:** `40`
 
@@ -139,10 +135,7 @@ of score. Defaults to 20.
 
 **Type:** `number`
 
-Don't mask tool-result parts whose original content is shorter
-than this (estimated tokens). Skips tiny "ok"-style success
-messages where the stub would be larger than the original.
-Doesn't apply to attachments (always worth masking).
+Don't mask tool-result parts whose original content is shorter than this (estimated tokens). Skips tiny "ok"-style success messages where the stub would be larger than the original. Doesn't apply to attachments (always worth masking).
 
 **Default:** `50`
 
@@ -178,7 +171,7 @@ Default model to use for the agent.
 
 ## `permissions.preset`
 
-**Type:** `"permissive" | "readonly" | "strict" | "yolo"`
+**Type:** `"strict" | "readonly" | "permissive" | "yolo"`
 
 Permissions preset to use. Defaults to "permissive".
 
@@ -190,7 +183,7 @@ Permissions preset to use. Defaults to "permissive".
 
 ## `reasoning`
 
-**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
+**Type:** `"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"`
 
 Default reasoning effort.
 
@@ -206,28 +199,28 @@ Values:
 
 ```json
 {
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
     "enabled": {
-      "type": "boolean",
-      "description": "Whether the plugin is enabled. Defaults to true."
+      "description": "Whether the plugin is enabled. Defaults to true.",
+      "type": "boolean"
     },
     "exclude": {
-      "type": "array",
+      "description": "When set, exclude the resources, matching these paths/globs from the plugin. Add a resource type to the exclude list to disable that resource type. For example, `[\"skills\"]` will disable all skills from the plugin. Exclude is applied after include.",
       "items": {
         "type": "string"
       },
-      "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
+      "type": "array"
     },
     "include": {
-      "type": "array",
+      "description": "When set, only include the resources, matching these paths/globs from the plugin.",
       "items": {
         "type": "string"
       },
-      "description": "When set, only include the resources, matching these paths/globs from the plugin."
+      "type": "array"
     }
   },
-  "additionalProperties": false
+  "type": "object"
 }
 ```
 
@@ -262,8 +255,6 @@ Allow skills to be used by the agent. Defaults to true.
 ## `system`
 
 **Type:** `object`
-
-System integrations and external commands used by zaly.
 
 ## `system.bash`
 
@@ -301,7 +292,7 @@ Package manager command used for npm packs.
 
 ## `ui.collapsedTools`
 
-**Type:** `Array<AnyTool>`
+**Type:** `Array<"agent_send" | "agent_spawn" | "bash" | "edit" | "fetch" | "find" | "grep" | "read" | "search" | "subagent" | "task_list" | "task_poll" | "task_stop" | "wakeup" | "write" | string>`
 
 Tools whose result body should be hidden in the UI.
 
@@ -331,7 +322,7 @@ Maximum number of visible rows in selection lists, like pickers and autocomplete
 
 ## `ui.mode`
 
-**Type:** `"fullscreen" | "scrollback"`
+**Type:** `"scrollback" | "fullscreen"`
 
 Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.
 
@@ -347,7 +338,7 @@ Whether to show the reasoning trace in the UI.
 
 ## `ui.sessionTree`
 
-**Type:** `Array<"assistant" | "reasoning" | "system" | "tools">`
+**Type:** `Array<"assistant" | "reasoning" | "tools" | "system">`
 
 What messages to show in the session tree. Defaults to assistant, reasoning, and tools.
 
@@ -355,7 +346,7 @@ What messages to show in the session tree. Defaults to assistant, reasoning, and
 
 ## `ui.shiki`
 
-**Type:** `"andromeeda" | "aurora-x" | "auto" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
+**Type:** `"auto" | "andromeeda" | "aurora-x" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
 
 Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.
 

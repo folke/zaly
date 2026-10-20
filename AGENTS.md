@@ -34,7 +34,7 @@ Project guidance for AI agents working in this repository.
 
 - Read before editing, match existing style, and keep changes focused. No new dependencies unless requested.
 - Prefer focused tests while iterating; run the full suite and both runtimes before final verification when practical.
-- Author TypeBox schemas in `src/schemas/tpl/<name>.ts`; `bun z build` generates `assets/schemas/<name>.schema.json` and standalone `src/schemas/gen/<name>.ts` validators. Typed runtime APIs live in `src/schemas/<name>.ts`. Never edit generated validators directly. Use `bun z build --no-schemas` to skip schema generation.
+- Schema entries live in `src/schemas/tpl/<name>.ts`: export a TypeBox `schema` or a type-driven `source` descriptor (`path`, `type`, optional `enrich`/`functions`). Theme, config, models, and state derive from their TypeScript input types through the pinned native generator; theme-specific semantic constraints live in `packages/dev/src/schemas-theme.ts`. `bun z build` generates `assets/schemas/<name>.schema.json` and standalone `src/schemas/gen/<name>.ts` validators. Typed runtime APIs live in `src/schemas/<name>.ts`. Never edit generated validators directly. Use `bun z build --no-schemas` to skip schema generation.
 - Review and include intentional generated changes. CI fails if builds/tests modify tracked files, including schemas and package build metadata.
 - For permission changes, check `permissions.test.ts`, `presets.test.ts`, and `permissions-wire.test.ts` in `packages/agent/test`.
 - For TUI rendering changes, check both `packages/tui/test/renderer` and `packages/tui/test/terminal`. Raw output intentionally includes ANSI control sequences.

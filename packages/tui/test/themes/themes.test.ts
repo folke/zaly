@@ -149,8 +149,10 @@ describe("validateTheme — positive cases", () => {
     expect(() => validateTheme({ primary: "#ff00ff" })).toThrow()
   })
 
-  test("inherit accepted", () => {
-    expect(() => validateOverrides({ fg: "inherit" })).not.toThrow()
+  test("inherit accepted in semantic colors and styles", () => {
+    expect(() =>
+      validateOverrides({ primary: "inherit", title: { fg: "inherit", bg: "inherit" } })
+    ).not.toThrow()
   })
 
   test("hex forms (#rgb / #rrggbb / #rrggbbaa) accepted", () => {
@@ -190,6 +192,10 @@ describe("validateTheme — positive cases", () => {
 })
 
 describe("validateTheme — negative cases", () => {
+  test.each(["fg", "bg"])("base %s cannot inherit", (key) => {
+    expect(() => validateOverrides({ [key]: "inherit" })).toThrow(new RegExp(`/${key}`))
+  })
+
   const ansiNames = [
     "black",
     "red",

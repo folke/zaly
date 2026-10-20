@@ -33,6 +33,7 @@ type Schema = {
   type?: string
   description?: string
   enum?: unknown[]
+  const?: unknown
   properties?: Record<string, Schema>
   items?: Schema
   required?: string[]
@@ -42,26 +43,42 @@ type Schema = {
   additionalProperties?: boolean | Schema
 }
 
-export function schemaType(schema: Schema): string {
+export function schemaType(
+  schema: Schema,
+  definitions: Record<string, Schema | undefined> = {}
+): string {
+  if ("const" in schema) return JSON.stringify(schema.const)
   if (schema.enum) return schema.enum.map((value) => JSON.stringify(value)).join(" | ")
-  if (schema.$ref) return schema.$ref.split("/").at(-1) ?? "object"
-  if (schema.type === "array") return `Array<${schemaType(schema.items ?? {})}>`
+  if (schema.$ref) {
+    const name = decodeURIComponent(schema.$ref.split("/").at(-1) ?? "object")
+      .replaceAll("~1", "/")
+      .replaceAll("~0", "~")
+    return definitions[name] ? schemaType(definitions[name], definitions) : name
+  }
+  if (schema.type === "array") return `Array<${schemaType(schema.items ?? {}, definitions)}>`
   const variants = schema.anyOf ?? schema.oneOf
-  if (variants) return variants.map(schemaType).join(" | ")
+  if (variants) return variants.map((variant) => schemaType(variant, definitions)).join(" | ")
   return schema.type ?? "unknown"
 }
 
 export function settingsReference(): string {
-  const definitions = ConfigSchema.$defs as Record<string, Schema>
+  const definitions = ConfigSchema.definitions as Record<string, Schema | undefined>
   const root = ConfigSchema as Schema
-  const deref = (schema: Schema) =>
-    schema.$ref ? (definitions[schema.$ref.split("/").at(-1)!] ?? schema) : schema
+  const deref = (schema: Schema): Schema => {
+    if (!schema.$ref) return schema
+    const name = decodeURIComponent(schema.$ref.split("/").at(-1)!)
+      .replaceAll("~1", "/")
+      .replaceAll("~0", "~")
+    const target = definitions[name]
+    if (!target) throw new Error(`Missing settings schema definition: ${name}`)
+    return { ...deref(target), ...schema, $ref: undefined }
+  }
   const lines: string[] = []
   const walk = (schema: Schema, path: string, defaults: unknown) => {
     const resolved = deref(schema)
     if (path) {
-      lines.push(`## ${code(path)}`, "", `**Type:** ${code(schemaType(resolved))}`, "")
-      if (schema.description) lines.push(prose(schema.description), "")
+      lines.push(`## ${code(path)}`, "", `**Type:** ${code(schemaType(resolved, definitions))}`, "")
+      if (resolved.description) lines.push(prose(resolved.description), "")
       if (defaults !== undefined && !resolved.properties)
         lines.push(
           `**Default:** ${path === "system.npm" ? "runtime-dependent" : code(JSON.stringify(defaults))}`,

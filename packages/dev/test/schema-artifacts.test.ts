@@ -51,7 +51,7 @@ test("published config and models schemas describe objects rather than tuples", 
   const config = readSchema("config", "config")
   const models = readSchema("config", "models")
   expect(config.type).toBe("object")
-  expect(config.properties.ui.properties.mode.enum).toEqual(["fullscreen", "scrollback"])
+  expect(config.properties.ui.properties.mode.enum.toSorted()).toEqual(["fullscreen", "scrollback"])
   expect(config.items).toBeUndefined()
   expect(models.type).toBe("object")
   expect(models.additionalProperties.type).toBe("object")

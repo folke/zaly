@@ -60,48 +60,23 @@ __export(exports_validator, {
 module.exports = __toCommonJS(exports_validator);
 var validate = validate21;
 var validator_default = validate21;
-var schema6 = { type: "object", properties: {}, $defs: { Cost: { type: "object", required: ["input", "output"], properties: { cache_read: { type: "number" }, cache_write: { type: "number" }, input: { type: "number" }, input_audio: { type: "number" }, output: { type: "number" }, output_audio: { type: "number" }, reasoning: { type: "number" } }, additionalProperties: false, description: `Per-tier cost. Values are USD per **million tokens** (models.dev
-convention). Optional fields are only present when the provider
-publishes distinct pricing for that axis.` }, Headers: { type: "object", properties: {}, additionalProperties: { type: "string" } }, Modality: { type: "string", description: "Input/output modality.", enum: ["audio", "image", "pdf", "text", "video"] }, ModelCost: { type: "object", required: ["input", "output"], properties: { cache_read: { type: "number" }, cache_write: { type: "number" }, context_over_200k: { $ref: "#/$defs/Cost" }, input: { type: "number" }, input_audio: { type: "number" }, output: { type: "number" }, output_audio: { type: "number" }, reasoning: { type: "number" } }, additionalProperties: false }, ModelInfo: { type: "object", required: ["id"], properties: { api: { type: "string", description: "adapter to use: anthropic, openai, openai-responses, etc." }, baseUrl: { type: "string", description: "Model specific baseUrl override *" }, contextSize: { type: "number", description: "Max context size for this model" }, cost: { $ref: "#/$defs/ModelCost", description: "Pricing per million tokens. `context_over_200k` is the higher\ntier some providers bill for prompts over 200K tokens." }, id: { type: "string" }, input: { type: "array", items: { $ref: "#/$defs/Modality" }, description: "Input modalities this model accepts" }, knowledge: { type: "string", description: "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`." }, last_updated: { type: "string", description: "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational." }, maxTokens: { type: "number", description: "Max output tokens this model accepts" }, name: { type: "string" }, open_weights: { type: "boolean", description: "Model weights are publicly released. Informational." }, output: { type: "array", items: { $ref: "#/$defs/Modality" } }, reasoning: { type: "boolean", description: "Emits reasoning / thinking tokens." }, release_date: { type: "string", description: "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational." }, tool_call: { type: "boolean", description: "Supports tool calling. Informational — we filter non-tool models\nout of the generated catalog, so at runtime this is effectively\nalways true. Optional to make `addModels` ergonomic." } }, additionalProperties: false, description: "Metadata for one model. One-to-one with the models.dev `Model`\nschema. Loaded lazily per-provider via `getModel(id)` or eagerly\nvia `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type):\nwhen `reasoning === false`, `cost.reasoning` is absent." }, Quirks: { type: "object", properties: { friendlyErrors: { type: "string", description: 'Friendly-error formatting for known endpoint shapes. `"codex"`\nparses ChatGPT usage-limit responses into a human message.', enum: ["codex"] }, maxTokensField: { type: "string", description: `Which wire field carries the max-output-tokens cap, per adapter
-family.
-
-Chat Completions:
-  - \`"max_tokens"\`            — legacy, most third-parties
-  - \`"max_completion_tokens"\` — newer OpenAI + reasoning models
-
-Responses:
-  - \`"max_output_tokens"\`     — public Responses API default
-
-All families:
-  - \`"none"\` — suppress entirely. Codex backend rejects any
-    max-tokens field with \`Unsupported parameter\`.`, enum: ["max_completion_tokens", "max_output_tokens", "max_tokens", "none"] }, reasoningField: { type: "string", description: 'Streaming delta field that carries reasoning tokens.\n- `"reasoning"` (OpenRouter, most third-parties)\n- `"reasoning_content"` (DeepSeek-ish)\n- `"reasoning_details"` (structured form on a few providers)\nIf unset, adapter accepts any of the three.', enum: ["reasoning", "reasoning_content", "reasoning_details"] }, reasoningLevels: { type: "array", items: { type: "string", enum: ["high", "low", "max", "medium", "minimal", "off", "xhigh"] }, description: 'Which effort levels this model actually accepts. Adapter clamps\nunsupported values to the nearest supported one — `"xhigh"` on\npre-GPT-5.4 → `"high"`, `"minimal"` on o1/o3 → `"low"`. Unset\nmeans any level is accepted.' }, responsesInclude: { type: "array", items: { type: "string" }, description: 'Extra fields to request on the response payload. Codex backend\nneeds `["reasoning.encrypted_content"]` so the model can round-trip\nreasoning across turns.' }, responsesReasoningSummary: { type: "string", description: 'Reasoning summary verbosity for the Responses API. Default\n`"auto"`. `"off"` disables the summary stream.', enum: ["auto", "concise", "detailed", "off"] }, responsesStore: { type: "boolean", description: "Whether the Responses API persists the response server-side\n(`store`). Default `true`. Codex backend requires `false`." }, responsesSystemAs: { type: "string", description: 'Where the durable system prompt lands.\n- `"input"` (default) — first item, `role: "system"` message.\n- `"instructions"` — top-level `instructions` field. Codex backend\n  rejects system messages in `input` and requires this.', enum: ["input", "instructions"] }, sessionHeader: { type: "string", description: "Header carrying the conversation identity. Independent of prompt caching." }, strictTools: { type: "boolean", description: "Model supports `strict: true` on tool definitions. Default false." }, temperatureSupported: { type: "boolean", description: "Model accepts `temperature`. Default derived from\n`ModelInfo.temperature` (catalog field); set here to override." }, thinkingFormat: { type: "string", description: 'How the provider expects reasoning / thinking requests shaped.\n- `"openai"`              → `reasoning_effort: "minimal|low|medium|high"`\n- `"openrouter"`          → `reasoning: { effort }`\n- `"deepseek"`            → `thinking: { type: "enabled" }` + `reasoning_effort`\n- `"zai"` / `"qwen"`      → top-level `enable_thinking: boolean`\n- `"qwen-chat-template"`  → `chat_template_kwargs.enable_thinking`', enum: ["deepseek", "openai", "openrouter", "qwen", "qwen-chat-template", "zai"] }, toolCallExtraContent: { type: "string" } }, additionalProperties: false, description: `Provider-specific wire quirks that "OpenAI compatibility" doesn't
-actually cover. Each field names an axis of variation with a
-typed union of known shapes; adapters read these and dispatch.
-
-Populated by \`getModel\` from \`assets/quirks.json\` — provider-level
-defaults overlaid with per-model overrides. Users can further
-override per-model via \`addModels\` or per-call via the request's
-\`quirks\` field.
-
-Add new axes here as they surface; start minimal.` } }, $schema: "http://json-schema.org/draft-07/schema#", additionalProperties: { type: "object", properties: { api: { type: "string", description: "Adapter family to use for this provider." }, apiKey: { type: "string" }, baseUrl: { type: "string", description: "Base URL for API requests *" }, doc: { type: "string", description: "Docs link for this provider's model list." }, env: { type: "array", items: { type: "string" }, description: "Env-var names consulted for credentials, in priority order.\nThe first element is the conventional one (`OPENAI_API_KEY`\netc.); downstream entries are fallbacks." }, headers: { $ref: "#/$defs/Headers" }, models: { type: "array", items: { $ref: "#/$defs/ModelInfo" } }, name: { type: "string", description: "Provider name *" }, quirks: { $ref: "#/$defs/Quirks" }, replaceModels: { type: "boolean" }, source: { type: "string", enum: ["builtin", "custom", "models.dev", "models.json"] } }, additionalProperties: false } };
+var schema6 = { $schema: "http://json-schema.org/draft-07/schema#", additionalProperties: { additionalProperties: false, properties: { api: { $ref: "#/definitions/AnyProvider", description: "Adapter family to use for this provider." }, apiKey: { type: "string" }, baseUrl: { description: "Base URL for API requests *", type: "string" }, doc: { description: "Docs link for this provider's model list.", type: "string" }, env: { description: "Env-var names consulted for credentials, in priority order. The first element is the conventional one (`OPENAI_API_KEY` etc.); downstream entries are fallbacks.", items: { type: "string" }, type: "array" }, headers: { additionalProperties: { type: "string" }, type: "object" }, models: { items: { $ref: "#/definitions/ModelInfo" }, type: "array" }, name: { description: "Provider name *", type: "string" }, quirks: { $ref: "#/definitions/Quirks" }, replaceModels: { type: "boolean" }, source: { enum: ["models.dev", "builtin", "custom", "models.json"], type: "string" } }, type: "object" }, definitions: { AnyProvider: { anyOf: [{ $ref: "#/definitions/BuiltinProvider" }, { type: "string" }] }, BuiltinProvider: { enum: ["anthropic", "openai", "openai-responses"], type: "string" }, Cost: { additionalProperties: false, description: "Per-tier cost. Values are USD per **million tokens** (models.dev convention). Optional fields are only present when the provider publishes distinct pricing for that axis.", properties: { cache_read: { type: "number" }, cache_write: { type: "number" }, input: { type: "number" }, input_audio: { type: "number" }, output: { type: "number" }, output_audio: { type: "number" }, reasoning: { type: "number" } }, required: ["input", "output"], type: "object" }, Modality: { description: "Input/output modality.", enum: ["text", "audio", "image", "video", "pdf"], type: "string" }, ModelInfo: { additionalProperties: false, description: "Metadata for one model. One-to-one with the models.dev `Model` schema. Loaded lazily per-provider via `getModel(id)` or eagerly via `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type): when `reasoning === false`, `cost.reasoning` is absent.", properties: { api: { $ref: "#/definitions/AnyProvider", description: "adapter to use: anthropic, openai, openai-responses, etc." }, baseUrl: { description: "Model specific baseUrl override *", type: "string" }, contextSize: { description: "Max context size for this model", type: "number" }, cost: { additionalProperties: false, description: "Pricing per million tokens. `context_over_200k` is the higher tier some providers bill for prompts over 200K tokens.", properties: { cache_read: { type: "number" }, cache_write: { type: "number" }, context_over_200k: { $ref: "#/definitions/Cost" }, input: { type: "number" }, input_audio: { type: "number" }, output: { type: "number" }, output_audio: { type: "number" }, reasoning: { type: "number" } }, required: ["input", "output"], type: "object" }, id: { type: "string" }, input: { description: "Input modalities this model accepts", items: { $ref: "#/definitions/Modality" }, type: "array" }, knowledge: { description: "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`.", type: "string" }, last_updated: { description: "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational.", type: "string" }, maxTokens: { description: "Max output tokens this model accepts", type: "number" }, name: { type: "string" }, open_weights: { description: "Model weights are publicly released. Informational.", type: "boolean" }, output: { items: { $ref: "#/definitions/Modality" }, type: "array" }, reasoning: { description: "Emits reasoning / thinking tokens.", type: "boolean" }, release_date: { description: "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational.", type: "string" }, tool_call: { description: "Supports tool calling. Informational — we filter non-tool models out of the generated catalog, so at runtime this is effectively always true. Optional to make `addModels` ergonomic.", type: "boolean" } }, required: ["id"], type: "object" }, Quirks: { additionalProperties: false, description: "Provider-specific wire quirks that \"OpenAI compatibility\" doesn't actually cover. Each field names an axis of variation with a typed union of known shapes; adapters read these and dispatch.\n\nPopulated by `getModel` from `assets/quirks.json` — provider-level defaults overlaid with per-model overrides. Users can further override per-model via `addModels` or per-call via the request's `quirks` field.\n\nAdd new axes here as they surface; start minimal.", properties: { friendlyErrors: { const: "codex", description: 'Friendly-error formatting for known endpoint shapes. `"codex"` parses ChatGPT usage-limit responses into a human message.', type: "string" }, maxTokensField: { description: 'Which wire field carries the max-output-tokens cap, per adapter family.\n\nChat Completions:   - `"max_tokens"`            — legacy, most third-parties   - `"max_completion_tokens"` — newer OpenAI + reasoning models\n\nResponses:   - `"max_output_tokens"`     — public Responses API default\n\nAll families:   - `"none"` — suppress entirely. Codex backend rejects any     max-tokens field with `Unsupported parameter`.', enum: ["max_tokens", "max_completion_tokens", "max_output_tokens", "none"], type: "string" }, reasoningField: { description: 'Streaming delta field that carries reasoning tokens.\n- `"reasoning"` (OpenRouter, most third-parties)\n- `"reasoning_content"` (DeepSeek-ish)\n- `"reasoning_details"` (structured form on a few providers) If unset, adapter accepts any of the three.', enum: ["reasoning", "reasoning_content", "reasoning_details"], type: "string" }, reasoningLevels: { description: 'Which effort levels this model actually accepts. Adapter clamps unsupported values to the nearest supported one — `"xhigh"` on pre-GPT-5.4 → `"high"`, `"minimal"` on o1/o3 → `"low"`. Unset means any level is accepted.', items: { enum: ["off", "minimal", "low", "medium", "high", "xhigh", "max"], type: "string" }, type: "array" }, responsesInclude: { description: 'Extra fields to request on the response payload. Codex backend needs `["reasoning.encrypted_content"]` so the model can round-trip reasoning across turns.', items: { type: "string" }, type: "array" }, responsesReasoningSummary: { description: 'Reasoning summary verbosity for the Responses API. Default `"auto"`. `"off"` disables the summary stream.', enum: ["auto", "concise", "detailed", "off"], type: "string" }, responsesStore: { description: "Whether the Responses API persists the response server-side (`store`). Default `true`. Codex backend requires `false`.", type: "boolean" }, responsesSystemAs: { description: 'Where the durable system prompt lands.\n- `"input"` (default) — first item, `role: "system"` message.\n- `"instructions"` — top-level `instructions` field. Codex backend   rejects system messages in `input` and requires this.', enum: ["input", "instructions"], type: "string" }, sessionHeader: { description: "Header carrying the conversation identity. Independent of prompt caching.", type: "string" }, strictTools: { description: "Model supports `strict: true` on tool definitions. Default false.", type: "boolean" }, temperatureSupported: { description: "Model accepts `temperature`. Default derived from `ModelInfo.temperature` (catalog field); set here to override.", type: "boolean" }, thinkingFormat: { description: 'How the provider expects reasoning / thinking requests shaped.\n- `"openai"`              → `reasoning_effort: "minimal|low|medium|high"`\n- `"openrouter"`          → `reasoning: { effort }`\n- `"deepseek"`            → `thinking: { type: "enabled" }` + `reasoning_effort`\n- `"zai"` / `"qwen"`      → top-level `enable_thinking: boolean`\n- `"qwen-chat-template"`  → `chat_template_kwargs.enable_thinking`', enum: ["openai", "openrouter", "deepseek", "zai", "qwen", "qwen-chat-template"], type: "string" }, toolCallExtraContent: { type: "string" } }, type: "object" } }, type: "object" };
 var func2 = Object.prototype.hasOwnProperty;
-function validate22(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var schema8 = { enum: ["anthropic", "openai", "openai-responses"], type: "string" };
+function validate23(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
-  if (data && typeof data == "object" && !Array.isArray(data)) {
-    for (const key0 in data) {
-      if (typeof data[key0] !== "string") {
-        const err0 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/additionalProperties/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err0];
-        } else {
-          vErrors.push(err0);
-        }
-        errors++;
-      }
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
     }
-  } else {
-    const err1 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    errors++;
+  }
+  if (!(data === "anthropic" || data === "openai" || data === "openai-responses")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema8.enum }, message: "must be equal to one of the allowed values" };
     if (vErrors === null) {
       vErrors = [err1];
     } else {
@@ -109,11 +84,58 @@ function validate22(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
+  validate23.errors = vErrors;
+  return errors === 0;
+}
+function validate22(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  const _errs0 = errors;
+  let valid0 = false;
+  const _errs1 = errors;
+  if (!validate23(data, { instancePath, parentData, parentDataProperty, rootData })) {
+    vErrors = vErrors === null ? validate23.errors : vErrors.concat(validate23.errors);
+    errors = vErrors.length;
+  }
+  var _valid0 = _errs1 === errors;
+  valid0 = valid0 || _valid0;
+  if (!valid0) {
+    const _errs2 = errors;
+    if (typeof data !== "string") {
+      const err0 = { instancePath, schemaPath: "#/anyOf/1/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+      if (vErrors === null) {
+        vErrors = [err0];
+      } else {
+        vErrors.push(err0);
+      }
+      errors++;
+    }
+    var _valid0 = _errs2 === errors;
+    valid0 = valid0 || _valid0;
+  }
+  if (!valid0) {
+    const err1 = { instancePath, schemaPath: "#/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  } else {
+    errors = _errs0;
+    if (vErrors !== null) {
+      if (_errs0) {
+        vErrors.length = _errs0;
+      } else {
+        vErrors = null;
+      }
+    }
+  }
   validate22.errors = vErrors;
   return errors === 0;
 }
-var schema8 = { type: "object", required: ["id"], properties: { api: { type: "string", description: "adapter to use: anthropic, openai, openai-responses, etc." }, baseUrl: { type: "string", description: "Model specific baseUrl override *" }, contextSize: { type: "number", description: "Max context size for this model" }, cost: { $ref: "#/$defs/ModelCost", description: "Pricing per million tokens. `context_over_200k` is the higher\ntier some providers bill for prompts over 200K tokens." }, id: { type: "string" }, input: { type: "array", items: { $ref: "#/$defs/Modality" }, description: "Input modalities this model accepts" }, knowledge: { type: "string", description: "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`." }, last_updated: { type: "string", description: "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational." }, maxTokens: { type: "number", description: "Max output tokens this model accepts" }, name: { type: "string" }, open_weights: { type: "boolean", description: "Model weights are publicly released. Informational." }, output: { type: "array", items: { $ref: "#/$defs/Modality" } }, reasoning: { type: "boolean", description: "Emits reasoning / thinking tokens." }, release_date: { type: "string", description: "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational." }, tool_call: { type: "boolean", description: "Supports tool calling. Informational — we filter non-tool models\nout of the generated catalog, so at runtime this is effectively\nalways true. Optional to make `addModels` ergonomic." } }, additionalProperties: false, description: "Metadata for one model. One-to-one with the models.dev `Model`\nschema. Loaded lazily per-provider via `getModel(id)` or eagerly\nvia `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type):\nwhen `reasoning === false`, `cost.reasoning` is absent." };
-function validate26(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var schema9 = { additionalProperties: false, description: "Metadata for one model. One-to-one with the models.dev `Model` schema. Loaded lazily per-provider via `getModel(id)` or eagerly via `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type): when `reasoning === false`, `cost.reasoning` is absent.", properties: { api: { $ref: "#/definitions/AnyProvider", description: "adapter to use: anthropic, openai, openai-responses, etc." }, baseUrl: { description: "Model specific baseUrl override *", type: "string" }, contextSize: { description: "Max context size for this model", type: "number" }, cost: { additionalProperties: false, description: "Pricing per million tokens. `context_over_200k` is the higher tier some providers bill for prompts over 200K tokens.", properties: { cache_read: { type: "number" }, cache_write: { type: "number" }, context_over_200k: { $ref: "#/definitions/Cost" }, input: { type: "number" }, input_audio: { type: "number" }, output: { type: "number" }, output_audio: { type: "number" }, reasoning: { type: "number" } }, required: ["input", "output"], type: "object" }, id: { type: "string" }, input: { description: "Input modalities this model accepts", items: { $ref: "#/definitions/Modality" }, type: "array" }, knowledge: { description: "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`.", type: "string" }, last_updated: { description: "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational.", type: "string" }, maxTokens: { description: "Max output tokens this model accepts", type: "number" }, name: { type: "string" }, open_weights: { description: "Model weights are publicly released. Informational.", type: "boolean" }, output: { items: { $ref: "#/definitions/Modality" }, type: "array" }, reasoning: { description: "Emits reasoning / thinking tokens.", type: "boolean" }, release_date: { description: "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational.", type: "string" }, tool_call: { description: "Supports tool calling. Informational — we filter non-tool models out of the generated catalog, so at runtime this is effectively always true. Optional to make `addModels` ergonomic.", type: "boolean" } }, required: ["id"], type: "object" };
+function validate28(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (data && typeof data == "object" && !Array.isArray(data)) {
@@ -239,146 +261,11 @@ function validate26(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  validate26.errors = vErrors;
+  validate28.errors = vErrors;
   return errors === 0;
 }
-function validate25(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
-  let vErrors = null;
-  let errors = 0;
-  if (data && typeof data == "object" && !Array.isArray(data)) {
-    if (data.input === undefined) {
-      const err0 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "input" }, message: "must have required property '" + "input" + "'" };
-      if (vErrors === null) {
-        vErrors = [err0];
-      } else {
-        vErrors.push(err0);
-      }
-      errors++;
-    }
-    if (data.output === undefined) {
-      const err1 = { instancePath, schemaPath: "#/required", keyword: "required", params: { missingProperty: "output" }, message: "must have required property '" + "output" + "'" };
-      if (vErrors === null) {
-        vErrors = [err1];
-      } else {
-        vErrors.push(err1);
-      }
-      errors++;
-    }
-    for (const key0 in data) {
-      if (!(key0 === "cache_read" || key0 === "cache_write" || key0 === "context_over_200k" || key0 === "input" || key0 === "input_audio" || key0 === "output" || key0 === "output_audio" || key0 === "reasoning")) {
-        const err2 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
-        if (vErrors === null) {
-          vErrors = [err2];
-        } else {
-          vErrors.push(err2);
-        }
-        errors++;
-      }
-    }
-    if (data.cache_read !== undefined) {
-      let data0 = data.cache_read;
-      if (!(typeof data0 == "number" && isFinite(data0))) {
-        const err3 = { instancePath: instancePath + "/cache_read", schemaPath: "#/properties/cache_read/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err3];
-        } else {
-          vErrors.push(err3);
-        }
-        errors++;
-      }
-    }
-    if (data.cache_write !== undefined) {
-      let data1 = data.cache_write;
-      if (!(typeof data1 == "number" && isFinite(data1))) {
-        const err4 = { instancePath: instancePath + "/cache_write", schemaPath: "#/properties/cache_write/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err4];
-        } else {
-          vErrors.push(err4);
-        }
-        errors++;
-      }
-    }
-    if (data.context_over_200k !== undefined) {
-      if (!validate26(data.context_over_200k, { instancePath: instancePath + "/context_over_200k", parentData: data, parentDataProperty: "context_over_200k", rootData })) {
-        vErrors = vErrors === null ? validate26.errors : vErrors.concat(validate26.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.input !== undefined) {
-      let data3 = data.input;
-      if (!(typeof data3 == "number" && isFinite(data3))) {
-        const err5 = { instancePath: instancePath + "/input", schemaPath: "#/properties/input/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err5];
-        } else {
-          vErrors.push(err5);
-        }
-        errors++;
-      }
-    }
-    if (data.input_audio !== undefined) {
-      let data4 = data.input_audio;
-      if (!(typeof data4 == "number" && isFinite(data4))) {
-        const err6 = { instancePath: instancePath + "/input_audio", schemaPath: "#/properties/input_audio/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err6];
-        } else {
-          vErrors.push(err6);
-        }
-        errors++;
-      }
-    }
-    if (data.output !== undefined) {
-      let data5 = data.output;
-      if (!(typeof data5 == "number" && isFinite(data5))) {
-        const err7 = { instancePath: instancePath + "/output", schemaPath: "#/properties/output/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err7];
-        } else {
-          vErrors.push(err7);
-        }
-        errors++;
-      }
-    }
-    if (data.output_audio !== undefined) {
-      let data6 = data.output_audio;
-      if (!(typeof data6 == "number" && isFinite(data6))) {
-        const err8 = { instancePath: instancePath + "/output_audio", schemaPath: "#/properties/output_audio/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err8];
-        } else {
-          vErrors.push(err8);
-        }
-        errors++;
-      }
-    }
-    if (data.reasoning !== undefined) {
-      let data7 = data.reasoning;
-      if (!(typeof data7 == "number" && isFinite(data7))) {
-        const err9 = { instancePath: instancePath + "/reasoning", schemaPath: "#/properties/reasoning/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err9];
-        } else {
-          vErrors.push(err9);
-        }
-        errors++;
-      }
-    }
-  } else {
-    const err10 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
-    if (vErrors === null) {
-      vErrors = [err10];
-    } else {
-      vErrors.push(err10);
-    }
-    errors++;
-  }
-  validate25.errors = vErrors;
-  return errors === 0;
-}
-var schema11 = { type: "string", description: "Input/output modality.", enum: ["audio", "image", "pdf", "text", "video"] };
-function validate29(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var schema11 = { description: "Input/output modality.", enum: ["text", "audio", "image", "video", "pdf"], type: "string" };
+function validate30(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (typeof data !== "string") {
@@ -390,7 +277,7 @@ function validate29(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  if (!(data === "audio" || data === "image" || data === "pdf" || data === "text" || data === "video")) {
+  if (!(data === "text" || data === "audio" || data === "image" || data === "video" || data === "pdf")) {
     const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema11.enum }, message: "must be equal to one of the allowed values" };
     if (vErrors === null) {
       vErrors = [err1];
@@ -399,10 +286,10 @@ function validate29(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  validate29.errors = vErrors;
+  validate30.errors = vErrors;
   return errors === 0;
 }
-function validate24(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+function validate26(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (data && typeof data == "object" && !Array.isArray(data)) {
@@ -416,7 +303,7 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
       errors++;
     }
     for (const key0 in data) {
-      if (!func2.call(schema8.properties, key0)) {
+      if (!func2.call(schema9.properties, key0)) {
         const err1 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
         if (vErrors === null) {
           vErrors = [err1];
@@ -427,8 +314,14 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
       }
     }
     if (data.api !== undefined) {
-      if (typeof data.api !== "string") {
-        const err2 = { instancePath: instancePath + "/api", schemaPath: "#/properties/api/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+      if (!validate22(data.api, { instancePath: instancePath + "/api", parentData: data, parentDataProperty: "api", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.baseUrl !== undefined) {
+      if (typeof data.baseUrl !== "string") {
+        const err2 = { instancePath: instancePath + "/baseUrl", schemaPath: "#/properties/baseUrl/type", keyword: "type", params: { type: "string" }, message: "must be string" };
         if (vErrors === null) {
           vErrors = [err2];
         } else {
@@ -437,9 +330,10 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
-    if (data.baseUrl !== undefined) {
-      if (typeof data.baseUrl !== "string") {
-        const err3 = { instancePath: instancePath + "/baseUrl", schemaPath: "#/properties/baseUrl/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (data.contextSize !== undefined) {
+      let data2 = data.contextSize;
+      if (!(typeof data2 == "number" && isFinite(data2))) {
+        const err3 = { instancePath: instancePath + "/contextSize", schemaPath: "#/properties/contextSize/type", keyword: "type", params: { type: "number" }, message: "must be number" };
         if (vErrors === null) {
           vErrors = [err3];
         } else {
@@ -448,145 +342,130 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
-    if (data.contextSize !== undefined) {
-      let data2 = data.contextSize;
-      if (!(typeof data2 == "number" && isFinite(data2))) {
-        const err4 = { instancePath: instancePath + "/contextSize", schemaPath: "#/properties/contextSize/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err4];
-        } else {
-          vErrors.push(err4);
-        }
-        errors++;
-      }
-    }
     if (data.cost !== undefined) {
-      if (!validate25(data.cost, { instancePath: instancePath + "/cost", parentData: data, parentDataProperty: "cost", rootData })) {
-        vErrors = vErrors === null ? validate25.errors : vErrors.concat(validate25.errors);
-        errors = vErrors.length;
-      }
-    }
-    if (data.id !== undefined) {
-      if (typeof data.id !== "string") {
-        const err5 = { instancePath: instancePath + "/id", schemaPath: "#/properties/id/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err5];
-        } else {
-          vErrors.push(err5);
+      let data3 = data.cost;
+      if (data3 && typeof data3 == "object" && !Array.isArray(data3)) {
+        if (data3.input === undefined) {
+          const err4 = { instancePath: instancePath + "/cost", schemaPath: "#/properties/cost/required", keyword: "required", params: { missingProperty: "input" }, message: "must have required property '" + "input" + "'" };
+          if (vErrors === null) {
+            vErrors = [err4];
+          } else {
+            vErrors.push(err4);
+          }
+          errors++;
         }
-        errors++;
-      }
-    }
-    if (data.input !== undefined) {
-      let data5 = data.input;
-      if (Array.isArray(data5)) {
-        const len0 = data5.length;
-        for (let i0 = 0;i0 < len0; i0++) {
-          if (!validate29(data5[i0], { instancePath: instancePath + "/input/" + i0, parentData: data5, parentDataProperty: i0, rootData })) {
-            vErrors = vErrors === null ? validate29.errors : vErrors.concat(validate29.errors);
+        if (data3.output === undefined) {
+          const err5 = { instancePath: instancePath + "/cost", schemaPath: "#/properties/cost/required", keyword: "required", params: { missingProperty: "output" }, message: "must have required property '" + "output" + "'" };
+          if (vErrors === null) {
+            vErrors = [err5];
+          } else {
+            vErrors.push(err5);
+          }
+          errors++;
+        }
+        for (const key1 in data3) {
+          if (!(key1 === "cache_read" || key1 === "cache_write" || key1 === "context_over_200k" || key1 === "input" || key1 === "input_audio" || key1 === "output" || key1 === "output_audio" || key1 === "reasoning")) {
+            const err6 = { instancePath: instancePath + "/cost", schemaPath: "#/properties/cost/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key1 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err6];
+            } else {
+              vErrors.push(err6);
+            }
+            errors++;
+          }
+        }
+        if (data3.cache_read !== undefined) {
+          let data4 = data3.cache_read;
+          if (!(typeof data4 == "number" && isFinite(data4))) {
+            const err7 = { instancePath: instancePath + "/cost/cache_read", schemaPath: "#/properties/cost/properties/cache_read/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err7];
+            } else {
+              vErrors.push(err7);
+            }
+            errors++;
+          }
+        }
+        if (data3.cache_write !== undefined) {
+          let data5 = data3.cache_write;
+          if (!(typeof data5 == "number" && isFinite(data5))) {
+            const err8 = { instancePath: instancePath + "/cost/cache_write", schemaPath: "#/properties/cost/properties/cache_write/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err8];
+            } else {
+              vErrors.push(err8);
+            }
+            errors++;
+          }
+        }
+        if (data3.context_over_200k !== undefined) {
+          if (!validate28(data3.context_over_200k, { instancePath: instancePath + "/cost/context_over_200k", parentData: data3, parentDataProperty: "context_over_200k", rootData })) {
+            vErrors = vErrors === null ? validate28.errors : vErrors.concat(validate28.errors);
             errors = vErrors.length;
           }
         }
-      } else {
-        const err6 = { instancePath: instancePath + "/input", schemaPath: "#/properties/input/type", keyword: "type", params: { type: "array" }, message: "must be array" };
-        if (vErrors === null) {
-          vErrors = [err6];
-        } else {
-          vErrors.push(err6);
+        if (data3.input !== undefined) {
+          let data7 = data3.input;
+          if (!(typeof data7 == "number" && isFinite(data7))) {
+            const err9 = { instancePath: instancePath + "/cost/input", schemaPath: "#/properties/cost/properties/input/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err9];
+            } else {
+              vErrors.push(err9);
+            }
+            errors++;
+          }
         }
-        errors++;
-      }
-    }
-    if (data.knowledge !== undefined) {
-      if (typeof data.knowledge !== "string") {
-        const err7 = { instancePath: instancePath + "/knowledge", schemaPath: "#/properties/knowledge/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err7];
-        } else {
-          vErrors.push(err7);
+        if (data3.input_audio !== undefined) {
+          let data8 = data3.input_audio;
+          if (!(typeof data8 == "number" && isFinite(data8))) {
+            const err10 = { instancePath: instancePath + "/cost/input_audio", schemaPath: "#/properties/cost/properties/input_audio/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err10];
+            } else {
+              vErrors.push(err10);
+            }
+            errors++;
+          }
         }
-        errors++;
-      }
-    }
-    if (data.last_updated !== undefined) {
-      if (typeof data.last_updated !== "string") {
-        const err8 = { instancePath: instancePath + "/last_updated", schemaPath: "#/properties/last_updated/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err8];
-        } else {
-          vErrors.push(err8);
+        if (data3.output !== undefined) {
+          let data9 = data3.output;
+          if (!(typeof data9 == "number" && isFinite(data9))) {
+            const err11 = { instancePath: instancePath + "/cost/output", schemaPath: "#/properties/cost/properties/output/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err11];
+            } else {
+              vErrors.push(err11);
+            }
+            errors++;
+          }
         }
-        errors++;
-      }
-    }
-    if (data.maxTokens !== undefined) {
-      let data9 = data.maxTokens;
-      if (!(typeof data9 == "number" && isFinite(data9))) {
-        const err9 = { instancePath: instancePath + "/maxTokens", schemaPath: "#/properties/maxTokens/type", keyword: "type", params: { type: "number" }, message: "must be number" };
-        if (vErrors === null) {
-          vErrors = [err9];
-        } else {
-          vErrors.push(err9);
+        if (data3.output_audio !== undefined) {
+          let data10 = data3.output_audio;
+          if (!(typeof data10 == "number" && isFinite(data10))) {
+            const err12 = { instancePath: instancePath + "/cost/output_audio", schemaPath: "#/properties/cost/properties/output_audio/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err12];
+            } else {
+              vErrors.push(err12);
+            }
+            errors++;
+          }
         }
-        errors++;
-      }
-    }
-    if (data.name !== undefined) {
-      if (typeof data.name !== "string") {
-        const err10 = { instancePath: instancePath + "/name", schemaPath: "#/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-        if (vErrors === null) {
-          vErrors = [err10];
-        } else {
-          vErrors.push(err10);
-        }
-        errors++;
-      }
-    }
-    if (data.open_weights !== undefined) {
-      if (typeof data.open_weights !== "boolean") {
-        const err11 = { instancePath: instancePath + "/open_weights", schemaPath: "#/properties/open_weights/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
-        if (vErrors === null) {
-          vErrors = [err11];
-        } else {
-          vErrors.push(err11);
-        }
-        errors++;
-      }
-    }
-    if (data.output !== undefined) {
-      let data12 = data.output;
-      if (Array.isArray(data12)) {
-        const len1 = data12.length;
-        for (let i1 = 0;i1 < len1; i1++) {
-          if (!validate29(data12[i1], { instancePath: instancePath + "/output/" + i1, parentData: data12, parentDataProperty: i1, rootData })) {
-            vErrors = vErrors === null ? validate29.errors : vErrors.concat(validate29.errors);
-            errors = vErrors.length;
+        if (data3.reasoning !== undefined) {
+          let data11 = data3.reasoning;
+          if (!(typeof data11 == "number" && isFinite(data11))) {
+            const err13 = { instancePath: instancePath + "/cost/reasoning", schemaPath: "#/properties/cost/properties/reasoning/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err13];
+            } else {
+              vErrors.push(err13);
+            }
+            errors++;
           }
         }
       } else {
-        const err12 = { instancePath: instancePath + "/output", schemaPath: "#/properties/output/type", keyword: "type", params: { type: "array" }, message: "must be array" };
-        if (vErrors === null) {
-          vErrors = [err12];
-        } else {
-          vErrors.push(err12);
-        }
-        errors++;
-      }
-    }
-    if (data.reasoning !== undefined) {
-      if (typeof data.reasoning !== "boolean") {
-        const err13 = { instancePath: instancePath + "/reasoning", schemaPath: "#/properties/reasoning/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
-        if (vErrors === null) {
-          vErrors = [err13];
-        } else {
-          vErrors.push(err13);
-        }
-        errors++;
-      }
-    }
-    if (data.release_date !== undefined) {
-      if (typeof data.release_date !== "string") {
-        const err14 = { instancePath: instancePath + "/release_date", schemaPath: "#/properties/release_date/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        const err14 = { instancePath: instancePath + "/cost", schemaPath: "#/properties/cost/type", keyword: "type", params: { type: "object" }, message: "must be object" };
         if (vErrors === null) {
           vErrors = [err14];
         } else {
@@ -595,9 +474,9 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
-    if (data.tool_call !== undefined) {
-      if (typeof data.tool_call !== "boolean") {
-        const err15 = { instancePath: instancePath + "/tool_call", schemaPath: "#/properties/tool_call/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+    if (data.id !== undefined) {
+      if (typeof data.id !== "string") {
+        const err15 = { instancePath: instancePath + "/id", schemaPath: "#/properties/id/type", keyword: "type", params: { type: "string" }, message: "must be string" };
         if (vErrors === null) {
           vErrors = [err15];
         } else {
@@ -606,41 +485,149 @@ function validate24(data, { instancePath = "", parentData, parentDataProperty, r
         errors++;
       }
     }
+    if (data.input !== undefined) {
+      let data13 = data.input;
+      if (Array.isArray(data13)) {
+        const len0 = data13.length;
+        for (let i0 = 0;i0 < len0; i0++) {
+          if (!validate30(data13[i0], { instancePath: instancePath + "/input/" + i0, parentData: data13, parentDataProperty: i0, rootData })) {
+            vErrors = vErrors === null ? validate30.errors : vErrors.concat(validate30.errors);
+            errors = vErrors.length;
+          }
+        }
+      } else {
+        const err16 = { instancePath: instancePath + "/input", schemaPath: "#/properties/input/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err16];
+        } else {
+          vErrors.push(err16);
+        }
+        errors++;
+      }
+    }
+    if (data.knowledge !== undefined) {
+      if (typeof data.knowledge !== "string") {
+        const err17 = { instancePath: instancePath + "/knowledge", schemaPath: "#/properties/knowledge/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err17];
+        } else {
+          vErrors.push(err17);
+        }
+        errors++;
+      }
+    }
+    if (data.last_updated !== undefined) {
+      if (typeof data.last_updated !== "string") {
+        const err18 = { instancePath: instancePath + "/last_updated", schemaPath: "#/properties/last_updated/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err18];
+        } else {
+          vErrors.push(err18);
+        }
+        errors++;
+      }
+    }
+    if (data.maxTokens !== undefined) {
+      let data17 = data.maxTokens;
+      if (!(typeof data17 == "number" && isFinite(data17))) {
+        const err19 = { instancePath: instancePath + "/maxTokens", schemaPath: "#/properties/maxTokens/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+        if (vErrors === null) {
+          vErrors = [err19];
+        } else {
+          vErrors.push(err19);
+        }
+        errors++;
+      }
+    }
+    if (data.name !== undefined) {
+      if (typeof data.name !== "string") {
+        const err20 = { instancePath: instancePath + "/name", schemaPath: "#/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err20];
+        } else {
+          vErrors.push(err20);
+        }
+        errors++;
+      }
+    }
+    if (data.open_weights !== undefined) {
+      if (typeof data.open_weights !== "boolean") {
+        const err21 = { instancePath: instancePath + "/open_weights", schemaPath: "#/properties/open_weights/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+        if (vErrors === null) {
+          vErrors = [err21];
+        } else {
+          vErrors.push(err21);
+        }
+        errors++;
+      }
+    }
+    if (data.output !== undefined) {
+      let data20 = data.output;
+      if (Array.isArray(data20)) {
+        const len1 = data20.length;
+        for (let i1 = 0;i1 < len1; i1++) {
+          if (!validate30(data20[i1], { instancePath: instancePath + "/output/" + i1, parentData: data20, parentDataProperty: i1, rootData })) {
+            vErrors = vErrors === null ? validate30.errors : vErrors.concat(validate30.errors);
+            errors = vErrors.length;
+          }
+        }
+      } else {
+        const err22 = { instancePath: instancePath + "/output", schemaPath: "#/properties/output/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err22];
+        } else {
+          vErrors.push(err22);
+        }
+        errors++;
+      }
+    }
+    if (data.reasoning !== undefined) {
+      if (typeof data.reasoning !== "boolean") {
+        const err23 = { instancePath: instancePath + "/reasoning", schemaPath: "#/properties/reasoning/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+        if (vErrors === null) {
+          vErrors = [err23];
+        } else {
+          vErrors.push(err23);
+        }
+        errors++;
+      }
+    }
+    if (data.release_date !== undefined) {
+      if (typeof data.release_date !== "string") {
+        const err24 = { instancePath: instancePath + "/release_date", schemaPath: "#/properties/release_date/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err24];
+        } else {
+          vErrors.push(err24);
+        }
+        errors++;
+      }
+    }
+    if (data.tool_call !== undefined) {
+      if (typeof data.tool_call !== "boolean") {
+        const err25 = { instancePath: instancePath + "/tool_call", schemaPath: "#/properties/tool_call/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+        if (vErrors === null) {
+          vErrors = [err25];
+        } else {
+          vErrors.push(err25);
+        }
+        errors++;
+      }
+    }
   } else {
-    const err16 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    const err26 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
     if (vErrors === null) {
-      vErrors = [err16];
+      vErrors = [err26];
     } else {
-      vErrors.push(err16);
+      vErrors.push(err26);
     }
     errors++;
   }
-  validate24.errors = vErrors;
+  validate26.errors = vErrors;
   return errors === 0;
 }
-var schema12 = { type: "object", properties: { friendlyErrors: { type: "string", description: 'Friendly-error formatting for known endpoint shapes. `"codex"`\nparses ChatGPT usage-limit responses into a human message.', enum: ["codex"] }, maxTokensField: { type: "string", description: `Which wire field carries the max-output-tokens cap, per adapter
-family.
-
-Chat Completions:
-  - \`"max_tokens"\`            — legacy, most third-parties
-  - \`"max_completion_tokens"\` — newer OpenAI + reasoning models
-
-Responses:
-  - \`"max_output_tokens"\`     — public Responses API default
-
-All families:
-  - \`"none"\` — suppress entirely. Codex backend rejects any
-    max-tokens field with \`Unsupported parameter\`.`, enum: ["max_completion_tokens", "max_output_tokens", "max_tokens", "none"] }, reasoningField: { type: "string", description: 'Streaming delta field that carries reasoning tokens.\n- `"reasoning"` (OpenRouter, most third-parties)\n- `"reasoning_content"` (DeepSeek-ish)\n- `"reasoning_details"` (structured form on a few providers)\nIf unset, adapter accepts any of the three.', enum: ["reasoning", "reasoning_content", "reasoning_details"] }, reasoningLevels: { type: "array", items: { type: "string", enum: ["high", "low", "max", "medium", "minimal", "off", "xhigh"] }, description: 'Which effort levels this model actually accepts. Adapter clamps\nunsupported values to the nearest supported one — `"xhigh"` on\npre-GPT-5.4 → `"high"`, `"minimal"` on o1/o3 → `"low"`. Unset\nmeans any level is accepted.' }, responsesInclude: { type: "array", items: { type: "string" }, description: 'Extra fields to request on the response payload. Codex backend\nneeds `["reasoning.encrypted_content"]` so the model can round-trip\nreasoning across turns.' }, responsesReasoningSummary: { type: "string", description: 'Reasoning summary verbosity for the Responses API. Default\n`"auto"`. `"off"` disables the summary stream.', enum: ["auto", "concise", "detailed", "off"] }, responsesStore: { type: "boolean", description: "Whether the Responses API persists the response server-side\n(`store`). Default `true`. Codex backend requires `false`." }, responsesSystemAs: { type: "string", description: 'Where the durable system prompt lands.\n- `"input"` (default) — first item, `role: "system"` message.\n- `"instructions"` — top-level `instructions` field. Codex backend\n  rejects system messages in `input` and requires this.', enum: ["input", "instructions"] }, sessionHeader: { type: "string", description: "Header carrying the conversation identity. Independent of prompt caching." }, strictTools: { type: "boolean", description: "Model supports `strict: true` on tool definitions. Default false." }, temperatureSupported: { type: "boolean", description: "Model accepts `temperature`. Default derived from\n`ModelInfo.temperature` (catalog field); set here to override." }, thinkingFormat: { type: "string", description: 'How the provider expects reasoning / thinking requests shaped.\n- `"openai"`              → `reasoning_effort: "minimal|low|medium|high"`\n- `"openrouter"`          → `reasoning: { effort }`\n- `"deepseek"`            → `thinking: { type: "enabled" }` + `reasoning_effort`\n- `"zai"` / `"qwen"`      → top-level `enable_thinking: boolean`\n- `"qwen-chat-template"`  → `chat_template_kwargs.enable_thinking`', enum: ["deepseek", "openai", "openrouter", "qwen", "qwen-chat-template", "zai"] }, toolCallExtraContent: { type: "string" } }, additionalProperties: false, description: `Provider-specific wire quirks that "OpenAI compatibility" doesn't
-actually cover. Each field names an axis of variation with a
-typed union of known shapes; adapters read these and dispatch.
-
-Populated by \`getModel\` from \`assets/quirks.json\` — provider-level
-defaults overlaid with per-model overrides. Users can further
-override per-model via \`addModels\` or per-call via the request's
-\`quirks\` field.
-
-Add new axes here as they surface; start minimal.` };
-function validate33(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+var schema12 = { additionalProperties: false, description: "Provider-specific wire quirks that \"OpenAI compatibility\" doesn't actually cover. Each field names an axis of variation with a typed union of known shapes; adapters read these and dispatch.\n\nPopulated by `getModel` from `assets/quirks.json` — provider-level defaults overlaid with per-model overrides. Users can further override per-model via `addModels` or per-call via the request's `quirks` field.\n\nAdd new axes here as they surface; start minimal.", properties: { friendlyErrors: { const: "codex", description: 'Friendly-error formatting for known endpoint shapes. `"codex"` parses ChatGPT usage-limit responses into a human message.', type: "string" }, maxTokensField: { description: 'Which wire field carries the max-output-tokens cap, per adapter family.\n\nChat Completions:   - `"max_tokens"`            — legacy, most third-parties   - `"max_completion_tokens"` — newer OpenAI + reasoning models\n\nResponses:   - `"max_output_tokens"`     — public Responses API default\n\nAll families:   - `"none"` — suppress entirely. Codex backend rejects any     max-tokens field with `Unsupported parameter`.', enum: ["max_tokens", "max_completion_tokens", "max_output_tokens", "none"], type: "string" }, reasoningField: { description: 'Streaming delta field that carries reasoning tokens.\n- `"reasoning"` (OpenRouter, most third-parties)\n- `"reasoning_content"` (DeepSeek-ish)\n- `"reasoning_details"` (structured form on a few providers) If unset, adapter accepts any of the three.', enum: ["reasoning", "reasoning_content", "reasoning_details"], type: "string" }, reasoningLevels: { description: 'Which effort levels this model actually accepts. Adapter clamps unsupported values to the nearest supported one — `"xhigh"` on pre-GPT-5.4 → `"high"`, `"minimal"` on o1/o3 → `"low"`. Unset means any level is accepted.', items: { enum: ["off", "minimal", "low", "medium", "high", "xhigh", "max"], type: "string" }, type: "array" }, responsesInclude: { description: 'Extra fields to request on the response payload. Codex backend needs `["reasoning.encrypted_content"]` so the model can round-trip reasoning across turns.', items: { type: "string" }, type: "array" }, responsesReasoningSummary: { description: 'Reasoning summary verbosity for the Responses API. Default `"auto"`. `"off"` disables the summary stream.', enum: ["auto", "concise", "detailed", "off"], type: "string" }, responsesStore: { description: "Whether the Responses API persists the response server-side (`store`). Default `true`. Codex backend requires `false`.", type: "boolean" }, responsesSystemAs: { description: 'Where the durable system prompt lands.\n- `"input"` (default) — first item, `role: "system"` message.\n- `"instructions"` — top-level `instructions` field. Codex backend   rejects system messages in `input` and requires this.', enum: ["input", "instructions"], type: "string" }, sessionHeader: { description: "Header carrying the conversation identity. Independent of prompt caching.", type: "string" }, strictTools: { description: "Model supports `strict: true` on tool definitions. Default false.", type: "boolean" }, temperatureSupported: { description: "Model accepts `temperature`. Default derived from `ModelInfo.temperature` (catalog field); set here to override.", type: "boolean" }, thinkingFormat: { description: 'How the provider expects reasoning / thinking requests shaped.\n- `"openai"`              → `reasoning_effort: "minimal|low|medium|high"`\n- `"openrouter"`          → `reasoning: { effort }`\n- `"deepseek"`            → `thinking: { type: "enabled" }` + `reasoning_effort`\n- `"zai"` / `"qwen"`      → top-level `enable_thinking: boolean`\n- `"qwen-chat-template"`  → `chat_template_kwargs.enable_thinking`', enum: ["openai", "openrouter", "deepseek", "zai", "qwen", "qwen-chat-template"], type: "string" }, toolCallExtraContent: { type: "string" } }, type: "object" };
+function validate34(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
   let vErrors = null;
   let errors = 0;
   if (data && typeof data == "object" && !Array.isArray(data)) {
@@ -666,8 +653,8 @@ function validate33(data, { instancePath = "", parentData, parentDataProperty, r
         }
         errors++;
       }
-      if (!(data0 === "codex")) {
-        const err2 = { instancePath: instancePath + "/friendlyErrors", schemaPath: "#/properties/friendlyErrors/enum", keyword: "enum", params: { allowedValues: schema12.properties.friendlyErrors.enum }, message: "must be equal to one of the allowed values" };
+      if (data0 !== "codex") {
+        const err2 = { instancePath: instancePath + "/friendlyErrors", schemaPath: "#/properties/friendlyErrors/const", keyword: "const", params: { allowedValue: "codex" }, message: "must be equal to constant" };
         if (vErrors === null) {
           vErrors = [err2];
         } else {
@@ -687,7 +674,7 @@ function validate33(data, { instancePath = "", parentData, parentDataProperty, r
         }
         errors++;
       }
-      if (!(data1 === "max_completion_tokens" || data1 === "max_output_tokens" || data1 === "max_tokens" || data1 === "none")) {
+      if (!(data1 === "max_tokens" || data1 === "max_completion_tokens" || data1 === "max_output_tokens" || data1 === "none")) {
         const err4 = { instancePath: instancePath + "/maxTokensField", schemaPath: "#/properties/maxTokensField/enum", keyword: "enum", params: { allowedValues: schema12.properties.maxTokensField.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err4];
@@ -733,7 +720,7 @@ function validate33(data, { instancePath = "", parentData, parentDataProperty, r
             }
             errors++;
           }
-          if (!(data4 === "high" || data4 === "low" || data4 === "max" || data4 === "medium" || data4 === "minimal" || data4 === "off" || data4 === "xhigh")) {
+          if (!(data4 === "off" || data4 === "minimal" || data4 === "low" || data4 === "medium" || data4 === "high" || data4 === "xhigh" || data4 === "max")) {
             const err8 = { instancePath: instancePath + "/reasoningLevels/" + i0, schemaPath: "#/properties/reasoningLevels/items/enum", keyword: "enum", params: { allowedValues: schema12.properties.reasoningLevels.items.enum }, message: "must be equal to one of the allowed values" };
             if (vErrors === null) {
               vErrors = [err8];
@@ -875,7 +862,7 @@ function validate33(data, { instancePath = "", parentData, parentDataProperty, r
         }
         errors++;
       }
-      if (!(data13 === "deepseek" || data13 === "openai" || data13 === "openrouter" || data13 === "qwen" || data13 === "qwen-chat-template" || data13 === "zai")) {
+      if (!(data13 === "openai" || data13 === "openrouter" || data13 === "deepseek" || data13 === "zai" || data13 === "qwen" || data13 === "qwen-chat-template")) {
         const err21 = { instancePath: instancePath + "/thinkingFormat", schemaPath: "#/properties/thinkingFormat/enum", keyword: "enum", params: { allowedValues: schema12.properties.thinkingFormat.enum }, message: "must be equal to one of the allowed values" };
         if (vErrors === null) {
           vErrors = [err21];
@@ -905,7 +892,7 @@ function validate33(data, { instancePath = "", parentData, parentDataProperty, r
     }
     errors++;
   }
-  validate33.errors = vErrors;
+  validate34.errors = vErrors;
   return errors === 0;
 }
 function validate21(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
@@ -927,8 +914,14 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
           }
         }
         if (data0.api !== undefined) {
-          if (typeof data0.api !== "string") {
-            const err1 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/api", schemaPath: "#/additionalProperties/properties/api/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+          if (!validate22(data0.api, { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/api", parentData: data0, parentDataProperty: "api", rootData })) {
+            vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data0.apiKey !== undefined) {
+          if (typeof data0.apiKey !== "string") {
+            const err1 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/apiKey", schemaPath: "#/additionalProperties/properties/apiKey/type", keyword: "type", params: { type: "string" }, message: "must be string" };
             if (vErrors === null) {
               vErrors = [err1];
             } else {
@@ -937,9 +930,9 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             errors++;
           }
         }
-        if (data0.apiKey !== undefined) {
-          if (typeof data0.apiKey !== "string") {
-            const err2 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/apiKey", schemaPath: "#/additionalProperties/properties/apiKey/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (data0.baseUrl !== undefined) {
+          if (typeof data0.baseUrl !== "string") {
+            const err2 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/baseUrl", schemaPath: "#/additionalProperties/properties/baseUrl/type", keyword: "type", params: { type: "string" }, message: "must be string" };
             if (vErrors === null) {
               vErrors = [err2];
             } else {
@@ -948,24 +941,13 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             errors++;
           }
         }
-        if (data0.baseUrl !== undefined) {
-          if (typeof data0.baseUrl !== "string") {
-            const err3 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/baseUrl", schemaPath: "#/additionalProperties/properties/baseUrl/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (data0.doc !== undefined) {
+          if (typeof data0.doc !== "string") {
+            const err3 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/doc", schemaPath: "#/additionalProperties/properties/doc/type", keyword: "type", params: { type: "string" }, message: "must be string" };
             if (vErrors === null) {
               vErrors = [err3];
             } else {
               vErrors.push(err3);
-            }
-            errors++;
-          }
-        }
-        if (data0.doc !== undefined) {
-          if (typeof data0.doc !== "string") {
-            const err4 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/doc", schemaPath: "#/additionalProperties/properties/doc/type", keyword: "type", params: { type: "string" }, message: "must be string" };
-            if (vErrors === null) {
-              vErrors = [err4];
-            } else {
-              vErrors.push(err4);
             }
             errors++;
           }
@@ -976,43 +958,41 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             const len0 = data5.length;
             for (let i0 = 0;i0 < len0; i0++) {
               if (typeof data5[i0] !== "string") {
-                const err5 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/env/" + i0, schemaPath: "#/additionalProperties/properties/env/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                const err4 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/env/" + i0, schemaPath: "#/additionalProperties/properties/env/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
                 if (vErrors === null) {
-                  vErrors = [err5];
+                  vErrors = [err4];
                 } else {
-                  vErrors.push(err5);
+                  vErrors.push(err4);
                 }
                 errors++;
               }
             }
           } else {
-            const err6 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/env", schemaPath: "#/additionalProperties/properties/env/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            const err5 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/env", schemaPath: "#/additionalProperties/properties/env/type", keyword: "type", params: { type: "array" }, message: "must be array" };
             if (vErrors === null) {
-              vErrors = [err6];
+              vErrors = [err5];
             } else {
-              vErrors.push(err6);
+              vErrors.push(err5);
             }
             errors++;
           }
         }
         if (data0.headers !== undefined) {
-          if (!validate22(data0.headers, { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/headers", parentData: data0, parentDataProperty: "headers", rootData })) {
-            vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
-            errors = vErrors.length;
-          }
-        }
-        if (data0.models !== undefined) {
-          let data8 = data0.models;
-          if (Array.isArray(data8)) {
-            const len1 = data8.length;
-            for (let i1 = 0;i1 < len1; i1++) {
-              if (!validate24(data8[i1], { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/models/" + i1, parentData: data8, parentDataProperty: i1, rootData })) {
-                vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
-                errors = vErrors.length;
+          let data7 = data0.headers;
+          if (data7 && typeof data7 == "object" && !Array.isArray(data7)) {
+            for (const key2 in data7) {
+              if (typeof data7[key2] !== "string") {
+                const err6 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/headers/" + key2.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/additionalProperties/properties/headers/additionalProperties/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err6];
+                } else {
+                  vErrors.push(err6);
+                }
+                errors++;
               }
             }
           } else {
-            const err7 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/models", schemaPath: "#/additionalProperties/properties/models/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            const err7 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/headers", schemaPath: "#/additionalProperties/properties/headers/type", keyword: "type", params: { type: "object" }, message: "must be object" };
             if (vErrors === null) {
               vErrors = [err7];
             } else {
@@ -1021,9 +1001,18 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             errors++;
           }
         }
-        if (data0.name !== undefined) {
-          if (typeof data0.name !== "string") {
-            const err8 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/name", schemaPath: "#/additionalProperties/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (data0.models !== undefined) {
+          let data9 = data0.models;
+          if (Array.isArray(data9)) {
+            const len1 = data9.length;
+            for (let i1 = 0;i1 < len1; i1++) {
+              if (!validate26(data9[i1], { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/models/" + i1, parentData: data9, parentDataProperty: i1, rootData })) {
+                vErrors = vErrors === null ? validate26.errors : vErrors.concat(validate26.errors);
+                errors = vErrors.length;
+              }
+            }
+          } else {
+            const err8 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/models", schemaPath: "#/additionalProperties/properties/models/type", keyword: "type", params: { type: "array" }, message: "must be array" };
             if (vErrors === null) {
               vErrors = [err8];
             } else {
@@ -1032,15 +1021,9 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             errors++;
           }
         }
-        if (data0.quirks !== undefined) {
-          if (!validate33(data0.quirks, { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/quirks", parentData: data0, parentDataProperty: "quirks", rootData })) {
-            vErrors = vErrors === null ? validate33.errors : vErrors.concat(validate33.errors);
-            errors = vErrors.length;
-          }
-        }
-        if (data0.replaceModels !== undefined) {
-          if (typeof data0.replaceModels !== "boolean") {
-            const err9 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/replaceModels", schemaPath: "#/additionalProperties/properties/replaceModels/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+        if (data0.name !== undefined) {
+          if (typeof data0.name !== "string") {
+            const err9 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/name", schemaPath: "#/additionalProperties/properties/name/type", keyword: "type", params: { type: "string" }, message: "must be string" };
             if (vErrors === null) {
               vErrors = [err9];
             } else {
@@ -1049,10 +1032,15 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             errors++;
           }
         }
-        if (data0.source !== undefined) {
-          let data13 = data0.source;
-          if (typeof data13 !== "string") {
-            const err10 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/source", schemaPath: "#/additionalProperties/properties/source/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (data0.quirks !== undefined) {
+          if (!validate34(data0.quirks, { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/quirks", parentData: data0, parentDataProperty: "quirks", rootData })) {
+            vErrors = vErrors === null ? validate34.errors : vErrors.concat(validate34.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data0.replaceModels !== undefined) {
+          if (typeof data0.replaceModels !== "boolean") {
+            const err10 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/replaceModels", schemaPath: "#/additionalProperties/properties/replaceModels/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
             if (vErrors === null) {
               vErrors = [err10];
             } else {
@@ -1060,8 +1048,11 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             }
             errors++;
           }
-          if (!(data13 === "builtin" || data13 === "custom" || data13 === "models.dev" || data13 === "models.json")) {
-            const err11 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/source", schemaPath: "#/additionalProperties/properties/source/enum", keyword: "enum", params: { allowedValues: schema6.additionalProperties.properties.source.enum }, message: "must be equal to one of the allowed values" };
+        }
+        if (data0.source !== undefined) {
+          let data14 = data0.source;
+          if (typeof data14 !== "string") {
+            const err11 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/source", schemaPath: "#/additionalProperties/properties/source/type", keyword: "type", params: { type: "string" }, message: "must be string" };
             if (vErrors === null) {
               vErrors = [err11];
             } else {
@@ -1069,23 +1060,32 @@ function validate21(data, { instancePath = "", parentData, parentDataProperty, r
             }
             errors++;
           }
+          if (!(data14 === "models.dev" || data14 === "builtin" || data14 === "custom" || data14 === "models.json")) {
+            const err12 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1") + "/source", schemaPath: "#/additionalProperties/properties/source/enum", keyword: "enum", params: { allowedValues: schema6.additionalProperties.properties.source.enum }, message: "must be equal to one of the allowed values" };
+            if (vErrors === null) {
+              vErrors = [err12];
+            } else {
+              vErrors.push(err12);
+            }
+            errors++;
+          }
         }
       } else {
-        const err12 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/additionalProperties/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        const err13 = { instancePath: instancePath + "/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/additionalProperties/type", keyword: "type", params: { type: "object" }, message: "must be object" };
         if (vErrors === null) {
-          vErrors = [err12];
+          vErrors = [err13];
         } else {
-          vErrors.push(err12);
+          vErrors.push(err13);
         }
         errors++;
       }
     }
   } else {
-    const err13 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    const err14 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
     if (vErrors === null) {
-      vErrors = [err13];
+      vErrors = [err14];
     } else {
-      vErrors.push(err13);
+      vErrors.push(err14);
     }
     errors++;
   }

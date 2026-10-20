@@ -7,6 +7,61 @@ import { expect, test } from "vitest"
 
 const generator = new URL("../src/schemas.ts", import.meta.url).href
 
+test("native type sources preserve JSDoc, optional fields, and literal unions", async () => {
+  const root = mkdtempSync(join(tmpdir(), "zaly-native-schema-"))
+  try {
+    mkdirSync(join(root, "src/schemas/tpl"), { recursive: true })
+    writeFileSync(join(root, "package.json"), '{"type":"module"}')
+    writeFileSync(
+      join(root, "tsconfig.json"),
+      JSON.stringify({ compilerOptions: { strict: true, types: [] } })
+    )
+    writeFileSync(
+      join(root, "input.ts"),
+      `export type Input = {
+      /** Display name. @minLength 2 */
+      name: string
+      mode?: "dark" | "light"
+    }`
+    )
+    writeFileSync(
+      join(root, "src/schemas/tpl/input.ts"),
+      `export const source = { path: "input.ts", type: "Input" }`
+    )
+    const generate = () =>
+      execFileSync("bun", [
+        "--eval",
+        `import { generateSchemas } from ${JSON.stringify(generator)}; await generateSchemas(${JSON.stringify(root)})`,
+      ])
+    generate()
+    const path = join(root, "assets/schemas/input.schema.json")
+    const json = readFileSync(path, "utf8")
+    const schema = JSON.parse(json)
+    expect(schema.properties.name.description).toBe("Display name.")
+    expect(schema.properties.name.minLength).toBe(2)
+    expect(schema.required).toEqual(["name"])
+    expect(schema.properties.mode.enum).toEqual(["dark", "light"])
+    const { check } = await import(pathToFileURL(join(root, "src/schemas/gen/input.ts")).href)
+    expect(check({ name: "ok" })).toBe(true)
+    expect(check({ name: "a" })).toBe(false)
+    expect(check({ name: "ok", mode: "unknown" })).toBe(false)
+    expect(check({ name: "ok", extra: true })).toBe(false)
+    generate()
+    expect(readFileSync(path, "utf8")).toBe(json)
+    const input = join(root, "input.ts")
+    writeFileSync(
+      input,
+      readFileSync(input, "utf8").replace("name: string", "name: string\n      count: number")
+    )
+    generate()
+    const updated = JSON.parse(readFileSync(path, "utf8"))
+    expect(updated.properties.count.type).toBe("number")
+    expect(updated.required).toContain("count")
+  } finally {
+    rmSync(root, { force: true, recursive: true })
+  }
+})
+
 test("standalone generation bundles helpers, retains diagnostics, and is deterministic", async () => {
   const root = mkdtempSync(join(tmpdir(), "zaly-schema-"))
   try {
