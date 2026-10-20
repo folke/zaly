@@ -10,6 +10,7 @@ import { fetchTool } from "../src/tools/fetch.ts"
 
 const html = `<html><head><title>Test page</title></head><body><nav>Menu</nav>
 <main><h1>Hello</h1><p>Read <a href="../guide">the guide</a>.</p></main></body></html>`
+const xml = '<?xml version="1.0" encoding="UTF-8"?><VOTABLE><RESOURCE/></VOTABLE>'
 const large = Array.from({ length: 25 }, (_, i) => `line ${i + 1}`).join("\n")
 const server = createServer((req, res) => {
   const path = new URL(req.url!, "http://localhost").pathname
@@ -52,6 +53,7 @@ const server = createServer((req, res) => {
     "/json": ["application/json", '{"items":[{"id":1},{"id":2}]}'],
     "/bad-json": ["application/json", "not JSON"],
     "/plain": ["text/plain", "hello"],
+    "/xml": ["application/x-votable+xml", xml],
     "/markdown": ["text/markdown", "# Native markdown\n\n[Link](/relative)"],
     "/long": ["text/plain", large],
     "/long-line": ["text/plain", "😀".repeat(2000)],
@@ -166,6 +168,14 @@ test("JSONPath, request options, and existing text handling remain available", a
     token: "test",
     userAgent: zalyUserAgent,
   })
+})
+
+test("XML responses stay text instead of being decoded as SVG images", async () => {
+  const result = await runTool(fetchTool, { url: `${origin}/xml` }, {})
+  expect(result.isError).toBe(false)
+  expect(result.meta).toMatchObject({ type: "text", format: "xml" })
+  expect(result.content).toContainEqual(expect.objectContaining({ type: "text", text: xml }))
+  expect(result.content).not.toContainEqual(expect.objectContaining({ type: "image" }))
 })
 
 test("caller User-Agent overrides are case-insensitive", async () => {

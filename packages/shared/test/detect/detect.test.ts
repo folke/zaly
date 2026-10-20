@@ -102,6 +102,22 @@ describe("fileDetect — magic bytes", () => {
     expect(r?.type).toBe("image")
     if (r?.type === "image") expect(r.format).toBe("svg")
   })
+  test.each([
+    '<svg xmlns="http://www.w3.org/2000/svg"/>',
+    '<?xml version="1.0"?>\n<!-- Logo -->\n<svg/>',
+    '<?xml version="1.0"?>\n<!DOCTYPE svg SYSTEM "svg.dtd">\n<svg/>',
+  ])("SVG root is recognized after an optional XML prolog: %s", async (text) => {
+    const r = await fileDetect({ data: Buffer.from(text) })
+    expect(r).toMatchObject({ type: "image", format: "svg" })
+  })
+  test.each([
+    '<?xml version="1.0"?><VOTABLE><RESOURCE/></VOTABLE>',
+    '<?xml version="1.0"?><root><svg/></root>',
+    '<?xml version="1.0"?><svg-metadata/>',
+  ])("ordinary XML is not classified as SVG: %s", async (text) => {
+    const r = await fileDetect({ data: Buffer.from(text) })
+    expect(r).toMatchObject({ type: "text", format: "xml" })
+  })
   test("AVIF and HEIC by ISOBMFF brand", async () => {
     const avif = writeTmp("avif.bin", Buffer.from("\0\0\0\0ftypavifxxxx", "binary"))
     const heic = writeTmp("heic.bin", Buffer.from("\0\0\0\0ftypheicxxxx", "binary"))

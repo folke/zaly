@@ -108,9 +108,10 @@ function customImage(file: FileData): ImageFormat | undefined {
     if (HEIC_BRANDS.has(brand)) return "heic"
   }
   if (b.length >= 2 && b[0] === 0x50 && NETPBM[b[1]]) return NETPBM[b[1]]
-  // SVG: text starts with `<?xml` or `<svg` (allow leading whitespace).
-  const head = Buffer.from(b.subarray(0, 256)).toString("utf8").trimStart()
-  if (head.startsWith("<?xml") || head.startsWith("<svg")) return "svg"
+  // XML declarations alone don't identify SVG. Skip the prolog and check the root element.
+  const head = Buffer.from(b.subarray(0, 4096)).toString("utf8").trimStart()
+  const root = head.replace(/^(?:<\?[\s\S]*?\?>\s*|<!--[\s\S]*?-->\s*|<!DOCTYPE[^>]*>\s*)*/, "")
+  if (/^<svg[\s/>]/.test(root)) return "svg"
   return undefined
 }
 
