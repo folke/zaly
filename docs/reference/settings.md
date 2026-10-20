@@ -5,143 +5,9 @@ Generated from the configuration schema and default settings. CLI overrides proj
 Defaults for `system.npm` depend on the runtime: Bun under Bun, npm under Node. The `search` tool is additionally enabled when `BRAVE_API_KEY` is set.
 
 <!-- settings:start -->
-## `model`
+## `$schema`
 
 **Type:** `string`
-
-Default model to use for the agent.
-
-## `reasoning`
-
-**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
-
-Default reasoning effort.
-
-**Default:** `"medium"`
-
-## `tools`
-
-**Type:** `Array<string>`
-
-**Default:** `["bash","edit","read","write","fetch","find","grep","task_list","task_poll","task_stop"]`
-
-## `ui`
-
-**Type:** `object`
-
-## `ui.mode`
-
-**Type:** `"fullscreen" | "scrollback"`
-
-Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.
-
-**Default:** `"fullscreen"`
-
-## `ui.copyOnSelect`
-
-**Type:** `boolean`
-
-**Default:** `true`
-
-## `ui.collapsedTools`
-
-**Type:** `Array<AnyTool>`
-
-Tools whose result body should be hidden in the UI.
-
-**Default:** `["read"]`
-
-## `ui.images`
-
-**Type:** `boolean`
-
-Render images, if supported by the terminal
-
-**Default:** `true`
-
-## `ui.listHeight`
-
-**Type:** `number`
-
-Maximum number of visible rows in selection lists, like pickers and autocomplete.
-
-**Default:** `10`
-
-## `ui.reasoning`
-
-**Type:** `boolean`
-
-Whether to show the reasoning trace in the UI.
-
-**Default:** `true`
-
-## `ui.theme`
-
-**Type:** `string`
-
-Theme name or path to custom theme file
-
-**Default:** `"tokyonight-moon"`
-
-## `ui.shiki`
-
-**Type:** `"andromeeda" | "aurora-x" | "auto" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
-
-Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.
-
-**Default:** `"auto"`
-
-## `ui.sessionTree`
-
-**Type:** `Array<"assistant" | "reasoning" | "system" | "tools">`
-
-What messages to show in the session tree. Defaults to assistant, reasoning, and tools.
-
-**Default:** `["assistant","reasoning","tools"]`
-
-## `ui.transparent`
-
-**Type:** `boolean`
-
-Make the background transparent. Defaults to false.
-
-**Default:** `false`
-
-## `ui.treeHeight`
-
-**Type:** `number`
-
-Maximum number of visible rows in the session tree.
-
-**Default:** `20`
-
-## `skills`
-
-**Type:** `object`
-
-## `skills.enabled`
-
-**Type:** `boolean`
-
-Allow skills to be used by the agent. Defaults to true.
-
-**Default:** `true`
-
-## `skills.actions`
-
-**Type:** `boolean`
-
-Show skill actions. Defaults to true.
-
-**Default:** `true`
-
-## `skills.actionPrefix`
-
-**Type:** `string`
-
-Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`
-
-**Default:** `"skill:"`
 
 ## `commands`
 
@@ -217,9 +83,40 @@ Threshold for automatic compaction.
 
 **Default:** `0.95`
 
+## `keymap`
+
+**Type:** `object`
+
+Values:
+
+```json
+{
+  "anyOf": [
+    {
+      "type": "string"
+    },
+    {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  ]
+}
+```
+
 ## `masking`
 
 **Type:** `object`
+
+## `masking.delta`
+
+**Type:** `number`
+
+How far above the target ratio to trigger a new masking pass.
+Defaults to 0.25 (25%).
+
+**Default:** `0.25`
 
 ## `masking.enabled`
 
@@ -228,6 +125,15 @@ Threshold for automatic compaction.
 Whether to enable masking. Defaults to true.
 
 **Default:** `true`
+
+## `masking.keepTurns`
+
+**Type:** `number`
+
+How many turns to keep in the tail of the conversation, regardless
+of score. Defaults to 20.
+
+**Default:** `40`
 
 ## `masking.minTokens`
 
@@ -240,24 +146,6 @@ Doesn't apply to attachments (always worth masking).
 
 **Default:** `50`
 
-## `masking.keepTurns`
-
-**Type:** `number`
-
-How many turns to keep in the tail of the conversation, regardless
-of score. Defaults to 20.
-
-**Default:** `40`
-
-## `masking.delta`
-
-**Type:** `number`
-
-How far above the target ratio to trigger a new masking pass.
-Defaults to 0.25 (25%).
-
-**Default:** `0.25`
-
 ## `masking.target`
 
 **Type:** `number`
@@ -266,9 +154,27 @@ Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%).
 
 **Default:** `0.5`
 
+## `model`
+
+**Type:** `string`
+
+Default model to use for the agent.
+
 ## `permissions`
 
 **Type:** `object`
+
+## `permissions.allow`
+
+**Type:** `Array<string>`
+
+## `permissions.ask`
+
+**Type:** `Array<string>`
+
+## `permissions.deny`
+
+**Type:** `Array<string>`
 
 ## `permissions.preset`
 
@@ -278,21 +184,17 @@ Permissions preset to use. Defaults to "permissive".
 
 **Default:** `"permissive"`
 
-## `permissions.allow`
-
-**Type:** `Array<string>`
-
-## `permissions.deny`
-
-**Type:** `Array<string>`
-
-## `permissions.ask`
-
-**Type:** `Array<string>`
-
 ## `plugins`
 
 **Type:** `Array<string>`
+
+## `reasoning`
+
+**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
+
+Default reasoning effort.
+
+**Default:** `"medium"`
 
 ## `resources`
 
@@ -310,25 +212,52 @@ Values:
       "type": "boolean",
       "description": "Whether the plugin is enabled. Defaults to true."
     },
-    "include": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "When set, only include the resources, matching these paths/globs from the plugin."
-    },
     "exclude": {
       "type": "array",
       "items": {
         "type": "string"
       },
       "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "When set, only include the resources, matching these paths/globs from the plugin."
     }
   },
-  "required": [],
   "additionalProperties": false
 }
 ```
+
+## `skills`
+
+**Type:** `object`
+
+## `skills.actionPrefix`
+
+**Type:** `string`
+
+Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`
+
+**Default:** `"skill:"`
+
+## `skills.actions`
+
+**Type:** `boolean`
+
+Show skill actions. Defaults to true.
+
+**Default:** `true`
+
+## `skills.enabled`
+
+**Type:** `boolean`
+
+Allow skills to be used by the agent. Defaults to true.
+
+**Default:** `true`
 
 ## `system`
 
@@ -360,31 +289,101 @@ Package manager command used for npm packs.
 
 **Default:** runtime-dependent
 
-## `$schema`
+## `tools`
 
-**Type:** `string`
+**Type:** `Array<string>`
 
-## `keymap`
+**Default:** `["bash","edit","read","write","fetch","find","grep","task_list","task_poll","task_stop"]`
+
+## `ui`
 
 **Type:** `object`
 
-Values:
+## `ui.collapsedTools`
 
-```json
-{
-  "oneOf": [
-    {
-      "type": "string"
-    },
-    {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
-  ]
-}
-```
+**Type:** `Array<AnyTool>`
+
+Tools whose result body should be hidden in the UI.
+
+**Default:** `["read"]`
+
+## `ui.copyOnSelect`
+
+**Type:** `boolean`
+
+**Default:** `true`
+
+## `ui.images`
+
+**Type:** `boolean`
+
+Render images, if supported by the terminal
+
+**Default:** `true`
+
+## `ui.listHeight`
+
+**Type:** `number`
+
+Maximum number of visible rows in selection lists, like pickers and autocomplete.
+
+**Default:** `10`
+
+## `ui.mode`
+
+**Type:** `"fullscreen" | "scrollback"`
+
+Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.
+
+**Default:** `"fullscreen"`
+
+## `ui.reasoning`
+
+**Type:** `boolean`
+
+Whether to show the reasoning trace in the UI.
+
+**Default:** `true`
+
+## `ui.sessionTree`
+
+**Type:** `Array<"assistant" | "reasoning" | "system" | "tools">`
+
+What messages to show in the session tree. Defaults to assistant, reasoning, and tools.
+
+**Default:** `["assistant","reasoning","tools"]`
+
+## `ui.shiki`
+
+**Type:** `"andromeeda" | "aurora-x" | "auto" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
+
+Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.
+
+**Default:** `"auto"`
+
+## `ui.theme`
+
+**Type:** `string`
+
+Theme name or path to custom theme file
+
+**Default:** `"tokyonight-moon"`
+
+## `ui.transparent`
+
+**Type:** `boolean`
+
+Make the background transparent. Defaults to false.
+
+**Default:** `false`
+
+## `ui.treeHeight`
+
+**Type:** `number`
+
+Maximum number of visible rows in the session tree.
+
+**Default:** `20`
 
 ## Permission presets
 

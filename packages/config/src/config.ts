@@ -22,7 +22,7 @@ export class ConfigFile<T extends ConfigScope = ConfigScope> extends JsonFile<Co
       logger: logger.child(`config:${scope}`),
       reviver: settingsReviver,
       validate: (data) =>
-        import("./schemas/gen/config.ts").then(({ validateConfig }) => validateConfig(data)),
+        import("./schemas/config.ts").then(({ validateConfig }) => validateConfig(data)),
     })
     this.#paths = paths
     this.#scope = scope
@@ -138,7 +138,7 @@ export class ConfigManager {
       default: {} as ModelsJson,
       logger: this.#opts.logger.child("models"),
       validate: (data) =>
-        import("./schemas/gen/models.ts").then(({ validateModels }) => validateModels(data)),
+        import("./schemas/models.ts").then(({ validateModels }) => validateModels(data)),
     })
     if (this.#opts.workspace) {
       const wsPaths = zalyPaths.project(this.#opts.workspace)
@@ -150,7 +150,7 @@ export class ConfigManager {
       default: {},
       logger: this.#opts.logger.child("state"),
       validate: (data) =>
-        import("./schemas/gen/state.ts").then(({ validateState }) => validateState(data)),
+        import("./schemas/state.ts").then(({ validateState }) => validateState(data)),
     })
     await this.#state.refresh()
     this.#config = undefined

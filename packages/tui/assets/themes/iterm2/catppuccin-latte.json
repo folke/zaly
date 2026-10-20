@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "catppuccin-latte",
+  "name": "Catppuccin Latte",
+  "appearance": "light",
+  "shiki": "auto",
+  "muted": "#9ea0af",
+  "quiet": {
+    "dim": true,
+    "fg": "muted",
+    "italic": true
+  },
+  "comment": {
+    "fg": "muted",
+    "italic": true
+  },
+  "title": {
+    "bold": true,
+    "fg": "primary"
+  },
+  "delim": "muted",
+  "ui": {
+    "bg": "bg-3"
+  },
+  "overlay": {
+    "bg": "ui"
+  },
+  "highlight": {
+    "bg": "bg-3"
+  },
+  "divider": "fg-5",
+  "gutter": "quiet",
+  "prompt": "inherit",
+  "border": "divider",
+  "borderTitle": "title",
+  "code": {
+    "bg": "bg-2"
+  },
+  "codeTitle": "title",
+  "syntaxDelimiter": "delim",
+  "syntaxBracket": "delim",
+  "mdBold": {
+    "bold": true
+  },
+  "mdCode": {
+    "bg": "highlight",
+    "fg": "primary"
+  },
+  "mdCodeBlock": "code",
+  "mdCodeBlockTitle": "title",
+  "mdHeading1": "mdHeading",
+  "mdHeading2": {
+    "bold": true,
+    "fg": "accent"
+  },
+  "mdHeading3": "mdHeading2",
+  "mdHeading4": "mdHeading2",
+  "mdHeading5": "mdHeading2",
+  "mdHeading6": "mdHeading2",
+  "mdHeading": "title",
+  "mdHr": "accent",
+  "mdItalic": {
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "primary",
+    "underline": true
+  },
+  "mdListBullet": "accent",
+  "mdListChecked": "primary",
+  "mdListUnchecked": "primary",
+  "mdQuote": "muted",
+  "mdStrikethrough": {
+    "strikethrough": true
+  },
+  "mdTable": "accent",
+  "mdTableHeader": "title",
+  "optionActive": "selection",
+  "optionDesc": "muted",
+  "optionName": "primary",
+  "diffContext": {
+    "bg": "code"
+  },
+  "diffAddNum": {
+    "bg": "diffAdd-10"
+  },
+  "diffDelNum": {
+    "bg": "diffDel-10"
+  },
+  "diffContextNum": {
+    "bg": "diffContext-10"
+  },
+  "primary": "#1e66f5",
+  "accent": "#ef95d7",
+  "bg": "#eff1f5",
+  "fg": "#4c4f69",
+  "selection": {
+    "bg": "#dc8a78",
+    "fg": "#eff1f5"
+  },
+  "success": "#40a02b",
+  "info": "#179299",
+  "warn": "#df8e1d",
+  "error": "#d20f39",
+  "syntaxNumber": "#3878f6",
+  "syntaxString": "#40a02b",
+  "syntaxBoolean": "#df8e1d",
+  "syntaxFunction": "#1e66f5",
+  "syntaxField": "fg",
+  "syntaxConstant": "#ea76cb",
+  "syntaxSpecial": "#d20f39",
+  "black": "#bcc0cc",
+  "red": "#d20f39",
+  "green": "#40a02b",
+  "yellow": "#df8e1d",
+  "blue": "#1e66f5",
+  "magenta": "#ea76cb",
+  "cyan": "#179299",
+  "white": "#5c5f77",
+  "brightBlack": "#acb0be",
+  "brightRed": "#e7103f",
+  "brightGreen": "#46b02f",
+  "brightYellow": "#e49931",
+  "brightBlue": "#3878f6",
+  "brightMagenta": "#ef95d7",
+  "brightCyan": "#19a1a8",
+  "brightWhite": "#6c6f85",
+  "brightGray": "#acb0be",
+  "brightGrey": "#acb0be",
+  "gray": "#acb0be",
+  "grey": "#acb0be",
+  "diffAdd": {
+    "bg": "#cce1cd",
+    "fg": "success"
+  },
+  "diffDel": {
+    "bg": "#e9c4cf",
+    "fg": "error"
+  }
+}

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, test } from "vitest"
-import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../../src/schemas/theme.ts"
 import { resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme, loadTheme, themeRegistry } from "../../src/themes/registry.ts"
 
@@ -93,8 +93,8 @@ describe("built-in themes — load & validate", () => {
   const names = themeRegistry.keys()
 
   // `resolveTheme` skips validation for the hot path — built-in
-  // theme JSON is dev-controlled, and typia's generated assertions
-  // would drag ~3MB of code into module load. The correctness
+  // theme JSON is dev-controlled, so the standalone validator can
+  // stay off the main startup path. The correctness
   // contract is covered here instead: every shipped JSON is
   // validated explicitly so schema drift still fails the build.
   const assetsDir = fileURLToPath(import.meta.resolve("../../assets/themes/"))
@@ -149,10 +149,6 @@ describe("validateTheme — positive cases", () => {
     expect(() => validateTheme({ primary: "#ff00ff" })).toThrow()
   })
 
-  test("ANSI names and bright variants accepted", () => {
-    expect(() => validateOverrides({ primary: "red", accent: "brightCyan" })).not.toThrow()
-  })
-
   test("inherit accepted", () => {
     expect(() => validateOverrides({ fg: "inherit" })).not.toThrow()
   })
@@ -180,7 +176,7 @@ describe("validateTheme — positive cases", () => {
 
   test("unknown plugin slots are accepted (extensibility)", () => {
     expect(() =>
-      validateOverrides({ pluginThing: "primary", pluginStyle: { italic: true, fg: "red" } })
+      validateOverrides({ pluginThing: "primary", pluginStyle: { italic: true, fg: "error" } })
     ).not.toThrow()
   })
 
@@ -194,8 +190,55 @@ describe("validateTheme — positive cases", () => {
 })
 
 describe("validateTheme — negative cases", () => {
+  const ansiNames = [
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "white",
+    "gray",
+    "grey",
+  ]
+  test.each(ansiNames.flatMap((name) => [name, `bright${name[0].toUpperCase()}${name.slice(1)}`]))(
+    "rejects ANSI color %s in JSON themes",
+    (color) => {
+      for (const overrides of [
+        { primary: color },
+        { fg: color },
+        { bg: color },
+        { title: color },
+        { title: { fg: color } },
+        { title: { bg: color } },
+        { pluginSlot: color },
+        { pluginStyle: { fg: color } },
+      ])
+        expect(() => validateOverrides(overrides)).toThrow(/Invalid theme/)
+    }
+  )
+
   test("wrong type at a slot throws", () => {
     expect(() => validateOverrides({ primary: 42 as never })).toThrow(/primary/)
+  })
+
+  test.each(["#abcd", "#12345678"])("accepts valid alpha hex colors: %s", (color) => {
+    expect(() => validateOverrides({ primary: color })).not.toThrow()
+  })
+
+  test.each(["#12", "#12345", "#1234567", "#ggg", "#123456789"])(
+    "rejects malformed hex colors: %s",
+    (color) => {
+      expect(() => validateOverrides({ primary: color })).toThrow(/primary/)
+    }
+  )
+
+  test("validation reports missing and extra fields without changing the input", () => {
+    const input = { ...custom, title: { bold: true, typo: true } }
+    expect(() => validateTheme(input)).toThrow(/title\/typo/)
+    expect(input.title.typo).toBe(true)
+    expect(() => validateTheme({})).toThrow(/\/id/)
   })
 
   test("invalid Color string at a slot throws", () => {
@@ -205,7 +248,7 @@ describe("validateTheme — negative cases", () => {
   test("color-only slot rejects a Style object", () => {
     // `primary` is one of the Color-typed slots (ColorKeys<Theme>); a
     // Style shape here should trip the isColorKey narrowing.
-    expect(() => validateOverrides({ primary: { bold: true, fg: "red" } as never })).toThrow()
+    expect(() => validateOverrides({ primary: { bold: true, fg: "primary" } as never })).toThrow()
   })
 
   test("malformed lightness modifier rejected", () => {

@@ -7,7 +7,7 @@ import { toError } from "@zaly/shared"
 import { writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { bundledThemes, normalizeTheme } from "shiki"
-import { validateTheme } from "../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../src/schemas/theme.ts"
 import { blend } from "../src/style/color.ts"
 import { createThemeResolver } from "./themes-textmate.ts"
 

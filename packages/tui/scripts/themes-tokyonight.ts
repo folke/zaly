@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process"
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { validateTheme } from "../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../src/schemas/theme.ts"
 
 if (isCI) {
   console.log("Skipping tokyonight build on CI …")

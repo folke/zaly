@@ -1,10 +1,7 @@
-import type { Simplify } from "@zaly/shared"
 import type { Theme } from "./types.ts"
 
-export type CustomTheme = Simplify<
-  Partial<Pick<Theme<false>, keyof typeof defaultsDark>> &
-    Omit<Theme<false>, keyof typeof defaultsDark> & { $schema?: string }
->
+export type CustomTheme = Partial<Pick<Theme<false>, keyof typeof defaultsDark>> &
+  Omit<Theme<false>, keyof typeof defaultsDark> & { $schema?: string }
 
 /**
  * Slot-level fallbacks. Every Theme value is shallow-merged on top of

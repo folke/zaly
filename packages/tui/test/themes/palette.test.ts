@@ -1,15 +1,15 @@
 import type { Scheme, SchemeColor } from "../../scripts/themes-iterm2.ts"
-import type { HexColor, Style } from "../../src/style/types.ts"
+import type { Color, HexColor, Style } from "../../src/style/types.ts"
 import type { TerminalPalette } from "../../src/themes/system.ts"
 
 import { describe, expect, test } from "vitest"
 import { paletteFromScheme } from "../../scripts/themes-iterm2.ts"
-import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../../src/schemas/theme.ts"
 import { blend } from "../../src/style/color.ts"
 import { hexToOklch } from "../../src/style/oklch.ts"
 import { openStyle } from "../../src/style/style.ts"
 import { defaultsDark, defaultsLight } from "../../src/themes/default.ts"
-import { themeFromPalette } from "../../src/themes/system.ts"
+import { internalizePalette, themeFromPalette } from "../../src/themes/system.ts"
 
 const ansi: HexColor[] = [
   "#111111",
@@ -38,7 +38,7 @@ describe("terminal palette themes", () => {
     const current = { ...theme, id: "palette" }
     expect(theme).not.toHaveProperty("id")
     expect(theme).not.toHaveProperty("name")
-    expect(theme.primary).toBe("blue")
+    expect(theme.primary).toBe(ansi[4])
     expect(openStyle({ fg: "primary" }, current)).toBe(openStyle({ fg: ansi[4] }))
     expect(openStyle({ fg: "accent" }, current)).toBe(openStyle({ fg: ansi[13] }))
     expect(openStyle({ fg: "syntaxString" }, current)).toBe(openStyle({ fg: ansi[2] }))
@@ -46,6 +46,46 @@ describe("terminal palette themes", () => {
     expect(openStyle({ fg: "brightGrey" }, current)).toBe(openStyle({ fg: ansi[8] }))
     expect(theme.syntaxField).toBe("fg")
     expect(JSON.stringify(defaultsDark)).toBe(before)
+  })
+
+  test("internalizes palette bases without evaluating adjustments or semantic references", () => {
+    const theme = {
+      ...themeFromPalette(palette),
+      appearance: "dark",
+      name: "blue",
+      shiki: "red",
+      primary: "brightBlue+51" as Color,
+      accent: "primary+5",
+      title: { bold: true, fg: "brightBlue-10" as Color, bg: "blue+05" as Color },
+      syntaxString: "green",
+    } as const
+    const before = JSON.stringify(theme)
+    const result = internalizePalette(
+      theme,
+      new Map([
+        ["blue", ansi[4]],
+        ["brightBlue", ansi[12]],
+        ["green", ansi[2]],
+      ])
+    )
+    expect(result.primary).toBe(`${ansi[12]}+51`)
+    expect(result.accent).toBe("primary+5")
+    expect(result.title).toEqual({ bold: true, fg: `${ansi[12]}-10`, bg: `${ansi[4]}+05` })
+    expect(result.syntaxString).toBe(ansi[2])
+    expect(result.name).toBe("blue")
+    expect(result.shiki).toBe("red")
+    expect(result.appearance).toBe("dark")
+    expect(JSON.stringify(theme)).toBe(before)
+    expect(openStyle({ fg: "primary" }, { ...result, id: "rgb" })).toBe(
+      openStyle({ fg: "primary" }, { ...theme, id: "palette" })
+    )
+    expect(openStyle({ fg: "accent" }, { ...result, id: "rgb" })).toBe(
+      openStyle({ fg: "accent" }, { ...theme, id: "palette" })
+    )
+    expect(openStyle({ style: "title" }, { ...result, id: "rgb" })).toBe(
+      openStyle({ style: "title" }, { ...theme, id: "palette" })
+    )
+    expect(validateTheme({ ...result, id: "export" })).toEqual({ ...result, id: "export" })
   })
 
   test.each([

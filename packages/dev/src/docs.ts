@@ -9,8 +9,8 @@ import { toolRegistry } from "../../agent/src/tools/registry.ts"
 import { appActions } from "../../cli/src/app/actions.ts"
 import { Cli, mainCommand } from "../../cli/src/cli.ts"
 import { modelsCommand } from "../../cli/src/commands/models.ts"
+import ConfigSchema from "../../config/assets/schemas/config.schema.json" with { type: "json" }
 import { defaultSettings } from "../../config/src/defaults.ts"
-import { ConfigSchema } from "../../config/src/schemas/gen/config.schema.ts"
 import { defaultActions } from "../../tui/src/input/defaults.ts"
 import { workspace } from "./utils.ts"
 
@@ -52,8 +52,8 @@ export function schemaType(schema: Schema): string {
 }
 
 export function settingsReference(): string {
-  const definitions = ConfigSchema.components.schemas as Record<string, Schema>
-  const root = ConfigSchema.schema as Schema
+  const definitions = ConfigSchema.$defs as Record<string, Schema>
+  const root = ConfigSchema as Schema
   const deref = (schema: Schema) =>
     schema.$ref ? (definitions[schema.$ref.split("/").at(-1)!] ?? schema) : schema
   const lines: string[] = []

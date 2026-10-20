@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "gruvbox-dark",
+  "name": "Gruvbox Dark",
+  "appearance": "dark",
+  "shiki": "auto",
+  "muted": "#8a826d",
+  "quiet": {
+    "dim": true,
+    "fg": "muted",
+    "italic": true
+  },
+  "comment": {
+    "fg": "muted",
+    "italic": true
+  },
+  "title": {
+    "bold": true,
+    "fg": "primary"
+  },
+  "delim": "muted",
+  "ui": {
+    "bg": "bg+3"
+  },
+  "overlay": {
+    "bg": "ui"
+  },
+  "highlight": {
+    "bg": "ui"
+  },
+  "divider": "bg-5",
+  "gutter": "quiet",
+  "prompt": "inherit",
+  "border": "divider",
+  "borderTitle": "title",
+  "code": {
+    "bg": "bg+3"
+  },
+  "codeTitle": "title",
+  "syntaxDelimiter": "delim",
+  "syntaxBracket": "delim",
+  "mdBold": {
+    "bold": true
+  },
+  "mdCode": {
+    "bg": "highlight",
+    "fg": "primary"
+  },
+  "mdCodeBlock": "code",
+  "mdCodeBlockTitle": "title",
+  "mdHeading1": "mdHeading",
+  "mdHeading2": {
+    "bold": true,
+    "fg": "accent"
+  },
+  "mdHeading3": "mdHeading2",
+  "mdHeading4": "mdHeading2",
+  "mdHeading5": "mdHeading2",
+  "mdHeading6": "mdHeading2",
+  "mdHeading": "title",
+  "mdHr": "accent",
+  "mdItalic": {
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "primary",
+    "underline": true
+  },
+  "mdListBullet": "accent",
+  "mdListChecked": "primary",
+  "mdListUnchecked": "primary",
+  "mdQuote": "muted",
+  "mdStrikethrough": {
+    "strikethrough": true
+  },
+  "mdTable": "accent",
+  "mdTableHeader": "title",
+  "optionActive": "selection",
+  "optionDesc": "muted",
+  "optionName": "primary",
+  "diffContext": {
+    "bg": "code"
+  },
+  "diffAddNum": {
+    "bg": "diffAdd+10"
+  },
+  "diffDelNum": {
+    "bg": "diffDel+10"
+  },
+  "diffContextNum": {
+    "bg": "diffContext+10"
+  },
+  "primary": "#458588",
+  "accent": "#d3869b",
+  "bg": "#282828",
+  "fg": "#ebdbb2",
+  "selection": {
+    "bg": "#665c54",
+    "fg": "#ebdbb2"
+  },
+  "success": "#98971a",
+  "info": "#689d6a",
+  "warn": "#d79921",
+  "error": "#cc241d",
+  "syntaxNumber": "#83a598",
+  "syntaxString": "#98971a",
+  "syntaxBoolean": "#d79921",
+  "syntaxFunction": "#458588",
+  "syntaxField": "fg",
+  "syntaxConstant": "#b16286",
+  "syntaxSpecial": "#cc241d",
+  "black": "#282828",
+  "red": "#cc241d",
+  "green": "#98971a",
+  "yellow": "#d79921",
+  "blue": "#458588",
+  "magenta": "#b16286",
+  "cyan": "#689d6a",
+  "white": "#a89984",
+  "brightBlack": "#928374",
+  "brightRed": "#fb4934",
+  "brightGreen": "#b8bb26",
+  "brightYellow": "#fabd2f",
+  "brightBlue": "#83a598",
+  "brightMagenta": "#d3869b",
+  "brightCyan": "#8ec07c",
+  "brightWhite": "#ebdbb2",
+  "brightGray": "#928374",
+  "brightGrey": "#928374",
+  "gray": "#928374",
+  "grey": "#928374",
+  "diffAdd": {
+    "bg": "#3e3e25",
+    "fg": "success"
+  },
+  "diffDel": {
+    "bg": "#492726",
+    "fg": "error"
+  }
+}

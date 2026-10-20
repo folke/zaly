@@ -4,7 +4,7 @@ import type { ShikiLanguage, ShikiTheme, ShikiThemeInput } from "./types.ts"
 import { createHighlighterCore } from "shiki/core"
 import { createOnigurumaEngine } from "shiki/engine/oniguruma"
 import { bundledLanguages as bundled } from "shiki/langs"
-import { isShikiLang, isShikiTheme } from "../schemas/gen/shiki.ts"
+import { isShikiLang, isShikiTheme } from "../schemas/shiki.ts"
 import { openAnsi, RESET } from "../style/ansi.ts"
 import { syntaxScopes } from "./theme.ts"
 

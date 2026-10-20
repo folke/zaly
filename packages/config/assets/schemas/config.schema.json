@@ -1,13 +1,139 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "actionPrefix": {
+          "type": "string",
+          "description": "Prefix for command actions. Defaults to ``"
+        },
+        "bash": {
+          "type": "boolean",
+          "description": "Allow bash execution in commands. Defaults to true."
+        },
+        "expr": {
+          "type": "boolean",
+          "description": "Allow js expressions in command templates. Defaults to true."
+        }
+      },
+      "additionalProperties": false,
+      "description": "Template commands."
+    },
+    "compaction": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable automatic compaction when context is full"
+        },
+        "keepTokens": {
+          "type": "number",
+          "description": "Existing messages up to this many tokens will be preserved in the context"
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Reasoning effort for the compaction summary",
+          "enum": [
+            "high",
+            "low",
+            "max",
+            "medium",
+            "minimal",
+            "off",
+            "xhigh"
+          ]
+        },
+        "summaryTokens": {
+          "type": "number",
+          "description": "Maximum number of tokens to use for the generated summary"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Threshold for automatic compaction."
+        }
+      },
+      "additionalProperties": false
+    },
+    "keymap": {
+      "$ref": "#/$defs/Keymap"
+    },
+    "masking": {
+      "type": "object",
+      "properties": {
+        "delta": {
+          "type": "number",
+          "description": "How far above the target ratio to trigger a new masking pass.\nDefaults to 0.25 (25%)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to enable masking. Defaults to true."
+        },
+        "keepTurns": {
+          "type": "number",
+          "description": "How many turns to keep in the tail of the conversation, regardless\nof score. Defaults to 20."
+        },
+        "minTokens": {
+          "type": "number",
+          "description": "Don't mask tool-result parts whose original content is shorter\nthan this (estimated tokens). Skips tiny \"ok\"-style success\nmessages where the stub would be larger than the original.\nDoesn't apply to attachments (always worth masking)."
+        },
+        "target": {
+          "type": "number",
+          "description": "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%)."
+        }
+      },
+      "additionalProperties": false
+    },
     "model": {
       "type": "string",
       "description": "Default model to use for the agent."
     },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deny": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preset": {
+          "type": "string",
+          "description": "Permissions preset to use. Defaults to \"permissive\".",
+          "enum": [
+            "permissive",
+            "readonly",
+            "strict",
+            "yolo"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "reasoning": {
       "type": "string",
+      "description": "Default reasoning effort.",
       "enum": [
         "high",
         "low",
@@ -16,8 +142,57 @@
         "minimal",
         "off",
         "xhigh"
-      ],
-      "description": "Default reasoning effort."
+      ]
+    },
+    "resources": {
+      "$ref": "#/$defs/Resources",
+      "description": "Resource configuration for zaly."
+    },
+    "skills": {
+      "type": "object",
+      "properties": {
+        "actionPrefix": {
+          "type": "string",
+          "description": "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`"
+        },
+        "actions": {
+          "type": "boolean",
+          "description": "Show skill actions. Defaults to true."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Allow skills to be used by the agent. Defaults to true."
+        }
+      },
+      "additionalProperties": false
+    },
+    "system": {
+      "type": "object",
+      "properties": {
+        "bash": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command used by the bash tool."
+        },
+        "git": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command used for git packs."
+        },
+        "npm": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Package manager command used for npm packs."
+        }
+      },
+      "additionalProperties": false,
+      "description": "System integrations and external commands used by zaly."
     },
     "tools": {
       "type": "array",
@@ -28,23 +203,15 @@
     "ui": {
       "type": "object",
       "properties": {
-        "mode": {
-          "type": "string",
-          "enum": [
-            "fullscreen",
-            "scrollback"
-          ],
-          "description": "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer."
-        },
-        "copyOnSelect": {
-          "type": "boolean"
-        },
         "collapsedTools": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AnyTool"
+            "$ref": "#/$defs/AnyTool"
           },
           "description": "Tools whose result body should be hidden in the UI."
+        },
+        "copyOnSelect": {
+          "type": "boolean"
         },
         "images": {
           "type": "boolean",
@@ -54,16 +221,34 @@
           "type": "number",
           "description": "Maximum number of visible rows in selection lists, like pickers and autocomplete."
         },
+        "mode": {
+          "type": "string",
+          "description": "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.",
+          "enum": [
+            "fullscreen",
+            "scrollback"
+          ]
+        },
         "reasoning": {
           "type": "boolean",
           "description": "Whether to show the reasoning trace in the UI."
         },
-        "theme": {
-          "type": "string",
-          "description": "Theme name or path to custom theme file"
+        "sessionTree": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "assistant",
+              "reasoning",
+              "system",
+              "tools"
+            ]
+          },
+          "description": "What messages to show in the session tree. Defaults to assistant, reasoning, and tools."
         },
         "shiki": {
           "type": "string",
+          "description": "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.",
           "enum": [
             "andromeeda",
             "aurora-x",
@@ -131,21 +316,11 @@
             "vitesse-black",
             "vitesse-dark",
             "vitesse-light"
-          ],
-          "description": "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it."
+          ]
         },
-        "sessionTree": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "assistant",
-              "reasoning",
-              "system",
-              "tools"
-            ]
-          },
-          "description": "What messages to show in the session tree. Defaults to assistant, reasoning, and tools."
+        "theme": {
+          "type": "string",
+          "description": "Theme name or path to custom theme file"
         },
         "transparent": {
           "type": "boolean",
@@ -156,579 +331,18 @@
           "description": "Maximum number of visible rows in the session tree."
         }
       },
-      "required": [],
       "additionalProperties": false
-    },
-    "skills": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Allow skills to be used by the agent. Defaults to true."
-        },
-        "actions": {
-          "type": "boolean",
-          "description": "Show skill actions. Defaults to true."
-        },
-        "actionPrefix": {
-          "type": "string",
-          "description": "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`"
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "commands": {
-      "type": "object",
-      "properties": {
-        "actionPrefix": {
-          "type": "string",
-          "description": "Prefix for command actions. Defaults to ``"
-        },
-        "bash": {
-          "type": "boolean",
-          "description": "Allow bash execution in commands. Defaults to true."
-        },
-        "expr": {
-          "type": "boolean",
-          "description": "Allow js expressions in command templates. Defaults to true."
-        }
-      },
-      "required": [],
-      "additionalProperties": false,
-      "description": "Template commands."
-    },
-    "compaction": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Enable automatic compaction when context is full"
-        },
-        "keepTokens": {
-          "type": "number",
-          "description": "Existing messages up to this many tokens will be preserved in the context"
-        },
-        "reasoning": {
-          "type": "string",
-          "enum": [
-            "high",
-            "low",
-            "max",
-            "medium",
-            "minimal",
-            "off",
-            "xhigh"
-          ],
-          "description": "Reasoning effort for the compaction summary"
-        },
-        "summaryTokens": {
-          "type": "number",
-          "description": "Maximum number of tokens to use for the generated summary"
-        },
-        "threshold": {
-          "type": "number",
-          "description": "Threshold for automatic compaction."
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "masking": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether to enable masking. Defaults to true."
-        },
-        "minTokens": {
-          "type": "number",
-          "description": "Don't mask tool-result parts whose original content is shorter\nthan this (estimated tokens). Skips tiny \"ok\"-style success\nmessages where the stub would be larger than the original.\nDoesn't apply to attachments (always worth masking)."
-        },
-        "keepTurns": {
-          "type": "number",
-          "description": "How many turns to keep in the tail of the conversation, regardless\nof score. Defaults to 20."
-        },
-        "delta": {
-          "type": "number",
-          "description": "How far above the target ratio to trigger a new masking pass.\nDefaults to 0.25 (25%)."
-        },
-        "target": {
-          "type": "number",
-          "description": "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%)."
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "permissions": {
-      "type": "object",
-      "properties": {
-        "preset": {
-          "type": "string",
-          "enum": [
-            "permissive",
-            "readonly",
-            "strict",
-            "yolo"
-          ],
-          "description": "Permissions preset to use. Defaults to \"permissive\"."
-        },
-        "allow": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "deny": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "ask": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "plugins": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "resources": {
-      "$ref": "#/definitions/RecordstringResourceFilter",
-      "description": "Resource configuration for zaly."
-    },
-    "system": {
-      "type": "object",
-      "properties": {
-        "bash": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Command used by the bash tool."
-        },
-        "git": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Command used for git packs."
-        },
-        "npm": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Package manager command used for npm packs."
-        }
-      },
-      "required": [],
-      "additionalProperties": false,
-      "description": "System integrations and external commands used by zaly."
-    },
-    "$schema": {
-      "type": "string"
-    },
-    "keymap": {
-      "$ref": "#/definitions/Recordstringstringstring"
     }
   },
-  "required": [],
-  "additionalProperties": false,
-  "definitions": {
-    "TypiaConfig": {
-      "type": "object",
-      "properties": {
-        "model": {
-          "type": "string",
-          "description": "Default model to use for the agent."
-        },
-        "reasoning": {
-          "type": "string",
-          "enum": [
-            "high",
-            "low",
-            "max",
-            "medium",
-            "minimal",
-            "off",
-            "xhigh"
-          ],
-          "description": "Default reasoning effort."
-        },
-        "tools": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "ui": {
-          "type": "object",
-          "properties": {
-            "mode": {
-              "type": "string",
-              "enum": [
-                "fullscreen",
-                "scrollback"
-              ],
-              "description": "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer."
-            },
-            "copyOnSelect": {
-              "type": "boolean"
-            },
-            "collapsedTools": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AnyTool"
-              },
-              "description": "Tools whose result body should be hidden in the UI."
-            },
-            "images": {
-              "type": "boolean",
-              "description": "Render images, if supported by the terminal"
-            },
-            "listHeight": {
-              "type": "number",
-              "description": "Maximum number of visible rows in selection lists, like pickers and autocomplete."
-            },
-            "reasoning": {
-              "type": "boolean",
-              "description": "Whether to show the reasoning trace in the UI."
-            },
-            "theme": {
-              "type": "string",
-              "description": "Theme name or path to custom theme file"
-            },
-            "shiki": {
-              "type": "string",
-              "enum": [
-                "andromeeda",
-                "aurora-x",
-                "auto",
-                "ayu-dark",
-                "ayu-light",
-                "ayu-mirage",
-                "catppuccin-frappe",
-                "catppuccin-latte",
-                "catppuccin-macchiato",
-                "catppuccin-mocha",
-                "dark-plus",
-                "dracula",
-                "dracula-soft",
-                "everforest-dark",
-                "everforest-light",
-                "github-dark",
-                "github-dark-default",
-                "github-dark-dimmed",
-                "github-dark-high-contrast",
-                "github-light",
-                "github-light-default",
-                "github-light-high-contrast",
-                "gruvbox-dark-hard",
-                "gruvbox-dark-medium",
-                "gruvbox-dark-soft",
-                "gruvbox-light-hard",
-                "gruvbox-light-medium",
-                "gruvbox-light-soft",
-                "horizon",
-                "horizon-bright",
-                "houston",
-                "kanagawa-dragon",
-                "kanagawa-lotus",
-                "kanagawa-wave",
-                "laserwave",
-                "light-plus",
-                "material-theme",
-                "material-theme-darker",
-                "material-theme-lighter",
-                "material-theme-ocean",
-                "material-theme-palenight",
-                "min-dark",
-                "min-light",
-                "monokai",
-                "night-owl",
-                "night-owl-light",
-                "nord",
-                "one-dark-pro",
-                "one-light",
-                "plastic",
-                "poimandres",
-                "red",
-                "rose-pine",
-                "rose-pine-dawn",
-                "rose-pine-moon",
-                "slack-dark",
-                "slack-ochin",
-                "snazzy-light",
-                "solarized-dark",
-                "solarized-light",
-                "synthwave-84",
-                "tokyo-night",
-                "vesper",
-                "vitesse-black",
-                "vitesse-dark",
-                "vitesse-light"
-              ],
-              "description": "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it."
-            },
-            "sessionTree": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "assistant",
-                  "reasoning",
-                  "system",
-                  "tools"
-                ]
-              },
-              "description": "What messages to show in the session tree. Defaults to assistant, reasoning, and tools."
-            },
-            "transparent": {
-              "type": "boolean",
-              "description": "Make the background transparent. Defaults to false."
-            },
-            "treeHeight": {
-              "type": "number",
-              "description": "Maximum number of visible rows in the session tree."
-            }
-          },
-          "required": [],
-          "additionalProperties": false
-        },
-        "skills": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Allow skills to be used by the agent. Defaults to true."
-            },
-            "actions": {
-              "type": "boolean",
-              "description": "Show skill actions. Defaults to true."
-            },
-            "actionPrefix": {
-              "type": "string",
-              "description": "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`"
-            }
-          },
-          "required": [],
-          "additionalProperties": false
-        },
-        "commands": {
-          "type": "object",
-          "properties": {
-            "actionPrefix": {
-              "type": "string",
-              "description": "Prefix for command actions. Defaults to ``"
-            },
-            "bash": {
-              "type": "boolean",
-              "description": "Allow bash execution in commands. Defaults to true."
-            },
-            "expr": {
-              "type": "boolean",
-              "description": "Allow js expressions in command templates. Defaults to true."
-            }
-          },
-          "required": [],
-          "additionalProperties": false,
-          "description": "Template commands."
-        },
-        "compaction": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Enable automatic compaction when context is full"
-            },
-            "keepTokens": {
-              "type": "number",
-              "description": "Existing messages up to this many tokens will be preserved in the context"
-            },
-            "reasoning": {
-              "type": "string",
-              "enum": [
-                "high",
-                "low",
-                "max",
-                "medium",
-                "minimal",
-                "off",
-                "xhigh"
-              ],
-              "description": "Reasoning effort for the compaction summary"
-            },
-            "summaryTokens": {
-              "type": "number",
-              "description": "Maximum number of tokens to use for the generated summary"
-            },
-            "threshold": {
-              "type": "number",
-              "description": "Threshold for automatic compaction."
-            }
-          },
-          "required": [],
-          "additionalProperties": false
-        },
-        "masking": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Whether to enable masking. Defaults to true."
-            },
-            "minTokens": {
-              "type": "number",
-              "description": "Don't mask tool-result parts whose original content is shorter\nthan this (estimated tokens). Skips tiny \"ok\"-style success\nmessages where the stub would be larger than the original.\nDoesn't apply to attachments (always worth masking)."
-            },
-            "keepTurns": {
-              "type": "number",
-              "description": "How many turns to keep in the tail of the conversation, regardless\nof score. Defaults to 20."
-            },
-            "delta": {
-              "type": "number",
-              "description": "How far above the target ratio to trigger a new masking pass.\nDefaults to 0.25 (25%)."
-            },
-            "target": {
-              "type": "number",
-              "description": "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%)."
-            }
-          },
-          "required": [],
-          "additionalProperties": false
-        },
-        "permissions": {
-          "type": "object",
-          "properties": {
-            "preset": {
-              "type": "string",
-              "enum": [
-                "permissive",
-                "readonly",
-                "strict",
-                "yolo"
-              ],
-              "description": "Permissions preset to use. Defaults to \"permissive\"."
-            },
-            "allow": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "deny": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "ask": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [],
-          "additionalProperties": false
-        },
-        "plugins": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "resources": {
-          "$ref": "#/definitions/RecordstringResourceFilter",
-          "description": "Resource configuration for zaly."
-        },
-        "system": {
-          "type": "object",
-          "properties": {
-            "bash": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Command used by the bash tool."
-            },
-            "git": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Command used for git packs."
-            },
-            "npm": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "Package manager command used for npm packs."
-            }
-          },
-          "required": [],
-          "additionalProperties": false,
-          "description": "System integrations and external commands used by zaly."
-        },
-        "$schema": {
-          "type": "string"
-        },
-        "keymap": {
-          "$ref": "#/definitions/Recordstringstringstring"
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
+  "$defs": {
     "AnyTool": {
       "type": "string"
     },
-    "RecordstringResourceFilter": {
+    "Keymap": {
       "type": "object",
+      "properties": {},
       "additionalProperties": {
-        "$ref": "#/definitions/ResourceFilter"
-      }
-    },
-    "ResourceFilter": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Whether the plugin is enabled. Defaults to true."
-        },
-        "include": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "When set, only include the resources, matching these paths/globs from the plugin."
-        },
-        "exclude": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "Recordstringstringstring": {
-      "type": "object",
-      "additionalProperties": {
-        "oneOf": [
+        "anyOf": [
           {
             "type": "string"
           },
@@ -740,6 +354,39 @@
           }
         ]
       }
+    },
+    "ResourceFilter": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the plugin is enabled. Defaults to true."
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When set, only include the resources, matching these paths/globs from the plugin."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Resources": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {
+        "$ref": "#/$defs/ResourceFilter"
+      }
     }
-  }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false
 }

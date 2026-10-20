@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/folke/zaly/main/packages/tui/assets/schemas/theme.schema.json",
+  "id": "tokyonight-day",
+  "name": "TokyoNight Day",
+  "appearance": "light",
+  "shiki": "auto",
+  "muted": "#8ca1d3",
+  "quiet": {
+    "dim": true,
+    "fg": "muted",
+    "italic": true
+  },
+  "comment": {
+    "fg": "muted",
+    "italic": true
+  },
+  "title": {
+    "bold": true,
+    "fg": "primary"
+  },
+  "delim": "muted",
+  "ui": {
+    "bg": "bg-3"
+  },
+  "overlay": {
+    "bg": "ui"
+  },
+  "highlight": {
+    "bg": "bg-3"
+  },
+  "divider": "fg-5",
+  "gutter": "quiet",
+  "prompt": "inherit",
+  "border": "divider",
+  "borderTitle": "title",
+  "code": {
+    "bg": "bg-2"
+  },
+  "codeTitle": "title",
+  "syntaxDelimiter": "delim",
+  "syntaxBracket": "delim",
+  "mdBold": {
+    "bold": true
+  },
+  "mdCode": {
+    "bg": "highlight",
+    "fg": "primary"
+  },
+  "mdCodeBlock": "code",
+  "mdCodeBlockTitle": "title",
+  "mdHeading1": "mdHeading",
+  "mdHeading2": {
+    "bold": true,
+    "fg": "accent"
+  },
+  "mdHeading3": "mdHeading2",
+  "mdHeading4": "mdHeading2",
+  "mdHeading5": "mdHeading2",
+  "mdHeading6": "mdHeading2",
+  "mdHeading": "title",
+  "mdHr": "accent",
+  "mdItalic": {
+    "italic": true
+  },
+  "mdLink": {
+    "fg": "primary",
+    "underline": true
+  },
+  "mdListBullet": "accent",
+  "mdListChecked": "primary",
+  "mdListUnchecked": "primary",
+  "mdQuote": "muted",
+  "mdStrikethrough": {
+    "strikethrough": true
+  },
+  "mdTable": "accent",
+  "mdTableHeader": "title",
+  "optionActive": "selection",
+  "optionDesc": "muted",
+  "optionName": "primary",
+  "diffContext": {
+    "bg": "code"
+  },
+  "diffAddNum": {
+    "bg": "diffAdd-10"
+  },
+  "diffDelNum": {
+    "bg": "diffDel-10"
+  },
+  "diffContextNum": {
+    "bg": "diffContext-10"
+  },
+  "primary": "#2e7de9",
+  "accent": "#9854f1",
+  "bg": "#e1e2e7",
+  "fg": "#3760bf",
+  "selection": {
+    "bg": "#99a7df",
+    "fg": "#3760bf"
+  },
+  "success": "#587539",
+  "info": "#007197",
+  "warn": "#8c6c3e",
+  "error": "#f52a65",
+  "syntaxNumber": "#2e7de9",
+  "syntaxString": "#587539",
+  "syntaxBoolean": "#8c6c3e",
+  "syntaxFunction": "#2e7de9",
+  "syntaxField": "fg",
+  "syntaxConstant": "#9854f1",
+  "syntaxSpecial": "#f52a65",
+  "black": "#e9e9ed",
+  "red": "#f52a65",
+  "green": "#587539",
+  "yellow": "#8c6c3e",
+  "blue": "#2e7de9",
+  "magenta": "#9854f1",
+  "cyan": "#007197",
+  "white": "#6172b0",
+  "brightBlack": "#a1a6c5",
+  "brightRed": "#f52a65",
+  "brightGreen": "#587539",
+  "brightYellow": "#8c6c3e",
+  "brightBlue": "#2e7de9",
+  "brightMagenta": "#9854f1",
+  "brightCyan": "#007197",
+  "brightWhite": "#3760bf",
+  "brightGray": "#a1a6c5",
+  "brightGrey": "#a1a6c5",
+  "gray": "#a1a6c5",
+  "grey": "#a1a6c5",
+  "diffAdd": {
+    "bg": "#c6ccc4",
+    "fg": "success"
+  },
+  "diffDel": {
+    "bg": "#e5bdcd",
+    "fg": "error"
+  }
+}

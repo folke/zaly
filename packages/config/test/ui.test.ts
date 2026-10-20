@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { defaultSettings } from "../src/defaults.ts"
-import { validateConfig } from "../src/schemas/gen/config.ts"
+import { validateConfig } from "../src/schemas/config.ts"
 
 describe("syntax highlighting configuration", () => {
   test("defaults to automatic theme selection", () => {

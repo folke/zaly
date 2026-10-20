@@ -24,7 +24,7 @@
  */
 
 import { barplot, bench, do_not_optimize, summary } from "mitata"
-import { isShikiLang } from "../src/schemas/gen/shiki.ts"
+import { isShikiLang } from "../src/schemas/shiki.ts"
 import { shiki } from "../src/shiki/api.ts"
 
 // Fixtures — small/medium/large code blocks across the langs that
@@ -71,10 +71,8 @@ await warmup(SMALL_TS, "typescript")
 
 barplot(async () => {
   summary(async () => {
-    // `isLang` should be a typia-generated near-no-op now (was a module
-    // import previously). If it shows up here, the type-union check
-    // grew teeth. `do_not_optimize` keeps V8 from constant-folding the
-    // result and reporting fake-zero numbers.
+    // Measure the standalone language guard without letting V8
+    // constant-fold the result into a misleading zero.
     bench("isLang('typescript')", () => do_not_optimize(isShikiLang("typescript")))
     bench("isLang('nonsense-lang')", () => do_not_optimize(isShikiLang("nonsense-lang")))
 

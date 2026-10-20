@@ -52,7 +52,7 @@ export async function loadTheme(o?: string | { name?: string; path?: string }): 
 
 /**
  * Fill defaults on a raw theme object. Built-in JSON is dev-controlled
- * so we don't pay typia's ~3MB of generated assertions at startup;
+ * so the standalone validator stays off the main startup path;
  * user-supplied JSON goes through `loadThemeFile` which validates.
  */
 function resolveTheme(theme: (CustomTheme | Theme) & { $schema?: string }, id: string): Theme {
@@ -68,14 +68,13 @@ function resolveTheme(theme: (CustomTheme | Theme) & { $schema?: string }, id: s
  * this is the escape hatch for CLIs that accept an explicit `--theme
  * /path/to/theme.json` argument.
  *
- * Async because typia's generated `validateTheme` (a few thousand
- * unrolled assertions) is dynamically imported here — it's only needed
- * for user-supplied JSON and should stay off the main startup path.
+ * The standalone validator is dynamically imported here — it is only
+ * needed for user-supplied JSON and stays off the main startup path.
  */
 async function loadThemeFile(path: string): Promise<Theme> {
   const raw = withError(() => readFileSync(path, "utf8"), `Failed to read theme file at ${path}`)
   const data = withError(() => JSON.parse(raw), `Failed to parse theme JSON at ${path}`)
-  const { validateTheme } = await import("../schemas/gen/theme.config.ts")
+  const { validateTheme } = await import("../schemas/theme.ts")
   return resolveTheme(validateTheme(data), basename(path, ".json"))
 }
 

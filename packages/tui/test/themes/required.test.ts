@@ -1,7 +1,7 @@
 import type { CustomTheme } from "../../src/themes/default.ts"
 
 import { expect, test } from "vitest"
-import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../../src/schemas/theme.ts"
 import { defaultsDark } from "../../src/themes/default.ts"
 
 const theme = {

@@ -44,7 +44,7 @@ const b = await loadTheme("my-theme", { dirs: ["~/.config/myapp/themes"] })
 
 `loadTheme` is async (built-in themes resolve through dynamic imports). Its `name` parameter is typed `BuiltinTheme | (string & {})` — editors suggest every bundled name while still accepting arbitrary strings for custom themes.
 
-For CLIs that accept an explicit `--theme /path/to/foo.json` flag, skip the search and `await loadThemeFile(path)` directly. It's async because typia's generated validator (a few thousand unrolled assertions) is dynamically imported — built-in themes are pre-validated at build time and skip this path, so `import "@zaly/tui"` never pulls the validator into its startup graph.
+For CLIs that accept an explicit `--theme /path/to/foo.json` flag, use `await loadTheme({ path })`. File loading dynamically imports a standalone Ajv validator. Built-in themes are validated during development and skip runtime validation, so the validator stays off the main startup path.
 
 ## Bundled themes
 
@@ -76,7 +76,7 @@ A slot can be either a `Color` (shorthand for `{ fg: <color> }`) or a full `Styl
 
 ```json
 {
-  "primary": "blue",
+  "primary": "#82aaff",
   "title": { "bold": true, "fg": "primary" },
   "mdCodeBlock": { "bg": "muted", "fg": "primary" }
 }
@@ -84,13 +84,15 @@ A slot can be either a `Color` (shorthand for `{ fg: <color> }`) or a full `Styl
 
 Slots can reference other slots — `"borderTitle": "title"` means "use the `title` slot's style." Resolution is shallow, so chains are avoided.
 
-Colors accept:
+Theme JSON colors accept:
 
-- Basic ANSI names: `red`, `brightBlue`, `black`, …
-- Hex literals: `"#82aaff"`.
+- Hex literals: `"#82aaff"`, including native alpha forms such as `"#82aaff80"`.
 - Slot refs: `"primary"`, `"error"`, …
-- Alpha suffix: `"primary/15"` — pre-composites against `bg` at render time. Handy for subtle fills.
-- Tonal steps: done via the style builder chain (`style.primary[300](…)`); see [Styling](./styling).
+- Lightness adjustments on hex colors or slot refs: `"primary+5"`, `"bg-3"`.
+- `"inherit"` to leave the parent color unchanged.
+
+ANSI names such as `red` and `brightBlue` are supported by runtime styles and the
+system theme's terminal fallback, but are not accepted in theme JSON.
 
 ## Shiki integration
 
@@ -111,9 +113,9 @@ const theme = { ...dracula, primary: "#ffaa00" }
 Themes live as JSON so they're portable — users can drop a file into a config directory and load it without a TS build step.
 
 1. Copy a bundled JSON (`assets/themes/*.json`) as a starting point.
-2. Edit slot values. Validation runs at load time — typia checks the raw object against the generated `Theme` schema and throws on any structural problem.
-3. Load via `loadTheme("my-theme", { dirs: ["./themes"] })` (dir search) or `loadThemeFile("/path/to/my-theme.json")` (direct path).
-4. Re-run `bun run build:typia` after schema changes (adding new slots, refining types).
+2. Edit slot values. The standalone validator checks custom JSON at load time and reports invalid fields without modifying the input.
+3. Load via `loadTheme("my-theme", { dirs: ["./themes"] })` (dir search) or `loadTheme({ path: "/path/to/my-theme.json" })` (direct path).
+4. Edit `src/schemas/tpl/theme.ts` for schema changes and run `bun z build`. This generates `assets/schemas/theme.schema.json` and `src/schemas/gen/theme.ts`; the typed runtime wrapper lives in `src/schemas/theme.ts`.
 
 > [!TIP]
 > Contributing a new theme upstream? Drop the JSON into `assets/themes/`, run `bun scripts/gen-themes.ts` to regenerate the bundled loader map (`src/themes/*.ts` + `src/themes/index.ts`), and it becomes a first-class built-in with its own subpath export and `ThemeName` entry.

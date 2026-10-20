@@ -13,7 +13,7 @@ Project guidance for AI agents working in this repository.
 - Use the `@zaly/dev` wrapper for project tooling:
   - `bun z lint` — oxlint with TypeScript diagnostics; root lint also requires `actionlint` on PATH.
   - `bun z fmt` — oxfmt.
-  - `bun z build` — typia validators/JSON schemas, build scripts, and tsdown bundles/declarations.
+  - `bun z build` — standalone validators/JSON schemas, build scripts, and tsdown bundles/declarations.
   - `bun z api` — API surface reports via API Extractor.
 - Run from the repository root for workspace-wide operations, or inside a package for supported package-local operations.
 - Prefer `rg`/`fd` for searching; use `rekal` for indexed notes when relevant.
@@ -34,7 +34,7 @@ Project guidance for AI agents working in this repository.
 
 - Read before editing, match existing style, and keep changes focused. No new dependencies unless requested.
 - Prefer focused tests while iterating; run the full suite and both runtimes before final verification when practical.
-- Edit schema templates in `src/schemas/tpl`, not generated validators in `src/schemas/gen`; regenerate with `bun z build`.
+- Author TypeBox schemas in `src/schemas/tpl/<name>.ts`; `bun z build` generates `assets/schemas/<name>.schema.json` and standalone `src/schemas/gen/<name>.ts` validators. Typed runtime APIs live in `src/schemas/<name>.ts`. Never edit generated validators directly. Use `bun z build --no-schemas` to skip schema generation.
 - Review and include intentional generated changes. CI fails if builds/tests modify tracked files, including schemas and package build metadata.
 - For permission changes, check `permissions.test.ts`, `presets.test.ts`, and `permissions-wire.test.ts` in `packages/agent/test`.
 - For TUI rendering changes, check both `packages/tui/test/renderer` and `packages/tui/test/terminal`. Raw output intentionally includes ANSI control sequences.

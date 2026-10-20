@@ -1,7 +1,7 @@
 import type { ShikiOpts, ShikiTheme } from "./types.ts"
 
 import { hasColors } from "@zaly/shared/env"
-import { isShikiLang } from "../schemas/gen/shiki.ts"
+import { isShikiLang } from "../schemas/shiki.ts"
 
 /** List bundled highlighting themes without loading their color definitions. */
 export async function shikiThemes() {

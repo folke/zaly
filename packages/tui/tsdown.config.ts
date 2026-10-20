@@ -7,7 +7,6 @@ export default defineConfig({
     // both external lets the main bundle stay lean and defers marked until
     // `await import("#md")` actually runs.
     neverBundle: ["#md"],
-    onlyBundle: ["typia"],
   },
   entry: {
     "md.bun": "src/runtime/md.bun.ts",

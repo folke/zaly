@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
 
 const packages = ["shared", "ai", "tui", "config", "plugin", "agent"]
 for (const pkg of packages) await import(`@zaly/${pkg}`)
@@ -14,6 +15,29 @@ for (const id of themeRegistry.keys()) {
   const theme = await loadTheme(id)
   assert.equal(theme.id, id, `Packed theme failed to load: ${id}`)
 }
+
+const profile = join(process.cwd(), "test-profile")
+for (const key of ["CONFIG", "STATE", "CACHE", "DATA", "LOG", "TMP"]) {
+  process.env[`ZALY_${key}`] = join(profile, key.toLowerCase())
+  mkdirSync(process.env[`ZALY_${key}`], { recursive: true })
+}
+mkdirSync(join(process.cwd(), ".zaly"), { recursive: true })
+writeFileSync(
+  join(profile, "config/config.json"),
+  JSON.stringify({ keymap: { test: "A" }, ui: { shiki: "auto" } })
+)
+writeFileSync(
+  join(profile, "config/models.json"),
+  JSON.stringify({ local: { models: [{ id: "test", input: ["text"] }] } })
+)
+writeFileSync(join(profile, "state/state.json"), JSON.stringify({ lastModel: "local/test" }))
+const { loadConfig } = await import("@zaly/config")
+const { Logger } = await import("@zaly/shared/logger")
+const config = await loadConfig({ cwd: process.cwd(), logger: new Logger() })
+assert.equal(config.$.keymap.test, "shift-a", "Packed config did not normalize keymaps")
+assert.equal(config.$.ui.shiki, "auto")
+assert.equal(config.models.$.local.models[0].id, "test", "Packed model validation failed")
+assert.equal(config.state.$.lastModel, "local/test", "Packed state validation failed")
 
 // An active app handle lets the intentionally unreferenced worker finish its request.
 const keepAlive = setInterval(() => {}, 1000)

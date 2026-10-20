@@ -1,5 +1,5 @@
 import type { TerminalPaletteSnapshot } from "../input/queries.ts"
-import type { HexColor } from "../style/types.ts"
+import type { Color, HexColor } from "../style/types.ts"
 import type { Theme } from "./types.ts"
 
 import { blend } from "../style/color.ts"
@@ -35,16 +35,40 @@ const ANSI_NAMES = [
   "brightWhite",
 ] as const
 
-/** Freeze ANSI references through named palette slots, using the normal resolver. */
-export function themeFromPalette(palette: TerminalPalette): Omit<Theme, "id"> {
+/** @internal Replace palette-name bases while retaining authored lightness adjustments. */
+export function internalizePalette(
+  theme: Omit<Theme, "id">,
+  colors: ReadonlyMap<string, HexColor>
+): Omit<Theme<false>, "id"> {
+  const color = (value: string) => {
+    const [, base, suffix = ""] = value.match(/^(.+?)([+-]\d+)?$/) ?? ["", value]
+    const hex = colors.get(base)
+    return (hex === undefined ? value : `${hex}${suffix}`) as Color
+  }
+  return Object.fromEntries(
+    Object.entries(theme).map(([key, value]) => {
+      if (["$schema", "id", "name", "shiki", "appearance"].includes(key)) return [key, value]
+      if (typeof value === "string") return [key, color(value)]
+      if (typeof value !== "object") return [key, value]
+      const style = { ...value }
+      if (style.fg !== undefined) style.fg = color(style.fg)
+      if (style.bg !== undefined) style.bg = color(style.bg)
+      return [key, style]
+    })
+  ) as Omit<Theme<false>, "id">
+}
+
+/** Freeze a complete terminal palette into a file-compatible RGB theme. */
+export function themeFromPalette(palette: TerminalPalette): Omit<Theme<false>, "id"> {
   if (palette.ansi.length !== 16)
     throw new Error("A terminal palette requires exactly 16 ANSI colors")
   const appearance = palette.appearance ?? (isDark(palette.bg) ? "dark" : "light")
-  const colors = Object.fromEntries(ANSI_NAMES.map((name, i) => [name, palette.ansi[i]]))
+  const colors = new Map<string, HexColor>(ANSI_NAMES.map((name, i) => [name, palette.ansi[i]]))
+  for (const name of ["brightGray", "brightGrey", "gray", "grey"]) colors.set(name, palette.ansi[8])
   const theme: Omit<Theme, "id"> = {
     ...(appearance === "dark" ? defaultsDark : defaultsLight),
     ...defaultsSystem,
-    ...colors,
+    ...Object.fromEntries(colors),
     appearance,
     bg: palette.bg,
     diffAdd: { bg: blend(palette.ansi[2], palette.bg, 0.2), fg: "success" },
@@ -54,14 +78,8 @@ export function themeFromPalette(palette: TerminalPalette): Omit<Theme, "id"> {
     selection: { bg: blend(palette.ansi[12], palette.bg, 0.3) },
     syntaxField: "fg",
   }
-  Object.assign(theme, {
-    brightGray: palette.ansi[8],
-    brightGrey: palette.ansi[8],
-    gray: palette.ansi[8],
-    grey: palette.ansi[8],
-  })
   if (palette.selectionBg) theme.selection = { bg: palette.selectionBg, fg: palette.selectionFg }
-  return theme
+  return internalizePalette(theme, colors)
 }
 
 /** Choose the richest coherent strategy supported by this terminal snapshot. */

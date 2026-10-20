@@ -118,7 +118,7 @@ export type Config = Simplify<
   }
 >
 
-export type TypiaConfig = Omit<Config, "keymap"> & {
+export type ConfigInput = Omit<Config, "keymap"> & {
   keymap?: Record<string, string | string[]>
 }
 

@@ -50,20 +50,16 @@ const main = defineCommand({
           description: "Also run `build:*` scripts before tsdown",
           default: true,
         },
-        typia: {
+        schemas: {
           type: "boolean",
-          description: "Also build typia validators and JSON schemas (if applicable)",
+          description: "Also generate validators and JSON schemas (if applicable)",
           default: true,
         },
       },
       run: async ({ args }) => {
-        if (args.typia) {
-          const { compile, generateJsonSchemas, hasSchemas } = await import("./typia.ts")
-          for (const pkg of await resolvePkgs()) {
-            if (!hasSchemas(pkg.dir)) continue
-            await compile(pkg.dir)
-            await generateJsonSchemas(pkg.dir)
-          }
+        if (args.schemas) {
+          const { generateSchemas } = await import("./schemas.ts")
+          for (const pkg of await resolvePkgs()) await generateSchemas(pkg.dir)
         }
         const pkg = await findPkg()
         if (args.scripts) await runScripts("build:*", pkg)

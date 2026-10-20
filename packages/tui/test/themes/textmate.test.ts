@@ -5,7 +5,7 @@ import { bundledThemes, createHighlighter, normalizeTheme } from "shiki"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { THEMES, toTui } from "../../scripts/themes-shiki.ts"
 import { createThemeResolver, opaqueColor } from "../../scripts/themes-textmate.ts"
-import { validateTheme } from "../../src/schemas/gen/theme.config.ts"
+import { validateTheme } from "../../src/schemas/theme.ts"
 
 function resolver(rules: ThemeRegistration["settings"]) {
   return createThemeResolver(

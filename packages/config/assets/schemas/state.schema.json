@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "inputHistory": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lastModel": {
+      "type": "string"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false
+}

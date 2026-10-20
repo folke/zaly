@@ -10,7 +10,7 @@ import type { WorkerInstance } from "./worker.ts"
 
 import { hash, toError } from "@zaly/shared"
 import { hasColors } from "@zaly/shared/env"
-import { isShikiLang } from "../schemas/gen/shiki.ts"
+import { isShikiLang } from "../schemas/shiki.ts"
 
 function isJob(s: ShikiJob | ShikiResult): s is ShikiJob {
   return "key" in s && "lang" in s
