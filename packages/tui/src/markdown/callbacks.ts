@@ -32,8 +32,9 @@ const alertRe = /^\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*$/
  * a custom `Text` content function).
  * @internal
  */
-export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
+export function createCallbacks(ctx: MarkdownCtx, linkPrefix = crypto.randomUUID()): MdCallbacks {
   const s = ctx.style
+  let linkSeq = 0
 
   return {
     blockquote: (children) => {
@@ -76,7 +77,8 @@ export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
 
     html: (children) => children,
 
-    link: (children, { href }) => hyperlink(href, s.mdLink(children)),
+    link: (children, { href }) =>
+      hyperlink(href, s.mdLink(children), `${linkPrefix}-${++linkSeq}`),
 
     paragraph: (children) => `${children}\n\n`,
 
