@@ -48,7 +48,6 @@ export default defineConfig({
   },
   entry: {},
   dts: {
-    generator: "tsgo",
     sourcemap: true,
   },
   exports: {
