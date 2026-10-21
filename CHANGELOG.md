@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.1.0](https://github.com/folke/zaly/compare/v0.0.12...v0.1.0) (2026-10-21)
+
+
+### 🚀 Enhancements
+
+* **agent:** fetch web pages as readable Markdown ([ae4be56](https://github.com/folke/zaly/commit/ae4be56316cfbf7a47a19085496e760a0d536d5e))
+* **cli:** add custom fetch result previews ([068fdd9](https://github.com/folke/zaly/commit/068fdd94dbeb9a1e1e183f376f7a1dda629b8eaf))
+* **tui:** auto generate shiki theme based on zaly theme when needed ([bd867f3](https://github.com/folke/zaly/commit/bd867f3476c428a7bb9ef6ba5e1e5a75c9f465cb))
+* **tui:** builtin themes should never use ANSI color names ([d54af83](https://github.com/folke/zaly/commit/d54af838be04bee7ec6ff0bafdf560c3236b2a41))
+* **tui:** dark/light aware theming and better diff colors ([08775d6](https://github.com/folke/zaly/commit/08775d6f9fdb9f5a62c3c61583d7c60bafea15a6))
+* **tui:** experimental zaly theme generator based on iterm2 themes ([8655cc2](https://github.com/folke/zaly/commit/8655cc20ee1287df643fb6acdae601f40a025e63))
+* **tui:** markdown now renders latex math expressions when KGP is available ([7e5cd99](https://github.com/folke/zaly/commit/7e5cd9942bdf71d0a1dc4a934bb41f6a70dea52c))
+* **tui:** more zaly themes ([c8100e8](https://github.com/folke/zaly/commit/c8100e84eabb66332bef4ce1eac0f1d175699738))
+* **tui:** system theme based on terminal palette ([653a91f](https://github.com/folke/zaly/commit/653a91f6d7e82a2382593be0fffc25ebf3b2e188))
+
+
+### 🩹 Fixes
+
+* **agent:** better search result formatting ([75c5bf7](https://github.com/folke/zaly/commit/75c5bf710fde7a4a8aa13b782a9a506c0bce5c40))
+* **agent:** preserve partial results in case of find errors ([21c15e9](https://github.com/folke/zaly/commit/21c15e9fa145344c85685853c3a8c28dfda4c634))
+* **agent:** preserve partial results in case of grep errors ([6e83988](https://github.com/folke/zaly/commit/6e839886cb08de885599250851af643aad0be4e7))
+* **agent:** use limit for bash output and allow small previews ([d404271](https://github.com/folke/zaly/commit/d4042717218638396c0ca813f190ac69c206c8b9))
+* **models:** update models.dev catalog ([#51](https://github.com/folke/zaly/issues/51)) ([5aa3e65](https://github.com/folke/zaly/commit/5aa3e65b8d040a5ded43860dc3087185d801b953))
+* **models:** update models.dev catalog ([#53](https://github.com/folke/zaly/issues/53)) ([45aa2c1](https://github.com/folke/zaly/commit/45aa2c1a1fc92180e2f8704e391f9bbc4d8c77f5))
+* **schemas:** generate schemas from their actual root types ([78979f5](https://github.com/folke/zaly/commit/78979f57dd744d827b0ef30dbea3312a2fee2643))
+* **shared:** distinguish XML documents from SVG images ([6a42be4](https://github.com/folke/zaly/commit/6a42be49c2b450630b798f755f12f778f398b88a))
+* **tui:** don't use enum in shiki API, so that tests don't need transform ([1ee7791](https://github.com/folke/zaly/commit/1ee77911dba116c44e6814eef0967a1396fd087b))
+* **tui:** preserve EOF newline semantics in diff rendering ([7046fea](https://github.com/folke/zaly/commit/7046fead1c91dd61dd569728e5e031849e925abc))
+
+
+### 💅 Refactors
+
+* generate JSON schemas based on TS Types ([49f849b](https://github.com/folke/zaly/commit/49f849b019c42f56aa3f641f894547ee3c159925))
+* get rid of typia in favor of typebox + ajv ([3b95b68](https://github.com/folke/zaly/commit/3b95b6816c4f917f87989d0dc6fc2fecc46e599f))
+* **tui:** Theme.mode -&gt; Theme.appearance ([14164a9](https://github.com/folke/zaly/commit/14164a919fa26668365b6d6ef68960b832e1ac92))
+
+
+### 📖 Documentation
+
+* **etc:** re-generate API extracts and exports ([6542d34](https://github.com/folke/zaly/commit/6542d34194a383740e80b266e00fe90c872ca15a))
+
+
+### 📦 Build
+
+* **tsdown:** use auto generator for dts, which will default to TS7 ([3568d79](https://github.com/folke/zaly/commit/3568d7994f58525b6971fc37699bfac773137740))
+
+
+### 🤖 CI
+
+* remove ttsc plugin cache ([9f24ce1](https://github.com/folke/zaly/commit/9f24ce1f430e580282cdf4a78ebee78ce827def9))
+* start bumping minor when needed ([8badfa5](https://github.com/folke/zaly/commit/8badfa52f92a6486d6738abdcc8dbe2b8c4d8947))
+
 ## [0.0.12](https://github.com/folke/zaly/compare/v0.0.11...v0.0.12) (2026-10-18)
 
 
