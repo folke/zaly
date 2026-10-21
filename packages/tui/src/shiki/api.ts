@@ -20,14 +20,15 @@ type T = ShikiTheme
 const THEME: ShikiTheme = "tokyo-night"
 
 // See: https://github.com/shikijs/vscode-textmate/blob/19dc9b889aa47df91027e857cdad518760b5a026/src/theme.ts#L326
-const enum FontStyle {
-  NotSet = -1,
-  None = 0,
-  Italic = 1,
-  Bold = 2,
-  Underline = 4,
-  Strikethrough = 8,
-}
+// oxlint-disable-next-line sort-keys
+const FontStyle = {
+  NotSet: -1,
+  None: 0,
+  Italic: 1,
+  Bold: 2,
+  Underline: 4,
+  Strikethrough: 8,
+} as const
 
 const highlighter = await createHighlighterCore({
   engine: await createOnigurumaEngine(import("shiki/wasm")),
