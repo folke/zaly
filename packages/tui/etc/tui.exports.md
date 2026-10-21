@@ -1,18 +1,21 @@
-# @zaly/tui (108)
+# @zaly/tui (124)
 
-## Classes (2)
+## Classes (3)
 
 - KeyPatternError
 - Owner
+- TerminalQueries
 
-## Functions (32)
+## Functions (39)
 
 - canonical
 - codeToAnsi
 - createAsync
 - createContext
 - createCtx
+- createIterable
 - createNode
+- createProgressive
 - createRef
 - createRender
 - createRenderer
@@ -30,7 +33,12 @@
 - keyMatches
 - memo
 - onCleanup
+- parseAttrs
+- parseTerminalColor
+- peek
 - provideContext
+- shikiTheme
+- shikiThemes
 - signal
 - toAccessor
 - untrack
@@ -61,7 +69,7 @@
 
 - isNode
 
-## Types (62)
+## Types (70)
 
 - Accessor
 - Action
@@ -76,11 +84,11 @@
 - AnyStyle
 - BaseEvents
 - BrightAnsiColorName
-- BuiltinAction
 - Color
 - ColorLightness
 - Context
 - FlexState
+- GeneratedShikiTheme
 - HexColor
 - InputRouterEvents
 - InspectOpts
@@ -97,6 +105,7 @@
 - NodeAction
 - NodeActionMap
 - NodeVisitor
+- Progressive
 - RGB
 - Reactive
 - Ref
@@ -109,11 +118,14 @@
 - Setter
 - ShikiJob
 - ShikiLanguage
+- ShikiOpts
 - ShikiRequest
 - ShikiResult
+- ShikiSelection
 - ShikiTheme
+- ShikiThemeInput
+- ShikiWorkerMessage
 - ShikiWorkerRequest
-- ShikiWorkerResponse
 - Signal
 - SignalStore
 - SpecialKeyName
@@ -122,6 +134,10 @@
 - StyleState
 - SurfaceType
 - SuspenseBoundary
+- TerminalPaletteSnapshot
+- TerminalQuery
+- TerminalQueryOpts
 - Theme
 - ThemeKey
+- ThemeStyle
 - ThemeValue

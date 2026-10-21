@@ -4,9 +4,6 @@
 
 ```ts
 
-import { DumpOptions } from 'js-yaml';
-import { LoadOptions } from 'js-yaml';
-
 // @public (undocumented)
 export function parseFrontmatter(content: string, opts?: YamlParseOpts): Promise<{
     fm: Record<string, unknown>;

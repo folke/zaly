@@ -107,7 +107,7 @@ export type LogMeta<T extends object = {}> = {
 
 // @public (undocumented)
 export type LogReporter = {
-    $log(entry: LogEntry<any>): void;
+    $log: (entry: LogEntry<any>) => void;
 };
 
 // @public (undocumented)

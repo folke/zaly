@@ -4,7 +4,7 @@
 
 ```ts
 
-import sharpType from 'sharp';
+import { Sharp } from 'sharp';
 
 // @public (undocumented)
 export interface CompressOpts {

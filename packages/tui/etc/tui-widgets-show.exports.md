@@ -1,13 +1,16 @@
-# @zaly/tui/widgets/show (3)
-
-## Classes (1)
-
-- Show
+# @zaly/tui/widgets/show (6)
 
 ## Functions (1)
 
 - show
 
-## Types (1)
+## Types Classes (1)
 
-- ShowState
+- Show
+
+## Types (4)
+
+- ShowBranch
+- ShowChildren
+- ShowGate
+- ShowSpec

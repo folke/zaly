@@ -18,8 +18,8 @@ export type EnvPaths = {
     state: string;
 };
 
-// @public (undocumented)
-export function envPaths(): EnvPaths;
+// @public
+export function envPaths(root?: string): EnvPaths;
 
 // @public (undocumented)
 export function isRemotePath(path: string): boolean;
@@ -28,10 +28,11 @@ export function isRemotePath(path: string): boolean;
 export type ProjectPaths = {
     cwd: string;
     dotAgents: string[];
-    dotZaly?: string;
+    dotZaly: string;
     git?: string;
     root: string;
     stop: string;
+    env: EnvPaths;
 };
 
 // @public (undocumented)
@@ -41,10 +42,11 @@ export function projectPaths(cwd?: string): ProjectPaths;
 export const zalyPaths: {
     readonly config: string;
     readonly env: EnvPaths;
-    pluginPath(plugin: string): string; /** Installed plugins directory */
+    readonly models: string;
+    pluginPath(plugin: string): string;
     readonly plugins: string;
     project(cwd?: string): ProjectPaths;
-    readonly sessions: string; /** state.json is for cross-run user state — last model picked, future prefs, etc. */
+    readonly sessions: string;
     readonly state: string;
 };
 

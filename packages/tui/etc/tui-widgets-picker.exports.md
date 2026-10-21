@@ -6,7 +6,7 @@
 
 ## Types (4)
 
-- PickerFn
-- PickerResult
+- PickerActions
+- PickerItem
 - PickerSelectProps
 - PickerTreeProps

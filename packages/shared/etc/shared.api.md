@@ -4,7 +4,10 @@
 
 ```ts
 
-import * as _$node_fs0 from 'node:fs';
+import { BigIntStats } from 'node:fs';
+import { PathLike } from 'node:fs';
+import { StatOptions } from 'node:fs';
+import { Stats } from 'node:fs';
 
 // @public (undocumented)
 export type AnyFn<A extends any[] = never[], R = unknown> = (...args: A) => R;
@@ -22,6 +25,9 @@ export function compareNaturalDescNumbers(a: string, b: string): number;
 export function decodePath(encoded: string): string;
 
 // @public
+export type DeepPartial<T> = { [K in keyof T]?: T[K] extends readonly unknown[] ? T[K] : T[K] extends object ? Simplify<DeepPartial<T[K]>> : T[K]; };
+
+// @public
 export type EmitArgs<E> = keyof E extends never ? [] : [event: E];
 
 // @public
@@ -34,7 +40,7 @@ export type Emitter<A extends EventMap_2 = never, B extends EventMap_2 = never, 
 export function encodePath(path: string): string;
 
 // @public
-export type Envelope<T extends EventMap_2> = { [K in keyof T & string]: EventOf<T, K> }[keyof T & string];
+export type Envelope<T extends EventMap_2> = { [K in keyof T & string]: EventOf<T, K>; }[keyof T & string];
 
 // @public
 type EventMap_2 = Record<string, Record<string, unknown> | {
@@ -51,7 +57,7 @@ export type EventOf<T extends EventMap_2, K extends keyof T & string> = {
 } & T[K];
 
 // @public (undocumented)
-export type EventType<T extends EventMap_2> = keyof T & string;
+export type EventType<T extends EventMap_2> = [T] extends [never] ? never : keyof T & string;
 
 // @public
 export function findUp(root: string, name: string | string[], opts?: Partial<FindUpOpts<false>>): string | undefined;
@@ -73,16 +79,16 @@ export function formatDuration(from: number, opts?: {
 }): string;
 
 // @public (undocumented)
-export function formatNumber(n: number): string;
+export function formatNumber(n: number, opts?: Intl.NumberFormatOptions): string;
 
 // @public (undocumented)
-export function formatRelTime(from: number, opts?: {
+export function formatRelativeTime(from: number, opts?: {
     to?: number;
     nowThreshold?: number;
 }): string;
 
 // @public (undocumented)
-export function formatSize(bytes: number): string;
+export function formatSize(bytes: number, digits?: number): string;
 
 // @public (undocumented)
 export function gitRoot(path: string): string | undefined;
@@ -96,29 +102,14 @@ export const isInstance: <T>(v: unknown) => v is T;
 // @public (undocumented)
 export function isPromiseLike(value: unknown): value is PromiseLike<unknown>;
 
-// @public (undocumented)
-export type JsonArray = JsonValue[] | readonly JsonValue[];
-
-// @public (undocumented)
-export type JsonObject = { [Key in string]: JsonValue };
-
-// @public (undocumented)
-export type JsonPrimitive = string | number | boolean | null;
-
-// @public
-export type JsonReviver = (this: unknown, key: string, value: unknown) => unknown;
-
-// @public (undocumented)
-export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
-
 // @public
 export type Listener<E, Self> = (event: E, self: Self, ctx: ListenerCtx) => unknown;
 
 // @public (undocumented)
 export type ListenerCtx = {
-    serial?: boolean; /** Signal that aborts when the current listener chain should stop */
-    signal: AbortSignal; /** Abort the current listener chain with an optional reason */
-    abort(reason?: unknown): void;
+    serial?: boolean;
+    signal: AbortSignal;
+    abort: (reason?: unknown) => void;
 };
 
 // @public (undocumented)
@@ -127,7 +118,10 @@ export type ListenerOpts = {
 };
 
 // @public (undocumented)
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybeGetter<T> = T | (() => T);
+
+// @public
+export type MaybePromise<T = void> = T | Promise<T>;
 
 // @public (undocumented)
 export function normPath(...paths: (string | undefined)[]): string;
@@ -137,9 +131,6 @@ export function prettyPath(path: string, to?: string): string;
 
 // @public (undocumented)
 export function randomHash(len?: number): string;
-
-// @public (undocumented)
-export function readJson<T extends JsonObject = JsonObject>(path: string, reviver?: JsonReviver): Promise<T>;
 
 // @public (undocumented)
 export function safeFn<T extends AnyFn>(fn: T): (...args: Parameters<T>) => SafeReturn<T>;
@@ -154,22 +145,25 @@ export const safeReadFile: (p: string) => Promise<string | undefined>;
 export const safeReadFileSync: (path: string) => string | undefined;
 
 // @public (undocumented)
-export function safeReadJson<T extends JsonObject = JsonObject>(path: string, reviver?: JsonReviver): Promise<T | undefined>;
+export const safeStat: (path: PathLike, options?: StatOptions | undefined) => BigIntStats | Stats | undefined;
 
 // @public (undocumented)
-export const safeStat: (path: _$node_fs0.PathLike, options?: _$node_fs0.StatOptions | undefined) => _$node_fs0.BigIntStats | _$node_fs0.Stats | undefined;
-
-// @public (undocumented)
-export const safeStatAsync: (p: string) => Promise<_$node_fs0.Stats | undefined>;
+export const safeStatAsync: (p: string) => Promise<Stats | undefined>;
 
 // @public
 export function safeStringify(value: unknown, replacer?: (key: string, value: unknown) => unknown, space?: string | number): string;
 
-// @public (undocumented)
-export function safeWriteJson<T extends JsonObject = JsonObject>(path: string, data: T | ((prev?: T) => T)): Promise<T | undefined>;
+// @public
+export type Simplify<T> = T extends SkipSimplify ? T : { [K in keyof T]: T[K]; } & {};
+
+// @public
+export type SimplifyDeep<T> = T extends SkipSimplify ? T : T extends (infer U)[] ? SimplifyDeep<U>[] : T extends object ? { [K in keyof T]: SimplifyDeep<T[K]>; } & {} : T;
 
 // @public (undocumented)
 export function toError(err: unknown): Error;
+
+// @public (undocumented)
+export function toValue<T>(value: MaybeGetter<T>): T;
 
 // @public (undocumented)
 export function withError<T>(fn: () => T, errorMsg: string): T;
@@ -179,9 +173,6 @@ export function withLock<T>(path: string, fn: () => Promise<T>): Promise<T>;
 
 // @public (undocumented)
 export function wrapError(msg: string, cause: unknown): Error;
-
-// @public
-export function writeJson<T extends JsonObject = JsonObject>(path: string, data: T | ((prev?: T) => T)): Promise<T>;
 
 // (No @packageDocumentation comment for this package)
 

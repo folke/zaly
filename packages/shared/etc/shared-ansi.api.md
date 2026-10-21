@@ -10,6 +10,9 @@ export const APC_RE: RegExp;
 // @public (undocumented)
 export const CSI_RE: RegExp;
 
+// @public (undocumented)
+export const fitAnsi: (s: string, width: number, ellipsis?: string) => string;
+
 // @public
 export function hasAnsi(text: string): boolean;
 
@@ -17,7 +20,7 @@ export function hasAnsi(text: string): boolean;
 export const OSC_RE: RegExp;
 
 // @public (undocumented)
-export const RESET = "\u001B[0m";
+export const RESET = "[0m";
 
 // @public
 export function sliceAnsi(s: string, start: number, end?: number): string;
@@ -34,7 +37,7 @@ export function stripAnsi(s: string, opts?: {
 }): string;
 
 // @public (undocumented)
-export const truncateAnsi: (s: string, maxLength: number, ellipsis?: string) => string;
+export const truncateAnsi: (s: string, width: number, ellipsis?: string) => string;
 
 // @public
 export function wrapAnsi(s: string, width: number, opts?: WrapOpts): string;

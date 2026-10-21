@@ -1,11 +1,10 @@
-# @zaly/tui/services/picker (4)
+# @zaly/tui/services/picker (3)
 
 ## Classes (1)
 
 - Picker
 
-## Types (3)
+## Types (2)
 
 - PickOpts
-- PickSelectOpts
-- PickTreeOpts
+- ToggleItem

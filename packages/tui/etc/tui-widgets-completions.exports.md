@@ -1,12 +1,10 @@
-# @zaly/tui/widgets/completions (12)
+# @zaly/tui/widgets/completions (10)
 
-## Functions (5)
+## Functions (3)
 
 - actionsSource
 - filesSource
-- fuzzyScore
 - githubSource
-- rank
 
 ## Types (7)
 

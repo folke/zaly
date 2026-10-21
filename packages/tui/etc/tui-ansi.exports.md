@@ -1,12 +1,14 @@
-# @zaly/tui/ansi (8)
+# @zaly/tui/ansi (10)
 
-## Functions (6)
+## Functions (8)
 
 - ansiBg
 - ansiColor
+- applyDefaultColors
 - hyperlink
 - openAnsi
 - reapplyStyle
+- stripAnsiBg
 - styleAnsi
 
 ## Constants (1)

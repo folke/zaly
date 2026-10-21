@@ -20,6 +20,8 @@ export type LoaderMap<L extends Loader_2> = Record<string, L>;
 // @public (undocumented)
 export class Registry<L extends Loader_2, I extends LoaderMap<L> = LoaderMap<L>> {
     constructor(label: string);
+    // (undocumented)
+    fork(label?: string): Registry<L, I>;
     from<const E extends LoaderMap<L>>(entries: E): Registry<L, E>;
     // (undocumented)
     has(name: AnyRegKey<I>): boolean;
@@ -28,6 +30,8 @@ export class Registry<L extends Loader_2, I extends LoaderMap<L> = LoaderMap<L>>
     load<N extends keyof I>(name: N, ...args: LoadArgs<L>): ReturnType<I[N]>;
     // (undocumented)
     load(name: string, ...args: LoadArgs<L>): ReturnType<L>;
+    // (undocumented)
+    protected loader(name: string): L | undefined;
     register(name: string, loader: L): () => void;
 }
 

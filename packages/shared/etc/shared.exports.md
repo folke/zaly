@@ -1,10 +1,10 @@
-# @zaly/shared (50)
+# @zaly/shared (46)
 
 ## Classes (1)
 
 - Emitter
 
-## Functions (32)
+## Functions (29)
 
 - atomicWriteFile
 - clamp
@@ -23,25 +23,23 @@
 - normPath
 - prettyPath
 - randomHash
-- readJson
 - safeFn
 - safeParseJson
 - safeReadFile
 - safeReadFileSync
-- safeReadJson
 - safeStat
 - safeStatAsync
 - safeStringify
-- safeWriteJson
 - toError
+- toValue
 - withError
 - withLock
 - wrapError
-- writeJson
 
-## Types (17)
+## Types (16)
 
 - AnyFn
+- DeepPartial
 - EmitArgs
 - Envelope
 - EventMap
@@ -49,12 +47,10 @@
 - EventOf
 - EventType
 - FindUpOpts
-- JsonArray
-- JsonObject
-- JsonPrimitive
-- JsonReviver
-- JsonValue
 - Listener
 - ListenerCtx
 - ListenerOpts
+- MaybeGetter
 - MaybePromise
+- Simplify
+- SimplifyDeep

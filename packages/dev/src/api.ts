@@ -15,7 +15,7 @@ import { mkdirSync } from "node:fs"
 import { join } from "pathe"
 
 // `@zaly/cli` is a leaf binary, not consumed externally — skip it.
-export const API_PACKAGES = ["agent", "ai", "shared", "tui"] as const
+export const API_PACKAGES = ["agent", "ai", "shared", "tui", "config", "plugin"] as const
 
 function reportName(pkgName: string, subpath: string): string {
   const base = pkgName.split("/").pop()!
@@ -45,6 +45,7 @@ function configFor(pkgDir: string, pkgName: string, subpath: string, dts: string
       reportFolder: "<projectFolder>/etc/",
       reportTempFolder: "<projectFolder>/temp/",
     },
+    newlineKind: "lf",
     docModel: { enabled: false },
     dtsRollup: { enabled: false },
     tsdocMetadata: { enabled: false },

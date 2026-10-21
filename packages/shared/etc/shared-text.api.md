@@ -12,11 +12,11 @@ export const cleanTextAgent: (s: string, opts?: CleanTextOpts) => string;
 
 // @public (undocumented)
 export type CleanTextOpts = {
-    keepStyles?: boolean; /** Run `stripAnsi`. Default `true`. */
-    ansi?: boolean; /** Run `stripBinary`. Default `true`. */
+    keepStyles?: boolean;
+    ansi?: boolean;
     binary?: boolean;
-    adversarial?: boolean; /** Run `normalizeEol`. Default `true`. */
-    eol?: boolean; /** Apply `String.prototype.normalize("NFC")`. Default `true`. */
+    adversarial?: boolean;
+    eol?: boolean;
     unicode?: boolean;
     nul?: string;
 };

@@ -51,8 +51,8 @@ export type DetectedText<T extends TextFormat = TextFormat> = FileData & {
 
 // @public (undocumented)
 export type FileData = {
-    data: Uint8Array; /** On-disk path, when the source resolved to a local file. */
-    path?: string; /** Source URL, when the source was an http(s) URL or file URI. */
+    data: Uint8Array;
+    path?: string;
     url?: string;
     hash?: string;
     mime?: string;

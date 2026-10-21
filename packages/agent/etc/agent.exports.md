@@ -1,16 +1,25 @@
-# @zaly/agent (81)
+# @zaly/agent (104)
 
 ## Classes (2)
 
 - Commands
 - Skills
 
-## Functions (6)
+## Functions (15)
 
 - createAgent
+- estimatePart
+- extractBashUsage
+- extractConversation
+- extractFileUsage
+- formatBashUsage
+- formatFileUsage
+- formatTokenStats
 - isUuidv7
 - isUuidv7Like
+- messageTail
 - promptCollection
+- tokenStats
 - toolCollection
 - uuidv7
 
@@ -31,14 +40,18 @@
 - TokenUsage
 - ToolCollection
 
-## Types Functions (4)
+## Types Functions (8)
 
 - addUsage
+- assertFresh
+- checkFresh
 - createAgentContext
+- freshnessError
+- isUnchanged
 - taskCompletionMessage
 - taskInfoPart
 
-## Types (58)
+## Types (68)
 
 - AgentContextEvents
 - AgentEvents
@@ -51,6 +64,7 @@
 - AnyScope
 - AnyTool
 - BashTool
+- BashUsage
 - BuiltinPrompt
 - BuiltinScope
 - BuiltinTool
@@ -61,6 +75,11 @@
 - DoneTaskInfo
 - EditTool
 - EditToolMeta
+- FetchTool
+- FetchToolMeta
+- FileMeta
+- FileTool
+- FileUsage
 - FindTool
 - FindToolMeta
 - GrepTool
@@ -92,8 +111,12 @@
 - TaskMeta
 - TaskStatus
 - TasksEvents
+- TokenCount
+- TokenStats
 - ToolInit
 - ToolLoader
+- ToolStat
+- ToolStatOptions
 - TurnResult
 - Verdict
 - WriteTool

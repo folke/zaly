@@ -1,31 +1,28 @@
-# @zaly/ai (133)
+# @zaly/ai (157)
 
-## Classes (3)
+## Classes (5)
 
 - AiError
+- AuthManager
 - ContentTransform
 - Model
+- ModelCatalog
 
-## Functions (52)
+## Functions (48)
 
 - attachmentToMeta
-- authenticate
-- builtinProviders
-- chainAuth
 - compressImages
 - createTransform
 - defineTool
+- downloadCatalog
 - dropAttachments
 - errorToMeta
 - errorToMetaPart
 - extractToolCalls
 - extractToolResults
 - fileToMetaPart
-- filterModel
-- filterModels
 - getModel
 - hasAttachments
-- hasAuth
 - inlineFile
 - inlineFileSources
 - isAttachment
@@ -34,8 +31,7 @@
 - isErrorInfo
 - isStreamable
 - justText
-- listModelIds
-- listModels
+- loadCatalog
 - loadModel
 - metaToText
 - metaToTextPart
@@ -43,8 +39,9 @@
 - pairedToolIds
 - parseJson
 - parseModelId
-- registerSecrets
 - renderMetaPart
+- resolveApiKey
+- resolveModels
 - runTool
 - safeParseToolParams
 - sanitizeText
@@ -54,6 +51,7 @@
 - toErrorPart
 - toErrorResult
 - toImagePart
+- toModelSpec
 - toParts
 - toPdfPart
 - toXml
@@ -61,32 +59,39 @@
 - truncateText
 - withRetry
 
-## Constants (1)
+## Constants (3)
 
-- authRegistry
+- DEFAULT_CONTEXT_SIZE
+- DEFAULT_MAX_TOKENS
+- zalyUserAgent
 
-## Types Classes (2)
+## Types Classes (1)
 
 - ModelCollection
-- SecretsManager
 
-## Types Functions (2)
+## Types Functions (3)
 
 - collect
-- secretsAuth
+- filterModel
+- filterModels
 
-## Types (73)
+## Types (97)
 
-- AnyAuthProvider
+- AnyContent
 - AnyPart
+- AnyType
+- ApiKey
+- ApiKeySecret
 - AssistantMessage
 - Attachment
 - AudioPart
-- AuthCredentials
-- AuthLoader
-- AuthProvider
+- AuthLogin
+- AuthLoginMethod
+- AuthManagerOpts
+- AuthSecret
 - AuthSecrets
-- BuiltinAuthProvider
+- AuthSource
+- CatalogModel
 - CollectOptions
 - Content
 - ContentPart
@@ -95,7 +100,6 @@
 - ErrorCode
 - ErrorInfo
 - ErrorPart
-- ExperimentalModes
 - FetchLike
 - FilePart
 - FilePartSource
@@ -103,36 +107,56 @@
 - ImagePart
 - Inlined
 - JsonValue
+- LoginCallbacks
 - Message
 - MetaOf
 - MetaPart
 - Modality
-- ModelCatalog
+- ModelCtx
 - ModelFilter
 - ModelInfo
 - ModelOpts
-- ModelProviderOverride
+- ModelProvider
 - ModelSpec
 - ModelStreamOptions
+- ModelsJson
+- OAuthBrowserLogin
+- OAuthBrowserOpts
+- OAuthCallbacks
+- OAuthDeviceCode
+- OAuthDeviceLogin
+- OAuthDeviceOpts
+- OAuthExchangeCodeRequest
+- OAuthLogin
+- OAuthLoginCtx
+- OAuthMethod
 - OAuthOptions
 - OAuthProvider
+- OAuthRequest
+- OAuthResponse
+- OAuthSecret
+- OAuthToken
+- OAuthTokenRequest
+- OAuthTokenResponse
 - OverflowCheck
 - ParamsOf
 - ParseResult
 - PdfPart
 - Provider
-- ProviderInfo
+- ProviderApiKey
 - ProviderOptions
+- ProviderOverride
 - ProviderRequest
 - Quirks
 - ReasoningEffort
 - ReasoningOptions
 - ReasoningPart
 - ResponseFormat
+- ResultOf
 - RetryOptions
 - Role
-- Secret
-- StoredModel
+- SafeParamsOf
+- StaticOf
 - StreamEvent
 - StreamOptions
 - Streamable

@@ -1,13 +1,12 @@
-# @zaly/tui/widgets/image (4)
+# @zaly/tui/widgets/image (3)
 
 ## Classes (1)
 
 - Image
 
-## Functions (2)
+## Functions (1)
 
 - image
-- resetImageTransmitCache
 
 ## Types (1)
 

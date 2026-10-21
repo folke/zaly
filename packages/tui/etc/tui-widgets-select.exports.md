@@ -1,4 +1,4 @@
-# @zaly/tui/widgets/select (8)
+# @zaly/tui/widgets/select (7)
 
 ## Classes (1)
 
@@ -8,11 +8,10 @@
 
 - select
 
-## Types (6)
+## Types (5)
 
 - Option
 - OptionRender
 - OptionRenderCtx
 - SelectEvents
 - SelectState
-- Selectable

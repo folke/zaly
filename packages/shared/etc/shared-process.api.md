@@ -32,6 +32,9 @@ export type BaseStreamOpts<T> = {
     concat: (chunks: T[]) => T;
 };
 
+// @public (undocumented)
+export function bash(): [string, ...string[]];
+
 // @public
 export function bufferedTailStream<T>(stream: Stream<T>): {
     stream: Stream<T>;
@@ -45,6 +48,14 @@ export class BufferStream extends BaseStream<Buffer> {
     // (undocumented)
     protected onResult(chunks: Buffer[]): Buffer;
 }
+
+// @public (undocumented)
+export type CmdArgs = (string | undefined | CmdOpts)[];
+
+// @public (undocumented)
+export type CmdOpts = SpawnOpts & {
+    throw?: boolean;
+};
 
 // @public
 export type KillReason = "timeout" | "abort" | "maxBuffer" | "manual";
@@ -108,20 +119,24 @@ export class Spawn<O = Buffer, E = Buffer> {
 }
 
 // @public (undocumented)
+export function spawnCmd(...cmd: CmdArgs): Promise<string | undefined>;
+
+// @public (undocumented)
 export interface SpawnOpts<O = Buffer, E = Buffer> {
+    bash?: boolean | string[];
     // (undocumented)
     cwd?: string;
     // (undocumented)
     env?: NodeJS.ProcessEnv;
     keepStdinOpen?: boolean;
     maxBuffer?: number;
-    shell?: boolean;
+    shell?: boolean | string[];
     signal?: AbortSignal;
     // (undocumented)
-    stderr?: Stream<E>;
+    stderr?: Stream<E> | false;
     stdin?: Buffer | string;
     // (undocumented)
-    stdout?: Stream<O>;
+    stdout?: Stream<O> | false;
     timeout?: number;
 }
 
@@ -146,9 +161,9 @@ export function spawnWithInput(cmd: string, args: readonly string[], input: stri
 
 // @public (undocumented)
 export type Stream<T> = {
-    add(chunk: Buffer): void;
-    finish(): void;
-    close?(): Promise<void>;
+    add: (chunk: Buffer) => void;
+    finish: () => void;
+    close?: () => Promise<void>;
     readonly result: T;
     readonly done: boolean;
 };
@@ -158,10 +173,12 @@ export function tailedStream<T>(stream: Stream<T>, path: string): Stream<T>;
 
 // @public (undocumented)
 export class TextStream extends BaseStream<string> {
+    lineBatches(size?: number): AsyncIterable<string[]>;
+    lines(): AsyncIterable<string>;
     // (undocumented)
     onAdd(chunk: Buffer): string;
     // (undocumented)
-    onFinish: () => number;
+    onFinish: () => void;
     // (undocumented)
     onResult(chunks: string[]): string;
 }
@@ -169,8 +186,10 @@ export class TextStream extends BaseStream<string> {
 // @public (undocumented)
 export function transformStream<T, X>(stream: Stream<T>, transform: (chunk: T) => X): Stream<X>;
 
-// @public
-export function which(cmd: string): string | undefined;
+// @public (undocumented)
+export function which(cmd: string, opts?: {
+    update?: boolean;
+}): string | undefined;
 
 // (No @packageDocumentation comment for this package)
 

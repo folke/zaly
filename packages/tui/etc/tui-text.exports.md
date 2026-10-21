@@ -1,9 +1,11 @@
-# @zaly/tui/text (5)
+# @zaly/tui/text (7)
 
-## Functions (4)
+## Functions (6)
 
 - calcLayout
+- capitalize
 - countLines
+- expandTabs
 - formatLines
 - formatText
 

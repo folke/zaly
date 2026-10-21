@@ -1,16 +1,11 @@
-# @zaly/tui/widgets/tree (6)
-
-## Classes (1)
-
-- Tree
+# @zaly/tui/widgets/tree (4)
 
 ## Functions (1)
 
 - tree
 
-## Types (4)
+## Types (3)
 
-- TreeEvents
 - TreeItem
 - TreeNode
 - TreeProps

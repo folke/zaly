@@ -4,16 +4,18 @@
 
 ```ts
 
-import * as _$_zaly_shared_registry0 from '@zaly/shared/registry';
+import { BaseCollection } from '@zaly/shared/collection';
 import { CompressOpts } from '@zaly/shared/image';
 import { DetectedFile } from '@zaly/shared/detect';
 import { DetectedImage } from '@zaly/shared/detect';
+import { JsonFile } from '@zaly/shared/json';
+import { JsonObject } from '@zaly/shared/json';
+import { Logger } from '@zaly/shared/logger';
+import { MaybePromise } from '@zaly/shared';
+import { Simplify } from '@zaly/shared';
 import { Static } from 'typebox/type';
 import { TObject } from 'typebox/type';
 import { TSchema } from 'typebox/type';
-
-// @public
-export function addModels(models: Record<string, ModelSpec>): void;
 
 // @public
 export class AiError extends Error implements ErrorInfo {
@@ -30,10 +32,28 @@ export class AiError extends Error implements ErrorInfo {
 }
 
 // @public (undocumented)
-export type AnyAuthProvider = BuiltinAuthProvider | (string & {});
+export type AnyContent = Message["content"];
 
-// @public
-export type AnyPart = ContentPart | ToolCallPart | ToolResultPart | ReasoningPart;
+// @public (undocumented)
+export type AnyPart = Exclude<AnyContent[number], string>;
+
+// @public (undocumented)
+export type AnyType = Extract<Message["content"][number], {
+    type: string;
+}>["type"];
+
+// @public (undocumented)
+export type ApiKey = {
+    key: string;
+    source: AuthSource;
+    details?: string;
+    headers?: Record<string, string>;
+};
+
+// @public (undocumented)
+export type ApiKeySecret = {
+    type: "api-key";
+} & StoredApiKey;
 
 // @public (undocumented)
 export type AssistantMessage = Omit<Message<"assistant">, "meta"> & {
@@ -51,42 +71,79 @@ export function attachmentToMeta<K extends Attachment["type"]>(...kinds: readonl
 // @public (undocumented)
 export type AudioPart = FilePart<"audio", "audio/mpeg" | "audio/wav">;
 
-// @public
-export interface AuthCredentials {
-    // (undocumented)
-    accountId?: string;
-    // (undocumented)
-    apiKey?: string;
-    // (undocumented)
-    headers?: Record<string, string>;
-}
+// @public (undocumented)
+export type AuthLogin = {
+    method: AuthLoginMethod;
+    desc: string;
+    login: (opts: LoginCallbacks) => Promise<ApiKey | undefined>;
+};
 
-// @public
-export function authenticate(model: ModelSpec, auth?: AuthProvider): Promise<AuthCredentials | undefined>;
+// @public (undocumented)
+export type AuthLoginMethod = "api-key" | "oauth-browser" | "oauth-device" | "env";
 
-// @public
-export type AuthLoader = () => Promise<AuthProvider>;
-
-// @public
-export interface AuthProvider {
+// @public (undocumented)
+export class AuthManager {
+    static basic(): AuthManager;
     // (undocumented)
-    getAuth(model: ModelSpec): AuthCredentials | undefined | Promise<AuthCredentials | undefined>;
+    delete(name: string): Promise<void>;
+    // (undocumented)
+    get(name: string): AuthSecret | undefined;
+    // (undocumented)
+    getAuth(it: ModelSpec | ModelProvider, opts?: {
+        verify?: boolean;
+    }): Promise<ApiKey | undefined>;
+    // (undocumented)
+    static load(path: string, opts?: AuthManagerOpts): Promise<AuthManager>;
+    // (undocumented)
+    get logger(): Logger | undefined;
+    login(provider: ModelProvider): Promise<AuthLogin[]>;
+    needAuth(provider: ModelProvider): boolean;
+    resolve(secret: string, provider: ModelProvider): Promise<string | undefined>;
+    // (undocumented)
+    set(name: string, secret: AuthSecret): Promise<void>;
 }
 
 // @public (undocumented)
-export const authRegistry: _$_zaly_shared_registry0.Registry<AuthLoader, {
-    readonly codex: () => Promise<AuthProvider | OAuthProvider>;
-    readonly env: () => Promise<AuthProvider>;
-}>;
+export type AuthManagerOpts = {
+    logger?: Logger;
+    bash?: boolean | string[];
+    env?: boolean;
+};
 
 // @public (undocumented)
-export type BuiltinAuthProvider = keyof typeof authProviders;
+export type AuthSecret = ApiKeySecret | OAuthSecret;
 
-// @public
-export function builtinProviders(): Promise<Readonly<Record<string, Omit<ProviderInfo, "models">>>>;
+// @public (undocumented)
+export type AuthSecrets = Record<string, AuthSecret>;
 
-// @public
-export function chainAuth(...providers: (AuthProvider | AnyAuthProvider)[]): AuthProvider;
+// @public (undocumented)
+export type AuthSource = "store" | "env" | "oauth" | "model" | "provider";
+
+// @public (undocumented)
+export type CatalogModel = ModelInfo & {
+    family?: string;
+    attachment?: boolean;
+    reasoning?: boolean;
+    interleaved?: true | {
+        field: "reasoning_content" | "reasoning_details";
+    };
+    structured_output?: boolean;
+    temperature?: boolean;
+    modalities: {
+        input: Modality[];
+        output: Modality[];
+    };
+    limit: {
+        context: number;
+        input?: number;
+        output: number;
+    };
+    status?: "alpha" | "beta" | "deprecated";
+    experimental?: {
+        modes?: ExperimentalModes;
+    };
+    provider?: ModelProviderOverride;
+};
 
 // @public
 export function collect(stream: AsyncIterable<StreamEvent>, opts?: CollectOptions): Promise<{
@@ -139,42 +196,38 @@ export class ContentTransform<T extends AnyPart = ContentPart> {
 
 // @public
 export interface Context {
+    cacheKey?: string;
     messages: Message[];
     prompt?: string[];
+    sessionId?: string;
     tools?: Tool[];
 }
 
 // @public
-export interface Cost {
-    // (undocumented)
-    cache_read?: number;
-    // (undocumented)
-    cache_write?: number;
-    // (undocumented)
+export type Cost = {
     input: number;
-    // (undocumented)
-    input_audio?: number;
-    // (undocumented)
     output: number;
-    // (undocumented)
-    output_audio?: number;
-    // (undocumented)
     reasoning?: number;
-}
+    cache_read?: number;
+    cache_write?: number;
+    input_audio?: number;
+    output_audio?: number;
+};
 
 // @public (undocumented)
 export function createTransform<T extends AnyPart = ContentPart>(): ContentTransform<T>;
 
+// @public (undocumented)
+export const DEFAULT_CONTEXT_SIZE = 128000;
+
+// @public (undocumented)
+export const DEFAULT_MAX_TOKENS = 16000;
+
 // @public
-export function defineTool<Params extends TObject, Result extends TSchema = TSchema, Meta extends object = object>(def: {
-    desc?: string;
-    call: (args: Static<Params>, ctx: ToolContext<Meta>) => Static<Result> | Promise<Static<Result>>;
-    preflight?: (args: Static<Params>, ctx: ToolContext<Meta>) => void | Promise<void>;
-    name: string;
-    params: Params;
-    parallel?: boolean;
-    result?: Result;
-}): Tool<Static<Params>, Static<Result>, Meta>;
+export function defineTool<Params extends TObject, Result extends TSchema | undefined = undefined, Meta extends object = object>(def: ToolDef<Params, Result, Meta>): Tool<Static<Params>, StaticOf<Result>, Meta>;
+
+// @public (undocumented)
+export function downloadCatalog(dir: string): Promise<ModelCatalog>;
 
 // @public
 export function dropAttachments(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<Exclude<Exclude<Exclude<Exclude<T, {
@@ -192,8 +245,8 @@ export type ErrorCode = Uppercase<string>;
 
 // @public
 export type ErrorInfo = {
-    code: ErrorCode; /** Human-readable explanation. What the model and the user read. */
-    message: string; /** Free-form structured data — extensible per-producer. */
+    code: ErrorCode;
+    message: string;
     data?: unknown;
     retryable?: boolean;
 };
@@ -208,31 +261,22 @@ export function errorToMeta(): <T extends ContentPart>(ct: ContentTransform<T>) 
     type: "error";
 }> | ({
     type: "meta";
-    tag?: string;
+    tag?: string | undefined;
     data?: unknown;
-    content?: Content;
+    content?: Content | undefined;
 } & {
     data: unknown;
 }) | ({
     type: "meta";
-    tag?: string;
+    tag?: string | undefined;
     data?: unknown;
-    content?: Content;
+    content?: Content | undefined;
 } & {
     content: Content;
 })>;
 
 // @public
 export function errorToMetaPart(e: ErrorPart): MetaPart;
-
-// @public
-export type ExperimentalModes = Record<string, {
-    cost?: Cost;
-    provider?: {
-        body?: Record<string, JsonValue>;
-        headers?: Record<string, string>;
-    };
-}>;
 
 // @public (undocumented)
 export function extractToolCalls<T extends string = string>(messages: readonly Message[], tools?: T[]): Generator<{
@@ -276,19 +320,19 @@ export type FilePartSource = FilePart["source"];
 export function fileToMetaPart(p: FilePart): MetaPart;
 
 // @public (undocumented)
-export function filterModel(id: string, m: ModelSpec, opts?: ModelFilter): Promise<boolean>;
+export function filterModel(m: ModelSpec, opts?: ModelFilter): Promise<boolean>;
+
+// @public
+export function filterModels(models: readonly ModelSpec[], opts?: ModelFilter): Promise<ModelSpec[]>;
 
 // @public
 export type FinishReason = "stop" | "length" | "tool-calls" | "content-filter" | "error" | "other";
 
-// @public
+// @public (undocumented)
 export function getModel(id: string): Promise<ModelSpec | undefined>;
 
 // @public
 export function hasAttachments(content: Content): boolean;
-
-// @public
-export function hasAuth(m: ModelSpec, auth?: AuthProvider): Promise<boolean>;
 
 // @public (undocumented)
 export type ImagePart = FilePart<"image", "image/png" | "image/jpeg" | "image/webp"> & {
@@ -333,14 +377,14 @@ export type JsonValue = string | number | boolean | null | JsonValue[] | {
 // @public (undocumented)
 export function justText(content: Content): string;
 
-// @public
-export function listModelIds(): Promise<readonly string[]>;
+// @public (undocumented)
+export function loadCatalog(path?: string): Promise<ModelCatalog>;
 
 // @public
-export function listModels(opts?: ModelFilter): Promise<Record<string, ModelSpec>>;
+export function loadModel(model: ModelOpts, base?: ModelSpec, ctx?: ModelCtx): Promise<Model>;
 
-// @public
-export function loadModel(source: string | ModelSpec, overrides?: Partial<ModelSpec>, auth?: AuthProvider): Promise<Model>;
+// @public (undocumented)
+export type LoginCallbacks = OAuthCallbacks & {};
 
 // @public
 export type Message<T extends Role = Role> = Extract<MessageBase, {
@@ -351,15 +395,15 @@ export type Message<T extends Role = Role> = Extract<MessageBase, {
 export type MetaOf<T extends Tool = Tool> = T extends Tool<unknown, unknown, infer M> ? M : object;
 
 // @public
-export type MetaPart = {
+export type MetaPart<T extends string = string, D = unknown, C extends Content = Content> = {
     type: "meta";
-    tag?: string;
-    data?: unknown;
-    content?: Content;
+    tag?: T;
+    data?: D;
+    content?: C;
 } & ({
-    data: unknown;
+    data: D;
 } | {
-    content: Content;
+    content: C;
 });
 
 // @public
@@ -392,104 +436,252 @@ export class Model<T extends AnyProvider = string> {
     stream(ctx: Context, opts?: ModelStreamOptions): Promise<AssistantMessage>;
 }
 
-// @public
-export interface ModelFilter {
+// @public (undocumented)
+export class ModelCatalog {
     // (undocumented)
-    auth?: AuthProvider | true;
+    get $(): Catalog;
     // (undocumented)
-    filter?: string | ((m: ModelSpec) => boolean);
+    fork(overrides?: ProviderOverride[], opts?: {
+        logger?: Logger;
+    }): Promise<ModelCatalog>;
     // (undocumented)
-    modality?: Modality | Modality[] | {
-        input?: Modality[];
-        output?: Modality[];
-    };
+    get(modelId: string): ModelSpec | undefined;
     // (undocumented)
-    reasoning?: boolean;
+    list(filter?: ModelFilter): Promise<ModelSpec[]>;
+    // (undocumented)
+    static load(cat?: string | Catalog): Promise<ModelCatalog>;
+    // (undocumented)
+    get models(): readonly ModelSpec[];
+    // (undocumented)
+    provider(id: string): ModelProvider<true> | undefined;
+    // (undocumented)
+    get providers(): readonly ModelProvider<true>[];
 }
 
+// @public (undocumented)
+export class ModelCollection extends BaseCollection<Model | undefined, Promise<ModelSpec[]>, ProviderOverride> {
+    constructor(opts?: ModelCtx);
+    // (undocumented)
+    catalog(): Promise<ModelCatalog>;
+    // (undocumented)
+    get(id: string): Promise<ModelSpec | undefined>;
+    // (undocumented)
+    list(filter?: ModelFilter): Promise<ModelSpec[]>;
+    // (undocumented)
+    load(opts: ModelOpts): Promise<Model>;
+    // (undocumented)
+    providers(): Promise<readonly ModelProvider<true>[]>;
+    // (undocumented)
+    refresh(): void;
+    // (undocumented)
+    register(provider: ProviderOverride): () => void;
+}
+
+// @public (undocumented)
+export function modelCollection(opts?: ModelCtx): ModelCollection;
+
+// @public (undocumented)
+export type ModelCtx = {
+    auth?: AuthManager;
+    logger?: Logger;
+    json?: JsonFile<ModelsJson, ModelsJson>;
+};
+
 // @public
-export interface ModelInfo {
-    attachment: boolean;
+export type ModelFilter = {
+    auth?: AuthManager | true;
+    reasoning?: boolean;
+    contextSize?: number;
+    modality?: Modality | Modality[] | {
+        input?: Modality | Modality[];
+        output?: Modality | Modality[];
+    };
+    filter?: string | ((m: ModelSpec) => boolean);
+};
+
+// @public
+export type ModelInfo = {
+    id: string;
+    name?: string;
+    baseUrl?: string;
+    api?: AnyProvider;
+    input?: Modality[];
+    output?: Modality[];
+    maxTokens?: number;
+    contextSize?: number;
+    reasoning?: boolean;
+    knowledge?: string;
+    release_date?: string;
+    last_updated?: string;
+    open_weights?: boolean;
     cost?: Cost & {
         context_over_200k?: Cost;
     };
-    // (undocumented)
-    experimental?: {
-        modes?: ExperimentalModes;
-    };
-    family?: string;
-    id: string;
-    interleaved?: true | {
-        field: "reasoning_content" | "reasoning_details";
-    };
-    knowledge?: string;
-    last_updated?: string;
-    // (undocumented)
-    limit: {
-        context: number;
-        input?: number;
-        output: number;
-    };
-    // (undocumented)
-    modalities: {
-        input: Modality[];
-        output: Modality[];
-    };
-    // (undocumented)
-    name: string;
-    open_weights?: boolean;
-    // (undocumented)
-    provider?: ModelProviderOverride;
-    reasoning: boolean;
-    release_date?: string;
-    status?: "alpha" | "beta" | "deprecated";
-    structured_output?: boolean;
-    temperature?: boolean;
     tool_call?: boolean;
-}
+};
+
+// @public (undocumented)
+export type ModelOpts = string | ({
+    id: string;
+} & Partial<ModelSpec>);
 
 // @public
-export interface ModelProviderOverride {
-    // (undocumented)
-    api?: string;
-    // (undocumented)
-    body?: Record<string, JsonValue>;
-    // (undocumented)
+export type ModelProvider<S extends boolean = boolean> = {
+    id: string;
+    name: string;
+    api?: AnyProvider;
+    apiKey?: string;
+    baseUrl?: string;
+    doc?: string;
+    env?: string[];
     headers?: Record<string, string>;
-    // (undocumented)
-    npm?: string;
-    // (undocumented)
-    shape?: "completions" | "responses";
-}
+    quirks?: Quirks;
+    models?: S extends true ? ModelInfo[] : ModelInfo[] | ((catalog: ModelCatalog) => MaybePromise<ModelInfo[]>);
+    oauth?: OAuthOptions | ((provider: ModelProvider) => MaybePromise<OAuthOptions>);
+    source?: "models.dev" | "builtin" | "custom" | "models.json";
+};
+
+// @public (undocumented)
+export type ModelsJson = Record<string, Simplify<Omit<ProviderOverride<true>, "id" | "oauth">>>;
 
 // @public
-export interface ModelSpec extends ProviderOptions, Omit<ModelInfo, "provider"> {
-    maxTokens?: number;
-    provider: AnyProvider;
-    providerInfo?: ProviderInfo;
-    providerOverride?: ModelInfo["provider"];
-    quirks?: Quirks;
+export interface ModelSpec extends ProviderOptions, ModelInfo {
+    // (undocumented)
+    api: AnyProvider;
+    contextSize: number;
+    id: string;
+    input: Modality[];
+    maxTokens: number;
+    model: string;
+    name: string;
+    provider: ModelProvider;
 }
 
 // @public (undocumented)
 export type ModelStreamOptions = Omit<StreamOptions, "model" | "quirks"> & CollectOptions;
 
 // @public (undocumented)
-export interface OAuthOptions {
-    onAuthUrl: (info: {
-        url: string;
-        instructions: string;
-    }) => void | Promise<void>;
-    onManualCodeInput?: () => Promise<string>;
-    onProgress?: (message: string) => void | Promise<void>;
-    signal?: AbortSignal;
-}
+export type OAuthBrowserLogin = OAuthProvider & OAuthLogin & OAuthBrowserOpts;
 
 // @public (undocumented)
-export interface OAuthProvider extends AuthProvider {
-    // (undocumented)
-    login(opts?: OAuthOptions): Promise<AuthCredentials>;
-}
+export type OAuthBrowserOpts = {
+    redirectUrl: string;
+    authorizeUrl: string | URL;
+    scope: string;
+};
+
+// @public (undocumented)
+export type OAuthCallbacks = {
+    browse?: (url: string) => MaybePromise;
+    notify?: (opts: {
+        title: string;
+        details?: string;
+    }) => MaybePromise;
+    prompt?: (msg: string) => Promise<string | undefined>;
+    onDeviceCode?: (opts: OAuthDeviceCode) => MaybePromise;
+    signal?: AbortSignal;
+};
+
+// @public (undocumented)
+export type OAuthDeviceCode = {
+    deviceCode: string;
+    userCode: string;
+    verificationUrl: string;
+    expires: number;
+    interval: number;
+};
+
+// @public (undocumented)
+export type OAuthDeviceLogin = OAuthProvider & OAuthLogin & OAuthDeviceOpts;
+
+// @public (undocumented)
+export type OAuthDeviceOpts = {
+    start: (ctx: OAuthLoginCtx) => Promise<OAuthDeviceCode>;
+    poll: (device: OAuthDeviceCode, ctx: OAuthLoginCtx) => Promise<(OAuthToken & {
+        ok: true;
+    }) | {
+        ok: false;
+        status: "pending" | "slow_down" | (string & {});
+    }>;
+};
+
+// @public (undocumented)
+export type OAuthExchangeCodeRequest = OAuthTokenRequest & {
+    code: string;
+    verifier: string;
+    redirectUrl: string;
+};
+
+// @public (undocumented)
+export type OAuthLogin = OAuthCallbacks & {
+    method?: OAuthMethod;
+    logger?: Logger;
+};
+
+// @public (undocumented)
+export type OAuthLoginCtx = OAuthLogin & OAuthProvider & {
+    fetch: typeof safeFetch;
+};
+
+// @public (undocumented)
+export type OAuthMethod = "browser" | "device";
+
+// @public (undocumented)
+export type OAuthOptions = OAuthProvider & {
+    device?: OAuthDeviceOpts;
+    browser?: OAuthBrowserOpts;
+    apiKey: (token: OAuthToken) => MaybePromise<ApiKey>;
+};
+
+// @public (undocumented)
+export type OAuthProvider = {
+    name: string;
+    clientId: string;
+    tokenUrl: string;
+};
+
+// @public (undocumented)
+export type OAuthRequest = {
+    params?: Record<string, string>;
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+};
+
+// @public (undocumented)
+export type OAuthResponse<T> = {
+    error: (msg?: string) => never;
+} & ({
+    ok: true;
+    json: T;
+} | {
+    ok: false;
+    json?: T;
+});
+
+// @public (undocumented)
+export type OAuthSecret = {
+    type: "oauth";
+    token: OAuthToken;
+} & StoredApiKey;
+
+// @public (undocumented)
+export type OAuthToken = {
+    access: string;
+    refresh?: string;
+    expires: number;
+};
+
+// @public (undocumented)
+export type OAuthTokenRequest = OAuthProvider & OAuthRequest;
+
+// @public (undocumented)
+export type OAuthTokenResponse = {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+    token_type?: string;
+    scope?: string;
+};
 
 // @public
 export interface OverflowCheck {
@@ -508,10 +700,7 @@ export type ParamsOf<T extends Tool = Tool> = unknown extends Parameters<T["call
 export function parseJson<T = unknown>(input: string): Promise<ParseResult<T>>;
 
 // @public
-export function parseModelId(id: string): {
-    provider: string;
-    model: string;
-};
+export function parseModelId(id: string): [string, string];
 
 // @public
 export type ParseResult<T = unknown> = {
@@ -531,58 +720,54 @@ export interface Provider<T extends string = string> {
     // (undocumented)
     id: T;
     // (undocumented)
-    stream(req: ProviderRequest): AsyncIterable<StreamEvent>;
+    stream: (req: ProviderRequest) => AsyncIterable<StreamEvent>;
 }
 
-// @public
-export interface ProviderInfo {
-    api?: string;
-    doc: string;
-    env: string[];
-    // (undocumented)
-    id: string;
-    // (undocumented)
-    models: Record<string, ModelInfo>;
-    // (undocumented)
-    name: string;
-    npm: string;
-}
+// @public (undocumented)
+export type ProviderApiKey = string | ApiKey;
 
 // @public
 export interface ProviderOptions {
-    apiKey?: string;
+    apiKey?: ProviderApiKey | (() => MaybePromise<ProviderApiKey | undefined>);
     baseUrl?: string;
     fetch?: FetchLike;
     headers?: Record<string, string>;
 }
 
+// @public (undocumented)
+export type ProviderOverride<S extends boolean = boolean> = Partial<Omit<ModelProvider<S>, "id">> & {
+    id: string;
+    replaceModels?: boolean;
+};
+
 // @public
 export interface ProviderRequest {
     // (undocumented)
     ctx: Context;
-    model: string;
+    model: ModelSpec;
     // (undocumented)
     opts: StreamOptions;
-    quirks?: Quirks;
 }
 
 // @public
-export interface Quirks {
-    friendlyErrors?: "codex";
+export type Quirks = {
+    sessionHeader?: string;
     maxTokensField?: "max_tokens" | "max_completion_tokens" | "max_output_tokens" | "none";
-    reasoningField?: "reasoning" | "reasoning_content" | "reasoning_details";
-    reasoningLevels?: ("off" | "minimal" | "low" | "medium" | "high" | "xhigh")[];
-    responsesInclude?: string[];
-    responsesReasoningSummary?: "auto" | "concise" | "detailed" | "off";
-    responsesStore?: boolean;
-    responsesSystemAs?: "input" | "instructions";
-    strictTools?: boolean;
-    temperatureSupported?: boolean;
     thinkingFormat?: "openai" | "openrouter" | "deepseek" | "zai" | "qwen" | "qwen-chat-template";
-}
+    reasoningLevels?: ("off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max")[];
+    reasoningField?: "reasoning" | "reasoning_content" | "reasoning_details";
+    temperatureSupported?: boolean;
+    strictTools?: boolean;
+    responsesStore?: boolean;
+    responsesInclude?: string[];
+    responsesSystemAs?: "input" | "instructions";
+    responsesReasoningSummary?: "auto" | "concise" | "detailed" | "off";
+    friendlyErrors?: "codex";
+    toolCallExtraContent?: string;
+};
 
 // @public (undocumented)
-export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 // @public
 export interface ReasoningOptions {
@@ -601,11 +786,14 @@ export interface ReasoningPart {
     type: "reasoning";
 }
 
-// @public (undocumented)
-export function registerModel(id: string, opts: ModelSpec): () => void;
-
 // @public
 export function renderMetaPart(m: MetaPart): string;
+
+// @public
+export function resolveApiKey(key: ProviderOptions["apiKey"], source?: AuthSource): Promise<ApiKey | undefined>;
+
+// @public (undocumented)
+export function resolveModels(provider: ModelProvider, cat: ModelCatalog): MaybePromise<ModelInfo[]>;
 
 // @public
 export type ResponseFormat = {
@@ -616,6 +804,9 @@ export type ResponseFormat = {
     schema: unknown;
     strict?: boolean;
 };
+
+// @public (undocumented)
+export type ResultOf<T extends Tool = Tool> = unknown extends Awaited<ReturnType<T["call"]>> ? unknown : Awaited<ReturnType<T["call"]>>;
 
 // @public (undocumented)
 export interface RetryOptions {
@@ -648,8 +839,11 @@ export function runTool<I, O>(tool: Tool<I, O>, rawArgs: unknown, ctx: ToolConte
     streaming: true;
 }): Promise<ToolResult | Streamable>;
 
+// @public (undocumented)
+export type SafeParamsOf<T extends Tool = Tool> = Partial<ParamsOf<T>> | undefined;
+
 // @public
-export function safeParseToolParams<T extends Tool = Tool>(params: unknown): Partial<ParamsOf<T>> | undefined;
+export function safeParseToolParams<T extends Tool = Tool>(params: unknown): SafeParamsOf<T>;
 
 // @public
 export function sanitizeText(): <T extends ContentPart>(ct: ContentTransform<T>) => ContentTransform<Exclude<T, {
@@ -660,16 +854,19 @@ export function sanitizeText(): <T extends ContentPart>(ct: ContentTransform<T>)
     text: string;
 })>;
 
+// @public (undocumented)
+export type StaticOf<T> = T extends TSchema ? Static<T> : unknown;
+
 // @public
 export interface Streamable {
     // (undocumented)
-    abort(): void;
+    abort: () => void;
     // (undocumented)
     done: Promise<void>;
     // (undocumented)
-    hasNew?(): boolean;
+    hasNew?: () => boolean;
     // (undocumented)
-    poll(): ToolResult & {
+    poll: () => ToolResult & {
         running: boolean;
     };
 }
@@ -683,17 +880,18 @@ export type StreamEvent = {
     delta: string;
     signature?: string;
 } | {
-    type: "tool-call-delta"; /** Stable within one assistant stream; use this to merge partials. */
-    key: string; /** Final tool-call id when known. May arrive after early deltas. */
-    id?: string; /** Tool name when known. */
-    name?: string; /** Raw argument fragment from this provider event. */
-    delta?: string; /** Accumulated argument buffer for this tool call so far. */
+    type: "tool-call-delta";
+    key: string;
+    id?: string;
+    name?: string;
+    delta?: string;
     args?: string;
 } | {
     type: "tool-call";
     id: string;
     name: string;
     params: unknown;
+    wire?: Record<string, unknown>;
 } | {
     type: "finish";
     finishReason: FinishReason;
@@ -760,6 +958,9 @@ export interface TokenCount {
 }
 
 // @public (undocumented)
+export function toModelSpec(model: ModelInfo, provider: ModelProvider): ModelSpec;
+
+// @public (undocumented)
 export interface Tool<Params = unknown, Result = unknown, Meta extends object = object> {
     // (undocumented)
     call(params: Params, ctx: ToolContext<Meta>): Promise<Result>;
@@ -769,25 +970,20 @@ export interface Tool<Params = unknown, Result = unknown, Meta extends object = 
     name: string;
     parallel?: boolean;
     // (undocumented)
-    params: unknown;
+    params: Params;
     // (undocumented)
     preflight?(params: Params, ctx: ToolContext<Meta>): void | Promise<void>;
     // (undocumented)
     result?: unknown;
-    // (undocumented)
-    _types?: {
-        params: Params;
-        result: Result;
-        meta: Meta;
-    };
     validator: {
-        validateParams(params: unknown): Promise<Params>;
-        validateResult(result: unknown): Promise<Awaited<Result>>;
+        validateParams: (params: unknown) => Promise<Params>;
+        validateResult: (result: unknown) => Promise<Awaited<Result>>;
+        cleanParams: (params: unknown) => Promise<unknown>;
     };
 }
 
 // @public
-export interface ToolCallPart<N extends string = string, A = unknown> {
+export interface ToolCallPart<N extends string = string, A = unknown> extends WirePart {
     // (undocumented)
     id: string;
     // (undocumented)
@@ -809,6 +1005,17 @@ export interface ToolContext<M extends object = object> {
     meta?: M;
     signal?: AbortSignal;
 }
+
+// @public (undocumented)
+export type ToolDef<Params extends TObject = TObject, Result extends TSchema | undefined = undefined, Meta extends object = object, Args = Static<Params>, Ret = StaticOf<Result>> = {
+    desc?: string;
+    call: (args: Args, ctx: ToolContext<Meta>) => MaybePromise<Ret>;
+    preflight?: (args: Args, ctx: ToolContext<Meta>) => void | Promise<void>;
+    name: string;
+    params: Params;
+    parallel?: boolean;
+    result?: Result;
+};
 
 // @public
 export interface ToolResult<T extends object = object> {
@@ -866,6 +1073,11 @@ export interface Usage extends TokenCount {
 export type VideoPart = FilePart<"video", "video/mp4" | "video/webm">;
 
 // @public (undocumented)
+export type WirePart = {
+    wire?: Record<string, unknown>;
+};
+
+// @public (undocumented)
 export type WithoutPart<P extends ContentPart, T extends Content = Content> = T extends readonly ContentPart[] ? Exclude<T[number], P>[] : T;
 
 // @public (undocumented)
@@ -875,6 +1087,9 @@ export type WithPart<K extends ContentPart["type"]> = Extract<ContentPart, {
 
 // @public
 export function withRetry(fetchImpl: FetchLike, opts?: RetryOptions): FetchLike;
+
+// @public (undocumented)
+export const zalyUserAgent: string;
 
 // (No @packageDocumentation comment for this package)
 

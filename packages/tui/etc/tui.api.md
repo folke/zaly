@@ -4,24 +4,16 @@
 
 ```ts
 
-import * as _$_zaly_shared_logger0 from '@zaly/shared/logger';
 import { ArgsOpts } from '@zaly/shared/args';
 import { ArgsResult } from '@zaly/shared/args';
 import { BundledLanguage } from 'shiki/types';
 import { BundledTheme } from 'shiki/types';
-import { DetectedFile } from '@zaly/shared/detect';
-import { Dirent } from 'node:fs';
 import { Emitter } from '@zaly/shared';
-import { InspectOptions as InspectOptions_2 } from 'node:util';
-import { LogEntry } from '@zaly/shared/logger';
 import { Logger } from '@zaly/shared/logger';
 import { LogLevel } from '@zaly/shared/logger';
-import { LogReporter } from '@zaly/shared/logger';
 import { MaybePromise } from '@zaly/shared';
+import { Simplify } from '@zaly/shared';
 import { TryResult } from '@zaly/shared/logger';
-
-// @public
-export type AcceptFn<T> = (item: T, query: string) => string | undefined;
 
 // @public
 export type Accessor<T> = (() => T) & {
@@ -29,28 +21,24 @@ export type Accessor<T> = (() => T) & {
 };
 
 // @public (undocumented)
-export type Action<T extends ArgsOpts = ArgsOpts> = ActionDef<T> & {
+export type Action<T extends ArgsOpts = ArgsOpts, N = void> = ActionDef<T, N> & {
     id: string;
 };
 
 // @public
-export type ActionCompletionItem = ActionDef & {
-    id: string;
-};
-
-// @public
-export interface ActionCtx<T extends ArgsOpts = ArgsOpts> {
-    // (undocumented)
-    args?: ArgsResult<T>;
+export type ActionCtx<T extends ArgsOpts = ArgsOpts, N = void> = {
     readonly id: string;
-    readonly key?: RoutedKey;
     readonly node?: Node;
-    readonly source: "key" | "programmatic" | (string & {});
     readonly target?: Node;
-}
+    readonly source: "key" | "programmatic" | (string & {});
+    readonly key?: RoutedKey;
+    args?: ArgsResult<T>;
+} & (N extends Node ? {
+    readonly node: N;
+} : {});
 
 // @public
-export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
+export interface ActionDef<T extends ArgsOpts = ArgsOpts, N = void> {
     // (undocumented)
     args?: T;
     // (undocumented)
@@ -58,23 +46,27 @@ export interface ActionDef<T extends ArgsOpts = ArgsOpts> {
     // (undocumented)
     desc?: string;
     // (undocumented)
-    fn?: ActionFn<T>;
+    fn?: ActionFn<T, N>;
     // (undocumented)
     hidden?: boolean;
     // (undocumented)
     keys?: readonly string[];
+    priority?: number;
+    // (undocumented)
+    source?: string;
 }
 
 // @public (undocumented)
 export type ActionFilter = {
     cmd?: string;
-    id?: string;
+    id?: string | RegExp;
     hidden?: boolean;
+    source?: string;
     filter?: (info: Action) => boolean;
 };
 
 // @public (undocumented)
-export type ActionFn<T extends ArgsOpts = ArgsOpts> = (ctx: ActionCtx<T>) => unknown;
+export type ActionFn<T extends ArgsOpts = ArgsOpts, N = void> = (ctx: ActionCtx<T, N>) => MaybePromise<unknown>;
 
 // @public (undocumented)
 export type ActionMap = Record<string, ActionDef>;
@@ -84,32 +76,31 @@ export class Actions extends Emitter<ActionEvents> {
     constructor(logger?: Logger);
     // (undocumented)
     bind(binding: KeyBinding): () => void;
+    delete(filter: string[] | ActionFilter): void;
     dispatch(id: string, ctx?: Partial<ActionCtx>): boolean;
     // (undocumented)
     dispatch(action: Action, ctx?: Partial<ActionCtx>): boolean;
     // (undocumented)
-    dispatchKey(routed: RoutedKey): boolean;
+    dispatchKey(routed: RoutedKey, opts?: {
+        node?: boolean;
+        global?: boolean;
+    }): boolean;
     // (undocumented)
     find(opts?: ActionFilter): Action | undefined;
     // (undocumented)
     get(id: string): Action | undefined;
     // (undocumented)
     list(opts?: ActionFilter): Action[];
-    register(entries: ActionMap, opts?: {
+    register(actions: ActionMap | Action[], opts?: {
         default?: boolean;
     }): () => void;
     setTargetResolver(fn: () => Node | undefined): void;
-    unregister(...ids: string[]): void;
-}
-
-// @public
-export function actionsSource(opts: ActionsSourceOptions): CompletionSource<ActionCompletionItem>;
-
-// @public (undocumented)
-export interface ActionsSourceOptions {
-    actions: Actions;
-    filter?: (id: string, info: ActionDef) => boolean;
-    trigger?: RegExp;
+    // (undocumented)
+    whichKey(node: Node, opts?: {
+        filter?: ActionFilter;
+    }): (Action & {
+        keys: string[];
+    })[];
 }
 
 // @public (undocumented)
@@ -139,51 +130,7 @@ export interface AnsiStyle {
 }
 
 // @public (undocumented)
-export type AnyStyle = Style | Color;
-
-// @public
-export class Autocomplete extends Node<AutocompleteState, AutocompleteEvents> {
-    constructor(opts: AutocompleteOptions);
-    // (undocumented)
-    get enabled(): boolean;
-    // (undocumented)
-    readonly menu: Menu;
-    get open(): boolean;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): string[] | Promise<string[]>;
-    // (undocumented)
-    static readonly type = "autocomplete";
-    // (undocumented)
-    readonly type = "autocomplete";
-}
-
-// @public
-export function autocomplete(opts: AutocompleteOptions): Autocomplete;
-
-// @public (undocumented)
-export interface AutocompleteEvents extends BaseEvents {
-    // (undocumented)
-    close: {};
-    complete: {
-        source: string;
-        item: unknown;
-    };
-    // (undocumented)
-    open: {};
-}
-
-// @public (undocumented)
-export interface AutocompleteOptions {
-    // (undocumented)
-    enabled?: Reactive<boolean>;
-    input: Input | Ref<Input>;
-    maxHeight?: number;
-    // (undocumented)
-    sources: Record<string, CompletionSource<any>>;
-}
-
-// @public (undocumented)
-export interface AutocompleteState extends StyleState {}
+export type AnyStyle<Ansi extends boolean = false> = Style<Ansi> | Color<Ansi>;
 
 // @public
 export type BaseEvents = {
@@ -192,6 +139,8 @@ export type BaseEvents = {
     unmount: {};
     focus: {};
     blur: {};
+    show: {};
+    hide: {};
     key: {
         key: RoutedKey;
     };
@@ -206,99 +155,20 @@ export type BaseEvents = {
     };
 };
 
-// @public (undocumented)
-export class Box<T extends object = {}> extends Node<BoxStyle & T> {
-    layout(ctx: RenderCtx): Promise<{
-        minWidth: number;
-        width: number;
-    }>;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-}
-
-// @public
-export function box(style: State<BoxStyle>, ...children: Child[]): Box;
-
-// @public (undocumented)
-export interface BoxStyle extends Style {
-    // (undocumented)
-    border?: BorderSpec;
-    borderStyle?: string | Style;
-    // (undocumented)
-    borderTitle?: TextContent;
-    borderTitleAlign?: TitleAlign;
-    borderTitleStyle?: string | Style;
-    // (undocumented)
-    flexDirection?: "row" | "column";
-    // (undocumented)
-    gap?: number;
-    height?: number;
-    // (undocumented)
-    padding?: Padding;
-    verticalAlign?: "top" | "bottom";
-}
-
 // @public
 export type BrightAnsiColorName = `bright${Capitalize<AnsiColorName>}`;
 
 // @public
-export type BuiltinAction = keyof (Input["actions"] & Menu["actions"] & Renderer["globalActions"]);
-
-// @public (undocumented)
-export function calcLayout(text: string, opts?: {
-    wrap?: WrapMode;
-}): Layout;
-
-// @public
 export function canonical(patternOrEvent: string | KeyEvent): KeyPattern;
 
-// @public
-export const code: (props: State<CodeState>) => Box<{}>;
-
 // @public (undocumented)
-export interface CodeState {
-    code: Reactive<string>;
-    lang?: string;
-    // (undocumented)
-    limit?: Reactive<number | undefined>;
-    // (undocumented)
-    more?: (more: number, msg: string) => string;
-    // (undocumented)
-    numbered?: boolean;
-    // (undocumented)
-    numberOffset?: Reactive<number | undefined>;
-    // (undocumented)
-    offset?: Reactive<number | undefined>;
-    path?: Reactive<string>;
-    // (undocumented)
-    style?: AnyStyle | false;
-    syntax?: boolean;
-    title?: Reactive<string>;
-}
-
-// @public (undocumented)
-export function codeToAnsi(code: string, lang?: string, theme?: ShikiTheme): Promise<string>;
+export function codeToAnsi(code: string, lang: string, opts?: ShikiOpts): Promise<string>;
 
 // @public
-export type Color = HexColor | AnsiColorName | BrightAnsiColorName | ThemeKey | "inherit" | `${HexColor | ThemeKey}-${ColorLightness}` | `${HexColor | ThemeKey}+${ColorLightness}`;
+export type Color<Ansi extends boolean = true, I = true> = HexColor | (Ansi extends true ? AnsiColorName : never) | (Ansi extends true ? BrightAnsiColorName : never) | ThemeKey | (I extends true ? "inherit" : never) | `${HexColor | ThemeKey}-${ColorLightness}` | `${HexColor | ThemeKey}+${ColorLightness}`;
 
 // @public
 export type ColorLightness = `${number}`;
-
-// @public (undocumented)
-export type CompleteResult<T = MenuItem> = T[] | Promise<T[]>;
-
-// @public
-export interface CompletionSource<T = MenuItem> {
-    // (undocumented)
-    accept?: AcceptFn<T>;
-    // (undocumented)
-    complete: (query: string, match: Matcher) => CompleteResult<T>;
-    // (undocumented)
-    render?: MenuRender<T>;
-    // (undocumented)
-    triggers: readonly RegExp[];
-}
 
 // @public
 export interface Context<T> {
@@ -307,9 +177,6 @@ export interface Context<T> {
     // (undocumented)
     readonly id: symbol;
 }
-
-// @public (undocumented)
-export function countLines(text: string): number;
 
 // @public
 export function createAsync<T>(fn: (prev: T | undefined) => Promise<T>, opts: {
@@ -332,11 +199,39 @@ export function createCtx(opts?: Partial<RenderCtx> & {
     theme?: Theme;
 }): Promise<RenderCtx>;
 
+// @public (undocumented)
+export function createIterable<T>(fn: (ctx: {
+    signal: AbortSignal;
+}) => AsyncIterable<T | readonly T[]>, opts?: {
+    throttle?: number;
+    initialValue?: readonly T[];
+}): Progressive<readonly T[]>;
+
 // @public
 export function createNode<T extends Node>(fn: () => T): T;
 
 // @public (undocumented)
-export function createRef<T>(value?: T): Ref<T>;
+export function createProgressive<T>(fn: (ctx: {
+    signal: AbortSignal;
+    set: (value: T) => void;
+}) => MaybePromise<T>, opts: {
+    throttle?: number;
+    initialValue: T;
+}): Progressive<T>;
+
+// @public (undocumented)
+export function createProgressive<T>(fn: (ctx: {
+    signal: AbortSignal;
+    set: (value: T) => void;
+}) => MaybePromise<T>, opts: {
+    throttle?: number;
+    initialValue?: T;
+}): Progressive<T | undefined>;
+
+// @public (undocumented)
+export function createRef<T>(value?: T, opts?: {
+    onSet?: (value: T, prev: T | undefined) => void | (() => void);
+}): Ref<T>;
 
 // @public
 export function createRender(node: Node, ctx: RenderCtx & {
@@ -361,57 +256,11 @@ export function createSuspenseBoundary(parent?: SuspenseBoundary): SuspenseBound
 // @public (undocumented)
 export function defineAction<T extends ArgsOpts = ArgsOpts>(action: ActionDef<T>): ActionDef<T>;
 
-// @public
-export class Diff extends Node<DiffState> {
-    constructor(state: DiffState);
-    // (undocumented)
-    get input(): {
-        original: string;
-        modified: string;
-    };
-    // (undocumented)
-    layout(): Layout;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-}
+// @public (undocumented)
+export function defineAction<T extends ArgsOpts = ArgsOpts>(action: Action<T>): Action<T>;
 
 // @public
-export function diff(state: DiffState): Diff;
-
-// @public (undocumented)
-export interface DiffState {
-    context?: number;
-    lang?: string;
-    modified: Reactive<string>;
-    original: Reactive<string>;
-    path?: Reactive<string>;
-    // (undocumented)
-    wrap?: WrapMode;
-}
-
-// @public (undocumented)
-export function divider(state?: DividerState): Text;
-
-// @public (undocumented)
-export type DividerState = Style & {
-    char?: string;
-    length?: number;
-};
-
-// @public
-export function effect(fn: () => void): () => void;
-
-// @public
-export function filesSource(opts?: FilesSourceOptions): CompletionSource;
-
-// @public (undocumented)
-export interface FilesSourceOptions {
-    cwd?: string;
-    filter?: (entry: Dirent, abs: string) => boolean;
-    limit?: number;
-    prefix?: string;
-    trigger?: RegExp;
-}
+export function effect(fn: () => void | (() => void)): () => void;
 
 // @public
 export interface FlexState {
@@ -423,156 +272,21 @@ export interface FlexState {
 }
 
 // @public (undocumented)
-export function formatLines(text: string | string[], opts?: {
-    numbered?: boolean;
-    numberOffset?: number;
-    maxLineLength?: number;
-    offset?: number;
-    limit?: number;
-    more?: false | ((more: number, msg: string) => string);
-    style?: StyleBuilder;
-}): string[];
-
-// @public (undocumented)
-export function formatText(text: string, opts: {
-    wrap?: WrapMode;
-    width: number;
-    style?: StyleBuilder; /** When wrapping, preserve the indentation of the original text. */
-    indent?: boolean;
-    wrapBg?: boolean;
-}): string[];
-
-// @public
-export function fuzzyScore(query: string, target: string): number;
-
-// @public (undocumented)
-export type GithubFetcher = (cwd: string, state: GithubState) => Promise<GithubItem[]>;
-
-// @public
-export interface GithubItem {
-    // (undocumented)
-    author?: {
-        login?: string;
-    };
-    // (undocumented)
-    number: number;
-    state: string;
-    // (undocumented)
-    title: string;
-    // (undocumented)
-    type: "issue" | "pr";
-    // (undocumented)
-    url: string;
-}
-
-// @public
-export function githubSource(opts?: GithubSourceOptions): CompletionSource<GithubItem>;
-
-// @public (undocumented)
-export interface GithubSourceOptions {
-    cwd?: string;
-    fetcher?: GithubFetcher;
-    limit?: number;
-    prefix?: string;
-    state?: GithubState;
-    trigger?: RegExp;
-}
-
-// @public (undocumented)
-export type GithubState = "open" | "closed" | "all";
+export type GeneratedShikiTheme = {
+    name: string;
+    appearance: "dark" | "light";
+    styles: AnsiStyle[];
+};
 
 // @public
 export type HexColor = `#${string}`;
 
-// @public (undocumented)
-export class Image extends Node<ImageState> {
-    constructor(state: ImageState);
-    // (undocumented)
-    get fallback(): string[];
-    // (undocumented)
-    layout(): Layout;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-}
-
-// @public (undocumented)
-export function image(src: string, style?: Omit<ImageState, "src">): Image;
-
-// @public (undocumented)
-export function image(state: ImageState): Image;
-
-// @public (undocumented)
-export interface ImageState {
-    alt?: string;
-    cellAspect?: number;
-    height?: number;
-    src: string;
-    width?: number;
-}
-
-// @public
-export class Input extends Node<InputState, InputEvents> {
-    constructor(initial?: InputState);
-    actions: {
-        "input.cursorDown": () => void;
-        "input.cursorLeft": () => void;
-        "input.cursorLineEnd": () => void;
-        "input.cursorLineStart": () => void;
-        "input.cursorRight": () => void;
-        "input.cursorUp": () => void;
-        "input.deleteCharBack": () => void;
-        "input.deleteCharForward": () => void;
-        "input.deleteWordBack": () => void;
-        "input.insertNewline": () => void;
-        "input.insertTab": () => void;
-        "input.paste": () => void;
-        "input.submit": () => void;
-    };
-    // (undocumented)
-    attach(att: InputAttachment | Paste): void;
-    consume(): InputValue;
-    // (undocumented)
-    get history(): readonly string[];
-    set history(v: readonly string[]);
-    // (undocumented)
-    insert(text: string): void;
-    // (undocumented)
-    paste(text: string): void;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-    static readonly type = "input";
-    // (undocumented)
-    readonly type = "input";
-}
-
-// @public
-export function input(state?: InputState): Input;
-
-// @public
-export type InputAttachment = DetectedFile & {
-    path: string;
-};
-
-// @public (undocumented)
-export type InputEvents = BaseEvents & {
-    history: {
-        history: string[];
-        added: string;
-    }; /** Fired when plain Enter is pressed. Payload is the current value. */
-    submit: {
-        value: string;
-        attachments: InputAttachment[];
-    };
-    attach: {
-        attachment: InputAttachment;
-    };
-};
-
 // @public
 export class InputRouter extends Emitter<InputRouterEvents> {
     constructor(logger?: Logger);
+    blur(node: Node): void;
     dispatch(ev: InputEvent): boolean;
-    focus(node: Node | undefined): void;
+    focus(node: Node): void;
     get focused(): Node | undefined;
     setActions(actions: Actions): void;
     // (undocumented)
@@ -587,6 +301,12 @@ export type InputRouterEvents = {
     key: {
         event: KeyEvent;
     };
+    mouse: {
+        event: MouseEvent;
+    };
+    "term-response": {
+        event: TerminalResponseEvent;
+    };
     focus: {
         node: Node;
     };
@@ -595,42 +315,28 @@ export type InputRouterEvents = {
     };
 };
 
-// @public (undocumented)
-export interface InputState extends StyleState {
-    // (undocumented)
-    canAttach?: (file: InputAttachment) => boolean;
-    cursor?: number;
-    // (undocumented)
-    format?: (value: string, ctx: {
-        style: StyleBuilder;
-    }) => MaybePromise<string>;
-    history?: readonly string[];
-    // (undocumented)
-    pasteMaxChars?: number;
-    pasteMaxLines?: number;
-    placeholder?: string;
-    // (undocumented)
-    validate?: (value: string) => boolean;
-    value?: string;
-    width?: Size;
-}
-
-// @public (undocumented)
-export type InputValue = {
-    value: string;
-    attachments: InputAttachment[];
-};
-
 // @internal
 export function inRenderContextOf(node: Node): boolean;
 
+// @public (undocumented)
+export function inspect(value: unknown, opts?: InspectOpts): string;
+
 // @public
-export function inspect(msg: unknown[], opts?: InspectOptions): string;
+export function inspectFormat(msg: unknown[], opts?: InspectOpts): string;
 
 // @public (undocumented)
-export interface InspectOptions {
-    inspect?: InspectOptions_2;
+export interface InspectOpts {
+    // (undocumented)
+    colors?: boolean;
+    // (undocumented)
+    indent?: number;
+    // (undocumented)
+    null?: boolean;
     stacktrace?: boolean;
+    // (undocumented)
+    style?: StyleBuilder;
+    // (undocumented)
+    undefined?: boolean;
 }
 
 // @internal
@@ -706,132 +412,7 @@ export interface LayoutState {
 }
 
 // @public
-export const log: (state: State<LogState>, ...children: Node[]) => Box<{}>;
-
-// @public (undocumented)
-export type LogEntryFactory = (level: LogLevel, msg: unknown[]) => Node;
-
-// @public
-export interface LoggerStream {
-    // (undocumented)
-    append(node: () => Node): unknown;
-}
-
-// @public (undocumented)
-export interface LogState {
-    color?: Color;
-    // (undocumented)
-    content: Reactive<string>;
-    icon?: string;
-    // (undocumented)
-    level: LogLevel;
-    // (undocumented)
-    markdown?: boolean;
-    prefix?: string;
-    style?: LogStyle;
-    textColor?: Color;
-    // (undocumented)
-    title?: string;
-}
-
-// @public (undocumented)
-export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif";
-
-// @public (undocumented)
-export type LogStyleOverride = Omit<LogState, "level" | "content">;
-
-// @public (undocumented)
-export class Markdown extends Node<MarkdownState> {
-    constructor(state: State<MarkdownState>);
-    // (undocumented)
-    readonly images: Map<string, Image>;
-    // (undocumented)
-    layout(): Layout;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-}
-
-// @public
-export function markdown(content: Reactive<string>, style?: Omit<State<MarkdownState>, "content">): Markdown;
-
-// @public (undocumented)
-export function markdown(state: State<MarkdownState>): Markdown;
-
-// @public (undocumented)
-export interface MarkdownState {
-    content: Reactive<string>;
-    options?: MdOptions;
-    // (undocumented)
-    style?: AnyStyle;
-    syntax?: boolean;
-    // (undocumented)
-    wrap?: WrapMode;
-}
-
-// @public
-export type Matcher = (s: string) => number;
-
-// @public
 export function memo<T>(fn: () => T): Accessor<T>;
-
-// @public
-export class Menu<T extends MenuItem<unknown> = MenuItem> extends Node<MenuState<T>, MenuEvents<T>> {
-    constructor(initial: MenuState<T>);
-    // (undocumented)
-    actions: {
-        "menu.cancel": () => void;
-        "menu.first": () => void;
-        "menu.last": () => void;
-        "menu.next": () => void;
-        "menu.prev": () => void;
-        "menu.select": () => void;
-    };
-    // (undocumented)
-    bind(node: Node | Ref<Node>): this;
-    // (undocumented)
-    protected _render(ctx: RenderCtx): string[];
-    resetHeight(): void;
-    // (undocumented)
-    static readonly type = "menu";
-    // (undocumented)
-    readonly type = "menu";
-}
-
-// @public
-export function menu<T extends MenuItem<unknown> = MenuItem>(state: MenuState<T>): Menu<T>;
-
-// @public (undocumented)
-export interface MenuEvents<T = MenuItem> extends BaseEvents {
-    cancel: {};
-    select: {
-        item: T;
-    };
-}
-
-// @public
-export interface MenuItem<T = string> {
-    // (undocumented)
-    hint?: string;
-    // (undocumented)
-    label?: string;
-    // (undocumented)
-    value: T;
-}
-
-// @public
-export type MenuRender<T> = (item: T, active: boolean, ctx: RenderCtx) => string;
-
-// @public (undocumented)
-export interface MenuState<T = MenuItem> extends Style {
-    active?: number;
-    counter?: boolean;
-    items: Reactive<readonly T[]>;
-    labelWidth?: number;
-    maxHeight?: number;
-    render?: MenuRender<T>;
-    sticky?: boolean;
-    width?: Size;
-}
 
 // @public
 export interface MountCtx {
@@ -841,9 +422,10 @@ export interface MountCtx {
     readonly input: {
         readonly terminalFocus: boolean;
         readonly events: Emitter<InputRouterEvents>;
-        readonly bind: Actions["bind"]; /** Move focus to `node`. Mirrors `router.focus(node)`. */
-        readonly focus: (node: Node) => void; /** Clear focus. */
-        readonly blur: () => void;
+        readonly bind: Actions["bind"];
+        readonly focus: (node: Node) => void;
+        readonly blur: (node: Node) => void;
+        readonly queries: TerminalQueries;
     };
     // (undocumented)
     logger: Logger;
@@ -857,6 +439,8 @@ export interface MountCtx {
 // @public
 export abstract class Node<T extends object = object, E extends {} = {}> extends Emitter<BaseEvents, E> {
     constructor(state: State<T>, ...children: Node[]);
+    // (undocumented)
+    action(id: keyof NonNullable<this["actions"]> & string, opts?: Partial<ActionCtx>): boolean;
     // (undocumented)
     actions?: NodeActionMap;
     // (undocumented)
@@ -889,12 +473,12 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // (undocumented)
     get layoutNodes(): readonly Node[];
     // (undocumented)
-    protected get logger(): _$_zaly_shared_logger0.Logger<{
-        name: string;
+    protected get logger(): Logger<    {
+    name: string;
     } & Partial<{}> & {
-        id: string | undefined;
-        name: string;
-        node: string;
+    id: string | undefined;
+    name: string;
+    node: string;
     }> | undefined;
     // (undocumented)
     mount(ctx: MountCtx): this;
@@ -905,7 +489,7 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     // (undocumented)
     get parent(): Node | undefined;
     // (undocumented)
-    ref(ref?: Ref<this>): this;
+    ref<N extends Node>(ref?: Ref<this extends N ? N : never>): this;
     // (undocumented)
     remove(child: Node): this;
     // (undocumented)
@@ -934,62 +518,44 @@ export abstract class Node<T extends object = object, E extends {} = {}> extends
     get visible(): boolean;
     // (undocumented)
     with<R>(fn: () => R): R;
+    // (undocumented)
+    withActions<A extends NodeActionMap>(actions: A): this & {
+        actions: A;
+    };
+    // (undocumented)
+    withEvents<Events extends {}>(): this & Emitter<Events>;
 }
 
 // @public
-export type NodeAction = ((ctx: ActionCtx) => void) | (ActionDef & {
-    fn: (ctx: ActionCtx) => void;
+export type NodeAction<T extends Node = Node> = ActionFn<ArgsOpts, T> | (ActionDef<ArgsOpts, T> & {
+    fn: ActionFn<ArgsOpts, T>;
 });
 
 // @public
-export type NodeActionMap = Record<string, NodeAction>;
+export type NodeActionMap<T extends Node = Node> = Record<string, NodeAction<T>>;
 
 // @public
 export type NodeVisitor = (node: Node) => void | "stop";
 
-// @public (undocumented)
-export class Notifier {
-    constructor(ui: OverlaySurface);
-    // (undocumented)
-    notify(msg: string, opts?: NotifProps): Overlay;
-}
-
-// @public (undocumented)
-export type NotifProps = Omit<LogState, "content" | "level"> & {
-    level?: LogLevel;
-    timeout?: number;
-    onClose?: () => void;
-};
-
 // @public
 export function onCleanup(fn: () => void): void;
 
-// @public (undocumented)
-export type Overlay<T extends Node[] = Node[]> = Box<OverlayState> & {
-    children: T;
-};
-
-// @public (undocumented)
-export function overlay<T extends Node[] = Node[]>(state: State<OverlayState & BoxStyle>, ...children: T): Overlay<T>;
-
-// @public (undocumented)
-export interface OverlayState {
-    // (undocumented)
-    relative?: "screen" | "ui" | "stream";
-    // (undocumented)
-    verticalAnchor?: "top" | "center" | "bottom";
-    x: number;
-    y: number;
-    zIndex?: number;
-}
-
 // @public
-export class OverlaySurface extends Surface {
-    constructor(deps: OverlayDeps);
+export class OverlaySurface extends Surface<OverlaySurfaceEvents> {
     get active(): readonly Overlay[];
     add<O extends Overlay>(overlay: () => O): O;
+    at(input: Point): OverlayRenderState | undefined;
+    // (undocumented)
+    get bounds(): {
+        top: number;
+        bottom: number;
+    };
     // (undocumented)
     close(overlay: Overlay): this;
+    // (undocumented)
+    contains(point: Point): boolean;
+    // (undocumented)
+    get dirty(): boolean;
     // (undocumented)
     protected mountAll(ctx: MountCtx): void;
     get nodes(): readonly Node[];
@@ -997,7 +563,11 @@ export class OverlaySurface extends Surface {
     open<T extends Overlay = Overlay>(overlay: () => T): T;
     // (undocumented)
     remove(overlay: Overlay): this;
-    _render(sync?: (fn: () => void) => void): Promise<void>;
+    _render(frame: RenderFrame): Promise<void>;
+    // (undocumented)
+    get state(): readonly OverlayRenderState[];
+    // (undocumented)
+    readonly type = "overlay";
     // (undocumented)
     protected unmountAll(): void;
 }
@@ -1017,83 +587,45 @@ export class Owner {
 }
 
 // @public (undocumented)
-export type Padding = number | readonly [v: number, h: number] | readonly [t: number, r: number, b: number, l: number];
-
-// @public (undocumented)
-export class Picker {
-    constructor(ui: OverlaySurface, input: Input);
-    // (undocumented)
-    close(): void;
-    // (undocumented)
-    get isOpen(): Accessor<boolean>;
-    // (undocumented)
-    pick<T extends PickerItem<unknown> = PickerItem>(opts: Omit<PickOpts<T>, "input">): Promise<T | undefined>;
-}
-
-// @public (undocumented)
-export const picker: <T extends PickerItem<unknown> = PickerItem<string>>(props: PickerProps<T>) => Menu<T>;
-
-// @public (undocumented)
-export type PickerItem<T = string> = MenuItem<T> & {
-    searchText?: string;
-};
-
-// @public (undocumented)
-export type PickerProps<T extends PickerItem<unknown> = PickerItem> = Omit<MenuState<T>, "items"> & {
-    input: Input | Ref<Input>;
-    items: readonly T[] | ((query: string, match: Matcher) => PickerResult<T>);
-    sort?: boolean;
-};
-
-// @public (undocumented)
-export type PickerResult<T extends PickerItem<unknown> = PickerItem> = readonly T[] | Promise<readonly T[]>;
-
-// @public (undocumented)
-export type PickOpts<T extends PickerItem<unknown> = PickerItem> = PickerProps<T> & {
-    title?: string;
-    ref?: Ref<Menu<T>>;
-};
-
-// @public (undocumented)
-export class Progress extends Node<ProgressState> {
-    // (undocumented)
-    protected _render(ctx: RenderCtx): string[];
-}
+export function parseAttrs(params: string): number[];
 
 // @public
-export function progress(state: State<ProgressState>): Progress;
+export function parseTerminalColor(value: string): HexColor | undefined;
+
+// @public
+export function peek<T>(s: Reactive<T>): T;
 
 // @public (undocumented)
-export interface ProgressState {
-    color?: Color;
-    complete?: string;
-    incomplete?: string;
-    label?: string | ((ctx: RenderCtx, fraction: number) => string);
-    total?: Reactive<number>;
-    trackColor?: Color;
-    value: Reactive<number>;
-    width?: Size;
-}
-
-// @public (undocumented)
-export type Props = Record<string, any>;
+export type Progressive<T> = Accessor<T> & {
+    readonly loading: Accessor<boolean>;
+    whenIdle: () => Promise<void>;
+};
 
 // @public
 export function provideContext<T>(ctx: Context<T>, value: T): void;
 
 // @public
-export function rank<T>(items: Iterable<T>, score: (item: T) => number, limit?: number): T[];
-
-// @public
 export type Reactive<T> = T | Accessor<T>;
 
 // @public (undocumented)
-export type Ref<T> = (() => T) & {
-    value: T;
-};
+export interface Ref<T> {
+    // (undocumented)
+    (): T;
+    // (undocumented)
+    get value(): T | undefined;
+    set value(value: T);
+}
 
 // @public (undocumented)
 export const RenderContext: Context<RenderContextValue | undefined>;
+
+// @public
+export type RenderContextValue = {
+    theme: Accessor<Theme>;
+    style: Accessor<StyleBuilder>;
+    images: Accessor<boolean>;
+    queries: TerminalQueries;
+};
 
 // @public
 export interface RenderCtx {
@@ -1107,12 +639,17 @@ export interface RenderCtx {
 }
 
 // @public
-export class Renderer {
+export class Renderer extends Emitter<RenderEvents> {
     constructor(opts?: RendererOptions);
     readonly actions: Actions;
     bind: Actions["bind"];
     get ctx(): RenderCtx;
+    // (undocumented)
+    get debug(): boolean;
+    set debug(debug: boolean);
     findNode(match: string | ((node: Node) => boolean)): Node[];
+    // (undocumented)
+    readonly frame: Frame;
     getNode(id: string): Node | undefined;
     globalActions: {
         "global.quit": {
@@ -1122,12 +659,24 @@ export class Renderer {
     // (undocumented)
     readonly input: InputRouter;
     readonly logger: Logger;
+    mountCtx(surface: SurfaceType): MountCtx;
+    // (undocumented)
+    get mouse(): boolean;
+    set mouse(mouse: boolean);
     // (undocumented)
     readonly overlay: OverlaySurface;
+    // (undocumented)
+    queries: TerminalQueries;
     render(): Promise<void>;
+    // (undocumented)
+    get rootOwner(): Owner;
     get running(): boolean;
     // (undocumented)
+    readonly selection: SelectionLayer;
+    // (undocumented)
     start(): void;
+    // (undocumented)
+    stats: RenderStats;
     // (undocumented)
     stop(): void;
     // (undocumented)
@@ -1135,8 +684,9 @@ export class Renderer {
     // (undocumented)
     readonly terminal: Terminal;
     set theme(theme: Theme);
-    // (undocumented)
     get theme(): Theme;
+    set transparent(transparent: boolean);
+    get transparent(): boolean;
     // (undocumented)
     readonly ui: UI;
     walk(visit: NodeVisitor): void;
@@ -1144,22 +694,43 @@ export class Renderer {
 
 // @public (undocumented)
 export interface RendererOptions {
+    altScreen?: boolean;
+    defaultStyle?: Pick<Style, "fg" | "bg">;
     fixedFooterHeight?: number;
     hookSignals?: boolean;
     // (undocumented)
+    images?: Reactive<boolean>;
+    // (undocumented)
     logger?: Logger;
+    mouse?: boolean;
     // (undocumented)
     reporter?: TuiReporterOpts;
+    shiki?: ShikiSelection;
     // (undocumented)
     stdin?: TerminalReader;
     // (undocumented)
     stdout?: TerminalWriter;
     // (undocumented)
     theme?: Theme;
+    // (undocumented)
+    transparent?: Reactive<boolean>;
 }
 
-// @internal
-export function resetImageTransmitCache(): void;
+// @public (undocumented)
+export type RenderEvents = {
+    start: {};
+    stop: {};
+    dirty: {};
+};
+
+// @public (undocumented)
+export class RenderStats {
+    // (undocumented)
+    get(): Record<string, number>;
+    inc(stat: string, delta?: number): void;
+    // (undocumented)
+    set(stat: string, value: number): void;
+}
 
 // @public (undocumented)
 export type RGB = [r: number, g: number, b: number];
@@ -1178,7 +749,7 @@ export interface RoutedKey {
     // (undocumented)
     shift: boolean;
     // (undocumented)
-    stop(): void;
+    stop: () => void;
     // (undocumented)
     stopped: boolean;
     // (undocumented)
@@ -1188,7 +759,7 @@ export interface RoutedKey {
 // @public
 export interface RoutedPaste {
     // (undocumented)
-    stop(): void;
+    stop: () => void;
     // (undocumented)
     stopped: boolean;
     // (undocumented)
@@ -1201,58 +772,67 @@ export type Setter<T> = ((next: T | ((prev: T) => T)) => void) & {
 };
 
 // @public (undocumented)
-export type ShikiJob = Omit<ShikiRequest, "lang" | "key"> & {
-    lang: ShikiLanguage;
-    key: string;
+export type ShikiJob = ShikiWorkerRequest & ReturnType<typeof Promise.withResolvers<ShikiResult>> & {
+    scheduled?: boolean;
 };
 
 // @public (undocumented)
 export type ShikiLanguage = BundledLanguage;
 
 // @public (undocumented)
+export type ShikiOpts = {
+    theme?: ShikiThemeInput;
+    signal?: AbortSignal;
+};
+
+// @public (undocumented)
 export type ShikiRequest = {
     key?: string;
     code: string;
     lang: string;
-    theme?: ShikiTheme;
+    theme?: ShikiThemeInput;
+    signal?: AbortSignal;
 };
 
 // @public (undocumented)
 export type ShikiResult = {
-    key: string;
+    id: number;
     value: string;
     error?: string;
+    aborted?: boolean;
 };
+
+// @public (undocumented)
+export type ShikiSelection = "auto" | ShikiTheme;
 
 // @public (undocumented)
 export type ShikiTheme = BundledTheme;
 
-// @public (undocumented)
-export type ShikiWorkerRequest = {
-    id: number;
-    jobs: ShikiJob[];
-};
+// @public
+export function shikiTheme(theme: Theme, selection?: ShikiSelection): ShikiThemeInput;
 
 // @public (undocumented)
-export type ShikiWorkerResponse = {
-    id: number;
-    results: ShikiResult[];
-};
+export type ShikiThemeInput = ShikiTheme | GeneratedShikiTheme;
 
 // @public
-export class Show extends Node<ShowState> {
-    layoutChildren(): readonly Node[];
-    protected _render(ctx: RenderCtx): Promise<string[]>;
-}
-
-// @public
-export function show(state: ShowState, ...children: Node[]): Show;
+export function shikiThemes(): Promise<{
+    id: ShikiTheme;
+    name: string;
+}[]>;
 
 // @public (undocumented)
-export interface ShowState<T = unknown> {
-    fallback?: Node;
-    when?: Reactive<T | undefined | false | null>;
-}
+export type ShikiWorkerMessage = {
+    type: "ready";
+} | (ShikiResult & {
+    type: "result";
+});
+
+// @public (undocumented)
+export type ShikiWorkerRequest = Omit<ShikiRequest, "lang" | "key"> & {
+    id: number;
+    lang: ShikiLanguage;
+    key: string;
+};
 
 // @public (undocumented)
 export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>] & {
@@ -1261,63 +841,39 @@ export type Signal<T> = readonly [get: Accessor<T>, set: Setter<T>] & {
 };
 
 // @public
-export function signal<T>(initial: T): Signal<T>;
+export function signal<T>(initial: T, opts?: {
+    equals?: false | ((prev: T, next: T) => boolean);
+}): Signal<T>;
 
 // @public
 export type SignalStore<T extends object> = T & {
-    set(patch: Partial<T> | ((current: T) => Partial<T>)): void;
+    set: (patch: Partial<T> | ((current: T) => Partial<T>)) => void;
 };
 
 // @public
 export type SpecialKeyName = (typeof specialKeys)[number];
 
-// @public
-export class Spinner extends Node<SpinnerState> {
-    constructor(state: SpinnerState);
-    // (undocumented)
-    protected _render(ctx: RenderCtx): string[];
-    start(): this;
-    stop(): this;
-    static tick(speed: number): number;
-}
-
-// @public
-export function spinner(state?: State<SpinnerState>): Spinner;
-
-// @internal
-export const spinnerFrames: {
-    readonly arrow: readonly ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"];
-    readonly bouncingBar: readonly ["[    ]", "[=   ]", "[==  ]", "[=== ]", "[ ===]", "[  ==]", "[   =]", "[    ]"];
-    readonly circle: readonly ["◐", "◓", "◑", "◒"];
-    readonly dots: readonly ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-    readonly line: readonly ["-", "\\", "|", "/"];
-};
-
-// @public (undocumented)
-export interface SpinnerState {
-    color?: Reactive<AnyStyle>;
-    frames?: SpinnerStyle | readonly string[];
-    // (undocumented)
-    idle?: string;
-    running?: Reactive<boolean>;
-    speed?: number;
-}
-
-// @public (undocumented)
-export type SpinnerStyle = keyof typeof spinnerFrames;
-
 // @public (undocumented)
 export type State<T extends object = object> = T & BaseState;
 
-// @public
+// @public (undocumented)
 export class Stream extends Surface<StreamEvents> {
-    constructor(terminal: Terminal, getCtx: () => RenderCtx, rootOwner: Owner, opts?: Partial<StreamOptions>);
+    constructor(renderer: Renderer, opts?: Partial<StreamOptions>);
     // (undocumented)
     get active(): boolean;
     append<N extends Node>(node: () => N): N;
-    invalidate(): void;
+    // (undocumented)
+    get bounds(): {
+        top: number;
+        bottom: number;
+    };
+    // (undocumented)
+    emitScroll(): void;
+    // (undocumented)
+    fromScreen(point: Point): Point | undefined;
+    // (undocumented)
+    getRow(row: number): string | undefined;
     get liveHeight(): number;
-    markStale(fromRow: number, toRow: number): void;
     // (undocumented)
     protected mountAll(ctx: MountCtx): void;
     get nodes(): readonly Node[];
@@ -1325,8 +881,30 @@ export class Stream extends Surface<StreamEvents> {
     // (undocumented)
     get pending(): boolean;
     // (undocumented)
-    _render(sync?: (fn: () => void) => void): Promise<void>;
+    _render(frame: RenderFrame): Promise<void>;
+    // (undocumented)
+    reset(opts?: {
+        keepNodes?: boolean;
+    }): void;
+    // (undocumented)
+    resetPaint(): void;
     get rows(): readonly string[];
+    // (undocumented)
+    scroll(lines?: number): Promise<void>;
+    // (undocumented)
+    scrollBottom(): Promise<void>;
+    // (undocumented)
+    scrollDown(lines?: number): Promise<void>;
+    // (undocumented)
+    scrollTop(): Promise<void>;
+    // (undocumented)
+    scrollUp(lines?: number): Promise<void>;
+    // (undocumented)
+    get terminal(): Terminal;
+    // (undocumented)
+    toScreen(point: Point): Point | undefined;
+    // (undocumented)
+    readonly type = "stream";
     // (undocumented)
     protected unmountAll(): void;
     // (undocumented)
@@ -1334,24 +912,24 @@ export class Stream extends Surface<StreamEvents> {
 }
 
 // @public
-export type Style = Omit<AnsiStyle, "fg" | "bg"> & {
-    fg?: Color;
-    bg?: Color;
-    style?: AnyStyle;
-};
+export type Style<Ansi extends boolean = true> = Simplify<Omit<AnsiStyle, "fg" | "bg"> & {
+    fg?: Color<Ansi>;
+    bg?: Color<Ansi>;
+    style?: AnyStyle<Ansi>;
+}>;
 
 // @public
-export type StyleState = Style;
+export type StyleState = Style<false>;
 
 // @public (undocumented)
 export type SurfaceType = "stream" | "ui" | "overlay";
 
 // @public
 export type SuspenseBoundary = {
-    increment(): void;
-    decrement(): void;
-    active(): boolean;
-    whenIdle(): Promise<void>;
+    increment: () => void;
+    decrement: () => void;
+    active: () => boolean;
+    whenIdle: () => Promise<void>;
 };
 
 // @public
@@ -1360,14 +938,23 @@ export const SuspenseContext: Context<SuspenseBoundary | undefined>;
 // @internal (undocumented)
 export class Terminal {
     constructor(opts?: TerminalOpts);
+    // (undocumented)
+    get altScreen(): boolean;
     clearBelow(): string;
     clearLine(): string;
     clearScrollRegion(): void;
     get cols(): number;
+    // (undocumented)
+    deleteImages(opts?: {
+        data?: boolean;
+    }): void;
     deleteLines(n: number): string;
     enqueueTransmit(seq: string): void;
     flushTransmits(): void;
     get footerTop(): number;
+    // (undocumented)
+    get mouse(): boolean;
+    set mouse(mouse: boolean);
     moveTo(row: number, col?: number): string;
     // (undocumented)
     onResize(fn: ResizeListener): () => void;
@@ -1376,6 +963,11 @@ export class Terminal {
     get scrollBottom(): number;
     scrollDown(n: number): string;
     scrollUp(n: number): string;
+    setProgress(state: "progress", value: number): void;
+    // (undocumented)
+    setProgress(state: "error" | "paused", value?: number): void;
+    // (undocumented)
+    setProgress(state?: "inactive" | "loading"): void;
     setReserveBottom(rows: number): void;
     setScrollRegion(top: number, bottom: number): void;
     start(): void;
@@ -1385,138 +977,165 @@ export class Terminal {
 }
 
 // @public (undocumented)
-export class Text extends Node<TextStyle> {
+export interface TerminalPaletteSnapshot {
     // (undocumented)
-    layout(ctx: RenderCtx): Promise<Layout>;
+    ansi: (HexColor | undefined)[];
     // (undocumented)
-    protected _render(ctx: RenderCtx): Promise<string[]>;
+    bg?: HexColor;
+    // (undocumented)
+    fg?: HexColor;
+    // (undocumented)
+    selectionBg?: HexColor;
+    // (undocumented)
+    selectionFg?: HexColor;
 }
 
-// @public
-export function text(content: TextContent, style?: Omit<State<TextStyle>, "content">): Text;
-
 // @public (undocumented)
-export function text(style: State<TextStyle>): Text;
-
-// @public
-export type TextContent = Reactive<string> | ((ctx: RenderCtx) => MaybePromise<Reactive<string>>);
-
-// @public (undocumented)
-export function textContent(content: TextContent, ctx: RenderCtx): Promise<string>;
-
-// @public (undocumented)
-export function textContent(content: TextContent | undefined, ctx: RenderCtx): Promise<undefined>;
-
-// @public (undocumented)
-export interface TextStyle extends Style {
+export class TerminalQueries {
+    constructor(router: InputRouter, terminal: TerminalQueryWriter);
     // (undocumented)
-    content: TextContent;
+    color(index: number | "fg" | "bg" | "selectionBg" | "selectionFg", opts?: TerminalQueryOpts): Promise<`#${string}` | undefined>;
     // (undocumented)
-    wrap?: "word" | "char" | "none";
+    colorScheme(opts?: TerminalQueryOpts): Promise<"dark" | "light" | undefined>;
+    // (undocumented)
+    palette(opts?: TerminalQueryOpts): Promise<TerminalPaletteSnapshot>;
+    // (undocumented)
+    primaryDeviceAttributes(opts?: TerminalQueryOpts): Promise<(TerminalResponseEvent & {
+        attrs: number[];
+    }) | undefined>;
+    // (undocumented)
+    query<T>(query: TerminalQuery<T>): Promise<T | undefined>;
+    // (undocumented)
+    secondaryDeviceAttributes(opts?: TerminalQueryOpts): Promise<(TerminalResponseEvent & {
+        attrs: number[];
+    }) | undefined>;
+    // (undocumented)
+    xtVersion(opts?: TerminalQueryOpts): Promise<(TerminalResponseEvent & {
+        name: string;
+        version?: string;
+    }) | undefined>;
 }
 
-// @public
-export type Theme = {
-    shiki?: ShikiTheme; /** Brand / primary accent. */
-    primary: Color; /** Secondary accent — distinct hue from `primary`. */
-    accent: Color;
-    text: Color;
-    muted: ThemeValue;
-    quiet: ThemeValue;
-    comment: ThemeValue; /** Section / panel titles. Typically `bold` + a fg color. */
-    title: ThemeValue;
-    subtle: ThemeValue; /** Default UI surface. Bottom of the stack. */
-    ui: ThemeValue; /** Popup / modal surface. One tier above `ui`. */
-    overlay: ThemeValue;
-    highlight: ThemeValue; /** Separators between messages or sections. */
-    divider: ThemeValue; /** Highlighted text in inputs, lists, autocomplete. */
-    selection: ThemeValue; /** Line-number column, diff markers. */
-    gutter: ThemeValue; /** Main input-prompt styling. */
-    prompt: ThemeValue; /** Structural border around panels, boxes, tables. */
-    border: ThemeValue;
-    borderTitle: ThemeValue; /** Code-block surface (bg + optional fg). Default for `mdCodeBlock`. */
-    code: ThemeValue; /** Title above a code block (e.g. file path). */
-    codeTitle: ThemeValue;
-    success: Color;
-    info: Color;
-    warn: Color;
-    error: Color;
-    mdBold: ThemeValue;
-    mdCode: ThemeValue;
-    mdCodeBlock: ThemeValue;
-    mdCodeBlockTitle: ThemeValue;
-    mdHeading1: ThemeValue;
-    mdHeading2: ThemeValue;
-    mdHeading3: ThemeValue;
-    mdHeading4: ThemeValue;
-    mdHeading5: ThemeValue;
-    mdHeading6: ThemeValue;
-    mdHeading: ThemeValue;
-    mdHr: ThemeValue;
-    mdItalic: ThemeValue;
-    mdLink: ThemeValue;
-    mdListBullet: ThemeValue;
-    mdListChecked: ThemeValue;
-    mdListUnchecked: ThemeValue;
-    mdQuote: ThemeValue;
-    mdStrikethrough: ThemeValue;
-    mdTable: ThemeValue;
-    mdTableHeader: ThemeValue;
-    menuLabel: ThemeValue;
-    menuHint: ThemeValue; /** Currently-highlighted entry. */
-    menuActive: ThemeValue;
-    diffAdd: ThemeValue;
-    diffContext: ThemeValue;
-    diffDel: ThemeValue;
-    diffLine: ThemeValue;
-    diffTitle: ThemeValue;
+// @public (undocumented)
+export type TerminalQuery<T = TerminalResponseEvent> = TerminalQueryOpts & {
+    request: string;
+    match: (event: TerminalResponseEvent) => T | undefined;
 };
 
 // @public (undocumented)
-export type ThemeKey = keyof Theme;
+export type TerminalQueryOpts = {
+    signal?: AbortSignal;
+    timeout?: number;
+    wrap?: (seq: string) => string;
+};
 
 // @public
-export type ThemeValue = Color | Style;
+export type Theme<Ansi extends boolean = true, T = ThemeValue<Ansi>> = {
+    id: string;
+    appearance: "dark" | "light";
+    name?: string;
+    shiki?: ShikiSelection;
+    fg: Color<Ansi, Ansi>;
+    bg: Color<Ansi, Ansi>;
+    primary: Color<Ansi>;
+    accent: Color<Ansi>;
+    muted: T;
+    quiet: T;
+    comment: T;
+    title: T;
+    delim: T;
+    ui: T;
+    overlay: T;
+    highlight: T;
+    divider: T;
+    selection: T;
+    gutter: T;
+    prompt: T;
+    border: T;
+    borderTitle: T;
+    code: T;
+    codeTitle: T;
+    success: Color<Ansi>;
+    info: Color<Ansi>;
+    warn: Color<Ansi>;
+    error: Color<Ansi>;
+    syntaxBoolean: T;
+    syntaxBracket: T;
+    syntaxConstant: T;
+    syntaxDelimiter: T;
+    syntaxField: T;
+    syntaxFunction: T;
+    syntaxNumber: T;
+    syntaxSpecial: T;
+    syntaxString: T;
+    mdBold: T;
+    mdCode: T;
+    mdCodeBlock: T;
+    mdCodeBlockTitle: T;
+    mdHeading1: T;
+    mdHeading2: T;
+    mdHeading3: T;
+    mdHeading4: T;
+    mdHeading5: T;
+    mdHeading6: T;
+    mdHeading: T;
+    mdHr: T;
+    mdItalic: T;
+    mdLink: T;
+    mdListBullet: T;
+    mdListChecked: T;
+    mdListUnchecked: T;
+    mdQuote: T;
+    mdStrikethrough: T;
+    mdTable: T;
+    mdTableHeader: T;
+    optionName: T;
+    optionDesc: T;
+    optionActive: T;
+    diffAdd: T;
+    diffDel: T;
+    diffContext: T;
+    diffAddNum: T;
+    diffDelNum: T;
+    diffContextNum: T;
+};
+
+// @public (undocumented)
+export type ThemeKey = Exclude<keyof Theme<false, unknown>, "shiki" | "$schema" | "id" | "name" | "appearance">;
+
+// @public (undocumented)
+export type ThemeStyle<Ansi extends boolean = true> = Simplify<Omit<AnsiStyle, "fg" | "bg"> & {
+    fg?: Color<Ansi>;
+    bg?: Color<Ansi>;
+}>;
+
+// @public (undocumented)
+export type ThemeValue<Ansi extends boolean = true> = ThemeStyle<Ansi> | Color<Ansi>;
 
 // @public
-export function toAccessor<T>(value: T): Accessor<T>;
-
-// @public (undocumented)
-export class TuiReporter implements LogReporter {
-    // (undocumented)
-    $log(input: LogEntry): void;
-    constructor(opts?: TuiReporterOpts);
-    // (undocumented)
-    attach(stream: LoggerStream): this;
-    // (undocumented)
-    detach(): this;
-}
-
-// @public (undocumented)
-export interface TuiReporterOpts extends InspectOptions {
-    factory?: LogEntryFactory;
-    markdown?: boolean;
-    styles?: Partial<Record<LogLevel, LogStyleOverride>>;
-    // (undocumented)
-    wrap?: (node: Node) => Node;
-    write?: (text: string, kind: "stdout" | "stderr") => void;
-}
+export function toAccessor<T>(fn: () => T): Accessor<T>;
 
 // @public
 export class UI extends Surface {
-    constructor(terminal: Terminal, getCtx: () => RenderCtx, rootOwner: Owner);
+    constructor(renderer: Renderer);
     add<N extends Node>(child: () => N): N;
-    get height(): number;
-    invalidate(): void;
     // (undocumented)
-    markStale(fromRow: number, toRow: number): void;
+    get bounds(): {
+        top: number;
+        bottom: number;
+    };
+    get height(): number;
     // (undocumented)
     protected mountAll(ctx: MountCtx): void;
     get nodes(): readonly Node[];
     onResize(): void;
-    _render(sync?: (fn: () => void) => void): Promise<void>;
+    _render(frame: RenderFrame): Promise<void>;
     get root(): Box;
     get rows(): readonly string[];
+    // (undocumented)
+    get terminal(): Terminal;
+    // (undocumented)
+    readonly type = "ui";
     // (undocumented)
     protected unmountAll(): void;
 }
@@ -1533,17 +1152,11 @@ export function useActiveOwner(): Owner | undefined;
 // @public
 export function useContext<T>(ctx: Context<T>): T;
 
-// @public
-export function widget<T extends (...args: any[]) => Node>(fn: T): T;
-
 // @internal
 export function withActiveNode<T>(node: Node, fn: () => T): T;
 
 // @internal
 export function withOwner<T>(owner: Owner, fn: () => T): T;
-
-// @public (undocumented)
-export type WrapMode = "word" | "char" | "none";
 
 // (No @packageDocumentation comment for this package)
 

@@ -1,4 +1,4 @@
-# @zaly/agent/session (22)
+# @zaly/agent/session (23)
 
 ## Classes (4)
 
@@ -14,8 +14,9 @@
 - resumeSession
 - sessionInfo
 
-## Types (14)
+## Types (15)
 
+- MaskCheckpoint
 - PartialNode
 - SessionEvents
 - SessionFilter

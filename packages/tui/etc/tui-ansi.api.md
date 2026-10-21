@@ -10,6 +10,9 @@ export function ansiBg(str: string, idx: number): AnsiColor | undefined;
 // @public (undocumented)
 export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined;
 
+// @public
+export function applyDefaultColors(text: string, fg: string, bg: string): string;
+
 // @internal
 export function hyperlink(url: string, text: string): string;
 
@@ -20,7 +23,10 @@ export function openAnsi(style: AnsiStyle): string;
 export function reapplyStyle(s: string, escape: string): string;
 
 // @public (undocumented)
-export const RESET = "\u001B[0m";
+export const RESET = "[0m";
+
+// @public (undocumented)
+export function stripAnsiBg(s: string): string;
 
 // @public (undocumented)
 export function styleAnsi(text: string, style?: AnsiStyle): string;

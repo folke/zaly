@@ -1,4 +1,4 @@
-# @zaly/shared/process (17)
+# @zaly/shared/process (21)
 
 ## Classes (5)
 
@@ -8,18 +8,22 @@
 - Spawn
 - TextStream
 
-## Functions (6)
+## Functions (8)
 
+- bash
 - bufferedTailStream
+- spawnCmd
 - spawnText
 - spawnWithInput
 - tailedStream
 - transformStream
 - which
 
-## Types (6)
+## Types (8)
 
 - BaseStreamOpts
+- CmdArgs
+- CmdOpts
 - KillReason
 - ProxyStreamOptions
 - SpawnOpts

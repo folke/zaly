@@ -9,19 +9,26 @@ import { ParseArgsConfig } from 'node:util';
 import { ParseArgsOptionsConfig } from 'node:util';
 
 // @public (undocumented)
-export type ArgsOpts = ParseArgsOptionsConfig;
+export type ArgsOption = ParseArgOption & {
+    desc?: string;
+    required?: boolean;
+    positional?: boolean;
+};
+
+// @public (undocumented)
+export type ArgsOpts = Record<string, ArgsOption>;
 
 // @public (undocumented)
 export function argsParse<T extends ArgsOpts>(cmd: string, options: T): Promise<ArgsResult<T>>;
 
 // @public (undocumented)
-export type ArgsResult<T extends ArgsOpts> = ParsedArgsResult<{
+export type ArgsResult<T extends ArgsOpts = ArgsOpts> = ParsedArgsResult<{
     allowPositionals: true;
     options: T;
 }>;
 
 // @public (undocumented)
-export function argsUsage(name: string, opts: ParseArgsOptionsConfig): string;
+export function argsUsage(name: string, opts: ArgsOpts): string;
 
 // @public (undocumented)
 export type ParsedArgs<T extends ParseArgsConfig> = ReturnType<typeof parseArgs<T>>;

@@ -1,7 +1,8 @@
-# @zaly/tui/style (20)
+# @zaly/tui/style (21)
 
-## Functions (7)
+## Functions (8)
 
+- blend
 - inspect
 - inspectFormat
 - isHexColor

@@ -4,13 +4,13 @@
 
 ```ts
 
-import * as _$_zaly_shared_logger0 from '@zaly/shared/logger';
 import { ArgsOpts } from '@zaly/shared/args';
 import { ArgsResult } from '@zaly/shared/args';
 import { BundledTheme } from 'shiki/types';
 import { Emitter } from '@zaly/shared';
 import { Logger } from '@zaly/shared/logger';
 import { MaybePromise } from '@zaly/shared';
+import { Simplify } from '@zaly/shared';
 import { TryResult } from '@zaly/shared/logger';
 
 // @public (undocumented)

@@ -5,7 +5,7 @@
 ```ts
 
 import { BundledTheme } from 'shiki/types';
-import { InspectOptions as InspectOptions_2 } from 'node:util';
+import { Simplify } from '@zaly/shared';
 
 // @public (undocumented)
 export type AnsiColor = AnsiColorName | BrightAnsiColorName | HexColor | "inherit";
@@ -34,13 +34,16 @@ export interface AnsiStyle {
 }
 
 // @public (undocumented)
-export type AnyStyle = Style | Color;
+export type AnyStyle<Ansi extends boolean = false> = Style<Ansi> | Color<Ansi>;
+
+// @public (undocumented)
+export function blend(c: HexColor, bg: HexColor, alpha: number): HexColor;
 
 // @public
 export type BrightAnsiColorName = `bright${Capitalize<AnsiColorName>}`;
 
 // @public
-export type Color = HexColor | AnsiColorName | BrightAnsiColorName | ThemeKey | "inherit" | `${HexColor | ThemeKey}-${ColorLightness}` | `${HexColor | ThemeKey}+${ColorLightness}`;
+export type Color<Ansi extends boolean = true, I = true> = HexColor | (Ansi extends true ? AnsiColorName : never) | (Ansi extends true ? BrightAnsiColorName : never) | ThemeKey | (I extends true ? "inherit" : never) | `${HexColor | ThemeKey}-${ColorLightness}` | `${HexColor | ThemeKey}+${ColorLightness}`;
 
 // @public
 export type ColorLightness = `${number}`;
@@ -48,13 +51,25 @@ export type ColorLightness = `${number}`;
 // @public
 export type HexColor = `#${string}`;
 
+// @public (undocumented)
+export function inspect(value: unknown, opts?: InspectOpts): string;
+
 // @public
-export function inspect(msg: unknown[], opts?: InspectOptions): string;
+export function inspectFormat(msg: unknown[], opts?: InspectOpts): string;
 
 // @public (undocumented)
-export interface InspectOptions {
-    inspect?: InspectOptions_2;
+export interface InspectOpts {
+    // (undocumented)
+    colors?: boolean;
+    // (undocumented)
+    indent?: number;
+    // (undocumented)
+    null?: boolean;
     stacktrace?: boolean;
+    // (undocumented)
+    style?: StyleBuilder;
+    // (undocumented)
+    undefined?: boolean;
 }
 
 // @public (undocumented)
@@ -64,34 +79,34 @@ export function isHexColor(s: string): s is HexColor;
 export function isMarkdown(s: string): boolean;
 
 // @public (undocumented)
-export function parseHex(hex: string): RGB;
+export function parseHex(hex: HexColor): RGB;
 
 // @public (undocumented)
 export type RGB = [r: number, g: number, b: number];
 
 // @public
-export type Style = Omit<AnsiStyle, "fg" | "bg"> & {
-    fg?: Color;
-    bg?: Color;
-    style?: AnyStyle;
-};
-
-// @public
-export function style(theme?: Theme): StyleBuilder;
+export type Style<Ansi extends boolean = true> = Simplify<Omit<AnsiStyle, "fg" | "bg"> & {
+    fg?: Color<Ansi>;
+    bg?: Color<Ansi>;
+    style?: AnyStyle<Ansi>;
+}>;
 
 // @public (undocumented)
-export type StyleBuilder = {
+export type StyleBuilder<Ansi extends boolean = false> = {
     theme: Theme;
     (text: string): string;
-    fg(color: Color): StyleBuilder;
-    bg(color: Color): StyleBuilder;
-    add(slot?: AnyThemeKey | Style): StyleBuilder;
-    lighten(n: number): StyleBuilder;
-    darken(n: number): StyleBuilder;
-} & { readonly [K in AttrName | FgChainKey | BgChainKey | FgExtractKey]: StyleBuilder };
+    fg: (color: Color<Ansi>) => StyleBuilder<Ansi>;
+    bg: (color: Color<Ansi>) => StyleBuilder<Ansi>;
+    add: (slot?: ThemeKey | AnyStyle) => StyleBuilder<Ansi>;
+    lighten: (n: number) => StyleBuilder<Ansi>;
+    darken: (n: number) => StyleBuilder<Ansi>;
+} & { readonly [K in AttrName | ChainSlot<Ansi> | `bg${Capitalize<ChainSlot<Ansi>>}` | `fg${Capitalize<ChainSlot<Ansi>>}`]: StyleBuilder<Ansi>; };
+
+// @public
+export function styleBuilder<Ansi extends boolean = false>(theme?: Theme | false): StyleBuilder<Ansi>;
 
 // @public (undocumented)
-export type ThemeKey = keyof Theme;
+export type ThemeKey = Exclude<keyof Theme<false, unknown>, "shiki" | "$schema" | "id" | "name" | "appearance">;
 
 // @public (undocumented)
 export function toHex(c: RGB): HexColor;

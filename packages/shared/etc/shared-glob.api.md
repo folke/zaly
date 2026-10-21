@@ -5,7 +5,18 @@
 ```ts
 
 // @public (undocumented)
-export function glob(pattern: string | readonly string[], opts?: Partial<GlobOptions>): AsyncGenerator<string>;
+export function glob(pattern?: string | readonly string[], opts?: Partial<GlobOptions> & {
+    throttle?: 0;
+}): AsyncGenerator<string>;
+
+// @public (undocumented)
+export function glob(pattern?: string | readonly string[], opts?: Partial<GlobOptions>): AsyncGenerator<string[]>;
+
+// @public (undocumented)
+export type Globber = (path: string) => boolean;
+
+// @public (undocumented)
+export function globber(patterns: string[]): Globber;
 
 // @public (undocumented)
 export type GlobOptions = {
@@ -21,6 +32,8 @@ export type GlobOptions = {
     onMatch?: (rel: string) => void;
     onError?: (path: string, error: Error) => void;
     signal?: AbortSignal;
+    limit?: number;
+    throttle?: number;
 };
 
 // (No @packageDocumentation comment for this package)

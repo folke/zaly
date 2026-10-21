@@ -1,7 +1,8 @@
-# @zaly/shared/ansi (12)
+# @zaly/shared/ansi (13)
 
-## Functions (7)
+## Functions (8)
 
+- fitAnsi
 - hasAnsi
 - sliceAnsi
 - splitAnsi

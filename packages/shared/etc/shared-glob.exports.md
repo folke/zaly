@@ -1,9 +1,11 @@
-# @zaly/shared/glob (2)
+# @zaly/shared/glob (4)
 
-## Functions (1)
+## Functions (2)
 
 - glob
+- globber
 
-## Types (1)
+## Types (2)
 
 - GlobOptions
+- Globber

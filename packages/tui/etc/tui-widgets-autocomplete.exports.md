@@ -1,4 +1,4 @@
-# @zaly/tui/widgets/autocomplete (9)
+# @zaly/tui/widgets/autocomplete (7)
 
 ## Classes (1)
 
@@ -8,12 +8,10 @@
 
 - autocomplete
 
-## Types (7)
+## Types (5)
 
 - AcceptFn
 - AutocompleteEvents
 - AutocompleteOptions
 - AutocompleteState
-- CompleteResult
 - CompletionSource
-- Matcher
