@@ -6,12 +6,12 @@
   "definitions": {
     "Color<false,false>": {
       "description": "Hex color or theme slot. Hex colors and theme slots may have an integer +/- lightness adjustment.",
-      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$",
+      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdMath|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?)$",
       "type": "string"
     },
     "Color<false>": {
       "description": "Hex color or theme slot, or inherit. Hex colors and theme slots may have an integer +/- lightness adjustment.",
-      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$",
+      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|accent|bg|border|borderTitle|code|codeTitle|comment|delim|diffAdd|diffAddNum|diffContext|diffContextNum|diffDel|diffDelNum|divider|error|fg|gutter|highlight|info|mdBold|mdCode|mdCodeBlock|mdCodeBlockTitle|mdHeading|mdHeading1|mdHeading2|mdHeading3|mdHeading4|mdHeading5|mdHeading6|mdHr|mdItalic|mdLink|mdListBullet|mdListChecked|mdListUnchecked|mdMath|mdQuote|mdStrikethrough|mdTable|mdTableHeader|muted|optionActive|optionDesc|optionName|overlay|primary|prompt|quiet|selection|success|syntaxBoolean|syntaxBracket|syntaxConstant|syntaxDelimiter|syntaxField|syntaxFunction|syntaxNumber|syntaxSpecial|syntaxString|title|ui|warn)(?:[+-][0-9]+)?|inherit)$",
       "type": "string"
     },
     "ShikiSelection": {
@@ -271,6 +271,9 @@
       "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
     },
     "mdListUnchecked": {
+      "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
+    },
+    "mdMath": {
       "$ref": "#/definitions/ThemeValue%3Cfalse%3E"
     },
     "mdQuote": {

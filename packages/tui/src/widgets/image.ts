@@ -63,7 +63,7 @@ export class Image extends Node<ImageState> {
     if (detected?.type !== "image") return this.fallback
     const img = await imageInfo(detected)
 
-    const { cols, rows } = dims(this.state, img, Math.min(ctx.width, 80))
+    const { cols, rows } = dims(this.state, img, ctx.width)
 
     const t = await kitty.transmitOnce(img)
     if (!t) return this.fallback
@@ -105,9 +105,9 @@ function dims(
 ): { cols: number; rows: number } {
   const cellAspect = state.cellAspect ?? 2
   const aspect = meta.height / meta.width
-  let cols = state.width
+  let cols = state.width === undefined ? undefined : Math.max(1, Math.min(state.width, available))
   let rows = state.height
-  if (cols === undefined && rows === undefined) cols = Math.max(1, available)
+  if (cols === undefined && rows === undefined) cols = Math.max(1, Math.min(available, 80))
   if (cols !== undefined && rows === undefined) {
     rows = Math.max(1, Math.round((cols * aspect) / cellAspect))
   } else if (rows !== undefined && cols === undefined) {

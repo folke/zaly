@@ -55,6 +55,34 @@ assert(markdown.text.includes("# Documentation"), "Packed fetch lost Markdown he
 assert(markdown.text.includes("[Guide](https://example.com/guide)"), "Packed fetch lost hyperlinks")
 assert(/\| A\s*\|/.test(markdown.text), "Packed fetch lost table conversion")
 
+const { createCtx } = await import("@zaly/tui")
+const { markdown: mathMarkdown } = await import("@zaly/tui/widgets/markdown")
+let mathBytes = ""
+const mathNode = mathMarkdown(
+  String.raw`$$\frac{1}{${process.pid}} + \mathbb{R} + \begin{cases}0 & x < 0 \\ 1 & x \ge 0\end{cases}$$`
+)
+mathNode.mount({
+  input: {
+    blur() {},
+    queries: { xtVersion: async () => ({ name: "kitty", version: "0" }) },
+  },
+  surface: "history",
+})
+try {
+  const rows = await mathNode.render(
+    await createCtx({
+      transmit: (seq) => {
+        mathBytes += seq
+      },
+      width: 40,
+    })
+  )
+  assert(mathBytes.includes("\x1b_Ga=t,"), "Packed math did not transmit a generated image")
+  assert(rows.join("\n").includes("\u{10eeee}"), "Packed math lost image placement")
+} finally {
+  mathNode.unmount()
+}
+
 // An active app handle lets the intentionally unreferenced worker finish its request.
 const keepAlive = setInterval(() => {}, 1000)
 try {

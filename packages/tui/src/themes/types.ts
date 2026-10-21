@@ -132,6 +132,7 @@ export type Theme<Ansi extends boolean = true, T = ThemeValue<Ansi>> = {
   mdListBullet: T
   mdListChecked: T
   mdListUnchecked: T
+  mdMath: T
   mdQuote: T
   mdStrikethrough: T
   mdTable: T

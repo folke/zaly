@@ -39,19 +39,17 @@ export class MarkdownRenderer {
     // images concurrently and splices their rows back in. Keeps the
     // markdown callback surface synchronous while supporting async
     // image preparation.
-    const image =
-      (ctx.images ?? true)
-        ? createImageCallback({
-            add: (child) => this.#parent?.add(child),
-            images: this.#images,
-            remove: (child) => this.#parent?.remove(child) ?? child.unmount(),
-          })
-        : undefined
+    const image = createImageCallback({
+      add: (child) => this.#parent?.add(child),
+      images: this.#images,
+      queries: ctx.images === false ? undefined : this.#parent?.ctx?.input.queries,
+      remove: (child) => this.#parent?.remove(child) ?? child.unmount(),
+    })
 
-    if (image) callbacks.image = image.cb
+    if (ctx.images ?? true) callbacks.image = image.cb
 
-    let rendered = this.#render(source, callbacks, this.#opts)
-    if (image) rendered = await image.resolve(ctx, rendered)
+    let rendered = this.#render(image.prepare(source), callbacks, this.#opts)
+    rendered = await image.resolve(ctx, rendered)
     return this.normalizeEol(source, rendered)
   }
 

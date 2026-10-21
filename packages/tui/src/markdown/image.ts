@@ -1,10 +1,14 @@
 import type { RenderCtx } from "../core/ctx.ts"
 import type { Node } from "../core/node.ts"
+import type { TerminalQueries } from "../input/queries.ts"
 import type { Image } from "../widgets/image.ts"
+import type { MathExpression } from "./math.ts"
 import type { MdCallbacks, MdImageMeta } from "./types.ts"
 
-import { stripAnsi } from "@zaly/shared/ansi"
+import { stringWidth, stripAnsi } from "@zaly/shared/ansi"
 import { basename } from "pathe"
+import { resolveAnsiStyle } from "../style/style.ts"
+import { MATH_PIXELS_PER_CELL, replaceMath } from "./math.ts"
 
 /** Minimal host shape the image callback needs. Any Node-like parent
  *  with a per-src `Image` cache satisfies it — the `Markdown` widget is
@@ -15,6 +19,7 @@ export interface ImageHost {
    *  placement id, which the spec guarantees is a flicker-free
    *  move/resize. */
   images: Map<string, Image>
+  queries?: TerminalQueries
   /** Attach a freshly-created `Image` as a child so mount/unmount
    *  propagate. */
   add: (child: Node) => unknown
@@ -25,6 +30,7 @@ export interface ImageHost {
 interface ImageEntry {
   src: string
   alt: string
+  math?: MathExpression
 }
 
 /**
@@ -32,17 +38,19 @@ interface ImageEntry {
  *
  * The markdown renderer is synchronous (callbacks return strings), but
  * image preparation is async (sharp metadata, KGP transmit, format
- * conversion). We reconcile with a two-pass approach:
+ * conversion). Math shares the same markers and placement path:
  *
- *  1. During rendering, the `image` callback pushes `{ src, alt }` into
+ *  1. Before rendering, `prepare` collects math expressions and protects
+ *     their markers from ordinary Markdown escaping.
+ *  2. During rendering, the `image` callback pushes `{ src, alt }` into
  *     the entries array and emits a compact `<img id=N>` marker where
  *     `N` is the entry's index. The marker is plain text so any
  *     renderer (marked or `Bun.markdown.render`) emits it verbatim.
- *  2. After rendering, `resolve(ctx, rendered)` renders every unique
+ *  3. After rendering, `resolve(ctx, rendered)` typesets math to cached
+ *     SVG files, renders every unique
  *     src concurrently via cached `Image` nodes, then replaces each
- *     marker with either the rendered rows (for *block* images — ones
- *     that end up on their own line) or the markdown alt text (for
- *     inline images, which would otherwise break text flow).
+ *     marker with rendered rows. Inline images share a top-aligned row
+ *     band, with continuation rows padded to each image's terminal column.
  *
  * The caller passes in a persistent `cache: Map<src, Image>` owned by
  * the Markdown instance so re-renders reuse the same Image node (and
@@ -51,6 +59,7 @@ interface ImageEntry {
  */
 export function createImageCallback(host: ImageHost): {
   cb: MdCallbacks["image"]
+  prepare: (source: string) => string
   resolve: (ctx: RenderCtx, rendered: string) => Promise<string>
 } {
   const entries: ImageEntry[] = []
@@ -63,8 +72,21 @@ export function createImageCallback(host: ImageHost): {
       return `<img id=${id}>`
     },
 
+    prepare(source: string): string {
+      return replaceMath(source, (math) => {
+        const id = entries.length
+        entries.push({ alt: math.source, math, src: "" })
+        // A bare tag on its own line starts an HTML block and swallows following Markdown.
+        return `\`<img id=${id}>\``
+      })
+    },
+
     async resolve(ctx: RenderCtx, rendered: string): Promise<string> {
-      if (entries.length === 0) return rendered
+      if (entries.length === 0) {
+        for (const img of cache.values()) host.remove(img)
+        cache.clear()
+        return rendered
+      }
 
       // `Image` is heavy (pulls image-meta, sharp lazy loaders, KGP
       // encoder) and 99% of markdown has no images. Load it only when
@@ -79,22 +101,58 @@ export function createImageCallback(host: ImageHost): {
       // pinned and KGP gives a flicker-free move/resize). Image bytes
       // are de-duped at a different layer (`transmitOnce` in kitty.ts),
       // so multiple occurrences cost N placements but only one transmit.
+      const { loadKittyGraphics } = await import("../image/kitty.ts")
+      const graphics =
+        entries.some((entry) => entry.math) && host.queries
+          ? await loadKittyGraphics(host.queries)
+          : undefined
+      const fg = resolveAnsiStyle("mdMath", ctx.style.theme).fg
+      const color = typeof fg === "string" && fg.startsWith("#") ? fg : undefined
       const ordinals = new Map<string, number>()
       const rowsByEntry: string[][] = []
       const used = new Set<string>()
       await Promise.all(
         entries.map(async (entry, idx) => {
-          const ord = ordinals.get(entry.src) ?? 0
-          ordinals.set(entry.src, ord + 1)
-          const key = `${entry.src}\u0000${ord}`
+          if (entry.math && (!graphics?.supported || !color)) {
+            rowsByEntry[idx] = [entry.alt]
+            return
+          }
+          const identity = entry.math
+            ? `math:${JSON.stringify([entry.math.tex, entry.math.display, color])}`
+            : entry.src
+          const ord = ordinals.get(identity) ?? 0
+          ordinals.set(identity, ord + 1)
+          const key = `${identity}\u0000${ord}`
           used.add(key)
           let img = cache.get(key)
           if (img === undefined) {
-            img = new Image({ alt: entry.alt, src: entry.src })
+            let src = entry.src
+            let width: number | undefined
+            if (entry.math) {
+              try {
+                const { mathImage } = await import("./math.ts")
+                src = await mathImage(entry.math, color!)
+                const { fileDetect } = await import("@zaly/shared/detect")
+                const { imageInfo } = await import("@zaly/shared/image")
+                const detected = await fileDetect(src)
+                if (detected?.type !== "image") throw new Error("Expected a math SVG")
+                const info = await imageInfo(detected)
+                width = Math.max(1, Math.ceil(info.width / MATH_PIXELS_PER_CELL))
+              } catch {
+                rowsByEntry[idx] = [entry.alt]
+                return
+              }
+            }
+            img = new Image({ alt: entry.alt, src, width })
             host.add(img)
             cache.set(key, img)
           }
-          rowsByEntry[idx] = await img.render(ctx)
+          try {
+            rowsByEntry[idx] = await img.render(ctx)
+          } catch (error) {
+            if (!entry.math) throw error
+            rowsByEntry[idx] = [entry.alt]
+          }
         })
       )
 
@@ -111,44 +169,50 @@ export function createImageCallback(host: ImageHost): {
       // Walk the rendered output line by line:
       //   - Marker alone on its line (whitespace + ANSI tolerated) →
       //     replace the line with the full image rows.
-      //   - Marker mid-line → inline ref placeholder, then splice the
-      //     image rows on the next line(s) so the picture still
-      //     appears below the surrounding text.
-      // Multiple markers on one mid-line all get inline refs; their
-      // image rows stack underneath in document order.
+      //   - Marker mid-line → top-align image rows in a shared band.
+      // Coordinates are terminal cells, not string offsets. As with tables,
+      // subsequent wrapping to a narrower width can invalidate this layout.
       const out: string[] = []
       for (const line of rendered.split("\n")) {
-        const matched: { entry: ImageEntry; rows: string[] }[] = []
+        const matched = new Map<number, { entry: ImageEntry; rows: string[] }>()
         for (const m of line.matchAll(MARKER_RE)) {
           const idx = Number(m[1])
-          matched.push({ entry: entries[idx], rows: rowsByEntry[idx] ?? [] })
+          if (entries[idx]) matched.set(idx, { entry: entries[idx], rows: rowsByEntry[idx] ?? [] })
         }
 
-        if (matched.length === 0) {
+        if (matched.size === 0) {
           out.push(line)
           continue
         }
 
-        const lineHasOnlyMarker =
-          matched.length === 1 && stripAnsi(line.replace(MARKER_RE, "")).trim() === ""
-
-        if (lineHasOnlyMarker && matched[0].rows.length > 0) {
-          out.push(...matched[0].rows)
-          continue
+        if (matched.size === 1 && stripAnsi(line.replace(MARKER_RE, "")).trim() === "") {
+          const img = matched.values().next().value
+          if (img && img.rows.length > 0) {
+            out.push(...img.rows)
+            continue
+          }
         }
 
-        // Mid-line: replace each marker with a nice inline ref, then
-        // append every image's rows below the line in order. Skip rows
-        // that don't contain real graphics (KGP escapes) — when the
-        // terminal can't render images, `Image.render` falls back to a
-        // single-row alt-text representation, which would just
-        // duplicate the inline label we already emitted.
-        out.push(
-          line.replaceAll(MARKER_RE, (_, idxStr: string) => labelOf(entries[Number(idxStr)]))
-        )
-        for (const { rows } of matched) {
-          if (rows.some(isRealGraphics)) out.push(...rows)
+        const band = [""]
+        let cursor = 0
+        for (const marker of line.matchAll(MARKER_RE)) {
+          band[0] += line.slice(cursor, marker.index)
+          const image = matched.get(Number(marker[1]))
+          if (!image) {
+            band[0] += marker[0]
+          } else {
+            const column = stringWidth(band[0])
+            const rows = image.rows.length ? image.rows : [labelOf(image.entry)]
+            band[0] += rows[0]
+            for (let row = 1; row < rows.length; row++) {
+              band[row] ??= ""
+              band[row] += " ".repeat(Math.max(0, column - stringWidth(band[row]))) + rows[row]
+            }
+          }
+          cursor = marker.index + marker[0].length
         }
+        band[0] += line.slice(cursor)
+        out.push(...band)
       }
       return out.join("\n")
     },
@@ -156,18 +220,14 @@ export function createImageCallback(host: ImageHost): {
 }
 
 /** Friendly inline placeholder for an image that can't render at this
- *  position. Prefers the markdown alt text; falls back to the basename
+ *  position. Math keeps its original source. Otherwise prefers the markdown alt text;
+ *  falls back to the basename
  *  of the source path (so `[clip.png]` instead of `[/tmp/long/path/clip.png]`),
  *  and "image" for anything weirder. */
 function labelOf(entry: ImageEntry): string {
+  if (entry.math) return entry.alt
   const label = entry.alt !== "" ? entry.alt : basename(entry.src) || "image"
   return `[${label}]`
 }
 
 const MARKER_RE = /<img id=(\d+)>/g
-
-/** True when a row contains a Kitty Graphics Protocol escape (transmit
- *  or place) — i.e. real image data, not the text alt fallback. */
-function isRealGraphics(row: string): boolean {
-  return row.includes("\x1b_G")
-}

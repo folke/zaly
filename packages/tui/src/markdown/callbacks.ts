@@ -59,7 +59,8 @@ export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
 
     code: createCodeCallback(ctx),
 
-    codespan: (text) => s.mdCode(text),
+    // Image markers use code spans for parser protection, not code styling.
+    codespan: (text) => (/^<img id=\d+>$/.test(text) ? text : s.mdCode(text)),
 
     emphasis: (children) => s.mdItalic(children),
 

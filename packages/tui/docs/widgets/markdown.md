@@ -57,9 +57,20 @@ renderer.stream.append(md)
 for await (const chunk of llm.stream()) md.state.content += chunk
 ```
 
+## Math
+
+Math is recognized before Markdown parsing on both Bun and Node:
+
+- Inline: `$…$`, `\(…\)`, and GitHub's dollar-backtick form.
+- Display: `$$…$$`, `\[…\]`, and fenced `math` blocks.
+
+Complete expressions are typeset locally with a lazy-loaded MathJax TeX/AMS renderer. Self-contained SVGs are cached under the system temporary directory in `zaly-math-<uid>/<hash>.svg`; the hash includes the expression, display mode, and resolved `mdMath` foreground. The existing [`image`](./image) widget handles SVG conversion and terminal placement. Formula widths use a consistent text-relative scale rather than filling the available width, and shrink to fit narrower terminals.
+
+Inline formulas share a top-aligned row band with the surrounding text. The tallest formula determines the band's height; continuation rows are aligned to each formula's terminal column. This layout targets the render width; downstream wrapping to a narrower width can break the alignment. The `mdMath` theme slot controls formula color. Unsupported terminals, disabled images, unresolved terminal-native foreground colors, invalid expressions, or unavailable image conversion fall back to the original source. Code spans, ordinary code fences, and indented code are not interpreted as math. Incomplete expressions are left for later streaming updates. `latex` and `tex` fences remain source code; bare LaTeX environments and MathML markup are not recognized as math.
+
 ## Notes
 
-- Image refs (`![alt](src)`) are rendered via the [`image`](./image) widget when on their own line; inline images fall back to alt text so paragraph flow isn't broken.
+- Image refs (`![alt](src)`) are rendered via the [`image`](./image) widget when on their own line; inline images share top-aligned row bands, including multi-row images.
 - The Bun runtime uses `Bun.markdown.render`; Node uses `marked`. Both accept the same callbacks, and a code-fence info-string shim normalizes quoted titles (e.g. `\`\`\`ts title="foo.ts"`) across runtimes.
 
 > [!TIP]

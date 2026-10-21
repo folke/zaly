@@ -61,6 +61,7 @@ export const defaultsDark = {
   mdListBullet: "accent",
   mdListChecked: "primary",
   mdListUnchecked: "primary",
+  mdMath: { fg: "primary" },
   mdQuote: "muted",
   mdStrikethrough: { strikethrough: true },
   mdTable: "accent",

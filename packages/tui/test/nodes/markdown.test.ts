@@ -1,4 +1,4 @@
-import { RESET } from "@zaly/shared/ansi"
+import { RESET, stringWidth } from "@zaly/shared/ansi"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { renderMarkdown } from "#md"
@@ -498,6 +498,35 @@ describe("markdown — images", () => {
     expect(image?.("Logo again", { src: "logo.png" })).toBe("<img id=2>")
   })
 
+  test("prepare() collects math before ordinary image callbacks", async () => {
+    const image = createImageCallback(node)
+    expect(image.prepare(String.raw`Before \(x^2\), after.`)).toBe("Before `<img id=0>`, after.")
+    expect(image.cb?.("pic", { src: "pic.png" })).toBe("<img id=1>")
+    expect(await image.resolve(ctx(40), "Before <img id=0>, after.\n<img id=1>")).toBe(
+      String.raw`Before \(x^2\), after.
+pic`
+    )
+  })
+
+  test("math falls back to original source without image support", async () => {
+    const source = String.raw`Before \(\frac{a}{b}\), after.`
+    const rows = await markdown(source).render(ctx(80))
+    expect(stripAnsi(rows.join("\n")).trim()).toBe(source)
+  })
+
+  test("display math preserves backslashes and braces in its fallback", async () => {
+    const source = String.raw`\[\mathrm{BTJD}=\mathrm{BJD}-2{,}457{,}000\]`
+    const rows = await markdown(source).render(ctx(80))
+    expect(stripAnsi(rows.join("\n")).trim()).toBe(source)
+  })
+
+  test("a display replacement does not turn subsequent Markdown into raw HTML", async () => {
+    const out = await markdown("$$x$$\n**still bold**").render(ctx(80))
+    const text = stripAnsi(out.join("\n"))
+    expect(text).toContain("still bold")
+    expect(text).not.toContain("**still bold**")
+  })
+
   test("resolve() replaces block markers with rendered rows", async () => {
     const image = createImageCallback(node)
     image.cb?.("pic", { src: "pic.png" })
@@ -515,7 +544,7 @@ describe("markdown — images", () => {
     const image = createImageCallback(node)
     image.cb?.("icon", { src: "i.png" })
     const out = await image.resolve(ctx(40), "Click <img id=0> here.")
-    expect(out).toBe("Click [icon] here.")
+    expect(out).toBe("Click icon here.")
   })
 
   test("Markdown pre-renders image nodes and flows alt through to the fallback", async () => {
@@ -586,6 +615,69 @@ describe("markdown — Image instance cache", () => {
     const secondRows = await m.render(ctx(40))
     const secondP = extractPlacementId(secondRows.join("\n"))
     expect(secondP).toBe(firstP)
+  })
+
+  test("math SVGs use existing placements, reuse Image nodes, and are removed when no longer referenced", async () => {
+    resetKittyGraphics()
+    const m = mountMarkdown(markdown(String.raw`\[\frac{a}{b}\]`), { inline: false })
+    const first = await m.render(ctx(40))
+    const placement = extractPlacementId(first.join("\n"))
+    expect(placement).toBeDefined()
+    m.state.content = String.raw`\[\frac{a}{b}\]
+
+More text`
+    const second = await m.render(ctx(40))
+    expect(extractPlacementId(second.join("\n"))).toBe(placement)
+    m.state.content = "No math left"
+    const final = await m.render(ctx(40))
+    expect(final.join("\n")).toContain("No math left")
+    expect(extractPlacementId(final.join("\n"))).toBeUndefined()
+  })
+
+  test("single-row math images replace source labels inline without code backgrounds", async () => {
+    resetKittyGraphics()
+    const m = mountMarkdown(markdown("Before $x^2$ after."))
+    const theme = { ...defaultTheme, mdCode: { bg: "#123456" as const, fg: "#ff0000" as const } }
+    const rows = await m.render(createCtx({ theme, transmit: () => {}, width: 40 }))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toContain("\u{10eeee}")
+    const plain = stripAnsi(rows[0])
+    expect(plain.startsWith("Before ")).toBe(true)
+    expect(plain.endsWith(" after.")).toBe(true)
+    expect(plain).not.toContain("$x^2$")
+    expect(stringWidth(rows[0]) - "Before  after.".length).toBeLessThan(12)
+    expect(rows[0]).not.toContain("48;2;18;52;86")
+  })
+
+  test("several one-row formulas stay in the same paragraph", async () => {
+    resetKittyGraphics()
+    const m = mountMarkdown(markdown("A $x$ and $y$ and $z$."))
+    const rows = await m.render(ctx(40))
+    expect(rows).toHaveLength(1)
+    expect(stripAnsi(rows[0])).toMatch(/^A .+ and .+ and .+\.$/)
+    expect(rows[0].match(/\u{10eeee}/gu)?.length).toBeGreaterThanOrEqual(3)
+  })
+
+  test("tall inline formulas form a top-aligned band within the paragraph", async () => {
+    resetKittyGraphics()
+    const source = String.raw`Before $\frac{\frac{a}{b}}{\frac{c}{d}}$ after.`
+    const m = mountMarkdown(markdown(source))
+    const rows = await m.render(ctx(80))
+    expect(stripAnsi(rows[0]).startsWith("Before ")).toBe(true)
+    expect(stripAnsi(rows[0]).endsWith(" after.")).toBe(true)
+    expect(rows.join("\n")).not.toContain(String.raw`\frac`)
+    expect(rows[0]).toContain("\u{10eeee}")
+    expect(rows.length).toBeGreaterThan(1)
+    for (const row of rows.slice(1)) {
+      expect(stripAnsi(row).startsWith("       \u{10eeee}")).toBe(true)
+    }
+  })
+
+  test("invalid math falls back to source without breaking the message", async () => {
+    resetKittyGraphics()
+    const source = String.raw`\[\unknowncommand{x}\]`
+    const m = mountMarkdown(markdown(source))
+    expect(stripAnsi((await m.render(ctx(40))).join("\n")).trim()).toBe(source)
   })
 
   test("transmit is emitted at most once across re-renders of the same src", async () => {

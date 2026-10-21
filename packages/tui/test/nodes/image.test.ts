@@ -1,6 +1,7 @@
 import type { RenderCtx } from "../../src/core/ctx.ts"
 import type { ImageState } from "../../src/widgets/image.ts"
 
+import { stringWidth } from "@zaly/shared/ansi"
 import { fileDetect } from "@zaly/shared/detect"
 import { imageInfo } from "@zaly/shared/image"
 import { mkdtempSync, rmSync } from "node:fs"
@@ -217,6 +218,12 @@ describe("image() — KGP rendering", () => {
   test("no dims: cols default to ctx.width, rows from source aspect", async () => {
     const { rows } = await renderImage(pngPath, undefined, { width: 16 })
     expect(rows).toHaveLength(4)
+  })
+
+  test("explicit widths shrink to fit the available cells without changing aspect ratio", async () => {
+    const { rows } = await renderImage(pngPath, { width: 30 }, { width: 12 })
+    expect(rows).toHaveLength(3)
+    expect(rows.map((row) => stringWidth(row))).toEqual([12, 12, 12])
   })
 
   test("width only: height computed from source aspect ratio", async () => {
