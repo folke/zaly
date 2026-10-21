@@ -32,7 +32,7 @@ export type BashToolMeta = MetaOf<BashTool>
  *    installs); pass shorter for tighter deadlines.
  *
  * Output truncation — large outputs are summarised inline as head + tail
- * (split from `max_lines`). Only when truncation actually fires does
+ * (split from `limit`). Only when truncation actually fires does
  * the tool flush the captured bytes to a per-spawn log file under
  * `tmpdir()/zaly-bash/` and surface `truncated.fullOutputPath`; small
  * outputs that fit inline never touch disk. The model can `read({ path })`
@@ -65,17 +65,17 @@ export const bashTool = defineTool({
           '(e.g. "check the test suite passes", not "run bun test").',
       })
     ),
-    max_lines: Type.Optional(
+    limit: Type.Optional(
       Type.Integer({
         default: 200,
         description:
           "Cap on lines kept inline in the result. Split as head + tail " +
           "(half each). Lower for commands you only need pass/fail on " +
-          "(`max_lines: 20`); raise when middle output matters. Output " +
+          "(`limit: 20`); raise when middle output matters. Output " +
           "above the cap is elided in the inline result, but the full " +
           "log is always written to disk and surfaced as " +
           "`truncated.fullOutputPath` — `read` it if you need to dig deeper.",
-        minimum: 10,
+        minimum: 1,
       })
     ),
     timeout: Type.Optional(
@@ -140,7 +140,7 @@ export const bashTool = defineTool({
       // heartbeat flag this task with `*new*` without advancing the
       // cursor (which would consume the bytes for any later poll).
       hasNew: () => proc.stdout.length > cursor.combined,
-      poll: () => snapshot({ cursor, logPath, maxLines: args.max_lines ?? 200, proc, startedAt }),
+      poll: () => snapshot({ cursor, logPath, maxLines: args.limit ?? 200, proc, startedAt }),
     }
   },
 })

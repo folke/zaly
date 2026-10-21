@@ -88,11 +88,11 @@ Run a bash command. Returns its output once the command exits, or a partial snap
       "type": "string",
       "description": "Short, human-readable description of what this command does. Shown to the user in the TUI alongside the command. Keep it under ~10 words. Don't restate the command itself — describe the intent (e.g. \"check the test suite passes\", not \"run bun test\")."
     },
-    "max_lines": {
+    "limit": {
       "type": "integer",
       "default": 200,
-      "description": "Cap on lines kept inline in the result. Split as head + tail (half each). Lower for commands you only need pass/fail on (`max_lines: 20`); raise when middle output matters. Output above the cap is elided in the inline result, but the full log is always written to disk and surfaced as `truncated.fullOutputPath` — `read` it if you need to dig deeper.",
-      "minimum": 10
+      "description": "Cap on lines kept inline in the result. Split as head + tail (half each). Lower for commands you only need pass/fail on (`limit: 20`); raise when middle output matters. Output above the cap is elided in the inline result, but the full log is always written to disk and surfaced as `truncated.fullOutputPath` — `read` it if you need to dig deeper.",
+      "minimum": 1
     },
     "timeout": {
       "type": "integer",
