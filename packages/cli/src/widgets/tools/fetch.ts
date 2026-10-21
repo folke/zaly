@@ -32,7 +32,7 @@ export const fetchRenderer: ToolRenderer<FetchTool> = {
 
     const error = memo(() => {
       const m = meta()
-      if (!m || m.ok) return
+      if (m?.ok !== false) return
       const status = `${m.status} ${m.statusText}`.trim()
       const type = m.type === "text" ? (m.format ?? m.contentType) : m.type.toUpperCase()
       return cleanText([status, type].filter(Boolean).join(" · "))
