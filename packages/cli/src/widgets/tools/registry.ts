@@ -3,7 +3,7 @@ import type { Reactive, Node } from "@zaly/tui"
 
 import { createRegistry } from "@zaly/shared/registry"
 import { bashRenderer } from "./bash.ts"
-import { defaultRenderer } from "./default.ts"
+import { defaultRenderer, genericRenderer } from "./default.ts"
 import { editRenderer } from "./edit.ts"
 import { fetchRenderer } from "./fetch.ts"
 import { readRenderer } from "./read.ts"
@@ -51,6 +51,7 @@ const builtin = {
   find: () => bashRenderer as ToolRenderer,
   grep: () => bashRenderer as ToolRenderer,
   read: () => readRenderer as ToolRenderer,
+  search: () => genericRenderer({ lang: "markdown" }) as ToolRenderer,
   skill: () => skillRenderer as ToolRenderer,
   write: () => writeRenderer as ToolRenderer,
 } as const satisfies Record<string, ToolResultLoader>

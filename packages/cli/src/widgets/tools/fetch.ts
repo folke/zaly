@@ -12,7 +12,7 @@ import { markdown } from "@zaly/tui/widgets/markdown"
 import { show } from "@zaly/tui/widgets/show"
 import { text } from "@zaly/tui/widgets/text"
 
-const PREVIEW_LINE_LIMIT = 5
+const PREVIEW_LINE_LIMIT = 10
 
 export const fetchRenderer: ToolRenderer<FetchTool> = {
   result(props) {
@@ -59,6 +59,7 @@ export const fetchRenderer: ToolRenderer<FetchTool> = {
             lang,
             limit: PREVIEW_LINE_LIMIT,
             more: (_more, msg) => `${msg} fetched`,
+            wrap: "word",
           })
         ),
         show({ when: saved }, () => text(saved, { style: "quiet", wrap: "char" }))

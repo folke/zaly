@@ -1,5 +1,6 @@
 import type { Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
+import type { WrapMode } from "../layout/text.ts"
 import type { AnyStyle } from "../style/types.ts"
 
 import { extname } from "pathe"
@@ -35,6 +36,7 @@ export interface CodeState {
   offset?: Reactive<number | undefined>
   limit?: Reactive<number | undefined>
   more?: (more: number, msg: string) => string
+  wrap?: WrapMode
 }
 
 /**
@@ -101,6 +103,6 @@ export const code = widget((props: State<CodeState>) => {
     show({ when: title }, () =>
       text((ctx) => ctx.style.codeTitle(title() ?? ""), { wrap: "none" })
     ),
-    text(formatted, { wrap: "none" })
+    text(formatted, { wrap: props.wrap ?? "none" })
   )
 })

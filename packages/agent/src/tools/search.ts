@@ -80,7 +80,7 @@ export const searchTool = defineTool({
     ),
   }),
 
-  async call(args): Promise<(MetaPart | TextPart)[]> {
+  async call(args, ctx): Promise<(MetaPart | TextPart)[]> {
     const apiKey = process.env.BRAVE_API_KEY
     if (!apiKey || apiKey === "") {
       throw new AiError({
@@ -103,6 +103,7 @@ export const searchTool = defineTool({
         accept: "application/json",
         "x-subscription-token": apiKey,
       },
+      signal: ctx.signal,
     })
 
     if (!res.ok) {
@@ -134,7 +135,7 @@ export const searchTool = defineTool({
       return parts
     }
 
-    for (const r of results) {
+    for (const [ri, r] of results.entries()) {
       const meta = sources[r.url] ?? {}
       const header: Record<string, unknown> = { url: r.url }
       // `age` arrives as a 3-tuple [pretty, ISO, relative]; keep the
@@ -142,14 +143,17 @@ export const searchTool = defineTool({
       if (meta.age && meta.age.length > 0) header.age = meta.age[1] ?? meta.age[0]
 
       parts.push({ data: header, tag: "source", type: "meta" })
+
+      const body = r.snippets ?? []
       // Title as a markdown H1 right after the `<source>` tag — the
       // pair reads like a document section. Snippets flow underneath.
       const title = r.title ?? meta.title
-      const body: string[] = []
-      if (title) body.push(`# ${title}`)
-      const snippets = r.snippets ?? []
-      if (snippets.length > 0) body.push(snippets.join("\n\n"))
-      if (body.length > 0) parts.push({ text: body.join("\n\n"), type: "text" })
+      if (title && !body[0]?.includes(title)) body.unshift(`# ${title}`)
+
+      if (body.length > 0) {
+        if (ri < results.length - 1) body.push("")
+        parts.push({ text: body.join("\n\n"), type: "text" })
+      }
     }
 
     return parts

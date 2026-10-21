@@ -76,8 +76,8 @@ test("large fetch results show a compact preview and the saved output path", asy
     )
   )
   expect(value).toContain("line 1")
-  expect(value).not.toContain("line 6")
-  expect(value).toContain("+15 more lines fetched")
+  expect(value).not.toContain("line 11")
+  expect(value).toContain("+10 more lines fetched")
   expect(value).toContain("Full output: /tmp/fetch-output.md (200 lines)")
 })
 
