@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/folke/zaly/compare/v0.1.0...v0.1.1) (2026-10-22)
+
+
+### 🩹 Fixes
+
+* **agent:** backward compat for the fetch tool widget ([92620df](https://github.com/folke/zaly/commit/92620dfff6fe4ae5deb2635542e6c0740757ca63))
+* **agent:** read tool unchanged now only checks other reads ([efee7a3](https://github.com/folke/zaly/commit/efee7a370316886e6387de56e5119133c3095e4b))
+
 ## [0.1.0](https://github.com/folke/zaly/compare/v0.0.12...v0.1.0) (2026-10-21)
 
 
