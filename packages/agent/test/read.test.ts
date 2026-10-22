@@ -1,6 +1,5 @@
 import type { Message, MetaPart, TextPart, ToolContext, ToolResultPart } from "@zaly/ai"
-import type { ReadToolMeta } from "../src/tools/read.ts"
-import type { FileMeta } from "../src/utils/file.ts"
+import type { FileMeta, ReadToolMeta } from "../src/tools/read.ts"
 
 import { mkdirSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"

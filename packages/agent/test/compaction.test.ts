@@ -88,7 +88,12 @@ describe("compaction usage extraction", () => {
             type: "tool-call",
           },
           { id: "b2", name: "bash", params: { command: "bun test" }, type: "tool-call" },
-          { id: "b3", name: "bash", params: { command: "echo 'a\\nb'" }, type: "tool-call" },
+          {
+            id: "b3",
+            name: "bash",
+            params: { command: String.raw`echo 'a\nb'` },
+            type: "tool-call",
+          },
           { id: "b4", name: "bash", params: "not json", type: "tool-call" },
         ],
         role: "assistant",

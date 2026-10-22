@@ -1,5 +1,5 @@
 import type { ToolContext } from "@zaly/ai"
-import type { FileMeta } from "../utils/file.ts"
+import type { FileMeta } from "./read.ts"
 
 import { AiError, defineTool } from "@zaly/ai"
 import { normPath, safeReadFile } from "@zaly/shared"

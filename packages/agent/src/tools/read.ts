@@ -1,13 +1,11 @@
-import type { Content, ToolContext } from "@zaly/ai"
-import type { FileMeta } from "../utils/file.ts"
+import type { Content, Tool, ToolContext } from "@zaly/ai"
 
-import { AiError, defineTool, toAttachment } from "@zaly/ai"
+import { AiError, defineTool, extractToolResults, toAttachment } from "@zaly/ai"
 import { normPath } from "@zaly/shared"
 import { fileDetect } from "@zaly/shared/detect"
 import { normalizeEol } from "@zaly/shared/text"
 import { stat } from "node:fs/promises"
 import { Type } from "typebox"
-import { isUnchanged } from "../utils/file.ts"
 
 /**
  * Read a file from disk.
@@ -28,6 +26,20 @@ const DEFAULT_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
 
 export type ReadTool = typeof readTool
+export type FileTool = Tool<{ path: string }, unknown, FileMeta>
+
+export type FileMeta = {
+  path: string
+  mtime: number
+  kind: "read" | "write" | "edit"
+  /** True when the result reflects the whole-file content — set by
+   *  un-sliced `read` and by `write` (which always replaces the
+   *  full file). Used by the masker to know whether this result
+   *  subsumes earlier reads of the same path. `edit` never sets it
+   *  because the result is patch-relative. */
+  full?: boolean
+  unchanged?: boolean
+}
 
 export type ReadToolMeta = FileMeta & {
   offset: number
@@ -86,9 +98,20 @@ export const readTool = defineTool({
       throw new AiError({ code: "NOT_A_FILE", message: `${path} is not a regular file` })
     }
 
-    if (isUnchanged(path, ctx)) {
-      // Fresh! We've seen this file's current bytes, so we can skip
-      // returning the content again.
+    // Check whether we've already read this file's current bytes. If so, we can skip
+    // returning the content again. This is a context optimization for large files
+    // that are read multiple times without changes.
+    const existing = extractToolResults<Partial<ReadToolMeta>>(ctx.messages ?? [], ["read"]).find(
+      ({ m, $p, p }) =>
+        m.id &&
+        p.meta?.path === path &&
+        p.meta.full &&
+        p.meta.mtime === fileStat.mtimeMs &&
+        !ctx.isMasked?.(m.id, $p)
+    )
+
+    if (existing) {
+      // The exact file is still fully read in context, so we can skip returning it again.
       ctx.meta = {
         full: false,
         kind: "read",

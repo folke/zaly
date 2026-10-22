@@ -143,7 +143,7 @@ const cleanDefaults: Required<CleanTextOpts> = {
   binary: true,
   eol: true,
   keepStyles: false,
-  nul: "\\0",
+  nul: String.raw`\0`,
   unicode: true,
 }
 

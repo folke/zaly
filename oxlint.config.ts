@@ -99,7 +99,10 @@ export default defineConfig({
     "init-declarations": "off", // 4
     "max-params": ["warn", 4],
     "max-statements": "off", // 26
-    "new-cap": ["warn", { capIsNewExceptionPattern: "(Intl|Value|Type|Schema|compiled\\w*)\\." }],
+    "new-cap": [
+      "warn",
+      { capIsNewExceptionPattern: String.raw`(Intl|Value|Type|Schema|compiled\w*)\.` },
+    ],
     "no-console": "warn",
     "no-continue": "off", // 24
     "no-control-regex": "off", // 2

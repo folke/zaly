@@ -35,6 +35,8 @@ export interface CodeState {
     style?: AnyStyle | false;
     syntax?: boolean;
     title?: Reactive<string>;
+    // (undocumented)
+    wrap?: WrapMode;
 }
 
 // (No @packageDocumentation comment for this package)

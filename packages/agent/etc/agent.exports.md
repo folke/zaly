@@ -1,4 +1,4 @@
-# @zaly/agent (101)
+# @zaly/agent (100)
 
 ## Classes (2)
 
@@ -40,11 +40,10 @@
 - TokenUsage
 - ToolCollection
 
-## Types Functions (5)
+## Types Functions (4)
 
 - addUsage
 - createAgentContext
-- isUnchanged
 - taskCompletionMessage
 - taskInfoPart
 

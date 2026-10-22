@@ -146,7 +146,7 @@ const TOOLS = [bashTool, taskListTool, taskPollTool, taskStopTool]
   const parts = await tasks.run(
     [
       call("bash", {
-        command: "printf '\\x00\\x01\\x02hello\\x00world'",
+        command: String.raw`printf '\x00\x01\x02hello\x00world'`,
         description: "emit binary",
       }),
     ],
