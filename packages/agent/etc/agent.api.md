@@ -4,7 +4,6 @@
 
 ```ts
 
-import { AiError } from '@zaly/ai';
 import { AnyKey } from '@zaly/shared/registry';
 import { AnyPart } from '@zaly/ai';
 import { AnyType } from '@zaly/ai';
@@ -296,9 +295,6 @@ export type AnyScope = PermissionScope | (string & {});
 export type AnyTool = AnyKey<BuiltinTool>;
 
 // @public (undocumented)
-export function assertFresh(path: string, ctx: ToolContext): void;
-
-// @public (undocumented)
 export type BashTool = typeof bashTool;
 
 // @public
@@ -314,11 +310,6 @@ export type BuiltinScope = keyof typeof builtin$2;
 
 // @public (undocumented)
 export type BuiltinTool = keyof typeof builtin;
-
-// @public (undocumented)
-export function checkFresh(path: string, ctx: ToolContext, opts?: {
-    full?: boolean;
-}): AiError | true;
 
 // @public (undocumented)
 export type CheckResult = {
@@ -473,9 +464,6 @@ export function formatFileUsage(files: FileUsage[]): string;
 
 // @public (undocumented)
 export function formatTokenStats(s: TokenStats, indent?: number): string;
-
-// @public
-export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiError;
 
 // @public (undocumented)
 export type GrepTool = typeof grepTool;

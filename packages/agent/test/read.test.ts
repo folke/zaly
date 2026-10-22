@@ -2,13 +2,11 @@ import type { Message, MetaPart, TextPart, ToolContext, ToolResultPart } from "@
 import type { ReadToolMeta } from "../src/tools/read.ts"
 import type { FileMeta } from "../src/utils/file.ts"
 
-import { AiError } from "@zaly/ai"
 import { mkdirSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "pathe"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { readTool } from "../src/tools/read.ts"
-import { assertFresh, checkFresh } from "../src/utils/file.ts"
 
 type ReadResult = string | (TextPart | MetaPart)[]
 
@@ -196,13 +194,6 @@ describe("read tool — unchanged detection", () => {
       { text: "unread contents", type: "text" },
     ])
     expect(ctx.meta?.unchanged).not.toBe(true)
-    expect(checkFresh(path, { messages: [withReadOf(other, mtime)] })).toMatchObject({
-      code: "FILE_NOT_FRESH",
-      data: { reason: "NOT_READ" },
-    })
-    expect(() => assertFresh(path, { messages: [withReadOf(other, mtime)] })).toThrow(
-      /read this file before/i
-    )
   })
 
   test.each([
@@ -254,8 +245,31 @@ describe("read tool — unchanged detection", () => {
       { text: "contents", type: "text" },
     ])
     expect(ctx.meta?.unchanged).not.toBe(true)
-    expect(() => assertFresh(path, ctx)).toThrow(/read this file before/i)
   })
+
+  test.each([false, true])(
+    "an old unchanged result does not replace its supporting full read (masked=%s)",
+    async (masked) => {
+      const path = join(dir, "unchanged-chain.txt")
+      writeFileSync(path, "current contents\n")
+      const mtime = statSync(path).mtimeMs
+      const ctx: ToolContext<ReadToolMeta> = {
+        messages: [
+          { ...withReadOf(path, mtime, { full: true }), id: "original" },
+          { ...withReadOf(path, mtime, { full: false, unchanged: true }), id: "unchanged" },
+        ],
+        isMasked: (id, part) => masked && id === "original" && part === 0,
+      }
+      const params = await readTool.validator.validateParams({ path })
+      const result = await readTool.call(params, ctx)
+      if (masked) {
+        expect(result).toContainEqual({ type: "text", text: "current contents" })
+        expect(ctx.meta?.unchanged).not.toBe(true)
+      } else {
+        expect(ctx.meta?.unchanged).toBe(true)
+      }
+    }
+  )
 
   test("truncated lines are not recorded as a full-file read", async () => {
     const path = join(dir, "truncated-read.txt")
@@ -279,43 +293,5 @@ describe("read tool — unchanged detection", () => {
     const params = await readTool.validator.validateParams({ path: "./relative.txt" })
     await readTool.call(params, ctx)
     expect(ctx.meta?.unchanged).toBe(true)
-  })
-
-  test("a different file's stale read does not make the target stale", () => {
-    const path = join(dir, "not-read.txt")
-    writeFileSync(path, "contents")
-    expect(checkFresh(path, { messages: [withReadOf(join(dir, "other.txt"), 1)] })).toMatchObject({
-      code: "FILE_NOT_FRESH",
-      data: { reason: "NOT_READ" },
-    })
-  })
-})
-
-describe("trackFile / assertFresh", () => {
-  test("assertFresh throws NOT_FOUND when the path doesn't exist", () => {
-    const ctx: ToolContext = { messages: [] }
-    expect(() => assertFresh(join(dir, "missing-fresh.txt"), ctx)).toThrow(AiError)
-  })
-
-  test("assertFresh throws NOT_READ when no prior read for this path", () => {
-    const path = join(dir, "fresh-not-read.txt")
-    writeFileSync(path, "hello")
-    expect(() => assertFresh(path, { messages: [] })).toThrow(/read this file before/i)
-  })
-
-  test("assertFresh succeeds when a recent read message records the current mtime", () => {
-    const path = join(dir, "fresh-ok.txt")
-    writeFileSync(path, "hello")
-    const mtime = statSync(path).mtimeMs
-    const ctx: ToolContext = { messages: [withReadOf(path, mtime)] }
-    expect(() => assertFresh(path, ctx)).not.toThrow()
-  })
-
-  test("assertFresh throws STALE when the prior read mtime no longer matches", () => {
-    const path = join(dir, "fresh-stale.txt")
-    writeFileSync(path, "hello")
-    // Pretend we read this file with a different mtime.
-    const ctx: ToolContext = { messages: [withReadOf(path, 1)] }
-    expect(() => assertFresh(path, ctx)).toThrow(/changed since last read/)
   })
 })

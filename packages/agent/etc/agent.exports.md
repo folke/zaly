@@ -1,4 +1,4 @@
-# @zaly/agent (104)
+# @zaly/agent (101)
 
 ## Classes (2)
 
@@ -40,13 +40,10 @@
 - TokenUsage
 - ToolCollection
 
-## Types Functions (8)
+## Types Functions (5)
 
 - addUsage
-- assertFresh
-- checkFresh
 - createAgentContext
-- freshnessError
 - isUnchanged
 - taskCompletionMessage
 - taskInfoPart

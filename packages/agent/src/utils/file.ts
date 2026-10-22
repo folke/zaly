@@ -1,6 +1,6 @@
 import type { Tool, ToolContext } from "@zaly/ai"
 
-import { AiError, extractToolResults } from "@zaly/ai"
+import { extractToolResults } from "@zaly/ai"
 import { normPath, safeStat } from "@zaly/shared"
 
 export type FileMeta = {
@@ -30,46 +30,16 @@ function isFileMeta(meta: unknown): meta is FileMeta {
   )
 }
 
-export function assertFresh(path: string, ctx: ToolContext) {
-  const err = checkFresh(path, ctx)
-  if (err !== true) throw err
-}
-
-export function isUnchanged(path: string, ctx: ToolContext) {
-  return checkFresh(path, ctx, { full: true }) === true
-}
-
-export function checkFresh(
-  path: string,
-  ctx: ToolContext,
-  opts: { full?: boolean } = {}
-): AiError | true {
+export function isUnchanged(path: string, ctx: ToolContext): boolean {
   path = normPath(ctx.cwd, path)
   const mtime = safeStat(path)?.mtimeMs
-  if (mtime === undefined)
-    return new AiError({ code: "NOT_FOUND", message: `${path}: file not found` })
-  const messages = ctx.messages ?? []
-  let ret: AiError = freshnessError(path, "NOT_READ")
+  if (mtime === undefined) return false
 
+  const messages = ctx.messages ?? []
   for (const { m, $p, p } of extractToolResults<FileMeta>(messages)) {
     const id = m.id
     if (!id || !isFileMeta(p.meta) || p.meta.path !== path || ctx.isMasked?.(id, $p)) continue
-    if (opts.full && !p.meta.full) continue
-    if (p.meta.mtime === mtime) return true // Fresh! The file's mtime matches what we saw at read time.
-    ret = freshnessError(path, "STALE")
+    if (p.meta.full && p.meta.mtime === mtime) return true // Fresh! The file's mtime matches what we saw at read time.
   }
-  return ret
-}
-
-/** Build the canonical freshness error. `data.reason` distinguishes
- *  never-read from changed-since-read for callers and renderers. */
-export function freshnessError(path: string, reason: "NOT_READ" | "STALE"): AiError {
-  return new AiError({
-    code: "FILE_NOT_FRESH",
-    data: { path, reason },
-    message:
-      reason === "NOT_READ"
-        ? `${path}: read this file before mutating it.`
-        : `${path}: file changed since last read. Re-read before mutating.`,
-  })
+  return false
 }
