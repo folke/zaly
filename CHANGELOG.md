@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.1](https://github.com/folke/zaly/compare/v0.1.0...v0.1.1) (2026-10-25)
+
+
+### 🩹 Fixes
+
+* **agent:** backward compat for the fetch tool widget ([92620df](https://github.com/folke/zaly/commit/92620dfff6fe4ae5deb2635542e6c0740757ca63))
+* **agent:** read tool unchanged now only checks other reads ([efee7a3](https://github.com/folke/zaly/commit/efee7a370316886e6387de56e5119133c3095e4b))
+* **agent:** simplify compaction checkpoints and expose debug summaries ([4527e00](https://github.com/folke/zaly/commit/4527e0025a14436a7474bd59f92dfacfc7a967f6))
+* **models:** update models.dev catalog ([#55](https://github.com/folke/zaly/issues/55)) ([502080b](https://github.com/folke/zaly/commit/502080b5b26e151a692702cc70a7ca9005f98a64))
+
+
+### 📦 Build
+
+* fix lint ([c70b60c](https://github.com/folke/zaly/commit/c70b60c93d59295847f507aa0d06bc12e6596208))
+* use ts 7.1.0-beta ([d48efd4](https://github.com/folke/zaly/commit/d48efd42345cfd2ace0401baacf14ef08a04a8f2))
+
 ## [0.1.0](https://github.com/folke/zaly/compare/v0.0.12...v0.1.0) (2026-10-21)
 
 
