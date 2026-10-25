@@ -55,7 +55,7 @@
     "mitata": "^1.0.34"
   },
   "peerDependencies": {
-    "typebox": "^1.4.2"
+    "typebox": "^1.4.3"
   },
   "engines": {
     "bun": ">=1.2",

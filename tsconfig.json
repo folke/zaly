@@ -6,6 +6,7 @@
     "module": "nodenext",
     "moduleDetection": "force",
     "allowJs": false,
+    "declarationMap": true,
 
     "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
