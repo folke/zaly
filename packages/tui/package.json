@@ -1,6 +1,6 @@
 {
   "name": "@zaly/tui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Terminal UI framework used by zaly.",
   "keywords": [
     "ansi",
