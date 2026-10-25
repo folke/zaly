@@ -23,7 +23,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    //"declaration": true,
+    "declaration": true,
     "isolatedDeclarations": false,
     "customConditions": ["bun"]
   },
