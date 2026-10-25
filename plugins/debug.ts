@@ -1,5 +1,7 @@
+import type { Message } from "@zaly/ai"
 import type { PluginApi } from "@zaly/plugin"
 
+import { stringifyContent } from "@zaly/ai"
 import { defineAction } from "@zaly/tui"
 
 export default async function DebugPlugin(api: PluginApi) {
@@ -11,6 +13,11 @@ export default async function DebugPlugin(api: PluginApi) {
           short: "p",
           type: "boolean",
         },
+        summary: {
+          desc: "Print the compaction summary",
+          short: "s",
+          type: "boolean",
+        },
         tools: {
           desc: "Print the active tools",
           short: "t",
@@ -20,7 +27,7 @@ export default async function DebugPlugin(api: PluginApi) {
       cmd: "debug",
       desc: "Print debug info about the current session, including prompts and tools.",
       fn: async ({ args }) => {
-        const any = args?.prompts ?? args?.tools
+        const any = args?.prompts === true || args?.tools === true || args?.summary === true
 
         const prompt = await api.prompts.render()
         const tools = await api.tools.load()
@@ -34,6 +41,17 @@ export default async function DebugPlugin(api: PluginApi) {
         if (args?.tools || !any) {
           console.info("## Tools")
           for (const t of tools) console.log(t.name, t.params)
+        }
+
+        if (args?.summary || !any) {
+          const summary = api.agent.messages.find(
+            (m): m is Message<"system"> =>
+              m.role === "system" && m.meta?.kind === "compaction-summary"
+          )
+          if (summary) {
+            console.info("## Compaction Summary")
+            console.log(stringifyContent(summary.content))
+          }
         }
       },
       id: "debug",
