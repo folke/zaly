@@ -20,6 +20,8 @@ export const defaultSettings = {
     treeHeight: 20,
   },
   compaction: {
+    backgroundEnabled: true,
+    backgroundThreshold: 0.9,
     enabled: true,
     keepTokens: 20_000,
     reasoning: "medium",

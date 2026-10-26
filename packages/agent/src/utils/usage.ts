@@ -54,8 +54,8 @@ export class TokenUsage implements Usage {
     return this.last.reasoning ?? 0
   }
 
-  add(count: Usage): void {
-    this.#last = count
+  add(count: Usage, opts: { current?: boolean } = {}): void {
+    if (opts.current ?? true) this.#last = count
     this.#total = addUsage(this.#total, count)
   }
 

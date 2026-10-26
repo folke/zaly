@@ -44,8 +44,9 @@ export function addUsage(a: Usage, b: Usage): Usage;
 export class Agent extends Emitter<AgentEvents> {
     constructor(ctx: AgentContext);
     child(overrides?: Partial<AgentOptions>): Promise<Agent>;
-    // (undocumented)
-    compact(): Promise<void>;
+    compact(opts?: {
+        background?: boolean;
+    }): Promise<void>;
     get contextSize(): number;
     // (undocumented)
     get ctx(): AgentContext;
@@ -858,7 +859,9 @@ export function tokenStats(msgs: readonly Message[], opts?: {
 export class TokenUsage implements Usage {
     constructor(messages?: readonly Message[]);
     // (undocumented)
-    add(count: Usage): void;
+    add(count: Usage, opts?: {
+        current?: boolean;
+    }): void;
     // (undocumented)
     get cacheRead(): number;
     // (undocumented)

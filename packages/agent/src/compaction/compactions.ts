@@ -17,6 +17,9 @@ import {
 export type CompactionOptions = {
   enabled: boolean
   threshold?: number
+  /** Prepare and apply automatic compaction without pausing the foreground loop. */
+  backgroundEnabled?: boolean
+  backgroundThreshold?: number
   /** Existing messages up to this many tokens will be preserved in the context */
   keepTokens: number
   maxToolResultLen: number
@@ -29,6 +32,8 @@ export type CompactionOptions = {
 }
 
 const defaults: CompactionOptions = {
+  backgroundEnabled: true,
+  backgroundThreshold: 0.9,
   bash: { limit: 50, minCount: 2, minScore: 0.5, sort: "score" },
   enabled: true,
   files: { limit: 50, minCount: 1, minScore: 0.5, sort: "score" },
@@ -49,13 +54,13 @@ export class Compaction {
   }
 
   async compact(pressure: ContextPressure): Promise<void> {
-    const { session } = this.#agent
+    const { session, model } = this.#agent
+    if (!model) throw new Error("model must be loaded to compact")
 
     const masker = await this.#agent.ctx.masker()
 
     const snapshot = [...session.messages]
     const messages = masker ? await masker.mask(snapshot, pressure) : snapshot
-    const preTokens = this.#agent.contextSize
 
     const now = performance.now()
 
@@ -86,7 +91,10 @@ export class Compaction {
       role: "user",
     }
 
-    const summary = await this.#summarize(request)
+    this.#opts.signal?.throwIfAborted()
+    const summary = await this.#summarize(request, model, session.id)
+    this.#opts.signal?.throwIfAborted()
+    if (this.#agent.session !== session) throw new Error("Compaction session changed")
     // The bash + file usage tables are deterministic, ground-truth signals
     // — pricier to ask the model to reproduce than to copy verbatim. Carry
     // them through to the resumed agent so it has the same working-set
@@ -104,7 +112,8 @@ export class Compaction {
     await session.compact({
       durationMs: Math.round(performance.now() - now),
       from,
-      preTokens,
+      preTokens: pressure.used,
+      signal: this.#opts.signal,
       summary: summaryMessage,
       to,
       trigger: this.#opts.trigger,
@@ -112,14 +121,16 @@ export class Compaction {
     masker?.reset()
   }
 
-  async #summarize(message: Message<"user">): Promise<string> {
-    const model = this.#agent.model
-    if (!model) throw new Error("model must be loaded to compact")
+  async #summarize(
+    message: Message<"user">,
+    model: NonNullable<Agent["model"]>,
+    sessionId: string
+  ): Promise<string> {
     const m = await model.stream(
       {
         messages: [message],
         prompt: [SYSTEM_PROMPT],
-        sessionId: this.#agent.session.id,
+        sessionId,
       },
       {
         caching: false,

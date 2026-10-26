@@ -16,6 +16,11 @@ test("config accepts partial settings and normalizes keymaps without mutating th
   expect(validateConfig({})).toEqual({ keymap: {} })
 })
 
+test("config accepts independently configurable background and blocking compaction", () => {
+  const compaction = { backgroundEnabled: false, backgroundThreshold: 0.85, threshold: 0.95 }
+  expect(validateConfig({ compaction }).compaction).toEqual(compaction)
+})
+
 test("config preserves nested partials and plugin-defined tool names", () => {
   const input = { ui: { collapsedTools: ["plugin-tool"] }, skills: {}, resources: { plugin: {} } }
   expect(validateConfig(input)).toEqual({ ...input, keymap: {} })
@@ -40,6 +45,8 @@ test.each([
   { permissions: { preset: "invalid" } },
   { resources: { plugin: { include: [false] } } },
   { compaction: { threshold: "high" } },
+  { compaction: { backgroundThreshold: "high" } },
+  { compaction: { backgroundEnabled: "yes" } },
 ])("config rejects malformed or unknown settings: %j", (input) => {
   expect(() => validateConfig(input)).toThrow(/Invalid config/)
 })

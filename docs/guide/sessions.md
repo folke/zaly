@@ -45,9 +45,21 @@ lossy transformation: do not assume every old detail survives verbatim. Importan
 long-term project conventions belong in [project instructions](../extend/instructions.md),
 not only in a long conversation.
 
-Automatic compaction is enabled by default. Use `/compact` to request it manually.
-The `compaction` settings control its threshold, retained context, and summary
-budget. Model/provider token limits and output budgets also affect available context.
+Automatic compaction is enabled by default. At 90% context usage, zaly starts
+summarizing older history in the background without interrupting the current
+response or tools. It applies the summary as soon as it is ready, preserving
+messages added since the snapshot. At 95%, the agent waits for compaction before
+continuing, reusing any summary already in progress.
+
+Use `/compact` to request blocking compaction manually. Set
+`compaction.backgroundEnabled` to `false` to keep only blocking automatic
+compaction, or `compaction.enabled` to `false` to disable automatic compaction
+entirely. `backgroundThreshold` and `threshold` control the background and
+blocking context ratios respectively. If both thresholds are reached, blocking
+compaction takes precedence.
+
+The other `compaction` settings control retained context and the summary budget.
+Model/provider token limits and output budgets also affect available context.
 
 ## Storage and cleanup
 

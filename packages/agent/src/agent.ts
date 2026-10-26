@@ -15,7 +15,6 @@ import type {
   ToolContext,
   ToolResult,
 } from "@zaly/ai"
-import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentContext } from "./ctx.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
 import type { Session } from "./session/session.ts"
@@ -70,6 +69,10 @@ export class Agent extends Emitter<AgentEvents> {
   #pauseRequested?: string
   #running?: Promise<AgentStopKind>
   #usage: TokenUsage
+  #contextEpoch = 0
+  #requestEpoch = 0
+  #compaction?: { session: Session; controller: AbortController; promise: Promise<void> }
+  #compactionAttempt?: { session: Session; messageId?: string }
 
   /** Pending future-injects scheduled via `scheduleWakeup`. Cleared
    *  whenever the loop becomes active for any reason — the scheduled
@@ -133,6 +136,8 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   async reset(): Promise<void> {
+    this.#compactionAttempt = undefined
+    this.#contextEpoch++
     this.stop({ abort: true, reason: "reset" })
     await this.waitIdle()
     await this.#tasks.killAll()
@@ -452,6 +457,10 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #collect() {
     this.#abortController = new AbortController()
+    const epoch = this.#contextEpoch
+    this.#requestEpoch = epoch
+    const usage = this.#usage
+    const session = this.session
     const context = {
       cacheKey: this.ctx.session.id,
       messages: [...this.ctx.messages],
@@ -462,15 +471,35 @@ export class Agent extends Emitter<AgentEvents> {
     await this.emitSerial("context", context)
     const model = this.model
     if (!model) throw new Error("model must be loaded to collect")
-    return model.stream(context, this.#streamOpts())
+    const message = await model.stream(context, this.#streamOpts())
+    if (this.session !== session) throw new DOMException("Request session changed", "AbortError")
+    return { epoch, message, usage }
   }
 
-  #shouldAutoCompact(): boolean {
-    const opts = toValue(this.#opts.compaction)
-    const auto = opts?.enabled ?? true
-    if (!auto) return false
-    const threshold = opts?.threshold ?? 0.95
-    return this.pressure.ratio >= threshold
+  #maybeCompact(opts: { backgroundOnly?: boolean } = {}): Promise<void> | undefined {
+    const config = toValue(this.#opts.compaction)
+    if (config?.enabled === false) return
+    const ratio = this.pressure.ratio
+
+    if (!opts.backgroundOnly && ratio >= (config?.threshold ?? 0.95))
+      return this.#compact({ trigger: "auto" })
+
+    if (config?.backgroundEnabled === false || this.#pauseRequested !== undefined) return
+    if (ratio < (config?.backgroundThreshold ?? 0.9)) return
+    if (
+      this.#compaction &&
+      !this.#compaction.controller.signal.aborted &&
+      this.#compaction.session === this.session
+    )
+      return
+    const session = this.session
+    const messageId = session.messages.at(-1)?.id
+    if (
+      this.#compactionAttempt?.session === session &&
+      this.#compactionAttempt.messageId === messageId
+    )
+      return
+    return this.#compact({ background: true, trigger: "auto" })
   }
 
   #streamOpts(): ModelStreamOptions {
@@ -494,7 +523,8 @@ export class Agent extends Emitter<AgentEvents> {
   /** Run exactly one step. Useful for tests and custom drivers
    *  that want to interleave logic between steps. */
   async step(): Promise<StepResult> {
-    if (this.#shouldAutoCompact()) await this.compact()
+    const compaction = this.#maybeCompact()
+    if (compaction) await compaction
     // Drain the notify queue into the inject queue as a single system message
     if (this.#notifyQueue.length > 0) {
       this.#injectQueue.push({
@@ -512,7 +542,9 @@ export class Agent extends Emitter<AgentEvents> {
     let collected: AssistantMessage
 
     try {
-      collected = await this.#collect()
+      const response = await this.#collect()
+      collected = response.message
+      response.usage.add(collected.meta.usage, { current: response.epoch === this.#contextEpoch })
     } catch (error) {
       const err = toError(error)
       const overflow = isContextOverflow({ message: err.message })
@@ -524,8 +556,6 @@ export class Agent extends Emitter<AgentEvents> {
         usage: { input: 0, output: 0 },
       }
     }
-
-    this.#usage.add(collected.meta.usage)
 
     const result: Omit<StepResult, "kind"> = {
       finishReason: collected.meta.finishReason,
@@ -550,6 +580,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     const calls = await this.#parseToolCalls(collected)
     await this.session.add(collected)
+    void this.#maybeCompact({ backgroundOnly: true })
 
     if (calls.length === 0) return { kind: "natural", ...result }
 
@@ -573,21 +604,58 @@ export class Agent extends Emitter<AgentEvents> {
     return calls
   }
 
-  async compact(): Promise<void> {
-    const prev = this.#status
-    const pressure = this.pressure
-    this.#setStatus("compacting")
-    this.#usage.resetLast()
-    try {
-      const { Compaction } = await import("./compaction/compactions.ts")
-      const opts: Partial<CompactionOptions> = {
-        ...toValue(this.#opts.compaction),
-        signal: this.#abortController?.signal,
+  /** Apply compaction before resolving, or start it without waiting when background is true. */
+  async compact(opts: { background?: boolean } = {}): Promise<void> {
+    return this.#compact(opts)
+  }
+
+  async #compact(opts: { background?: boolean; trigger?: "manual" | "auto" } = {}): Promise<void> {
+    let job = this.#compaction
+    if (job && (job.session !== this.session || job.controller.signal.aborted)) job = undefined
+    if (!job) {
+      const session = this.session
+      const controller = new AbortController()
+      const pressure = this.pressure
+      this.#compactionAttempt = { messageId: session.messages.at(-1)?.id, session }
+      const applied = () => {
+        if (this.session !== session) return
+        this.#contextEpoch++
+        this.#usage.resetLast()
       }
-      const compactor = new Compaction(this, opts)
-      await compactor.compact(pressure)
+      session.on("compact", applied)
+      const promise = (async () => {
+        try {
+          const { Compaction } = await import("./compaction/compactions.ts")
+          controller.signal.throwIfAborted()
+          const config = toValue(this.#opts.compaction)
+          const signal = config?.signal
+            ? AbortSignal.any([controller.signal, config.signal])
+            : controller.signal
+          const compactor = new Compaction(this, {
+            ...config,
+            signal,
+            trigger: opts.trigger ?? config?.trigger ?? "manual",
+          })
+          await compactor.compact(pressure)
+        } finally {
+          session.off("compact", applied)
+          if (this.#compaction?.controller === controller) this.#compaction = undefined
+        }
+      })()
+      job = { controller, promise, session }
+      this.#compaction = job
+      // Background callers do not await the job, but blocking callers still receive its error.
+      void promise.catch((error) => {
+        if (!controller.signal.aborted) this.#opts.logger?.child("compaction").error(error)
+      })
+    }
+    if (opts.background) return
+    const prev = this.#status
+    this.#setStatus("compacting")
+    try {
+      await job.promise
     } finally {
-      this.#setStatus(prev)
+      if (this.#status === "compacting") this.#setStatus(prev)
     }
   }
 
@@ -659,7 +727,10 @@ export class Agent extends Emitter<AgentEvents> {
    * stream or tool calls are left to run to completion */
   stop(opts: { abort?: boolean; reason?: string } = {}): void {
     this.#pauseRequested ??= opts.reason ?? "stop"
-    if (opts.abort ?? true) this.#abortController?.abort(opts.reason)
+    if (opts.abort ?? true) {
+      this.#abortController?.abort(opts.reason)
+      this.#compaction?.controller.abort(opts.reason)
+    }
   }
 
   async start() {
@@ -701,6 +772,8 @@ export class Agent extends Emitter<AgentEvents> {
         // `auto: false`, overflow stops cleanly instead of attempting
         // a recovery the user explicitly opted out of.
         if (toValue(this.#opts.compaction)?.enabled === false) return { kind: "context-overflow" }
+        // A background summary may already have replaced the rejected context.
+        if (this.#requestEpoch !== this.#contextEpoch) continue
         // Compactor mutates the conversation; the rejected message is
         // not committed — next step retries on the compacted state.
         this.#opts.logger
@@ -708,7 +781,7 @@ export class Agent extends Emitter<AgentEvents> {
           .warn(
             `context overflow detected (size ${this.contextSize}, limit ${this.pressure.limit}); running compaction`
           )
-        await this.compact()
+        await this.#compact({ trigger: "auto" })
         continue
       }
 

@@ -397,6 +397,34 @@ describe("Session — summary boundaries", () => {
     expect(loaded.settings.modelId).toBe("new-model")
   })
 
+  test("an aborted queued compaction does not write a summary", async () => {
+    const store = new MemoryStore()
+    const s = await Session.load({ store })
+    const to = await s.add(u("old"))
+    const writing = Promise.withResolvers<void>()
+    const release = Promise.withResolvers<void>()
+    const write = store.write.bind(store)
+    vi.spyOn(store, "write").mockImplementation(async (node) => {
+      if (node.type === "message") {
+        writing.resolve()
+        await release.promise
+      }
+      await write(node)
+    })
+    const added = s.add(a("new"))
+    await writing.promise
+    const controller = new AbortController()
+    const compact = s
+      .compact({ to, summary: stubSummary, signal: controller.signal })
+      .catch((error: unknown) => error)
+    controller.abort()
+    release.resolve()
+    await added
+    expect(await compact).toHaveProperty("name", "AbortError")
+    expect(bare(s.messages)).toEqual([u("old"), a("new")])
+    expect((await allNodes(s)).some((node) => node.type === "compact")).toBe(false)
+  })
+
   test("serializes concurrent appends, including lazy session startup", async () => {
     const s = await newSession()
     await Promise.all([s.add(u("one")), s.add(a("two")), s.add(u("three"))])

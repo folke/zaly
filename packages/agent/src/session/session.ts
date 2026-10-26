@@ -245,6 +245,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     trigger?: "manual" | "auto"
     preTokens?: number
     durationMs?: number
+    /** Cancel a queued compaction before its commit begins. */
+    signal?: AbortSignal
     /** Prefer an explicit boundary; tail-only calls remain supported. */
     to?: string
     /** Expected first message of the snapshot, including a prior summary if present. */
@@ -253,6 +255,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     summary: Message<"system">
   }): Promise<string> {
     return this.#mutate(async () => {
+      opts.signal?.throwIfAborted()
       let tail = opts.tail
       if (opts.to !== undefined) {
         const index = this.messages.findIndex((m) => m.id === opts.to)

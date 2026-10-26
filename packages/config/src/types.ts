@@ -62,6 +62,10 @@ export type ResolvedConfig = {
     expr?: boolean
   }
   compaction: {
+    /** Start automatic compaction without pausing the foreground agent. */
+    backgroundEnabled: boolean
+    /** Context ratio at which background compaction starts. */
+    backgroundThreshold: number
     /** Enable automatic compaction when context is full */
     enabled: boolean
     /** Existing messages up to this many tokens will be preserved in the context */
@@ -70,7 +74,7 @@ export type ResolvedConfig = {
     reasoning: ReasoningEffort
     /** Maximum number of tokens to use for the generated summary */
     summaryTokens: number
-    /** Threshold for automatic compaction. */
+    /** Context ratio at which the agent waits for compaction before continuing. */
     threshold: number
   }
   masking: {

@@ -101,6 +101,8 @@ export const defaultSettings: {
         treeHeight: number;
     };
     compaction: {
+        backgroundEnabled: true;
+        backgroundThreshold: number;
         enabled: true;
         keepTokens: number;
         reasoning: "medium";
@@ -172,6 +174,8 @@ export type ResolvedConfig = {
         expr?: boolean;
     };
     compaction: {
+        backgroundEnabled: boolean;
+        backgroundThreshold: number;
         enabled: boolean;
         keepTokens: number;
         reasoning: ReasoningEffort;

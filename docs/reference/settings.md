@@ -41,6 +41,22 @@ Allow js expressions in command templates. Defaults to true.
 
 **Type:** `object`
 
+## `compaction.backgroundEnabled`
+
+**Type:** `boolean`
+
+Start automatic compaction without pausing the foreground agent.
+
+**Default:** `true`
+
+## `compaction.backgroundThreshold`
+
+**Type:** `number`
+
+Context ratio at which background compaction starts.
+
+**Default:** `0.9`
+
 ## `compaction.enabled`
 
 **Type:** `boolean`
@@ -77,7 +93,7 @@ Maximum number of tokens to use for the generated summary
 
 **Type:** `number`
 
-Threshold for automatic compaction.
+Context ratio at which the agent waits for compaction before continuing.
 
 **Default:** `0.95`
 

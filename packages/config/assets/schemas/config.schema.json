@@ -188,6 +188,14 @@
     "compaction": {
       "additionalProperties": false,
       "properties": {
+        "backgroundEnabled": {
+          "description": "Start automatic compaction without pausing the foreground agent.",
+          "type": "boolean"
+        },
+        "backgroundThreshold": {
+          "description": "Context ratio at which background compaction starts.",
+          "type": "number"
+        },
         "enabled": {
           "description": "Enable automatic compaction when context is full",
           "type": "boolean"
@@ -205,7 +213,7 @@
           "type": "number"
         },
         "threshold": {
-          "description": "Threshold for automatic compaction.",
+          "description": "Context ratio at which the agent waits for compaction before continuing.",
           "type": "number"
         }
       },

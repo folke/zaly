@@ -354,6 +354,18 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       name: "Auto Compaction",
       prop: ["compaction", "enabled"],
     }),
+    toggle({
+      desc: "Start compaction early without pausing the foreground agent",
+      name: "Background Compaction",
+      prop: ["compaction", "backgroundEnabled"],
+    }),
+    option({
+      desc: "Context usage at which background compaction starts",
+      name: "Background Compaction Threshold",
+      options: [0.7, 0.75, 0.8, 0.85, 0.9],
+      prop: ["compaction", "backgroundThreshold"],
+      render: renderPct,
+    }),
     option({
       desc: "Existing messages up to this many tokens will be preserved in the context",
       name: "Compaction Keep Tokens",
@@ -373,8 +385,8 @@ export async function editConfig(app: App, opts: { scope?: "user" | "project" } 
       prop: ["compaction", "summaryTokens"],
     }),
     option({
-      desc: "Threshold for automatic compaction",
-      name: "Compaction Threshold",
+      desc: "Context usage at which the agent waits for compaction",
+      name: "Compaction Blocking Threshold",
       options: [0.75, 0.85, 0.95],
       prop: ["compaction", "threshold"],
       render: renderPct,
