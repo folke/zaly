@@ -75,6 +75,20 @@ const fakeHighlighter = (code: string) => `\x1b[33m${code}\x1b[0m`
 // `tryHighlight` then falls through to plain styling.
 const passthroughHighlighter = (code: string) => code
 
+describe("markdown — CJK wrapping", () => {
+  test.each(["", "1. "])(
+    "preserves a long styled paragraph or list item (prefix=%j)",
+    async (prefix) => {
+      const source = `${prefix}**消除多余开销**：不再需要 \`struct pwm_dc_motor_config\` 这种为了通用性加的中间层，直接使用专用驱动接口。`
+      const rows = await markdown(source).render(ctx(80))
+      const expected = stripAnsi(render(source, 80)).replaceAll(/\s/g, "")
+      expect(rows.map(stripAnsi).join("").replaceAll(/\s/g, "")).toBe(expected)
+      expect(rows.length).toBeGreaterThan(1)
+      expect(rows.every((row) => stringWidth(row) <= 80)).toBe(true)
+    }
+  )
+})
+
 describe("markdown — inline callbacks", () => {
   test("strong wraps children in mdBold", async () => {
     const open = expectedOpen("mdBold")

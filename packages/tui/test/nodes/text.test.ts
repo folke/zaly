@@ -1,5 +1,6 @@
 import type { Color } from "../../src/index.ts"
 
+import { stringWidth, stripAnsi } from "@zaly/shared/ansi"
 import { describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
 import { Box } from "../../src/widgets/box.ts"
@@ -22,6 +23,38 @@ describe("Text", () => {
     // would tip over the budget; we propagate that through unchanged.
     const t = new Text({ content: "hello world and one more" })
     expect(await t.render(ctx(10))).toEqual(["hello ", "world and ", "one more"])
+  })
+
+  test.each(["word", "char"] as const)(
+    "%s wrapping preserves CJK text beyond a cell boundary",
+    async (wrap) => {
+      const content = "你好世界你好世界"
+      const rows = await new Text({ content, wrap }).render(ctx(10))
+      expect(rows).toEqual(["你好世界你", "好世界"])
+      expect(rows.join("")).toBe(content)
+      expect(rows.every((row) => stringWidth(row) <= 10)).toBe(true)
+    }
+  )
+
+  test.each(["你好世界你好世界   ", "中文🙂中文🙂中文", "e\u0301你好世界你好世界"])(
+    "styled wide text is not mistaken for trailing whitespace: %s",
+    async (content) => {
+      const rows = await new Text({ content: `\x1b[31m${content}\x1b[0m` }).render(ctx(10))
+      expect(
+        rows
+          .map((row) => stripAnsi(row))
+          .join("")
+          .trimEnd()
+          .normalize()
+      ).toBe(content.trimEnd().normalize())
+      expect(rows.length).toBeGreaterThan(1)
+      expect(rows.every((row) => stringWidth(row) <= 10)).toBe(true)
+    }
+  )
+
+  test("trims genuine overflowing padding when the visible CJK text fits", async () => {
+    const rows = await new Text({ content: "你好世界     " }).render(ctx(10))
+    expect(rows).toEqual(["你好世界  "])
   })
 
   test("narrow ctx wraps content tightly", async () => {

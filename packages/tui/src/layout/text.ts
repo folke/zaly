@@ -49,7 +49,7 @@ export function formatText(
       const stripped = stripAnsi(line)
 
       // Long line that ends in (ansi) whitespace, so just strip
-      if (stripped.slice(opts.width).trim() === "") {
+      if (stringWidth(stripped.trimEnd()) <= opts.width) {
         ret.push(sliceAnsi(line, 0, opts.width))
         continue
       }
