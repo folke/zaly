@@ -172,6 +172,52 @@ describe("Diff widget", () => {
     expect(rows).toContain("    6  + F")
   })
 
+  test("tab-indented Python renders like equivalent spaces without extending row backgrounds", async () => {
+    const original = 'def normalize(value):\n\tif value:\n\t\treturn value\n\treturn ""\n'
+    const modified =
+      'def normalize(value):\n\tif value:\n\t\tvalue = value.strip()\n\t\treturn value.upper()\n\treturn ""\n'
+    const tabbed = await diff({ original, modified }).render(ctx)
+    const spaced = await diff({
+      original: original.replaceAll("\t", "    "),
+      modified: modified.replaceAll("\t", "    "),
+    }).render(ctx)
+    expect(tabbed).toEqual(spaced)
+    expect(tabbed.every((row) => !row.includes("\t"))).toBe(true)
+    expect(new Set(tabbed.map((row) => stringWidth(row))).size).toBe(1)
+  })
+
+  test("tab stops are relative to source content rather than the gutter", async () => {
+    const rows = simplify(await diff({ original: "x\t=\t1\n", modified: "x\t=\t2\n" }).render(ctx))
+    expect(rows).toEqual([" 1     - x   =   1", "    1  + x   =   2"])
+  })
+
+  test("tabs in ANSI-styled content expand before measuring and padding", async () => {
+    const original = "\x1b[31m\told\x1b[0m\n"
+    const modified = "\x1b[32m\tnew\x1b[0m\n"
+    const tabbed = await diff({ original, modified }).render(ctx)
+    const spaced = await diff({
+      original: original.replaceAll("\t", "    "),
+      modified: modified.replaceAll("\t", "    "),
+    }).render(ctx)
+    expect(tabbed).toEqual(spaced)
+  })
+
+  test("expanded tab indentation participates in wrapping", async () => {
+    const rows = await diff({
+      original: "\t\treturn old_value\n",
+      modified: "\t\treturn new_value\n",
+    }).render(createCtx({ theme, width: 24 }))
+    expect(rows.every((row) => !row.includes("\t") && stringWidth(row) <= 24)).toBe(true)
+    expect(rows.length).toBeGreaterThan(2)
+  })
+
+  test("tab-to-space-only edits remain visible", async () => {
+    const rows = simplify(
+      await diff({ original: "\tvalue = 1\n", modified: "    value = 1\n" }).render(ctx)
+    )
+    expect(rows).toEqual([" 1     -     value = 1", "    1  +     value = 1"])
+  })
+
   test("syntax-highlighted lang: content carries ANSI", async () => {
     const n = diff({
       context: 1,

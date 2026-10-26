@@ -10,7 +10,7 @@ import { basename, extname } from "pathe"
 import { Node } from "../core/node.ts"
 import { createAsync, memo, unwrap, useContext } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
-import { calcLayout } from "../layout/text.ts"
+import { calcLayout, expandTabs } from "../layout/text.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
 import { shikiTheme } from "../shiki/theme.ts"
 
@@ -111,9 +111,11 @@ export class Diff extends Node<DiffState> {
       context: this.state.context ?? 3,
       ctx: { ...ctx, width },
       modified,
-      modifiedHi: splitAnsi(highlighted.modified).slice(0, modified.length),
+      // Expand display tabs before any cell-based splitting, wrapping, or padding.
+      // Keep the original lines unchanged so whitespace-only edits remain visible.
+      modifiedHi: splitAnsi(expandTabs(highlighted.modified)).slice(0, modified.length),
       original,
-      originalHi: splitAnsi(highlighted.original).slice(0, original.length),
+      originalHi: splitAnsi(expandTabs(highlighted.original)).slice(0, original.length),
     }
 
     this.state.wrap ??= "word"
