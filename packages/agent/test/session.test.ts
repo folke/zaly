@@ -2,7 +2,7 @@
 import type { Message } from "@zaly/ai"
 import type { SessionEvents, SessionNode } from "../src/session/index.ts"
 
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { MemoryStore, Session } from "../src/session/index.ts"
 
 const u = (text: string): Message<"user"> => ({ content: text, role: "user" })
@@ -276,6 +276,135 @@ describe("Session — compact", () => {
   })
 })
 
+describe("Session — summary boundaries", () => {
+  test("message IDs identify the same nodes before and after reload", async () => {
+    const s = await startedSession()
+    const id = await s.add({ ...u("message"), id: "supplied-id", ts: 123 })
+    expect(id).toBe("supplied-id")
+    expect(s.messages[0]).toMatchObject({ id, ts: 123 })
+    expect(await s.node(id)).toMatchObject({ uuid: id, message: { id, ts: 123 } })
+    const loaded = await Session.load({ store: new MemoryStore(await allNodes(s)) })
+    expect(loaded.messages[0]).toMatchObject({ id, ts: 123 })
+  })
+
+  test("retains all messages appended after the summarized boundary", async () => {
+    const s = await startedSession([u("old"), a("summarized"), u("kept")])
+    const from = s.messages[0].id!
+    const to = s.messages[1].id!
+    await s.add(a("arrived during summary"))
+    await s.update({ modelId: "changed" })
+    await s.add(u("also new"))
+    const head = s.head
+    let event: SessionEvents["compact"] | undefined
+    s.on("compact", (e) => {
+      event = e
+    })
+    const id = await s.compact({ from, to, summary: stubSummary })
+    expect(bare(s.messages)).toEqual([
+      stubSummary,
+      u("kept"),
+      a("arrived during summary"),
+      u("also new"),
+    ])
+    expect(event?.node).toMatchObject({ uuid: id, parentUuid: head, from, to, tail: 3 })
+    const loaded = await Session.load({ store: new MemoryStore(await allNodes(s)) })
+    expect(bare(loaded.messages)).toEqual(bare(s.messages))
+  })
+
+  test("a boundary at the current head keeps no older messages", async () => {
+    const s = await startedSession([u("old")])
+    const to = s.messages[0].id!
+    await s.compact({ to, summary: stubSummary })
+    expect(bare(s.messages)).toEqual([stubSummary])
+  })
+
+  test("rejects missing and inactive boundaries without changing the session", async () => {
+    const s = await startedSession([u("old"), a("branch")])
+    const to = s.messages[1].id!
+    await s.checkout(s.messages[0].id!)
+    const head = s.head
+    await expect(s.compact({ to, summary: stubSummary })).rejects.toThrow(/active history/)
+    await expect(s.compact({ to: "missing", summary: stubSummary })).rejects.toThrow(
+      /active history/
+    )
+    expect(s.head).toBe(head)
+    await s.add(u("after rejection"))
+    expect(bare(s.messages)).toEqual([u("old"), u("after rejection")])
+  })
+
+  test("rejects a snapshot superseded by another compaction even if its boundary survives", async () => {
+    const s = await startedSession([u("old"), a("boundary"), u("kept")])
+    const from = s.messages[0].id!
+    const to = s.messages[1].id!
+    await compactStub(s, { tail: 2 })
+    await expect(s.compact({ from, to, summary: stubSummary })).rejects.toThrow(/active history/)
+    expect(bare(s.messages)).toEqual([stubSummary, a("boundary"), u("kept")])
+  })
+
+  test("can summarize the preceding summary while preserving its kept tail", async () => {
+    const s = await startedSession([u("old"), a("kept")])
+    await compactStub(s, { tail: 1 })
+    const to = s.messages[0].id!
+    const summary: Message<"system"> = { role: "system", content: "updated summary" }
+    await s.compact({ from: to, to, summary })
+    expect(bare(s.messages)).toEqual([summary, a("kept")])
+  })
+
+  test("nested boundaries keep prior tail messages without resurrecting summarized content", async () => {
+    const s = await startedSession([
+      u("old"),
+      a("first boundary"),
+      u("second boundary"),
+      a("kept"),
+      u("also kept"),
+    ])
+    const first = s.messages[1].id!
+    const second = s.messages[2].id!
+    await s.compact({ to: first, summary: stubSummary })
+    await s.compact({ to: second, summary: stubSummary })
+    await s.compact({ to: s.messages[0].id!, summary: stubSummary })
+    expect(bare(s.messages)).toEqual([stubSummary, a("kept"), u("also kept")])
+    const loaded = await Session.load({ store: new MemoryStore(await allNodes(s)) })
+    expect(bare(loaded.messages)).toEqual(bare(s.messages))
+  })
+
+  test("serializes compaction with messages and settings queued during persistence", async () => {
+    const store = new MemoryStore()
+    const s = await Session.load({ store })
+    await s.start()
+    const to = await s.add(u("old"))
+    await s.add(a("kept"))
+    const writing = Promise.withResolvers<void>()
+    const release = Promise.withResolvers<void>()
+    const write = store.write.bind(store)
+    vi.spyOn(store, "write").mockImplementation(async (node) => {
+      if (node.type === "compact") {
+        writing.resolve()
+        await release.promise
+      }
+      await write(node)
+    })
+    const compact = s.compact({ to, summary: stubSummary })
+    await writing.promise
+    const added = s.add(u("queued"))
+    const settings = s.update({ modelId: "new-model" })
+    release.resolve()
+    await Promise.all([compact, added, settings])
+    expect(bare(s.messages)).toEqual([stubSummary, a("kept"), u("queued")])
+    expect(s.settings.modelId).toBe("new-model")
+    const loaded = await Session.load({ store })
+    expect(bare(loaded.messages)).toEqual(bare(s.messages))
+    expect(loaded.settings.modelId).toBe("new-model")
+  })
+
+  test("serializes concurrent appends, including lazy session startup", async () => {
+    const s = await newSession()
+    await Promise.all([s.add(u("one")), s.add(a("two")), s.add(u("three"))])
+    const loaded = await Session.load({ store: new MemoryStore(await allNodes(s)) })
+    expect(bare(loaded.messages)).toEqual([u("one"), a("two"), u("three")])
+  })
+})
+
 describe("Session — history", () => {
   test("returns empty when there's nothing past the active chain", async () => {
     const s = await startedSession([u("hi"), a("hello")])
@@ -391,6 +520,20 @@ describe("Session — JSONL persistence", () => {
 
     const loaded = await Session.load({ path: file })
     expect(bare([...loaded.messages])).toEqual([stubSummary, a("old2"), u("fresh")])
+    await loaded.close()
+  })
+
+  test("explicit summary boundaries and their recalculated tail survive JSONL reload", async () => {
+    const file = tmpPath("boundary")
+    const s = await Session.load({ path: file })
+    const to = await s.add(u("summarized"))
+    await s.add(a("arrived later"))
+    await s.compact({ from: to, to, summary: stubSummary })
+    await s.close()
+    const loaded = await Session.load({ path: file })
+    expect(bare(loaded.messages)).toEqual([stubSummary, a("arrived later")])
+    const compact = (await allNodes(loaded)).find((node) => node.type === "compact")
+    expect(compact).toMatchObject({ from: to, to, tail: 1 })
     await loaded.close()
   })
 

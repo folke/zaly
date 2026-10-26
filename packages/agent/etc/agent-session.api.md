@@ -82,7 +82,9 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
         trigger?: "manual" | "auto";
         preTokens?: number;
         durationMs?: number;
-        tail: number;
+        to?: string;
+        from?: string;
+        tail?: number;
         summary: Message<"system">;
     }): Promise<string>;
     // (undocumented)

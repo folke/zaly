@@ -485,9 +485,6 @@ readonly write: () => PermissionHandler<"read" | "write">;
 }>;
 
 // @public (undocumented)
-export function isUnchanged(path: string, ctx: ToolContext): boolean;
-
-// @public (undocumented)
 export function isUuidv7(s: string): boolean;
 
 // @public (undocumented)

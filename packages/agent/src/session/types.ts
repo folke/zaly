@@ -30,7 +30,11 @@ type SessionN = {
       preTokens?: number
       /** How long the compactor took, ms. */
       durationMs?: number
-      /** Number of message from before compaction that will be preserved */
+      /** Last active message covered by the summary. Absent on legacy entries. */
+      to?: string
+      /** First active message in the summarized snapshot, used to reject stale summaries. */
+      from?: string
+      /** Number of messages after the summary boundary at commit time. */
       tail: number
       /** Frozen summary message that becomes the head of the active
        *  chain reconstruction. The full Message (not just text) so the

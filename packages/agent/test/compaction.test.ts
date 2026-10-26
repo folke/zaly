@@ -1,6 +1,9 @@
-import type { Message, Usage } from "@zaly/ai"
+import type { Message, ProviderRequest, Usage } from "@zaly/ai"
+import type { SessionNode } from "../src/session/types.ts"
 
+import { stringifyContent } from "@zaly/ai"
 import { describe, expect, test } from "vitest"
+import { Compaction } from "../src/compaction/compactions.ts"
 import {
   extractBashUsage,
   extractConversation,
@@ -10,9 +13,18 @@ import {
   messageTail,
 } from "../src/compaction/utils.ts"
 import { MemoryStore, Session } from "../src/session/index.ts"
+import { loadAgent, mockModel } from "./helpers.ts"
 
-const u = (text: string): Message => ({ content: text, role: "user" })
-const a = (text: string): Message => ({ content: text, role: "assistant" })
+const u = (text: string): Message<"user"> => ({ content: text, role: "user" })
+const a = (text: string): Message<"assistant"> => ({ content: text, role: "assistant" })
+
+function messageText(message: Message): string {
+  if (typeof message.content === "string") return message.content
+  return message.content
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+}
 
 /** Build a started session and seed a script of `[message, usage?]`
  *  pairs. Usage is attached to the assistant message's `meta.usage` so
@@ -283,5 +295,116 @@ describe("messageTail", () => {
       [a("a2"), usage(200, 50)],
     ])
     expect(messageTail(session.messages, {})).toEqual(messages.slice(1))
+  })
+})
+
+async function pendingCompaction(messages: Message[], keepTokens = 0) {
+  const model = mockModel([
+    [
+      { type: "text-delta", delta: "Checkpoint" },
+      { type: "finish", finishReason: "stop", usage: { input: 100, output: 10 } },
+    ],
+  ])
+  const started = Promise.withResolvers<void>()
+  const release = Promise.withResolvers<void>()
+  const requests: ProviderRequest[] = []
+  const providerStream = model.provider.stream
+  model.provider.stream = async function* stream(request) {
+    requests.push(request)
+    started.resolve()
+    await release.promise
+    yield* providerStream(request)
+  }
+  const agent = await loadAgent({ messages, model, mask: { enabled: false } })
+  const compactor = new Compaction(agent, {
+    keepTokens,
+    bash: { limit: 50, minCount: 1, minScore: 0, sort: "score" },
+  })
+  const done = compactor.compact(agent.pressure)
+  await started.promise
+  return { agent, done, release: release.resolve, requests }
+}
+
+describe("Compaction — snapshots", () => {
+  test("usage tables exclude the retained tail, just like the summarized transcript", async () => {
+    const call = (
+      id: string,
+      path: string,
+      command: string,
+      input: number
+    ): Message<"assistant"> => ({
+      role: "assistant",
+      meta: { usage: usage(input) },
+      content: [
+        { type: "tool-call", id: `${id}-bash`, name: "bash", params: { command } },
+        { type: "tool-call", id, name: "read", params: { path } },
+      ],
+    })
+    const result = (id: string, path: string): Message<"tool"> => ({
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          id,
+          name: "read",
+          content: "contents",
+          meta: { path, full: true, kind: "read" },
+        },
+      ],
+    })
+    const task = await pendingCompaction(
+      [
+        u("begin"),
+        call("older", "/older.ts", "OLD_COMMAND", 100),
+        result("older", "/older.ts"),
+        call("tail", "/tail-only.ts", "TAIL_COMMAND", 900),
+        result("tail", "/tail-only.ts"),
+        { ...a("recent answer"), meta: { usage: usage(1000) } },
+      ],
+      150
+    )
+    task.release()
+    await task.done
+    const message = task.requests[0].ctx.messages[0]
+    if (message.role !== "user") throw new Error("Expected a user request")
+    const content = message.content
+    if (typeof content === "string") throw new Error("Expected separate transcript and usage parts")
+    const files = stringifyContent([content[1]])
+    const commands = stringifyContent([content[2]])
+    expect(files).toContain("/older.ts")
+    expect(files).not.toContain("/tail-only.ts")
+    expect(commands).toContain("OLD_COMMAND")
+    expect(commands).not.toContain("TAIL_COMMAND")
+    const summary = messageText(task.agent.session.messages[0])
+    expect(summary).toContain("/older.ts")
+    expect(summary).not.toContain("/tail-only.ts")
+  })
+
+  test("messages arriving during summarization are retained after the explicit boundary", async () => {
+    const task = await pendingCompaction([
+      u("older"),
+      { ...a("kept"), meta: { usage: usage(100) } },
+    ])
+    const to = task.agent.session.messages[0].id!
+    await task.agent.session.add(u("arrived during compaction"))
+    task.release()
+    await task.done
+    expect(task.agent.session.messages.map(messageText)).toEqual([
+      expect.stringContaining("Checkpoint"),
+      "kept",
+      "arrived during compaction",
+    ])
+    const nodes: SessionNode[] = []
+    for await (const node of task.agent.session.nodes()) nodes.push(node)
+    expect(nodes.find((node) => node.type === "compact")).toMatchObject({ to, tail: 2 })
+  })
+
+  test("does not apply a completed summary after navigating away from its boundary", async () => {
+    const task = await pendingCompaction([u("first"), u("second")])
+    const first = task.agent.session.messages[0].id!
+    await task.agent.session.checkout(first)
+    task.release()
+    await expect(task.done).rejects.toThrow(/active history/)
+    expect(task.agent.session.messages.map(messageText)).toEqual(["first"])
   })
 })

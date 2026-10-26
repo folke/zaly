@@ -64,6 +64,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   #started = false
   #path?: string
   #head?: string
+  #mutations?: Promise<void>
 
   protected constructor(opts: SessionInit<T>) {
     super()
@@ -159,14 +160,14 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
   }
 
   async update(settings: SessionUpdate, opts?: { force?: boolean }): Promise<string> {
-    return this.#commit({ settings, type: "session-settings" }, opts)
+    return this.#mutate(() => this.#commit({ settings, type: "session-settings" }, opts))
   }
 
   /** Lazily emits `session-start` on a fresh session or `session-resume`
    *  on a hydrated one. Called from `#commit` before the first non-marker
    *  node lands so the start/resume marker always heads the chain. */
   async #autostart(): Promise<void> {
-    if (!this.#started) await this.start()
+    if (!this.#started) await this.#start()
   }
 
   /** Explicitly mark the session as started — writes a `session-start`
@@ -174,12 +175,19 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
    *  Idempotent; subsequent calls are no-ops. Optional `meta` is
    *  applied via `update()` after the marker lands. */
   async start(settings?: SessionUpdate): Promise<string | undefined> {
-    if (this.#started) return settings ? this.update(settings) : this.#store.root?.uuid
+    return this.#mutate(() => this.#start(settings))
+  }
+
+  async #start(settings?: SessionUpdate): Promise<string | undefined> {
+    if (this.#started)
+      return settings
+        ? this.#commit({ settings, type: "session-settings" })
+        : this.#store.root?.uuid
     this.#started = true
     const type = this.messages.length > 0 ? ("session-resume" as const) : ("session-start" as const)
     await this.#commit({ type })
     void this.emit(type)
-    await this.update(settings ?? {})
+    await this.#commit({ settings: settings ?? {}, type: "session-settings" })
     return this.#store.root?.uuid
   }
 
@@ -225,49 +233,68 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     const uuid = message.id ?? uuidv7()
     const ts = message.ts ?? Date.now()
     const m = { ...message, id: uuid, ts }
-    return this.#commit({ message: m, type: "message" })
+    return this.#mutate(() => this.#commit({ message: m, type: "message" }))
   }
 
-  /** Mark a compaction boundary. Subsequent `add()` calls land after
-   *  this node; their messages form the new active conversation. The
-   *  pre-compact chain stays in the store but is no longer part of
-   *  `messages`. Also commits a fresh `session-meta` snapshot right
-   *  after the compact so post-compact lazy walks always have a nearby
-   *  meta anchor. */
+  /** Summarize an active prefix through a message ID, preserving everything
+   *  appended after it. Boundary validation and tail calculation share the
+   *  serialized commit with the new summary. Legacy tail-only calls remain
+   *  supported. Original history stays in the store; a fresh settings anchor
+   *  follows the compact node for reconstruction. */
   async compact(opts: {
     trigger?: "manual" | "auto"
     preTokens?: number
     durationMs?: number
-    tail: number
+    /** Prefer an explicit boundary; tail-only calls remain supported. */
+    to?: string
+    /** Expected first message of the snapshot, including a prior summary if present. */
+    from?: string
+    tail?: number
     summary: Message<"system">
   }): Promise<string> {
-    const node: SessionNode = {
-      durationMs: opts.durationMs,
-      parentUuid: this.#store.root?.uuid,
-      preTokens: opts.preTokens,
-      summary: opts.summary,
-      tail: opts.tail,
-      trigger: opts.trigger ?? "manual",
-      ts: Date.now(),
-      type: "compact",
-      uuid: uuidv7(),
-    }
-    const compactUuid = await this.#commit(node)
-    await this.update({}, { force: true })
-    await this.#rebuild()
-    void this.emit("compact", { node })
-    return compactUuid
+    return this.#mutate(async () => {
+      let tail = opts.tail
+      if (opts.to !== undefined) {
+        const index = this.messages.findIndex((m) => m.id === opts.to)
+        if (index === -1 || (opts.from !== undefined && this.messages[0]?.id !== opts.from)) {
+          throw new Error("Compaction snapshot is no longer part of the active history")
+        }
+        tail = this.messages.length - index - 1
+      }
+      if (tail === undefined || !Number.isInteger(tail) || tail < 0) {
+        throw new Error("Compaction requires a message boundary or a non-negative integer tail")
+      }
+      const compactUuid = await this.#commit({
+        durationMs: opts.durationMs,
+        from: opts.from,
+        preTokens: opts.preTokens,
+        summary: opts.summary,
+        tail,
+        to: opts.to,
+        trigger: opts.trigger ?? "manual",
+        type: "compact",
+      })
+      await this.#commit({ settings: {}, type: "session-settings" }, { force: true })
+      await this.#rebuild()
+      const node = this.#view.compact!
+      void this.emit("compact", { node })
+      return compactUuid
+    })
   }
 
   async addMaskCheckpoint(opts: MaskCheckpoint): Promise<string> {
-    this.#view.maskCheckpoint = opts
-    return this.#commit({ ...opts, type: "mask-checkpoint" })
+    return this.#mutate(async () => {
+      this.#view.maskCheckpoint = opts
+      return this.#commit({ ...opts, type: "mask-checkpoint" })
+    })
   }
 
   async checkout(uuid: string): Promise<void> {
-    if (this.#closed) throw new Error("Session is closed")
-    this.#head = uuid
-    await this.#rebuild()
+    return this.#mutate(async () => {
+      if (this.#closed) throw new Error("Session is closed")
+      this.#head = uuid
+      await this.#rebuild()
+    })
   }
 
   /** Pre-active history of the current chain — messages from before
@@ -284,12 +311,28 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
 
   /** Flush + close the underlying store. Subsequent writes throw. */
   async close(): Promise<void> {
-    if (this.#closed) return
-    this.#closed = true
-    await this.#store.close?.()
+    return this.#mutate(async () => {
+      if (this.#closed) return
+      this.#closed = true
+      await this.#store.close?.()
+    })
   }
 
   // ── Internals ────────────────────────────────────────────────────────
+
+  // Keep commits and view rebuilds together so appends cannot race a compaction.
+  #mutate<R>(fn: () => Promise<R>): Promise<R> {
+    const pending = this.#mutations ? this.#mutations.then(fn) : fn()
+    const settled = pending.then(
+      () => {},
+      () => {}
+    )
+    this.#mutations = settled
+    void settled.then(() => {
+      if (this.#mutations === settled) this.#mutations = undefined
+    })
+    return pending
+  }
 
   /** Atomically commit a node: register it in the store, update active
    *  messages, persist, and emit. Single chokepoint for all mutations. */
@@ -297,8 +340,8 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     let node: SessionNode = {
       ...n,
       parentUuid: this.head,
-      ts: Date.now(),
-      uuid: uuidv7(),
+      ts: n.type === "message" ? (n.message.ts ?? Date.now()) : Date.now(),
+      uuid: n.type === "message" ? (n.message.id ?? uuidv7()) : uuidv7(),
     }
 
     if (!this.#started && node.type !== "session-start" && node.type !== "session-resume") {
@@ -386,9 +429,9 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       if (node.type === "mask-checkpoint" && !compact && !maskCheckpoint) maskCheckpoint = node
       if (node.type === "message") messageNodes.push(node)
       if (node.type === "compact" && (opts.active ?? true)) {
-        if (compact) break // stop at the first compact
-        compact = node
-        // update limit to the compact's tail
+        compact ??= node
+        // Earlier compactions may contain part of the kept tail. Walk through
+        // their preserved messages, but never resurrect their summarized history.
         limit = Math.min(limit, messageNodes.length + node.tail)
       }
       if (opts.stop?.(node)) break

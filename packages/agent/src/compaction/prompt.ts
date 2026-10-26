@@ -35,4 +35,4 @@ export const PREVIOUS_SUMMARY_PROMPT = `Incorporate this prior summary into the 
 /** Shown to the resumed agent, not the summarizer. */
 export const SUMMARY_HEADER = `The older conversation has been compacted into the summary below. Recent messages follow verbatim and may supersede it. Use both to continue where the conversation left off without repeating completed work.
 
-File and command usage tables cover the full conversation and are navigation aids, not evidence of results. If necessary information is missing, consult the referenced artifacts or ask rather than guess.`
+File and command usage tables cover the summarized history and are navigation aids, not evidence of results. If necessary information is missing, consult the referenced artifacts or ask rather than guess.`

@@ -53,7 +53,9 @@ export class Compaction {
 
     const masker = await this.#agent.ctx.masker()
 
-    const messages = masker ? await masker.mask(session.messages, pressure) : session.messages
+    const snapshot = [...session.messages]
+    const messages = masker ? await masker.mask(snapshot, pressure) : snapshot
+    const preTokens = this.#agent.contextSize
 
     const now = performance.now()
 
@@ -61,6 +63,9 @@ export class Compaction {
     const older = tail.length > 0 ? messages.slice(0, -tail.length) : messages
 
     if (older.length === 0) return
+    const to = older.at(-1)?.id
+    const from = older[0].id
+    if (!to || !from) throw new Error("Compaction snapshot messages must have IDs")
 
     const conversation = extractConversation(
       // Conversation summary is based on the older messages, not the tail — the tail is what we keep
@@ -68,8 +73,8 @@ export class Compaction {
       { maxToolResultLen: this.#opts.maxToolResultLen }
     )
 
-    const bashUsage = formatBashUsage(extractBashUsage(messages, this.#opts.bash))
-    const fileUsage = formatFileUsage(extractFileUsage(messages, this.#opts.files))
+    const bashUsage = formatBashUsage(extractBashUsage(older, this.#opts.bash))
+    const fileUsage = formatFileUsage(extractFileUsage(older, this.#opts.files))
 
     const request: Message<"user"> = {
       content: [
@@ -98,9 +103,10 @@ export class Compaction {
     }
     await session.compact({
       durationMs: Math.round(performance.now() - now),
-      preTokens: this.#agent.contextSize,
+      from,
+      preTokens,
       summary: summaryMessage,
-      tail: tail.length,
+      to,
       trigger: this.#opts.trigger,
     })
     masker?.reset()
