@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/folke/zaly/compare/v0.1.1...v0.2.0) (2026-10-26)
+
+
+### 🚀 Enhancements
+
+* **agent:** added new openai/codex models ([571e22d](https://github.com/folke/zaly/commit/571e22dd1d03a58d9ce3816f73d713f2433f49b3))
+* **agent:** anchor compaction summaries to explicit session boundaries ([acfcd82](https://github.com/folke/zaly/commit/acfcd8269fba7cdb9b319d4777e212f84988db9f))
+* **agent:** compact context in the background ([eef8aea](https://github.com/folke/zaly/commit/eef8aea6b34ee2fa73f49dd1b07c831b43b1333a))
+
+
+### 🩹 Fixes
+
+* **tui:** expand diff tabs before display layout ([b27e9a3](https://github.com/folke/zaly/commit/b27e9a346e79ef0a91b9cf0f352be12e0d1536df))
+* **tui:** preserve CJK text when wrapping long lines ([17faf80](https://github.com/folke/zaly/commit/17faf80a45d62ac36b15cc81e298b80fb53e4752)), closes [#60](https://github.com/folke/zaly/issues/60)
+
 ## [0.1.1](https://github.com/folke/zaly/compare/v0.1.0...v0.1.1) (2026-10-25)
 
 
