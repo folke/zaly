@@ -13,12 +13,28 @@
  *   - `transform`    — escape hatch for arbitrary per-model editing;
  *                      return `undefined` to drop the model entirely.
  *
- * Hand-maintained. Adding a new entry is typically the answer when a
- * provider has a quirk models.dev's catalog can't express.
+ * Hand-maintained except for the generated Codex context-window mapping.
+ * Adding a new entry is typically the answer when a provider has a quirk
+ * models.dev's catalog can't express.
  */
 
 import type { ModelProvider } from "../types.ts"
 import type { ModelCatalog } from "./catalog.ts"
+
+// start:codex-models
+const codexModels: Record<string, number> = {
+  "codex-auto-review": 272_000,
+  "gpt-5.6-luna": 272_000,
+  "gpt-5.6-sol": 272_000,
+  "gpt-5.6-terra": 272_000,
+  "gpt-6-astra": 272_000,
+  "gpt-6-luna": 272_000,
+  "gpt-6-sol": 272_000,
+  "gpt-6.1-sol": 500_000,
+  "gpt-6.1-terra": 500_000,
+  "gpt-reserve": 272_000,
+}
+// end:codex-models
 
 // oxlint-disable-next-line sort-keys
 export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined> = {
@@ -26,8 +42,8 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
   // Synthetic provider that clones the codex-family models from the
   // openai catalog and routes them at the chatgpt.com backend used by
   // codex CLI. Auth comes from `codexAuth` (PKCE, see `loginCodex`),
-  // not env. Clone rules are intentionally pattern-based so newly
-  // released codex variants get picked up automatically.
+  // not env. Available models and their context windows are generated
+  // from the Codex CLI cache by packages/agent/scripts/codex-models.ts.
   // oxlint-disable-next-line sort-keys
   "openai-codex": {
     id: "openai-codex",
@@ -44,31 +60,16 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
       sessionHeader: "session-id",
     },
     oauth: async () => import("../auth/openai-codex.ts").then((m) => m.codexOauth),
-    // The codex backend serves the codex-family models plus a curated
-    // set of mainline gpt-5.x reasoning models. Pattern catches future
-    // codex variants automatically; the explicit entries cover the
-    // dual-routed mainline models. New mainline GPT-5.x reasoning
-    // models would need to be added here as they release.
     models: async (catalog: ModelCatalog) => {
       const openai = catalog.provider("openai")
       if (!openai) return []
-      const want = new Set([
-        "gpt-6.1-sol",
-        "gpt-6-astra",
-        "gpt-6-sol",
-        "gpt-6-luna",
-        "gpt-5.6-sol",
-        "gpt-5.6-terra",
-        "gpt-5.6-luna",
-        "gpt-5.5",
-      ])
       return (
         (openai.models ?? [])
-          .filter((m) => want.has(m.id))
+          .filter((m) => Object.hasOwn(codexModels, m.id))
           // oxlint-disable-next-line oxc/no-map-spread
           .map((m) => ({
             ...m,
-            contextSize: Math.min(270_000, m.contextSize ?? 270_000), // codex backend has a 270k context limit
+            contextSize: codexModels[m.id],
           }))
       )
     },
