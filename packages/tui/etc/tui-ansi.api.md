@@ -13,6 +13,9 @@ export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefin
 // @public
 export function applyDefaultColors(text: string, fg: string, bg: string): string;
 
+// @public
+export function fileUrl(path: string, cwd?: string): string;
+
 // @internal
 export function hyperlink(url: string, text: string): string;
 

@@ -70,6 +70,7 @@ class AgentStream {
         toolCall({
           call,
           collapsed: memo(() => this.app.$.ui.collapsedTools.includes(call.name) || active()),
+          cwd: this.app.agent.ctx.cwd,
           pending: active,
           result,
         })
@@ -94,8 +95,8 @@ class AgentStream {
       const [pending, setPending] = signal(true)
       this.app.renderer.stream.append(() =>
         type === "text"
-          ? assistantMessage({ content, pending })
-          : reasoningMessage({ content, pending })
+          ? assistantMessage({ content, cwd: this.app.agent.ctx.cwd, pending })
+          : reasoningMessage({ content, cwd: this.app.agent.ctx.cwd, pending })
       )
       active = { setContent, setPending, type }
       this.active = active
@@ -104,7 +105,7 @@ class AgentStream {
   }
 
   onPending(messages: readonly Message[]): void {
-    for (const mf of messageWidgets(messages, this.app, { pending: true })) {
+    for (const mf of messageWidgets(messages, this.app, { cwd: this.app.agent.ctx.cwd, pending: true })) {
       if (mf.setPending)
         this.#pending.set(mf.id, {
           setMessage: mf.setMessage,

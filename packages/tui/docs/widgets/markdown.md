@@ -27,12 +27,23 @@ const ok = true
 
 ## State
 
-| field                    | type        | default | description                                                                      |
-| ------------------------ | ----------- | ------- | -------------------------------------------------------------------------------- |
-| `content`                | `string`    | —       | Markdown source. Mutating this field re-renders (useful for streamed tokens).    |
-| `options`                | `MdOptions` | —       | Parser flags passed through to `renderMarkdown`. Mirrors `Bun.markdown.Options`. |
-| `syntax`                 | `boolean`   | `true`  | Enable shiki-backed syntax highlighting for fenced code blocks.                  |
-| `wrap`, `width`, `fg`, … | —           | —       | [`text`](./text) style fields flow through.                                      |
+| field                    | type               | default         | description                                                                      |
+| ------------------------ | ------------------ | --------------- | -------------------------------------------------------------------------------- |
+| `content`                | `string`           | —               | Markdown source. Mutating this field re-renders (useful for streamed tokens).    |
+| `cwd`                    | `Reactive<string>` | `process.cwd()` | Base directory for relative file links.                                          |
+| `options`                | `MdOptions`        | —               | Parser flags passed through to `renderMarkdown`. Mirrors `Bun.markdown.Options`. |
+| `syntax`                 | `boolean`          | `true`          | Enable shiki-backed syntax highlighting for fenced code blocks.                  |
+| `wrap`, `width`, `fg`, … | —                  | —               | [`text`](./text) style fields flow through.                                      |
+
+## File links
+
+Relative Markdown links resolve against `cwd` and become absolute, encoded `file://` URIs with the originating hostname. Set `cwd` to the source document's directory when rendering a file, or the agent's working directory for chat messages:
+
+```ts
+markdown({ content: "[Guide](docs/guide.md)", cwd: "/path/to/project" })
+```
+
+Existing URI schemes and fragment-only references are preserved. The same `cwd` option is available on `MarkdownCtx` for direct renderer use. The low-level `hyperlink()` formatter still accepts URIs unchanged; use `fileUrl(path, cwd)` from `@zaly/tui/ansi` for literal filesystem paths.
 
 ## Themed elements
 

@@ -110,6 +110,7 @@ export async function listProviders(app: App): Promise<void> {
 }
 
 type AuthProps = {
+  cwd?: string
   details: Accessor<string>
   prompt: Accessor<string | undefined>
   onSubmit?: (value?: string) => void
@@ -131,7 +132,7 @@ function authOverlay(props: AuthProps) {
       x: 0.5,
       y: 0.5,
     },
-    box({ padding: [0, 1] }, markdown(props.details)),
+    box({ padding: [0, 1] }, markdown(props.details, { cwd: props.cwd })),
     show({ when: memo(() => props.prompt() !== undefined) }, () => [
       divider(),
       box(
@@ -171,8 +172,11 @@ export async function login(app: App, provider?: ModelProvider): Promise<void> {
   const ac = new AbortController()
   let submit: PromiseWithResolvers<string | undefined> | undefined
 
+  const session = await app.ctx.session()
+  const cwd = session.settings.cwd ?? app.ctx.flags.cwd
   const node = app.renderer.overlay.add(() =>
     authOverlay({
+      cwd,
       details,
       onSubmit: (value) => submit?.resolve(value),
       prompt,

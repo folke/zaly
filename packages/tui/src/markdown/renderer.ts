@@ -8,6 +8,8 @@ export type MarkdownOptions = MdOptions & {
 }
 
 export type MarkdownCtx = RenderCtx & {
+  /** Base directory for relative file links. Defaults to process.cwd(). */
+  cwd?: string
   images?: boolean
   highlight?: (code: string, lang?: string) => string
 }

@@ -14,6 +14,7 @@ import { toolRenderer } from "./tools/registry.ts"
 
 export type ToolCallProps = {
   call: ToolCallPart
+  cwd?: string
   result: Reactive<ToolResult | undefined>
   pending?: Accessor<boolean>
   collapsed?: Reactive<boolean>
@@ -53,7 +54,7 @@ export const toolCall = widget((props: ToolCallProps) => {
     { pending: props.pending, type: status },
     box(
       { flexDirection: "column" },
-      renderer.call({ call, params, result: props.result }),
+      renderer.call({ call, cwd: props.cwd, params, result: props.result }),
       // Optional description, dimmed
       desc ? text(({ style }) => style.dim(desc)) : undefined,
       show(
@@ -61,12 +62,13 @@ export const toolCall = widget((props: ToolCallProps) => {
           use: () =>
             log({
               content: memo(() => unwrap(props.result)?.error?.message ?? "Unknown error"),
+              cwd: props.cwd,
               level: "error",
             }),
           when: isError,
         },
         {
-          use: () => renderer.result({ call, params, result: props.result }),
+          use: () => renderer.result({ call, cwd: props.cwd, params, result: props.result }),
           when: showResult,
         }
       )

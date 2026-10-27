@@ -1,6 +1,9 @@
 import { hasAnsi, RESET, splitAnsi } from "@zaly/shared/ansi"
+import { hostname } from "node:os"
+import { resolve } from "node:path"
+import { pathToFileURL } from "node:url"
 import { describe, expect, test } from "vitest"
-import { applyDefaultColors, hyperlink, stripAnsiBg } from "../../src/style/ansi.ts"
+import { applyDefaultColors, fileUrl, hyperlink, stripAnsiBg } from "../../src/style/ansi.ts"
 import { openStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 
@@ -194,6 +197,25 @@ describe("hyperlink (OSC 8)", () => {
 
   test("empty URL: returns text unchanged (no-op)", () => {
     expect(hyperlink("", "text")).toBe("text")
+  })
+})
+
+describe("fileUrl", () => {
+  test("resolves relative paths and encodes literal filename characters", () => {
+    const cwd = resolve("project")
+    const path = "docs/a #? 100% 中文.md"
+    const expected = pathToFileURL(resolve(cwd, path))
+    expected.hostname = hostname()
+    expect(fileUrl(path, cwd)).toBe(expected.href)
+    const url = new URL(fileUrl(path, cwd))
+    expect(url.hostname).toBe(hostname().toLowerCase())
+    expect(url.pathname).toContain("a%20%23%3F%20100%25%20")
+  })
+
+  test("defaults to process cwd and keeps absolute paths independent of the base", () => {
+    expect(fileUrl("README.md")).toBe(fileUrl(resolve("README.md")))
+    const path = resolve("README.md")
+    expect(fileUrl(path, resolve("elsewhere"))).toBe(fileUrl(path))
   })
 })
 

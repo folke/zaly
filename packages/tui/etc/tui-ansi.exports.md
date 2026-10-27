@@ -1,10 +1,11 @@
-# @zaly/tui/ansi (10)
+# @zaly/tui/ansi (11)
 
-## Functions (8)
+## Functions (9)
 
 - ansiBg
 - ansiColor
 - applyDefaultColors
+- fileUrl
 - hyperlink
 - openAnsi
 - reapplyStyle

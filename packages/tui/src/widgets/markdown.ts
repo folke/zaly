@@ -1,5 +1,5 @@
 import type { RenderCtx } from "../core/ctx.ts"
-import type { Accessor } from "../core/reactive.ts"
+import type { Accessor, Reactive } from "../core/reactive.ts"
 import type { State } from "../core/state.ts"
 import type { WrapMode } from "../layout/text.ts"
 import type { MarkdownRenderer } from "../markdown/renderer.ts"
@@ -24,6 +24,8 @@ export interface MarkdownState {
    *  pass `signal()` / `memo()` for streaming content that re-parses on
    *  each render and subscribes the node to the signal. */
   content: TextContent
+  /** Base directory for relative file links. Defaults to process.cwd(). */
+  cwd?: Reactive<string>
   /** Options forwarded to `renderMarkdown`. */
   options?: MdOptions
   /**
@@ -133,6 +135,7 @@ export class Markdown extends Node<MarkdownState> {
 
       formatted = await this.#renderer.render(source, {
         ...ctx,
+        cwd: unwrap(this.state.cwd),
         highlight: (code, lang) => this.#highlight(code, lang, shikiTheme(ctx.style.theme)),
         images: unwrap(this.#images) ?? true,
       })

@@ -40,7 +40,7 @@ export class MessageComposer implements ComposerPlugin {
     const { isAttachment, toParts } = await import("@zaly/ai")
     const { image } = await import("@zaly/tui/widgets/image")
     const { text } = await import("@zaly/tui/widgets/text")
-    const { hyperlink } = await import("@zaly/tui/ansi")
+    const { fileUrl, hyperlink } = await import("@zaly/tui/ansi")
 
     const attachments = toParts(m.content).filter((p) => isAttachment(p))
 
@@ -49,7 +49,8 @@ export class MessageComposer implements ComposerPlugin {
       if (info.type === "image") {
         children.push(box({ padding: [1, 0, 0, 0] }, image({ alt: info.name, src: info.src })))
       } else {
-        const link = info.source.type === "base64" ? info.name : hyperlink(info.src, info.name)
+        const url = info.source.type === "file" ? fileUrl(info.src, ctx.cwd) : info.src
+        const link = info.source.type === "base64" ? info.name : hyperlink(url, info.name)
         children.push(text(({ style }) => style.dim(`📄 ${link}`)))
       }
     }

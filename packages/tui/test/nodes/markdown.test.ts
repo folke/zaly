@@ -1,4 +1,5 @@
 import { RESET, stringWidth } from "@zaly/shared/ansi"
+import { resolve } from "node:path"
 // oxlint-disable unicorn/no-await-expression-member
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest"
 import { renderMarkdown } from "#md"
@@ -9,6 +10,7 @@ import { TerminalQueries } from "../../src/input/queries.ts"
 import { InputRouter } from "../../src/input/router.ts"
 import { createCallbacks } from "../../src/markdown/callbacks.ts"
 import { createImageCallback } from "../../src/markdown/image.ts"
+import { fileUrl } from "../../src/style/ansi.ts"
 import { openStyle, resolveStyle } from "../../src/style/style.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { markdown } from "../../src/widgets/markdown.ts"
@@ -50,8 +52,8 @@ function mountMarkdown<T extends ReturnType<typeof markdown>>(
   return node
 }
 
-function render(md: string, width = 80): string {
-  return renderMarkdown(md, createCallbacks(ctx(width)))
+function render(md: string, width = 80, cwd?: string): string {
+  return renderMarkdown(md, createCallbacks({ ...ctx(width), cwd }))
 }
 
 function expectedOpen(slot: string): string {
@@ -74,6 +76,47 @@ const fakeHighlighter = (code: string) => `\x1b[33m${code}\x1b[0m`
 // Shiki returns the input unchanged when a language isn't recognized;
 // `tryHighlight` then falls through to plain styling.
 const passthroughHighlighter = (code: string) => code
+
+describe("markdown — file links", () => {
+  test("relative links resolve against cwd while preserving fragments and URL encoding", () => {
+    const cwd = resolve("project with spaces")
+    const out = render("[source](docs/a%20b%23c.md#L42)", 80, cwd)
+    expect(out).toContain(`\x1b]8;;${fileUrl("docs/a b#c.md", cwd)}#L42\x1b\\`)
+  })
+
+  test("absolute file paths are independent of cwd", () => {
+    const path = resolve("absolute-source.md")
+    const out = render(`[source](${path.replaceAll("\\", "/")})`, 80, resolve("elsewhere"))
+    expect(out).toContain(`\x1b]8;;${fileUrl(path)}\x1b\\`)
+  })
+
+  test("relative links default to process cwd", () => {
+    expect(render("[source](README.md)")).toContain(`\x1b]8;;${fileUrl("README.md")}\x1b\\`)
+  })
+
+  test.each([
+    "https://example.com/a",
+    "mailto:me@example.com",
+    "vscode://file/tmp/test.ts:42",
+    "file:///tmp/a.md",
+    "#section",
+    "//example.com/a",
+  ])("preserves existing URI or reference %s", (href) => {
+    expect(render(`[link](${href})`)).toContain(`\x1b]8;;${href}\x1b\\`)
+  })
+
+  test("the widget passes cwd through and responds to changes", async () => {
+    const cwd = resolve("first-project")
+    const node = markdown({ content: "[source](README.md)", cwd })
+    const first = await node.render(ctx())
+    expect(first.join("\n")).toContain(fileUrl("README.md", cwd))
+    const secondCwd = resolve("second-project")
+    node.state.cwd = secondCwd
+    const second = await node.render(ctx())
+    expect(second.join("\n")).toContain(fileUrl("README.md", secondCwd))
+    expect(second.join("\n")).not.toContain(fileUrl("README.md", cwd))
+  })
+})
 
 describe("markdown — CJK wrapping", () => {
   test.each(["", "1. "])(

@@ -104,12 +104,12 @@ export class FilesComposer implements ComposerPlugin {
     if (refs.length === 0) return []
 
     const { text } = await import("@zaly/tui/widgets/text")
-    const { hyperlink } = await import("@zaly/tui/ansi")
+    const { fileUrl, hyperlink } = await import("@zaly/tui/ansi")
     const children: Node[] = []
 
     for (let i = 0; i < refs.length; i++) {
       const ref = refs[i]
-      const link = hyperlink(ref.path, ref.ref)
+      const link = hyperlink(fileUrl(ref.path, ctx.cwd), ref.ref)
       const prefix = i === refs.length - 1 ? "└╴" : "├╴"
       children.push(
         text(

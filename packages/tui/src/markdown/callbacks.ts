@@ -4,7 +4,7 @@ import type { MdCallbacks } from "./types.ts"
 
 import { stringWidth } from "@zaly/shared/ansi"
 import { capitalize } from "../layout/text.ts"
-import { hyperlink } from "../style/ansi.ts"
+import { fileUrl, hyperlink } from "../style/ansi.ts"
 import { createCodeCallback } from "./code.ts"
 import { createListCallbacks } from "./list.ts"
 import { createTableCallbacks } from "./table.ts"
@@ -77,7 +77,16 @@ export function createCallbacks(ctx: MarkdownCtx): MdCallbacks {
 
     html: (children) => children,
 
-    link: (children, { href }) => hyperlink(href, s.mdLink(children)),
+    link: (children, { href }) => {
+      let url = href
+      if (process.platform === "win32" && /^[a-z]:[\\/]/i.test(href)) {
+        url = fileUrl(href, ctx.cwd)
+      } else if (!/^(?:[a-z][a-z\d+.-]*:|\/\/|#|$)/i.test(href)) {
+        const base = fileUrl(".", ctx.cwd)
+        url = new URL(href, base.endsWith("/") ? base : `${base}/`).href
+      }
+      return hyperlink(url, s.mdLink(children))
+    },
 
     paragraph: (children) => `${children}\n\n`,
 

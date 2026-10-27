@@ -11,8 +11,21 @@ export async function replay(session: Session, app: App) {
   const messages = session.messages.filter((m) => !m.hidden).slice(-REPLAY_LIMIT)
   if (messages.length === 0) return
 
+  // A resumed session may contain messages from several working directories.
+  const directories = new Map(
+    await Promise.all(
+      messages.map(async (message) => {
+        const node = message.id ? await session.node(message.id) : undefined
+        return [message.id, node?.settings.cwd] as const
+      })
+    )
+  )
+
   // Match tool calls to results before splitting; the boundary can fall between them.
-  const entries = messageWidgets(messages, app, { pending: true })
+  const entries = messageWidgets(messages, app, {
+    cwd: (message) => directories.get(message.id) ?? session.settings.cwd ?? app.ctx.flags.cwd,
+    pending: true,
+  })
   const tailIds = new Set(messages.slice(-STICKY_TAIL).map((m) => m.id))
   const tail = entries.filter((m) => tailIds.has(m.id))
   const tailWidgets = tail.flatMap(({ widgets }) => widgets)

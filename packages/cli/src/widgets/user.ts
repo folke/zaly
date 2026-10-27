@@ -19,6 +19,7 @@ export const userMessage = widget(
     message: Reactive<Message<"user">>
     pending?: Accessor<boolean>
     composer?: Composer
+    cwd?: string
   }) => {
     const { composer, message } = props
     const children = createRef<Box>()
@@ -32,17 +33,17 @@ export const userMessage = widget(
         const m = unwrap(message)
         const content = justText(m.content)
         if (!composer || !style) return content
-        const nodes = await composer.render(content, { message: m, style })
+        const nodes = await composer.render(content, { cwd: props.cwd, message: m, style })
         const childBox = children()
         childBox.splice(1, childBox.children.length - 1, ...nodes)
-        return await composer.format(content, { message: m, style })
+        return await composer.format(content, { cwd: props.cwd, message: m, style })
       },
       { initialValue: justText(unwrap(message).content) }
     )
 
     return bubble(
       { childrenBox: children, pending: props.pending, type: "user" },
-      isMd ? markdown(formatted) : text(formatted)
+      isMd ? markdown(formatted, { cwd: props.cwd }) : text(formatted)
     )
   }
 )

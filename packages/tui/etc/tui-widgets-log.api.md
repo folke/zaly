@@ -22,6 +22,7 @@ export interface LogState {
     color?: Color<false>;
     // (undocumented)
     content: TextContent;
+    cwd?: string;
     icon?: string;
     // (undocumented)
     level: LogLevel;

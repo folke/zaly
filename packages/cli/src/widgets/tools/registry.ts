@@ -25,6 +25,7 @@ import { writeRenderer } from "./write.ts"
  * a code block, diff, or whatever fits the tool's output shape.
  */
 export interface ToolResultCtx<T extends Tool = Tool> {
+  cwd?: string
   params?: Partial<ParamsOf<T>>
   call: ToolCallPart<T["name"], ParamsOf<T>>
   /** Reactive — `undefined` while in flight, then the resolved

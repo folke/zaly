@@ -23,13 +23,16 @@ export function stripReasoningMarkers(text: string): string {
 }
 
 export const reasoningMessage = widget(
-  (props: { content: Reactive<string>; pending?: Accessor<boolean> }) =>
+  (props: { content: Reactive<string>; cwd?: string; pending?: Accessor<boolean> }) =>
     bubble(
       {
         pending: props.pending,
         style: "quiet",
         type: "reasoning",
       },
-      markdown(memo(() => stripReasoningMarkers(unwrap(props.content))))
+      markdown(
+        memo(() => stripReasoningMarkers(unwrap(props.content))),
+        { cwd: props.cwd }
+      )
     )
 )

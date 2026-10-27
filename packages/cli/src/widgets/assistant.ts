@@ -8,6 +8,9 @@ import { bubble } from "./bubble.ts"
  *  (signal accessor) so deltas re-render the markdown body in place;
  *  resumed messages pass a plain string. Both flow through `markdown`. */
 export const assistantMessage = widget(
-  (props: { content: Reactive<string>; pending?: Accessor<boolean> }) =>
-    bubble({ pending: props.pending, type: "assistant" }, markdown(props.content))
+  (props: { content: Reactive<string>; cwd?: string; pending?: Accessor<boolean> }) =>
+    bubble(
+      { pending: props.pending, type: "assistant" },
+      markdown(props.content, { cwd: props.cwd })
+    )
 )

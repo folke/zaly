@@ -17,12 +17,15 @@ export type MessageWidgets = {
   setMessage?: Setter<Message<"user">>
 }
 
-export type MessageWidgetsOpts = {}
+export type MessageWidgetsOpts = {
+  cwd?: string | ((message: Message) => string | undefined)
+  pending?: boolean
+}
 
 export function messageWidgets(
   messages: readonly Message[],
   app: App,
-  opts: { pending?: boolean } = {}
+  opts: MessageWidgetsOpts = {}
 ): MessageWidgets[] {
   const reasoning = app.$.ui.reasoning
   const collapsed = new Set(app.$.ui.collapsedTools)
@@ -39,6 +42,7 @@ export function messageWidgets(
   for (const m of messages) {
     if (m.hidden) continue
     m.id ??= uuidv7()
+    const cwd = typeof opts.cwd === "function" ? opts.cwd(m) : opts.cwd
     const [pending, setPending] = opts.pending ? signal(true) : []
     if (m.role === "user") {
       const [message, setMessage] = signal<Message<"user">>(m)
@@ -50,6 +54,7 @@ export function messageWidgets(
           () =>
             userMessage({
               composer: app.composer,
+              cwd,
               message,
               pending,
             }),
@@ -59,14 +64,15 @@ export function messageWidgets(
       const widgets = toParts(m.content)
         .map((part) => {
           if (part.type === "text" && part.text !== "")
-            return () => assistantMessage({ content: part.text, pending })
+            return () => assistantMessage({ content: part.text, cwd, pending })
           else if (part.type === "reasoning" && part.text !== "" && reasoning)
-            return () => reasoningMessage({ content: part.text, pending })
+            return () => reasoningMessage({ content: part.text, cwd, pending })
           else if (part.type === "tool-call") {
             return () =>
               toolCall({
                 call: part,
                 collapsed: collapsed.has(part.name),
+                cwd,
                 pending,
                 result: results.get(part.id),
               })

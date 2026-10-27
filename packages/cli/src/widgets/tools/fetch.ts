@@ -50,9 +50,13 @@ export const fetchRenderer: ToolRenderer<FetchTool> = {
       const lang = format === "plain" ? undefined : format
       return box(
         {},
-        show({ when: link }, () => markdown(link)),
-        show({ when: error }, () => log({ content: () => error() ?? "", level: "error" })),
-        show({ when: warning }, () => log({ content: () => warning() ?? "", level: "warn" })),
+        show({ when: link }, () => markdown(link, { cwd: props.cwd })),
+        show({ when: error }, () =>
+          log({ content: () => error() ?? "", cwd: props.cwd, level: "error" })
+        ),
+        show({ when: warning }, () =>
+          log({ content: () => warning() ?? "", cwd: props.cwd, level: "warn" })
+        ),
         show({ when: content }, () =>
           code({
             code: content,

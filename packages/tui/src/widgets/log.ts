@@ -17,6 +17,8 @@ export type LogStyle = "badge" | "icon" | "prompt" | "title" | "text" | "notif"
 export interface LogState {
   level: LogLevel
   content: TextContent
+  /** Base directory for relative links in Markdown content. */
+  cwd?: string
   title?: string
   /** Rendering of the per-level prefix chunk. Defaults by level. */
   style?: LogStyle
@@ -116,7 +118,9 @@ export const log = widget((state: State<LogState>, ...children: Node[]) => {
   } as const
   if (state.content !== "") {
     children = [
-      (state.markdown ?? true) ? markdown(state.content, style) : text(state.content, style),
+      (state.markdown ?? true)
+        ? markdown(state.content, { ...style, cwd: state.cwd })
+        : text(state.content, style),
       ...children,
     ]
   }

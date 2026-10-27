@@ -22,6 +22,7 @@ export type FileRef = {
 }
 
 export type ComposerCtx = {
+  cwd?: string
   value: string
   app: App
   input: Input
@@ -121,7 +122,7 @@ export class Composer {
 
   async format(
     value: string,
-    opts: { style: StyleBuilder; message?: Message<"user"> }
+    opts: { cwd?: string; style: StyleBuilder; message?: Message<"user"> }
   ): Promise<string> {
     const ctx = this.ctx({ value, ...opts })
     for (const plugin of this.plugins("format", ctx)) {
@@ -147,7 +148,7 @@ export class Composer {
 
   async render(
     value: string,
-    opts: { style: StyleBuilder; message: Message<"user"> }
+    opts: { cwd?: string; style: StyleBuilder; message: Message<"user"> }
   ): Promise<Node[]> {
     const ctx = this.ctx({ value, ...opts })
     const nodes: Node[] = []

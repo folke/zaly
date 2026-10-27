@@ -33,6 +33,7 @@ export function markdown(state: State<MarkdownState>): Markdown;
 // @public (undocumented)
 export interface MarkdownState {
     content: TextContent;
+    cwd?: Reactive<string>;
     options?: MdOptions;
     // (undocumented)
     style?: AnyStyle;

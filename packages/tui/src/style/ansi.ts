@@ -2,6 +2,9 @@ import type { AnsiColor, AnsiStyle } from "./types.ts"
 
 import { sliceAnsi } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
+import { hostname } from "node:os"
+import { resolve } from "pathe"
+import { pathToFileURL } from "node:url"
 import { isHexColor, parseHex, toHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;
@@ -77,6 +80,13 @@ const colorCache = new Map<string, string | typeof notFound>()
 export function hyperlink(url: string, text: string): string {
   if (url === "") return text
   return `${OSC8}${url}${ST}${text}${OSC8}${ST}`
+}
+
+/** Absolute, encoded file URI for terminal links, including the originating hostname. */
+export function fileUrl(path: string, cwd = process.cwd()): string {
+  const url = pathToFileURL(resolve(cwd, path))
+  if (!url.hostname) url.hostname = hostname()
+  return url.href
 }
 
 export function ansiColor(color: AnsiColor, kind: "fg" | "bg"): string | undefined {

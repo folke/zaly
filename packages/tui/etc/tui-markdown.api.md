@@ -15,6 +15,7 @@ import { TryResult } from '@zaly/shared/logger';
 
 // @public (undocumented)
 export type MarkdownCtx = RenderCtx & {
+    cwd?: string;
     images?: boolean;
     highlight?: (code: string, lang?: string) => string;
 };
