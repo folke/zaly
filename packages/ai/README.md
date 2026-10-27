@@ -46,6 +46,20 @@ const result = await runTool(add, { a: 1, b: 2 })
 
 For the multi-turn agent loop, see [`@zaly/agent`](../agent).
 
+## Updating Codex model metadata
+
+From the repository root, explicitly choose a source:
+
+```sh
+bun packages/ai/scripts/codex-models.ts --source local
+bun packages/ai/scripts/codex-models.ts --source github
+```
+
+`local` reads `~/.codex/models_cache.json` (refresh it using `/models` in Codex).
+`github` fetches OpenAI's checked-in metadata, which may lag behind the live backend.
+Both update only the marked mapping in `src/models/overrides.ts`. This remains a
+manual operation, separate from the automated models.dev refresh.
+
 ## License
 
 MIT © Folke Lemaitre

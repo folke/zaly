@@ -43,7 +43,7 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
   // openai catalog and routes them at the chatgpt.com backend used by
   // codex CLI. Auth comes from `codexAuth` (PKCE, see `loginCodex`),
   // not env. Available models and their context windows are generated
-  // from the Codex CLI cache by packages/agent/scripts/codex-models.ts.
+  // by packages/ai/scripts/codex-models.ts (--source local|github).
   // oxlint-disable-next-line sort-keys
   "openai-codex": {
     id: "openai-codex",
