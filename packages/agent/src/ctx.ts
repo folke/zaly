@@ -9,6 +9,7 @@ import type { Skills } from "./skills.ts"
 import type { Swarm } from "./swarm.ts"
 import type { AgentOptions } from "./types.ts"
 
+import { resolveReasoning } from "@zaly/ai"
 import { Emitter, isInstance, normPath } from "@zaly/shared"
 import { LazyCache } from "@zaly/shared/cache"
 
@@ -45,7 +46,7 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     super()
     this.#opts = opts
     this.#cwd = normPath(opts.cwd)
-    this.#reasoning = opts.request?.reasoning?.effort ?? "medium"
+    this.#reasoning = opts.request?.reasoning ?? "medium"
     this.#session = opts.session
     this.#model = opts.model
     this.#skills = opts.skills
@@ -125,15 +126,18 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     return this.#agent
   }
 
-  get reasoning() {
-    return this.#reasoning
+  get reasoning(): ReasoningEffort {
+    return this.#model
+      ? (resolveReasoning(this.#model.spec, this.#reasoning) ?? "off")
+      : this.#reasoning
   }
 
   set reasoning(r: ReasoningEffort) {
     if (r === this.#reasoning) return
-    const prev = this.#reasoning
+    const prev = this.reasoning
     this.#reasoning = r
-    void this.emit("reasoning", { effort: r, prev })
+    const effort = this.reasoning
+    if (effort !== prev) void this.emit("reasoning", { effort, prev })
   }
 
   get session(): Session {
@@ -170,8 +174,11 @@ export class AgentContext extends Emitter<AgentContextEvents> {
   set model(m: Model | undefined) {
     if (m === this.#model) return
     const prev = this.#model
+    const reasoning = this.reasoning
     this.#model = m
     void this.emit("model", { model: m, prev })
+    if (this.reasoning !== reasoning)
+      void this.emit("reasoning", { effort: this.reasoning, prev: reasoning })
   }
 
   set tools(tools: Tool[]) {

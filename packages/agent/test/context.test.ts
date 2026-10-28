@@ -1,4 +1,4 @@
-import type { Message, Tool } from "@zaly/ai"
+import type { Message, ModelSpec, Tool } from "@zaly/ai"
 
 import { describe, expect, test } from "vitest"
 import { ContextScoring } from "../src/context/scoring.ts"
@@ -12,7 +12,78 @@ const assistant = (content: Message<"assistant">["content"]): Message<"assistant
 })
 const tool = (content: Message<"tool">["content"]): Message<"tool"> => ({ content, role: "tool" })
 
+function model(name = "gpt-6.1-sol"): ModelSpec {
+  return {
+    id: `openai/${name}`,
+    input: ["text", "image"],
+    model: name,
+    name,
+    api: "openai-responses",
+    provider: { id: "openai", name: "OpenAI" },
+    contextSize: 500_000,
+    maxTokens: 16_000,
+    reasoning: true,
+  }
+}
+
 describe("tokenStats", () => {
+  test("signed reasoning uses recorded usage, not just its visible summary or ciphertext length", () => {
+    const m: Message<"assistant"> = {
+      role: "assistant",
+      content: [{ type: "reasoning", text: "short summary", signature: "opaque".repeat(10_000) }],
+      meta: { modelId: model().id, usage: { input: 10, output: 500, reasoning: 496 } },
+    }
+    const stats = tokenStats([m], { model: model() })
+    expect(stats.tokens).toBe(496)
+    expect(stats.children?.get("assistant")?.children?.get("reasoning")?.tokens).toBe(496)
+    expect(tokenStats([m], { model: model("gpt-6-astra") }).tokens).toBe(0)
+    expect(tokenStats([m], { model: model(), reasoning: false }).tokens).toBe(0)
+  })
+
+  test("recorded reasoning is attributed once across multiple signed blocks", () => {
+    const m: Message<"assistant"> = {
+      role: "assistant",
+      content: [
+        { type: "reasoning", text: "first", signature: "one" },
+        { type: "reasoning", text: "second", signature: "two" },
+      ],
+      meta: { usage: { input: 0, output: 100, reasoning: 100 } },
+    }
+    expect(tokenStats([m]).tokens).toBe(100)
+    const unsigned: Message<"assistant"> = {
+      role: "assistant",
+      content: [{ type: "reasoning", text: "short summary" }],
+      meta: m.meta,
+    }
+    expect(tokenStats([unsigned]).tokens).toBe(4)
+  })
+
+  test("reasoning estimation uses the same effective off policy as request translation", () => {
+    const selected = model()
+    selected.reasoning_options = [{ type: "effort", values: ["low", "medium", "high"] }]
+    const messages: Message[] = [
+      {
+        role: "assistant",
+        content: [{ type: "reasoning", text: "summary", signature: "signed" }],
+        meta: { modelId: selected.id, usage: { input: 1, output: 100, reasoning: 100 } },
+      },
+    ]
+    expect(tokenStats(messages, { model: selected, reasoning: "off" }).tokens).toBe(100)
+    selected.reasoning_options = [
+      { type: "toggle" },
+      { type: "effort", values: ["low", "medium", "high"] },
+    ]
+    expect(tokenStats(messages, { model: selected, reasoning: "off" }).tokens).toBe(0)
+  })
+
+  test("tool descriptions count even when no system prompt is supplied", () => {
+    const short = { name: "test", params: {} } as Tool
+    const long = { ...short, desc: "word ".repeat(100) }
+    const a = tokenStats([], { tools: [short] }).tokens
+    const b = tokenStats([], { tools: [long] }).tokens
+    expect(b - a).toBe(125)
+  })
+
   test("estimates text, tool calls, tool results, attachments, meta, and errors", () => {
     const stats = tokenStats(
       [

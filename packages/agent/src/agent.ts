@@ -515,7 +515,7 @@ export class Agent extends Emitter<AgentEvents> {
         }
       },
       onUpdate: this.#opts.onUpdate,
-      reasoning: { ...base.reasoning, effort: this.#ctx.reasoning },
+      reasoning: this.#ctx.reasoning,
       signal: this.#abortController?.signal,
     }
   }

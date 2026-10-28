@@ -544,7 +544,7 @@ describe("openai: request translation", () => {
         streamReq({
           messages: [{ content: "x", role: "user" }],
           model: "gpt-5",
-          reasoning: { effort: "high" },
+          reasoning: "high",
         })
       )
     )
@@ -559,7 +559,7 @@ describe("openai: request translation", () => {
         streamReq({
           messages: [{ content: "x", role: "user" }],
           model: "gpt-5",
-          reasoning: { effort: "off" },
+          reasoning: "off",
         })
       )
     )
@@ -574,7 +574,7 @@ describe("openai: request translation", () => {
         streamReq({
           messages: [{ content: "x", role: "user" }],
           model: "gpt-5",
-          reasoning: { effort: "xhigh" },
+          reasoning: "xhigh",
         })
       )
     )

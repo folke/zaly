@@ -321,6 +321,7 @@ function toModelInfo(m: CatalogModel, pid: string): ModelInfo {
     open_weights: m.open_weights,
     output: m.modalities.output,
     reasoning: m.reasoning ?? false,
+    reasoning_options: m.reasoning_options,
     release_date: m.release_date,
   }
 }

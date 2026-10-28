@@ -36,9 +36,11 @@ export async function contextTree(app: App) {
   const collapsed = new Set<string>(["tool-result", "compaction-summary", "user-tool-use", "task"])
   const expand = (c: TokenCount) => !collapsed.has(c.type) && !(c.kind && collapsed.has(c.kind))
 
-  const all = tokenStats(app.agent.messages, { expand, prompt, tools })
+  const estimate = { model: model.spec, reasoning: app.agent.ctx.reasoning }
+  const all = tokenStats(app.agent.messages, { ...estimate, expand, prompt, tools })
   const effective = masker?.enabled
     ? tokenStats(await masker.mask(app.agent.messages), {
+        ...estimate,
         expand,
         prompt,
         tools,

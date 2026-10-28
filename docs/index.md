@@ -35,7 +35,7 @@ Inside zaly
 ```text
 /login
 /model
-/effort
+/reasoning
 ```
 
 </div>

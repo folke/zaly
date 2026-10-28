@@ -1,10 +1,10 @@
 import type { AuthManager } from "../src/index.ts"
-import type { ModelCatalog } from "../src/models/catalog.ts"
 import type { ModelInfo, ModelProvider, ModelSpec } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { getModel, loadCatalog, parseModelId, resolveModels, toModelSpec } from "../src/index.ts"
 import { modelCollection } from "../src/model.ts"
+import { ModelCatalog } from "../src/models/catalog.ts"
 import { filterModel } from "../src/models/filter.ts"
 import { builtinOverrides } from "../src/models/overrides.ts"
 
@@ -33,6 +33,32 @@ const customProvider = (overrides: Partial<ModelSpec> = {}): ModelProvider => {
     models: [customModel({ ...overrides, id: model })],
   }
 }
+
+test("models.dev reasoning options survive catalog import and spec resolution", async () => {
+  const reasoning_options = [
+    { type: "effort" as const, values: ["low" as const, "medium" as const, "high" as const] },
+  ]
+  const catalog = await ModelCatalog.load({
+    anthropic: {
+      id: "anthropic",
+      name: "Anthropic",
+      npm: "@ai-sdk/anthropic",
+      doc: "https://example.com/models",
+      models: {
+        test: {
+          id: "test",
+          name: "Test",
+          modalities: { input: ["text"], output: ["text"] },
+          reasoning: true,
+          reasoning_options,
+          tool_call: true,
+          limit: { context: 100_000, output: 4096 },
+        },
+      },
+    },
+  })
+  expect(catalog.get("anthropic/test")?.reasoning_options).toEqual(reasoning_options)
+})
 
 describe("addModels / getModel", () => {
   test("custom registration is retrievable", async () => {

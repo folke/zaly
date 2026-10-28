@@ -1,8 +1,9 @@
-import type { Message } from "@zaly/ai"
+import type { Message, ToolCallPart } from "@zaly/ai"
 import type { Agent } from "../src/agent.ts"
 
 import { describe, expect, test, vi } from "vitest"
 import { Masker } from "../src/masker.ts"
+import { mockModel } from "./helpers.ts"
 
 const user = (id: string, content: Message<"user">["content"]): Message<"user"> => ({
   content,
@@ -54,6 +55,29 @@ function fakeAgent(): FakeAgent {
 }
 
 describe("Masker", () => {
+  test("reasoning filtering for estimation never shifts original masking coordinates", async () => {
+    const agent = fakeAgent()
+    Object.assign(agent, { model: mockModel([]) })
+    agent.ctx.reasoning = "off"
+    const call: ToolCallPart = {
+      type: "tool-call",
+      id: "write",
+      name: "write",
+      params: { path: "file.ts", content: "large payload ".repeat(1000) },
+    }
+    const reasoning = { type: "reasoning", text: "summary", signature: "signed" } as const
+    const messages = [
+      assistant("a", [reasoning, call]),
+      tool("t", [{ type: "tool-result", id: "write", name: "write", content: "ok" }]),
+      assistant("tail", "done"),
+    ]
+    const masker = new Masker(agent, { keepTurns: 0, minTokens: 1, target: 0.5 })
+    const projected = await masker.mask(messages, { force: true, limit: 100 })
+    expect(projected[0].content[0]).toEqual(reasoning)
+    expect(projected[0].content[1]).toMatchObject({ type: "tool-call", params: { masked: true } })
+    expect(masker.isMasked("a", 0)).toBe(false)
+    expect(masker.isMasked("a", 1)).toBe(true)
+  })
   test("registers agent hooks and resets masks on session events", async () => {
     const agent = fakeAgent()
     const masker = new Masker(agent, { keepTurns: 0 })

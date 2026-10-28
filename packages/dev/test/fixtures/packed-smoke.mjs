@@ -6,9 +6,20 @@ import { join } from "node:path"
 const packages = ["shared", "ai", "tui", "config", "plugin", "agent"]
 for (const pkg of packages) await import(`@zaly/${pkg}`)
 
-const { loadCatalog } = await import("@zaly/ai")
+const { loadCatalog, reasoningLevels, resolveReasoning } = await import("@zaly/ai")
 const catalog = await loadCatalog()
 assert(Object.keys(catalog.$).length > 0, "Catalog asset is empty")
+assert(
+  catalog.provider("anthropic")?.models?.some((model) => model.reasoning_options?.length),
+  "Reasoning metadata is missing from the packed catalog"
+)
+const reasoningModel = {
+  id: "packed-test",
+  reasoning: true,
+  reasoning_options: [{ type: "effort", values: ["low", "medium", "high"] }],
+}
+assert.deepEqual(reasoningLevels(reasoningModel), ["low", "medium", "high"])
+assert.equal(resolveReasoning(reasoningModel, "off"), "low")
 
 const { loadTheme, themeRegistry } = await import("@zaly/tui/themes")
 for (const id of themeRegistry.keys()) {

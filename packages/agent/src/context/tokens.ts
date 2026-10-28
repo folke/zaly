@@ -1,7 +1,25 @@
-import type { AnyContent, AnyPart, AnyType, Attachment, Message, Tool } from "@zaly/ai"
+import type {
+  AnyPart,
+  AnyType,
+  Attachment,
+  Message,
+  ModelSpec,
+  ReasoningEffort,
+  ReasoningPart,
+  Tool,
+} from "@zaly/ai"
 import type { Prompt } from "../prompt/registry.ts"
 
-import { stringifyContent } from "@zaly/ai"
+import { resolveReasoning, stringifyContent } from "@zaly/ai"
+
+export type TokenContext = {
+  reasoning?: ReasoningEffort | boolean
+  model?: ModelSpec
+}
+
+export type MessageTokenContext = TokenContext & {
+  message?: Message
+}
 
 export type TokenCount = {
   type: AnyType | Message["role"] | "prompt" | "tool-schema" | "system-prompt"
@@ -36,9 +54,51 @@ function sumTokens(stats: TokenCount[]): number {
   return stats.reduce((sum, s) => sum + s.tokens, 0)
 }
 
-export function estimatePart(p: AnyPart): TokenCount {
+function estimateReasoning(part: ReasoningPart, ctx: MessageTokenContext): number {
+  let reasoning = ctx.reasoning
+  if (ctx.model) {
+    let requested: ReasoningEffort = "medium"
+    if (typeof reasoning === "string") requested = reasoning
+    else if (reasoning === false) requested = "off"
+    reasoning = resolveReasoning(ctx.model, requested)
+  }
+  const enabled =
+    reasoning !== "off" && reasoning !== false && (!ctx.model || ctx.model.reasoning === true)
+  if (!enabled) return 0
+
+  if (ctx.message?.role === "assistant") {
+    // Reasoning parts are for the same model?
+    if (ctx.model && ctx.message.meta?.modelId !== ctx.model.id) return 0
+
+    const parts = Array.isArray(ctx.message.content)
+      ? ctx.message.content.filter((p) => p.type === "reasoning")
+      : []
+
+    // Sanity check
+    if (!parts.includes(part)) throw new Error("Reasoning part not found in message content")
+
+    const signed = parts.filter((p) => p.signature)
+    const reported = ctx.message.meta?.usage?.reasoning
+
+    // If the reasoning part is signed, and the message has a reported reasoning token count,
+    // attribute the reported reasoning token count to the first signed reasoning part.
+    if (signed.length && reported !== undefined && Number.isFinite(reported) && reported >= 0) {
+      const first = signed.at(0)
+      if (part !== first) return 0
+      return reported
+    }
+  }
+
+  // If the reasoning part is not signed, or the message does not have a reported reasoning token count,
+  // estimate the token count based on the text length.
+  return fromText(part.text)
+}
+
+export function estimatePart(p: AnyPart, ctx: MessageTokenContext = {}): TokenCount {
   switch (p.type) {
-    case "reasoning":
+    case "reasoning": {
+      return { tokens: estimateReasoning(p, ctx), type: p.type }
+    }
     case "text": {
       return { tokens: fromText(p.text), type: p.type }
     }
@@ -50,7 +110,7 @@ export function estimatePart(p: AnyPart): TokenCount {
       }
     }
     case "tool-result": {
-      const children = estimateContent(p.content)
+      const children = estimateContent(p.content, ctx)
       return {
         children,
         kind: p.name,
@@ -65,7 +125,7 @@ export function estimatePart(p: AnyPart): TokenCount {
       return { tokens: ATTACHMENT_TOKENS[p.type], type: p.type }
     }
     case "meta": {
-      const children = p.content ? estimateContent(p.content) : undefined
+      const children = p.content ? estimateContent(p.content, ctx) : undefined
       return {
         children,
         kind: p.tag,
@@ -83,21 +143,24 @@ export function estimatePart(p: AnyPart): TokenCount {
   }
 }
 
-function estimateContent(content: AnyContent): TokenCount[] {
+function estimateContent(
+  content: string | readonly AnyPart[],
+  ctx: MessageTokenContext
+): TokenCount[] {
   if (typeof content === "string") return [{ tokens: fromText(content), type: "text" }]
   let tokens = 0
   const children: TokenCount[] = []
   for (const p of content) {
-    const partStats = estimatePart(p)
+    const partStats = estimatePart(p, ctx)
     tokens += partStats.tokens
     children.push(partStats)
   }
   return children
 }
 
-function estimateMessage(m: Message): TokenCount {
+function estimateMessage(m: Message, ctx: TokenContext): TokenCount {
   const type = m.role
-  const children = estimateContent(m.content)
+  const children = estimateContent(m.content, { ...ctx, message: m })
   const kind = m.role === "system" ? m.meta?.kind : undefined
   return {
     children,
@@ -116,7 +179,7 @@ function estimatePrompt(prompt: (string | Prompt<string>)[], tools?: Tool[]): To
   children.push(
     ...(tools?.map((t) => ({
       kind: t.name,
-      tokens: fromText(t.name) + fromText(JSON.stringify(t.params ?? {})),
+      tokens: fromText(t.name) + fromText(t.desc ?? "") + fromText(JSON.stringify(t.params ?? {})),
       type: "tool-schema" as const,
     })) ?? [])
   )
@@ -154,12 +217,12 @@ export function tokenStats(
     prompt?: (string | Prompt<string>)[]
     tools?: Tool[]
     expand?: (c: TokenCount) => boolean
-  } = {}
+  } & TokenContext = {}
 ): TokenStats {
   const root: TokenStats = { children: new Map(), count: 0, key: "TOTAL", tokens: 0 }
   const counts: TokenCount[] = []
-  if (opts.prompt) counts.push(estimatePrompt(opts.prompt, opts.tools))
-  counts.push(...msgs.map(estimateMessage))
+  if (opts.prompt || opts.tools) counts.push(estimatePrompt(opts.prompt ?? [], opts.tools))
+  counts.push(...msgs.map((message) => estimateMessage(message, opts)))
   for (const stats of counts) {
     root.tokens += stats.tokens
     root.count++

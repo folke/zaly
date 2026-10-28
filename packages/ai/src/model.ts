@@ -31,6 +31,7 @@ import { AuthManager } from "./auth/manager.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel, loadCatalog } from "./models/catalog.ts"
+import { resolveReasoning } from "./models/reasoning.ts"
 import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
@@ -82,7 +83,7 @@ export class Model<T extends AnyProvider = string> {
       .map("tool-result", (part) => (toolIds.has(part.id) ? part : undefined))
       .map("tool-call", (part) => (toolIds.has(part.id) ? part : undefined))
     const ret: Message[] = []
-    const reasoning = opts.reasoning && opts.reasoning.effort !== "off"
+    const reasoning = this.spec.reasoning === true && opts.reasoning !== "off"
     for (const m of messages) {
       let mct = ct
       // Drop reasoning if model ids don't match or reasoning is disabled
@@ -111,7 +112,7 @@ export class Model<T extends AnyProvider = string> {
       ...opts,
       caching: opts.caching ?? true,
       maxTokens: opts.maxTokens ? Math.min(opts.maxTokens, this.spec.maxTokens) : undefined,
-      reasoning: this.spec.reasoning ? opts.reasoning : undefined,
+      reasoning: resolveReasoning(this.spec, opts.reasoning),
     }
 
     /** Apply the model-level transform to every message's content. No-op

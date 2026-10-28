@@ -28,7 +28,7 @@ export interface StreamOptions {
   maxTokens?: number
   stopSequences?: string[]
   toolChoice?: ToolChoice
-  reasoning?: ReasoningOptions
+  reasoning?: ReasoningEffort
   responseFormat?: ResponseFormat
   /** Grammar-enforce tool argument schemas where the provider supports
    *  it (OpenAI `strict: true`). Default off: MCP-supplied schemas
@@ -89,31 +89,6 @@ export interface Provider<T extends string = string> {
 export type ToolChoice = "auto" | "required" | "none" | { name: string }
 
 export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
-
-/** Reasoning / thinking configuration.
- *
- *  `effort` is the user-facing knob. Adapters translate to each
- *  provider's native shape (`reasoning_effort` on OpenAI,
- *  `thinking.budget_tokens` on Anthropic, `thinkingConfig` on Google).
- *
- *  Levels, loosely ordered by cost:
- *    - `"off"`      — explicitly disable (no-op on models that always reason).
- *    - `"minimal"`  — lightest setting the provider offers.
- *    - `"low"` / `"medium"` / `"high"` — standard spread.
- *    - `"xhigh"`    — beyond OpenAI's `"high"` ceiling where the provider
- *                     allows it (Anthropic, Google); falls back to `"high"`
- *                     on providers capped there.
- *    - `"max"`      — provider maximum where available (currently Anthropic
- *                     adaptive thinking); falls back to the highest supported
- *                     budget/effort elsewhere.
- *
- *  `budget` overrides the effort-derived budget with an explicit token
- *  count — power-user path for providers that accept a number
- *  (Anthropic `thinking.budget_tokens`, Google `thinkingBudget`). */
-export interface ReasoningOptions {
-  effort?: ReasoningEffort
-  budget?: number
-}
 
 /** Structured-output format.
  *

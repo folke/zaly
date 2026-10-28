@@ -135,7 +135,7 @@ export class Compaction {
       {
         caching: false,
         maxTokens: this.#opts.summaryTokens,
-        reasoning: this.#opts.reasoning ? { effort: this.#opts.reasoning } : undefined,
+        reasoning: this.#opts.reasoning,
         signal: this.#opts.signal,
       }
     )

@@ -23,9 +23,10 @@ export function streamReq(
     prompt?: string[]
     tools?: Tool[]
     quirks?: Quirks
+    modelSpec?: Partial<ModelSpec>
   } & StreamOptions
 ): ProviderRequest {
-  const { model, messages, prompt, tools, quirks, ...rest } = flat
+  const { model, messages, prompt, tools, quirks, modelSpec, ...rest } = flat
   const opts: StreamOptions = { caching: false, ...rest }
   // `limit.output: 4096` matches the old hard-coded Anthropic fallback,
   // so request-shape tests that don't pass `maxTokens` keep their
@@ -33,6 +34,7 @@ export function streamReq(
   const spec: ModelSpec = {
     id: model,
     name: model,
+    reasoning: true,
     model,
     api: "mock",
     input: ["text"],
@@ -46,6 +48,7 @@ export function streamReq(
       models: [],
       quirks,
     },
+    ...modelSpec,
   }
   return { ctx: { messages, prompt, tools }, model: spec, opts }
 }

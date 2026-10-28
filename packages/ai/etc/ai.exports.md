@@ -1,4 +1,4 @@
-# @zaly/ai (157)
+# @zaly/ai (159)
 
 ## Classes (5)
 
@@ -8,7 +8,7 @@
 - Model
 - ModelCatalog
 
-## Functions (48)
+## Functions (50)
 
 - attachmentToMeta
 - compressImages
@@ -39,9 +39,11 @@
 - pairedToolIds
 - parseJson
 - parseModelId
+- reasoningLevels
 - renderMetaPart
 - resolveApiKey
 - resolveModels
+- resolveReasoning
 - runTool
 - safeParseToolParams
 - sanitizeText
@@ -149,7 +151,7 @@
 - ProviderRequest
 - Quirks
 - ReasoningEffort
-- ReasoningOptions
+- ReasoningOption
 - ReasoningPart
 - ResponseFormat
 - ResultOf

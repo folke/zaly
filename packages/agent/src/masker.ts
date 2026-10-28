@@ -172,7 +172,9 @@ export class Masker {
     this.#masked.clear()
     this.#stats.clear()
     this.#threshold = this.#opts.target + this.#opts.delta
-    const usage = tokenStats(messages, { prompt: opts.prompt, tools: opts.tools })
+
+    const estimate = { model: this.#agent.model?.spec, reasoning: this.#agent.ctx.reasoning }
+    const usage = tokenStats(messages, { ...estimate, prompt: opts.prompt, tools: opts.tools })
     // `pressure.ratio` is based on the current projected/masked request,
     // not the raw session. Raw history may exceed model context; masking
     // only needs to keep the projected request in a safe band.
@@ -207,7 +209,7 @@ export class Masker {
 
       if (p.turn <= this.#opts.keepTurns) continue
 
-      const tokens = estimatePart(p.part).tokens
+      const tokens = estimatePart(p.part, { ...estimate, message: p.message }).tokens
       if (tokens < this.#opts.minTokens) continue
 
       const part = p.mask()
@@ -220,7 +222,7 @@ export class Masker {
         `${p.part.type}${p.part.type === "tool-result" || p.part.type === "tool-call" ? `:${p.part.name}` : ""}`
       )
       this.#masked.set(id, msgParts)
-      const delta = tokens - estimatePart(part).tokens
+      const delta = tokens - estimatePart(part, { ...estimate, message: p.message }).tokens
       masked += delta
       mask -= delta
     }

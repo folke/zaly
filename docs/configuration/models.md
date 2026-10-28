@@ -56,8 +56,12 @@ the user config directory is for model/provider overrides; it is not the credent
 
 ## Reasoning effort
 
-Use `/effort` or `--reasoning` to choose reasoning effort. Available/effective
-levels depend on the model; not every model supports the entire configuration enum.
+Use `/reasoning` or `--reasoning` to choose reasoning effort. Available/effective
+levels come from the provider/model's `reasoning_options` metadata, with explicit
+provider quirks taking precedence. Unsupported choices are clamped to an available
+level. On always-thinking models, `off` becomes the lowest supported effort;
+otherwise it disables thinking. Missing API configuration leaves provider defaults
+untouched. Older catalogs and custom models without this metadata remain supported.
 Showing reasoning in the UI (`ui.reasoning`) is separate from selecting effort.
 
 Check [CLI options](../reference/cli.md) for model-list filtering and startup flags.

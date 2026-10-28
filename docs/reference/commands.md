@@ -10,13 +10,6 @@ Show a tree view of the current session's context.
 Action: `agent.context`
 
 
-## /effort
-
-Change how much reasoning the model uses for future turns.
-
-Action: `agent.effort`
-
-
 ## /model
 
 Switch the model used for future agent turns.
@@ -25,6 +18,13 @@ Action: `agent.model`
 
 - `--all`: Show all models, including non-authenticated ones (boolean)
 - `--refresh`: Refresh the model list from the provider (boolean)
+
+## /reasoning
+
+Change how much reasoning the model uses for future turns.
+
+Action: `agent.reasoning`
+
 
 ## /session
 

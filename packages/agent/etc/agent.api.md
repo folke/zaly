@@ -23,6 +23,7 @@ import { Message } from '@zaly/ai';
 import { MetaOf } from '@zaly/ai';
 import { MetaPart } from '@zaly/ai';
 import { Model } from '@zaly/ai';
+import { ModelSpec } from '@zaly/ai';
 import { ParamsOf } from '@zaly/ai';
 import { ReasoningEffort } from '@zaly/ai';
 import { Registry } from '@zaly/shared/registry';
@@ -388,7 +389,7 @@ export type EditToolMeta = FileMeta & {
 };
 
 // @public (undocumented)
-export function estimatePart(p: AnyPart): TokenCount;
+export function estimatePart(p: AnyPart, ctx?: MessageTokenContext): TokenCount;
 
 // @public
 export function extractBashUsage(messages: readonly Message[], opts?: ToolStatOptions): BashUsage[];
@@ -495,6 +496,11 @@ export function isUuidv7Like(s: string): boolean;
 export function messageTail(messages: readonly Message[], opts: {
     keepTokens?: number;
 }): Message[];
+
+// @public (undocumented)
+export type MessageTokenContext = TokenContext & {
+    message?: Message;
+};
 
 // @public (undocumented)
 export interface PermissionContext<T extends string> {
@@ -833,6 +839,12 @@ export type TasksEvents = {
 export type TaskStatus = "pending" | "running" | "done";
 
 // @public (undocumented)
+export type TokenContext = {
+    reasoning?: ReasoningEffort | boolean;
+    model?: ModelSpec;
+};
+
+// @public (undocumented)
 export type TokenCount = {
     type: AnyType | Message["role"] | "prompt" | "tool-schema" | "system-prompt";
     kind?: string;
@@ -853,7 +865,7 @@ export function tokenStats(msgs: readonly Message[], opts?: {
     prompt?: (string | Prompt<string>)[];
     tools?: Tool[];
     expand?: (c: TokenCount) => boolean;
-}): TokenStats;
+} & TokenContext): TokenStats;
 
 // @public (undocumented)
 export class TokenUsage implements Usage {

@@ -510,6 +510,7 @@ export type ModelInfo = {
     maxTokens?: number;
     contextSize?: number;
     reasoning?: boolean;
+    reasoning_options?: ReasoningOption[];
     knowledge?: string;
     release_date?: string;
     last_updated?: string;
@@ -770,12 +771,21 @@ export type Quirks = {
 export type ReasoningEffort = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 // @public
-export interface ReasoningOptions {
-    // (undocumented)
-    budget?: number;
-    // (undocumented)
-    effort?: ReasoningEffort;
-}
+export function reasoningLevels(model: ModelInfo & {
+    provider?: Pick<ModelProvider, "quirks">;
+}): ReasoningEffort[];
+
+// @public
+export type ReasoningOption = {
+    type: "toggle";
+} | {
+    type: "effort";
+    values: ("none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "default" | null)[];
+} | {
+    type: "budget_tokens";
+    min?: number;
+    max?: number;
+};
 
 // @public
 export interface ReasoningPart {
@@ -794,6 +804,11 @@ export function resolveApiKey(key: ProviderOptions["apiKey"], source?: AuthSourc
 
 // @public (undocumented)
 export function resolveModels(provider: ModelProvider, cat: ModelCatalog): MaybePromise<ModelInfo[]>;
+
+// @public
+export function resolveReasoning(model: ModelInfo & {
+    provider?: Pick<ModelProvider, "quirks">;
+}, requested?: ReasoningEffort): ReasoningEffort | undefined;
 
 // @public
 export type ResponseFormat = {
@@ -907,7 +922,7 @@ export interface StreamOptions {
     // (undocumented)
     maxTokens?: number;
     // (undocumented)
-    reasoning?: ReasoningOptions;
+    reasoning?: ReasoningEffort;
     // (undocumented)
     responseFormat?: ResponseFormat;
     signal?: AbortSignal;

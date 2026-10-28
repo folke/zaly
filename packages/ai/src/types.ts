@@ -404,6 +404,25 @@ export type Cost = {
   output_audio?: number
 }
 
+/** Reasoning controls advertised by models.dev for a provider/model. */
+export type ReasoningOption =
+  | { type: "toggle" }
+  | {
+      type: "effort"
+      values: (
+        | "none"
+        | "minimal"
+        | "low"
+        | "medium"
+        | "high"
+        | "xhigh"
+        | "max"
+        | "default"
+        | null
+      )[]
+    }
+  | { type: "budget_tokens"; min?: number; max?: number }
+
 /** Metadata for one model. One-to-one with the models.dev `Model`
  *  schema. Loaded lazily per-provider via `getModel(id)` or eagerly
  *  via `listModels()`.
@@ -426,6 +445,8 @@ export type ModelInfo = {
   contextSize?: number
   /** Emits reasoning / thinking tokens. */
   reasoning?: boolean
+  /** Provider-specific controls. Optional for older catalogs and custom models. */
+  reasoning_options?: ReasoningOption[]
   /** Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`. */
   knowledge?: string
   /** Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational. */

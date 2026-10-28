@@ -3,7 +3,7 @@ import type {
   FinishReason,
   Provider,
   ProviderRequest,
-  ReasoningOptions,
+  ReasoningEffort,
   ResponseFormat,
   StreamEvent,
   TokenCount,
@@ -32,6 +32,7 @@ import {
 } from "../content/compose.ts"
 import { stringifyContent } from "../content/format.ts"
 import { ContentTransform } from "../content/transform.ts"
+import { resolveReasoning } from "../models/reasoning.ts"
 import { requestHeaders } from "../utils/headers.ts"
 
 // ── Content transform ───────────────────────────────────────────────────
@@ -239,7 +240,7 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toResponsesToolChoice(opts.toolChoice)
   }
 
-  const reasoning = buildReasoning(opts.reasoning?.effort, quirks)
+  const reasoning = buildReasoning(resolveReasoning(model, opts.reasoning), quirks)
   if (reasoning !== undefined) out.reasoning = reasoning
 
   if (opts.responseFormat !== undefined) {
@@ -253,7 +254,7 @@ async function buildRequest(req: ProviderRequest): Promise<ResponsesRequest> {
 }
 
 function buildReasoning(
-  effort: ReasoningOptions["effort"],
+  effort: ReasoningEffort | undefined,
   quirks: Quirks
 ): ResponsesRequest["reasoning"] {
   const clamped = clampEffort(effort, quirks.reasoningLevels)
@@ -275,9 +276,9 @@ function buildReasoning(
 }
 
 function clampEffort(
-  effort: ReasoningOptions["effort"],
+  effort: ReasoningEffort | undefined,
   levels: Quirks["reasoningLevels"]
-): ReasoningOptions["effort"] | undefined {
+): ReasoningEffort | undefined {
   if (effort === undefined) return undefined
   if (levels === undefined) return effort
   if (levels.includes(effort)) return effort

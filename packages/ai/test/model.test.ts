@@ -1,4 +1,4 @@
-import type { Provider, StreamEvent } from "../src/provider.ts"
+import type { Provider, ProviderRequest, StreamEvent } from "../src/provider.ts"
 
 import { describe, expect, test } from "vitest"
 import { modelCollection } from "../src/model.ts"
@@ -7,16 +7,16 @@ import { providerRegistry } from "../src/providers/index.ts"
 // ── Local mock provider (registered once for the whole file) ───────────
 
 let scriptedEvents: StreamEvent[] = []
+let captured: ProviderRequest | undefined
 
-providerRegistry.register(
-  "mock-cost-test",
-  (): Promise<Provider<"mock-cost-test">> =>
-    Promise.resolve({
-      id: "mock-cost-test",
-      async *stream() {
-        for (const ev of scriptedEvents) yield ev
-      },
-    })
+providerRegistry.register("mock-cost-test", (): Promise<Provider<"mock-cost-test">> =>
+  Promise.resolve({
+    id: "mock-cost-test",
+    async *stream(req) {
+      captured = req
+      for (const ev of scriptedEvents) yield ev
+    },
+  })
 )
 
 const models = modelCollection()
@@ -26,6 +26,21 @@ models.register({
   api: "mock-api",
   id: "mock-cost-test",
   models: [
+    {
+      id: "always-thinking",
+      api: "mock-cost-test" as never,
+      reasoning: true,
+      reasoning_options: [{ type: "effort", values: ["low", "medium", "high"] }],
+    },
+    {
+      id: "toggle-thinking",
+      api: "mock-cost-test" as never,
+      reasoning: true,
+      reasoning_options: [
+        { type: "toggle" },
+        { type: "effort", values: ["low", "medium", "high"] },
+      ],
+    },
     {
       id: "cheap",
       cost: { cache_read: 0.5, cache_write: 5, input: 1, output: 4, reasoning: 8 },
@@ -54,6 +69,51 @@ describe("loadModel — error paths", () => {
     await expect(models.load("not-a-real-provider/not-a-real-model")).rejects.toThrow(
       /Model.*not found/s
     )
+  })
+})
+
+describe("Model.stream — effective reasoning", () => {
+  test.each(["always-thinking", "toggle-thinking"])(
+    "normalizes off before filtering reasoning for %s",
+    async (id) => {
+      scriptedEvents = [{ type: "finish", finishReason: "stop", usage: { input: 1, output: 1 } }]
+      const model = await models.load(`mock-cost-test/${id}`)
+      await model.stream(
+        {
+          messages: [
+            {
+              role: "assistant",
+              content: [{ type: "reasoning", text: "summary", signature: "signed" }],
+              meta: { modelId: model.id },
+            },
+          ],
+        },
+        { reasoning: "off" }
+      )
+      expect(captured?.opts.reasoning).toBe(id === "always-thinking" ? "low" : "off")
+      const content = captured?.ctx.messages[0]?.content
+      expect(Array.isArray(content) && content.some((part) => part.type === "reasoning")).toBe(
+        id === "always-thinking"
+      )
+    }
+  )
+
+  test("unset effort leaves provider defaults and compatible reasoning intact", async () => {
+    scriptedEvents = [{ type: "finish", finishReason: "stop", usage: { input: 1, output: 1 } }]
+    const model = await models.load("mock-cost-test/always-thinking")
+    await model.stream({
+      messages: [
+        {
+          role: "assistant",
+          content: [{ type: "reasoning", text: "summary", signature: "signed" }],
+          meta: { modelId: model.id },
+        },
+      ],
+    })
+    expect(captured?.opts.reasoning).toBeUndefined()
+    expect(captured?.ctx.messages[0].content).toEqual([
+      { type: "reasoning", text: "summary", signature: "signed" },
+    ])
   })
 })
 

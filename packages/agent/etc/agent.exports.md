@@ -1,4 +1,4 @@
-# @zaly/agent (100)
+# @zaly/agent (102)
 
 ## Classes (2)
 
@@ -47,7 +47,7 @@
 - taskCompletionMessage
 - taskInfoPart
 
-## Types (68)
+## Types (70)
 
 - AgentContextEvents
 - AgentEvents
@@ -80,6 +80,7 @@
 - FindToolMeta
 - GrepTool
 - GrepToolMeta
+- MessageTokenContext
 - PermissionContext
 - PermissionHandler
 - PermissionOptions
@@ -107,6 +108,7 @@
 - TaskMeta
 - TaskStatus
 - TasksEvents
+- TokenContext
 - TokenCount
 - TokenStats
 - ToolInit

@@ -1,6 +1,6 @@
 import type { Message, ProviderRequest } from "@zaly/ai"
 
-import { defineTool, stringifyContent } from "@zaly/ai"
+import { defineTool, Model, stringifyContent } from "@zaly/ai"
 import { Type } from "typebox"
 import { describe, expect, test } from "vitest"
 import { MemoryStore } from "../src/session/index.ts"
@@ -84,6 +84,45 @@ describe("Agent — no tool calls", () => {
     expect(result.steps).toBe(1)
     expect(result.stopReason).toBe("natural")
     expect(result.messages.at(-1)?.role).toBe("assistant")
+  })
+})
+
+describe("Agent — effective reasoning", () => {
+  test("context and model changes expose the effective effort without losing the preference", async () => {
+    const base = mockModel([])
+    const always = new Model({
+      id: base.id,
+      provider: base.provider,
+      spec: {
+        ...base.spec,
+        reasoning: true,
+        reasoning_options: [{ type: "effort", values: ["low", "medium", "high"] }],
+      },
+    })
+    const agent = await loadAgent({ model: always, request: { reasoning: "off" } })
+    expect(agent.ctx.reasoning).toBe("low")
+    const changes: string[] = []
+    agent.ctx.on("reasoning", ({ effort }) => {
+      changes.push(effort)
+    })
+    const toggle = new Model({
+      id: base.id,
+      provider: base.provider,
+      spec: {
+        ...base.spec,
+        reasoning: true,
+        reasoning_options: [
+          { type: "toggle" },
+          { type: "effort", values: ["low", "medium", "high"] },
+        ],
+      },
+    })
+    agent.ctx.model = toggle
+    expect(agent.ctx.reasoning).toBe("off")
+    expect(changes).toEqual(["off"])
+    agent.ctx.reasoning = "max"
+    expect(agent.ctx.reasoning).toBe("high")
+    expect(changes).toEqual(["off", "high"])
   })
 })
 

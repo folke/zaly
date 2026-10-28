@@ -3,7 +3,7 @@ import type {
   FinishReason,
   Provider,
   ProviderRequest,
-  ReasoningOptions,
+  ReasoningEffort,
   ResponseFormat,
   StreamEvent,
   TokenCount,
@@ -32,6 +32,7 @@ import {
 } from "../content/compose.ts"
 import { stringifyContent } from "../content/format.ts"
 import { ContentTransform } from "../content/transform.ts"
+import { resolveReasoning } from "../models/reasoning.ts"
 import { requestHeaders } from "../utils/headers.ts"
 
 // ── Content transform ───────────────────────────────────────────────────
@@ -230,7 +231,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toOpenAIToolChoice(opts.toolChoice)
   }
 
-  writeThinking(out, opts.reasoning?.effort, quirks)
+  writeThinking(out, resolveReasoning(model, opts.reasoning), quirks)
 
   if (opts.responseFormat !== undefined) {
     out.response_format = toOpenAIResponseFormat(opts.responseFormat)
@@ -248,7 +249,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
  *  it omits the field (models that always reason ignore this). */
 function writeThinking(
   out: OpenAIChatRequest,
-  effort: ReasoningOptions["effort"],
+  effort: ReasoningEffort | undefined,
   quirks: Quirks
 ): void {
   const format = quirks.thinkingFormat ?? "openai"
@@ -296,9 +297,9 @@ function writeThinking(
  *  raised to the floor. `"off"` passes through when it's in the list,
  *  otherwise falls to the lowest positive level. */
 function clampEffort(
-  effort: ReasoningOptions["effort"],
+  effort: ReasoningEffort | undefined,
   levels: Quirks["reasoningLevels"]
-): ReasoningOptions["effort"] | undefined {
+): ReasoningEffort | undefined {
   if (effort === undefined) return undefined
   if (levels === undefined) return effort
   if (levels.includes(effort)) return effort

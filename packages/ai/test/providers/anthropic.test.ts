@@ -1,4 +1,4 @@
-import type { Message, Tool } from "../../src/types.ts"
+import type { Message, ReasoningOption, Tool } from "../../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { collect } from "../../src/provider.ts"
@@ -712,7 +712,7 @@ describe("anthropic: request translation", () => {
     }
   })
 
-  test("reasoning.effort maps to thinking budget_tokens for legacy models", async () => {
+  test("reasoning maps to thinking budget_tokens for legacy models", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -721,7 +721,7 @@ describe("anthropic: request translation", () => {
           maxTokens: 100_000,
           messages: [{ content: "x", role: "user" }],
           model: "claude-sonnet-4-5",
-          reasoning: { effort: "high" },
+          reasoning: "high",
         })
       )
     )
@@ -739,7 +739,7 @@ describe("anthropic: request translation", () => {
         streamReq({
           messages: [{ content: "x", role: "user" }],
           model: "claude-sonnet-4-6",
-          reasoning: { effort: "medium" },
+          reasoning: "medium",
         })
       )
     )
@@ -748,7 +748,7 @@ describe("anthropic: request translation", () => {
     expect(body.output_config).toEqual({ effort: "medium" })
   })
 
-  test("Claude adaptive thinking defaults to high effort", async () => {
+  test("unset reasoning leaves provider thinking and effort defaults untouched", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
@@ -760,76 +760,111 @@ describe("anthropic: request translation", () => {
       )
     )
     const body = recorded[0].body as { output_config: unknown; thinking: unknown }
-    expect(body.thinking).toEqual({ type: "adaptive" })
-    expect(body.output_config).toEqual({ effort: "high" })
+    expect(body.thinking).toBeUndefined()
+    expect(body.output_config).toBeUndefined()
   })
 
-  test("Claude adaptive thinking clamps unavailable effort levels", async () => {
+  test("adaptive efforts come from catalog values, including unknown future model names", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
-    for (const model of ["claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-6"]) {
+    const options: ReasoningOption[][] = [
+      [{ type: "effort", values: ["low", "medium", "high", "xhigh", "max"] }],
+      [{ type: "effort", values: ["low", "medium", "high"] }],
+      [{ type: "effort", values: ["low", "medium"] }],
+    ]
+    for (const reasoning_options of options) {
       await drain(
         provider.stream(
           streamReq({
             messages: [{ content: "x", role: "user" }],
-            model,
-            reasoning: { effort: "max" },
+            model: "claude-future-model",
+            reasoning: "max",
+            modelSpec: { reasoning_options },
           })
         )
       )
     }
-    expect((recorded[0].body as { output_config: { effort: string } }).output_config.effort).toBe(
-      "max"
-    )
-    expect((recorded[1].body as { output_config: { effort: string } }).output_config.effort).toBe(
-      "max"
-    )
-    expect((recorded[2].body as { output_config: { effort: string } }).output_config.effort).toBe(
-      "high"
-    )
+    expect(recorded.map(({ body }) => (body as { thinking: unknown }).thinking)).toEqual([
+      { type: "adaptive" },
+      { type: "adaptive" },
+      { type: "adaptive" },
+    ])
+    expect(recorded.map(({ body }) => (body as { output_config: unknown }).output_config)).toEqual([
+      { effort: "max" },
+      { effort: "high" },
+      { effort: "medium" },
+    ])
   })
 
-  test("reasoning.budget overrides effort-derived bucket", async () => {
+  test("off disables thinking only when catalog controls allow it", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
+    const provider = createAnthropic({ apiKey: "test", fetch })
+    const options: ReasoningOption[][] = [
+      [{ type: "toggle" }, { type: "effort", values: ["low", "medium", "high", "max"] }],
+      [{ type: "effort", values: ["none", "low", "medium"] }],
+      [{ type: "budget_tokens", min: 1024 }],
+      [{ type: "effort", values: ["low", "medium", "high", "max"] }],
+    ]
+    for (const reasoning_options of options) {
+      await drain(
+        provider.stream(
+          streamReq({
+            messages: [{ content: "x", role: "user" }],
+            model: "claude-future-model",
+            reasoning: "off",
+            modelSpec: { reasoning_options },
+          })
+        )
+      )
+    }
+    expect(recorded.map(({ body }) => (body as { thinking: unknown }).thinking)).toEqual([
+      { type: "disabled" },
+      { type: "disabled" },
+      { type: "disabled" },
+      { type: "adaptive" },
+    ])
+    expect((recorded[3].body as { output_config: unknown }).output_config).toEqual({
+      effort: "low",
+    })
+  })
+
+  test("legacy models honor advertised thinking budget bounds", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
     await drain(
       provider.stream(
         streamReq({
-          maxTokens: 100_000,
           messages: [{ content: "x", role: "user" }],
-          model: "m",
-          reasoning: { budget: 2048, effort: "low" },
+          model: "claude-sonnet-4-5",
+          reasoning: "high",
+          maxTokens: 10_000,
+          modelSpec: { reasoning_options: [{ type: "budget_tokens", min: 1024, max: 2000 }] },
         })
       )
     )
-    expect(
-      (recorded[0].body as { thinking: { budget_tokens: number } }).thinking.budget_tokens
-    ).toBe(2048)
+    expect((recorded[0].body as { thinking: unknown }).thinking).toEqual({
+      type: "enabled",
+      budget_tokens: 2000,
+    })
   })
 
-  test("reasoning.effort: 'off' omits thinking except for Mythos", async () => {
+  test("insufficient output capacity never sends an invalid legacy thinking budget", async () => {
     const { fetch, recorded } = recordFetch(sseResponse(basicStream()))
     const provider = createAnthropic({ apiKey: "test", fetch })
-    await drain(
-      provider.stream(
-        streamReq({
-          messages: [{ content: "x", role: "user" }],
-          model: "claude-opus-4-8",
-          reasoning: { effort: "off" },
-        })
+    await expect(
+      drain(
+        provider.stream(
+          streamReq({
+            messages: [{ content: "x", role: "user" }],
+            model: "claude-sonnet-4-5",
+            reasoning: "high",
+            maxTokens: 512,
+            modelSpec: { reasoning_options: [{ type: "budget_tokens", min: 1024 }] },
+          })
+        )
       )
-    )
-    await drain(
-      provider.stream(
-        streamReq({
-          messages: [{ content: "x", role: "user" }],
-          model: "claude-mythos-preview",
-          reasoning: { effort: "off" },
-        })
-      )
-    )
-    expect((recorded[0].body as { thinking?: unknown }).thinking).toBeUndefined()
-    expect((recorded[1].body as { thinking?: unknown }).thinking).toEqual({ type: "disabled" })
+    ).rejects.toThrow(/too small/)
+    expect(recorded).toHaveLength(0)
   })
 
   test("auth + version + custom headers are merged", async () => {

@@ -3,9 +3,9 @@ import type { ActionDef } from "@zaly/tui"
 import type { Option } from "@zaly/tui/widgets/select"
 import type { App } from "./app.ts"
 
+import { reasoningLevels } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
 import { defineAction } from "@zaly/tui"
-import { REASONING_EFFORTS } from "../context.ts"
 
 export type AppAction = keyof ReturnType<typeof appActions>
 
@@ -22,21 +22,6 @@ export function appActions({ app }: { app: App }) {
       fn: async () => {
         const { contextTree } = await import("./context.ts")
         await contextTree(app)
-      },
-    },
-    "agent.effort": {
-      cmd: "effort",
-      desc: "Change how much reasoning the model uses for future turns.",
-      fn: async () => {
-        const items: (Option & { text: ReasoningEffort })[] = REASONING_EFFORTS.map((level) => ({
-          name: level,
-          text: level,
-        }))
-        const effort = await app.pick({
-          active: items.findIndex((i) => i.text === app.agent.ctx.reasoning),
-          items,
-        })
-        if (effort) app.agent.ctx.reasoning = effort.text
       },
     },
     "agent.model": defineAction({
@@ -63,6 +48,27 @@ export function appActions({ app }: { app: App }) {
         })
       },
     }),
+    "agent.reasoning": {
+      cmd: "reasoning",
+      desc: "Change how much reasoning the model uses for future turns.",
+      fn: async () => {
+        const model = app.agent.model
+        if (!model) return
+        const items: (Option & { text: ReasoningEffort })[] = reasoningLevels(model.spec).map(
+          (level) => ({
+            name: level,
+            text: level,
+          })
+        )
+        if (!items.length)
+          return app.notify("This model has no configurable reasoning effort.", { level: "info" })
+        const effort = await app.pick({
+          active: items.findIndex((i) => i.text === app.agent.ctx.reasoning),
+          items,
+        })
+        if (effort) app.agent.ctx.reasoning = effort.text
+      },
+    },
     "agent.session": {
       cmd: "session",
       desc: "Show the current session's id, path, and settings.",

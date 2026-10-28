@@ -211,6 +211,13 @@
           "description": "Emits reasoning / thinking tokens.",
           "type": "boolean"
         },
+        "reasoning_options": {
+          "description": "Provider-specific controls. Optional for older catalogs and custom models.",
+          "items": {
+            "$ref": "#/definitions/ReasoningOption"
+          },
+          "type": "array"
+        },
         "release_date": {
           "description": "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational.",
           "type": "string"
@@ -327,6 +334,77 @@
         }
       },
       "type": "object"
+    },
+    "ReasoningOption": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "toggle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "effort",
+              "type": "string"
+            },
+            "values": {
+              "items": {
+                "enum": [
+                  "none",
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max",
+                  "default",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "type",
+            "values"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "max": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "type": {
+              "const": "budget_tokens",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "Reasoning controls advertised by models.dev for a provider/model."
     }
   },
   "type": "object"

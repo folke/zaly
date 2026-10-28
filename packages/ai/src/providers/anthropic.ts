@@ -3,12 +3,21 @@ import type {
   FinishReason,
   Provider,
   ProviderRequest,
-  ReasoningOptions,
+  ReasoningEffort,
   StreamEvent,
   TokenCount,
   ToolChoice,
 } from "../provider.ts"
-import type { Content, ImagePart, Message, PdfPart, ProviderOptions, Tool } from "../types.ts"
+import type {
+  Content,
+  ImagePart,
+  Message,
+  ModelSpec,
+  PdfPart,
+  ProviderOptions,
+  ReasoningOption,
+  Tool,
+} from "../types.ts"
 
 import { safeStringify } from "@zaly/shared"
 import { resolveApiKey } from "../auth/manager.ts"
@@ -22,6 +31,7 @@ import {
   truncateText,
 } from "../content/compose.ts"
 import { ContentTransform } from "../content/transform.ts"
+import { resolveReasoning } from "../models/reasoning.ts"
 import { requestHeaders } from "../utils/headers.ts"
 
 // ── Content transform ───────────────────────────────────────────────────
@@ -82,7 +92,7 @@ export type AnthropicContent = Awaited<ReturnType<typeof transformAnthropic>>
  *   - tool calls + tool results, streaming, usage/cost
  *   - prompt caching (`cache_control: { type: "ephemeral" }` — rolling
  *     marker on the trailing message + the trailing tool definition)
- *   - extended thinking via `reasoning.effort` / `reasoning.budget`
+ *   - catalog-driven reasoning effort with a legacy thinking-budget fallback
  *
  * Not implemented:
  *   - server-side tools (computer-use, web_search, …)
@@ -254,7 +264,7 @@ async function buildRequest(req: ProviderRequest): Promise<AnthropicRequest> {
     if (opts.toolChoice !== undefined) out.tool_choice = toAnthropicToolChoice(opts.toolChoice)
   }
 
-  applyThinking(out, model.model, opts.reasoning, maxTokens)
+  applyThinking(out, model, opts.reasoning, maxTokens)
 
   return out
 }
@@ -276,107 +286,64 @@ function toAnthropicToolChoice(
   return { name: choice.name, type: "tool" }
 }
 
-/** Translate `reasoning.effort` (and optional explicit `budget`) into
- *  Anthropic's `thinking.budget_tokens`. Effort levels follow the same
- *  monotonic ordering used elsewhere; budgets are coarse buckets that
- *  have proven reasonable in practice. `budget_tokens` must be < max_tokens. */
+/** Catalog efforts drive modern adaptive thinking. Older models retain budget-based translation. */
 function applyThinking(
   out: AnthropicRequest,
-  model: string,
-  reasoning: ReasoningOptions | undefined,
+  model: ModelSpec,
+  reasoning: ReasoningEffort | undefined,
   maxTokens: number
 ): void {
-  if (reasoning?.effort === "off") {
-    if (isMythos(model)) out.thinking = { type: "disabled" }
+  const effort = resolveReasoning(model, reasoning)
+  if (effort === undefined) return
+  const options = model.reasoning_options
+  if (effort === "off") {
+    if (options) out.thinking = { type: "disabled" }
     return
   }
-  if (supportsAdaptiveThinking(model)) {
+  const budget = options?.find((option) => option.type === "budget_tokens")
+  const effortOption = options?.find((option) => option.type === "effort")
+  const adaptive = options
+    ? !budget || (!!effortOption && supportsAdaptiveThinking(model.model))
+    : supportsAdaptiveThinking(model.model)
+  if (adaptive) {
     out.thinking = { type: "adaptive" }
-    out.output_config = { effort: adaptiveEffort(model, reasoning?.effort) }
+    if (!options || effortOption) {
+      out.output_config = { effort: effort === "minimal" ? "low" : effort }
+    }
     return
   }
-  const thinking = thinkingBudget(reasoning, maxTokens)
+  const thinking = thinkingBudget(effort, maxTokens, budget)
   if (thinking !== undefined) out.thinking = thinking
 }
 
 function thinkingBudget(
-  reasoning: ReasoningOptions | undefined,
-  maxTokens: number
+  reasoning: ReasoningEffort,
+  maxTokens: number,
+  limits?: Extract<ReasoningOption, { type: "budget_tokens" }>
 ): Extract<AnthropicRequest["thinking"], { type: "enabled" }> | undefined {
-  if (reasoning === undefined) return undefined
-  if (reasoning.effort === "off") return undefined
-  let budget = reasoning.budget
-  if (budget === undefined) {
-    switch (reasoning.effort) {
-      case undefined: {
-        return undefined
-      }
-      case "minimal": {
-        budget = 1024
-        break
-      }
-      case "low": {
-        budget = 4096
-        break
-      }
-      case "medium": {
-        budget = 8192
-        break
-      }
-      case "high": {
-        budget = 16_384
-        break
-      }
-      case "xhigh": {
-        budget = 32_768
-        break
-      }
-      case "max": {
-        budget = maxTokens - 1
-        break
-      }
-    }
+  if (reasoning === "off") return undefined
+  const budgets = {
+    high: 16_384,
+    low: 4096,
+    max: maxTokens - 1,
+    medium: 8192,
+    minimal: 1024,
+    xhigh: 32_768,
   }
-  // Anthropic requires budget < max_tokens; clamp with a small headroom
-  // so the model can still produce a final answer.
-  const clamped = Math.min(budget, Math.max(1024, maxTokens - 1))
-  return { budget_tokens: clamped, type: "enabled" }
+  const minimum = Math.max(1024, limits?.min ?? 1024)
+  const maximum = Math.min(limits?.max ?? Infinity, maxTokens - 1)
+  if (maximum < minimum)
+    throw new RangeError("maxTokens is too small for the model's thinking budget")
+  return {
+    budget_tokens: Math.min(Math.max(budgets[reasoning], minimum), maximum),
+    type: "enabled",
+  }
 }
 
 function supportsAdaptiveThinking(model: string): boolean {
-  if (isMythos(model)) return true
+  if (/^claude-(?:mythos|fable)-/.test(model)) return true
   const parsed = parseClaudeVersion(model)
   return parsed !== undefined && ((parsed.major >= 4 && parsed.minor >= 6) || parsed.major >= 5)
-}
-
-function adaptiveEffort(
-  model: string,
-  effort: ReasoningOptions["effort"]
-): NonNullable<AnthropicRequest["output_config"]>["effort"] {
-  if (effort === "minimal" || effort === "low") return "low"
-  if (effort === "medium") return "medium"
-  if (effort === "xhigh") return supportsXHighEffort(model) ? "xhigh" : "high"
-  if (effort === "max") return supportsMaxEffort(model) ? "max" : "high"
-  return "high"
-}
-
-function supportsXHighEffort(model: string): boolean {
-  const parsed = parseClaudeVersion(model)
-  return (
-    parsed?.family === "opus" && parsed.major === 4 && (parsed.minor === 7 || parsed.minor === 8)
-  )
-}
-
-function supportsMaxEffort(model: string): boolean {
-  if (isMythos(model)) return true
-  const parsed = parseClaudeVersion(model)
-  if (parsed?.major !== 4) return false
-  if (parsed.family === "opus") return parsed.minor >= 6 && parsed.minor <= 8
-  return parsed.family === "sonnet" && parsed.minor === 6
-}
-
-function isMythos(model: string): boolean {
-  return model === "claude-mythos-preview"
 }
 
 function parseClaudeVersion(
