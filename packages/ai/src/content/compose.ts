@@ -5,7 +5,7 @@ import type { ContentTransform } from "./transform.ts"
 
 import { cleanTextAgent } from "@zaly/shared/text"
 import { errorToMetaPart, fileToMetaPart, metaToTextPart } from "./format.ts"
-import { inlineFile } from "./part.ts"
+import { inlineFile, toImagePart } from "./part.ts"
 
 /**
  * Step-function helpers for `ContentTransform`. Each helper returns a
@@ -129,14 +129,7 @@ function compressImagePart(opts: CompressOpts) {
     const data = Buffer.from(img.source.data, "base64")
     const { imageCompress } = await import("@zaly/shared/image")
     const compressed = await imageCompress({ data, format, type: "image" }, opts)
-    return {
-      ...img,
-      mime: compressed.format === "png" ? "image/png" : "image/jpeg",
-      source: {
-        data: Buffer.from(compressed.data).toString("base64"),
-        type: "base64",
-      },
-    }
+    return { ...img, ...toImagePart(compressed) }
   }
 }
 
