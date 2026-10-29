@@ -337,6 +337,7 @@ export class Tasks extends Emitter<TasksEvents> {
     let chainHead: string | undefined
 
     const tools = await this.tools()
+    const parallel = calls.every((c) => tools.find((t) => t.name === c.name)?.parallel ?? false)
 
     for (const call of calls) {
       const tool = tools.find((t) => t.name === call.name)
@@ -345,9 +346,7 @@ export class Tasks extends Emitter<TasksEvents> {
         continue
       }
 
-      const parallel = tool.parallel ?? false
-
-      if (chainHead && !parallel) {
+      if (chainHead) {
         // Queue behind the chain head — won't start until that finishes.
         tasks.push(
           this.#registerPending({ call, ctxBase: ctx, round, tool, waitingFor: chainHead })
