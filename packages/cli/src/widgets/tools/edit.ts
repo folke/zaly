@@ -1,8 +1,8 @@
 import type { EditTool } from "@zaly/agent"
-import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
+import type { ToolRenderer } from "./registry.ts"
 
 import { prettyPath } from "@zaly/shared"
-import { memo, unwrap } from "@zaly/tui"
+import { memo } from "@zaly/tui"
 import { diff } from "@zaly/tui/widgets/diff"
 import { fileCall } from "./default.ts"
 
@@ -12,13 +12,13 @@ import { fileCall } from "./default.ts"
  *  hunks with proper context. */
 export const editRenderer: ToolRenderer<EditTool> = {
   call: fileCall,
-  result(props: ToolResultCtx<EditTool>) {
+  result(props) {
     const path = memo(() => {
-      const p = unwrap(props.result)?.meta?.path ?? props.params?.path
+      const p = props.result?.meta?.path ?? props.params.path
       return p ? prettyPath(p) : "unknown path"
     })
-    const original = memo(() => unwrap(props.result)?.meta?.original ?? "")
-    const modified = memo(() => unwrap(props.result)?.meta?.content ?? "")
+    const original = memo(() => props.result?.meta?.original ?? "")
+    const modified = memo(() => props.result?.meta?.content ?? "")
 
     return diff({
       modified,

@@ -3,7 +3,7 @@ import type { ParamsOf } from "@zaly/ai"
 import type { ToolRenderer } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
-import { memo, unwrap } from "@zaly/tui"
+import { memo } from "@zaly/tui"
 import { formatLines } from "@zaly/tui/text"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
@@ -29,14 +29,14 @@ const ignore = new Set(["limit", "max_columns", "pattern", "paths", "glob"])
 export const bashRenderer: ToolRenderer<BashTool | FindTool | GrepTool> = {
   result(props) {
     const command = memo(() => {
-      if (props.call.name === "bash") {
+      if (props.name === "bash") {
         const p = props.params as Partial<ParamsOf<BashTool>>
         return p.command ?? ""
-      } else if (props.call.name === "find" || props.call.name === "grep") {
+      } else if (props.name === "find" || props.name === "grep") {
         const p = props.params as Partial<ParamsOf<FindTool | GrepTool>>
-        const cmd = [props.call.name]
+        const cmd = [props.name]
         const all = p as Record<string, string | string[] | undefined>
-        const positional = props.call.name === "find" ? all.glob : all.pattern
+        const positional = props.name === "find" ? all.glob : all.pattern
         if (typeof positional === "string") cmd.push(positional)
         else if (Array.isArray(positional)) cmd.push(...positional)
         if (p.paths) cmd.push(...p.paths)
@@ -74,7 +74,7 @@ export const bashRenderer: ToolRenderer<BashTool | FindTool | GrepTool> = {
       text({
         content: (ctx) =>
           memo(() => {
-            const content = unwrap(props.result)?.content
+            const content = props.result?.content
             if (!content) return "…"
             return formatLines(justText(content), {
               limit: PREVIEW_LINE_LIMIT,

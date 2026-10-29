@@ -1,35 +1,39 @@
 import type { FileTool } from "@zaly/agent"
+import type { Tool } from "@zaly/ai"
 import type { ShikiLanguage } from "@zaly/tui"
 import type { WrapMode } from "@zaly/tui/text"
-import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
+import type { ToolView } from "../tool.ts"
 
 import { stringifyContent } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { memo, unwrap } from "@zaly/tui"
+import { memo } from "@zaly/tui"
 import { code } from "@zaly/tui/widgets/code"
 import { toolPreview } from "../params.ts"
 
 const PREVIEW_LINE_LIMIT = 10
 
 /// Show the pretty printed file path in the call preview.
-export function fileCall(props: ToolResultCtx<FileTool>) {
+export function fileCall(props: Readonly<ToolView<FileTool>>) {
   const path = memo(() => {
-    const p = unwrap(props.result)?.meta?.path
-    return { path: p ? prettyPath(p) : (props.params?.path ?? "unknown path") }
+    const p = props.result?.meta?.path
+    return { path: p ? prettyPath(p) : (props.params.path ?? "") }
   })
-  return toolPreview(props.call.name, path)
+  return toolPreview(props.name, path)
 }
 
 export function genericRenderer(
   opts: { limit?: number; lang?: ShikiLanguage; wrap?: WrapMode } = {}
-): Required<ToolRenderer> {
+) {
   return {
-    call(ctx: ToolResultCtx) {
-      return toolPreview(ctx.call.name, ctx.params)
+    call<T extends Tool>(this: void, ctx: Readonly<ToolView<T>>) {
+      return toolPreview(
+        ctx.name,
+        memo(() => ctx.params)
+      )
     },
-    result(ctx: ToolResultCtx) {
+    result<T extends Tool>(this: void, ctx: Readonly<ToolView<T>>) {
       const content = memo(() => {
-        const r = unwrap(ctx.result)
+        const r = ctx.result
         if (r === undefined) return ""
         return stringifyContent(r.content)
       })
@@ -50,4 +54,4 @@ export function genericRenderer(
  *  truncated to 500 chars. Used for any tool that doesn't have a
  *  specialised renderer registered. Mirrors the behaviour the inline
  *  result preview had before tool-renderer dispatch. */
-export const defaultRenderer: Required<ToolRenderer> = genericRenderer()
+export const defaultRenderer = genericRenderer()

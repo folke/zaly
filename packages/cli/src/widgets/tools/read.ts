@@ -1,9 +1,9 @@
 import type { ReadTool } from "@zaly/agent"
-import type { ToolRenderer, ToolResultCtx } from "./registry.ts"
+import type { ToolRenderer } from "./registry.ts"
 
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
-import { memo, unwrap } from "@zaly/tui"
+import { memo } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { log } from "@zaly/tui/widgets/log"
@@ -22,11 +22,12 @@ export const readRenderer: ToolRenderer<ReadTool> = {
     path.state.wrap = "char"
 
     const range = memo(() => {
-      const result = unwrap(props.result)
+      const result = props.result
       const meta = result?.meta
       if (result === undefined) {
-        const offset = props.params?.offset ?? 1
-        const limit = props.params?.limit
+        const params = props.params
+        const offset = params.offset ?? 1
+        const limit = params.limit
         if (offset < 0) {
           return limit !== undefined && limit < -offset
             ? `${-offset} from end · ${limit} line${limit === 1 ? "" : "s"}`
@@ -47,18 +48,16 @@ export const readRenderer: ToolRenderer<ReadTool> = {
     )
   },
 
-  result(props: ToolResultCtx<ReadTool>) {
+  result(props) {
     const path = memo(() => {
-      const p = unwrap(props.result)?.meta?.path
-      return p ? prettyPath(p) : (props.params?.path ?? "unknown path")
+      const p = props.result?.meta?.path
+      return p ? prettyPath(p) : (props.params.path ?? "unknown path")
     })
 
-    const unchanged = memo(() => unwrap(props.result)?.meta?.unchanged === true)
-    const title = memo(() =>
-      unwrap(props.result)?.isError === true ? `${path()}  (error)` : path()
-    )
-    const content = memo(() => justText(unwrap(props.result)?.content ?? ""))
-    const numberOffset = memo(() => unwrap(props.result)?.meta?.offset ?? props.params?.offset)
+    const unchanged = memo(() => props.result?.meta?.unchanged === true)
+    const title = memo(() => (props.result?.isError === true ? `${path()}  (error)` : path()))
+    const content = memo(() => justText(props.result?.content ?? ""))
+    const numberOffset = memo(() => props.result?.meta?.offset ?? props.params.offset)
 
     return box(
       {},

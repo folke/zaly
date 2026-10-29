@@ -1,12 +1,12 @@
-import type { Message, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { Message, StreamEvent, ToolCallPart, ToolResult } from "@zaly/ai"
 import type { Setter } from "@zaly/tui"
 import type { App } from "./app.ts"
 
-import { memo, signal } from "@zaly/tui"
+import { signal, toAccessor } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { compactionMarker } from "../widgets/compaction.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
-import { toolCall } from "../widgets/tool.ts"
+import { toolCall, ToolView } from "../widgets/tool.ts"
 import { messageWidgets } from "./message.ts"
 
 type StreamingWidget =
@@ -16,30 +16,42 @@ type StreamingWidget =
       setPending: Setter<boolean>
     }
   | {
-      type: "tools"
-      setPending: Setter<boolean>
-      setResult: (callId: string, result: ToolResult) => void
-    }
-  | {
       type: "message"
       setPending: Setter<boolean>
       setMessage?: (m: Message<"user">) => void
     }
 
 type ForType<T extends StreamingWidget["type"]> = Extract<StreamingWidget, { type: T }>
+type ToolDelta = Extract<StreamEvent, { type: "tool-call-delta" }>
+type StreamingTool = {
+  id?: string
+  name?: string
+  args: string
+  finalized: boolean
+  view?: ToolView
+}
 
 class AgentStream {
   #active?: StreamingWidget
   #ac?: AbortController
   #pending = new Map<string, ForType<"message">>()
+  #tools = new Map<string, StreamingTool>()
+  #toolsPending = signal(false)
 
   constructor(public app: App) {
     this.attach()
   }
 
-  flush(): void {
+  #flushActive(): void {
     this.#active?.setPending(false)
     this.#active = undefined
+  }
+
+  flush(): void {
+    this.#flushActive()
+    this.#toolsPending.set(false)
+    for (const entry of this.#tools.values()) entry.view?.close()
+    this.#tools.clear()
   }
 
   reset(): void {
@@ -50,7 +62,7 @@ class AgentStream {
   }
 
   set active(widget: StreamingWidget | undefined) {
-    this.flush()
+    this.#flushActive()
     this.#active = widget
   }
 
@@ -58,34 +70,76 @@ class AgentStream {
     return this.#active?.type === type ? (this.#active as ForType<T>) : undefined
   }
 
-  onToolCalls(calls: ToolCallPart[]): void {
-    const [pending, setPending] = signal(true)
-    const results = new Map<string, { setResult: Setter<ToolResult | undefined> }>()
+  #entry(key: string): StreamingTool {
+    const existing = this.#tools.get(key)
+    if (existing) return existing
+    this.#toolsPending.set(true)
+    const entry: StreamingTool = { args: "", finalized: false }
+    this.#tools.set(key, entry)
+    return entry
+  }
 
-    for (const call of calls) {
-      const [result, setResult] = signal<ToolResult | undefined>(undefined)
-      results.set(call.id, { setResult })
-      const active = memo(() => pending() && result() === undefined)
-      this.app.renderer.stream.append(() =>
-        toolCall({
-          call,
-          collapsed: memo(() => this.app.$.ui.collapsedTools.includes(call.name) || active()),
-          cwd: this.app.agent.ctx.cwd,
-          pending: active,
-          result,
-        })
-      )
+  #appendTool(entry: StreamingTool, call?: ToolCallPart): void {
+    if (entry.view || !entry.name) return
+    this.#flushActive()
+    const name = entry.name
+    const initial: ToolCallPart = call ?? {
+      id: entry.id ?? "",
+      name,
+      params: entry.args,
+      type: "tool-call",
     }
+    const cwd = this.app.agent.ctx.cwd
+    this.app.renderer.stream.append(() => {
+      const view: ToolView = new ToolView({
+        call: initial,
+        collapsed: toAccessor(() => this.app.$.ui.collapsedTools.includes(name) || view.pending),
+        cwd,
+        pending: toAccessor(() => this.#toolsPending.get() && view.result === undefined),
+      })
+      entry.view = view
+      return toolCall(view)
+    })
+  }
 
-    this.active = {
-      setPending,
-      setResult: (callId, result) => results.get(callId)?.setResult(result),
-      type: "tools",
+  #findTool(call: ToolCallPart): StreamingTool | undefined {
+    const entries = [...this.#tools.values()]
+    return (
+      entries.find((entry) => entry.id === call.id) ??
+      entries.find((entry) => !entry.id && !entry.finalized && entry.name === call.name)
+    )
+  }
+
+  onToolDelta(event: ToolDelta): void {
+    const entry = this.#entry(`delta:${event.key}`)
+    if (entry.finalized) return
+    entry.id ??= event.id
+    if (!entry.name && event.name) entry.name = event.name
+    entry.args = event.args ?? entry.args + (event.delta ?? "")
+    this.#appendTool(entry)
+    const view = entry.view
+    if (view && (view.call.params !== entry.args || (entry.id && view.call.id !== entry.id))) {
+      view.call = { ...view.call, id: entry.id ?? view.call.id, params: entry.args }
     }
   }
 
+  onToolCall(call: ToolCallPart): void {
+    this.#flushActive()
+    const entry = this.#findTool(call) ?? this.#entry(`call:${call.id}`)
+    entry.id = call.id
+    entry.name ??= call.name
+    entry.finalized = true
+    this.#appendTool(entry, call)
+    if (entry.view) entry.view.call = call
+  }
+
+  onToolCalls(calls: ToolCallPart[]): void {
+    for (const call of calls) this.onToolCall(call)
+  }
+
   onToolResult(call: ToolCallPart, result: ToolResult): void {
-    this.get("tools")?.setResult(call.id, result)
+    const view = this.#findTool(call)?.view
+    if (view) view.result = result
   }
 
   onDelta(type: "text" | "reasoning", delta: string): void {
@@ -105,7 +159,10 @@ class AgentStream {
   }
 
   onPending(messages: readonly Message[]): void {
-    for (const mf of messageWidgets(messages, this.app, { cwd: this.app.agent.ctx.cwd, pending: true })) {
+    for (const mf of messageWidgets(messages, this.app, {
+      cwd: this.app.agent.ctx.cwd,
+      pending: true,
+    })) {
       if (mf.setPending)
         this.#pending.set(mf.id, {
           setMessage: mf.setMessage,
@@ -129,14 +186,11 @@ class AgentStream {
     this.#ac = new AbortController()
     const opts = { signal: this.#ac.signal }
     const { agent } = this.app
-
     agent.ctx.on("session", () => this.attach(), opts)
-
     agent.session.on(
       "node",
       ({ node }) => {
-        if (node.type !== "message") return
-        this.onMessage(node.message)
+        if (node.type === "message") this.onMessage(node.message)
       },
       opts
     )
@@ -149,26 +203,24 @@ class AgentStream {
     agent.on(
       "stream-event",
       ({ event }) => {
-        if (event.type === "reasoning-delta" && event.delta !== "") {
+        if (event.type === "reasoning-delta" && event.delta !== "")
           this.onDelta("reasoning", event.delta)
-        } else if (event.type === "text-delta" && event.delta !== "") {
+        else if (event.type === "text-delta" && event.delta !== "")
           this.onDelta("text", event.delta)
-        }
+        else if (event.type === "tool-call-delta") this.onToolDelta(event)
+        else if (event.type === "tool-call") this.onToolCall(event)
       },
       opts
     )
     agent.on("tool-calls", ({ calls }) => this.onToolCalls(calls), opts)
     agent.on("tool-result", ({ call, result }) => this.onToolResult(call, result), opts)
     agent.on("step-end", () => this.flush(), opts)
+    agent.on("stop", () => this.flush(), opts)
     return this
   }
 }
 
-/**
- * Bridge: live agent events → renderer.stream appends. Owns the
- * in-flight assistant bubble's signal and a map of pending tool-call
- * setters so results can flip them to ✓/✗.
- */
+/** Bridge live agent events to reactive message and tool previews. */
 export function attachStream(app: App): AgentStream {
   return new AgentStream(app)
 }

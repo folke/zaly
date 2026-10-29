@@ -1,5 +1,6 @@
-import type { MetaOf, ParamsOf, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
-import type { Reactive, Node } from "@zaly/tui"
+import type { Tool } from "@zaly/ai"
+import type { Node } from "@zaly/tui"
+import type { ToolView } from "../tool.ts"
 
 import { createRegistry } from "@zaly/shared/registry"
 import { bashRenderer } from "./bash.ts"
@@ -18,24 +19,12 @@ import { writeRenderer } from "./write.ts"
  * registered renderer keyed by `call.name`. Plugins can register their
  * own via `toolResultRegistry.register("my-tool", myRenderer)`.
  *
- * Each renderer is a `Widget<ToolResultProps>` — a normal widget that
- * takes a reactive `result` accessor and returns a Node. While the
- * call is in flight (`result()` returns `undefined`) the renderer
- * typically shows a placeholder; once the result lands, it can render
- * a code block, diff, or whatever fits the tool's output shape.
+ * Call and result renderers receive the same ToolView. Read its reactive
+ * getters inside memos/render callbacks; result is undefined until the tool completes.
  */
-export interface ToolResultCtx<T extends Tool = Tool> {
-  cwd?: string
-  params?: Partial<ParamsOf<T>>
-  call: ToolCallPart<T["name"], ParamsOf<T>>
-  /** Reactive — `undefined` while in flight, then the resolved
-   *  `ToolResult` when the tool returns. */
-  result: Reactive<ToolResult<MetaOf<T>> | undefined>
-}
-
 export type ToolRenderer<T extends Tool = Tool> = {
-  call?: (ctx: ToolResultCtx<T>) => Node
-  result?: (ctx: ToolResultCtx<T>) => Node
+  call?: (view: Readonly<ToolView<T>>) => Node
+  result?: (view: Readonly<ToolView<T>>) => Node
 }
 
 export type ToolResultLoader = () => ToolRenderer
@@ -62,6 +51,6 @@ const toolResultRegistry = createRegistry<ToolResultLoader>("tool-result").from(
 export function toolRenderer<T extends Tool = Tool>(tool: T["name"]): Required<ToolRenderer<T>> {
   return {
     ...defaultRenderer,
-    ...(toolResultRegistry.has(tool) ? toolResultRegistry.load(tool) : {}),
+    ...(toolResultRegistry.has(tool) ? (toolResultRegistry.load(tool) as ToolRenderer<T>) : {}),
   }
 }

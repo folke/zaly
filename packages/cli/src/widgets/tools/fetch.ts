@@ -4,7 +4,7 @@ import type { ToolRenderer } from "./registry.ts"
 import { justText } from "@zaly/ai"
 import { prettyPath } from "@zaly/shared"
 import { cleanText } from "@zaly/shared/text"
-import { memo, unwrap } from "@zaly/tui"
+import { memo } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
 import { code } from "@zaly/tui/widgets/code"
 import { log } from "@zaly/tui/widgets/log"
@@ -16,13 +16,13 @@ const PREVIEW_LINE_LIMIT = 10
 
 export const fetchRenderer: ToolRenderer<FetchTool> = {
   result(props) {
-    const result = memo(() => unwrap(props.result))
+    const result = memo(() => props.result)
     const meta = memo(() => result()?.meta)
     const content = memo(() => cleanText(justText(result()?.content ?? "")))
 
     const link = memo(() => {
       const m = meta()
-      const url = m?.url ?? props.params?.url ?? ""
+      const url = m?.url ?? props.params.url ?? ""
       if (!url) return ""
       const title = m?.title ? cleanText(m.title) : url
       return `[${title}](${url})`

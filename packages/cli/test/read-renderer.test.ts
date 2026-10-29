@@ -1,24 +1,22 @@
 import type { ReadTool, ReadToolMeta } from "@zaly/agent"
 import type { ParamsOf, ToolResult } from "@zaly/ai"
-import type { Reactive } from "@zaly/tui"
 
 import { stripAnsi } from "@zaly/shared/ansi"
-import { createCtx, signal } from "@zaly/tui"
+import { createCtx } from "@zaly/tui"
 import { join } from "pathe"
 import { expect, test } from "vitest"
-import { toolCall } from "../src/widgets/tool.ts"
+import { toolCall, ToolView } from "../src/widgets/tool.ts"
 import { toolRenderer } from "../src/widgets/tools/registry.ts"
 
-function call(
-  params: Partial<ParamsOf<ReadTool>>,
-  result?: Reactive<ToolResult<ReadToolMeta> | undefined>
-) {
+function call(params: Partial<ParamsOf<ReadTool>>, result?: ToolResult<ReadToolMeta>) {
   const args = { path: "file.ts", ...params }
-  return toolRenderer<ReadTool>("read").call({
-    call: { id: "read", name: "read", params: args, type: "tool-call" },
-    params: args,
-    result,
-  })
+  return toolRenderer<ReadTool>("read").call(
+    new ToolView<ReadTool>({
+      cwd: process.cwd(),
+      call: { id: "read", name: "read", params: args, type: "tool-call" },
+      result,
+    })
+  )
 }
 
 function completed(meta: Partial<ReadToolMeta> = {}): ToolResult<ReadToolMeta> {
@@ -91,22 +89,22 @@ test("failed reads omit requested ranges", async () => {
 })
 
 test("read range reacts to completion and clamps to EOF even when the result is collapsed", async () => {
-  const [result, setResult] = signal<ToolResult<ReadToolMeta> | undefined>(undefined)
-  const node = toolCall({
+  const view = new ToolView<ReadTool>({
+    cwd: process.cwd(),
     call: {
       id: "read",
       name: "read",
       type: "tool-call",
       params: { path: "file.ts", offset: 8, limit: 100 },
     },
-    result,
     collapsed: true,
   })
+  const node = toolCall(view)
   const ctx = await createCtx({ width: 100 })
   let rows = await node.render(ctx)
   expect(stripAnsi(rows.join("\n"))).toContain('read("file.ts") 8–107')
 
-  setResult(completed({ offset: 8, limit: 23 }))
+  view.result = completed({ offset: 8, limit: 23 })
   rows = await node.render(ctx)
   expect(stripAnsi(rows.join("\n"))).toContain('read("file.ts") 8–30')
   expect(stripAnsi(rows.join("\n"))).not.toContain("read content")
@@ -115,17 +113,17 @@ test("read range reacts to completion and clamps to EOF even when the result is 
 test.each(["read", "edit", "write"] as const)(
   "%s preview reacts to the resolved file path",
   async (name) => {
-    const [result, setResult] = signal<ToolResult<ReadToolMeta> | undefined>(undefined)
-    const node = toolCall({
+    const view = new ToolView({
+      cwd: process.cwd(),
       call: { id: name, name, type: "tool-call", params: { path: "./folder/../file.ts" } },
-      result,
       collapsed: true,
     })
+    const node = toolCall(view)
     const ctx = await createCtx({ width: 100 })
     let rows = await node.render(ctx)
     expect(stripAnsi(rows.join("\n"))).toContain(`${name}("./folder/../file.ts")`)
 
-    setResult(completed({ kind: name, path: join(process.cwd(), "file.ts"), full: true }))
+    view.result = completed({ kind: name, path: join(process.cwd(), "file.ts"), full: true })
     rows = await node.render(ctx)
     expect(stripAnsi(rows.join("\n"))).toContain(`${name}("file.ts")`)
     expect(stripAnsi(rows.join("\n"))).not.toContain("folder/..")

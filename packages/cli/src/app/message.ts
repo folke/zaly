@@ -7,7 +7,7 @@ import { toParts } from "@zaly/ai"
 import { signal } from "@zaly/tui"
 import { assistantMessage } from "../widgets/assistant.ts"
 import { reasoningMessage } from "../widgets/reasoning.ts"
-import { toolCall } from "../widgets/tool.ts"
+import { toolCall, ToolView } from "../widgets/tool.ts"
 import { userMessage } from "../widgets/user.ts"
 
 export type MessageWidgets = {
@@ -69,13 +69,15 @@ export function messageWidgets(
             return () => reasoningMessage({ content: part.text, cwd, pending })
           else if (part.type === "tool-call") {
             return () =>
-              toolCall({
-                call: part,
-                collapsed: collapsed.has(part.name),
-                cwd,
-                pending,
-                result: results.get(part.id),
-              })
+              toolCall(
+                new ToolView({
+                  call: part,
+                  collapsed: collapsed.has(part.name),
+                  cwd: cwd ?? process.cwd(),
+                  pending,
+                  result: results.get(part.id),
+                })
+              )
           }
         })
         .filter((w) => w !== undefined)

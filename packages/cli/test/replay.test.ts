@@ -72,6 +72,65 @@ test.each([18, 19, 20])("replay preserves edit results with %i later messages", 
   expect(nodes.every((node) => !node.state.sticky)).toBe(true)
 })
 
+test("completed tail tools stay sticky and expanded until replay releases them", async () => {
+  const session = await Session.load({ store: new MemoryStore() })
+  for (let i = 0; i < 25; i++) await session.add({ role: "user", content: `Earlier ${i}` })
+  await session.add({
+    role: "assistant",
+    content: [
+      {
+        type: "tool-call",
+        id: "write",
+        name: "write",
+        params: { path: "file.txt", content: "finished body\n" },
+      },
+    ],
+  })
+  await session.add({
+    role: "tool",
+    content: [
+      {
+        type: "tool-result",
+        id: "write",
+        name: "write",
+        content: "ok",
+        meta: { path: "file.txt", original: "" },
+      },
+    ],
+  })
+  const nodes: Node[] = []
+  const frames: { sticky: boolean; output: string }[] = []
+  const ctx = await createCtx({ width: 100 })
+  const app = {
+    $: { ui: { reasoning: false, collapsedTools: [] } },
+    ctx: { flags: {} },
+    renderer: {
+      render: async () => {
+        for (const node of nodes) {
+          const rows = await node.render(ctx)
+          const output = stripAnsi(rows.join("\n"))
+          if (output.includes('write("file.txt")'))
+            frames.push({ sticky: !!node.state.sticky, output })
+        }
+      },
+      stream: {
+        append: (create: () => Node) => {
+          const node = create()
+          nodes.push(node)
+          return node
+        },
+        waitIdle: async () => {},
+      },
+    },
+  } as unknown as App
+  await replay(session, app)
+  expect(frames).toHaveLength(2)
+  expect(frames[0].sticky).toBe(true)
+  expect(frames[0].output).toContain("finished body")
+  expect(frames[1].sticky).toBe(false)
+  expect(frames[1].output).toContain("finished body")
+})
+
 test("replay uses each message's historical cwd before an agent is initialized", async () => {
   const first = resolve("first-project")
   const second = resolve("second-project")

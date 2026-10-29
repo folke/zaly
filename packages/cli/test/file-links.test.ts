@@ -2,13 +2,14 @@ import type { SkillTool } from "@zaly/agent"
 import type { MetaOf, ToolResult } from "@zaly/ai"
 import type { ComposerRenderCtx } from "../src/app/composer.ts"
 
-import { createCtx, signal } from "@zaly/tui"
+import { createCtx } from "@zaly/tui"
 import { fileUrl } from "@zaly/tui/ansi"
 import { resolve } from "pathe"
 import { expect, test } from "vitest"
 import { FilesComposer } from "../src/app/composer/files.ts"
 import { MessageComposer } from "../src/app/composer/message.ts"
 import { assistantMessage } from "../src/widgets/assistant.ts"
+import { ToolView } from "../src/widgets/tool.ts"
 import { toolRenderer } from "../src/widgets/tools/registry.ts"
 
 const project = resolve("project")
@@ -23,28 +24,30 @@ function loadedSkill(path = ""): ToolResult<MetaOf<SkillTool>> {
 test("skill links use the skill file's directory and follow reactive path changes", async () => {
   const first = resolve("skills/first/SKILL.md")
   const second = resolve("skills/second/SKILL.md")
-  const [result, setResult] = signal(loadedSkill(first))
-  const node = toolRenderer<SkillTool>("skill").result({
+  const view = new ToolView<SkillTool>({
     call: { id: "skill", name: "skill", type: "tool-call", params: { name: "example" } },
     cwd: project,
-    result,
+    result: loadedSkill(first),
   })
+  const node = toolRenderer<SkillTool>("skill").result(view)
   const ctx = await createCtx({ width: 100 })
   const rows = await node.render(ctx)
   expect(rows.join("\n")).toContain(fileUrl("skills/first/docs/reference.md"))
   expect(rows.join("\n")).not.toContain(fileUrl("docs/reference.md", project))
-  setResult(loadedSkill(second))
+  view.result = loadedSkill(second)
   const updated = await node.render(ctx)
   expect(updated.join("\n")).toContain(fileUrl("skills/second/docs/reference.md"))
   expect(updated.join("\n")).not.toContain(fileUrl("skills/first/docs/reference.md"))
 })
 
 test("skill links without a path fall back to the calling project", async () => {
-  const node = toolRenderer<SkillTool>("skill").result({
-    call: { id: "skill", name: "skill", type: "tool-call", params: { name: "example" } },
-    cwd: project,
-    result: loadedSkill(),
-  })
+  const node = toolRenderer<SkillTool>("skill").result(
+    new ToolView<SkillTool>({
+      call: { id: "skill", name: "skill", type: "tool-call", params: { name: "example" } },
+      cwd: project,
+      result: loadedSkill(),
+    })
+  )
   const rows = await node.render(await createCtx({ width: 100 }))
   expect(rows.join("\n")).toContain(fileUrl("docs/reference.md", project))
 })

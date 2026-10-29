@@ -1,10 +1,10 @@
 import type { FetchTool, FetchToolMeta } from "@zaly/agent"
 import type { ToolResult } from "@zaly/ai"
-import type { Reactive } from "@zaly/tui"
 
 import { stripAnsi } from "@zaly/shared/ansi"
-import { createCtx, signal } from "@zaly/tui"
+import { createCtx } from "@zaly/tui"
 import { expect, test } from "vitest"
+import { ToolView } from "../src/widgets/tool.ts"
 import { defaultRenderer } from "../src/widgets/tools/default.ts"
 import { toolRenderer } from "../src/widgets/tools/registry.ts"
 
@@ -30,12 +30,15 @@ function completed(
     },
   }
 }
-function node(result: Reactive<ToolResult<FetchToolMeta> | undefined>) {
-  return toolRenderer<FetchTool>("fetch").result({
+function view(result?: ToolResult<FetchToolMeta>) {
+  return new ToolView<FetchTool>({
+    cwd: process.cwd(),
     call: { id: "fetch", name: "fetch", params: { url }, type: "tool-call" },
-    params: { url },
     result,
   })
+}
+function node(result?: ToolResult<FetchToolMeta>) {
+  return toolRenderer<FetchTool>("fetch").result(view(result))
 }
 async function renderRaw(result: ToolResult<FetchToolMeta>) {
   const ctx = await createCtx({ width: 100 })
@@ -113,13 +116,13 @@ test.each([
 )
 
 test("a pending fetch reacts to its result and legacy text still renders without sidecar metadata", async () => {
-  const [result, setResult] = signal<ToolResult<FetchToolMeta> | undefined>(undefined)
-  const view = node(result)
+  const state = view()
+  const rendered = toolRenderer<FetchTool>("fetch").result(state)
   const ctx = await createCtx({ width: 100 })
-  let rows = await view.render(ctx)
+  let rows = await rendered.render(ctx)
   expect(stripAnsi(rows.join("\n")).trim()).toBe("")
-  setResult(completed())
-  rows = await view.render(ctx)
+  state.result = completed()
+  rows = await rendered.render(ctx)
   expect(stripAnsi(rows.join("\n"))).toContain("Page content")
   expect(await render({ content: "Legacy response" })).toContain("Legacy response")
 })
