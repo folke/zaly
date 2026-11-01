@@ -89,7 +89,6 @@ export class ShikiWorkerClient {
         ),
       this.#timeout
     )
-    timeout.unref()
     this.#timeouts.set(job.id, timeout)
     // oxlint-disable-next-line unicorn/require-post-message-target-origin
     worker.postMessage(msg)
@@ -106,7 +105,6 @@ export class ShikiWorkerClient {
         () => ready.reject(new Error(`Shiki worker did not start within ${this.#timeout}ms`)),
         this.#timeout
       )
-      timeout.unref()
       worker.on("message", (event) => {
         if (event.type === "ready") {
           started = true
