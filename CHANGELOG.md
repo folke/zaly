@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.0](https://github.com/folke/zaly/compare/v0.2.0...v0.3.0) (2026-11-07)
+
+
+### 🚀 Enhancements
+
+* **ai:** normalize reasoning from model capabilities ([27ace9b](https://github.com/folke/zaly/commit/27ace9b6d7ab086554a32e8222d737d8ccc34d00))
+* **cli:** preview streaming tool calls with reactive tool views ([b72e833](https://github.com/folke/zaly/commit/b72e8335c6107e553cbb3fd3aded60cb97d9ab7a))
+
+
+### 🩹 Fixes
+
+* **agent:** only run a tool batch in parallel, when each call can be parallel ([09736e1](https://github.com/folke/zaly/commit/09736e1d81711ce810d5aeae9fccc49f03cf0096))
+* **models:** update models.dev catalog ([#61](https://github.com/folke/zaly/issues/61)) ([118e327](https://github.com/folke/zaly/commit/118e32797033016a218eec0762cab133505418db))
+* **models:** update models.dev catalog ([#64](https://github.com/folke/zaly/issues/64)) ([c91b9c0](https://github.com/folke/zaly/commit/c91b9c0fe2776897ba1f172edb816806e26548b3))
+* **tui:** keep Shiki work alive under Node ([#67](https://github.com/folke/zaly/issues/67)) ([6964d44](https://github.com/folke/zaly/commit/6964d4429e3e48de01f66d4dfb7caa49be895143))
+* **tui:** resolve file hyperlinks against their source directory ([40ee939](https://github.com/folke/zaly/commit/40ee93923901743e94cc1b73c4156a0673dda2ff))
+
+
+### 💅 Refactors
+
+* **ai:** moved codex-models fetching to ai + added github source ([81a0b44](https://github.com/folke/zaly/commit/81a0b441f477397853d595e4b9a4d1faf9b07a99))
+* **ai:** re-use toImagePart in compose ([23f1081](https://github.com/folke/zaly/commit/23f1081166bc186733b04c75ca7a2bb7f99f6da6))
+
+
+### 🤖 CI
+
+* group dependabot PRs ([e7e0f7f](https://github.com/folke/zaly/commit/e7e0f7f351fb3980731c4bf154098b39c99d3818))
+
 ## [0.2.0](https://github.com/folke/zaly/compare/v0.1.1...v0.2.0) (2026-10-26)
 
 
