@@ -63,26 +63,26 @@
     "@types/shell-quote": "^1.7.5",
     "@types/turndown": "^5.0.6",
     "ignore": "^7.0.14",
-    "jsonpath-plus": "^11.2.1",
-    "linkedom": "^0.18.14",
+    "jsonpath-plus": "^11.3.0",
+    "linkedom": "^0.18.15",
     "shell-quote": "^1.12.0",
-    "turndown": "^7.2.4"
+    "turndown": "^7.2.5"
   },
   "peerDependencies": {
-    "typebox": "^1.4.3"
+    "typebox": "^1.4.5"
   },
   "engines": {
     "bun": ">=1.2",
     "node": ">=22.18.0"
   },
   "inlinedDependencies": {
-    "@acemir/cssom": "0.9.32",
     "@joplin/turndown-plugin-gfm": "1.0.68",
     "@mixmark-io/domino": "2.2.0",
     "@mozilla/readability": "0.6.0",
     "boolbase": "2.0.0",
     "css-select": "7.0.0",
     "css-what": "8.0.0",
+    "cssomnom": "0.1.11",
     "dom-serializer": [
       "2.0.0",
       "3.1.1"
@@ -106,11 +106,11 @@
     ],
     "htmlparser2": "10.1.0",
     "ignore": "7.0.14",
-    "jsonpath-plus": "11.2.1",
-    "linkedom": "0.18.14",
+    "jsonpath-plus": "11.3.0",
+    "linkedom": "0.18.15",
     "nth-check": "3.0.1",
     "shell-quote": "1.12.0",
-    "turndown": "7.2.4",
+    "turndown": "7.2.5",
     "uhyphen": "0.2.0"
   }
 }
