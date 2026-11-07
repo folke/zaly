@@ -54,6 +54,9 @@ renderer.start()
 This package is built for zaly first. It is usable on its own, but API names and
 widget behavior may change while the app evolves.
 
+Asynchronous syntax highlighting keeps Node alive until pending results settle.
+Idle highlighting workers do not prevent one-shot commands from exiting.
+
 ## License
 
 MIT © Folke Lemaitre
