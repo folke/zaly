@@ -1,6 +1,8 @@
 import type { Message, Tool } from "../../src/types.ts"
 
 import { describe, expect, test } from "vitest"
+import { Model } from "../../src/model.ts"
+import { builtinOverrides } from "../../src/models/overrides.ts"
 import { collect } from "../../src/provider.ts"
 import { createOpenAI } from "../../src/providers/openai.ts"
 import { recordFetch, sseResponse, streamReq } from "../helpers/sse.ts"
@@ -10,6 +12,66 @@ import { recordFetch, sseResponse, streamReq } from "../helpers/sse.ts"
 // sends to `fetch` — behavioural, not unit.
 
 describe("openai: request translation", () => {
+  test("awaits the message hook in order for every expanded wire message", async () => {
+    const source: Message = {
+      role: "tool",
+      content: [
+        { type: "tool-result", id: "first", name: "read", content: "First file" },
+        {
+          type: "tool-result",
+          id: "second",
+          name: "read",
+          content: [
+            { type: "image", mime: "image/png", source: { type: "base64", data: "iVBORw0K" } },
+          ],
+        },
+      ],
+    }
+    const original = structuredClone(source)
+    const events: string[] = []
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    const req = streamReq({
+      model: "m",
+      messages: [source],
+      quirks: {
+        async onOpenAIMessage(message, ctx) {
+          expect(ctx.source).toBe(source)
+          expect(ctx.model).toBe(req.model)
+          events.push(`start:${message.role}`)
+          await Promise.resolve()
+          events.push(`end:${message.role}`)
+          return message.role === "tool"
+            ? { ...message, content: `hook: ${message.content}` }
+            : message
+        },
+      },
+    })
+    await drain(provider.stream(req))
+    expect(events).toEqual([
+      "start:tool",
+      "end:tool",
+      "start:tool",
+      "end:tool",
+      "start:user",
+      "end:user",
+    ])
+    const body = recorded[0].body as { messages: unknown[] }
+    expect(body.messages).toMatchObject([
+      { role: "tool", tool_call_id: "first", content: "hook: First file" },
+      {
+        role: "tool",
+        tool_call_id: "second",
+        content: "hook: \n[attachments delivered as the next user message]",
+      },
+      {
+        role: "user",
+        content: [{ type: "image_url", image_url: { url: "data:image/png;base64,iVBORw0K" } }],
+      },
+    ])
+    expect(source).toEqual(original)
+  })
+
   test("system + user string content", async () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })
@@ -838,6 +900,156 @@ describe("openai: collect integration", () => {
 })
 
 // ── helpers ──────────────────────────────────────────────────────────────
+
+describe("openai: Google thought signatures", () => {
+  const model = "gemini-3-flash"
+  const bypass = { google: { thought_signature: "skip_thought_signature_validator" } }
+  type Call = { id: string; extra_content?: Record<string, unknown> }
+  const history = (owner?: string, wire?: Record<string, unknown>): Message[] => [
+    { role: "user", content: "Read the files" },
+    {
+      role: "assistant",
+      meta: owner ? { modelId: owner } : undefined,
+      content: [
+        {
+          type: "tool-call",
+          id: "first",
+          name: "read",
+          params: { path: "README.md" },
+          ...(wire ? { wire } : {}),
+        },
+        { type: "tool-call", id: "second", name: "read", params: { path: "OTHER.md" } },
+      ],
+    },
+    {
+      role: "tool",
+      content: [
+        { type: "tool-result", id: "first", name: "read", content: "First file" },
+        { type: "tool-result", id: "second", name: "read", content: "Second file" },
+      ],
+    },
+  ]
+  async function request(messages: Message[], google = true, viaModel = false): Promise<Call[]> {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    const req = streamReq({
+      model,
+      messages,
+      quirks: google ? builtinOverrides.google!.quirks : {},
+    })
+    await (viaModel
+      ? new Model({ id: model, spec: req.model, provider }).stream(req.ctx, req.opts)
+      : drain(provider.stream(req)))
+    const body = recorded[0].body as { messages: { role: string; tool_calls?: Call[] }[] }
+    return body.messages.find((message) => message.role === "assistant")!.tool_calls!
+  }
+
+  test("synthetic calls get a bypass on the first call, not unsigned siblings", async () => {
+    const messages = history()
+    const calls = await request(messages)
+    expect(calls[0].extra_content).toEqual(bypass)
+    expect(calls[1].extra_content).toBeUndefined()
+    const assistant = messages[1]
+    if (assistant.role !== "assistant" || !Array.isArray(assistant.content))
+      throw new Error("Expected assistant")
+    expect(assistant.content[0]).not.toHaveProperty("wire")
+  })
+
+  test("foreign signatures are discarded before adding Google's bypass", async () => {
+    const calls = await request(
+      history("other/model", {
+        extra_content: { google: { thought_signature: "foreign" }, secret: "foreign metadata" },
+      }),
+      true,
+      true
+    )
+    expect(calls[0].extra_content).toEqual(bypass)
+    expect(calls[1].extra_content).toBeUndefined()
+  })
+
+  test.each([{ owner: model }, { owner: undefined }])(
+    "real signatures and other wire metadata are preserved for owner $owner",
+    async ({ owner }) => {
+      const extra = {
+        google: { thought_signature: "real-signature", other: "keep" },
+        other: "keep",
+      }
+      const calls = await request(history(owner, { extra_content: extra }))
+      expect(calls[0].extra_content).toEqual(extra)
+      expect(calls[1].extra_content).toBeUndefined()
+    }
+  )
+
+  test("missing same-model signatures aren't silently replaced with a bypass", async () => {
+    const calls = await request(history(model))
+    expect(calls.every((call) => call.extra_content === undefined)).toBe(true)
+  })
+
+  test("non-Google requests don't receive Google's synthetic signature", async () => {
+    const calls = await request(history(), false)
+    expect(calls.every((call) => call.extra_content === undefined)).toBe(true)
+  })
+
+  test("foreign metadata doesn't leak into a different OpenAI-compatible provider", async () => {
+    const calls = await request(
+      history("other/model", { extra_content: { google: { thought_signature: "foreign" } } }),
+      false,
+      true
+    )
+    expect(calls.every((call) => call.extra_content === undefined)).toBe(true)
+  })
+
+  test("streamed signatures survive collection and JSON history replay", async () => {
+    const extra = { google: { thought_signature: "streamed-signature" } }
+    const { fetch, recorded } = recordFetch(() =>
+      sseResponse([
+        {
+          choices: [
+            {
+              index: 0,
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    id: "first",
+                    type: "function",
+                    function: { name: "read", arguments: '{"path":"README.md"}' },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        { choices: [{ index: 0, delta: { tool_calls: [{ index: 0, extra_content: extra }] } }] },
+        finishChunk({ finish_reason: "tool_calls" }),
+      ])
+    )
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    const opts = { model, quirks: builtinOverrides.google!.quirks }
+    const first = await collect(
+      provider.stream(streamReq({ ...opts, messages: [{ role: "user", content: "Read" }] }))
+    )
+    const serialized = JSON.stringify(first.message)
+    const saved = JSON.parse(serialized) as Message<"assistant">
+    saved.meta = { ...saved.meta, modelId: model }
+    await drain(
+      provider.stream(
+        streamReq({
+          ...opts,
+          messages: [
+            saved,
+            {
+              role: "tool",
+              content: [{ type: "tool-result", id: "first", name: "read", content: "README" }],
+            },
+          ],
+        })
+      )
+    )
+    const body = recorded[1].body as { messages: { tool_calls?: Call[] }[] }
+    expect(body.messages[0].tool_calls?.[0].extra_content).toEqual(extra)
+  })
+})
 
 async function drain<T>(stream: AsyncIterable<T>): Promise<T[]> {
   const out: T[] = []

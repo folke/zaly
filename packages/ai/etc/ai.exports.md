@@ -1,4 +1,4 @@
-# @zaly/ai (159)
+# @zaly/ai (161)
 
 ## Classes (5)
 
@@ -77,7 +77,7 @@
 - filterModel
 - filterModels
 
-## Types (97)
+## Types (99)
 
 - AnyContent
 - AnyPart
@@ -140,6 +140,8 @@
 - OAuthToken
 - OAuthTokenRequest
 - OAuthTokenResponse
+- OpenAIContentPart
+- OpenAIMessage
 - OverflowCheck
 - ParamsOf
 - ParseResult

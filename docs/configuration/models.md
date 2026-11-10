@@ -54,6 +54,17 @@ At startup, use `zaly --model provider/model`. Bare startup prefers the resumed
 session's model, then saved state, then the built-in fallback. `models.json` in
 the user config directory is for model/provider overrides; it is not the credential store.
 
+## Google tool history
+
+The built-in Google provider uses its OpenAI-compatible endpoint. zaly preserves
+Gemini's tool-call thought signatures for same-model continuations. Automatic file
+reads and foreign-model tool history use Google's documented signature-validation
+bypass; that fallback is added only to outgoing requests, not stored as a real signature.
+The Google-specific repair lives in its `quirks.onOpenAIMessage` override, not the
+generic OpenAI adapter. This runtime hook receives each translated message and its
+source/model context, and returns the original or a replacement message. Hooks are
+code-only and cannot be configured through `models.json`.
+
 ## Reasoning effort
 
 Use `/reasoning` or `--reasoning` to choose reasoning effort. Available/effective

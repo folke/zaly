@@ -162,7 +162,7 @@ interface OpenAITool {
   }
 }
 
-type OpenAIMessage =
+export type OpenAIMessage =
   | { role: "system" | "developer"; content: string }
   | { role: "user"; content: string | OpenAIContentPart[] }
   | {
@@ -175,11 +175,12 @@ type OpenAIMessage =
         id: string
         type: "function"
         function: { name: string; arguments: string }
+        extra_content?: Record<string, unknown>
       }[]
     }
   | { role: "tool"; tool_call_id: string; content: string }
 
-type OpenAIContentPart =
+export type OpenAIContentPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
   | { type: "input_audio"; input_audio: { data: string; format: "wav" | "mp3" } }
@@ -194,7 +195,14 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   const messages: OpenAIMessage[] = []
   for (const msg of ctx.messages) {
     // eslint-disable-next-line no-await-in-loop
-    messages.push(...(await toOpenAIMessages(msg)))
+    const translated = await toOpenAIMessages(msg)
+    for (const message of translated) {
+      if (quirks.onOpenAIMessage) {
+        // eslint-disable-next-line no-await-in-loop
+        const mapped = await quirks.onOpenAIMessage(message, { model, source: msg })
+        messages.push(mapped)
+      } else messages.push(message)
+    }
   }
   // Durable system prompt → first `role: "system"` message. Joined with
   // blank lines so multiple snippets read as separate paragraphs without
@@ -455,10 +463,10 @@ async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
           const args = part.params ?? {}
           const argStr = typeof args === "string" ? args : safeStringify(args)
           toolCalls.push({
+            ...part.wire,
             function: { arguments: argStr, name: part.name },
             id: part.id,
             type: "function",
-            ...part.wire,
           })
         }
       }

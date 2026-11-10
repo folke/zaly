@@ -132,6 +132,39 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
   google: {
     api: "openai",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    quirks: {
+      onOpenAIMessage(message, { source, model }) {
+        if (
+          message.role !== "assistant" ||
+          source.role !== "assistant" ||
+          source.meta?.modelId === model.id
+        )
+          return message
+        const first = message.tool_calls?.at(0)
+        if (!first) return message
+        const extra = first.extra_content ?? {}
+        const google =
+          extra.google && typeof extra.google === "object" && !Array.isArray(extra.google)
+            ? (extra.google as Record<string, unknown>)
+            : {}
+        if (typeof google.thought_signature === "string" && google.thought_signature !== "")
+          return message
+        // Google requires a signature on the first call, but unsigned siblings are valid.
+        return {
+          ...message,
+          tool_calls: [
+            {
+              ...first,
+              extra_content: {
+                ...extra,
+                google: { ...google, thought_signature: "skip_thought_signature_validator" },
+              },
+            },
+            ...message.tool_calls!.slice(1),
+          ],
+        }
+      },
+    },
   },
   xai: {
     api: "openai",

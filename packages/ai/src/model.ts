@@ -87,8 +87,11 @@ export class Model<T extends AnyProvider = string> {
     for (const m of messages) {
       let mct = ct
       // Drop reasoning if model ids don't match or reasoning is disabled
-      if (m.role === "assistant" && (!reasoning || m.meta?.modelId !== this.id))
-        mct = mct.drop("reasoning")
+      if (m.role === "assistant") {
+        if (!reasoning || m.meta?.modelId !== this.id) mct = mct.drop("reasoning")
+        if (m.meta?.modelId !== this.id)
+          mct = mct.map("tool-call", ({ wire: _wire, ...part }) => part)
+      }
       const t = mct.runMessageSync(m)
       if (t !== undefined) ret.push(t)
     }

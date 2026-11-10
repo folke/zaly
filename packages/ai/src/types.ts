@@ -16,6 +16,7 @@ import type { ApiKey } from "./auth/manager.ts"
 import type { OAuthOptions } from "./auth/oauth/types.ts"
 import type { ModelCatalog } from "./models/catalog.ts"
 import type { FinishReason, Usage } from "./provider.ts"
+import type { OpenAIMessage } from "./providers/openai.ts"
 import type { AnyProvider } from "./providers/registry.ts"
 
 /** Plain text in user, assistant, or tool-result content. */
@@ -30,7 +31,8 @@ export interface TextPart {
 }
 
 export type WirePart = {
-  /** Provider specific private wire data that travels with the message */
+  /** Provider-specific round-trip data, valid only for the originating model.
+   *  Model.stream strips it from foreign-model tool calls before replay. */
   wire?: Record<string, unknown>
 }
 
@@ -564,6 +566,13 @@ export type Quirks = {
    *  If unset, adapter accepts any of the three. */
   reasoningField?: "reasoning" | "reasoning_content" | "reasoning_details"
 
+  /** Runtime hook applied to each translated OpenAI Chat Completions message.
+   *  Return the original or a replacement message. Code-only; not JSON config. */
+  onOpenAIMessage?: (
+    message: OpenAIMessage,
+    ctx: { source: Message; model: ModelSpec }
+  ) => MaybePromise<OpenAIMessage>
+
   /** Model accepts `temperature`. Default derived from
    *  `ModelInfo.temperature` (catalog field); set here to override. */
   temperatureSupported?: boolean
@@ -637,4 +646,11 @@ export type ProviderOverride<S extends boolean = boolean> = Partial<
   replaceModels?: boolean
 }
 
-export type ModelsJson = Record<string, Simplify<Omit<ProviderOverride<true>, "id" | "oauth">>>
+export type ModelsJson = Record<
+  string,
+  Simplify<
+    Omit<ProviderOverride<true>, "id" | "oauth" | "quirks"> & {
+      quirks?: Omit<Quirks, "onOpenAIMessage">
+    }
+  >
+>

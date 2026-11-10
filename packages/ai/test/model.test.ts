@@ -1,4 +1,5 @@
 import type { Provider, ProviderRequest, StreamEvent } from "../src/provider.ts"
+import type { ToolCallPart } from "../src/types.ts"
 
 import { describe, expect, test } from "vitest"
 import { modelCollection } from "../src/model.ts"
@@ -114,6 +115,42 @@ describe("Model.stream — effective reasoning", () => {
     expect(captured?.ctx.messages[0].content).toEqual([
       { type: "reasoning", text: "summary", signature: "signed" },
     ])
+  })
+})
+
+describe("Model.stream — tool-call wire ownership", () => {
+  test.each([
+    { owner: "same", retained: true },
+    { owner: "other/model", retained: false },
+    { owner: undefined, retained: false },
+  ])("tool-call metadata from $owner is retained=$retained", async ({ owner, retained }) => {
+    scriptedEvents = [{ type: "finish", finishReason: "stop", usage: { input: 1, output: 1 } }]
+    const model = await models.load("mock-cost-test/toggle-thinking")
+    const wire = { extra_content: { google: { thought_signature: "opaque" } } }
+    const call: ToolCallPart = { type: "tool-call", id: "read", name: "read", params: {}, wire }
+    await model.stream(
+      {
+        messages: [
+          {
+            role: "assistant",
+            meta: owner ? { modelId: owner === "same" ? model.id : owner } : undefined,
+            content: [call],
+          },
+          {
+            role: "tool",
+            content: [{ type: "tool-result", id: "read", name: "read", content: "contents" }],
+          },
+        ],
+      },
+      { reasoning: "off" }
+    )
+    const content = captured?.ctx.messages[0]?.content
+    const replay = Array.isArray(content)
+      ? content.find((part) => part.type === "tool-call")
+      : undefined
+    expect(replay).toBeDefined()
+    expect(replay?.wire).toEqual(retained ? wire : undefined)
+    expect(call.wire).toBe(wire)
   })
 })
 

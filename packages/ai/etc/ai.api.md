@@ -543,7 +543,9 @@ export type ModelProvider<S extends boolean = boolean> = {
 };
 
 // @public (undocumented)
-export type ModelsJson = Record<string, Simplify<Omit<ProviderOverride<true>, "id" | "oauth">>>;
+export type ModelsJson = Record<string, Simplify<Omit<ProviderOverride<true>, "id" | "oauth" | "quirks"> & {
+    quirks?: Omit<Quirks, "onOpenAIMessage">;
+}>>;
 
 // @public
 export interface ModelSpec extends ProviderOptions, ModelInfo {
@@ -684,6 +686,49 @@ export type OAuthTokenResponse = {
     scope?: string;
 };
 
+// @public (undocumented)
+export type OpenAIContentPart = {
+    type: "text";
+    text: string;
+} | {
+    type: "image_url";
+    image_url: {
+        url: string;
+        detail?: "low" | "high" | "auto";
+    };
+} | {
+    type: "input_audio";
+    input_audio: {
+        data: string;
+        format: "wav" | "mp3";
+    };
+};
+
+// @public (undocumented)
+export type OpenAIMessage = {
+    role: "system" | "developer";
+    content: string;
+} | {
+    role: "user";
+    content: string | OpenAIContentPart[];
+} | {
+    role: "assistant";
+    content?: string;
+    tool_calls?: {
+        id: string;
+        type: "function";
+        function: {
+            name: string;
+            arguments: string;
+        };
+        extra_content?: Record<string, unknown>;
+    }[];
+} | {
+    role: "tool";
+    tool_call_id: string;
+    content: string;
+};
+
 // @public
 export interface OverflowCheck {
     contextLimit?: number;
@@ -757,6 +802,10 @@ export type Quirks = {
     thinkingFormat?: "openai" | "openrouter" | "deepseek" | "zai" | "qwen" | "qwen-chat-template";
     reasoningLevels?: ("off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max")[];
     reasoningField?: "reasoning" | "reasoning_content" | "reasoning_details";
+    onOpenAIMessage?: (message: OpenAIMessage, ctx: {
+        source: Message;
+        model: ModelSpec;
+    }) => MaybePromise<OpenAIMessage>;
     temperatureSupported?: boolean;
     strictTools?: boolean;
     responsesStore?: boolean;

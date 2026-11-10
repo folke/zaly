@@ -80,6 +80,13 @@ describe("addModels / getModel", () => {
   })
 })
 
+test("Google's OpenAI-compatible route enables thought signature handling", async () => {
+  const catalog = await loadCatalog()
+  const provider = catalog.provider("google")
+  expect(provider?.api).toBe("openai")
+  expect(provider?.quirks?.onOpenAIMessage).toBeTypeOf("function")
+})
+
 describe("filterModel", async () => {
   const visionModel: ModelSpec = await customSpec({
     id: "mock/vision",

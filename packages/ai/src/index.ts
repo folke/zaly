@@ -1,5 +1,6 @@
 export type * from "./types.ts"
 export type * from "./provider.ts"
+export type { OpenAIContentPart, OpenAIMessage } from "./providers/openai.ts"
 export type * from "./models/filter.ts"
 export * from "./auth/index.ts"
 export * from "./model.ts"
