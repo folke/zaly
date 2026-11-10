@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/folke/zaly/compare/v0.3.0...v0.3.1) (2026-11-10)
+
+
+### 🩹 Fixes
+
+* **ai:** preserve Gemini tool-call thought signatures ([ddbb9eb](https://github.com/folke/zaly/commit/ddbb9eb4929aae4fd6a2c942b7c2e6933b8d9ceb))
+* **models:** update models.dev catalog ([#76](https://github.com/folke/zaly/issues/76)) ([40df6a7](https://github.com/folke/zaly/commit/40df6a7dcf766b7f49f36bd5a4dafe230c79bae7))
+
 ## [0.3.0](https://github.com/folke/zaly/compare/v0.2.0...v0.3.0) (2026-11-07)
 
 
