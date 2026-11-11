@@ -502,9 +502,7 @@ async function* parseStream(
   let usage: TokenCount = { input: 0, output: 0 }
   let finishReason: FinishReason = "other"
   let finished = false
-  // Track whether the open output item is reasoning summary text vs
-  // actual reasoning text — both stream as separate event families
-  // and we forward both as `reasoning-delta`s.
+  const reasoning: ReasoningState = { hasText: false, newPart: false }
 
   const reader = body.getReader()
   try {
@@ -521,7 +519,11 @@ async function* parseStream(
         buffer = buffer.slice(idx + 2)
         const evt = parseSseEvent(raw)
         if (evt !== undefined) {
-          for (const out of handleEvent(evt, pendingCalls)) {
+          for (const out of handleEvent(evt, pendingCalls, reasoning)) {
+            if (out.type === "text-delta" || out.type === "tool-call") {
+              reasoning.hasText = false
+              reasoning.newPart = false
+            }
             if (out.type === "finish") {
               finishReason = out.finishReason
               usage = out.usage
@@ -575,9 +577,16 @@ function parseSseEvent(block: string): ResponsesEvent | undefined {
   }
 }
 
+interface ReasoningState {
+  part?: string
+  hasText: boolean
+  newPart: boolean
+}
+
 function* handleEvent(
   evt: ResponsesEvent,
-  pendingCalls: Map<string, PendingFunctionCall>
+  pendingCalls: Map<string, PendingFunctionCall>,
+  reasoning: ReasoningState
 ): Iterable<StreamEvent> {
   // Codex normalises a few terminal events (`response.done`,
   // `response.incomplete`) onto `response.completed` upstream; the
@@ -589,14 +598,31 @@ function* handleEvent(
       if (delta !== "") yield { delta, type: "text-delta" }
       return
     }
+    case "response.reasoning_summary_part.added": {
+      reasoning.newPart = reasoning.hasText
+      return
+    }
     case "response.reasoning_summary_text.delta":
     case "response.reasoning_text.delta": {
       const delta = typeof evt.delta === "string" ? evt.delta : ""
-      if (delta !== "") yield { delta, type: "reasoning-delta" }
+      if (delta === "") return
+      const part = JSON.stringify([
+        evt.type,
+        evt.item_id ?? evt.output_index,
+        evt.summary_index ?? evt.content_index,
+      ])
+      // Parts are independent prose/Markdown, not adjacent token fragments.
+      const separator =
+        reasoning.hasText && (reasoning.newPart || reasoning.part !== part) ? "\n" : ""
+      reasoning.part = part
+      reasoning.hasText = true
+      reasoning.newPart = false
+      yield { delta: separator + delta, type: "reasoning-delta" }
       return
     }
     case "response.output_item.added": {
       const item = evt.item as { type?: string; id?: string; call_id?: string; name?: string }
+      if (item.type === "reasoning") reasoning.newPart = reasoning.hasText
       if (item.type === "function_call" && typeof item.id === "string") {
         const pending = {
           argsBuffer: "",

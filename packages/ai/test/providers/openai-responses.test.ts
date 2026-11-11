@@ -2,8 +2,137 @@ import type { Content } from "../../src/types.ts"
 
 import { expect, test } from "vitest"
 import { builtinOverrides } from "../../src/models/overrides.ts"
+import { collect } from "../../src/provider.ts"
 import { createOpenAIResponses } from "../../src/providers/openai-responses.ts"
 import { recordFetch, sseResponse, streamReq } from "../helpers/sse.ts"
+
+async function reasoningStream(events: Record<string, unknown>[]) {
+  const { fetch } = recordFetch(sseResponse(events))
+  const provider = createOpenAIResponses({ apiKey: "test", fetch })
+  const deltas: string[] = []
+  const { message } = await collect(
+    provider.stream(streamReq({ model: "test", messages: [{ role: "user", content: "Think" }] })),
+    {
+      onEvent(event) {
+        if (event.type === "reasoning-delta") deltas.push(event.delta)
+      },
+    }
+  )
+  return { deltas, content: message.content }
+}
+
+const summaryDelta = (delta: string, fields: Record<string, unknown> = {}) => ({
+  type: "response.reasoning_summary_text.delta",
+  delta,
+  ...fields,
+})
+
+test("Responses separates summary parts in live deltas and saved reasoning", async () => {
+  const first = { item_id: "rs_1", summary_index: 0 }
+  const second = { item_id: "rs_1", summary_index: 1 }
+  const { deltas, content } = await reasoningStream([
+    { type: "response.output_item.added", item: { id: "rs_1", type: "reasoning" } },
+    { type: "response.reasoning_summary_part.added", ...first },
+    summaryDelta("**Preparing ", first),
+    summaryDelta("fixtures**", first),
+    { type: "response.reasoning_summary_text.done", text: "**Preparing fixtures**", ...first },
+    { type: "response.reasoning_summary_part.done", ...first },
+    { type: "response.reasoning_summary_part.added", ...second },
+    summaryDelta("", second),
+    summaryDelta("**Reading ", second),
+    summaryDelta("README**", second),
+    {
+      type: "response.output_item.done",
+      item: { type: "reasoning", encrypted_content: "encrypted" },
+    },
+  ])
+  expect(deltas).toEqual(["**Preparing ", "fixtures**", "\n**Reading ", "README**", ""])
+  const saved = JSON.stringify(content)
+  expect(JSON.parse(saved)).toEqual([
+    {
+      type: "reasoning",
+      text: "**Preparing fixtures**\n**Reading README**",
+      signature: "encrypted",
+    },
+  ])
+})
+
+test.each([
+  {
+    name: "summary indices",
+    first: { item_id: "rs_1", summary_index: 0 },
+    second: { item_id: "rs_1", summary_index: 1 },
+  },
+  {
+    name: "item ids",
+    first: { item_id: "rs_1", summary_index: 0 },
+    second: { item_id: "rs_2", summary_index: 0 },
+  },
+  {
+    name: "output indices",
+    first: { output_index: 0, summary_index: 0 },
+    second: { output_index: 1, summary_index: 0 },
+  },
+])(
+  "Responses detects boundaries from $name without part-added events",
+  async ({ first, second }) => {
+    const { deltas } = await reasoningStream([
+      summaryDelta("First ", first),
+      summaryDelta("part", first),
+      summaryDelta("Next ", second),
+      summaryDelta("part", second),
+    ])
+    expect(deltas).toEqual(["First ", "part", "\nNext ", "part"])
+  }
+)
+
+test("Responses part-added events handle missing indices and skip empty parts", async () => {
+  const { deltas } = await reasoningStream([
+    { type: "response.reasoning_summary_part.added" },
+    summaryDelta(""),
+    { type: "response.reasoning_summary_part.added" },
+    summaryDelta("First"),
+    { type: "response.reasoning_summary_part.added" },
+    summaryDelta(""),
+    { type: "response.reasoning_summary_part.added" },
+    summaryDelta("Next"),
+  ])
+  expect(deltas).toEqual(["First", "\nNext"])
+})
+
+test("Responses separates raw reasoning parts without splitting tokens", async () => {
+  const { deltas } = await reasoningStream([
+    { type: "response.reasoning_text.delta", item_id: "rs_1", content_index: 0, delta: "First " },
+    { type: "response.reasoning_text.delta", item_id: "rs_1", content_index: 0, delta: "part" },
+    { type: "response.reasoning_text.delta", item_id: "rs_1", content_index: 1, delta: "Next" },
+  ])
+  expect(deltas).toEqual(["First ", "part", "\nNext"])
+})
+
+test("Responses starts new reasoning bubbles without leading separators after text or tools", async () => {
+  const { deltas } = await reasoningStream([
+    summaryDelta("First", { item_id: "rs_1", summary_index: 3 }),
+    { type: "response.output_text.delta", delta: "Reply" },
+    summaryDelta("Second", { item_id: "rs_2", summary_index: 0 }),
+    {
+      type: "response.output_item.added",
+      item: { type: "function_call", id: "fc_1", call_id: "read_1", name: "read" },
+    },
+    { type: "response.function_call_arguments.done", item_id: "fc_1", arguments: "{}" },
+    summaryDelta("Third", { item_id: "rs_3", summary_index: 0 }),
+  ])
+  expect(deltas).toEqual(["First", "Second", "Third"])
+})
+
+test("Responses separates reasoning items when delta ids are omitted", async () => {
+  const { deltas } = await reasoningStream([
+    { type: "response.output_item.added", item: { type: "reasoning", id: "rs_1" } },
+    summaryDelta("First"),
+    { type: "response.output_item.added", item: { type: "reasoning", id: "rs_2" } },
+    summaryDelta("Next"),
+  ])
+  expect(deltas).toEqual(["First", "\nNext"])
+})
 
 async function toolOutput(content: Content, isError = false) {
   const { fetch, recorded } = recordFetch(sseResponse([]))
