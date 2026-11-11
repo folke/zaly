@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/folke/zaly/compare/v0.3.1...v0.3.2) (2026-11-11)
+
+
+### 🩹 Fixes
+
+* **ai:** preserve reasoning summary boundaries ([b46fc12](https://github.com/folke/zaly/commit/b46fc12444a494fa5a74a5ee0f5410bba7dc276c))
+
 ## [0.3.1](https://github.com/folke/zaly/compare/v0.3.0...v0.3.1) (2026-11-10)
 
 
