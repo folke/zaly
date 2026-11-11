@@ -1,6 +1,6 @@
 {
   "name": "@zaly/cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Hackable terminal coding agent.",
   "keywords": [
     "agent",
