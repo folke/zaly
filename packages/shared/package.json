@@ -1,6 +1,6 @@
 {
   "name": "@zaly/shared",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Shared utilities used across zaly packages.",
   "keywords": [
     "ansi",
