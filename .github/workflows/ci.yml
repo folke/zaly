@@ -83,7 +83,7 @@ jobs:
           target-branch: main
       - name: Check release matches the verified commit
         if: steps.release-please.outputs.release_created == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_SHA: ${{ steps.release-please.outputs.sha }}
           VERIFIED_SHA: ${{ github.sha }}
