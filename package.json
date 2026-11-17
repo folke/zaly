@@ -44,10 +44,10 @@
     "@vitest/coverage-v8": "5.1.0",
     "@zaly/dev": "workspace:*",
     "asciinema-player": "^3.18.0",
-    "knip": "^6.44.2",
-    "oxfmt": "^0.77.0",
-    "oxlint": "^1.92.0",
-    "oxlint-tsgolint": "^7.0.2006",
+    "knip": "^6.45.1",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "oxlint-tsgolint": "^7.0.2007",
     "publint": "^0.3.25",
     "tsdown": "^0.23.7",
     "typedoc": "^0.28.20",
@@ -55,7 +55,7 @@
     "typedoc-vitepress-theme": "^1.1.4",
     "typescript": "7.1.0-beta",
     "vitepress": "^2.0.0-alpha.21",
-    "vitepress-plugin-group-icons": "^1.8.1",
+    "vitepress-plugin-group-icons": "^1.8.2",
     "vitest": "^5.1.0"
   },
   "overrides": {
