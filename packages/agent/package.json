@@ -58,7 +58,7 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
-    "@joplin/turndown-plugin-gfm": "^1.0.68",
+    "@joplin/turndown-plugin-gfm": "^1.0.71",
     "@mozilla/readability": "^0.6.0",
     "@types/shell-quote": "^1.7.5",
     "@types/turndown": "^5.0.6",
