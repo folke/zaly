@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.3](https://github.com/folke/zaly/compare/v0.3.2...v0.3.3) (2026-11-18)
+
+
+### 🩹 Fixes
+
+* **models:** update models.dev catalog ([#81](https://github.com/folke/zaly/issues/81)) ([7dad075](https://github.com/folke/zaly/commit/7dad0751d06d9aedfadef6056b983061c00a4864))
+
+
+### 🎨 Styles
+
+* format ([9ab364a](https://github.com/folke/zaly/commit/9ab364aeb49bc5d9631a0d3275a577482200a100))
+
+
+### 📦 Build
+
+* **deps:** bump the all-actions group with 10 updates ([#96](https://github.com/folke/zaly/issues/96)) ([3d22c8c](https://github.com/folke/zaly/commit/3d22c8ca3ac3008bdb79e0e3803ba5e6409e4e27))
+
+
+### 🤖 CI
+
+* added github actions to dependabot ([5f0d2fb](https://github.com/folke/zaly/commit/5f0d2fbe07c4551249de6c142a1636ba913e7683))
+* dependabot config ([f2041a1](https://github.com/folke/zaly/commit/f2041a14c4706fdccc3cb7bf8666562830d693dd))
+* group dependabot github action updates ([c4a70b4](https://github.com/folke/zaly/commit/c4a70b46c8d2ccae6c0dbf7efd06d0382fd23e54))
+
 ## [0.3.2](https://github.com/folke/zaly/compare/v0.3.1...v0.3.2) (2026-11-11)
 
 
