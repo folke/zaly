@@ -16,7 +16,7 @@ jobs:
   models:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -27,11 +27,11 @@ jobs:
         run: bun run models --report "$RUNNER_TEMP/models-report.md"
       - name: Create automation token
         id: automation-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.AUTOMATION_APP_ID }}
           private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.automation-token.outputs.token }}
           branch: automation/models-catalog
