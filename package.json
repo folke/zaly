@@ -41,13 +41,13 @@
     "@types/bun": "^1.4.4",
     "@types/node": "^26.6.6",
     "@typescript/native-preview": "^7.0.0-dev.20260707.2",
-    "@vitest/coverage-v8": "5.1.0",
+    "@vitest/coverage-v8": "5.1.1",
     "@zaly/dev": "workspace:*",
-    "asciinema-player": "^3.18.0",
-    "knip": "^6.44.2",
-    "oxfmt": "^0.77.0",
-    "oxlint": "^1.92.0",
-    "oxlint-tsgolint": "^7.0.2006",
+    "asciinema-player": "^3.18.1",
+    "knip": "^6.45.1",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
+    "oxlint-tsgolint": "^7.0.2007",
     "publint": "^0.3.25",
     "tsdown": "^0.23.7",
     "typedoc": "^0.28.20",
@@ -55,8 +55,8 @@
     "typedoc-vitepress-theme": "^1.1.4",
     "typescript": "7.1.0-beta",
     "vitepress": "^2.0.0-alpha.21",
-    "vitepress-plugin-group-icons": "^1.8.1",
-    "vitest": "^5.1.0"
+    "vitepress-plugin-group-icons": "^1.8.2",
+    "vitest": "^5.1.1"
   },
   "overrides": {
     "@types/markdown-it": "14.1.2"
