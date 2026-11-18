@@ -5,7 +5,6 @@ Generated from the configuration schema and default settings. CLI overrides proj
 Defaults for `system.npm` depend on the runtime: Bun under Bun, npm under Node. The `search` tool is additionally enabled when `BRAVE_API_KEY` is set.
 
 <!-- settings:start -->
-
 ## `$schema`
 
 **Type:** `string`
@@ -399,10 +398,17 @@ Maximum number of visible rows in the session tree.
 
 Ask for everything. No commands or file ops auto-allowed.
 
+
 ```json
 {
-  "deny": ["bash(sudo:*)"],
-  "ask": ["tool(*)", "read(*)", "write(*)"]
+  "deny": [
+    "bash(sudo:*)"
+  ],
+  "ask": [
+    "tool(*)",
+    "read(*)",
+    "write(*)"
+  ]
 }
 ```
 
@@ -410,9 +416,12 @@ Ask for everything. No commands or file ops auto-allowed.
 
 Auto-allow read-only utilities, git read-only ops, and common build/test commands. Reads inside the workspace are allowed (sensitive paths denied); writes always ask.
 
+
 ```json
 {
-  "deny": ["bash(sudo:*)"],
+  "deny": [
+    "bash(sudo:*)"
+  ],
   "allow": [
     "tool(read)",
     "tool(grep)",
@@ -483,7 +492,10 @@ Auto-allow read-only utilities, git read-only ops, and common build/test command
     "bash(bun x oxlint:*)",
     "bash(oxlint:*)"
   ],
-  "ask": ["tool(*)", "write(*)"]
+  "ask": [
+    "tool(*)",
+    "write(*)"
+  ]
 }
 ```
 
@@ -491,9 +503,12 @@ Auto-allow read-only utilities, git read-only ops, and common build/test command
 
 Readonly preset plus broader dev commands (file moves, ad-hoc bun/node evals, git mutations, network fetches) and writes inside the workspace.
 
+
 ```json
 {
-  "deny": ["bash(sudo:*)"],
+  "deny": [
+    "bash(sudo:*)"
+  ],
   "allow": [
     "tool(*)",
     "bash(ls:*)",
@@ -592,10 +607,15 @@ Readonly preset plus broader dev commands (file moves, ad-hoc bun/node evals, gi
 
 Allow everything. No prompts. Use only when you trust the model and the task.
 
+
 ```json
 {
-  "allow": ["bash", "read(*)", "write(*)", "tool(*)"]
+  "allow": [
+    "bash",
+    "read(*)",
+    "write(*)",
+    "tool(*)"
+  ]
 }
 ```
-
 <!-- settings:end -->
