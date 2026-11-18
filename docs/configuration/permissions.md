@@ -12,12 +12,12 @@ Select a preset in configuration or for one invocation:
 zaly --permission readonly
 ```
 
-| Preset | Intended behavior |
-| --- | --- |
-| `strict` | Ask for tool/file operations rather than broadly auto-allowing them. |
-| `readonly` | Allow common inspection and development commands; writes require approval. |
-| `permissive` | Default: broader development commands and workspace writes are allowed. |
-| `yolo` | Allow everything without prompts. |
+| Preset       | Intended behavior                                                          |
+| ------------ | -------------------------------------------------------------------------- |
+| `strict`     | Ask for tool/file operations rather than broadly auto-allowing them.       |
+| `readonly`   | Allow common inspection and development commands; writes require approval. |
+| `permissive` | Default: broader development commands and workspace writes are allowed.    |
+| `yolo`       | Allow everything without prompts.                                          |
 
 `readonly` is **not a filesystem sandbox**: commands, tests, and build scripts can
 have side effects. `permissive` is a convenience trade-off, not a promise that

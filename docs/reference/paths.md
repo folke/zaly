@@ -3,13 +3,13 @@
 Linux and macOS use XDG-style defaults. macOS does not currently use a separate
 Library/Application Support mapping in zaly.
 
-| Kind | Default |
-| --- | --- |
-| Configuration/resources | `$XDG_CONFIG_HOME/zaly` or `~/.config/zaly` |
-| Data, installed plugins, sessions | `$XDG_DATA_HOME/zaly` or `~/.local/share/zaly` |
-| State and credentials | `$XDG_STATE_HOME/zaly` or `~/.local/state/zaly` |
-| Logs | State directory's `log/` |
-| Cache | `$XDG_CACHE_HOME/zaly` or `~/.cache/zaly` |
+| Kind                              | Default                                         |
+| --------------------------------- | ----------------------------------------------- |
+| Configuration/resources           | `$XDG_CONFIG_HOME/zaly` or `~/.config/zaly`     |
+| Data, installed plugins, sessions | `$XDG_DATA_HOME/zaly` or `~/.local/share/zaly`  |
+| State and credentials             | `$XDG_STATE_HOME/zaly` or `~/.local/state/zaly` |
+| Logs                              | State directory's `log/`                        |
+| Cache                             | `$XDG_CACHE_HOME/zaly` or `~/.cache/zaly`       |
 
 Important files/directories:
 
@@ -24,16 +24,16 @@ Important files/directories:
 
 ## Overrides
 
-| Variable | Meaning |
-| --- | --- |
-| `ZALY_CONFIG` | Override the configuration directory. |
-| `ZALY_DATA` | Override the data directory. |
-| `ZALY_STATE` | Override the state directory. |
-| `ZALY_CACHE` | Override the cache directory. |
-| `ZALY_LOG` | Override the log directory. |
-| `ZALY_TMP` | Override the temporary directory. |
-| `ZALY_ROOT` | Put these directories under one root, using `config`, `data`, `state`, `cache`, `log`, and `tmp` children. |
-| `ZALY_APPNAME` | Change the app directory name used by default mappings. |
+| Variable       | Meaning                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `ZALY_CONFIG`  | Override the configuration directory.                                                                      |
+| `ZALY_DATA`    | Override the data directory.                                                                               |
+| `ZALY_STATE`   | Override the state directory.                                                                              |
+| `ZALY_CACHE`   | Override the cache directory.                                                                              |
+| `ZALY_LOG`     | Override the log directory.                                                                                |
+| `ZALY_TMP`     | Override the temporary directory.                                                                          |
+| `ZALY_ROOT`    | Put these directories under one root, using `config`, `data`, `state`, `cache`, `log`, and `tmp` children. |
+| `ZALY_APPNAME` | Change the app directory name used by default mappings.                                                    |
 
 An individual `ZALY_*` directory override takes precedence over `ZALY_ROOT`, which
 takes precedence over platform/XDG defaults. These variables redirect user paths;

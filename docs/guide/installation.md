@@ -34,13 +34,13 @@ To update, run the same install command again. To uninstall, use
 
 ## Terminal support
 
-| Terminal | zaly experience |
-| --- | --- |
-| Ghostty | Full inline image support through the Kitty Graphics Protocol (KGP). |
-| Kitty | Full inline image support through KGP. |
-| Alacritty | Good text-only experience. |
-| WezTerm | Good text-only experience. |
-| iTerm2 | Good text-only experience. |
+| Terminal  | zaly experience                                                      |
+| --------- | -------------------------------------------------------------------- |
+| Ghostty   | Full inline image support through the Kitty Graphics Protocol (KGP). |
+| Kitty     | Full inline image support through KGP.                               |
+| Alacritty | Good text-only experience.                                           |
+| WezTerm   | Good text-only experience.                                           |
+| iTerm2    | Good text-only experience.                                           |
 
 This describes **zaly's current integration**, not every feature those terminals
 support. Images require both terminal support and `ui.images` enabled. Sending

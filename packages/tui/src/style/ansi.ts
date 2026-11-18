@@ -3,8 +3,8 @@ import type { AnsiColor, AnsiStyle } from "./types.ts"
 import { sliceAnsi } from "@zaly/shared/ansi"
 import { hasColors } from "@zaly/shared/env"
 import { hostname } from "node:os"
-import { resolve } from "pathe"
 import { pathToFileURL } from "node:url"
+import { resolve } from "pathe"
 import { isHexColor, parseHex, toHex } from "./color.ts"
 
 /** Optional wrap mode: `"word"` (default) breaks at word boundaries;

@@ -9,17 +9,19 @@ type CmdRawArgs<C> = C extends (...args: any) => { setup?: (ctx: infer Ctx) => a
   : never
 
 export type CmdArgs<C> = {
-  [K in keyof CmdRawArgs<C> as string extends K
-    ? never // drop index signature
-    : K extends `no-${string}`
-      ? never // drop negations
-      : K extends "_"
-        ? K // keep positional bucket as-is
-        : K extends `${string}${infer Rest}` // drop single-char keys (aliases)
-          ? Rest extends ""
-            ? never
-            : CamelCase<K & string>
-          : never]: CmdRawArgs<C>[K]
+  [
+    K in keyof CmdRawArgs<C> as string extends K
+      ? never // drop index signature
+      : K extends `no-${string}`
+        ? never // drop negations
+        : K extends "_"
+          ? K // keep positional bucket as-is
+          : K extends `${string}${infer Rest}` // drop single-char keys (aliases)
+            ? Rest extends ""
+              ? never
+              : CamelCase<K & string>
+            : never
+  ]: CmdRawArgs<C>[K]
 }
 
 export interface Flags {

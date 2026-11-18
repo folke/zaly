@@ -3,6 +3,7 @@
 Built-in tool definitions and parameter schemas. Availability depends on the `tools` setting, credentials, and plugins; this is the catalog, not the default enabled list. Skill activation tools are generated from installed skills and are not listed here. Tool calls are subject to [permissions](../configuration/permissions.md).
 
 <!-- tools:start -->
+
 ## agent_send
 
 Send a message to a subagent by name. The receiver sees it as a user message and runs (resuming if idle). Their reply will arrive in your queue as a system message at their next natural stop. Use this to steer a subagent mid-task or to follow up on a report.
@@ -12,10 +13,7 @@ Send a message to a subagent by name. The receiver sees it as a user message and
 ```json
 {
   "type": "object",
-  "required": [
-    "to",
-    "content"
-  ],
+  "required": ["to", "content"],
   "properties": {
     "to": {
       "type": "string",
@@ -40,11 +38,7 @@ Spawn a subagent under your supervision. The new agent inherits your model, perm
 ```json
 {
   "type": "object",
-  "required": [
-    "name",
-    "desc",
-    "prompt"
-  ],
+  "required": ["name", "desc", "prompt"],
   "properties": {
     "name": {
       "type": "string",
@@ -76,9 +70,7 @@ Run a bash command. Returns its output once the command exits, or a partial snap
 ```json
 {
   "type": "object",
-  "required": [
-    "command"
-  ],
+  "required": ["command"],
   "properties": {
     "command": {
       "type": "string",
@@ -113,10 +105,7 @@ Apply one or more exact-text replacements to a file. All matches are resolved ag
 ```json
 {
   "type": "object",
-  "required": [
-    "path",
-    "edits"
-  ],
+  "required": ["path", "edits"],
   "properties": {
     "path": {
       "type": "string",
@@ -126,10 +115,7 @@ Apply one or more exact-text replacements to a file. All matches are resolved ag
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "oldText",
-          "newText"
-        ],
+        "required": ["oldText", "newText"],
         "properties": {
           "oldText": {
             "type": "string",
@@ -157,9 +143,7 @@ Fetch a URL and return the response. JSON responses are parsed; use `jsonpath` (
 ```json
 {
   "type": "object",
-  "required": [
-    "url"
-  ],
+  "required": ["url"],
   "properties": {
     "url": {
       "type": "string",
@@ -307,9 +291,7 @@ Search file contents using rg/grep. Respects .gitignore by default when ripgrep 
 ```json
 {
   "type": "object",
-  "required": [
-    "pattern"
-  ],
+  "required": ["pattern"],
   "properties": {
     "pattern": {
       "type": "string",
@@ -362,9 +344,7 @@ Read a file. Text files return plain text with line-range metadata. Image & PDF 
 ```json
 {
   "type": "object",
-  "required": [
-    "path"
-  ],
+  "required": ["path"],
   "properties": {
     "path": {
       "type": "string",
@@ -394,9 +374,7 @@ Web search optimised for agents. Returns extracted snippets from each source pag
 ```json
 {
   "type": "object",
-  "required": [
-    "query"
-  ],
+  "required": ["query"],
   "properties": {
     "query": {
       "type": "string",
@@ -450,11 +428,7 @@ Spawn a focused subagent with the same model and permissions. Use for tasks that
 ```json
 {
   "type": "object",
-  "required": [
-    "description",
-    "prompt",
-    "task"
-  ],
+  "required": ["description", "prompt", "task"],
   "properties": {
     "description": {
       "type": "string",
@@ -500,9 +474,7 @@ Read the latest incremental output from a running task. Returns only what's arri
 ```json
 {
   "type": "object",
-  "required": [
-    "id"
-  ],
+  "required": ["id"],
   "properties": {
     "id": {
       "type": "string",
@@ -521,9 +493,7 @@ Stop a running task. Aborts the underlying work (e.g. SIGTERM → SIGKILL for ba
 ```json
 {
   "type": "object",
-  "required": [
-    "id"
-  ],
+  "required": ["id"],
   "properties": {
     "id": {
       "type": "string",
@@ -542,9 +512,7 @@ Schedule a one-shot wake-up of the agent loop. If `delayMs` elapses without anyt
 ```json
 {
   "type": "object",
-  "required": [
-    "delayMs"
-  ],
+  "required": ["delayMs"],
   "properties": {
     "delayMs": {
       "type": "integer",
@@ -568,10 +536,7 @@ Write content to a file. Overwrites existing files; creates parent directories a
 ```json
 {
   "type": "object",
-  "required": [
-    "path",
-    "content"
-  ],
+  "required": ["path", "content"],
   "properties": {
     "path": {
       "type": "string",
@@ -584,4 +549,5 @@ Write content to a file. Overwrites existing files; creates parent directories a
   }
 }
 ```
+
 <!-- tools:end -->

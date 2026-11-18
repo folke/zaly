@@ -32,8 +32,8 @@ Most users should install [`@zaly/cli`](../cli) instead.
 ## Minimal shape
 
 ```ts
-import { Type } from "typebox"
 import { defineTool, runTool } from "@zaly/ai"
+import { Type } from "typebox"
 
 const add = defineTool({
   name: "add",

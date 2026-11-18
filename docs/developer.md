@@ -13,15 +13,15 @@ mixed into the user guide.
 
 ## Packages
 
-| Package | Purpose |
-| --- | --- |
-| [@zaly/agent](https://github.com/folke/zaly/tree/main/packages/agent) | Agent loop, sessions, permissions, tools, and skills. |
-| [@zaly/ai](https://github.com/folke/zaly/tree/main/packages/ai) | Providers, models, authentication, messages, and tool definitions. |
-| [@zaly/tui](https://github.com/folke/zaly/tree/main/packages/tui) | Terminal rendering and reactive widgets. |
-| [@zaly/config](https://github.com/folke/zaly/tree/main/packages/config) | Configuration, resources, and plugins. |
-| [@zaly/plugin](https://github.com/folke/zaly/tree/main/packages/plugin) | Public plugin API. |
-| [@zaly/shared](https://github.com/folke/zaly/tree/main/packages/shared) | Shared utilities. |
-| [@zaly/cli](https://github.com/folke/zaly/tree/main/packages/cli) | Application entry point and terminal interface. |
+| Package                                                                 | Purpose                                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [@zaly/agent](https://github.com/folke/zaly/tree/main/packages/agent)   | Agent loop, sessions, permissions, tools, and skills.              |
+| [@zaly/ai](https://github.com/folke/zaly/tree/main/packages/ai)         | Providers, models, authentication, messages, and tool definitions. |
+| [@zaly/tui](https://github.com/folke/zaly/tree/main/packages/tui)       | Terminal rendering and reactive widgets.                           |
+| [@zaly/config](https://github.com/folke/zaly/tree/main/packages/config) | Configuration, resources, and plugins.                             |
+| [@zaly/plugin](https://github.com/folke/zaly/tree/main/packages/plugin) | Public plugin API.                                                 |
+| [@zaly/shared](https://github.com/folke/zaly/tree/main/packages/shared) | Shared utilities.                                                  |
+| [@zaly/cli](https://github.com/folke/zaly/tree/main/packages/cli)       | Application entry point and terminal interface.                    |
 
 APIs are alpha and may change. Dedicated developer/package sites can be added
 later; there are no placeholder API sections here.
