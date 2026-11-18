@@ -116,5 +116,6 @@ export function attachState(agent: Agent, state: AppState): void {
       if (err) console.error(`${err.name}: ${err.message}`)
     })
   agent.ctx.on("session", () => (state.usage = agent.usage))
+  agent.ctx.on("cwd", () => (state.cwd = agent.ctx.cwd))
   state.usage = agent.usage
 }

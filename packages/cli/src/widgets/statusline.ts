@@ -1,7 +1,7 @@
 import type { ThemeKey } from "@zaly/tui"
 import type { AppState } from "../types.ts"
 
-import { formatNumber as fmt } from "@zaly/shared"
+import { formatNumber as fmt, prettyPath } from "@zaly/shared"
 import { memo } from "@zaly/tui"
 import { box } from "@zaly/tui/widgets/box"
 import { spinner } from "@zaly/tui/widgets/spinner"
@@ -64,6 +64,8 @@ export const statusline = widget((props: AppState) =>
             return `${s.dim("↑")}${fmt(u.input)} ${s.dim("↓")}${fmt(u.output)}${read}${write}`
           })
         }
+
+        components.push(s.muted(prettyPath(props.cwd, "~")))
 
         return components
           .map((c) => (typeof c === "function" ? c() : c))

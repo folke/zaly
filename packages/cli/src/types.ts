@@ -44,6 +44,7 @@ export interface Flags {
 }
 
 export type AppState = {
+  cwd: string
   step: number
   /** Whether the agent is currently processing a request. */
   busy: boolean

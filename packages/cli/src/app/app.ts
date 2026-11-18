@@ -45,6 +45,7 @@ export class App {
 
   #state = createStore<AppState>({
     busy: true,
+    cwd: process.cwd(),
     loading: true,
     scroll: { below: 0, offset: 0, total: 0 },
     status: "loading",
