@@ -32,6 +32,8 @@ const codexModels: Record<string, number> = {
   "gpt-6-sol": 272_000,
   "gpt-6.1-sol": 500_000,
   "gpt-6.1-terra": 500_000,
+  "gpt-6.2-astra": 272_000,
+  "gpt-6.2-sol": 500_000,
   "gpt-reserve": 272_000,
 }
 // end:codex-models

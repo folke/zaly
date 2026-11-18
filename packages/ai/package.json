@@ -45,6 +45,8 @@
     "build": "z build",
     "lint": "z lint",
     "models": "bun scripts/fetch-models.ts",
+    "models:codex:github": "bun scripts/codex-models.ts --source github",
+    "models:codex:local": "bun scripts/codex-models.ts --source local",
     "test": "z test"
   },
   "dependencies": {
