@@ -54,8 +54,8 @@ export const grepTool = defineTool({
     context: Type.Optional(
       Type.Integer({
         default: 0,
-        description: "Context lines before/after each match. 0-10.",
-        maximum: 10,
+        description: "Context lines before/after each match. 0-20.",
+        maximum: 20,
         minimum: 0,
       })
     ),
