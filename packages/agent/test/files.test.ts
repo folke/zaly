@@ -56,15 +56,15 @@ describe("fileHandler — defaults inside a workspace", () => {
 })
 
 describe("fileHandler — sensitive paths", () => {
-  test("sensitive paths deny regardless of workspace rules", () => {
-    expect(validate("read", `${cwd}/.env`).verdict).toBe("deny")
+  test("sensitive paths ask despite workspace trust", () => {
+    expect(validate("read", `${cwd}/.env`).verdict).toBe("ask")
   })
 
-  test("sensitive deny precedes allow rules", () => {
+  test("explicit allow rules authorize sensitive files", () => {
     const r = validate("read", `${cwd}/.env`, {
       rules: [{ pattern: "*", policy: "allow", scope: "read" }],
     })
-    expect(r.verdict).toBe("deny")
+    expect(r.verdict).toBe("allow")
   })
 })
 

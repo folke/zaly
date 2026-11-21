@@ -508,6 +508,7 @@ export interface PermissionContext<T extends string> {
     cwd: string;
     rules: readonly Rule<T>[];
     scope: T;
+    sensitiveRules?: readonly Rule<T>[];
     validate: (scope: string, input: string) => CheckResult;
     workspaces: readonly string[];
 }

@@ -10,7 +10,8 @@ import { dirname, isAbsolute, relative } from "pathe"
  *
  * Algorithm:
  *   1. Normalize candidate to an absolute path.
- *   2. Sensitive-file check (env, ssh keys, credentials) → deny.
+ *   2. Detect sensitive files (env, ssh keys, credentials); only explicit
+ *      user rules or yolo rules may authorize them. Otherwise ask.
  *   3. Find the longest-prefix workspace containing the path. None →
  *      ask, with a `kind: "workspace"` suggestion for the containing
  *      directory.
@@ -30,16 +31,14 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
   validate(input, ctx): CheckResult {
     const abs = normPath(ctx.cwd, input)
 
-    if (isSensitiveFile(abs)) {
-      return { reason: `${abs}: sensitive file`, verdict: "deny" }
-    }
+    const sensitive = isSensitiveFile(abs)
 
     const ws = longestWorkspace(abs, ctx.workspaces)
     const inWorkspace = ws !== undefined
 
     // Inside-workspace + path === root: the workspace itself (e.g. `find .`
     // resolved to cwd). Workspace containment alone is enough to allow.
-    if (inWorkspace && abs === ws) return { verdict: "allow" }
+    if (inWorkspace && abs === ws && !sensitive) return { verdict: "allow" }
 
     // Outside any workspace, fall through to rule matching with `/` as
     // synthetic root. Lets blanket rules like `read(*)` (yolo preset)
@@ -50,8 +49,16 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
 
     const verb = ctx.scope === "read" ? "reading" : "writing"
 
-    const rule = resolveRule(base, rel, ctx.rules)
+    const rule = resolveRule(base, rel, sensitive ? (ctx.sensitiveRules ?? ctx.rules) : ctx.rules)
     if (rule?.policy === "deny") return { reason: `${abs}: denied by rule`, verdict: "deny" }
+    if (sensitive && rule?.policy !== "allow") {
+      return {
+        ask: `Allow ${verb} ${prettyPath(abs)}? (potentially sensitive file)`,
+        reason: `${abs}: potentially sensitive file`,
+        suggestions: [{ kind: "rule", pattern: `/${abs}`, scope: ctx.scope }],
+        verdict: "ask",
+      }
+    }
     if (rule?.policy === "ask") {
       return {
         ask: `Allow ${verb} ${prettyPath(abs)}?`,
@@ -91,7 +98,7 @@ export const fileHandler: PermissionHandler<"read" | "write"> = {
 
 /** True if `path` looks like a credentials/keys file we shouldn't
  *  expose to the model by default. Conservative — false positives are
- *  fine here, and users can override via `allow` rules. */
+ *  fine here: these paths require confirmation unless explicitly allowed. */
 export function isSensitiveFile(path: string): boolean {
   return SENSITIVE_PATTERNS.some((re) => re.test(path))
 }

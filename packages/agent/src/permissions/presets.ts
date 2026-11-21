@@ -113,7 +113,7 @@ const DEV_BASIC = [
   "bash(oxlint:*)",
 ]
 
-/** Hard denies — never auto-allowed, regardless of preset. */
+/** Shared denies for non-yolo presets. */
 const HARD_DENIES = ["bash(sudo:*)"]
 
 /** Broader rules unlocked by the permissive preset. Trades some safety
@@ -161,7 +161,7 @@ export const permissionPresets = {
   readonly: {
     description:
       "Auto-allow read-only utilities, git read-only ops, and common build/test commands. " +
-      "Reads inside the workspace are allowed (sensitive paths denied); writes always ask.",
+      "Reads inside the workspace are allowed (sensitive paths ask); writes always ask.",
     rules: {
       deny: HARD_DENIES,
       allow: [...READONLY_TOOLS, ...READONLY_BASH, ...READONLY_GIT, ...DEV_BASIC],
@@ -180,8 +180,7 @@ export const permissionPresets = {
         ...READONLY_GIT,
         ...DEV_BASIC,
         ...PERMISSIVE_EXTRAS,
-        // Allow writes inside any workspace (sensitive paths still denied
-        // by the file handler before rule resolution).
+        // Allow writes inside any workspace; sensitive paths still ask.
         "write(*)",
       ],
     },

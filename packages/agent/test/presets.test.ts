@@ -34,8 +34,8 @@ describe("preset — strict", () => {
     expect(m.validate("write", `${cwd}/src/foo.ts`).verdict).toBe("ask")
   })
 
-  test("sensitive paths still deny", () => {
-    expect(m.validate("read", `${cwd}/.env`).verdict).toBe("deny")
+  test("sensitive paths ask", () => {
+    expect(m.validate("read", `${cwd}/.env`).verdict).toBe("ask")
   })
 })
 
@@ -105,8 +105,8 @@ describe("preset — permissive", () => {
     expect(m.validate("write", `${cwd}/src/foo.ts`).verdict).toBe("allow")
   })
 
-  test("write to sensitive path still denies", () => {
-    expect(m.validate("write", `${cwd}/.env`).verdict).toBe("deny")
+  test("write to sensitive path asks", () => {
+    expect(m.validate("write", `${cwd}/.env`).verdict).toBe("ask")
   })
 })
 
@@ -149,10 +149,9 @@ describe("preset — yolo", () => {
     expect(m.validate("write", `${cwd}/src/foo.ts`).verdict).toBe("allow")
   })
 
-  test("sensitive files still deny", () => {
-    // The handler enforces sensitive-deny before consulting rules; even
-    // yolo doesn't override that.
-    expect(m.validate("read", `${cwd}/.env`).verdict).toBe("deny")
+  test("sensitive files allow", () => {
+    expect(m.validate("read", `${cwd}/.env`).verdict).toBe("allow")
+    expect(m.validate("write", `${cwd}/.env`).verdict).toBe("allow")
   })
 })
 
@@ -178,6 +177,74 @@ describe("preset overrides", () => {
     expect(base.validate("bash", "my-tool --foo").verdict).toBe("ask")
     expect(extended.validate("bash", "my-tool --foo").verdict).toBe("allow")
   })
+})
+
+describe("sensitive file policy", () => {
+  const paths = [".env", ".ssh/config", ".git/config", ".npmrc", "secrets/token"]
+  test.each(["strict", "readonly", "permissive", "yolo"] as const)(
+    "%s applies to sensitive files inside and outside workspaces",
+    (preset) => {
+      const m = manager(preset)
+      for (const scope of ["read", "write"]) {
+        for (const path of paths) {
+          for (const base of [cwd, "/outside"]) {
+            expect(m.validate(scope, `${base}/${path}`).verdict).toBe(
+              preset === "yolo" ? "allow" : "ask"
+            )
+          }
+        }
+      }
+    }
+  )
+
+  test.each(["strict", "readonly", "permissive", "yolo"] as const)(
+    "%s honors explicit allow, ask, and deny rules",
+    (preset) => {
+      for (const scope of ["read", "write"]) {
+        for (const policy of ["allow", "ask", "deny"] as const) {
+          const m = manager(preset, { rules: [{ scope, pattern: "/.env", policy }] })
+          expect(m.validate(scope, `${cwd}/.env`).verdict).toBe(policy)
+        }
+      }
+    }
+  )
+
+  test("sensitive prompts explain the operation and suggest only the absolute file", () => {
+    const m = manager("permissive")
+    for (const scope of ["read", "write"]) {
+      const result = m.validate(scope, "/outside/.ssh/config")
+      if (result.verdict !== "ask") throw new Error("Expected confirmation")
+      expect(result.ask).toContain(scope === "read" ? "reading" : "writing")
+      expect(result.ask).toContain("potentially sensitive file")
+      expect(result.suggestions).toEqual([
+        { kind: "rule", scope, pattern: "//outside/.ssh/config" },
+      ])
+      const suggestion = result.suggestions?.[0]
+      if (suggestion?.kind !== "rule") throw new Error("Expected a file rule")
+      m.addRule({ scope, pattern: suggestion.pattern, policy: "allow" })
+      expect(m.validate(scope, "/outside/.ssh/config").verdict).toBe("allow")
+      expect(m.validate(scope, "/outside/.ssh/id_rsa").verdict).toBe("ask")
+    }
+  })
+
+  test("workspace trust does not authorize sensitive files", () => {
+    const m = new PermissionManager({ cwd, workspaces: ["/outside"] })
+    expect(m.validate("read", "/outside/.env").verdict).toBe("ask")
+    expect(m.validate("write", "/outside/.env").verdict).toBe("ask")
+  })
+
+  test.each(["readonly", "permissive", "yolo"] as const)(
+    "%s applies sensitive policy through shell file delegation",
+    (preset) => {
+      const m = manager(preset)
+      for (const command of ["cat .env", "cat < .env", "echo value > .env"]) {
+        expect(m.validate("bash", command).verdict).toBe(preset === "yolo" ? "allow" : "ask")
+      }
+      const restricted = manager(preset, { rules: { deny: ["read(.env)", "write(.env)"] } })
+      expect(restricted.validate("bash", "cat .env").verdict).toBe("deny")
+      expect(restricted.validate("bash", "echo value > .env").verdict).toBe("deny")
+    }
+  )
 })
 
 describe("permissionPresets metadata", () => {

@@ -319,11 +319,16 @@ describe("PermissionManager.validate('bash') — file delegation", () => {
     expect(m.validate("bash", "ls > out.txt").verdict).toBe("allow")
   })
 
-  test("redirect to sensitive file denies (file handler enforces sensitive deny)", () => {
+  test("redirect to sensitive file asks without an explicit file rule", () => {
+    const m = new PermissionManager({ cwd, rules: { allow: ["bash(echo:*)"] } })
+    expect(m.validate("bash", "echo secret > .env").verdict).toBe("ask")
+  })
+
+  test("explicit Write(*) allows redirects to sensitive files", () => {
     const m = new PermissionManager({
       cwd,
       rules: { allow: ["bash(echo:*)", "write(*)"] },
     })
-    expect(m.validate("bash", "echo secret > .env").verdict).toBe("deny")
+    expect(m.validate("bash", "echo secret > .env").verdict).toBe("allow")
   })
 })

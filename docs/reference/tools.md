@@ -338,8 +338,8 @@ Search file contents using rg/grep. Respects .gitignore by default when ripgrep 
     "context": {
       "type": "integer",
       "default": 0,
-      "description": "Context lines before/after each match. 0-10.",
-      "maximum": 10,
+      "description": "Context lines before/after each match. 0-20.",
+      "maximum": 20,
       "minimum": 0
     },
     "limit": {

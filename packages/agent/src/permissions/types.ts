@@ -63,6 +63,10 @@ export interface PermissionContext<T extends string> {
   allowsAll?: (scope: string) => boolean
   /** Rules pre-filtered to `scope` by the manager. */
   rules: readonly Rule<T>[]
+  /** Rules eligible for sensitive files: explicit user rules, preset
+   *  restrictions, and yolo's blanket allows. Other preset allowances do
+   *  not authorize sensitive paths. When omitted, `rules` are explicit. */
+  sensitiveRules?: readonly Rule<T>[]
   /** Workspace directories shared across handlers — file scopes use
    *  these as containment roots; bash uses them for cwd-aware checks.
    *  All paths are absolute and pre-normalized. The session cwd is

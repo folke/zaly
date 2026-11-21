@@ -35,6 +35,7 @@ export type PermissionOptions = {
 export class PermissionManager {
   readonly cwd: string
   #rules: Rule[] = []
+  #sensitiveRules: Rule[] = []
   #workspaces: string[]
 
   constructor(opts?: PermissionOptions) {
@@ -42,8 +43,15 @@ export class PermissionManager {
     if (opts?.rules) {
       const more = Array.isArray(opts.rules) ? opts.rules : parseRules(opts.rules)
       this.#rules.push(...more)
+      this.#sensitiveRules.push(...more)
     }
-    if (opts?.preset) this.#rules.push(...parseRules(permissionPresets[opts.preset].rules))
+    if (opts?.preset) {
+      const rules = parseRules(permissionPresets[opts.preset].rules)
+      this.#rules.push(...rules)
+      this.#sensitiveRules.push(
+        ...rules.filter((r) => opts.preset === "yolo" || r.policy !== "allow")
+      )
+    }
     this.#workspaces = (opts?.workspaces ?? []).map((p) => normPath(this.cwd, p))
     // Auto-include cwd so users don't have to repeat it. Listed first so
     // longest-prefix lookup in handlers stays predictable.
@@ -82,6 +90,7 @@ export class PermissionManager {
 
   addRule(rule: Rule): void {
     this.#rules.unshift(rule)
+    this.#sensitiveRules.unshift(rule)
   }
 
   // ── Dispatch ────────────────────────────────────────────────────────
@@ -107,6 +116,7 @@ export class PermissionManager {
       cwd: this.cwd,
       rules,
       scope,
+      sensitiveRules: this.#sensitiveRules.filter((r) => r.scope === scope),
       validate: this.validate.bind(this),
       workspaces: this.#workspaces,
     })

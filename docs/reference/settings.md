@@ -414,7 +414,7 @@ Ask for everything. No commands or file ops auto-allowed.
 
 ### readonly
 
-Auto-allow read-only utilities, git read-only ops, and common build/test commands. Reads inside the workspace are allowed (sensitive paths denied); writes always ask.
+Auto-allow read-only utilities, git read-only ops, and common build/test commands. Reads inside the workspace are allowed (sensitive paths ask); writes always ask.
 
 
 ```json

@@ -52,6 +52,24 @@ Use the [generated settings reference](../reference/settings.md#permission-prese
 for exact preset descriptions and current rule lists. Start with a preset rather
 than copying a large allow list that will become stale.
 
+## Sensitive files
+
+Paths that look potentially sensitive—such as `.env`, `.ssh/config`, `.npmrc`,
+`.git/config`, or files under `secrets/`—require confirmation in `strict`,
+`readonly`, and `permissive`. Being inside a workspace or covered by a preset's
+ordinary write allowance does not bypass this check. The prompt distinguishes
+reading from writing and offers a rule for that specific file.
+
+Explicit user rules take precedence, including rules added through an approval
+prompt. For example, `read(~/.ssh/config)` can allow reading your SSH configuration
+without allowing access to private keys. Sensitive files are allowed without
+prompts under `yolo`, unless an explicit user rule requires confirmation or denies
+access. Without an approval callback, requests that need confirmation fail rather
+than being silently allowed.
+
+This is a path-based warning heuristic, not a sandbox or a guarantee that other
+files and commands cannot expose secrets.
+
 ## Project code and extensions
 
 Plugins and command-template shell snippets run code locally. Install or enable

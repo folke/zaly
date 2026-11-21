@@ -220,6 +220,55 @@ describe("real tools do not leave the agent stuck in running-tools", () => {
   })
 })
 
+describe("sensitive file confirmation", () => {
+  test.each([
+    { preset: "permissive", approve: undefined, runs: false },
+    { preset: "permissive", approve: false, runs: false },
+    { preset: "permissive", approve: true, runs: true },
+    { preset: "yolo", approve: undefined, runs: true },
+  ] as const)("$preset with approval=$approve runs=$runs", async ({ preset, approve, runs }) => {
+    for (const scope of ["read", "write"] as const) {
+      let toolRan = false
+      const seen: { scope: string; input: string; reason: string }[] = []
+      const tool = defineTool({
+        name: "sensitive",
+        parallel: true,
+        params: Type.Object({}),
+        async preflight(_args, ctx) {
+          await ctx.need?.(scope, "/workspace/.env")
+        },
+        call() {
+          toolRan = true
+          return "ok"
+        },
+      })
+      const agent = await loadAgent({
+        model: mockModel(callThenStop("sensitive")),
+        permissions: { preset },
+        tools: [tool],
+        allow:
+          approve === undefined
+            ? undefined
+            : async (req) => {
+                seen.push({ scope: req.scope, input: req.input, reason: req.reason })
+                return approve
+              },
+      })
+      await agent.run()
+      expect(toolRan).toBe(runs)
+      if (!runs) expect(lastToolPart(agent)?.error?.code).toBe("PERMISSION_DENIED")
+      if (approve !== undefined)
+        expect(seen).toEqual([
+          {
+            scope,
+            input: "/workspace/.env",
+            reason: "/workspace/.env: potentially sensitive file",
+          },
+        ])
+    }
+  })
+})
+
 describe("AgentOptions.allow — ask escalation", () => {
   test("ask without allow callback → deny", async () => {
     const agent = await loadAgent({
