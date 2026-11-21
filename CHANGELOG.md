@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/folke/zaly/compare/v0.3.3...v0.4.0) (2026-11-21)
+
+
+### 🚀 Enhancements
+
+* **agent:** allow grep context up to 20 ([135d7da](https://github.com/folke/zaly/commit/135d7da35cbdb0ac6019320ca8a29fb3c80293eb))
+* **ai:** added gpt-6.2-astra and gpt-6.2-sol codex models ([156bcf8](https://github.com/folke/zaly/commit/156bcf83cf0e1d5de1118544913b2278a78d03ae))
+* **cli:** added cwd to the statusline ([afe2389](https://github.com/folke/zaly/commit/afe2389c40c7be62db457b501765fc8e12009308))
+
+
+### 🩹 Fixes
+
+* **agent:** ask for sensitive files instead of denying access ([5a71be7](https://github.com/folke/zaly/commit/5a71be74539a1423fa8863bb313d337e5c37256e))
+
 ## [0.3.3](https://github.com/folke/zaly/compare/v0.3.2...v0.3.3) (2026-11-18)
 
 
