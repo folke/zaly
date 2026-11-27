@@ -1,4 +1,5 @@
 import type { Model } from "@zaly/ai"
+import type { Session } from "../session/session.ts"
 
 import { BaseCollection } from "@zaly/shared/collection"
 import { createRegistry } from "@zaly/shared/registry"
@@ -6,6 +7,7 @@ import { createRegistry } from "@zaly/shared/registry"
 export interface PromptCtx {
   model: Model
   cwd: string
+  session: Session
 }
 
 export type PromptLoader = (ctx: PromptCtx) => Promise<string>
@@ -21,6 +23,7 @@ const builtin = {
   agent: () => import("./agent.ts").then((m) => m.agentPrompt),
   env: (ctx) => import("./env.ts").then((m) => m.prompt(ctx)),
   model: (ctx) => import("./model.ts").then((m) => m.prompt(ctx)),
+  session: (ctx) => import("./session.ts").then((m) => m.prompt(ctx)),
 } as const satisfies Record<string, PromptLoader>
 
 export type BuiltinPrompt = keyof typeof builtin
@@ -57,5 +60,5 @@ class PromptCollection extends BaseCollection<AnyPrompt[], Prompt[], Prompt> {
 }
 
 export async function promptCollection(): Promise<PromptCollection> {
-  return new PromptCollection(["agent", "env", "model", "AGENTS.md", "MEMORY.md"])
+  return new PromptCollection(["agent", "env", "model", "session", "AGENTS.md", "MEMORY.md"])
 }

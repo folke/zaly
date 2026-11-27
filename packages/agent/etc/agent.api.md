@@ -613,6 +613,8 @@ export interface PromptCtx {
     cwd: string;
     // (undocumented)
     model: Model;
+    // (undocumented)
+    session: Session;
 }
 
 // @public (undocumented)
@@ -625,6 +627,7 @@ readonly "MEMORY.md": (ctx: PromptCtx) => Promise<string>;
 readonly agent: () => Promise<string>;
 readonly env: (ctx: PromptCtx) => Promise<string>;
 readonly model: (ctx: PromptCtx) => Promise<string>;
+readonly session: (ctx: PromptCtx) => Promise<string>;
 }>;
 
 // @public (undocumented)

@@ -28,6 +28,7 @@ export class PromptsApi implements Collection<AnyPrompt[], Prompt[], Prompt> {
       cwd: this.#plugin.ctx.cwd,
       model,
       prompts,
+      session: this.#plugin.ctx.session,
     })
   }
 

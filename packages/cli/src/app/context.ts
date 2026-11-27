@@ -29,7 +29,9 @@ export async function contextTree(app: App) {
   if (!model) {
     return app.notify("No model selected. Please select a model first.", { level: "error" })
   }
-  const prompt = await app.ctx.prompts().then((p) => p.render({ cwd: app.agent.ctx.cwd, model }))
+  const prompt = await app.ctx
+    .prompts()
+    .then((p) => p.render({ cwd: app.agent.ctx.cwd, model, session: app.agent.ctx.session }))
   const tools = await app.ctx.tools().then((t) => t.load())
   const masker = await app.agent.ctx.masker()
 

@@ -56,14 +56,23 @@ export async function loadAgent(app: App): Promise<Agent> {
   tools.active = ctx.config.$.tools
 
   const prompts = await ctx.prompts()
+  let promptRevision = 0
   const updatePrompt = async () => {
+    const revision = ++promptRevision
     const model = agent.ctx.model
-    agent.ctx.prompt = (model ? await prompts.render({ cwd: agent.ctx.cwd, model }) : []).map(
-      (p) => p.text
-    )
+    const rendered = (
+      model
+        ? await prompts.render({
+            cwd: agent.ctx.cwd,
+            model,
+            session: agent.ctx.session,
+          })
+        : []
+    ).map((p) => p.text)
+    if (revision === promptRevision) agent.ctx.prompt = rendered
   }
   prompts.onAny(updatePrompt)
-  agent.ctx.on("cwd", updatePrompt)
+  agent.ctx.on("cwd", updatePrompt).on("session", updatePrompt)
 
   const models = await app.ctx.models()
   models.on("active", ({ active }) => (agent.ctx.model = active))
