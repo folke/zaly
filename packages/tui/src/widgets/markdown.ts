@@ -13,7 +13,7 @@ import { hasColors } from "@zaly/shared/env"
 import { Node } from "../core/node.ts"
 import { createAsync, signal, unwrap, useContext } from "../core/reactive.ts"
 import { RenderContext } from "../core/render.ts"
-import { calcLayout, expandTabs, formatText } from "../layout/text.ts"
+import { calcLayout, expandTabs, formatLines, formatText } from "../layout/text.ts"
 import { shikiWorker } from "../shiki/client.ts"
 import { codeToAnsi } from "../shiki/shiki.ts"
 import { shikiTheme } from "../shiki/theme.ts"
@@ -35,6 +35,8 @@ export interface MarkdownState {
    * as plain text.
    */
   syntax?: boolean
+  /** Maximum rendered rows after wrapping, followed by a count of omitted rows. */
+  limit?: number
   wrap?: WrapMode
   style?: AnyStyle
 }
@@ -154,13 +156,15 @@ export class Markdown extends Node<MarkdownState> {
       }
     }
 
-    return formatText(formatted, {
+    const rows = formatText(formatted, {
       indent: true,
       style: this.state.style ? ctx.style.add(this.state.style) : undefined,
       width: ctx.width,
       wrap: this.state.wrap,
       wrapBg: true,
     })
+    const limit = this.state.limit
+    return limit === undefined ? rows : formatLines(rows, { limit, style: ctx.style.muted })
   }
 
   override async layout(ctx: RenderCtx) {

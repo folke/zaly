@@ -30,6 +30,8 @@ const builtin = {
   grep: () => import("./grep.ts" as string).then((m) => m.grepTool as Tool),
   read: () => import("./read.ts" as string).then((m) => m.readTool as Tool),
   search: () => import("./search.ts" as string).then((m) => m.searchTool as Tool),
+  session_search: () =>
+    import("./session-search.ts" as string).then((m) => m.sessionSearchTool as Tool),
   subagent: () => import("./subagent.ts" as string).then((m) => m.subagentTool as Tool),
   task_list: () => import("./tasks.ts" as string).then((m) => m.taskListTool as Tool),
   task_poll: () => import("./tasks.ts" as string).then((m) => m.taskPollTool as Tool),

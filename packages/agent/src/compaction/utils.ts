@@ -1,24 +1,14 @@
-import type { AnyPart, Message } from "@zaly/ai"
+import type { Message } from "@zaly/ai"
 import type { BashTool } from "../tools/bash.ts"
 import type { EditToolMeta } from "../tools/edit.ts"
 import type { ReadToolMeta } from "../tools/read.ts"
 import type { WriteToolMeta } from "../tools/write.ts"
 
-import {
-  attachmentToMeta,
-  ContentTransform,
-  errorToMeta,
-  extractToolCalls,
-  extractToolResults,
-  metaToText,
-  safeParseToolParams,
-  sanitizeText,
-  stringifyContent,
-  toXml,
-} from "@zaly/ai"
-import { safeStringify, formatDuration } from "@zaly/shared"
+import { extractToolCalls, extractToolResults, safeParseToolParams, toXml } from "@zaly/ai"
+import { formatDuration } from "@zaly/shared"
 import { parseBash } from "../utils/bash/parser.ts"
 import { TOOLS } from "../utils/bash/tools.ts"
+import { messageExtractor } from "./transcript.ts"
 
 export type ToolStat = {
   count: number
@@ -195,48 +185,16 @@ export function extractBashUsage(
 
 // ── Transcript ────────────────────────────────────────────────────────
 
-function truncate(text: string, len: number): string {
-  return text.length <= len ? text : `${text.slice(0, len)}…`
-}
-
 /** Flatten a list of messages into a single tagged transcript. */
 export function extractConversation(
   messages: readonly Message[],
   opts: { maxToolResultLen?: number } = {}
 ): string {
-  const transform = ContentTransform.create<AnyPart>()
-    .drop("reasoning")
-    .map("tool-call", (part) => ({
-      content: [
-        {
-          text: `${part.name}(${safeStringify(part.params)})`,
-          type: "text" as const,
-        },
-      ],
-      tag: "tool-call",
-      type: "meta",
-    }))
-    .map("tool-result", (part) => {
-      const text = truncate(stringifyContent(part.content), opts.maxToolResultLen ?? 2000)
-      return {
-        content: text === "" ? undefined : [{ text, type: "text" as const }],
-        data: { tool: part.name, ...(part.isError ? { error: true } : {}) },
-        tag: "tool-result",
-        type: "meta" as const,
-      }
-    })
-    .pipe(attachmentToMeta("image", "pdf", "audio", "video"))
-    .pipe(errorToMeta())
-    .pipe(metaToText())
-    .pipe(sanitizeText())
-
+  const extract = messageExtractor({ maxToolResultLen: opts.maxToolResultLen ?? 2000 })
   const blocks: string[] = []
   let role: string | undefined = undefined
   for (const m of messages) {
-    const parts =
-      typeof m.content === "string" ? [{ text: m.content, type: "text" as const }] : m.content
-    const transformed = transform.runSync(parts)
-    const text = stringifyContent(transformed).trim()
+    const { message: text } = extract(m)
     if (!text) continue
     let currentRole = m.role.charAt(0).toUpperCase() + m.role.slice(1) // capitalize
     currentRole = currentRole === "Tool" ? "Assistant" : currentRole // re-label "Tool" as "Assistant" for summarization purposes

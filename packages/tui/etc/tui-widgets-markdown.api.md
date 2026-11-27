@@ -34,6 +34,7 @@ export function markdown(state: State<MarkdownState>): Markdown;
 export interface MarkdownState {
     content: TextContent;
     cwd?: Reactive<string>;
+    limit?: number;
     options?: MdOptions;
     // (undocumented)
     style?: AnyStyle;

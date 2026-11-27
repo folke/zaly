@@ -26,6 +26,7 @@
         "grep",
         "read",
         "search",
+        "session_search",
         "subagent",
         "task_list",
         "task_poll",

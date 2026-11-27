@@ -933,6 +933,7 @@ readonly find: () => Promise<Tool<unknown, unknown, object>>;
 readonly grep: () => Promise<Tool<unknown, unknown, object>>;
 readonly read: () => Promise<Tool<unknown, unknown, object>>;
 readonly search: () => Promise<Tool<unknown, unknown, object>>;
+readonly session_search: () => Promise<Tool<unknown, unknown, object>>;
 readonly subagent: () => Promise<Tool<unknown, unknown, object>>;
 readonly task_list: () => Promise<Tool<unknown, unknown, object>>;
 readonly task_poll: () => Promise<Tool<unknown, unknown, object>>;

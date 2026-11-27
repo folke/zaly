@@ -59,6 +59,7 @@ export const defaultSettings = {
     "fetch",
     "find",
     "grep",
+    "session_search",
     // "agent_send",
     // "agent_spawn",
     // "subagent",

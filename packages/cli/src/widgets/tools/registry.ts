@@ -8,6 +8,7 @@ import { defaultRenderer, genericRenderer } from "./default.ts"
 import { editRenderer } from "./edit.ts"
 import { fetchRenderer } from "./fetch.ts"
 import { readRenderer } from "./read.ts"
+import { sessionSearchRenderer } from "./session-search.ts"
 import { skillRenderer } from "./skill.ts"
 import { writeRenderer } from "./write.ts"
 
@@ -42,6 +43,7 @@ const builtin = {
   grep: () => bashRenderer as ToolRenderer,
   read: () => readRenderer as ToolRenderer,
   search: () => genericRenderer({ lang: "markdown" }) as ToolRenderer,
+  session_search: () => sessionSearchRenderer as ToolRenderer,
   skill: () => skillRenderer as ToolRenderer,
   write: () => writeRenderer as ToolRenderer,
 } as const satisfies Record<string, ToolResultLoader>

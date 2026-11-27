@@ -29,6 +29,7 @@ const READONLY_TOOLS = [
   "tool(read)",
   "tool(grep)",
   "tool(find)",
+  "tool(session_search)",
   "tool(task_list)",
   "tool(task_poll)",
 ]

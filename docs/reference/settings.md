@@ -300,7 +300,7 @@ Package manager command used for npm packs.
 
 **Type:** `Array<string>`
 
-**Default:** `["bash","edit","read","write","fetch","find","grep","task_list","task_poll","task_stop"]`
+**Default:** `["bash","edit","read","write","fetch","find","grep","session_search","task_list","task_poll","task_stop"]`
 
 ## `ui`
 
@@ -308,7 +308,7 @@ Package manager command used for npm packs.
 
 ## `ui.collapsedTools`
 
-**Type:** `Array<"agent_send" | "agent_spawn" | "bash" | "edit" | "fetch" | "find" | "grep" | "read" | "search" | "subagent" | "task_list" | "task_poll" | "task_stop" | "wakeup" | "write" | string>`
+**Type:** `Array<"agent_send" | "agent_spawn" | "bash" | "edit" | "fetch" | "find" | "grep" | "read" | "search" | "session_search" | "subagent" | "task_list" | "task_poll" | "task_stop" | "wakeup" | "write" | string>`
 
 Tools whose result body should be hidden in the UI.
 
@@ -426,6 +426,7 @@ Auto-allow read-only utilities, git read-only ops, and common build/test command
     "tool(read)",
     "tool(grep)",
     "tool(find)",
+    "tool(session_search)",
     "tool(task_list)",
     "tool(task_poll)",
     "bash(ls:*)",
