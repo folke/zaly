@@ -98,10 +98,17 @@ export async function loadAgent(app: App): Promise<Agent> {
  * `agent.usage` reflects the last response by then.
  */
 export function attachState(agent: Agent, state: AppState): void {
+  const updateTasks = () => (state.tasks = agent.tasks.running())
+  agent.tasks
+    .on("task-added", updateTasks)
+    .on("task-done", updateTasks)
+    .on("task-removed", updateTasks)
   agent
     .on("step-end", () => {
       state.usage = agent.usage
       state.step += 1
+      // Tasks finished within a tool round don't emit task-done.
+      updateTasks()
     })
     .on("status", ({ status }) => {
       const busy = status !== "idle" && status !== "paused"
@@ -118,4 +125,5 @@ export function attachState(agent: Agent, state: AppState): void {
   agent.ctx.on("session", () => (state.usage = agent.usage))
   agent.ctx.on("cwd", () => (state.cwd = agent.ctx.cwd))
   state.usage = agent.usage
+  updateTasks()
 }

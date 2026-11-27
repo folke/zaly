@@ -28,7 +28,12 @@ export const statusline = widget((props: AppState) =>
 
         components.push(s.primary.bold("zaly"))
 
-        if (props.status !== "ready") components.push(s.accent(props.status))
+        const tasks = props.tasks?.length ?? 0
+        const taskStatus = tasks > 0 ? `${fmt(tasks)} ${tasks === 1 ? "task" : "tasks"}` : ""
+        const ready = props.status === "ready"
+
+        if (!ready) components.push(s.accent(props.status))
+        if (taskStatus) components.push(ready ? s.accent(taskStatus) : s.muted(taskStatus))
 
         if (props.scroll.offset < props.scroll.total) {
           const pct = Math.round((props.scroll.offset / props.scroll.total) * 100)

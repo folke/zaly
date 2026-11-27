@@ -1,4 +1,4 @@
-import type { AgentStatus, PermissionPresetName, TokenUsage } from "@zaly/agent"
+import type { AgentStatus, PermissionPresetName, TaskInfo, TokenUsage } from "@zaly/agent"
 import type { Model, ReasoningEffort } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
@@ -54,6 +54,8 @@ export type AppState = {
   model?: Model
   /** The current status of the agent and app */
   status: AgentStatus | "error" | "loading" | "ready"
+  /** Snapshot of active tasks, including pending work. */
+  tasks?: readonly TaskInfo[]
   /** The current token usage statistics. */
   usage?: TokenUsage
   /** The current reasoning effort. */
