@@ -129,6 +129,8 @@ export default defineConfig({
     "typescript/consistent-type-imports": ["error", { fixStyle: "separate-type-imports" }],
     "typescript/no-deprecated": "error",
     "typescript/no-floating-promises": "error",
+    "typescript/no-meaningless-void-operator": "off",
+    "typescript/no-unsafe-class-instance-assignment": "off",
     "typescript/no-misused-promises": "error",
     "typescript/no-unnecessary-condition": "error",
     "typescript/no-unsafe-type-assertion": "off",

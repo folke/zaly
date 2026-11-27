@@ -176,7 +176,7 @@
     "@types/picomatch": "^4.0.3",
     "@types/proper-lockfile": "^4.1.4",
     "@types/shell-quote": "^1.7.5",
-    "ignore": "^7.0.16",
+    "ignore": "^7.0.17",
     "image-meta": "^0.3.1",
     "js-yaml": "^5.5.0",
     "picomatch": "^4.0.7",
@@ -199,7 +199,7 @@
       "7.0.0"
     ],
     "get-east-asian-width": "1.7.0",
-    "ignore": "7.0.16",
+    "ignore": "7.0.17",
     "image-meta": "0.3.1",
     "js-yaml": "5.5.0",
     "picomatch": "4.0.7",
