@@ -67,5 +67,8 @@
   },
   "trustedDependencies": [
     "sharp"
-  ]
+  ],
+  "patchedDependencies": {
+    "@microsoft/api-extractor@7.60.2": "patches/@microsoft%2Fapi-extractor@7.60.2.patch"
+  }
 }

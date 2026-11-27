@@ -1,4 +1,4 @@
-# @zaly/agent (102)
+# @zaly/agent (103)
 
 ## Classes (2)
 
@@ -47,7 +47,7 @@
 - taskCompletionMessage
 - taskInfoPart
 
-## Types (70)
+## Types (71)
 
 - AgentContextEvents
 - AgentEvents
@@ -96,6 +96,7 @@
 - ReadToolMeta
 - Rule
 - SendMode
+- SessionSearchTool
 - SkillEntry
 - SkillMeta
 - SkillTool

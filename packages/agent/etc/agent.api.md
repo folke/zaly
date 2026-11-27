@@ -649,6 +649,9 @@ export type Rule<T extends string = string> = {
 // @public (undocumented)
 export type SendMode = "inject" | "append";
 
+// @public (undocumented)
+export type SessionSearchTool = typeof sessionSearchTool;
+
 // @public
 export interface SkillEntry {
     // (undocumented)

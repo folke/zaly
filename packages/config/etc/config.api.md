@@ -131,7 +131,7 @@ export const defaultSettings: {
         git: string[];
         npm: string[];
     };
-    tools: ["bash", "edit", "read", "write", "fetch", "find", "grep", "task_list", "task_poll", "task_stop", ...string[]];
+    tools: ["bash", "edit", "read", "write", "fetch", "find", "grep", "session_search", "task_list", "task_poll", "task_stop", ...string[]];
 };
 
 // @public (undocumented)
