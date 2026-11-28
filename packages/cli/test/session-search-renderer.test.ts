@@ -1,4 +1,5 @@
-import type { ToolResult } from "@zaly/ai"
+import type { SessionSearchTool } from "@zaly/agent"
+import type { MetaOf, ToolResult } from "@zaly/ai"
 
 import { stripAnsi } from "@zaly/shared/ansi"
 import { createCtx } from "@zaly/tui"
@@ -6,8 +7,12 @@ import { expect, test } from "vitest"
 import { ToolView } from "../src/widgets/tool.ts"
 import { toolRenderer } from "../src/widgets/tools/registry.ts"
 
-async function render(content: ToolResult["content"], width = 100) {
-  const view = new ToolView({
+async function render(
+  content: ToolResult["content"],
+  width = 100,
+  meta?: MetaOf<SessionSearchTool>
+) {
+  const view = new ToolView<SessionSearchTool>({
     call: {
       id: "search",
       name: "session_search",
@@ -15,10 +20,10 @@ async function render(content: ToolResult["content"], width = 100) {
       type: "tool-call",
     },
     cwd: process.cwd(),
-    result: { content },
+    result: { content, meta },
   })
   const ctx = await createCtx({ width })
-  const rows = await toolRenderer("session_search").result(view).render(ctx)
+  const rows = await toolRenderer<SessionSearchTool>("session_search").result(view).render(ctx)
   view.close()
   return rows.map((line) => stripAnsi(line).trimEnd())
 }
@@ -56,4 +61,17 @@ test("session search handles empty and legacy results", async () => {
   expect(await render("")).toEqual([" No matches found."])
   const legacy = await render('{"matches":[]}')
   expect(legacy.join("\n")).toContain('"matches":[]')
+})
+
+test("session search distinguishes omitted, visible, and absent results", async () => {
+  const partial = await render(row("msg-1", "user", "Example"), 100, {
+    shown: 2,
+    skipped: 1,
+    total: 6,
+  })
+  expect(partial.join("\n")).toContain("2 shown · 3 more · 1 already visible")
+  const visible = await render("", 100, { shown: 0, skipped: 1, total: 1 })
+  expect(visible.join("\n")).toContain("All results are already visible in the context.")
+  const absent = await render("", 100, { shown: 0, skipped: 0, total: 0 })
+  expect(absent.join("\n")).toContain("No results found.")
 })

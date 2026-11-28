@@ -119,7 +119,12 @@ describe("Masker", () => {
     expect(masker.stats.get("user")).toEqual({ image: 1 })
     expect(projected[0]).not.toBe(messages[0])
     expect(projected[0].content).toEqual([
-      { content: "Masked image. Re-attach to refresh", tag: "masked", type: "meta" },
+      {
+        content:
+          'Masked image. Re-attach to refresh, or use session_search({"id":"u1"}) to retrieve the text.',
+        tag: "masked",
+        type: "meta",
+      },
     ])
     expect(projected[1]).toBe(messages[1])
   })
@@ -173,7 +178,12 @@ describe("Masker", () => {
     expect(masker.isMasked("u1", 0)).toBe(true)
     expect(masker.isMasked("u2", 0)).toBe(false)
     expect(projected[0].content).toEqual([
-      { content: "Masked image. Re-attach to refresh", tag: "masked", type: "meta" },
+      {
+        content:
+          'Masked image. Re-attach to refresh, or use session_search({"id":"u1"}) to retrieve the text.',
+        tag: "masked",
+        type: "meta",
+      },
     ])
     expect(projected[2]).toBe(messages[2])
   })

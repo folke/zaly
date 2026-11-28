@@ -174,6 +174,7 @@ export class ContentTransform<T extends AnyPart = ContentPart> {
         type: K;
     }>>;
     extend<U extends AnyPart>(other: ContentTransform<U>): ContentTransform<U>;
+    filter(fn?: (part: T) => boolean): ContentTransform<T>;
     map<K extends T["type"], R extends AnyPart>(kind: K, fn: (part: Extract<T, {
         type: K;
     }>) => R | readonly R[] | undefined): ContentTransform<Exclude<T, {

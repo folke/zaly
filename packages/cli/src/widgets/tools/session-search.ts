@@ -7,6 +7,7 @@ import { cleanTextTui } from "@zaly/shared/text"
 import { memo } from "@zaly/tui"
 import { formatLines } from "@zaly/tui/text"
 import { box } from "@zaly/tui/widgets/box"
+import { log } from "@zaly/tui/widgets/log"
 import { markdown } from "@zaly/tui/widgets/markdown"
 import { show } from "@zaly/tui/widgets/show"
 import { text } from "@zaly/tui/widgets/text"
@@ -47,33 +48,62 @@ export const sessionSearchRenderer: ToolRenderer<SessionSearchTool> = {
 
   result(view) {
     const result = memo(() => resultMarkdown(justText(view.result?.content ?? "")))
-
-    return box(
-      { padding: [0, 1], style: "code", width: "fit" },
-      show(
-        {
-          use: () =>
-            markdown(
-              memo(() => result() ?? ""),
-              { cwd: view.cwd, limit: PREVIEW_LINE_LIMIT }
-            ),
-          when: result,
-        },
-        () =>
-          text({
-            content: (ctx) =>
-              memo(() => {
-                const content = view.result?.content
-                if (!content) return "…"
-                return formatLines(justText(content), {
-                  limit: PREVIEW_LINE_LIMIT,
-                  style: ctx.style.muted,
-                }).join("\n")
-              }),
-            style: "muted",
-            wrap: "word",
-          })
-      )
+    const noResults = memo(() => {
+      const m = view.result?.meta
+      if (m?.total === 0) return "No results found."
+      if (m?.shown === 0 && m.skipped > 0) return "All results are already visible in the context."
+    })
+    const summary = memo(() => {
+      const m = view.result?.meta
+      if (!m || m.shown === 0) return ""
+      const more = m.total - m.shown - m.skipped
+      if (more <= 0 && m.skipped === 0) return ""
+      return [
+        `${m.shown} shown`,
+        more > 0 ? `${more} more` : undefined,
+        m.skipped > 0 ? `${m.skipped} already visible` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    })
+    return show(
+      {
+        use: () =>
+          log({
+            content: memo(() => noResults() ?? ""),
+            level: "warn",
+          }),
+        when: noResults,
+      },
+      () =>
+        box(
+          { padding: [0, 1], style: "code", width: "fit" },
+          show(
+            {
+              use: () =>
+                markdown(
+                  memo(() => result() ?? ""),
+                  { cwd: view.cwd, limit: PREVIEW_LINE_LIMIT }
+                ),
+              when: result,
+            },
+            () =>
+              text({
+                content: (ctx) =>
+                  memo(() => {
+                    const content = view.result?.content
+                    if (!content) return "…"
+                    return formatLines(justText(content), {
+                      limit: PREVIEW_LINE_LIMIT,
+                      style: ctx.style.muted,
+                    }).join("\n")
+                  }),
+                style: "muted",
+                wrap: "word",
+              })
+          ),
+          show({ when: summary }, () => text(summary, { style: "muted" }))
+        )
     )
   },
 }

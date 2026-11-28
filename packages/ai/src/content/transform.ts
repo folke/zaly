@@ -49,6 +49,13 @@ export class ContentTransform<T extends AnyPart = ContentPart> {
     return this.#stage((parts) => parts.filter((p) => p.type !== kind))
   }
 
+  /** Keep only parts for which `fn` returns true. The output type
+   *  doesn't narrow, but the runtime filter can be used to implement
+   *  arbitrary predicates (e.g. "keep only images smaller than 1MB"). */
+  filter(fn?: (part: T) => boolean): ContentTransform<T> {
+    return fn === undefined ? this : this.#stage((parts) => parts.filter((p) => fn(p as T)))
+  }
+
   /** Replace each part of `kind` with the result of `fn`. The function
    *  may return:
    *    - a single `R` part (1:1 substitution),

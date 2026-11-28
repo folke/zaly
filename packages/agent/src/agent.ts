@@ -843,7 +843,8 @@ export class Agent extends Emitter<AgentEvents> {
       agent: this,
       bash: this.#opts.bash,
       cwd: this.cwd,
-      isMasked: (msgId: string, partIdx?: number) => masker?.isMasked(msgId, partIdx) ?? false,
+      isMasked: (msgId?: string, partIdx?: number) =>
+        msgId ? (masker?.isMasked(msgId, partIdx) ?? false) : false,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
       perms: await this.ctx.permissions(),

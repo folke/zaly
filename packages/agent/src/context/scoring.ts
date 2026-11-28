@@ -30,8 +30,8 @@ const DEFAULT_HALF_LIFE = 40
 const DEFAULT_WEIGHT = 1
 const DEFAULT_GAMMA = 0.5
 
-const maskedMeta = (result = "result", action = "call"): MetaPart => ({
-  content: `Masked ${result}. Re-${action} to refresh`,
+const maskedMeta = (part: MsgPart, result = "result", action = "call"): MetaPart => ({
+  content: `Masked ${result}. Re-${action} to refresh, or use session_search(${JSON.stringify({ id: part.message.id })}) to retrieve the text.`,
   tag: "masked",
   type: "meta",
 })
@@ -153,7 +153,7 @@ class ToolPolicy<T extends Tool = Tool, M extends object = object> extends MaskP
             ...part.part,
             params: { masked: truncate(safeStringify(group.params), 100) },
           }
-        return { ...part.part, content: [maskedMeta()] }
+        return { ...part.part, content: [maskedMeta(part)] }
       },
       update: (group, part) => {
         group.name = name
@@ -203,7 +203,7 @@ const fileScore: ToolRule<
         ...part.part,
         params: { masked: true, path: part.part.params.path },
       }
-    return part.part.isError ? part.part : { ...part.part, content: [maskedMeta()] }
+    return part.part.isError ? part.part : { ...part.part, content: [maskedMeta(part)] }
   },
   weight: (t) => {
     if (t.name === "write") return 1.25
@@ -222,14 +222,14 @@ const defaults: ContextScoringOptions = {
   parts: [
     {
       filter: (part) => isAttachment(part.part),
-      mask: (part) => maskedMeta(part.part.type, "attach"),
+      mask: (part) => maskedMeta(part, part.part.type, "attach"),
     },
     {
       filter: (part) => part.message.role === "system" && part.message.meta?.kind === "task",
       halfLife: 25,
       mask: (part) => {
         if (part.part.type === "meta") return part.part
-        return maskedMeta("task")
+        return maskedMeta(part, "task")
       },
     },
   ],
