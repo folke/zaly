@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/folke/zaly/compare/v0.4.0...v0.5.0) (2026-11-28)
+
+
+### 🚀 Enhancements
+
+* **agent:** filter session search by date ([660bd56](https://github.com/folke/zaly/commit/660bd56ea1a549c3c18c3f7b331839a0cfceeebf))
+* **agent:** recover masked messages and paginate session search ([ac5d1d9](https://github.com/folke/zaly/commit/ac5d1d96f3a6ac2923cf5510679246c95c3d2594))
+
 ## [0.4.0](https://github.com/folke/zaly/compare/v0.3.3...v0.4.0) (2026-11-27)
 
 
