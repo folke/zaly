@@ -62,7 +62,7 @@ test("finds exact old messages and nearby turns on the current branch after repe
     messages: [
       { id: third, match: true, role: "user", message: "Still leave TODO.md alone.", ts: iso },
     ],
-    meta: { already_visible: 0, before: third, more: 1, shown: 1 },
+    meta: { already_visible: 0, cursor: third, more: 1, shown: 1 },
     sidecar: { shown: 1, skipped: 0, total: 2 },
   })
   expect(await rows({ id: second })).toEqual({
@@ -75,7 +75,7 @@ test("finds exact old messages and nearby turns on the current branch after repe
     sidecar: { shown: 1, skipped: 0, total: 1 },
   })
   expect(await errorCode({ id: abandoned })).toBe("MESSAGE_NOT_FOUND")
-  expect(await errorCode({ before: abandoned, pattern: "todo" })).toBe("MESSAGE_NOT_FOUND")
+  expect(await errorCode({ cursor: abandoned, pattern: "todo" })).toBe("MESSAGE_NOT_FOUND")
   expect(await rows({ pattern: "Abandoned" })).toMatchObject({ messages: [] })
 })
 
@@ -149,9 +149,9 @@ test("paginates eligible hits by ID, with distinct context rows and sparse times
     [middle, true, undefined],
     [newest, true, undefined],
   ])
-  expect(page.meta).toEqual({ already_visible: 1, before: middle, more: 1, shown: 2 })
+  expect(page.meta).toEqual({ already_visible: 1, cursor: middle, more: 1, shown: 2 })
 
-  const older = await rows({ ...args, before: middle })
+  const older = await rows({ ...args, cursor: middle })
   expect(older.messages.map(({ id, match, ts }) => [id, match, ts])).toEqual([
     [oldest, true, new Date(base).toISOString()],
     [neighbor, undefined, undefined],
@@ -161,6 +161,48 @@ test("paginates eligible hits by ID, with distinct context rows and sparse times
 
   const all = await rows({ ...args, limit: 3 })
   expect(all.messages.filter((row) => row.ts).map((row) => row.id)).toEqual([oldest, middle])
+})
+
+test("date-only cutoffs use local midnight and exclude the boundary and later context", async () => {
+  const { session, rows } = await setup()
+  const midnight = new Date(2026, 10, 28).getTime()
+  await session.add({ content: "hit before", role: "user", ts: midnight - 1 })
+  const older = session.head
+  await session.add({ content: "hit at midnight", role: "user", ts: midnight })
+  await session.add({ content: "hit after", role: "user", ts: midnight + 1 })
+  const result = await rows({ before: "2026-11-28", context: 2, pattern: "hit" })
+  expect(result.messages.map(({ id }) => id)).toEqual([older])
+  expect(result.meta).toEqual({ already_visible: 0, more: 0, shown: 1 })
+})
+
+test("an offset cutoff survives pagination with tied and out-of-order timestamps", async () => {
+  const { session, rows } = await setup()
+  const ts = Date.UTC(2026, 10, 28, 10, 15)
+  await session.add({ content: "hit older", role: "user", ts: ts - 1 })
+  const older = session.head
+  await session.add({ content: "hit at cutoff", role: "user", ts })
+  await session.add({ content: "hit newer", role: "user", ts: ts - 1 })
+  const newer = session.head
+  const args = { before: "2026-11-28T11:15:00+01:00", context: 1, limit: 1, pattern: "hit" }
+  const page = await rows(args)
+  expect(page.messages.map(({ id }) => id)).toEqual([newer])
+  expect(page.meta).toEqual({ already_visible: 0, cursor: newer, more: 1, shown: 1 })
+  const next = await rows({ ...args, cursor: newer })
+  expect(next.messages.map(({ id }) => id)).toEqual([older])
+  expect(next.meta).toEqual({ already_visible: 0, more: 0, shown: 1 })
+  expect(await rows({ ...args, before: "2026-11-28T10:15:00Z" })).toEqual(page)
+})
+
+test.each([
+  "2026-02-29",
+  "2026-11-31T10:00Z",
+  "2026-11-28T10:00",
+  "2026-11-28T24:00:00Z",
+  "2026-11-28T10:00:00",
+  "2026-11-28T10:00:60Z",
+])("rejects invalid or ambiguous date cutoffs: %s", async (before) => {
+  const { errorCode } = await setup()
+  expect(await errorCode({ before, pattern: "hit" })).toBe("INVALID_INPUT")
 })
 
 test("an explicit masked ID returns the full stored text", async () => {
